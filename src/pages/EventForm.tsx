@@ -116,7 +116,10 @@ export default function EventForm() {
 
   const onSubmit = async (values: EventFormValues) => {
     const cleanValues = {
-      ...values,
+      event_name: values.event_name,
+      event_type: values.event_type,
+      event_date: values.event_date,
+      client_name: values.client_name,
       start_time: values.start_time || null,
       end_time: values.end_time || null,
       venue_name: values.venue_name || null,
@@ -124,6 +127,7 @@ export default function EventForm() {
       onsite_contact_name: values.onsite_contact_name || null,
       onsite_contact_phone: values.onsite_contact_phone || null,
       coverage_details: values.coverage_details || null,
+      delivery_method: values.delivery_method || null,
       delivery_deadline: values.delivery_deadline || null,
       notes: values.notes || null,
     };

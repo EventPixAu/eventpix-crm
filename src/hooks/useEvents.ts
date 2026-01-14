@@ -1,26 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface Event {
-  id: string;
-  event_name: string;
-  event_type: string;
-  event_date: string;
-  start_time: string | null;
-  end_time: string | null;
-  venue_name: string | null;
-  venue_address: string | null;
-  client_name: string;
-  onsite_contact_name: string | null;
-  onsite_contact_phone: string | null;
-  coverage_details: string | null;
-  delivery_method: string | null;
-  delivery_deadline: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
+type EventRow = Database['public']['Tables']['events']['Row'];
+type EventInsert = Database['public']['Tables']['events']['Insert'];
+type EventUpdate = Database['public']['Tables']['events']['Update'];
+
+export type Event = EventRow;
 
 export interface EventAssignment {
   id: string;
@@ -46,7 +33,7 @@ export function useEvents() {
         .order('event_date', { ascending: true });
       
       if (error) throw error;
-      return data as Event[];
+      return data;
     },
   });
 }
@@ -60,10 +47,10 @@ export function useEvent(id: string | undefined) {
         .from('events')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return data as Event;
+      return data;
     },
     enabled: !!id,
   });
@@ -99,7 +86,7 @@ export function useCreateEvent() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (event: Record<string, any>) => {
+    mutationFn: async (event: EventInsert) => {
       const { data, error } = await supabase
         .from('events')
         .insert(event)
@@ -124,7 +111,7 @@ export function useUpdateEvent() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...event }: { id: string } & Record<string, any>) => {
+    mutationFn: async ({ id, ...event }: EventUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('events')
         .update(event)
