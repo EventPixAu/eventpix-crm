@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -14,7 +13,6 @@ import {
   Phone,
   Trash2,
   User,
-  Users,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -32,6 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent } from '@/hooks/useEvents';
+import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -244,13 +243,8 @@ export default function EventDetail() {
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display font-semibold">Assigned Staff</h2>
-              {isAdmin && (
-                <Link to={`/events/${id}/assignments`}>
-                  <Button variant="outline" size="sm">
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage
-                  </Button>
-                </Link>
+              {isAdmin && id && (
+                <StaffAssignmentDialog eventId={id} assignments={assignments} />
               )}
             </div>
             {assignments.length === 0 ? (
