@@ -154,3 +154,52 @@ export function useDeleteEvent() {
     },
   });
 }
+
+export function useCreateAssignment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (assignment: { event_id: string; staff_id: string; role_on_event?: string; notes?: string }) => {
+      const { data, error } = await supabase
+        .from('event_assignments')
+        .insert(assignment)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', variables.event_id] });
+      toast({ title: 'Staff assigned successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ variant: 'destructive', title: 'Failed to assign staff', description: error.message });
+    },
+  });
+}
+
+export function useDeleteAssignment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, eventId }: { id: string; eventId: string }) => {
+      const { error } = await supabase
+        .from('event_assignments')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return eventId;
+    },
+    onSuccess: (eventId) => {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+      toast({ title: 'Assignment removed successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ variant: 'destructive', title: 'Failed to remove assignment', description: error.message });
+    },
+  });
+}
