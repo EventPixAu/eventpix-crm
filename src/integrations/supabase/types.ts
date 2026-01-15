@@ -106,8 +106,11 @@ export type Database = {
           communication_date: string | null
           communication_type: string
           created_at: string | null
+          email_template_id: string | null
           id: string
           logged_by: string | null
+          related_quote_id: string | null
+          status: string | null
           subject: string | null
           summary: string | null
         }
@@ -116,8 +119,11 @@ export type Database = {
           communication_date?: string | null
           communication_type: string
           created_at?: string | null
+          email_template_id?: string | null
           id?: string
           logged_by?: string | null
+          related_quote_id?: string | null
+          status?: string | null
           subject?: string | null
           summary?: string | null
         }
@@ -126,8 +132,11 @@ export type Database = {
           communication_date?: string | null
           communication_type?: string
           created_at?: string | null
+          email_template_id?: string | null
           id?: string
           logged_by?: string | null
+          related_quote_id?: string | null
+          status?: string | null
           subject?: string | null
           summary?: string | null
         }
@@ -137,6 +146,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_communications_email_template_id_fkey"
+            columns: ["email_template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_communications_related_quote_id_fkey"
+            columns: ["related_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -292,6 +315,70 @@ export type Database = {
         }
         Relationships: []
       }
+      contracts: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          file_url: string | null
+          id: string
+          lead_id: string | null
+          quote_id: string | null
+          sent_at: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["contract_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          lead_id?: string | null
+          quote_id?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["contract_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          lead_id?: string | null
+          quote_id?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["contract_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_methods_lookup: {
         Row: {
           created_at: string | null
@@ -369,6 +456,46 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_templates: {
+        Row: {
+          body_html: string
+          body_text: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string
+          trigger_type: Database["public"]["Enums"]["email_trigger_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          body_html: string
+          body_text?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject: string
+          trigger_type?:
+            | Database["public"]["Enums"]["email_trigger_type"]
+            | null
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string
+          body_text?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string
+          trigger_type?:
+            | Database["public"]["Enums"]["email_trigger_type"]
+            | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       equipment_allocations: {
         Row: {
@@ -1240,6 +1367,77 @@ export type Database = {
           },
         ]
       }
+      product_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          tax_rate: number | null
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          tax_rate?: number | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          tax_rate?: number | null
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1314,42 +1512,117 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          line_total: number | null
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          sort_order: number | null
+          tax_rate: number | null
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          line_total?: number | null
+          product_id?: string | null
+          quantity?: number
+          quote_id: string
+          sort_order?: number | null
+          tax_rate?: number | null
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          line_total?: number | null
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          sort_order?: number | null
+          tax_rate?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
+          accepted_at: string | null
+          accepted_by_email: string | null
+          accepted_by_name: string | null
           client_id: string | null
           created_at: string | null
           created_by: string | null
           id: string
           lead_id: string | null
           notes: string | null
+          public_token: string | null
           quote_number: string | null
           status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number | null
+          tax_total: number | null
+          terms_text: string | null
           total_estimate: number | null
           updated_at: string | null
           valid_until: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by_email?: string | null
+          accepted_by_name?: string | null
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           lead_id?: string | null
           notes?: string | null
+          public_token?: string | null
           quote_number?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number | null
+          tax_total?: number | null
+          terms_text?: string | null
           total_estimate?: number | null
           updated_at?: string | null
           valid_until?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by_email?: string | null
+          accepted_by_name?: string | null
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
           lead_id?: string | null
           notes?: string | null
+          public_token?: string | null
           quote_number?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number | null
+          tax_total?: number | null
+          terms_text?: string | null
           total_estimate?: number | null
           updated_at?: string | null
           valid_until?: string | null
@@ -1913,6 +2186,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_quote_public: {
+        Args: { p_email: string; p_name: string; p_token: string }
+        Returns: Json
+      }
       can_access_sales: { Args: { _user_id: string }; Returns: boolean }
       check_staff_conflicts: {
         Args: {
@@ -1970,11 +2247,18 @@ export type Database = {
         | "equipment_flagged_damaged"
         | "compliance_override"
         | "guardrail_override"
+      contract_status: "draft" | "sent" | "signed" | "cancelled"
       delivery_method:
         | "dropbox"
         | "zno_instant"
         | "spotmyphotos"
         | "internal_gallery"
+      email_trigger_type:
+        | "manual"
+        | "quote_sent"
+        | "quote_followup"
+        | "booking_confirmed"
+        | "event_reminder"
       event_type:
         | "wedding"
         | "corporate"
@@ -2136,11 +2420,19 @@ export const Constants = {
         "compliance_override",
         "guardrail_override",
       ],
+      contract_status: ["draft", "sent", "signed", "cancelled"],
       delivery_method: [
         "dropbox",
         "zno_instant",
         "spotmyphotos",
         "internal_gallery",
+      ],
+      email_trigger_type: [
+        "manual",
+        "quote_sent",
+        "quote_followup",
+        "booking_confirmed",
+        "event_reminder",
       ],
       event_type: [
         "wedding",
