@@ -11,6 +11,11 @@ export interface DeliveryMethod {
   name: string;
 }
 
+export interface StaffRole {
+  id: string;
+  name: string;
+}
+
 export function useEventTypes() {
   return useQuery({
     queryKey: ['event-types'],
@@ -37,6 +42,21 @@ export function useDeliveryMethods() {
       
       if (error) throw error;
       return data as DeliveryMethod[];
+    },
+  });
+}
+
+export function useStaffRoles() {
+  return useQuery({
+    queryKey: ['staff-roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_roles')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data as StaffRole[];
     },
   });
 }

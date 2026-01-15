@@ -9,6 +9,7 @@ import {
   Edit,
   MapPin,
   Phone,
+  Play,
   Trash2,
   User,
   History,
@@ -298,6 +299,12 @@ export default function EventDetail() {
               <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                 <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
                 <div className="space-y-2">
+                  <Link to={`/events/${id}/day-of`} className="block">
+                    <Button variant="default" className="w-full justify-start">
+                      <Play className="h-4 w-4 mr-2" />
+                      Day-Of View
+                    </Button>
+                  </Link>
                   <Link to={`/events/${id}/worksheets`} className="block">
                     <Button variant="outline" className="w-full justify-start">
                       View Worksheets
