@@ -17,6 +17,9 @@ import Staff from "./pages/Staff";
 import CalendarView from "./pages/CalendarView";
 import MyCalendar from "./pages/MyCalendar";
 import Workflows from "./pages/Workflows";
+import WorkflowsList from "./pages/admin/WorkflowsList";
+import WorkflowDetail from "./pages/admin/WorkflowDetail";
+import EventTypeDefaults from "./pages/admin/EventTypeDefaults";
 import Delivery from "./pages/Delivery";
 import GalleryPublic from "./pages/GalleryPublic";
 import NotFound from "./pages/NotFound";
@@ -58,6 +61,9 @@ function AppRoutes() {
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
       <Route path="/my-calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
       <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
+      <Route path="/admin/workflows" element={<ProtectedRoute><WorkflowsList /></ProtectedRoute>} />
+      <Route path="/admin/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
+      <Route path="/admin/event-types" element={<ProtectedRoute><EventTypeDefaults /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
