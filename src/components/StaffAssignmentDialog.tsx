@@ -27,6 +27,8 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
 import { useCheckAssignmentConflicts, useStaffAvailabilityByDate, AssignmentWarning } from '@/hooks/useStaffAvailability';
 import { useLogAuditEntry } from '@/hooks/useAuditLog';
+import { AssignmentEligibilityWarning, EligibilityBadge } from '@/components/AssignmentEligibilityWarning';
+import { useStaffEligibility } from '@/hooks/useCompliance';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -49,6 +51,10 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const sendNotification = useSendNotification();
   const checkConflicts = useCheckAssignmentConflicts();
   const logAuditEntry = useLogAuditEntry();
+  
+  // Fetch eligibility for selected user
+  const { data: eligibility } = useStaffEligibility(selectedUser || undefined);
+  const hasComplianceIssues = selectedUser && eligibility && !eligibility.eligible;
   
   // Fetch availability for the event date
   const { data: dateAvailability = [] } = useStaffAvailabilityByDate(event?.event_date);
@@ -102,7 +108,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   // Check if we have errors that require override
   const hasErrors = warnings.some(w => w.severity === 'error');
   const hasWarnings = warnings.length > 0;
-  const requiresOverride = hasErrors || (hasWarnings && !overrideConfirmed);
+  const requiresOverride = hasErrors || hasComplianceIssues || (hasWarnings && !overrideConfirmed);
 
   const handleAssign = async () => {
     if (!selectedUser) return;
@@ -237,8 +243,11 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
               ) : (
                 availableProfiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
-                    {profile.full_name || profile.email}
-                    {profile.default_role?.name && ` (${profile.default_role.name})`}
+                    <div className="flex items-center gap-2">
+                      <span>{profile.full_name || profile.email}</span>
+                      {profile.default_role?.name && <span className="text-muted-foreground">({profile.default_role.name})</span>}
+                      <EligibilityBadge userId={profile.id} />
+                    </div>
                   </SelectItem>
                 ))
               )}
@@ -264,6 +273,16 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
             onChange={(e) => setAssignmentNotes(e.target.value)}
             rows={2}
           />
+
+          {/* Compliance Eligibility Warning */}
+          {selectedUser && hasComplianceIssues && (
+            <AssignmentEligibilityWarning
+              userId={selectedUser}
+              userName={availableProfiles.find(p => p.id === selectedUser)?.full_name || 'Staff Member'}
+              eventId={eventId}
+              showOverrideOption={false}
+            />
+          )}
 
           {/* Availability Status Indicator */}
           {selectedUserAvailability && (
@@ -340,7 +359,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
           )}
           
           {/* Override Confirmation */}
-          {hasWarnings && (
+          {(hasWarnings || hasComplianceIssues) && (
             <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
               <Checkbox 
                 id="override" 
@@ -348,19 +367,19 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
                 onCheckedChange={(checked) => setOverrideConfirmed(!!checked)}
               />
               <label htmlFor="override" className="text-sm cursor-pointer">
-                I acknowledge these warnings and want to proceed with the assignment
+                I acknowledge these {hasComplianceIssues ? 'compliance issues and ' : ''}warnings and want to proceed with the assignment
               </label>
             </div>
           )}
 
           <Button
             onClick={handleAssign}
-            disabled={!selectedUser || createAssignment.isPending || (hasWarnings && !overrideConfirmed)}
+            disabled={!selectedUser || createAssignment.isPending || ((hasWarnings || hasComplianceIssues) && !overrideConfirmed)}
             className="w-full"
-            variant={hasWarnings ? "destructive" : "default"}
+            variant={(hasWarnings || hasComplianceIssues) ? "destructive" : "default"}
           >
             <UserPlus className="h-4 w-4 mr-2" />
-            {hasWarnings ? 'Override & Assign' : 'Assign to Event'}
+            {(hasWarnings || hasComplianceIssues) ? 'Override & Assign' : 'Assign to Event'}
           </Button>
         </div>
       </DialogContent>
