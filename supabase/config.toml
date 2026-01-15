@@ -1,1 +1,10 @@
 project_id = "kweiptzbmsbifplynnpb"
+
+[functions.send-notification]
+verify_jwt = false
+
+[functions.generate-thumbnail]
+verify_jwt = false
+
+[functions.check-compliance-expiry]
+verify_jwt = false
