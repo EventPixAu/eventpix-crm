@@ -178,6 +178,166 @@ export type Database = {
           },
         ]
       }
+      equipment_allocations: {
+        Row: {
+          allocated_at: string | null
+          created_at: string | null
+          equipment_item_id: string
+          event_id: string
+          id: string
+          notes: string | null
+          returned_at: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          allocated_at?: string | null
+          created_at?: string | null
+          equipment_item_id: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          returned_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          allocated_at?: string | null
+          created_at?: string | null
+          equipment_item_id?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          returned_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_allocations_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_allocations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_allocations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_items: {
+        Row: {
+          brand: string | null
+          category: string
+          condition: string
+          created_at: string | null
+          id: string
+          model: string | null
+          name: string
+          notes: string | null
+          serial_number: string | null
+          status: string
+        }
+        Insert: {
+          brand?: string | null
+          category: string
+          condition?: string
+          created_at?: string | null
+          id?: string
+          model?: string | null
+          name: string
+          notes?: string | null
+          serial_number?: string | null
+          status?: string
+        }
+        Update: {
+          brand?: string | null
+          category?: string
+          condition?: string
+          created_at?: string | null
+          id?: string
+          model?: string | null
+          name?: string
+          notes?: string | null
+          serial_number?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      equipment_kit_items: {
+        Row: {
+          created_at: string | null
+          equipment_item_id: string
+          id: string
+          kit_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_item_id: string
+          id?: string
+          kit_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string | null
+          equipment_item_id?: string
+          id?: string
+          kit_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_kit_items_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_kit_items_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_kits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_kits: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
       event_assignments: {
         Row: {
           assignment_notes: string | null
@@ -297,6 +457,7 @@ export type Database = {
           default_coverage_details: string | null
           default_delivery_deadline_days: number | null
           default_delivery_method_id: string | null
+          default_kit_id: string | null
           default_photographers_required: number | null
           default_roles_json: Json | null
           event_type_id: string | null
@@ -311,6 +472,7 @@ export type Database = {
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
+          default_kit_id?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           event_type_id?: string | null
@@ -325,6 +487,7 @@ export type Database = {
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
+          default_kit_id?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           event_type_id?: string | null
@@ -340,6 +503,13 @@ export type Database = {
             columns: ["default_delivery_method_id"]
             isOneToOne: false
             referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_series_default_kit_id_fkey"
+            columns: ["default_kit_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_kits"
             referencedColumns: ["id"]
           },
           {
@@ -432,6 +602,7 @@ export type Database = {
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
           ops_status: string | null
+          recommended_kit_id: string | null
           start_at: string | null
           start_time: string | null
           state: string | null
@@ -468,6 +639,7 @@ export type Database = {
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
+          recommended_kit_id?: string | null
           start_at?: string | null
           start_time?: string | null
           state?: string | null
@@ -504,6 +676,7 @@ export type Database = {
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
+          recommended_kit_id?: string | null
           start_at?: string | null
           start_time?: string | null
           state?: string | null
@@ -539,6 +712,13 @@ export type Database = {
             columns: ["job_intake_id"]
             isOneToOne: false
             referencedRelation: "job_intake"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_recommended_kit_id_fkey"
+            columns: ["recommended_kit_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_kits"
             referencedColumns: ["id"]
           },
         ]
@@ -1261,6 +1441,11 @@ export type Database = {
         | "delivery_updated"
         | "worksheet_item_toggled"
         | "assignment_override"
+        | "equipment_allocated"
+        | "equipment_pickup_marked"
+        | "equipment_returned"
+        | "equipment_flagged_missing"
+        | "equipment_flagged_damaged"
       delivery_method:
         | "dropbox"
         | "zno_instant"
@@ -1416,6 +1601,11 @@ export const Constants = {
         "delivery_updated",
         "worksheet_item_toggled",
         "assignment_override",
+        "equipment_allocated",
+        "equipment_pickup_marked",
+        "equipment_returned",
+        "equipment_flagged_missing",
+        "equipment_flagged_damaged",
       ],
       delivery_method: [
         "dropbox",
