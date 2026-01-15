@@ -38,6 +38,11 @@ import MyJobSheets from "./pages/MyJobSheets";
 import ClientList from "./pages/sales/ClientList";
 import LeadList from "./pages/sales/LeadList";
 import QuoteList from "./pages/sales/QuoteList";
+import QuoteDetail from "./pages/sales/QuoteDetail";
+import ProposalView from "./pages/sales/ProposalView";
+import ProductList from "./pages/sales/ProductList";
+import PipelineView from "./pages/sales/PipelineView";
+import PublicAcceptQuote from "./pages/sales/PublicAcceptQuote";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +70,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
+      <Route path="/accept/:token" element={<PublicAcceptQuote />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
       <Route path="/events/new" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
@@ -98,6 +104,10 @@ function AppRoutes() {
       <Route path="/sales/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
       <Route path="/sales/leads" element={<ProtectedRoute><LeadList /></ProtectedRoute>} />
       <Route path="/sales/quotes" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
+      <Route path="/sales/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
+      <Route path="/sales/products" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
+      <Route path="/sales/pipeline" element={<ProtectedRoute><PipelineView /></ProtectedRoute>} />
+      <Route path="/quote/:id/proposal" element={<ProtectedRoute><ProposalView /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
