@@ -20,6 +20,7 @@ import {
   CheckSquare,
   Square,
   X,
+  User,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -32,6 +33,7 @@ import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/ho
 import { useEventAssignments } from '@/hooks/useEvents';
 import { useAuth } from '@/lib/auth';
 import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
+import { StaffAvailabilityOverlay } from '@/components/StaffAvailabilityOverlay';
 import { cn } from '@/lib/utils';
 
 // Time slots from 6am to 11pm
@@ -344,6 +346,7 @@ export default function CalendarDayView() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
+  const [showAvailability, setShowAvailability] = useState(true);
 
   // Fetch events for the month containing selected date
   const { data: allEvents = [], isLoading, refetch } = useAdminCalendarEvents(selectedDate);
@@ -515,6 +518,18 @@ export default function CalendarDayView() {
             </>
           )}
 
+          {/* Availability Toggle - Admin Only */}
+          {isAdmin && (
+            <Button
+              variant={showAvailability ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowAvailability(!showAvailability)}
+            >
+              <User className="h-4 w-4 mr-2" />
+              Availability
+            </Button>
+          )}
+
           {/* View Toggle */}
           <Button
             variant={viewType === 'timeline' ? 'default' : 'outline'}
@@ -598,69 +613,85 @@ export default function CalendarDayView() {
         </div>
       )}
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-        </div>
-      ) : dayEvents.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Events Scheduled</h3>
-            <p className="text-muted-foreground mb-4">There are no events on this day.</p>
-            <Link to="/events/new">
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Create Event
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : viewType === 'timeline' ? (
-        /* Timeline View */
-        <Card>
-          <CardContent className="p-0">
-            <div className="relative" style={{ height: `${18 * 48}px` }}>
-              {/* Time slots background */}
-              {TIME_SLOTS.map((hour) => (
-                <div
-                  key={hour}
-                  className="absolute left-0 right-0 flex items-start border-t border-border/50"
-                  style={{ top: `${(hour - 6) * 48}px`, height: '48px' }}
-                >
-                  <TimeSlotLabel hour={hour} />
-                  <div className="flex-1 h-full" />
+      {/* Main Content with Optional Sidebar */}
+      <div className={cn(
+        "grid gap-6",
+        isAdmin && showAvailability ? "lg:grid-cols-[1fr_320px]" : ""
+      )}>
+        {/* Events Section */}
+        <div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : dayEvents.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Events Scheduled</h3>
+                <p className="text-muted-foreground mb-4">There are no events on this day.</p>
+                <Link to="/events/new">
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create Event
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : viewType === 'timeline' ? (
+            /* Timeline View */
+            <Card>
+              <CardContent className="p-0">
+                <div className="relative" style={{ height: `${18 * 48}px` }}>
+                  {/* Time slots background */}
+                  {TIME_SLOTS.map((hour) => (
+                    <div
+                      key={hour}
+                      className="absolute left-0 right-0 flex items-start border-t border-border/50"
+                      style={{ top: `${(hour - 6) * 48}px`, height: '48px' }}
+                    >
+                      <TimeSlotLabel hour={hour} />
+                      <div className="flex-1 h-full" />
+                    </div>
+                  ))}
+                  
+                  {/* Events */}
+                  {dayEvents.map((event) => (
+                    <TimelineEvent
+                      key={event.id}
+                      event={event}
+                      style={getEventStyle(event)}
+                      isSelected={selectedEventIds.has(event.id)}
+                      isSelectionMode={isSelectionMode}
+                      onToggleSelect={toggleEventSelection}
+                    />
+                  ))}
                 </div>
-              ))}
-              
-              {/* Events */}
+              </CardContent>
+            </Card>
+          ) : (
+            /* Cards View */
+            <div className="grid gap-4 md:grid-cols-2">
               {dayEvents.map((event) => (
-                <TimelineEvent
+                <DayEventCard
                   key={event.id}
                   event={event}
-                  style={getEventStyle(event)}
                   isSelected={selectedEventIds.has(event.id)}
                   isSelectionMode={isSelectionMode}
                   onToggleSelect={toggleEventSelection}
                 />
               ))}
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        /* Cards View */
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {dayEvents.map((event) => (
-            <DayEventCard
-              key={event.id}
-              event={event}
-              isSelected={selectedEventIds.has(event.id)}
-              isSelectionMode={isSelectionMode}
-              onToggleSelect={toggleEventSelection}
-            />
-          ))}
+          )}
         </div>
-      )}
+
+        {/* Availability Sidebar - Admin Only */}
+        {isAdmin && showAvailability && (
+          <div className="hidden lg:block">
+            <StaffAvailabilityOverlay date={selectedDate} />
+          </div>
+        )}
+      </div>
 
       {/* Bulk Assignment Dialog */}
       <BulkAssignmentDialog
