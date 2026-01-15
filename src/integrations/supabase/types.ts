@@ -182,6 +182,7 @@ export type Database = {
         Row: {
           assignment_notes: string | null
           created_at: string | null
+          estimated_cost: number | null
           event_id: string
           id: string
           notes: string | null
@@ -194,6 +195,7 @@ export type Database = {
         Insert: {
           assignment_notes?: string | null
           created_at?: string | null
+          estimated_cost?: number | null
           event_id: string
           id?: string
           notes?: string | null
@@ -206,6 +208,7 @@ export type Database = {
         Update: {
           assignment_notes?: string | null
           created_at?: string | null
+          estimated_cost?: number | null
           event_id?: string
           id?: string
           notes?: string | null
@@ -407,6 +410,7 @@ export type Database = {
           calendar_sequence: number
           city: string | null
           client_name: string
+          cost_threshold: number | null
           coverage_details: string | null
           created_at: string | null
           created_by: string | null
@@ -440,6 +444,7 @@ export type Database = {
           calendar_sequence?: number
           city?: string | null
           client_name: string
+          cost_threshold?: number | null
           coverage_details?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -475,6 +480,7 @@ export type Database = {
           calendar_sequence?: number
           city?: string | null
           client_name?: string
+          cost_threshold?: number | null
           coverage_details?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -840,6 +846,105 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "staff_availability_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_event_feedback: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          event_id: string
+          id: string
+          notes: string | null
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          rating: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_event_feedback_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_event_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_event_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_rates: {
+        Row: {
+          base_rate: number
+          created_at: string | null
+          currency: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          notes: string | null
+          rate_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          base_rate: number
+          created_at?: string | null
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          rate_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          base_rate?: number
+          created_at?: string | null
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          rate_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_rates_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
