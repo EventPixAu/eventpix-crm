@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { UserPlus, AlertTriangle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { UserPlus, AlertTriangle, CheckCircle2, XCircle, Loader2, ShieldAlert, ShieldCheck, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,6 +29,9 @@ import { supabase } from '@/integrations/supabase/client';
 import type { CalendarEvent } from '@/hooks/useCalendar';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGuardrails';
+import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
+import { useAuth } from '@/lib/auth';
 
 interface BulkAssignmentDialogProps {
   open: boolean;
@@ -50,6 +53,12 @@ interface AssignmentResult {
   error?: string;
 }
 
+interface UserGuardrailStatus {
+  userId: string;
+  hardBlocks: GuardrailCheck[];
+  softBlocks: GuardrailCheck[];
+}
+
 export function BulkAssignmentDialog({
   open,
   onOpenChange,
@@ -63,10 +72,17 @@ export function BulkAssignmentDialog({
   const [results, setResults] = useState<AssignmentResult[]>([]);
   const [conflicts, setConflicts] = useState<Map<string, ConflictInfo[]>>(new Map());
   const [acknowledgeConflicts, setAcknowledgeConflicts] = useState(false);
+  
+  // Guardrail state
+  const [userGuardrails, setUserGuardrails] = useState<Map<string, UserGuardrailStatus>>(new Map());
+  const [showGuardrailDialog, setShowGuardrailDialog] = useState(false);
+  const [guardrailsOverridden, setGuardrailsOverridden] = useState(false);
 
+  const { user } = useAuth();
   const { data: profiles = [] } = useStaffProfiles();
   const { data: roles = [] } = useStaffRoles();
   const sendNotification = useSendNotification();
+  const checkGuardrails = useCheckAssignmentGuardrails();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -111,15 +127,74 @@ export function BulkAssignmentDialog({
     setConflicts(conflictMap);
   };
 
+  // Check guardrails for selected users
+  const checkUserGuardrails = async (userIds: string[]) => {
+    if (userIds.length === 0 || selectedEvents.length === 0) {
+      setUserGuardrails(new Map());
+      return;
+    }
+
+    const guardrailMap = new Map<string, UserGuardrailStatus>();
+
+    for (const userId of userIds) {
+      // Check guardrails against the first event (as a representative sample)
+      const firstEvent = selectedEvents[0];
+      
+      try {
+        const result = await checkGuardrails.mutateAsync({
+          userId,
+          eventId: firstEvent.id,
+          eventDate: firstEvent.event_date,
+          startAt: firstEvent.start_at || null,
+          endAt: firstEvent.end_at || null,
+        });
+
+        if (result.hardBlocks.length > 0 || result.softBlocks.length > 0) {
+          guardrailMap.set(userId, {
+            userId,
+            hardBlocks: result.hardBlocks,
+            softBlocks: result.softBlocks,
+          });
+        }
+      } catch (err) {
+        console.error('Guardrail check failed for user:', userId, err);
+      }
+    }
+
+    setUserGuardrails(guardrailMap);
+  };
+
   const handleUserToggle = async (userId: string, checked: boolean) => {
     const newUsers = checked
       ? [...selectedUsers, userId]
       : selectedUsers.filter((id) => id !== userId);
     setSelectedUsers(newUsers);
-    await checkConflicts(newUsers);
+    setGuardrailsOverridden(false);
+    await Promise.all([
+      checkConflicts(newUsers),
+      checkUserGuardrails(newUsers),
+    ]);
   };
 
-  const handleAssign = async () => {
+  const handleAssignClick = () => {
+    if (selectedUsers.length === 0 || selectedEvents.length === 0) return;
+    
+    // Check if guardrails need override
+    if (hasGuardrailIssues && !guardrailsOverridden) {
+      setShowGuardrailDialog(true);
+      return;
+    }
+    
+    executeAssignments();
+  };
+
+  const handleGuardrailOverrideConfirmed = () => {
+    setGuardrailsOverridden(true);
+    setShowGuardrailDialog(false);
+    executeAssignments();
+  };
+
+  const executeAssignments = async () => {
     if (selectedUsers.length === 0 || selectedEvents.length === 0) return;
 
     setIsAssigning(true);
@@ -229,13 +304,47 @@ export function BulkAssignmentDialog({
     setResults([]);
     setConflicts(new Map());
     setAcknowledgeConflicts(false);
+    setUserGuardrails(new Map());
+    setGuardrailsOverridden(false);
     onOpenChange(false);
   };
 
   const hasConflicts = conflicts.size > 0;
+  const hasGuardrailIssues = userGuardrails.size > 0;
+  const totalHardBlocks = Array.from(userGuardrails.values()).reduce((sum, g) => sum + g.hardBlocks.length, 0);
+  const totalSoftBlocks = Array.from(userGuardrails.values()).reduce((sum, g) => sum + g.softBlocks.length, 0);
+  
+  // Aggregate all guardrail issues for the override dialog
+  const aggregatedHardBlocks = useMemo(() => {
+    const blocks: GuardrailCheck[] = [];
+    userGuardrails.forEach((status, userId) => {
+      status.hardBlocks.forEach(block => {
+        blocks.push({
+          ...block,
+          message: `${getProfileName(userId)}: ${block.message}`,
+        });
+      });
+    });
+    return blocks;
+  }, [userGuardrails, profiles]);
+
+  const aggregatedSoftBlocks = useMemo(() => {
+    const blocks: GuardrailCheck[] = [];
+    userGuardrails.forEach((status, userId) => {
+      status.softBlocks.forEach(block => {
+        blocks.push({
+          ...block,
+          message: `${getProfileName(userId)}: ${block.message}`,
+        });
+      });
+    });
+    return blocks;
+  }, [userGuardrails, profiles]);
+
   const canAssign =
     selectedUsers.length > 0 &&
     (!hasConflicts || acknowledgeConflicts) &&
+    (!hasGuardrailIssues || guardrailsOverridden) &&
     !isAssigning;
 
   const getProfileName = (id: string) => {
@@ -323,6 +432,19 @@ export function BulkAssignmentDialog({
                         {(conflicts.get(profile.id)?.length || 0) > 1 && 's'}
                       </Badge>
                     )}
+                    {userGuardrails.has(profile.id) && (
+                      <Badge
+                        variant="outline"
+                        className={
+                          userGuardrails.get(profile.id)!.hardBlocks.length > 0
+                            ? 'text-red-600 border-red-300 shrink-0'
+                            : 'text-amber-600 border-amber-300 shrink-0'
+                        }
+                      >
+                        <ShieldAlert className="h-3 w-3 mr-1" />
+                        {userGuardrails.get(profile.id)!.hardBlocks.length > 0 ? 'Blocked' : 'Warning'}
+                      </Badge>
+                    )}
                   </div>
                 );
               })}
@@ -357,6 +479,42 @@ export function BulkAssignmentDialog({
             rows={2}
           />
         </div>
+
+        {/* Guardrail Warnings */}
+        {hasGuardrailIssues && !guardrailsOverridden && (
+          <Alert variant={totalHardBlocks > 0 ? 'destructive' : 'default'} className={totalHardBlocks === 0 ? 'border-amber-500/50 bg-amber-500/10' : ''}>
+            {totalHardBlocks > 0 ? (
+              <ShieldAlert className="h-4 w-4" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+            )}
+            <AlertTitle className={totalHardBlocks === 0 ? 'text-amber-600' : ''}>
+              {totalHardBlocks > 0 ? 'Assignment Guardrails Triggered' : 'Guardrail Warnings'}
+            </AlertTitle>
+            <AlertDescription>
+              <div className="space-y-1 mt-1">
+                {totalHardBlocks > 0 && (
+                  <p>{totalHardBlocks} hard block{totalHardBlocks > 1 && 's'} detected across {userGuardrails.size} staff member{userGuardrails.size > 1 && 's'}</p>
+                )}
+                {totalSoftBlocks > 0 && (
+                  <p>{totalSoftBlocks} warning{totalSoftBlocks > 1 && 's'} detected across {userGuardrails.size} staff member{userGuardrails.size > 1 && 's'}</p>
+                )}
+                <p className="text-xs mt-2">Click "Override & Assign" to review and acknowledge these issues.</p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Guardrail Override Confirmed */}
+        {guardrailsOverridden && hasGuardrailIssues && (
+          <Alert className="border-green-500/50 bg-green-500/10">
+            <ShieldCheck className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-600">Guardrails Overridden</AlertTitle>
+            <AlertDescription>
+              All guardrail issues have been acknowledged. You can proceed with the assignment.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Conflict Warning */}
         {hasConflicts && (
@@ -436,14 +594,19 @@ export function BulkAssignmentDialog({
             Cancel
           </Button>
           <Button
-            onClick={handleAssign}
-            disabled={!canAssign}
-            variant={hasConflicts ? 'destructive' : 'default'}
+            onClick={handleAssignClick}
+            disabled={!canAssign && !(hasGuardrailIssues && !guardrailsOverridden)}
+            variant={hasConflicts || (hasGuardrailIssues && !guardrailsOverridden) ? 'destructive' : 'default'}
           >
             {isAssigning ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Assigning...
+              </>
+            ) : hasGuardrailIssues && !guardrailsOverridden ? (
+              <>
+                <ShieldAlert className="h-4 w-4 mr-2" />
+                Override & Assign
               </>
             ) : (
               <>
@@ -454,6 +617,18 @@ export function BulkAssignmentDialog({
             )}
           </Button>
         </div>
+
+        {/* Guardrail Override Dialog */}
+        <GuardrailOverrideDialog
+          open={showGuardrailDialog}
+          onOpenChange={setShowGuardrailDialog}
+          hardBlocks={aggregatedHardBlocks}
+          softBlocks={aggregatedSoftBlocks}
+          eventId={selectedEvents[0]?.id || ''}
+          userId={user?.id || ''}
+          onOverrideConfirmed={handleGuardrailOverrideConfirmed}
+          overrideType="bulk_assignment"
+        />
       </DialogContent>
     </Dialog>
   );
