@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { format, parseISO, addDays, subDays, isToday } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
@@ -17,6 +17,9 @@ import {
   Calendar,
   Layers,
   UserPlus,
+  CheckSquare,
+  Square,
+  X,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -24,8 +27,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
 import { useEventAssignments } from '@/hooks/useEvents';
+import { useAuth } from '@/lib/auth';
+import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
 import { cn } from '@/lib/utils';
 
 // Time slots from 6am to 11pm
@@ -89,7 +95,15 @@ function EventAssignmentsList({ eventId }: { eventId: string }) {
   );
 }
 
-function TimelineEvent({ event, style }: { event: CalendarEvent; style: React.CSSProperties }) {
+interface TimelineEventProps {
+  event: CalendarEvent;
+  style: React.CSSProperties;
+  isSelected: boolean;
+  isSelectionMode: boolean;
+  onToggleSelect: (eventId: string) => void;
+}
+
+function TimelineEvent({ event, style, isSelected, isSelectionMode, onToggleSelect }: TimelineEventProps) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
 
   return (
@@ -97,56 +111,68 @@ function TimelineEvent({ event, style }: { event: CalendarEvent; style: React.CS
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       className={cn(
-        "absolute left-20 right-4 rounded-lg border p-3 overflow-hidden",
+        "absolute left-20 right-4 rounded-lg border p-3 overflow-hidden transition-all",
         event.has_conflict
           ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300"
           : event.needs_attention
           ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300"
-          : "bg-card border-border"
+          : "bg-card border-border",
+        isSelected && "ring-2 ring-primary ring-offset-2"
       )}
       style={style}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-sm truncate">{event.event_name}</h3>
-            {event.event_series_name && (
-              <Badge variant="outline" className="shrink-0 text-xs">
-                <Layers className="h-3 w-3 mr-1" />
-                {event.event_series_name}
-              </Badge>
-            )}
-            {event.has_conflict && (
-              <Badge variant="destructive" className="shrink-0 text-xs">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Conflict
-              </Badge>
-            )}
+        <div className="flex items-start gap-2 flex-1 min-w-0">
+          {isSelectionMode && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect(event.id)}
+              className="mt-0.5 shrink-0"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-sm truncate">{event.event_name}</h3>
+              {event.event_series_name && (
+                <Badge variant="outline" className="shrink-0 text-xs">
+                  <Layers className="h-3 w-3 mr-1" />
+                  {event.event_series_name}
+                </Badge>
+              )}
+              {event.has_conflict && (
+                <Badge variant="destructive" className="shrink-0 text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Conflict
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">{event.client_name}</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{event.client_name}</p>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link to={`/events/${event.id}`}>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>View Event</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link to={`/events/${event.id}/edit`}>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <Edit className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>Edit Event</TooltipContent>
-          </Tooltip>
-        </div>
+        {!isSelectionMode && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to={`/events/${event.id}`}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>View Event</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to={`/events/${event.id}/edit`}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <Edit className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Edit Event</TooltipContent>
+            </Tooltip>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-2">
@@ -173,45 +199,65 @@ function TimelineEvent({ event, style }: { event: CalendarEvent; style: React.CS
 
       <EventAssignmentsList eventId={event.id} />
 
-      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
-        <Link to={`/events/${event.id}/worksheets`}>
-          <Button variant="outline" size="sm" className="h-7 text-xs">
-            <ClipboardList className="h-3 w-3 mr-1" />
-            Worksheets
-          </Button>
-        </Link>
-        <Link to={`/events/${event.id}/run-sheet`}>
-          <Button variant="outline" size="sm" className="h-7 text-xs">
-            <FileText className="h-3 w-3 mr-1" />
-            Run Sheet
-          </Button>
-        </Link>
-      </div>
+      {!isSelectionMode && (
+        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
+          <Link to={`/events/${event.id}/worksheets`}>
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              <ClipboardList className="h-3 w-3 mr-1" />
+              Worksheets
+            </Button>
+          </Link>
+          <Link to={`/events/${event.id}/run-sheet`}>
+            <Button variant="outline" size="sm" className="h-7 text-xs">
+              <FileText className="h-3 w-3 mr-1" />
+              Run Sheet
+            </Button>
+          </Link>
+        </div>
+      )}
     </motion.div>
   );
 }
 
-function DayEventCard({ event }: { event: CalendarEvent }) {
+interface DayEventCardProps {
+  event: CalendarEvent;
+  isSelected: boolean;
+  isSelectionMode: boolean;
+  onToggleSelect: (eventId: string) => void;
+}
+
+function DayEventCard({ event, isSelected, isSelectionMode, onToggleSelect }: DayEventCardProps) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
 
   return (
     <Card className={cn(
+      "transition-all",
       event.has_conflict && "border-orange-300 bg-orange-50/50 dark:bg-orange-900/10",
-      event.needs_attention && !event.has_conflict && "border-amber-300 bg-amber-50/50 dark:bg-amber-900/10"
+      event.needs_attention && !event.has_conflict && "border-amber-300 bg-amber-50/50 dark:bg-amber-900/10",
+      isSelected && "ring-2 ring-primary ring-offset-2"
     )}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <CardTitle className="text-base truncate">{event.event_name}</CardTitle>
-              {event.event_series_name && (
-                <Badge variant="outline" className="shrink-0 text-xs">
-                  <Layers className="h-3 w-3 mr-1" />
-                  {event.event_series_name}
-                </Badge>
-              )}
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            {isSelectionMode && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect(event.id)}
+                className="mt-1 shrink-0"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <CardTitle className="text-base truncate">{event.event_name}</CardTitle>
+                {event.event_series_name && (
+                  <Badge variant="outline" className="shrink-0 text-xs">
+                    <Layers className="h-3 w-3 mr-1" />
+                    {event.event_series_name}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">{event.client_name}</p>
             </div>
-            <p className="text-sm text-muted-foreground">{event.client_name}</p>
           </div>
           {event.has_conflict && (
             <Badge variant="destructive" className="shrink-0">
@@ -255,32 +301,34 @@ function DayEventCard({ event }: { event: CalendarEvent }) {
           <EventAssignmentsList eventId={event.id} />
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          <Link to={`/events/${event.id}`}>
-            <Button variant="outline" size="sm">
-              <ExternalLink className="h-4 w-4 mr-1" />
-              View
-            </Button>
-          </Link>
-          <Link to={`/events/${event.id}/edit`}>
-            <Button variant="outline" size="sm">
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </Button>
-          </Link>
-          <Link to={`/events/${event.id}/worksheets`}>
-            <Button variant="outline" size="sm">
-              <ClipboardList className="h-4 w-4 mr-1" />
-              Worksheets
-            </Button>
-          </Link>
-          <Link to={`/events/${event.id}/run-sheet`}>
-            <Button variant="outline" size="sm">
-              <FileText className="h-4 w-4 mr-1" />
-              Run Sheet
-            </Button>
-          </Link>
-        </div>
+        {!isSelectionMode && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t">
+            <Link to={`/events/${event.id}`}>
+              <Button variant="outline" size="sm">
+                <ExternalLink className="h-4 w-4 mr-1" />
+                View
+              </Button>
+            </Link>
+            <Link to={`/events/${event.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            </Link>
+            <Link to={`/events/${event.id}/worksheets`}>
+              <Button variant="outline" size="sm">
+                <ClipboardList className="h-4 w-4 mr-1" />
+                Worksheets
+              </Button>
+            </Link>
+            <Link to={`/events/${event.id}/run-sheet`}>
+              <Button variant="outline" size="sm">
+                <FileText className="h-4 w-4 mr-1" />
+                Run Sheet
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -288,14 +336,17 @@ function DayEventCard({ event }: { event: CalendarEvent }) {
 
 export default function CalendarDayView() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const dateParam = searchParams.get('date');
   const selectedDate = dateParam ? parseISO(dateParam) : new Date();
   
   const [viewType, setViewType] = useState<'timeline' | 'cards'>('timeline');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
+  const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
 
   // Fetch events for the month containing selected date
-  const { data: allEvents = [], isLoading } = useAdminCalendarEvents(selectedDate);
+  const { data: allEvents = [], isLoading, refetch } = useAdminCalendarEvents(selectedDate);
 
   // Filter to just this day's events
   const dayEvents = useMemo(() => {
@@ -308,6 +359,11 @@ export default function CalendarDayView() {
         return a.start_time.localeCompare(b.start_time);
       });
   }, [allEvents, selectedDate]);
+
+  // Get selected events
+  const selectedEvents = useMemo(() => {
+    return dayEvents.filter(e => selectedEventIds.has(e.id));
+  }, [dayEvents, selectedEventIds]);
 
   // Group by series for summary
   const seriesSummary = useMemo(() => {
@@ -328,10 +384,39 @@ export default function CalendarDayView() {
       ? subDays(selectedDate, 1) 
       : addDays(selectedDate, 1);
     setSearchParams({ date: format(newDate, 'yyyy-MM-dd') });
+    // Clear selection when navigating
+    setSelectedEventIds(new Set());
+    setIsSelectionMode(false);
   };
 
   const goToToday = () => {
     setSearchParams({ date: format(new Date(), 'yyyy-MM-dd') });
+  };
+
+  const toggleEventSelection = (eventId: string) => {
+    setSelectedEventIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllEvents = () => {
+    setSelectedEventIds(new Set(dayEvents.map(e => e.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedEventIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleBulkAssignComplete = () => {
+    clearSelection();
+    refetch();
   };
 
   // Calculate position for timeline events
@@ -361,7 +446,7 @@ export default function CalendarDayView() {
         }
       />
 
-      {/* Navigation and Stats */}
+      {/* Navigation and Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => navigateDay('prev')}>
@@ -381,6 +466,56 @@ export default function CalendarDayView() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Bulk Assignment Controls - Admin Only */}
+          {isAdmin && dayEvents.length > 0 && (
+            <>
+              {isSelectionMode ? (
+                <div className="flex items-center gap-2 bg-primary/10 rounded-lg px-3 py-1.5">
+                  <span className="text-sm font-medium">
+                    {selectedEventIds.size} selected
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={selectAllEvents}
+                    className="h-7"
+                  >
+                    <CheckSquare className="h-4 w-4 mr-1" />
+                    All
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setBulkAssignDialogOpen(true)}
+                    disabled={selectedEventIds.size === 0}
+                    className="h-7"
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Assign Staff
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-7"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSelectionMode(true)}
+                >
+                  <Square className="h-4 w-4 mr-2" />
+                  Select Events
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* View Toggle */}
           <Button
             variant={viewType === 'timeline' ? 'default' : 'outline'}
             size="sm"
@@ -504,6 +639,9 @@ export default function CalendarDayView() {
                   key={event.id}
                   event={event}
                   style={getEventStyle(event)}
+                  isSelected={selectedEventIds.has(event.id)}
+                  isSelectionMode={isSelectionMode}
+                  onToggleSelect={toggleEventSelection}
                 />
               ))}
             </div>
@@ -513,10 +651,24 @@ export default function CalendarDayView() {
         /* Cards View */
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {dayEvents.map((event) => (
-            <DayEventCard key={event.id} event={event} />
+            <DayEventCard
+              key={event.id}
+              event={event}
+              isSelected={selectedEventIds.has(event.id)}
+              isSelectionMode={isSelectionMode}
+              onToggleSelect={toggleEventSelection}
+            />
           ))}
         </div>
       )}
+
+      {/* Bulk Assignment Dialog */}
+      <BulkAssignmentDialog
+        open={bulkAssignDialogOpen}
+        onOpenChange={setBulkAssignDialogOpen}
+        selectedEvents={selectedEvents}
+        onComplete={handleBulkAssignComplete}
+      />
     </AppLayout>
   );
 }
