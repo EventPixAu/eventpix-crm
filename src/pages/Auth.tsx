@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import eventpixLogo from '@/assets/eventpix-logo.png';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -81,43 +82,58 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Background gradient effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-accent/5 rounded-full blur-3xl" />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Camera className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            Eventpix Ops
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-6"
+          >
+            <img 
+              src={eventpixLogo} 
+              alt="Eventpix" 
+              className="h-12 mx-auto"
+            />
+          </motion.div>
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            Internal Operations
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Internal operations platform
+          <p className="text-muted-foreground mt-2 text-sm">
+            Sign in to access the platform
           </p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-6 shadow-card">
-          <div className="flex mb-6">
+        <div className="bg-card/80 backdrop-blur-sm border border-border rounded-xl p-6 shadow-card">
+          <div className="flex mb-6 bg-secondary/50 rounded-lg p-1">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                 isLogin 
-                  ? 'text-foreground border-b-2 border-primary' 
-                  : 'text-muted-foreground border-b border-border hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Sign In
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                 !isLogin 
-                  ? 'text-foreground border-b-2 border-primary' 
-                  : 'text-muted-foreground border-b border-border hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Sign Up
@@ -126,7 +142,12 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2"
+              >
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
                   id="fullName"
@@ -134,9 +155,9 @@ export default function Auth() {
                   placeholder="John Smith"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="bg-secondary border-border"
+                  className="bg-secondary/50 border-border focus:border-primary focus:ring-primary"
                 />
-              </div>
+              </motion.div>
             )}
 
             <div className="space-y-2">
@@ -148,7 +169,7 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-secondary border-border"
+                className="bg-secondary/50 border-border focus:border-primary focus:ring-primary"
               />
             </div>
 
@@ -163,12 +184,12 @@ export default function Auth() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="bg-secondary border-border pr-10"
+                  className="bg-secondary/50 border-border pr-10 focus:border-primary focus:ring-primary"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -177,7 +198,7 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-primary hover:opacity-90"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-glow"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -191,8 +212,8 @@ export default function Auth() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Internal use only. Contact admin for access.
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Internal use only • Contact admin for access
         </p>
       </motion.div>
     </div>
