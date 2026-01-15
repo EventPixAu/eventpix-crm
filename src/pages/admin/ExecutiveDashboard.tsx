@@ -425,144 +425,146 @@ export default function ExecutiveDashboard() {
           </div>
 
           {/* Local Business Awards Spotlight */}
-          <section>
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Award className="h-5 w-5 text-amber-500" />
-              Local Business Awards Spotlight
-            </h2>
-            <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {data.localBusinessAwards.found 
-                        ? data.localBusinessAwards.seriesName 
-                        : 'Local Business Awards'}
-                    </CardTitle>
-                    <CardDescription>National program rollup</CardDescription>
-                  </div>
-                  {data.localBusinessAwards.found && (
-                    <Link 
-                      to={`/admin/series/${data.localBusinessAwards.seriesId}`}
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
-                    >
-                      View Series <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!data.localBusinessAwards.found ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <Award className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No "Local Business Awards" series found</p>
-                    <p className="text-xs mt-1">Create a series with this name to enable spotlight tracking</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* National Summary */}
-                    <div className="grid grid-cols-4 gap-3">
-                      <div className="p-3 bg-secondary rounded-lg text-center">
-                        <p className="text-2xl font-bold">{data.localBusinessAwards.totalEvents}</p>
-                        <p className="text-xs text-muted-foreground">Total Events</p>
-                      </div>
-                      <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-green-500">{data.localBusinessAwards.deliveredEvents}</p>
-                        <p className="text-xs text-muted-foreground">Delivered</p>
-                      </div>
-                      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-blue-500">{data.localBusinessAwards.pendingEvents}</p>
-                        <p className="text-xs text-muted-foreground">Pending</p>
-                      </div>
-                      <div className={cn(
-                        'p-3 rounded-lg text-center border',
-                        data.localBusinessAwards.overdueEvents > 0 
-                          ? 'bg-red-500/10 border-red-500/20' 
-                          : 'bg-secondary border-border'
-                      )}>
-                        <p className={cn(
-                          'text-2xl font-bold',
-                          data.localBusinessAwards.overdueEvents > 0 ? 'text-red-500' : ''
-                        )}>
-                          {data.localBusinessAwards.overdueEvents}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Overdue</p>
-                      </div>
+          {data.localBusinessAwards && (
+            <section>
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Award className="h-5 w-5 text-amber-500" />
+                Local Business Awards Spotlight
+              </h2>
+              <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">
+                        {data.localBusinessAwards.found 
+                          ? data.localBusinessAwards.seriesName 
+                          : 'Local Business Awards'}
+                      </CardTitle>
+                      <CardDescription>National program rollup</CardDescription>
                     </div>
-
-                    {/* SLA Status */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">Delivery SLA Status</span>
-                          <span className={cn(
-                            'text-sm font-bold',
-                            data.localBusinessAwards.slaPercentage >= 95 ? 'text-green-500' :
-                            data.localBusinessAwards.slaPercentage >= 80 ? 'text-amber-500' : 'text-red-500'
-                          )}>
-                            {data.localBusinessAwards.slaPercentage.toFixed(0)}%
-                          </span>
-                        </div>
-                        <Progress 
-                          value={data.localBusinessAwards.slaPercentage} 
-                          className="h-2"
-                        />
-                      </div>
-                      <Badge 
-                        variant={data.localBusinessAwards.overdueEvents === 0 ? 'default' : 'destructive'}
-                        className={data.localBusinessAwards.overdueEvents === 0 ? 'bg-green-500' : ''}
+                    {data.localBusinessAwards.found && (
+                      <Link 
+                        to={`/admin/series/${data.localBusinessAwards.seriesId}`}
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
                       >
-                        {data.localBusinessAwards.overdueEvents === 0 ? 'On Track' : 'At Risk'}
-                      </Badge>
+                        View Series <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!data.localBusinessAwards.found ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Award className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">No "Local Business Awards" series found</p>
+                      <p className="text-xs mt-1">Create a series with this name to enable spotlight tracking</p>
                     </div>
-
-                    {/* City Breakdown */}
-                    {data.localBusinessAwards.cityBreakdown.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          City-by-City Breakdown
-                        </p>
-                        <div className="grid gap-2 max-h-48 overflow-y-auto">
-                          {data.localBusinessAwards.cityBreakdown.map((city, idx) => (
-                            <div 
-                              key={`${city.city}-${city.state}-${idx}`}
-                              className={cn(
-                                'flex items-center justify-between p-2 rounded-lg border',
-                                city.slaOnTrack ? 'bg-secondary/50 border-border' : 'bg-red-500/10 border-red-500/20'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                {city.slaOnTrack ? (
-                                  <CheckCircle className="h-4 w-4 text-green-500" />
-                                ) : (
-                                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                                )}
-                                <span className="font-medium text-sm">
-                                  {city.city}{city.state ? `, ${city.state}` : ''}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs">
-                                <span className="text-muted-foreground">{city.totalEvents} events</span>
-                                <Badge variant="outline" className="text-green-500 border-green-500/30">
-                                  {city.deliveredEvents} delivered
-                                </Badge>
-                                {city.overdueEvents > 0 && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    {city.overdueEvents} overdue
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                  ) : (
+                    <>
+                      {/* National Summary */}
+                      <div className="grid grid-cols-4 gap-3">
+                        <div className="p-3 bg-secondary rounded-lg text-center">
+                          <p className="text-2xl font-bold">{data.localBusinessAwards.totalEvents}</p>
+                          <p className="text-xs text-muted-foreground">Total Events</p>
+                        </div>
+                        <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+                          <p className="text-2xl font-bold text-green-500">{data.localBusinessAwards.deliveredEvents}</p>
+                          <p className="text-xs text-muted-foreground">Delivered</p>
+                        </div>
+                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
+                          <p className="text-2xl font-bold text-blue-500">{data.localBusinessAwards.pendingEvents}</p>
+                          <p className="text-xs text-muted-foreground">Pending</p>
+                        </div>
+                        <div className={cn(
+                          'p-3 rounded-lg text-center border',
+                          data.localBusinessAwards.overdueEvents > 0 
+                            ? 'bg-red-500/10 border-red-500/20' 
+                            : 'bg-secondary border-border'
+                        )}>
+                          <p className={cn(
+                            'text-2xl font-bold',
+                            data.localBusinessAwards.overdueEvents > 0 ? 'text-red-500' : ''
+                          )}>
+                            {data.localBusinessAwards.overdueEvents}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Overdue</p>
                         </div>
                       </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+
+                      {/* SLA Status */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">Delivery SLA Status</span>
+                            <span className={cn(
+                              'text-sm font-bold',
+                              data.localBusinessAwards.slaPercentage >= 95 ? 'text-green-500' :
+                              data.localBusinessAwards.slaPercentage >= 80 ? 'text-amber-500' : 'text-red-500'
+                            )}>
+                              {data.localBusinessAwards.slaPercentage.toFixed(0)}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={data.localBusinessAwards.slaPercentage} 
+                            className="h-2"
+                          />
+                        </div>
+                        <Badge 
+                          variant={data.localBusinessAwards.overdueEvents === 0 ? 'default' : 'destructive'}
+                          className={data.localBusinessAwards.overdueEvents === 0 ? 'bg-green-500' : ''}
+                        >
+                          {data.localBusinessAwards.overdueEvents === 0 ? 'On Track' : 'At Risk'}
+                        </Badge>
+                      </div>
+
+                      {/* City Breakdown */}
+                      {data.localBusinessAwards.cityBreakdown.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            City-by-City Breakdown
+                          </p>
+                          <div className="grid gap-2 max-h-48 overflow-y-auto">
+                            {data.localBusinessAwards.cityBreakdown.map((city, idx) => (
+                              <div 
+                                key={`${city.city}-${city.state}-${idx}`}
+                                className={cn(
+                                  'flex items-center justify-between p-2 rounded-lg border',
+                                  city.slaOnTrack ? 'bg-secondary/50 border-border' : 'bg-red-500/10 border-red-500/20'
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {city.slaOnTrack ? (
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                  ) : (
+                                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                                  )}
+                                  <span className="font-medium text-sm">
+                                    {city.city}{city.state ? `, ${city.state}` : ''}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs">
+                                  <span className="text-muted-foreground">{city.totalEvents} events</span>
+                                  <Badge variant="outline" className="text-green-500 border-green-500/30">
+                                    {city.deliveredEvents} delivered
+                                  </Badge>
+                                  {city.overdueEvents > 0 && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      {city.overdueEvents} overdue
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+          )}
 
           {/* Series Performance Table */}
           <section>
