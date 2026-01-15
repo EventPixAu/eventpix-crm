@@ -920,6 +920,7 @@ export type Database = {
           home_state: string | null
           id: string
           notes_internal: string | null
+          notification_preferences: Json | null
           onboarding_notes: string | null
           onboarding_status: string
           phone: string | null
@@ -940,6 +941,7 @@ export type Database = {
           home_state?: string | null
           id: string
           notes_internal?: string | null
+          notification_preferences?: Json | null
           onboarding_notes?: string | null
           onboarding_status?: string
           phone?: string | null
@@ -960,6 +962,7 @@ export type Database = {
           home_state?: string | null
           id?: string
           notes_internal?: string | null
+          notification_preferences?: Json | null
           onboarding_notes?: string | null
           onboarding_status?: string
           phone?: string | null
@@ -1269,19 +1272,31 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          rejected_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           skill_id: string
+          status: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          rejected_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           skill_id: string
+          status?: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          rejected_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           skill_id?: string
+          status?: string
           user_id?: string
         }
         Relationships: [
