@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { UserPlus, X, Users, Bell } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { UserPlus, X, Users, AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -19,8 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useStaffProfiles, useStaffRoles } from '@/hooks/useStaff';
-import { useCreateAssignment, useDeleteAssignment, type EventAssignment } from '@/hooks/useEvents';
+import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
+import { useCheckConflicts } from '@/hooks/useCalendar';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -35,9 +38,28 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   
   const { data: profiles = [] } = useStaffProfiles();
   const { data: roles = [] } = useStaffRoles();
+  const { data: event } = useEvent(eventId);
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
   const sendNotification = useSendNotification();
+
+  // Check conflicts for selected user
+  const eventStart = useMemo(() => {
+    if (!event?.start_at) return null;
+    return new Date(event.start_at);
+  }, [event?.start_at]);
+  
+  const eventEnd = useMemo(() => {
+    if (!event?.end_at) return null;
+    return new Date(event.end_at);
+  }, [event?.end_at]);
+
+  const { data: conflicts = [] } = useCheckConflicts(
+    selectedUser || undefined,
+    eventStart,
+    eventEnd,
+    eventId
+  );
 
   // Get assigned user IDs (supporting both new user_id and legacy staff_id)
   const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
@@ -193,13 +215,30 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
             rows={2}
           />
 
+          {/* Conflict Warning */}
+          {conflicts.length > 0 && (
+            <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Conflict:</strong> This staff member is already assigned to{' '}
+                {conflicts.map((c, i) => (
+                  <span key={c.event_id}>
+                    {i > 0 && ', '}
+                    <strong>{c.event_name}</strong> at {format(new Date(c.start_at), 'h:mm a')}
+                  </span>
+                ))}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button
             onClick={handleAssign}
             disabled={!selectedUser || createAssignment.isPending}
             className="w-full"
+            variant={conflicts.length > 0 ? "destructive" : "default"}
           >
             <UserPlus className="h-4 w-4 mr-2" />
-            Assign to Event
+            {conflicts.length > 0 ? 'Assign Anyway' : 'Assign to Event'}
           </Button>
         </div>
       </DialogContent>

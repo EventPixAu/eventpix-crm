@@ -20,8 +20,7 @@ import {
   ChevronRight, 
   Clock, 
   MapPin, 
-  AlertTriangle, 
-  Users,
+  AlertTriangle,
   Calendar,
   List,
   LayoutGrid
@@ -31,19 +30,10 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
-import { useStaffProfiles } from '@/hooks/useStaff';
-import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
-import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
+import { useStaffCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'month' | 'week' | 'list';
@@ -77,17 +67,9 @@ function EventTile({ event }: { event: CalendarEvent }) {
         )}
       </div>
       <span className="text-foreground block truncate">{event.event_name}</span>
-      <div className="flex items-center gap-1 text-muted-foreground">
-        {suburb && (
-          <span className="truncate">{suburb}</span>
-        )}
-        {event.assignment_count > 0 && (
-          <span className="flex items-center gap-0.5 shrink-0">
-            <Users className="h-2.5 w-2.5" />
-            {event.assignment_count}
-          </span>
-        )}
-      </div>
+      {suburb && (
+        <span className="text-muted-foreground truncate block">{suburb}</span>
+      )}
     </Link>
   );
 }
@@ -144,31 +126,16 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 text-muted-foreground shrink-0">
-        <Users className="h-4 w-4" />
-        <span className="text-sm">{event.assignment_count}</span>
-      </div>
     </Link>
   );
 }
 
-export default function CalendarView() {
+export default function MyCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [selectedStaff, setSelectedStaff] = useState('all');
-  const [selectedEventType, setSelectedEventType] = useState('all');
-  const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   
-  const { data: staffProfiles = [] } = useStaffProfiles();
-  const { data: eventTypes = [] } = useEventTypes();
-  const { data: deliveryMethods = [] } = useDeliveryMethods();
-  
-  const { data: events = [], isLoading } = useAdminCalendarEvents(currentMonth, {
-    staffId: selectedStaff !== 'all' ? selectedStaff : undefined,
-    eventTypeId: selectedEventType !== 'all' ? selectedEventType : undefined,
-    deliveryMethodId: selectedDeliveryMethod !== 'all' ? selectedDeliveryMethod : undefined,
-  });
+  const { data: events = [], isLoading } = useStaffCalendarEvents(currentMonth);
 
   const monthDays = useMemo(() => {
     const start = startOfMonth(currentMonth);
@@ -191,7 +158,6 @@ export default function CalendarView() {
       }
       map.get(dateKey)!.push(event);
     });
-    // Sort each day's events by start_time
     map.forEach((dayEvents) => {
       dayEvents.sort((a, b) => {
         if (!a.start_time) return 1;
@@ -243,12 +209,12 @@ export default function CalendarView() {
   return (
     <AppLayout>
       <PageHeader
-        title="Calendar"
-        description="View and manage all scheduled events"
+        title="My Calendar"
+        description="Your assigned events and schedule"
       />
 
       {/* Calendar Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={handlePrev}>
             <ChevronLeft className="h-4 w-4" />
@@ -266,89 +232,19 @@ export default function CalendarView() {
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* View Toggle */}
-          <ToggleGroup 
-            type="single" 
-            value={viewMode} 
-            onValueChange={(v) => v && setViewMode(v as ViewMode)}
-            className="hidden sm:flex"
-          >
-            <ToggleGroupItem value="month" aria-label="Month view">
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="week" aria-label="Week view">
-              <Calendar className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="List view">
-              <List className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
-
-          {/* Filters */}
-          <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-            <SelectTrigger className="w-36 bg-card">
-              <SelectValue placeholder="All Staff" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Staff</SelectItem>
-              {staffProfiles.map((profile) => (
-                <SelectItem key={profile.id} value={profile.id}>
-                  {profile.full_name || profile.email}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedEventType} onValueChange={setSelectedEventType}>
-            <SelectTrigger className="w-36 bg-card">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {eventTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedDeliveryMethod} onValueChange={setSelectedDeliveryMethod}>
-            <SelectTrigger className="w-40 bg-card">
-              <SelectValue placeholder="All Delivery" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Delivery</SelectItem>
-              {deliveryMethods.map((method) => (
-                <SelectItem key={method.id} value={method.id}>
-                  {method.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Mobile view toggle */}
-      <div className="sm:hidden mb-4">
         <ToggleGroup 
           type="single" 
           value={viewMode} 
           onValueChange={(v) => v && setViewMode(v as ViewMode)}
-          className="w-full"
         >
-          <ToggleGroupItem value="month" className="flex-1">
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            Month
+          <ToggleGroupItem value="list" aria-label="List view">
+            <List className="h-4 w-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="week" className="flex-1">
-            <Calendar className="h-4 w-4 mr-2" />
-            Week
+          <ToggleGroupItem value="month" aria-label="Month view">
+            <LayoutGrid className="h-4 w-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem value="list" className="flex-1">
-            <List className="h-4 w-4 mr-2" />
-            List
+          <ToggleGroupItem value="week" aria-label="Week view">
+            <Calendar className="h-4 w-4" />
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
@@ -357,6 +253,14 @@ export default function CalendarView() {
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
         </div>
+      ) : events.length === 0 ? (
+        <div className="text-center py-12">
+          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No assigned events</h3>
+          <p className="text-muted-foreground">
+            You don't have any events assigned to you yet.
+          </p>
+        </div>
       ) : viewMode === 'list' ? (
         /* List View */
         <motion.div
@@ -364,15 +268,9 @@ export default function CalendarView() {
           animate={{ opacity: 1 }}
           className="space-y-3"
         >
-          {sortedListEvents.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              No events found for this period
-            </div>
-          ) : (
-            sortedListEvents.map((event) => (
-              <ListViewItem key={event.id} event={event} />
-            ))
-          )}
+          {sortedListEvents.map((event) => (
+            <ListViewItem key={event.id} event={event} />
+          ))}
         </motion.div>
       ) : viewMode === 'week' ? (
         /* Week View */
@@ -426,7 +324,6 @@ export default function CalendarView() {
           animate={{ opacity: 1 }}
           className="bg-card border border-border rounded-xl overflow-hidden shadow-card"
         >
-          {/* Weekday Headers */}
           <div className="grid grid-cols-7 border-b border-border">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div
@@ -438,11 +335,9 @@ export default function CalendarView() {
             ))}
           </div>
 
-          {/* Calendar Days */}
           <div className="grid grid-cols-7">
-            {/* Empty cells for days before the first of the month */}
             {Array.from({ length: startDayOfWeek }).map((_, index) => (
-              <div key={`empty-${index}`} className="min-h-[120px] border-b border-r border-border bg-muted/30" />
+              <div key={`empty-${index}`} className="min-h-[100px] border-b border-r border-border bg-muted/30" />
             ))}
 
             {monthDays.map((day) => {
@@ -453,15 +348,15 @@ export default function CalendarView() {
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'min-h-[120px] border-b border-r border-border p-2 transition-colors',
+                    'min-h-[100px] border-b border-r border-border p-2 transition-colors',
                     !isSameMonth(day, currentMonth) && 'bg-muted/30',
                     isCurrentDay && 'bg-primary/5'
                   )}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1">
                     <span
                       className={cn(
-                        'w-7 h-7 flex items-center justify-center text-sm rounded-full',
+                        'w-6 h-6 flex items-center justify-center text-sm rounded-full',
                         isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
                       )}
                     >
@@ -469,12 +364,12 @@ export default function CalendarView() {
                     </span>
                   </div>
                   <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map((event) => (
+                    {dayEvents.slice(0, 2).map((event) => (
                       <EventTile key={event.id} event={event} />
                     ))}
-                    {dayEvents.length > 3 && (
-                      <p className="text-xs text-muted-foreground pl-1.5">
-                        +{dayEvents.length - 3} more
+                    {dayEvents.length > 2 && (
+                      <p className="text-xs text-muted-foreground">
+                        +{dayEvents.length - 2} more
                       </p>
                     )}
                   </div>

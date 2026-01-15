@@ -13,6 +13,7 @@ import EventForm from "./pages/EventForm";
 import EventWorksheets from "./pages/EventWorksheets";
 import Staff from "./pages/Staff";
 import CalendarView from "./pages/CalendarView";
+import MyCalendar from "./pages/MyCalendar";
 import Workflows from "./pages/Workflows";
 import Delivery from "./pages/Delivery";
 import GalleryPublic from "./pages/GalleryPublic";
@@ -51,6 +52,7 @@ function AppRoutes() {
       <Route path="/events/:id/worksheets" element={<ProtectedRoute><EventWorksheets /></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
+      <Route path="/my-calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
       <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
