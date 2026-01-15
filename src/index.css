@@ -6,40 +6,42 @@
 
 /* Eventpix Internal Ops Design System
    Dark, professional aesthetic for internal tools
-   High-contrast for on-site mobile use
+   Colors matched to eventpix.com.au
 */
 
 @layer base {
   :root {
-    /* Dark theme by default - matches Eventpix brand */
-    --background: 220 20% 6%;
+    /* Dark theme - Eventpix brand colors */
+    /* Dark navy background from #12223f */
+    --background: 218 55% 16%;
     --foreground: 0 0% 98%;
 
-    --card: 220 18% 10%;
+    --card: 218 50% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 18% 12%;
+    --popover: 218 50% 14%;
     --popover-foreground: 0 0% 98%;
 
-    /* Eventpix coral/orange accent */
-    --primary: 16 85% 58%;
+    /* Eventpix primary blue #1BB1E7 - HSL: 195 82% 51% */
+    --primary: 195 82% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 16%;
+    --secondary: 218 45% 20%;
     --secondary-foreground: 0 0% 90%;
 
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 218 40% 18%;
+    --muted-foreground: 218 20% 60%;
 
-    --accent: 16 70% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* Lime accent #e7f67e - HSL: 68 88% 73% */
+    --accent: 68 88% 73%;
+    --accent-foreground: 218 55% 16%;
 
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 16 85% 58%;
+    --border: 218 40% 22%;
+    --input: 218 40% 22%;
+    --ring: 195 82% 51%;
 
     --radius: 0.5rem;
 
@@ -48,23 +50,23 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
-    --info: 210 100% 55%;
+    --info: 195 82% 51%;
     --info-foreground: 0 0% 100%;
 
     /* Sidebar */
-    --sidebar-background: 220 20% 8%;
+    --sidebar-background: 218 55% 12%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 16 85% 58%;
+    --sidebar-primary: 195 82% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 14%;
+    --sidebar-accent: 218 45% 18%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 220 15% 15%;
-    --sidebar-ring: 16 85% 58%;
+    --sidebar-border: 218 40% 18%;
+    --sidebar-ring: 195 82% 51%;
 
     /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(16 85% 58%) 0%, hsl(30 90% 55%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(220 20% 8%) 0%, hsl(220 20% 4%) 100%);
-    --shadow-glow: 0 0 30px -5px hsl(16 85% 58% / 0.3);
+    --gradient-primary: linear-gradient(135deg, hsl(195 82% 51%) 0%, hsl(195 82% 60%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(218 55% 12%) 0%, hsl(218 55% 8%) 100%);
+    --shadow-glow: 0 0 30px -5px hsl(195 82% 51% / 0.3);
     --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.4);
   }
 
@@ -109,8 +111,8 @@
   }
 
   .glass {
-    background: hsl(220 18% 10% / 0.8);
+    background: hsl(218 50% 12% / 0.8);
     backdrop-filter: blur(12px);
-    border: 1px solid hsl(220 15% 18% / 0.5);
+    border: 1px solid hsl(218 40% 22% / 0.5);
   }
 }
