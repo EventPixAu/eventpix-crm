@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 import { 
   AlertTriangle, 
   ArrowRight, 
   Award,
   Calendar, 
+  CalendarRange,
   CheckCircle, 
   Clock, 
   DollarSign, 
@@ -22,8 +25,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/lib/auth';
-import { useExecutiveDashboard } from '@/hooks/useExecutiveDashboard';
+import { useExecutiveDashboard, DateRangePreset, DateRange } from '@/hooks/useExecutiveDashboard';
 import { cn } from '@/lib/utils';
 
 function StatTile({ 
@@ -98,9 +105,22 @@ function RiskBadge({ level }: { level: 'green' | 'amber' | 'red' }) {
   );
 }
 
+const PRESET_LABELS: Record<DateRangePreset, string> = {
+  today: 'Today',
+  last7days: 'Last 7 Days',
+  last30days: 'Last 30 Days',
+  last90days: 'Last 90 Days',
+  custom: 'Custom Range',
+};
+
 export default function ExecutiveDashboard() {
   const { isAdmin } = useAuth();
-  const { data, isLoading, error } = useExecutiveDashboard();
+  const [preset, setPreset] = useState<DateRangePreset>('last30days');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [isFromOpen, setIsFromOpen] = useState(false);
+  const [isToOpen, setIsToOpen] = useState(false);
+  
+  const { data, isLoading, error } = useExecutiveDashboard({ preset, customRange });
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
@@ -116,12 +136,107 @@ export default function ExecutiveDashboard() {
     );
   }
 
+  const handlePresetChange = (value: DateRangePreset) => {
+    setPreset(value);
+    if (value !== 'custom') {
+      setCustomRange(undefined);
+    }
+  };
+
+  const handleFromDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setCustomRange(prev => ({
+        from: date,
+        to: prev?.to || new Date(),
+      }));
+      setPreset('custom');
+    }
+    setIsFromOpen(false);
+  };
+
+  const handleToDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setCustomRange(prev => ({
+        from: prev?.from || new Date(),
+        to: date,
+      }));
+      setPreset('custom');
+    }
+    setIsToOpen(false);
+  };
+
   return (
     <AppLayout>
-      <PageHeader
-        title="Executive Dashboard"
-        description="Operational overview and risk visibility"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <PageHeader
+          title="Executive Dashboard"
+          description="Operational overview and risk visibility"
+        />
+        
+        {/* Date Range Filter */}
+        <div className="flex items-center gap-2">
+          <Select value={preset} onValueChange={(v) => handlePresetChange(v as DateRangePreset)}>
+            <SelectTrigger className="w-[160px]">
+              <CalendarRange className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(PRESET_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {preset === 'custom' && (
+            <div className="flex items-center gap-1">
+              <Popover open={isFromOpen} onOpenChange={setIsFromOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10 px-3">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {customRange?.from ? format(customRange.from, 'MMM d, yyyy') : 'From'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker
+                    mode="single"
+                    selected={customRange?.from}
+                    onSelect={handleFromDateSelect}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground">to</span>
+              <Popover open={isToOpen} onOpenChange={setIsToOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10 px-3">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {customRange?.to ? format(customRange.to, 'MMM d, yyyy') : 'To'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker
+                    mode="single"
+                    selected={customRange?.to}
+                    onSelect={handleToDateSelect}
+                    disabled={(date) => customRange?.from ? date < customRange.from : false}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+          
+          {data?.dateRange && (
+            <Badge variant="outline" className="hidden md:flex">
+              {format(data.dateRange.from, 'MMM d')} - {format(data.dateRange.to, 'MMM d, yyyy')}
+            </Badge>
+          )}
+        </div>
+      </div>
 
       {isLoading || !data ? (
         <div className="space-y-6">
@@ -207,7 +322,9 @@ export default function ExecutiveDashboard() {
                   <Package className="h-5 w-5 text-primary" />
                   Delivery & SLA
                 </CardTitle>
-                <CardDescription>Last 30 days performance</CardDescription>
+                <CardDescription>
+                  {PRESET_LABELS[preset]} performance
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">

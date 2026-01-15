@@ -2,6 +2,31 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays, subDays, format, parseISO, differenceInDays } from 'date-fns';
 
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
+export type DateRangePreset = 'today' | 'last7days' | 'last30days' | 'last90days' | 'custom';
+
+export function getDateRangeForPreset(preset: DateRangePreset, customRange?: DateRange): DateRange {
+  const now = new Date();
+  switch (preset) {
+    case 'today':
+      return { from: startOfDay(now), to: endOfDay(now) };
+    case 'last7days':
+      return { from: subDays(now, 7), to: now };
+    case 'last30days':
+      return { from: subDays(now, 30), to: now };
+    case 'last90days':
+      return { from: subDays(now, 90), to: now };
+    case 'custom':
+      return customRange || { from: subDays(now, 30), to: now };
+    default:
+      return { from: subDays(now, 30), to: now };
+  }
+}
+
 export interface TodaySnapshot {
   eventsToday: number;
   eventsThisWeek: number;
@@ -89,18 +114,28 @@ export interface ExecutiveDashboardData {
   compliance: ComplianceRisk;
   seriesPerformance: SeriesPerformance[];
   localBusinessAwards: LocalBusinessAwardsData;
+  dateRange: DateRange;
 }
 
-export function useExecutiveDashboard() {
+export interface UseExecutiveDashboardOptions {
+  preset: DateRangePreset;
+  customRange?: DateRange;
+}
+
+export function useExecutiveDashboard(options: UseExecutiveDashboardOptions = { preset: 'last30days' }) {
+  const { preset, customRange } = options;
+  const dateRange = getDateRangeForPreset(preset, customRange);
+  
   return useQuery({
-    queryKey: ['executive-dashboard'],
+    queryKey: ['executive-dashboard', preset, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async (): Promise<ExecutiveDashboardData> => {
       const now = new Date();
       const todayStart = startOfDay(now);
       const todayEnd = endOfDay(now);
       const weekStart = startOfWeek(now, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-      const thirtyDaysAgo = subDays(now, 30);
+      const rangeStart = dateRange.from;
+      const rangeEnd = dateRange.to;
       const sevenDaysAgo = subDays(now, 7);
       const fortyEightHoursFromNow = addDays(now, 2);
 
@@ -164,7 +199,8 @@ export function useExecutiveDashboard() {
             cost_threshold,
             event_series:event_series_id (name)
           `)
-          .gte('event_date', format(thirtyDaysAgo, 'yyyy-MM-dd'))
+          .gte('event_date', format(rangeStart, 'yyyy-MM-dd'))
+          .lte('event_date', format(rangeEnd, 'yyyy-MM-dd'))
           .order('event_date', { ascending: false }),
         
         // Delivery records
@@ -177,13 +213,15 @@ export function useExecutiveDashboard() {
             delivery_method,
             events:event_id (event_date, delivery_deadline)
           `)
-          .gte('delivered_at', thirtyDaysAgo.toISOString()),
+          .gte('delivered_at', rangeStart.toISOString())
+          .lte('delivered_at', rangeEnd.toISOString()),
         
         // Staff feedback
         supabase
           .from('staff_event_feedback')
           .select('rating, user_id, event_id')
-          .gte('created_at', thirtyDaysAgo.toISOString()),
+          .gte('created_at', rangeStart.toISOString())
+          .lte('created_at', rangeEnd.toISOString()),
         
         // Profiles for staff counts
         supabase
@@ -310,15 +348,15 @@ export function useExecutiveDashboard() {
         return eventDate >= sevenDaysAgo && eventDate <= now;
       });
 
-      const thirtyDayAssignments = allAssignments.filter(a => {
+      const rangeAssignments = allAssignments.filter(a => {
         const events = a.events as { event_date: string } | null;
         if (!events) return false;
         const eventDate = parseISO(events.event_date);
-        return eventDate >= thirtyDaysAgo && eventDate <= now;
+        return eventDate >= rangeStart && eventDate <= rangeEnd;
       });
 
       const uniquePhotographers7 = new Set(sevenDayAssignments.map(a => a.user_id).filter(Boolean));
-      const uniquePhotographers30 = new Set(thirtyDayAssignments.map(a => a.user_id).filter(Boolean));
+      const uniquePhotographersRange = new Set(rangeAssignments.map(a => a.user_id).filter(Boolean));
 
       // Heavy load: 3+ events in one day
       const dailyLoadMap = new Map<string, Map<string, number>>();
@@ -353,8 +391,8 @@ export function useExecutiveDashboard() {
         avgEventsPerPhotographer7Days: uniquePhotographers7.size > 0 
           ? sevenDayAssignments.length / uniquePhotographers7.size 
           : 0,
-        avgEventsPerPhotographer30Days: uniquePhotographers30.size > 0 
-          ? thirtyDayAssignments.length / uniquePhotographers30.size 
+        avgEventsPerPhotographer30Days: uniquePhotographersRange.size > 0 
+          ? rangeAssignments.length / uniquePhotographersRange.size 
           : 0,
         heavyLoadPhotographers: heavyLoadCount,
         avgStaffRating: avgRating,
@@ -630,6 +668,7 @@ export function useExecutiveDashboard() {
         compliance,
         seriesPerformance,
         localBusinessAwards,
+        dateRange,
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
