@@ -277,6 +277,8 @@ export type Database = {
       }
       gallery_assets: {
         Row: {
+          alt_text: string | null
+          caption: string | null
           created_at: string
           event_id: string
           file_name: string
@@ -287,6 +289,8 @@ export type Database = {
           storage_path: string
         }
         Insert: {
+          alt_text?: string | null
+          caption?: string | null
           created_at?: string
           event_id: string
           file_name: string
@@ -297,6 +301,8 @@ export type Database = {
           storage_path: string
         }
         Update: {
+          alt_text?: string | null
+          caption?: string | null
           created_at?: string
           event_id?: string
           file_name?: string
