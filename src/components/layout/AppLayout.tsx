@@ -81,6 +81,9 @@ const adminNavItems = [
   { href: '/admin/event-types', label: 'Event Types', icon: Settings },
   { href: '/delivery', label: 'Delivery', icon: Package },
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
+  // Finance (Admin Only)
+  { href: '/admin/invoices', label: 'Invoices', icon: DollarSign },
+  { href: '/admin/margins', label: 'Margins', icon: BarChart3 },
 ];
 
 /**
