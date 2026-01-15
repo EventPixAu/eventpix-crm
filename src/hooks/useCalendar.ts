@@ -15,6 +15,8 @@ export interface CalendarEvent {
   venue_name: string | null;
   venue_address: string | null;
   event_type_id: string | null;
+  event_series_id: string | null;
+  event_series_name: string | null;
   delivery_method_id: string | null;
   delivery_deadline: string | null;
   assignment_count: number;
@@ -47,6 +49,7 @@ export function useAdminCalendarEvents(
     staffId?: string;
     eventTypeId?: string;
     deliveryMethodId?: string;
+    seriesId?: string;
   }
 ) {
   return useQuery({
@@ -69,6 +72,8 @@ export function useAdminCalendarEvents(
           venue_name,
           venue_address,
           event_type_id,
+          event_series_id,
+          event_series:event_series(id, name),
           delivery_method_id,
           delivery_deadline,
           event_assignments!left(id, user_id),
@@ -99,6 +104,10 @@ export function useAdminCalendarEvents(
 
       if (filters?.deliveryMethodId) {
         query = query.eq('delivery_method_id', filters.deliveryMethodId);
+      }
+
+      if (filters?.seriesId) {
+        query = query.eq('event_series_id', filters.seriesId);
       }
 
       const { data, error } = await query;
@@ -134,6 +143,8 @@ export function useAdminCalendarEvents(
           !deliveryRecord?.delivered_at &&
           differenceInDays(new Date(event.delivery_deadline), today) <= 7;
 
+        const seriesData = event.event_series as any;
+        
         return {
           id: event.id,
           event_name: event.event_name,
@@ -146,6 +157,8 @@ export function useAdminCalendarEvents(
           venue_name: event.venue_name,
           venue_address: event.venue_address,
           event_type_id: event.event_type_id,
+          event_series_id: event.event_series_id,
+          event_series_name: seriesData?.name || null,
           delivery_method_id: event.delivery_method_id,
           delivery_deadline: event.delivery_deadline,
           assignment_count: assignments.length,

@@ -24,7 +24,8 @@ import {
   Users,
   Calendar,
   List,
-  LayoutGrid
+  LayoutGrid,
+  Layers
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -43,13 +44,33 @@ import {
 } from '@/components/ui/toggle-group';
 import { useStaffProfiles } from '@/hooks/useStaff';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
+import { useActiveEventSeries } from '@/hooks/useEventSeries';
 import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'month' | 'week' | 'list';
 
-function EventTile({ event }: { event: CalendarEvent }) {
+// Generate consistent colors for series based on their ID
+const SERIES_COLORS = [
+  { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-400' },
+  { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-400' },
+  { bg: 'bg-purple-500/20', border: 'border-purple-500', text: 'text-purple-400' },
+  { bg: 'bg-amber-500/20', border: 'border-amber-500', text: 'text-amber-400' },
+  { bg: 'bg-pink-500/20', border: 'border-pink-500', text: 'text-pink-400' },
+  { bg: 'bg-cyan-500/20', border: 'border-cyan-500', text: 'text-cyan-400' },
+  { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-400' },
+  { bg: 'bg-indigo-500/20', border: 'border-indigo-500', text: 'text-indigo-400' },
+];
+
+function getSeriesColor(seriesId: string | null, seriesColorMap: Map<string, number>) {
+  if (!seriesId) return null;
+  const colorIndex = seriesColorMap.get(seriesId) ?? 0;
+  return SERIES_COLORS[colorIndex % SERIES_COLORS.length];
+}
+
+function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColorMap: Map<string, number> }) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
+  const seriesColor = getSeriesColor(event.event_series_id, seriesColorMap);
   
   return (
     <Link
@@ -60,12 +81,17 @@ function EventTile({ event }: { event: CalendarEvent }) {
           ? "bg-orange-100 dark:bg-orange-900/30 border-orange-500 hover:bg-orange-200 dark:hover:bg-orange-900/50"
           : event.needs_attention
           ? "bg-amber-100 dark:bg-amber-900/30 border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+          : seriesColor
+          ? `${seriesColor.bg} ${seriesColor.border} hover:opacity-80`
           : "bg-primary/10 border-primary hover:bg-primary/20"
       )}
     >
       <div className="flex items-center gap-1">
         {event.start_time && (
-          <span className="font-medium text-primary shrink-0">
+          <span className={cn(
+            "font-medium shrink-0",
+            seriesColor ? seriesColor.text : "text-primary"
+          )}>
             {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
           </span>
         )}
@@ -92,8 +118,9 @@ function EventTile({ event }: { event: CalendarEvent }) {
   );
 }
 
-function ListViewItem({ event }: { event: CalendarEvent }) {
+function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesColorMap: Map<string, number> }) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
+  const seriesColor = getSeriesColor(event.event_series_id, seriesColorMap);
   
   return (
     <Link
@@ -104,16 +131,32 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
           ? "border-orange-300 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30"
           : event.needs_attention
           ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          : seriesColor
+          ? `${seriesColor.border} ${seriesColor.bg} hover:opacity-80`
           : "border-border bg-card hover:bg-muted/50"
       )}
     >
       <div className="text-center shrink-0 w-16">
-        <p className="text-2xl font-bold text-primary">{format(new Date(event.event_date), 'd')}</p>
+        <p className={cn(
+          "text-2xl font-bold",
+          seriesColor ? seriesColor.text : "text-primary"
+        )}>
+          {format(new Date(event.event_date), 'd')}
+        </p>
         <p className="text-xs text-muted-foreground uppercase">{format(new Date(event.event_date), 'EEE')}</p>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-medium truncate">{event.event_name}</h3>
+          {event.event_series_name && (
+            <Badge variant="outline" className={cn(
+              "shrink-0",
+              seriesColor ? `${seriesColor.border} ${seriesColor.text}` : ""
+            )}>
+              <Layers className="h-3 w-3 mr-1" />
+              {event.event_series_name}
+            </Badge>
+          )}
           {event.has_conflict && (
             <Badge variant="outline" className="text-orange-600 border-orange-300 shrink-0">
               <AlertTriangle className="h-3 w-3 mr-1" />
@@ -152,6 +195,32 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
   );
 }
 
+function DaySummaryBadge({ events }: { events: CalendarEvent[] }) {
+  if (events.length <= 3) return null;
+  
+  // Group by series
+  const seriesGroups = new Map<string, number>();
+  events.forEach(e => {
+    if (e.event_series_name) {
+      seriesGroups.set(e.event_series_name, (seriesGroups.get(e.event_series_name) || 0) + 1);
+    }
+  });
+  
+  const topSeries = Array.from(seriesGroups.entries())
+    .sort((a, b) => b[1] - a[1])[0];
+  
+  if (topSeries && topSeries[1] >= 2) {
+    return (
+      <div className="text-xs text-muted-foreground pl-1.5 flex items-center gap-1">
+        <Layers className="h-3 w-3" />
+        {topSeries[1]} {topSeries[0]}
+      </div>
+    );
+  }
+  
+  return null;
+}
+
 export default function CalendarView() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(new Date());
@@ -159,16 +228,29 @@ export default function CalendarView() {
   const [selectedStaff, setSelectedStaff] = useState('all');
   const [selectedEventType, setSelectedEventType] = useState('all');
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('all');
+  const [selectedSeries, setSelectedSeries] = useState('all');
   
   const { data: staffProfiles = [] } = useStaffProfiles();
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
+  const { data: eventSeries = [] } = useActiveEventSeries();
   
   const { data: events = [], isLoading } = useAdminCalendarEvents(currentMonth, {
     staffId: selectedStaff !== 'all' ? selectedStaff : undefined,
     eventTypeId: selectedEventType !== 'all' ? selectedEventType : undefined,
     deliveryMethodId: selectedDeliveryMethod !== 'all' ? selectedDeliveryMethod : undefined,
+    seriesId: selectedSeries !== 'all' ? selectedSeries : undefined,
   });
+
+  // Create consistent color mapping for series
+  const seriesColorMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const uniqueSeriesIds = [...new Set(events.map(e => e.event_series_id).filter(Boolean))];
+    uniqueSeriesIds.forEach((id, index) => {
+      if (id) map.set(id, index);
+    });
+    return map;
+  }, [events]);
 
   const monthDays = useMemo(() => {
     const start = startOfMonth(currentMonth);
@@ -217,6 +299,15 @@ export default function CalendarView() {
     });
   }, [events]);
 
+  // Check for busy days (5+ events)
+  const busyDayCount = useMemo(() => {
+    let count = 0;
+    eventsByDate.forEach((dayEvents) => {
+      if (dayEvents.length >= 5) count++;
+    });
+    return count;
+  }, [eventsByDate]);
+
   const startDayOfWeek = startOfMonth(currentMonth).getDay();
 
   const handlePrev = () => {
@@ -246,6 +337,16 @@ export default function CalendarView() {
         title="Calendar"
         description="View and manage all scheduled events"
       />
+
+      {/* Busy day indicator */}
+      {busyDayCount > 0 && (
+        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-2 text-sm">
+          <Calendar className="h-4 w-4 text-primary" />
+          <span>
+            <strong>{busyDayCount}</strong> high-density day(s) this month with 5+ events
+          </span>
+        </div>
+      )}
 
       {/* Calendar Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
@@ -284,6 +385,21 @@ export default function CalendarView() {
               <List className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
+
+          {/* Series Filter */}
+          <Select value={selectedSeries} onValueChange={setSelectedSeries}>
+            <SelectTrigger className="w-40 bg-card">
+              <SelectValue placeholder="All Series" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Series</SelectItem>
+              {eventSeries.map((series) => (
+                <SelectItem key={series.id} value={series.id}>
+                  {series.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Filters */}
           <Select value={selectedStaff} onValueChange={setSelectedStaff}>
@@ -370,7 +486,7 @@ export default function CalendarView() {
             </div>
           ) : (
             sortedListEvents.map((event) => (
-              <ListViewItem key={event.id} event={event} />
+              <ListViewItem key={event.id} event={event} seriesColorMap={seriesColorMap} />
             ))
           )}
         </motion.div>
@@ -412,7 +528,7 @@ export default function CalendarView() {
                   )}
                 >
                   {dayEvents.map((event) => (
-                    <EventTile key={event.id} event={event} />
+                    <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
                   ))}
                 </div>
               );
@@ -448,6 +564,7 @@ export default function CalendarView() {
             {monthDays.map((day) => {
               const dayEvents = getEventsForDay(day);
               const isCurrentDay = isToday(day);
+              const isBusyDay = dayEvents.length >= 5;
 
               return (
                 <div
@@ -455,7 +572,8 @@ export default function CalendarView() {
                   className={cn(
                     'min-h-[120px] border-b border-r border-border p-2 transition-colors',
                     !isSameMonth(day, currentMonth) && 'bg-muted/30',
-                    isCurrentDay && 'bg-primary/5'
+                    isCurrentDay && 'bg-primary/5',
+                    isBusyDay && 'ring-1 ring-inset ring-primary/30'
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -467,15 +585,23 @@ export default function CalendarView() {
                     >
                       {format(day, 'd')}
                     </span>
+                    {isBusyDay && (
+                      <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                        {dayEvents.length}
+                      </Badge>
+                    )}
                   </div>
                   <div className="space-y-1">
                     {dayEvents.slice(0, 3).map((event) => (
-                      <EventTile key={event.id} event={event} />
+                      <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
                     ))}
                     {dayEvents.length > 3 && (
-                      <p className="text-xs text-muted-foreground pl-1.5">
-                        +{dayEvents.length - 3} more
-                      </p>
+                      <>
+                        <p className="text-xs text-muted-foreground pl-1.5">
+                          +{dayEvents.length - 3} more
+                        </p>
+                        <DaySummaryBadge events={dayEvents} />
+                      </>
                     )}
                   </div>
                 </div>
