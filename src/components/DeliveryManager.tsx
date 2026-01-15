@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { format } from 'date-fns';
-import { Check, Copy, Download, ExternalLink, QrCode, ToggleLeft } from 'lucide-react';
+import { format, differenceInHours } from 'date-fns';
+import { Check, Copy, Download, ExternalLink, QrCode, ToggleLeft, AlertTriangle, Clock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useDeliveryRecord, useCreateDeliveryRecord, useUpdateDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useDeliveryMethods } from '@/hooks/useLookups';
+import { useDeliveryGuardrails } from '@/hooks/useGuardrails';
+import { useEvent } from '@/hooks/useEvents';
 import { GalleryUploader } from '@/components/GalleryUploader';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -23,13 +26,24 @@ interface DeliveryManagerProps {
 export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
   const { toast } = useToast();
   const { data: record, isLoading } = useDeliveryRecord(eventId);
+  const { data: event } = useEvent(eventId);
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const createRecord = useCreateDeliveryRecord();
   const updateRecord = useUpdateDeliveryRecord();
+  
+  // Delivery guardrails
+  const { data: guardrails } = useDeliveryGuardrails(eventId);
+  const guardrailWarnings = guardrails?.warnings || [];
 
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('dropbox');
   const [deliveryLink, setDeliveryLink] = useState('');
   const [copiedLink, setCopiedLink] = useState<'public' | 'delivery' | null>(null);
+  
+  // Calculate deadline status
+  const deliveryDeadline = event?.delivery_deadline ? new Date(event.delivery_deadline) : null;
+  const hoursUntilDeadline = deliveryDeadline ? differenceInHours(deliveryDeadline, new Date()) : null;
+  const isDeadlineApproaching = hoursUntilDeadline !== null && hoursUntilDeadline > 0 && hoursUntilDeadline <= 24;
+  const isDeadlinePassed = hoursUntilDeadline !== null && hoursUntilDeadline <= 0;
 
   // Get the public URL from the origin
   const publicUrl = `${window.location.origin}/g/${record?.qr_token}`;
@@ -62,9 +76,25 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
 
   const handleMarkDelivered = async () => {
     if (!record) return;
+    
+    // Check guardrail: Cannot mark delivered without a link
+    if (!record.delivery_link && !deliveryLink) {
+      toast({
+        variant: 'destructive',
+        title: 'Delivery link required',
+        description: 'You must provide a delivery link before marking as delivered.',
+      });
+      return;
+    }
+    
     await updateRecord.mutateAsync({
       id: record.id,
       delivered_at: new Date().toISOString(),
+    });
+    
+    toast({
+      title: 'Marked as delivered',
+      description: 'The delivery has been marked as complete.',
     });
   };
 
@@ -126,6 +156,56 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
 
   return (
     <div className="space-y-6">
+      {/* Delivery Guardrail Warnings */}
+      {(guardrailWarnings.length > 0 || isDeadlineApproaching || isDeadlinePassed) && (
+        <div className="space-y-3">
+          {/* Deadline Warning */}
+          {isDeadlinePassed && !record?.delivered_at && (
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Delivery Deadline Passed</AlertTitle>
+              <AlertDescription>
+                The delivery deadline was {deliveryDeadline && format(deliveryDeadline, 'MMM d, yyyy h:mm a')}.
+                Please complete the delivery as soon as possible.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {isDeadlineApproaching && !record?.delivered_at && (
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-600">Deadline Approaching</AlertTitle>
+              <AlertDescription>
+                Delivery deadline is in {hoursUntilDeadline} hour{hoursUntilDeadline !== 1 && 's'} 
+                ({deliveryDeadline && format(deliveryDeadline, 'MMM d, yyyy h:mm a')}).
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Link Missing Warning */}
+          {!record?.delivery_link && !deliveryLink && record && !record.delivered_at && (
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-600">Delivery Link Required</AlertTitle>
+              <AlertDescription>
+                A delivery link must be provided before marking this event as delivered.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Delivered Without Link Warning */}
+          {record?.delivered_at && !record?.delivery_link && (
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Missing Delivery Link</AlertTitle>
+              <AlertDescription>
+                This delivery was marked complete but no delivery link was stored. 
+                Please add the link for record keeping.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
       {/* Delivery Method & Link */}
       <div className="bg-card border border-border rounded-xl p-5 shadow-card">
         <h3 className="text-lg font-display font-semibold mb-4">Delivery Configuration</h3>
@@ -178,7 +258,12 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
                 {record ? 'Update' : 'Create'} Delivery Record
               </Button>
               {record && !record.delivered_at && (
-                <Button variant="outline" onClick={handleMarkDelivered}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleMarkDelivered}
+                  disabled={!record.delivery_link && !deliveryLink}
+                  title={!record.delivery_link && !deliveryLink ? 'Delivery link required' : undefined}
+                >
                   Mark as Delivered
                 </Button>
               )}
