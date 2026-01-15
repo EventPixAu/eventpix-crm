@@ -36,6 +36,8 @@ import {
   Target,
   Building2,
   DollarSign,
+  ShoppingBag,
+  Kanban,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -63,6 +65,8 @@ const adminNavItems = [
   { href: '/sales/clients', label: 'Clients', icon: Building2 },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
+  { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   // Operations Section
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/job-intake', label: 'Job Intake', icon: FileText },
@@ -94,6 +98,8 @@ const salesNavItems = [
   { href: '/sales/clients', label: 'Clients', icon: Building2 },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
+  { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
   { href: '/staff/me', label: 'My Profile', icon: User },
 ];
