@@ -19,11 +19,15 @@ import {
   Send,
   Trash2,
   WifiOff,
+  ShieldAlert,
+  Package,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
@@ -32,6 +36,7 @@ import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from
 import { useStaffRoles } from '@/hooks/useLookups';
 import { useDayOfCache } from '@/hooks/useDayOfCache';
 import { useEventNotes, useCreateEventNote, useDeleteEventNote } from '@/hooks/useEventNotes';
+import { useEventAllocations } from '@/hooks/useEquipmentAllocations';
 import { downloadICS } from '@/lib/icsGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -61,8 +66,22 @@ export default function EventDayOf() {
   // Fetch same-day events for multi-event routing display
   const { data: sameDayEvents = [] } = useSameDayEvents(user?.id, event?.event_date);
   
+  // Equipment allocations for guardrail check
+  const { data: equipmentAllocations = [] } = useEventAllocations(id);
+  
   const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
+  
+  // Equipment guardrail checks
+  const hasRequiredKit = !!event?.recommended_kit_id;
+  const hasAllocatedEquipment = equipmentAllocations.length > 0;
+  const equipmentNotAllocated = hasRequiredKit && !hasAllocatedEquipment;
+  
+  // Check if any allocated equipment hasn't been picked up (for day-of warning)
+  const unpickedEquipment = useMemo(() => {
+    if (!isToday(parseISO(event?.event_date || ''))) return [];
+    return equipmentAllocations.filter(a => a.status === 'allocated');
+  }, [equipmentAllocations, event?.event_date]);
   
   const updateItem = useUpdateWorksheetItem();
   const createNote = useCreateEventNote();
@@ -270,6 +289,34 @@ export default function EventDayOf() {
       )}
 
       <div className={cn('max-w-lg mx-auto', isOffline && 'pt-10')}>
+        {/* Equipment Guardrail Warnings */}
+        {(equipmentNotAllocated || unpickedEquipment.length > 0) && (
+          <div className="px-4 pt-4 space-y-3">
+            {/* Kit required but no equipment allocated */}
+            {equipmentNotAllocated && (
+              <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Equipment Not Allocated</AlertTitle>
+                <AlertDescription>
+                  This event requires an equipment kit but no equipment has been allocated. 
+                  Please contact your manager before starting.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Equipment allocated but not picked up (only shown on day of event) */}
+            {unpickedEquipment.length > 0 && !equipmentNotAllocated && (
+              <Alert className="border-amber-500/50 bg-amber-500/10">
+                <Package className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-600">Equipment Not Picked Up</AlertTitle>
+                <AlertDescription>
+                  {unpickedEquipment.length} item{unpickedEquipment.length > 1 && 's'} allocated but not yet marked as picked up. 
+                  Please confirm equipment pickup before leaving for the event.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
           <div className="px-4 py-3">
