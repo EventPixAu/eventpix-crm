@@ -1,3 +1,18 @@
+/**
+ * OPERATIONS PLATFORM - Main Layout
+ * 
+ * SYSTEM BOUNDARIES:
+ * - This is an OPERATIONS-ONLY platform
+ * - NO CRM features (Sales CRM is external - Studio Ninja)
+ * - NO accounting logic (Accounting is external - Xero)
+ * - NO client communications or quoting
+ * 
+ * ROLE SEPARATION:
+ * - Admin: Full operations access (staffing, equipment, compliance, delivery, executive)
+ * - Photographer: Job-focused access only (my jobs, availability, equipment, KB)
+ * 
+ * Photographers should feel like: "This is my work app, not the company system."
+ */
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +34,7 @@ import {
   Wrench,
   FolderOpen,
   BarChart3,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -29,6 +45,19 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
+/**
+ * ADMIN NAVIGATION - Operations Scope Only
+ * 
+ * Grouped by function:
+ * - Operations: Events, Job Intake, Series, Calendar, Delivery
+ * - Staffing: Staff, Workflows
+ * - Equipment: Equipment management
+ * - Admin: Event Types, Executive Dashboard
+ * 
+ * EXCLUDED (handled by external systems):
+ * - Leads, Quotes, Clients (Sales CRM - Studio Ninja)
+ * - Invoicing, Payments (Accounting - Xero)
+ */
 const adminNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/admin/executive', label: 'Executive', icon: BarChart3 },
@@ -44,13 +73,33 @@ const adminNavItems = [
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
 ];
 
+/**
+ * PHOTOGRAPHER NAVIGATION - Personal Work Scope Only
+ * 
+ * Photographers can ONLY access:
+ * - My Jobs (their assigned events/job sheets)
+ * - My Calendar (their schedule)
+ * - My Availability (set availability)
+ * - My Documents (compliance uploads)
+ * - Help & Guides (knowledge base)
+ * - My Profile (personal settings)
+ * 
+ * Photographers CANNOT see:
+ * - All events list
+ * - Other staff details
+ * - Rates, costs, invoices
+ * - Executive dashboards
+ * - Series management
+ * - Equipment admin
+ * - Job intake queue
+ */
 const photographerNavItems = [
-  { href: '/staff/me', label: 'My Profile', icon: User },
-  { href: '/', label: 'My Jobs', icon: Home },
+  { href: '/', label: 'My Jobs', icon: Briefcase },
   { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
   { href: '/my-availability', label: 'My Availability', icon: CalendarCheck },
   { href: '/my-documents', label: 'My Documents', icon: FolderOpen },
   { href: '/knowledge-base', label: 'Help & Guides', icon: BookOpen },
+  { href: '/staff/me', label: 'My Profile', icon: User },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {
