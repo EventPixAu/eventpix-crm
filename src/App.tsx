@@ -15,7 +15,7 @@ import Staff from "./pages/Staff";
 import CalendarView from "./pages/CalendarView";
 import Workflows from "./pages/Workflows";
 import Delivery from "./pages/Delivery";
-import GalleryAccess from "./pages/GalleryAccess";
+import GalleryPublic from "./pages/GalleryPublic";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +42,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<Auth />} />
-      <Route path="/gallery/:eventId" element={<GalleryAccess />} />
+      <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
       <Route path="/events/new" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />

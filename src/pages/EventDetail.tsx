@@ -2,13 +2,11 @@ import { useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   ArrowLeft,
   Calendar,
   Clock,
   Edit,
-  ExternalLink,
   MapPin,
   Package,
   Phone,
@@ -29,10 +27,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
+import { DeliveryManager } from '@/components/DeliveryManager';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -112,8 +112,6 @@ export default function EventDetail() {
   }
 
   const date = parseISO(event.event_date);
-  const hasDelivery = event.delivery_method_id || event.delivery_method;
-  const deliveryLink = hasDelivery ? `https://gallery.eventpix.com.au/${event.id}` : null;
 
   return (
     <AppLayout>
@@ -176,108 +174,139 @@ export default function EventDetail() {
         )}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="lg:col-span-2 space-y-6"
-        >
-          {/* Event Details */}
-          <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-4">Event Details</h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Calendar className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Clock className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Time</p>
-                  <p className="font-medium">
-                    {event.start_time
-                      ? `${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}${
-                          event.end_time
-                            ? ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`
-                            : ''
-                        }`
-                      : 'TBD'}
-                  </p>
-                </div>
-              </div>
-              {event.venue_name && (
-                <div className="flex items-start gap-3 sm:col-span-2">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <MapPin className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Venue</p>
-                    <p className="font-medium">{event.venue_name}</p>
-                    {event.venue_address && (
-                      <p className="text-sm text-muted-foreground">{event.venue_address}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          <TabsTrigger value="delivery">Delivery</TabsTrigger>
+        </TabsList>
 
-          {/* Contact Info */}
-          <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-4">Contact Information</h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-muted rounded-lg">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Client</p>
-                  <p className="font-medium">{event.client_name}</p>
-                </div>
-              </div>
-              {event.onsite_contact_name && (
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
+        <TabsContent value="overview">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="lg:col-span-2 space-y-6"
+            >
+              {/* Event Details */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                <h2 className="text-lg font-display font-semibold mb-4">Event Details</h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Calendar className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Date</p>
+                      <p className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">On-site Contact</p>
-                    <p className="font-medium">{event.onsite_contact_name}</p>
-                    {event.onsite_contact_phone && (
-                      <a
-                        href={`tel:${event.onsite_contact_phone}`}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {event.onsite_contact_phone}
-                      </a>
-                    )}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Clock className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Time</p>
+                      <p className="font-medium">
+                        {event.start_time
+                          ? `${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}${
+                              event.end_time
+                                ? ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`
+                                : ''
+                            }`
+                          : 'TBD'}
+                      </p>
+                    </div>
                   </div>
+                  {event.venue_name && (
+                    <div className="flex items-start gap-3 sm:col-span-2">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <MapPin className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Venue</p>
+                        <p className="font-medium">{event.venue_name}</p>
+                        {event.venue_address && (
+                          <p className="text-sm text-muted-foreground">{event.venue_address}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {event.coverage_details && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
-                <p className="text-sm">{event.coverage_details}</p>
               </div>
-            )}
-            {event.notes && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-1">Notes</p>
-                <p className="text-sm">{event.notes}</p>
-              </div>
-            )}
-          </div>
 
-          {/* Assigned Staff */}
+              {/* Contact Info */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                <h2 className="text-lg font-display font-semibold mb-4">Contact Information</h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-muted rounded-lg">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Client</p>
+                      <p className="font-medium">{event.client_name}</p>
+                    </div>
+                  </div>
+                  {event.onsite_contact_name && (
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-muted rounded-lg">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">On-site Contact</p>
+                        <p className="font-medium">{event.onsite_contact_name}</p>
+                        {event.onsite_contact_phone && (
+                          <a
+                            href={`tel:${event.onsite_contact_phone}`}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {event.onsite_contact_phone}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {event.coverage_details && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
+                    <p className="text-sm">{event.coverage_details}</p>
+                  </div>
+                )}
+                {event.notes && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                    <p className="text-sm">{event.notes}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Sidebar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-6"
+            >
+              {/* Quick Actions */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
+                <div className="space-y-2">
+                  <Link to={`/events/${id}/worksheets`} className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      View Worksheets
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="assignments">
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display font-semibold">Assigned Staff</h2>
@@ -288,9 +317,8 @@ export default function EventDetail() {
             {assignments.length === 0 ? (
               <p className="text-muted-foreground text-sm">No staff assigned yet</p>
             ) : (
-              <div className="space-y-3">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {assignments.map((assignment) => {
-                  // Support both new profile-based and legacy staff-based assignments
                   const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
                   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
                   const initial = name.charAt(0).toUpperCase();
@@ -298,18 +326,23 @@ export default function EventDetail() {
                   return (
                     <div
                       key={assignment.id}
-                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                      className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg"
                     >
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span className="text-lg font-medium text-primary">
                           {initial}
                         </span>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{name}</p>
                         <p className="text-sm text-muted-foreground capitalize">
                           {role}
                         </p>
+                        {assignment.assignment_notes && (
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {assignment.assignment_notes}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -317,78 +350,12 @@ export default function EventDetail() {
               </div>
             )}
           </div>
-        </motion.div>
+        </TabsContent>
 
-        {/* Sidebar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="space-y-6"
-        >
-          {/* Delivery Info */}
-          <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-            <div className="flex items-center gap-2 mb-4">
-              <Package className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-display font-semibold">Delivery</h2>
-            </div>
-            {hasDelivery ? (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Method</p>
-                  <p className="font-medium capitalize">
-                    {getDeliveryMethodName()}
-                  </p>
-                </div>
-                {event.delivery_deadline && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Deadline</p>
-                    <p className="font-medium">
-                      {format(parseISO(event.delivery_deadline), 'MMM d, yyyy')}
-                    </p>
-                  </div>
-                )}
-                {deliveryLink && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Gallery QR Code</p>
-                    <div className="bg-white p-4 rounded-lg inline-block">
-                      <QRCodeSVG value={deliveryLink} size={120} />
-                    </div>
-                    <a
-                      href={deliveryLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Open Gallery Link
-                    </a>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No delivery method set</p>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-            <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
-            <div className="space-y-2">
-              <Link to={`/events/${id}/worksheets`} className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  View Worksheets
-                </Button>
-              </Link>
-              <Link to={`/events/${id}/delivery`} className="block">
-                <Button variant="outline" className="w-full justify-start">
-                  Manage Delivery
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+        <TabsContent value="delivery">
+          {id && <DeliveryManager eventId={id} isAdmin={isAdmin} />}
+        </TabsContent>
+      </Tabs>
     </AppLayout>
   );
 }

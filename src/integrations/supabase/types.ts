@@ -180,6 +180,7 @@ export type Database = {
       }
       events: {
         Row: {
+          calendar_sequence: number
           client_name: string
           coverage_details: string | null
           created_at: string | null
@@ -204,6 +205,7 @@ export type Database = {
           venue_name: string | null
         }
         Insert: {
+          calendar_sequence?: number
           client_name: string
           coverage_details?: string | null
           created_at?: string | null
@@ -230,6 +232,7 @@ export type Database = {
           venue_name?: string | null
         }
         Update: {
+          calendar_sequence?: number
           client_name?: string
           coverage_details?: string | null
           created_at?: string | null
