@@ -10,6 +10,8 @@ export interface GalleryAsset {
   mime_type: string | null;
   file_size: number | null;
   sort_order: number;
+  caption: string | null;
+  alt_text: string | null;
   created_at: string;
 }
 
@@ -172,6 +174,41 @@ export function useReorderGalleryAssets() {
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to reorder images', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useUpdateGalleryAsset() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      eventId, 
+      caption, 
+      alt_text 
+    }: { 
+      id: string; 
+      eventId: string; 
+      caption?: string | null; 
+      alt_text?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('gallery_assets')
+        .update({ caption, alt_text })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return { eventId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['gallery-assets', data.eventId] });
+      toast({ title: 'Image details updated' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update image', description: error.message, variant: 'destructive' });
     },
   });
 }

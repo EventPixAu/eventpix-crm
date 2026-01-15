@@ -1,8 +1,19 @@
 import { useRef, useState, useCallback } from 'react';
-import { ImagePlus, Loader2, Trash2, X, Upload, CheckCircle2, GripVertical } from 'lucide-react';
+import { ImagePlus, Loader2, Trash2, X, Upload, CheckCircle2, GripVertical, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useGalleryAssets, useUploadGalleryAsset, useDeleteGalleryAsset, useReorderGalleryAssets, getPublicUrl, GalleryAsset } from '@/hooks/useGalleryAssets';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useGalleryAssets, useUploadGalleryAsset, useDeleteGalleryAsset, useReorderGalleryAssets, useUpdateGalleryAsset, getPublicUrl, GalleryAsset } from '@/hooks/useGalleryAssets';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,9 +60,10 @@ interface SortableImageProps {
   isAdmin: boolean;
   onPreview: (url: string) => void;
   onDelete: (asset: { id: string; storagePath: string }) => void;
+  onEdit: (asset: GalleryAsset) => void;
 }
 
-function SortableImage({ asset, isAdmin, onPreview, onDelete }: SortableImageProps) {
+function SortableImage({ asset, isAdmin, onPreview, onDelete, onEdit }: SortableImageProps) {
   const {
     attributes,
     listeners,
@@ -79,11 +91,17 @@ function SortableImage({ asset, isAdmin, onPreview, onDelete }: SortableImagePro
     >
       <img
         src={url}
-        alt={asset.file_name}
+        alt={asset.alt_text || asset.file_name}
         className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
         onClick={() => onPreview(url)}
         loading="lazy"
       />
+      {/* Caption overlay */}
+      {asset.caption && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 pt-6">
+          <p className="text-white text-xs line-clamp-2">{asset.caption}</p>
+        </div>
+      )}
       {isAdmin && (
         <>
           {/* Drag Handle */}
@@ -93,6 +111,13 @@ function SortableImage({ asset, isAdmin, onPreview, onDelete }: SortableImagePro
             className="absolute top-2 left-2 p-1.5 bg-background/90 text-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background cursor-grab active:cursor-grabbing"
           >
             <GripVertical className="h-3.5 w-3.5" />
+          </button>
+          {/* Edit Button */}
+          <button
+            onClick={() => onEdit(asset)}
+            className="absolute top-2 right-10 p-1.5 bg-background/90 text-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+          >
+            <Pencil className="h-3.5 w-3.5" />
           </button>
           {/* Delete Button */}
           <button
@@ -113,12 +138,33 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
   const uploadMutation = useUploadGalleryAsset();
   const deleteMutation = useDeleteGalleryAsset();
   const reorderMutation = useReorderGalleryAssets();
+  const updateMutation = useUpdateGalleryAsset();
   
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; storagePath: string } | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [localAssets, setLocalAssets] = useState<GalleryAsset[]>([]);
+  const [editingAsset, setEditingAsset] = useState<GalleryAsset | null>(null);
+  const [editCaption, setEditCaption] = useState('');
+  const [editAltText, setEditAltText] = useState('');
+
+  const handleEditOpen = (asset: GalleryAsset) => {
+    setEditingAsset(asset);
+    setEditCaption(asset.caption || '');
+    setEditAltText(asset.alt_text || '');
+  };
+
+  const handleEditSave = async () => {
+    if (!editingAsset) return;
+    await updateMutation.mutateAsync({
+      id: editingAsset.id,
+      eventId,
+      caption: editCaption || null,
+      alt_text: editAltText || null,
+    });
+    setEditingAsset(null);
+  };
 
   // Sync local assets with server assets
   const displayAssets = localAssets.length > 0 ? localAssets : assets;
@@ -421,6 +467,7 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
                   isAdmin={isAdmin}
                   onPreview={setPreviewImage}
                   onDelete={setDeleteTarget}
+                  onEdit={handleEditOpen}
                 />
               ))}
             </div>
@@ -448,6 +495,63 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Caption/Alt Text Dialog */}
+      <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Image Details</DialogTitle>
+            <DialogDescription>
+              Add a caption and alt text to improve accessibility.
+            </DialogDescription>
+          </DialogHeader>
+          {editingAsset && (
+            <div className="space-y-4 py-2">
+              <div className="aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                <img
+                  src={getPublicUrl(editingAsset.storage_path)}
+                  alt={editingAsset.alt_text || editingAsset.file_name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="caption">Caption</Label>
+                <Input
+                  id="caption"
+                  value={editCaption}
+                  onChange={(e) => setEditCaption(e.target.value)}
+                  placeholder="Describe this image briefly..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Visible caption displayed below the image
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="alt-text">Alt Text</Label>
+                <Textarea
+                  id="alt-text"
+                  value={editAltText}
+                  onChange={(e) => setEditAltText(e.target.value)}
+                  placeholder="Describe the image for screen readers..."
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  For accessibility - read by screen readers
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAsset(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave} disabled={updateMutation.isPending}>
+              {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Image Preview Modal */}
       {previewImage && (
