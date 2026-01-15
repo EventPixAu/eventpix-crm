@@ -21,6 +21,9 @@ export interface Contract {
   status: ContractStatus;
   sent_at: string | null;
   signed_at: string | null;
+  signed_by_name: string | null;
+  signed_by_email: string | null;
+  public_token: string | null;
   created_at: string;
   updated_at: string;
   client?: any;
@@ -209,6 +212,66 @@ export function useUploadContractFile() {
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to upload file', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useMarkContractAsSent() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (contractId: string) => {
+      const { data, error } = await supabase.rpc('mark_contract_as_sent', {
+        p_contract_id: contractId,
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; public_token?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to mark contract as sent');
+      }
+      
+      return result;
+    },
+    onSuccess: (_, contractId) => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contracts', contractId] });
+      toast({ title: 'Contract marked as sent' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update contract', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useRegenerateContractToken() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (contractId: string) => {
+      const { data, error } = await supabase.rpc('regenerate_contract_token', {
+        p_contract_id: contractId,
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; new_token?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to regenerate token');
+      }
+      
+      return result;
+    },
+    onSuccess: (_, contractId) => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['contracts', contractId] });
+      toast({ title: 'Signing link regenerated' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to regenerate link', description: error.message, variant: 'destructive' });
     },
   });
 }

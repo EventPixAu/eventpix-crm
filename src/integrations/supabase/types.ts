@@ -325,6 +325,27 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_acceptance_attempts: {
+        Row: {
+          attempt_at: string
+          id: string
+          public_token: string
+          success: boolean
+        }
+        Insert: {
+          attempt_at?: string
+          id?: string
+          public_token: string
+          success?: boolean
+        }
+        Update: {
+          attempt_at?: string
+          id?: string
+          public_token?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           client_id: string
@@ -332,9 +353,12 @@ export type Database = {
           file_url: string | null
           id: string
           lead_id: string | null
+          public_token: string | null
           quote_id: string | null
           sent_at: string | null
           signed_at: string | null
+          signed_by_email: string | null
+          signed_by_name: string | null
           status: Database["public"]["Enums"]["contract_status"] | null
           title: string
           updated_at: string | null
@@ -345,9 +369,12 @@ export type Database = {
           file_url?: string | null
           id?: string
           lead_id?: string | null
+          public_token?: string | null
           quote_id?: string | null
           sent_at?: string | null
           signed_at?: string | null
+          signed_by_email?: string | null
+          signed_by_name?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           title: string
           updated_at?: string | null
@@ -358,9 +385,12 @@ export type Database = {
           file_url?: string | null
           id?: string
           lead_id?: string | null
+          public_token?: string | null
           quote_id?: string | null
           sent_at?: string | null
           signed_at?: string | null
+          signed_by_email?: string | null
+          signed_by_name?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           title?: string
           updated_at?: string | null
@@ -2263,6 +2293,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_contract_public: {
+        Args: { p_email: string; p_name: string; p_token: string }
+        Returns: Json
+      }
       accept_quote_public: {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
@@ -2306,7 +2340,12 @@ export type Database = {
         }
         Returns: string
       }
+      mark_contract_as_sent: { Args: { p_contract_id: string }; Returns: Json }
       mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
+      regenerate_contract_token: {
+        Args: { p_contract_id: string }
+        Returns: Json
+      }
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
     }
     Enums: {
