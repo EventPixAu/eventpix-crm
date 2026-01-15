@@ -16,6 +16,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
+import { NeedsAttentionQueue } from '@/components/NeedsAttentionQueue';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 import { useStaff } from '@/hooks/useStaff';
@@ -126,86 +127,100 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Upcoming Events/Jobs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="bg-card border border-border rounded-xl shadow-card"
-      >
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="text-lg font-display font-semibold">
-            {isAdmin ? 'Upcoming Events' : 'My Upcoming Jobs'}
-          </h2>
-          <Link to="/events" className="text-sm text-primary hover:underline">
-            View all
-          </Link>
-        </div>
-        
-        {eventsLoading ? (
-          <div className="p-8 text-center text-muted-foreground">
-            Loading events...
+      {/* Main Content Grid */}
+      <div className={isAdmin ? "grid lg:grid-cols-3 gap-6" : ""}>
+        {/* Upcoming Events/Jobs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={`bg-card border border-border rounded-xl shadow-card ${isAdmin ? 'lg:col-span-2' : ''}`}
+        >
+          <div className="flex items-center justify-between p-5 border-b border-border">
+            <h2 className="text-lg font-display font-semibold">
+              {isAdmin ? 'Upcoming Events' : 'My Upcoming Jobs'}
+            </h2>
+            <Link to="/events" className="text-sm text-primary hover:underline">
+              View all
+            </Link>
           </div>
-        ) : upcomingEvents.length === 0 ? (
-          <div className="p-8 text-center">
-            <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">
-              {isAdmin ? 'No upcoming events' : 'No upcoming jobs assigned'}
-            </p>
-            {isAdmin && (
-              <Link to="/events/new">
-                <Button variant="outline" className="mt-4">
-                  Create your first event
-                </Button>
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {upcomingEvents.map((event, index) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * index }}
-              >
-                <Link
-                  to={`/events/${event.id}`}
-                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-shrink-0 w-14 h-14 bg-primary/10 rounded-xl flex flex-col items-center justify-center">
-                    <span className="text-xs text-muted-foreground uppercase">
-                      {format(parseISO(event.event_date), 'MMM')}
-                    </span>
-                    <span className="text-lg font-display font-bold text-primary">
-                      {format(parseISO(event.event_date), 'd')}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium truncate">{event.event_name}</h3>
-                      <StatusBadge status={getEventStatus(event.event_date)} />
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {event.start_time ? format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a') : 'TBD'}
-                      </span>
-                      {event.venue_name && (
-                        <span className="flex items-center gap-1 truncate">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {event.venue_name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          
+          {eventsLoading ? (
+            <div className="p-8 text-center text-muted-foreground">
+              Loading events...
+            </div>
+          ) : upcomingEvents.length === 0 ? (
+            <div className="p-8 text-center">
+              <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground">
+                {isAdmin ? 'No upcoming events' : 'No upcoming jobs assigned'}
+              </p>
+              {isAdmin && (
+                <Link to="/events/new">
+                  <Button variant="outline" className="mt-4">
+                    Create your first event
+                  </Button>
                 </Link>
-              </motion.div>
-            ))}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {upcomingEvents.map((event, index) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                >
+                  <Link
+                    to={`/events/${event.id}`}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-14 h-14 bg-primary/10 rounded-xl flex flex-col items-center justify-center">
+                      <span className="text-xs text-muted-foreground uppercase">
+                        {format(parseISO(event.event_date), 'MMM')}
+                      </span>
+                      <span className="text-lg font-display font-bold text-primary">
+                        {format(parseISO(event.event_date), 'd')}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium truncate">{event.event_name}</h3>
+                        <StatusBadge status={getEventStatus(event.event_date)} />
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {event.start_time ? format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a') : 'TBD'}
+                        </span>
+                        {event.venue_name && (
+                          <span className="flex items-center gap-1 truncate">
+                            <MapPin className="h-3.5 w-3.5" />
+                            {event.venue_name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Needs Attention Queue - Admin Only */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <NeedsAttentionQueue />
+          </motion.div>
         )}
-      </motion.div>
+      </div>
     </AppLayout>
   );
 }

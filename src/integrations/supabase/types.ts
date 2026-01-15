@@ -809,6 +809,88 @@ export type Database = {
           },
         ]
       }
+      guardrail_overrides: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          event_id: string | null
+          id: string
+          justification: string
+          override_type: string
+          rules_breached: string[]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          event_id?: string | null
+          id?: string
+          justification: string
+          override_type: string
+          rules_breached: string[]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          event_id?: string | null
+          id?: string
+          justification?: string
+          override_type?: string
+          rules_breached?: string[]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardrail_overrides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardrail_overrides_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guardrail_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardrail_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       job_intake: {
         Row: {
           client_email: string | null
@@ -1579,6 +1661,7 @@ export type Database = {
         | "equipment_flagged_missing"
         | "equipment_flagged_damaged"
         | "compliance_override"
+        | "guardrail_override"
       delivery_method:
         | "dropbox"
         | "zno_instant"
@@ -1740,6 +1823,7 @@ export const Constants = {
         "equipment_flagged_missing",
         "equipment_flagged_damaged",
         "compliance_override",
+        "guardrail_override",
       ],
       delivery_method: [
         "dropbox",
