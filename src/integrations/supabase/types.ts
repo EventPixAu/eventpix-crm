@@ -253,6 +253,7 @@ export type Database = {
           default_coverage_details: string | null
           default_delivery_deadline_days: number | null
           default_delivery_method_id: string | null
+          default_photographers_required: number | null
           event_type_id: string | null
           id: string
           is_active: boolean | null
@@ -265,6 +266,7 @@ export type Database = {
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
+          default_photographers_required?: number | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -277,6 +279,7 @@ export type Database = {
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
+          default_photographers_required?: number | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -714,6 +717,44 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_availability: {
+        Row: {
+          availability_status: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability_status?: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability_status?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_availability_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_roles: {
         Row: {
           created_at: string | null
@@ -986,6 +1027,7 @@ export type Database = {
         | "assignment_removed"
         | "delivery_updated"
         | "worksheet_item_toggled"
+        | "assignment_override"
       delivery_method:
         | "dropbox"
         | "zno_instant"
@@ -1140,6 +1182,7 @@ export const Constants = {
         "assignment_removed",
         "delivery_updated",
         "worksheet_item_toggled",
+        "assignment_override",
       ],
       delivery_method: [
         "dropbox",

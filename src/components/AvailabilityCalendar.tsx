@@ -1,0 +1,263 @@
+import { useState, useMemo } from 'react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight, Circle, CircleDot, CircleSlash, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from '@/components/ui/toggle-group';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
+import { 
+  useMyAvailability, 
+  useSetAvailability,
+  AvailabilityStatus,
+  StaffAvailability,
+} from '@/hooks/useStaffAvailability';
+
+interface AvailabilityCalendarProps {
+  userId?: string;
+  readOnly?: boolean;
+}
+
+export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityCalendarProps) {
+  const { user } = useAuth();
+  const effectiveUserId = userId || user?.id;
+  
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+  
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  
+  const { data: availability = [], isLoading } = useMyAvailability(
+    format(monthStart, 'yyyy-MM-dd'),
+    format(monthEnd, 'yyyy-MM-dd')
+  );
+  
+  const setAvailability = useSetAvailability();
+  
+  // Create a map of date -> availability for quick lookup
+  const availabilityMap = useMemo(() => {
+    const map = new Map<string, StaffAvailability>();
+    availability.forEach(a => {
+      map.set(a.date, a);
+    });
+    return map;
+  }, [availability]);
+  
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  
+  // Get the day of week for the first day (0 = Sunday)
+  const startDayOfWeek = monthStart.getDay();
+  
+  const handleSetAvailability = async (status: AvailabilityStatus) => {
+    if (!effectiveUserId || !selectedDate) return;
+    
+    await setAvailability.mutateAsync({
+      userId: effectiveUserId,
+      date: selectedDate,
+      status,
+      notes: editNotes || undefined,
+    });
+    
+    setSelectedDate(null);
+    setEditNotes('');
+  };
+  
+  const getStatusIcon = (status: AvailabilityStatus | undefined) => {
+    switch (status) {
+      case 'unavailable':
+        return <CircleSlash className="h-3 w-3 text-destructive" />;
+      case 'limited':
+        return <CircleDot className="h-3 w-3 text-amber-500" />;
+      default:
+        return null;
+    }
+  };
+  
+  const getStatusColor = (status: AvailabilityStatus | undefined) => {
+    switch (status) {
+      case 'unavailable':
+        return 'bg-destructive/20 border-destructive/50 text-destructive-foreground';
+      case 'limited':
+        return 'bg-amber-500/20 border-amber-500/50';
+      default:
+        return '';
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <h3 className="font-semibold">
+          {format(currentMonth, 'MMMM yyyy')}
+        </h3>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-sm text-muted-foreground justify-center">
+        <div className="flex items-center gap-1">
+          <Circle className="h-3 w-3" />
+          <span>Available</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <CircleDot className="h-3 w-3 text-amber-500" />
+          <span>Limited</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <CircleSlash className="h-3 w-3 text-destructive" />
+          <span>Unavailable</span>
+        </div>
+      </div>
+      
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* Day headers */}
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+            {day}
+          </div>
+        ))}
+        
+        {/* Empty cells for days before the month starts */}
+        {Array.from({ length: startDayOfWeek }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+        
+        {/* Calendar days */}
+        {days.map(day => {
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const dayAvailability = availabilityMap.get(dateStr);
+          const status = dayAvailability?.availability_status;
+          const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+          
+          return (
+            <Popover 
+              key={dateStr}
+              open={selectedDate === dateStr}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setSelectedDate(null);
+                  setEditNotes('');
+                }
+              }}
+            >
+              <PopoverTrigger asChild>
+                <button
+                  disabled={readOnly || isPast}
+                  onClick={() => {
+                    setSelectedDate(dateStr);
+                    setEditNotes(dayAvailability?.notes || '');
+                  }}
+                  className={cn(
+                    'aspect-square p-1 rounded-lg border text-sm flex flex-col items-center justify-center gap-0.5',
+                    'transition-colors hover:bg-muted/50',
+                    'disabled:opacity-50 disabled:cursor-not-allowed',
+                    isToday(day) && 'ring-2 ring-primary',
+                    getStatusColor(status),
+                    !status && 'border-border'
+                  )}
+                >
+                  <span className={cn(
+                    'font-medium',
+                    !isSameMonth(day, currentMonth) && 'text-muted-foreground'
+                  )}>
+                    {format(day, 'd')}
+                  </span>
+                  {getStatusIcon(status)}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" align="center">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium">{format(parseISO(dateStr), 'EEEE, MMMM d')}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Set your availability
+                    </p>
+                  </div>
+                  
+                  <ToggleGroup 
+                    type="single" 
+                    value={status || 'available'}
+                    onValueChange={(value) => {
+                      if (value) handleSetAvailability(value as AvailabilityStatus);
+                    }}
+                    className="justify-start"
+                  >
+                    <ToggleGroupItem value="available" className="text-xs">
+                      <Circle className="h-3 w-3 mr-1" />
+                      Available
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="limited" className="text-xs">
+                      <CircleDot className="h-3 w-3 mr-1 text-amber-500" />
+                      Limited
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="unavailable" className="text-xs">
+                      <CircleSlash className="h-3 w-3 mr-1 text-destructive" />
+                      Unavailable
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-xs">Notes (optional)</Label>
+                    <Textarea
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      placeholder="e.g., Only available after 2pm..."
+                      rows={2}
+                      className="text-sm"
+                    />
+                  </div>
+                  
+                  {editNotes !== (dayAvailability?.notes || '') && (
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleSetAvailability(status || 'available')}
+                      disabled={setAvailability.isPending}
+                    >
+                      Save Notes
+                    </Button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

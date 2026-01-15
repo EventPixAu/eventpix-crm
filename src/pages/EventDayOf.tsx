@@ -35,6 +35,8 @@ import { useEventNotes, useCreateEventNote, useDeleteEventNote } from '@/hooks/u
 import { downloadICS } from '@/lib/icsGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useSameDayEvents } from '@/hooks/useStaffAvailability';
+import { TodaysSchedule } from '@/components/TodaysSchedule';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -54,6 +56,9 @@ export default function EventDayOf() {
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: staffRoles = [] } = useStaffRoles();
   const { data: eventNotes = [] } = useEventNotes(id);
+  
+  // Fetch same-day events for multi-event routing display
+  const { data: sameDayEvents = [] } = useSameDayEvents(user?.id, event?.event_date);
   
   const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
@@ -315,6 +320,13 @@ export default function EventDayOf() {
             )}
           </div>
         </header>
+
+        {/* Today's Schedule - shown when photographer has multiple events */}
+        {sameDayEvents.length > 1 && (
+          <section className="px-4 pt-4">
+            <TodaysSchedule events={sameDayEvents} currentEventId={id} />
+          </section>
+        )}
 
         {/* Primary Actions */}
         <section className="p-4 space-y-2">

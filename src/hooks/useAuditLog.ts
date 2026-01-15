@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { Database } from '@/integrations/supabase/types';
 
 export interface AuditLogEntry {
   id: string;
@@ -49,7 +51,36 @@ export function useAuditLog(eventId: string | undefined) {
   });
 }
 
-// Helper function to generate human-readable activity descriptions
+// Mutation to log audit entries
+export function useLogAuditEntry() {
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({
+      action,
+      eventId,
+      before,
+      after,
+    }: {
+      action: Database['public']['Enums']['audit_action'];
+      eventId: string;
+      before?: Record<string, any>;
+      after?: Record<string, any>;
+    }) => {
+      const { error } = await supabase
+        .from('audit_log')
+        .insert({
+          action,
+          event_id: eventId,
+          actor_user_id: user?.id,
+          before: before || null,
+          after: after || null,
+        });
+      
+      if (error) throw error;
+    },
+  });
+}
 export function getActivityDescription(entry: AuditLogEntry): { action: string; detail: string } {
   const before = entry.before || {};
   const after = entry.after || {};
