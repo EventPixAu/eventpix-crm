@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Clock,
   Copy,
+  HelpCircle,
   MapPin,
   MessageSquarePlus,
   Phone,
@@ -266,14 +267,26 @@ export default function EventDayOf() {
         {/* Header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
           <div className="px-4 py-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Link
-                to={`/events/${id}`}
-                className="p-1 -ml-1 text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-              <span className="text-sm text-muted-foreground">Day-Of View</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/events/${id}`}
+                  className="p-1 -ml-1 text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  {isAdmin ? 'Day-Of View' : 'Job Sheet'}
+                </span>
+              </div>
+              {!isAdmin && (
+                <Link to="/knowledge-base">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                    <HelpCircle className="h-4 w-4 mr-1" />
+                    Help
+                  </Button>
+                </Link>
+              )}
             </div>
             <h1 className="text-xl font-display font-bold mb-1">{displayEvent.event_name}</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

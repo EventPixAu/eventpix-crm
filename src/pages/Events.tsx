@@ -13,6 +13,8 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { InvoiceStatusBadge } from '@/components/ui/invoice-status-badge';
+import { OpsStatusBadge } from '@/components/ui/ops-status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -201,9 +203,18 @@ export default function Events() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium truncate">{event.event_name}</h3>
                       <StatusBadge status={getEventStatus(event.event_date)} />
+                      {isAdmin && (
+                        <>
+                          <OpsStatusBadge status={(event as any).ops_status} />
+                          <InvoiceStatusBadge 
+                            status={(event as any).invoice_status} 
+                            reference={(event as any).invoice_reference}
+                          />
+                        </>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="capitalize">{getEventTypeName(event)}</span>

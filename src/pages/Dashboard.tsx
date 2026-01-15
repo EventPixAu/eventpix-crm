@@ -126,7 +126,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Upcoming Events */}
+      {/* Upcoming Events/Jobs */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -134,7 +134,9 @@ export default function Dashboard() {
         className="bg-card border border-border rounded-xl shadow-card"
       >
         <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="text-lg font-display font-semibold">Upcoming Events</h2>
+          <h2 className="text-lg font-display font-semibold">
+            {isAdmin ? 'Upcoming Events' : 'My Upcoming Jobs'}
+          </h2>
           <Link to="/events" className="text-sm text-primary hover:underline">
             View all
           </Link>
@@ -147,7 +149,9 @@ export default function Dashboard() {
         ) : upcomingEvents.length === 0 ? (
           <div className="p-8 text-center">
             <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">No upcoming events</p>
+            <p className="text-muted-foreground">
+              {isAdmin ? 'No upcoming events' : 'No upcoming jobs assigned'}
+            </p>
             {isAdmin && (
               <Link to="/events/new">
                 <Button variant="outline" className="mt-4">
