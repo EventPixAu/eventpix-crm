@@ -183,7 +183,7 @@ export function useUpdateEventSeries() {
   });
 }
 
-// Fetch events by series
+// Fetch events by series with assignment counts
 export function useSeriesEvents(seriesId: string | undefined) {
   return useQuery({
     queryKey: ['series-events', seriesId],
@@ -195,7 +195,8 @@ export function useSeriesEvents(seriesId: string | undefined) {
         .select(`
           *,
           event_type:event_types(name),
-          delivery_method:delivery_methods_lookup(name)
+          delivery_method:delivery_methods_lookup(name),
+          event_assignments(id, user_id)
         `)
         .eq('event_series_id', seriesId)
         .order('event_date');
@@ -204,6 +205,94 @@ export function useSeriesEvents(seriesId: string | undefined) {
       return data;
     },
     enabled: !!seriesId,
+  });
+}
+
+// Staffing forecast for a series
+export interface StaffingForecast {
+  totalEvents: number;
+  upcomingEvents: number;
+  fullyStaffed: number;
+  understaffed: number;
+  overstaffed: number;
+  unassigned: number;
+  totalRequired: number;
+  totalAssigned: number;
+  events: Array<{
+    id: string;
+    event_name: string;
+    event_date: string;
+    venue_name: string | null;
+    city: string | null;
+    required: number;
+    assigned: number;
+    status: 'fully_staffed' | 'understaffed' | 'overstaffed' | 'unassigned';
+  }>;
+}
+
+export function useStaffingForecast(seriesId: string | undefined, defaultPhotographersRequired: number = 1) {
+  const { data: events = [] } = useSeriesEvents(seriesId);
+  
+  return useQuery({
+    queryKey: ['staffing-forecast', seriesId, defaultPhotographersRequired],
+    queryFn: async (): Promise<StaffingForecast> => {
+      const today = new Date().toISOString().split('T')[0];
+      const upcomingEvents = events.filter(e => e.event_date >= today);
+      
+      let fullyStaffed = 0;
+      let understaffed = 0;
+      let overstaffed = 0;
+      let unassigned = 0;
+      let totalRequired = 0;
+      let totalAssigned = 0;
+      
+      const forecastEvents = upcomingEvents.map(event => {
+        const required = defaultPhotographersRequired;
+        const assigned = event.event_assignments?.length || 0;
+        
+        totalRequired += required;
+        totalAssigned += assigned;
+        
+        let status: 'fully_staffed' | 'understaffed' | 'overstaffed' | 'unassigned';
+        if (assigned === 0) {
+          status = 'unassigned';
+          unassigned++;
+        } else if (assigned < required) {
+          status = 'understaffed';
+          understaffed++;
+        } else if (assigned > required) {
+          status = 'overstaffed';
+          overstaffed++;
+        } else {
+          status = 'fully_staffed';
+          fullyStaffed++;
+        }
+        
+        return {
+          id: event.id,
+          event_name: event.event_name,
+          event_date: event.event_date,
+          venue_name: event.venue_name,
+          city: event.city,
+          required,
+          assigned,
+          status,
+        };
+      });
+      
+      return {
+        totalEvents: events.length,
+        upcomingEvents: upcomingEvents.length,
+        fullyStaffed,
+        understaffed,
+        overstaffed,
+        unassigned,
+        totalRequired,
+        totalAssigned,
+        events: forecastEvents,
+      };
+    },
+    enabled: !!seriesId && events.length > 0,
   });
 }
 
