@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
-  Camera,
   ChevronDown,
   ClipboardList,
   FileCheck,
@@ -18,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import eventpixLogo from '@/assets/eventpix-logo.png';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -64,8 +64,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <Camera className="h-5 w-5 text-primary" />
-            <span className="font-display font-semibold">Eventpix</span>
+            <img src={eventpixLogo} alt="Eventpix" className="h-6" />
           </div>
           <div className="w-9" />
         </div>
@@ -90,10 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               className="fixed left-0 top-0 z-50 h-full w-[280px] bg-sidebar border-r border-sidebar-border lg:hidden"
             >
               <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-                <div className="flex items-center gap-2">
-                  <Camera className="h-6 w-6 text-primary" />
-                  <span className="font-display font-bold text-lg">Eventpix</span>
-                </div>
+                <img src={eventpixLogo} alt="Eventpix" className="h-7" />
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="p-2 text-muted-foreground hover:text-foreground"
@@ -140,8 +136,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:flex lg:h-screen lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
         <div className="flex items-center gap-2 p-6 border-b border-sidebar-border">
-          <Camera className="h-7 w-7 text-primary" />
-          <span className="font-display font-bold text-xl">Eventpix</span>
+          <img src={eventpixLogo} alt="Eventpix" className="h-8" />
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
