@@ -95,6 +95,7 @@ const adminNavItems = [
  */
 const photographerNavItems = [
   { href: '/', label: 'My Jobs', icon: Briefcase },
+  { href: '/my-job-sheets', label: 'Job Sheets', icon: FileText },
   { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
   { href: '/my-availability', label: 'My Availability', icon: CalendarCheck },
   { href: '/my-documents', label: 'My Documents', icon: FolderOpen },
