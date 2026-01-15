@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useSameDayEvents } from '@/hooks/useStaffAvailability';
 import { TodaysSchedule } from '@/components/TodaysSchedule';
+import { JobSheetEquipmentSection } from '@/components/JobSheetEquipmentSection';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -580,6 +581,18 @@ export default function EventDayOf() {
             </div>
           )}
         </motion.section>
+
+        {/* Equipment Section */}
+        {id && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mx-4 mb-4"
+          >
+            <JobSheetEquipmentSection eventId={id} />
+          </motion.section>
+        )}
 
         {/* Checklist */}
         <motion.section
