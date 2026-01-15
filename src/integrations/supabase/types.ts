@@ -283,6 +283,7 @@ export type Database = {
           file_size: number | null
           id: string
           mime_type: string | null
+          sort_order: number
           storage_path: string
         }
         Insert: {
@@ -292,6 +293,7 @@ export type Database = {
           file_size?: number | null
           id?: string
           mime_type?: string | null
+          sort_order?: number
           storage_path: string
         }
         Update: {
@@ -301,6 +303,7 @@ export type Database = {
           file_size?: number | null
           id?: string
           mime_type?: string | null
+          sort_order?: number
           storage_path?: string
         }
         Relationships: [

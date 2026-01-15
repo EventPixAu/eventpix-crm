@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback } from 'react';
-import { ImagePlus, Loader2, Trash2, X, Upload, CheckCircle2 } from 'lucide-react';
+import { ImagePlus, Loader2, Trash2, X, Upload, CheckCircle2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useGalleryAssets, useUploadGalleryAsset, useDeleteGalleryAsset, getPublicUrl } from '@/hooks/useGalleryAssets';
+import { useGalleryAssets, useUploadGalleryAsset, useDeleteGalleryAsset, useReorderGalleryAssets, getPublicUrl, GalleryAsset } from '@/hooks/useGalleryAssets';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,23 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface GalleryUploaderProps {
   eventId: string;
@@ -27,16 +44,120 @@ interface UploadingFile {
   status: 'pending' | 'uploading' | 'complete' | 'error';
 }
 
+interface SortableImageProps {
+  asset: GalleryAsset;
+  isAdmin: boolean;
+  onPreview: (url: string) => void;
+  onDelete: (asset: { id: string; storagePath: string }) => void;
+}
+
+function SortableImage({ asset, isAdmin, onPreview, onDelete }: SortableImageProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: asset.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const url = getPublicUrl(asset.storage_path);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted",
+        isDragging && "opacity-50 ring-2 ring-primary z-50"
+      )}
+    >
+      <img
+        src={url}
+        alt={asset.file_name}
+        className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+        onClick={() => onPreview(url)}
+        loading="lazy"
+      />
+      {isAdmin && (
+        <>
+          {/* Drag Handle */}
+          <button
+            {...attributes}
+            {...listeners}
+            className="absolute top-2 left-2 p-1.5 bg-background/90 text-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+          {/* Delete Button */}
+          <button
+            onClick={() => onDelete({ id: asset.id, storagePath: asset.storage_path })}
+            className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: assets = [], isLoading } = useGalleryAssets(eventId);
   const uploadMutation = useUploadGalleryAsset();
   const deleteMutation = useDeleteGalleryAsset();
+  const reorderMutation = useReorderGalleryAssets();
   
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; storagePath: string } | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+  const [localAssets, setLocalAssets] = useState<GalleryAsset[]>([]);
+
+  // Sync local assets with server assets
+  const displayAssets = localAssets.length > 0 ? localAssets : assets;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = assets.findIndex((item) => item.id === active.id);
+      const newIndex = assets.findIndex((item) => item.id === over.id);
+      
+      const newOrder = arrayMove(assets, oldIndex, newIndex);
+      setLocalAssets(newOrder);
+      
+      // Persist the new order
+      reorderMutation.mutate(
+        { eventId, orderedIds: newOrder.map(a => a.id) },
+        {
+          onSuccess: () => {
+            setLocalAssets([]);
+          },
+          onError: () => {
+            setLocalAssets([]);
+          },
+        }
+      );
+    }
+  }, [assets, eventId, reorderMutation]);
 
   const processFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files).filter(f => f.type.startsWith('image/'));
@@ -111,7 +232,7 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
     }
   };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDropZoneDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isAdmin) {
@@ -119,13 +240,13 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
     }
   }, [isAdmin]);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDropZoneDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDropZoneDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -166,7 +287,12 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-medium text-foreground">Gallery Images</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="font-medium text-foreground">Gallery Images</h4>
+          {isAdmin && displayAssets.length > 1 && (
+            <span className="text-xs text-muted-foreground">(drag to reorder)</span>
+          )}
+        </div>
         {isAdmin && (
           <>
             <input
@@ -236,15 +362,15 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
       {/* Drag and Drop Zone */}
       {isAdmin && (
         <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          onDragOver={handleDropZoneDragOver}
+          onDragLeave={handleDropZoneDragLeave}
+          onDrop={handleDropZoneDrop}
           className={cn(
             "border-2 border-dashed rounded-xl transition-all duration-200 cursor-pointer",
             isDragOver 
               ? "border-primary bg-primary/5 scale-[1.02]" 
               : "border-border hover:border-primary/50",
-            assets.length === 0 ? "py-12" : "py-6"
+            displayAssets.length === 0 ? "py-12" : "py-6"
           )}
           onClick={() => fileInputRef.current?.click()}
         >
@@ -272,39 +398,34 @@ export function GalleryUploader({ eventId, isAdmin }: GalleryUploaderProps) {
       )}
 
       {/* Empty state for non-admin */}
-      {!isAdmin && assets.length === 0 && (
+      {!isAdmin && displayAssets.length === 0 && (
         <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
           <ImagePlus className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">No images uploaded yet</p>
         </div>
       )}
 
-      {/* Image Grid */}
-      {assets.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {assets.map((asset) => {
-            const url = getPublicUrl(asset.storage_path);
-            return (
-              <div key={asset.id} className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted">
-                <img
-                  src={url}
-                  alt={asset.file_name}
-                  className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
-                  onClick={() => setPreviewImage(url)}
-                  loading="lazy"
+      {/* Image Grid with Drag & Drop */}
+      {displayAssets.length > 0 && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={displayAssets.map(a => a.id)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {displayAssets.map((asset) => (
+                <SortableImage
+                  key={asset.id}
+                  asset={asset}
+                  isAdmin={isAdmin}
+                  onPreview={setPreviewImage}
+                  onDelete={setDeleteTarget}
                 />
-                {isAdmin && (
-                  <button
-                    onClick={() => setDeleteTarget({ id: asset.id, storagePath: asset.storage_path })}
-                    className="absolute top-2 right-2 p-1.5 bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Delete Confirmation */}
