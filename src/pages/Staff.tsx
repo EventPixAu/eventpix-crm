@@ -270,7 +270,7 @@ export default function Staff() {
                         />
                       )}
                       <Link
-                        to={member.user_id ? `/staff/${member.user_id}` : '#'}
+                        to={`/staff/${member.user_id || member.id}`}
                         className="flex items-start gap-4 flex-1 min-w-0"
                       >
                         <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -284,9 +284,7 @@ export default function Staff() {
                               <h3 className="font-medium truncate">{member.name}</h3>
                               <StatusBadge status={member.status} />
                             </div>
-                            {member.user_id && (
-                              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                            )}
+                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           </div>
                           <p className="text-sm text-muted-foreground capitalize mb-3">
                             {member.role}

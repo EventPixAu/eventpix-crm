@@ -73,15 +73,14 @@ export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, user } = useAuth();
   
-  // Users can edit their own avatar, admins can edit any
-  const canEditAvatar = user?.id === id || isAdmin;
-
-  // Fetch profile
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  // First try to find a profile with this ID
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['staff-profile', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase
+      
+      // First try to find directly in profiles table
+      const { data: profileData, error: profileErr } = await supabase
         .from('profiles')
         .select(`
           id, full_name, email, phone, avatar_url, 
@@ -92,19 +91,77 @@ export default function StaffDetail() {
           default_role:staff_roles(name)
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      return data as StaffProfile;
+      if (profileData) {
+        return profileData as StaffProfile;
+      }
+      
+      // If not found, check if this is a staff table ID and get the linked user_id
+      const { data: staffData, error: staffErr } = await supabase
+        .from('staff')
+        .select('user_id, name, email, phone, role, status')
+        .eq('id', id)
+        .maybeSingle();
+      
+      if (staffData?.user_id) {
+        // Fetch the linked profile
+        const { data: linkedProfile, error: linkedErr } = await supabase
+          .from('profiles')
+          .select(`
+            id, full_name, email, phone, avatar_url, 
+            home_city, home_state, status, seniority,
+            onboarding_status, travel_ready, 
+            preferred_start_time, preferred_end_time,
+            notes_internal, default_role_id,
+            default_role:staff_roles(name)
+          `)
+          .eq('id', staffData.user_id)
+          .single();
+        
+        if (linkedProfile) {
+          return linkedProfile as StaffProfile;
+        }
+      }
+      
+      // If we have staff data but no profile, create a minimal profile object
+      if (staffData) {
+        return {
+          id: id,
+          full_name: staffData.name,
+          email: staffData.email,
+          phone: staffData.phone,
+          avatar_url: null,
+          home_city: null,
+          home_state: null,
+          status: staffData.status,
+          seniority: null,
+          onboarding_status: 'incomplete',
+          travel_ready: null,
+          preferred_start_time: null,
+          preferred_end_time: null,
+          notes_internal: null,
+          default_role_id: null,
+          default_role: { name: staffData.role },
+        } as StaffProfile;
+      }
+      
+      return null;
     },
     enabled: !!id,
   });
+  
+  // Determine the actual user ID for related queries (might be different from route ID)
+  const actualUserId = profile?.id || id;
+  
+  // Users can edit their own avatar, admins can edit any
+  const canEditAvatar = user?.id === actualUserId || isAdmin;
 
   // Fetch assignment history
   const { data: assignments, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ['staff-assignments', id],
+    queryKey: ['staff-assignments', actualUserId],
     queryFn: async () => {
-      if (!id) return [];
+      if (!actualUserId) return [];
       const { data, error } = await supabase
         .from('event_assignments')
         .select(`
@@ -113,22 +170,22 @@ export default function StaffDetail() {
             event_name, event_date, client_name, ops_status
           )
         `)
-        .eq('user_id', id)
+        .eq('user_id', actualUserId)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
       return data as Assignment[];
     },
-    enabled: !!id,
+    enabled: !!actualUserId && !!profile,
   });
 
   // Rates
-  const { data: rates, isLoading: ratesLoading } = useStaffRatesByUser(id);
+  const { data: rates, isLoading: ratesLoading } = useStaffRatesByUser(actualUserId);
 
   // Feedback
-  const { data: feedbackHistory, isLoading: feedbackLoading } = useStaffFeedbackHistory(id);
-  const { data: performanceSummary } = useStaffPerformanceSummary(id);
+  const { data: feedbackHistory, isLoading: feedbackLoading } = useStaffFeedbackHistory(actualUserId);
+  const { data: performanceSummary } = useStaffPerformanceSummary(actualUserId);
 
   if (!id) {
     return (
@@ -153,11 +210,20 @@ export default function StaffDetail() {
   if (!profile) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Staff member not found</div>
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
+            <Link to="/staff">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Staff
+            </Link>
+          </Button>
+        </div>
+        <div className="text-center py-12 text-muted-foreground">
+          Staff member not found. They may not have a linked user account yet.
+        </div>
       </AppLayout>
     );
   }
-
   const onboardingStatus = profile.onboarding_status as OnboardingStatus;
   const onboardingConfig = ONBOARDING_STATUS_CONFIG[onboardingStatus] || ONBOARDING_STATUS_CONFIG.incomplete;
 

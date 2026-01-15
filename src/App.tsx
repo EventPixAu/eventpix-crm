@@ -38,6 +38,7 @@ import Equipment from "./pages/Equipment";
 import StaffMe from "./pages/StaffMe";
 import MyJobSheets from "./pages/MyJobSheets";
 import ClientList from "./pages/sales/ClientList";
+import ClientDetail from "./pages/sales/ClientDetail";
 import LeadList from "./pages/sales/LeadList";
 import QuoteList from "./pages/sales/QuoteList";
 import QuoteDetail from "./pages/sales/QuoteDetail";
@@ -111,6 +112,7 @@ function AppRoutes() {
       <Route path="/equipment" element={<ProtectedRoute><Equipment /></ProtectedRoute>} />
       {/* Sales Routes */}
       <Route path="/sales/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
+      <Route path="/sales/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
       <Route path="/sales/leads" element={<ProtectedRoute><LeadList /></ProtectedRoute>} />
       <Route path="/sales/quotes" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
       <Route path="/sales/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
