@@ -109,7 +109,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
     
     // Log override if there were warnings
     if (hasWarnings && overrideConfirmed) {
-      await logAuditEntry({
+      logAuditEntry.mutate({
         action: 'assignment_override',
         eventId,
         after: {
