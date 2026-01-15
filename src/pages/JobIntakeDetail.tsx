@@ -1,7 +1,13 @@
+/**
+ * SALES BOUNDARY: Job Intake Detail
+ * 
+ * Displays a single job intake record from the Sales → Operations handoff queue.
+ * After conversion to Event, the job intake becomes READ-ONLY (enforced by DB trigger).
+ */
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, FileText, Calendar, Building2, Mail, ExternalLink, Trash2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Building2, Mail, ExternalLink, Trash2, ArrowRight, CheckCircle2, Clock, ArrowRightCircle, XCircle, Lock } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +43,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useJobIntake, useUpdateJobIntake, useConvertJobToEvent } from '@/hooks/useJobIntake';
+import { useJobIntake, useUpdateJobIntake, useConvertJobToEvent, useMarkReadyForOps, HandoffStatus } from '@/hooks/useJobIntake';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 
 export default function JobIntakeDetail() {
@@ -47,6 +54,7 @@ export default function JobIntakeDetail() {
   const { data: deliveryMethods } = useDeliveryMethods();
   const updateIntake = useUpdateJobIntake();
   const convertToEvent = useConvertJobToEvent();
+  const markReadyForOps = useMarkReadyForOps();
 
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
   const [eventData, setEventData] = useState({
@@ -113,20 +121,34 @@ export default function JobIntakeDetail() {
     await updateIntake.mutateAsync({
       id: intake.id,
       status: 'cancelled',
+      handoff_status: 'cancelled',
     });
   };
 
-  const getStatusVariant = (status: string) => {
+  const handleMarkReady = async () => {
+    await markReadyForOps.mutateAsync(intake.id);
+  };
+
+  const getHandoffStatusBadge = (status: HandoffStatus) => {
     switch (status) {
-      case 'proposed': return 'info';
-      case 'accepted': return 'success';
-      case 'cancelled': return 'error';
-      default: return 'default';
+      case 'draft':
+        return { label: 'Draft', icon: Clock, className: 'bg-muted text-muted-foreground border-muted' };
+      case 'ready_for_ops':
+        return { label: 'Ready for Ops', icon: ArrowRightCircle, className: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/50' };
+      case 'converted':
+        return { label: 'Converted', icon: CheckCircle2, className: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/50' };
+      case 'cancelled':
+        return { label: 'Cancelled', icon: XCircle, className: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/50' };
+      default:
+        return { label: status, icon: Clock, className: '' };
     }
   };
 
-  const isConverted = intake.status === 'accepted';
-  const isCancelled = intake.status === 'cancelled';
+  const isConverted = intake.handoff_status === 'converted';
+  const isCancelled = intake.handoff_status === 'cancelled';
+  const isDraft = intake.handoff_status === 'draft';
+  const isReadyForOps = intake.handoff_status === 'ready_for_ops';
+  const canConvert = isReadyForOps || isDraft; // Allow conversion from draft for backward compatibility
 
   return (
     <AppLayout>
@@ -139,15 +161,22 @@ export default function JobIntakeDetail() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">{intake.job_name}</h1>
-              <Badge variant="secondary" className={
-                getStatusVariant(intake.status) === 'success' 
-                  ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/50'
-                  : getStatusVariant(intake.status) === 'error'
-                  ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/50'
-                  : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/50'
-              }>
-                {intake.status}
-              </Badge>
+              {(() => {
+                const badge = getHandoffStatusBadge(intake.handoff_status);
+                const IconComponent = badge.icon;
+                return (
+                  <Badge variant="secondary" className={badge.className}>
+                    <IconComponent className="h-3 w-3 mr-1" />
+                    {badge.label}
+                  </Badge>
+                );
+              })()}
+              {isConverted && (
+                <Badge variant="outline" className="text-muted-foreground">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Read-only
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground">{intake.client_name}</p>
           </div>
@@ -155,6 +184,18 @@ export default function JobIntakeDetail() {
         
         {!isConverted && !isCancelled && (
           <div className="flex gap-2">
+            {/* Mark Ready for Ops button - only show for drafts */}
+            {isDraft && (
+              <Button 
+                variant="outline" 
+                onClick={handleMarkReady}
+                disabled={markReadyForOps.isPending}
+              >
+                <ArrowRightCircle className="h-4 w-4 mr-2" />
+                Mark Ready for Ops
+              </Button>
+            )}
+            
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" className="text-destructive">
@@ -180,16 +221,16 @@ export default function JobIntakeDetail() {
 
             <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button disabled={!canConvert}>
                   <ArrowRight className="h-4 w-4 mr-2" />
                   Convert to Event
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Convert to Event</DialogTitle>
+                  <DialogTitle>Sales → Operations Handoff</DialogTitle>
                   <DialogDescription>
-                    Create an event from this job intake. You can fill in additional details now or later.
+                    Create an event from this job. After conversion, the job intake record becomes read-only.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto">

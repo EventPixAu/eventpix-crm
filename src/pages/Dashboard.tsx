@@ -1,3 +1,14 @@
+/**
+ * OPERATIONS PLATFORM - Dashboard
+ * 
+ * ADMIN VIEW: Operations overview (today's events, upcoming, staff, attention queue)
+ * PHOTOGRAPHER VIEW: My Jobs focus (assigned events only, personal schedule)
+ * 
+ * SYSTEM BOUNDARIES:
+ * - NO client details visible to photographers
+ * - NO invoice/cost data shown to photographers (enforced by RLS)
+ * - NO sales metrics or CRM data
+ */
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format, isToday, isFuture, isPast, parseISO } from 'date-fns';
@@ -9,7 +20,8 @@ import {
   Clock, 
   MapPin, 
   Package, 
-  Users 
+  Users,
+  Briefcase 
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -19,26 +31,22 @@ import { Button } from '@/components/ui/button';
 import { NeedsAttentionQueue } from '@/components/NeedsAttentionQueue';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
-import { useStaff } from '@/hooks/useStaff';
 
 export default function Dashboard() {
   const { isAdmin, user } = useAuth();
   const { data: events = [], isLoading: eventsLoading } = useEvents();
-  const { data: staff = [], isLoading: staffLoading } = useStaff();
 
+  // Stats calculation - admin only sees full stats
   const stats = useMemo(() => {
-    const now = new Date();
     const todayEvents = events.filter(e => isToday(parseISO(e.event_date)));
     const upcomingEvents = events.filter(e => isFuture(parseISO(e.event_date)));
-    const activeStaff = staff.filter(s => s.status === 'active');
 
     return {
       totalEvents: events.length,
       todayEvents: todayEvents.length,
       upcomingEvents: upcomingEvents.length,
-      activeStaff: activeStaff.length,
     };
-  }, [events, staff]);
+  }, [events]);
 
   const upcomingEvents = useMemo(() => {
     return events
@@ -59,8 +67,11 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <PageHeader
-        title={isAdmin ? 'Admin Dashboard' : 'My Dashboard'}
-        description={`Welcome back${user?.email ? `, ${user.email.split('@')[0]}` : ''}`}
+        title={isAdmin ? 'Operations Dashboard' : 'My Jobs'}
+        description={isAdmin 
+          ? `Operations overview${user?.email ? ` - ${user.email.split('@')[0]}` : ''}`
+          : 'Your upcoming assignments'
+        }
         actions={
           isAdmin && (
             <Link to="/events/new">
@@ -73,9 +84,9 @@ export default function Dashboard() {
         }
       />
 
-      {/* Stats Grid */}
+      {/* Stats Grid - Admin Only */}
       {isAdmin && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -112,16 +123,34 @@ export default function Dashboard() {
               variant="default"
             />
           </motion.div>
+        </div>
+      )}
+
+      {/* Photographer Stats - Simpler view */}
+      {!isAdmin && (
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.1 }}
           >
             <StatCard
-              title="Active Staff"
-              value={stats.activeStaff}
-              icon={Users}
-              variant="success"
+              title="Today"
+              value={stats.todayEvents}
+              icon={Briefcase}
+              variant="primary"
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <StatCard
+              title="Coming Up"
+              value={stats.upcomingEvents}
+              icon={Calendar}
+              variant="default"
             />
           </motion.div>
         </div>

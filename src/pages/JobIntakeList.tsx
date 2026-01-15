@@ -1,7 +1,14 @@
+/**
+ * SALES BOUNDARY: Job Intake List
+ * 
+ * This page manages the Sales → Operations handoff queue.
+ * Jobs come from external CRM (Studio Ninja) and are converted to Events.
+ * This is NOT a CRM - no client communications or quoting here.
+ */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Plus, FileText, ArrowRight, Mail, Calendar, Building2, Search } from 'lucide-react';
+import { Plus, FileText, ArrowRight, Mail, Calendar, Building2, Search, CheckCircle2, Clock, XCircle, ArrowRightCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -25,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useJobIntakes, useCreateJobIntake, JobIntake } from '@/hooks/useJobIntake';
+import { useJobIntakes, useCreateJobIntake, JobIntake, HandoffStatus } from '@/hooks/useJobIntake';
 
 export default function JobIntakeList() {
   const navigate = useNavigate();
@@ -48,7 +55,8 @@ export default function JobIntakeList() {
     const matchesSearch = 
       intake.client_name.toLowerCase().includes(search.toLowerCase()) ||
       intake.job_name.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || intake.status === statusFilter;
+    // Use handoff_status as authoritative filter
+    const matchesStatus = statusFilter === 'all' || intake.handoff_status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -56,7 +64,8 @@ export default function JobIntakeList() {
     await createIntake.mutateAsync({
       ...formData,
       source: 'studio_ninja',
-      status: 'proposed',
+      status: 'proposed', // Legacy field
+      handoff_status: 'draft', // New authoritative field - starts as draft
       proposed_event_date: formData.proposed_event_date || null,
       external_job_id: formData.external_job_id || null,
       notes: formData.notes || null,
@@ -73,12 +82,18 @@ export default function JobIntakeList() {
     });
   };
 
-  const getStatusVariant = (status: string) => {
+  const getHandoffStatusBadge = (status: HandoffStatus) => {
     switch (status) {
-      case 'proposed': return 'info';
-      case 'accepted': return 'success';
-      case 'cancelled': return 'error';
-      default: return 'default';
+      case 'draft':
+        return { label: 'Draft', icon: Clock, className: 'bg-muted text-muted-foreground border-muted' };
+      case 'ready_for_ops':
+        return { label: 'Ready for Ops', icon: ArrowRightCircle, className: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/50' };
+      case 'converted':
+        return { label: 'Converted', icon: CheckCircle2, className: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/50' };
+      case 'cancelled':
+        return { label: 'Cancelled', icon: XCircle, className: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/50' };
+      default:
+        return { label: status, icon: Clock, className: '' };
     }
   };
 
@@ -189,35 +204,44 @@ export default function JobIntakeList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="proposed">Proposed</SelectItem>
-            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="ready_for_ops">Ready for Ops</SelectItem>
+            <SelectItem value="converted">Converted</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      {/* Stats - Using handoff_status as authoritative */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold">
-              {intakes?.filter(i => i.status === 'proposed').length || 0}
+            <div className="text-2xl font-bold text-muted-foreground">
+              {intakes?.filter(i => i.handoff_status === 'draft').length || 0}
             </div>
-            <p className="text-sm text-muted-foreground">Pending</p>
+            <p className="text-sm text-muted-foreground">Draft</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {intakes?.filter(i => i.handoff_status === 'ready_for_ops').length || 0}
+            </div>
+            <p className="text-sm text-muted-foreground">Ready for Ops</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-green-600">
-              {intakes?.filter(i => i.status === 'accepted').length || 0}
+              {intakes?.filter(i => i.handoff_status === 'converted').length || 0}
             </div>
             <p className="text-sm text-muted-foreground">Converted</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-muted-foreground">
-              {intakes?.filter(i => i.status === 'cancelled').length || 0}
+            <div className="text-2xl font-bold text-red-600">
+              {intakes?.filter(i => i.handoff_status === 'cancelled').length || 0}
             </div>
             <p className="text-sm text-muted-foreground">Cancelled</p>
           </CardContent>
@@ -256,15 +280,16 @@ export default function JobIntakeList() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-medium truncate">{intake.job_name}</h3>
-                      <Badge variant={getStatusVariant(intake.status) === 'success' ? 'default' : 'secondary'} className={
-                        getStatusVariant(intake.status) === 'success' 
-                          ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/50'
-                          : getStatusVariant(intake.status) === 'error'
-                          ? 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/50'
-                          : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/50'
-                      }>
-                        {intake.status}
-                      </Badge>
+                      {(() => {
+                        const badge = getHandoffStatusBadge(intake.handoff_status);
+                        const IconComponent = badge.icon;
+                        return (
+                          <Badge variant="secondary" className={badge.className}>
+                            <IconComponent className="h-3 w-3 mr-1" />
+                            {badge.label}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">

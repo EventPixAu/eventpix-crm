@@ -899,6 +899,7 @@ export type Database = {
           converted_by: string | null
           created_at: string | null
           external_job_id: string | null
+          handoff_status: Database["public"]["Enums"]["handoff_status"]
           id: string
           job_name: string
           notes: string | null
@@ -914,6 +915,7 @@ export type Database = {
           converted_by?: string | null
           created_at?: string | null
           external_job_id?: string | null
+          handoff_status?: Database["public"]["Enums"]["handoff_status"]
           id?: string
           job_name: string
           notes?: string | null
@@ -929,6 +931,7 @@ export type Database = {
           converted_by?: string | null
           created_at?: string | null
           external_job_id?: string | null
+          handoff_status?: Database["public"]["Enums"]["handoff_status"]
           id?: string
           job_name?: string
           notes?: string | null
@@ -1634,6 +1637,7 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
+      is_photographer: { Args: { _user_id: string }; Returns: boolean }
       log_audit_entry: {
         Args: {
           p_action: Database["public"]["Enums"]["audit_action"]
@@ -1677,6 +1681,7 @@ export type Database = {
         | "private"
         | "sports"
         | "other"
+      handoff_status: "draft" | "ready_for_ops" | "converted" | "cancelled"
       staff_role: "photographer" | "videographer" | "assistant"
       staff_status: "active" | "inactive"
       workflow_phase: "pre_event" | "day_of" | "post_event"
@@ -1842,6 +1847,7 @@ export const Constants = {
         "sports",
         "other",
       ],
+      handoff_status: ["draft", "ready_for_ops", "converted", "cancelled"],
       staff_role: ["photographer", "videographer", "assistant"],
       staff_status: ["active", "inactive"],
       workflow_phase: ["pre_event", "day_of", "post_event"],
