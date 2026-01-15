@@ -62,6 +62,22 @@ export function useStaffRoles() {
   });
 }
 
+// Fetch all profiles for assignment
+export function useProfiles() {
+  return useQuery({
+    queryKey: ['profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('full_name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 // Legacy hook - still reads from staff table for backward compatibility
 export interface Staff {
   id: string;

@@ -26,6 +26,7 @@ interface AppLayoutProps {
 const adminNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/events', label: 'Events', icon: Calendar },
+  { href: '/admin/series', label: 'Series', icon: FileCheck },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },

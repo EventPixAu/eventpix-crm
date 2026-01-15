@@ -247,6 +247,60 @@ export type Database = {
           },
         ]
       }
+      event_series: {
+        Row: {
+          created_at: string | null
+          default_coverage_details: string | null
+          default_delivery_deadline_days: number | null
+          default_delivery_method_id: string | null
+          event_type_id: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_coverage_details?: string | null
+          default_delivery_deadline_days?: number | null
+          default_delivery_method_id?: string | null
+          event_type_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_coverage_details?: string | null
+          default_delivery_deadline_days?: number | null
+          default_delivery_method_id?: string | null
+          event_type_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_series_default_delivery_method_id_fkey"
+            columns: ["default_delivery_method_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_series_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_type_workflow_defaults: {
         Row: {
           created_at: string | null
@@ -315,6 +369,7 @@ export type Database = {
           end_time: string | null
           event_date: string
           event_name: string
+          event_series_id: string | null
           event_type: Database["public"]["Enums"]["event_type"]
           event_type_id: string | null
           id: string
@@ -342,6 +397,7 @@ export type Database = {
           end_time?: string | null
           event_date: string
           event_name: string
+          event_series_id?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
@@ -369,6 +425,7 @@ export type Database = {
           end_time?: string | null
           event_date?: string
           event_name?: string
+          event_series_id?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
@@ -387,6 +444,13 @@ export type Database = {
             columns: ["delivery_method_id"]
             isOneToOne: false
             referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_event_series_id_fkey"
+            columns: ["event_series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
             referencedColumns: ["id"]
           },
           {
