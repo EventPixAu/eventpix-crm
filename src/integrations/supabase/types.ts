@@ -101,7 +101,7 @@ export type Database = {
           notes: string | null
           notified: boolean | null
           role_on_event: string | null
-          staff_id: string
+          staff_id: string | null
           staff_role_id: string | null
           user_id: string | null
         }
@@ -113,7 +113,7 @@ export type Database = {
           notes?: string | null
           notified?: boolean | null
           role_on_event?: string | null
-          staff_id: string
+          staff_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
         }
@@ -125,7 +125,7 @@ export type Database = {
           notes?: string | null
           notified?: boolean | null
           role_on_event?: string | null
-          staff_id?: string
+          staff_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
         }

@@ -2,6 +2,67 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Profile-based staff (users with photographer role or any authenticated user for assignment)
+export interface StaffProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  status: string | null;
+  default_role_id: string | null;
+  default_role?: StaffRole | null;
+}
+
+export interface StaffRole {
+  id: string;
+  name: string;
+}
+
+// Fetch all profiles that can be assigned to events (active status)
+export function useStaffProfiles() {
+  return useQuery({
+    queryKey: ['staff-profiles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          phone,
+          status,
+          default_role_id,
+          default_role:staff_roles!profiles_default_role_id_fkey (
+            id,
+            name
+          )
+        `)
+        .or('status.is.null,status.eq.active')
+        .order('full_name');
+      
+      if (error) throw error;
+      return data as StaffProfile[];
+    },
+  });
+}
+
+// Fetch staff roles lookup
+export function useStaffRoles() {
+  return useQuery({
+    queryKey: ['staff-roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_roles')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data as StaffRole[];
+    },
+  });
+}
+
+// Legacy hook - still reads from staff table for backward compatibility
 export interface Staff {
   id: string;
   user_id: string | null;

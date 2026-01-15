@@ -251,24 +251,31 @@ export default function EventDetail() {
               <p className="text-muted-foreground text-sm">No staff assigned yet</p>
             ) : (
               <div className="space-y-3">
-                {assignments.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">
-                        {assignment.staff?.name?.[0] || '?'}
-                      </span>
+                {assignments.map((assignment) => {
+                  // Support both new profile-based and legacy staff-based assignments
+                  const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
+                  const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
+                  const initial = name.charAt(0).toUpperCase();
+                  
+                  return (
+                    <div
+                      key={assignment.id}
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">
+                          {initial}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{name}</p>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {role}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{assignment.staff?.name}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {assignment.role_on_event || assignment.staff?.role}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

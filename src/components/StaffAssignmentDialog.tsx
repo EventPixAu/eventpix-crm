@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useStaff } from '@/hooks/useStaff';
+import { useStaffProfiles, useStaffRoles } from '@/hooks/useStaff';
 import { useCreateAssignment, useDeleteAssignment, type EventAssignment } from '@/hooks/useEvents';
 
 interface StaffAssignmentDialogProps {
@@ -28,32 +28,59 @@ interface StaffAssignmentDialogProps {
 
 export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedStaff, setSelectedStaff] = useState('');
-  const [roleOnEvent, setRoleOnEvent] = useState('');
-  const { data: allStaff = [] } = useStaff();
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [assignmentNotes, setAssignmentNotes] = useState('');
+  
+  const { data: profiles = [] } = useStaffProfiles();
+  const { data: roles = [] } = useStaffRoles();
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
 
-  const assignedStaffIds = assignments.map((a) => a.staff_id);
-  const availableStaff = allStaff.filter(
-    (staff) => !assignedStaffIds.includes(staff.id) && staff.status === 'active'
+  // Get assigned user IDs (supporting both new user_id and legacy staff_id)
+  const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
+  const availableProfiles = profiles.filter(
+    (profile) => !assignedUserIds.includes(profile.id)
   );
 
   const handleAssign = async () => {
-    if (!selectedStaff) return;
+    if (!selectedUser) return;
 
     await createAssignment.mutateAsync({
       event_id: eventId,
-      staff_id: selectedStaff,
-      role_on_event: roleOnEvent || null,
+      user_id: selectedUser,
+      staff_role_id: selectedRole || undefined,
+      assignment_notes: assignmentNotes || undefined,
     });
 
-    setSelectedStaff('');
-    setRoleOnEvent('');
+    setSelectedUser('');
+    setSelectedRole('');
+    setAssignmentNotes('');
   };
 
   const handleRemove = async (assignmentId: string) => {
     await deleteAssignment.mutateAsync({ id: assignmentId, eventId });
+  };
+
+  // Helper to get display name from assignment
+  const getAssignmentName = (assignment: EventAssignment): string => {
+    if (assignment.profile?.full_name) return assignment.profile.full_name;
+    if (assignment.staff?.name) return assignment.staff.name;
+    return assignment.profile?.email || 'Unknown';
+  };
+
+  // Helper to get role display from assignment
+  const getAssignmentRole = (assignment: EventAssignment): string => {
+    if (assignment.staff_role?.name) return assignment.staff_role.name;
+    if (assignment.role_on_event) return assignment.role_on_event;
+    if (assignment.staff?.role) return assignment.staff.role;
+    return 'Staff';
+  };
+
+  // Helper to get initials
+  const getInitials = (assignment: EventAssignment): string => {
+    const name = getAssignmentName(assignment);
+    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -87,13 +114,13 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="text-xs font-medium text-primary">
-                        {assignment.staff?.name?.[0] || '?'}
+                        {getInitials(assignment)}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{assignment.staff?.name}</p>
+                      <p className="text-sm font-medium">{getAssignmentName(assignment)}</p>
                       <p className="text-xs text-muted-foreground capitalize">
-                        {assignment.role_on_event || assignment.staff?.role}
+                        {getAssignmentRole(assignment)}
                       </p>
                     </div>
                   </div>
@@ -114,34 +141,49 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
         {/* Add New Assignment */}
         <div className="space-y-3 pt-4 border-t">
           <Label>Add Staff Member</Label>
-          <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+          <Select value={selectedUser} onValueChange={setSelectedUser}>
             <SelectTrigger>
               <SelectValue placeholder="Select staff member" />
             </SelectTrigger>
             <SelectContent>
-              {availableStaff.length === 0 ? (
+              {availableProfiles.length === 0 ? (
                 <SelectItem value="none" disabled>
                   No available staff
                 </SelectItem>
               ) : (
-                availableStaff.map((staff) => (
-                  <SelectItem key={staff.id} value={staff.id}>
-                    {staff.name} ({staff.role})
+                availableProfiles.map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.full_name || profile.email}
+                    {profile.default_role?.name && ` (${profile.default_role.name})`}
                   </SelectItem>
                 ))
               )}
             </SelectContent>
           </Select>
 
-          <Input
-            placeholder="Role on event (optional)"
-            value={roleOnEvent}
-            onChange={(e) => setRoleOnEvent(e.target.value)}
+          <Select value={selectedRole} onValueChange={setSelectedRole}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select role on event" />
+            </SelectTrigger>
+            <SelectContent>
+              {roles.map((role) => (
+                <SelectItem key={role.id} value={role.id}>
+                  {role.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Textarea
+            placeholder="Assignment notes (optional)"
+            value={assignmentNotes}
+            onChange={(e) => setAssignmentNotes(e.target.value)}
+            rows={2}
           />
 
           <Button
             onClick={handleAssign}
-            disabled={!selectedStaff || createAssignment.isPending}
+            disabled={!selectedUser || createAssignment.isPending}
             className="w-full"
           >
             <UserPlus className="h-4 w-4 mr-2" />
