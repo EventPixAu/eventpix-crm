@@ -373,9 +373,13 @@ export type Database = {
           event_type: Database["public"]["Enums"]["event_type"]
           event_type_id: string | null
           id: string
+          invoice_reference: string | null
+          invoice_status: string | null
+          job_intake_id: string | null
           notes: string | null
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
+          ops_status: string | null
           start_at: string | null
           start_time: string | null
           updated_at: string | null
@@ -401,9 +405,13 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
+          invoice_reference?: string | null
+          invoice_status?: string | null
+          job_intake_id?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
+          ops_status?: string | null
           start_at?: string | null
           start_time?: string | null
           updated_at?: string | null
@@ -429,9 +437,13 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
+          invoice_reference?: string | null
+          invoice_status?: string | null
+          job_intake_id?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
+          ops_status?: string | null
           start_at?: string | null
           start_time?: string | null
           updated_at?: string | null
@@ -458,6 +470,13 @@ export type Database = {
             columns: ["event_type_id"]
             isOneToOne: false
             referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_job_intake_id_fkey"
+            columns: ["job_intake_id"]
+            isOneToOne: false
+            referencedRelation: "job_intake"
             referencedColumns: ["id"]
           },
         ]
@@ -508,6 +527,106 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_intake: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          converted_at: string | null
+          converted_by: string | null
+          created_at: string | null
+          external_job_id: string | null
+          id: string
+          job_name: string
+          notes: string | null
+          proposed_event_date: string | null
+          source: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_name: string
+          converted_at?: string | null
+          converted_by?: string | null
+          created_at?: string | null
+          external_job_id?: string | null
+          id?: string
+          job_name: string
+          notes?: string | null
+          proposed_event_date?: string | null
+          source?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          converted_at?: string | null
+          converted_by?: string | null
+          created_at?: string | null
+          external_job_id?: string | null
+          id?: string
+          job_name?: string
+          notes?: string | null
+          proposed_event_date?: string | null
+          source?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_intake_converted_by_fkey"
+            columns: ["converted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_base: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

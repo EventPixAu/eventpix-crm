@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
-  ChevronDown,
   ClipboardList,
   FileCheck,
   Home,
@@ -13,6 +12,8 @@ import {
   Settings,
   Users,
   X,
+  FileText,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -26,17 +27,20 @@ interface AppLayoutProps {
 const adminNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/events', label: 'Events', icon: Calendar },
+  { href: '/job-intake', label: 'Job Intake', icon: FileText },
   { href: '/admin/series', label: 'Series', icon: FileCheck },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
   { href: '/admin/event-types', label: 'Event Types', icon: Settings },
   { href: '/delivery', label: 'Delivery', icon: Package },
+  { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
 ];
 
 const photographerNavItems = [
-  { href: '/', label: 'My Events', icon: Home },
+  { href: '/', label: 'My Jobs', icon: Home },
   { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
+  { href: '/knowledge-base', label: 'Help & Guides', icon: BookOpen },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {
