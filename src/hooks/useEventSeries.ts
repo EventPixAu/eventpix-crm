@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface EventSeries {
   id: string;
@@ -9,11 +10,25 @@ export interface EventSeries {
   default_coverage_details: string | null;
   default_delivery_method_id: string | null;
   default_delivery_deadline_days: number | null;
+  default_photographers_required: number | null;
+  default_roles_json: Json | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
+
+export type CreateEventSeriesInput = {
+  name: string;
+  event_type_id?: string | null;
+  default_coverage_details?: string | null;
+  default_delivery_method_id?: string | null;
+  default_delivery_deadline_days?: number | null;
+  default_photographers_required?: number | null;
+  default_roles_json?: Json | null;
+  notes?: string | null;
+  is_active?: boolean;
+};
 
 export interface EventSeriesWithStats extends EventSeries {
   event_count: number;
@@ -125,7 +140,7 @@ export function useCreateEventSeries() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: Omit<EventSeries, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (data: CreateEventSeriesInput) => {
       const { data: series, error } = await supabase
         .from('event_series')
         .insert(data)
@@ -150,7 +165,7 @@ export function useUpdateEventSeries() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<EventSeries> & { id: string }) => {
+    mutationFn: async ({ id, ...data }: Partial<Omit<EventSeries, 'default_roles_json'> & { default_roles_json?: Json | null }> & { id: string }) => {
       const { error } = await supabase
         .from('event_series')
         .update(data)

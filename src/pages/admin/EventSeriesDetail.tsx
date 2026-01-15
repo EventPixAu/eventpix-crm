@@ -12,6 +12,7 @@ import {
   Save,
   CheckCircle2,
   Layers,
+  Wand2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -56,6 +57,7 @@ import {
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 import { useProfiles } from '@/hooks/useStaff';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
+import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -89,6 +91,9 @@ export default function EventSeriesDetail() {
   const [assignUserId, setAssignUserId] = useState('');
   const [assignRoleId, setAssignRoleId] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
+  
+  // Recommend crew state
+  const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   
   // Load series data into form
   useEffect(() => {
@@ -153,6 +158,14 @@ export default function EventSeriesDetail() {
     return events.filter(e => e.event_date >= today).slice(0, 10);
   }, [events]);
   
+  // Get unassigned upcoming event IDs for recommendation
+  const unassignedEventIds = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return events
+      .filter(e => e.event_date >= today)
+      .map(e => e.id);
+  }, [events]);
+  
   if (isLoading) {
     return (
       <AppLayout>
@@ -183,6 +196,13 @@ export default function EventSeriesDetail() {
         description="Manage events, assignments, and settings for this series"
         actions={
           <div className="flex gap-2">
+            {unassignedEventIds.length > 0 && (
+              <Button variant="outline" onClick={() => setRecommendCrewOpen(true)}>
+                <Wand2 className="h-4 w-4 mr-2" />
+                Recommend Crew
+              </Button>
+            )}
+            
             <Button onClick={() => setBulkCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Bulk Create Events
@@ -192,6 +212,14 @@ export default function EventSeriesDetail() {
               open={bulkCreateOpen}
               onOpenChange={setBulkCreateOpen}
               series={series}
+            />
+            
+            <RecommendCrewDialog
+              open={recommendCrewOpen}
+              onOpenChange={setRecommendCrewOpen}
+              eventIds={unassignedEventIds}
+              scope="series"
+              seriesDefaults={series.default_roles_json as any}
             />
             
             {selectedEventIds.length > 0 && (
