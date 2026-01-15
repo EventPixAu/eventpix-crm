@@ -40,7 +40,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useLeads, useCreateLead, useClients } from '@/hooks/useSales';
-import { useLookups } from '@/hooks/useLookups';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   new: { label: 'New', variant: 'default' },
@@ -53,6 +54,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
 export default function LeadList() {
   const { data: leads, isLoading } = useLeads();
   const { data: clients } = useClients();
+  const createLead = useCreateLead();
   
   // Fetch event types directly
   const { data: eventTypes } = useQuery({
@@ -62,8 +64,6 @@ export default function LeadList() {
       return data || [];
     },
   });
-  const { eventTypes } = useLookups();
-  const createLead = useCreateLead();
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');

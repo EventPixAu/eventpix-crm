@@ -1,17 +1,15 @@
 /**
- * OPERATIONS PLATFORM - Main Layout
+ * EVENTPIX PLATFORM - Main Layout
  * 
- * SYSTEM BOUNDARIES:
- * - This is an OPERATIONS-ONLY platform
- * - NO CRM features (Sales CRM is external - Studio Ninja)
- * - NO accounting logic (Accounting is external - Xero)
- * - NO client communications or quoting
+ * UNIFIED SYSTEM supporting:
+ * - Sales: Clients, Leads, Quotes (replaces Studio Ninja CRM)
+ * - Operations: Events, Staffing, Equipment, Delivery (replaces ClickUp)
+ * - Xero integration for accounting (external)
  * 
  * ROLE SEPARATION:
- * - Admin: Full operations access (staffing, equipment, compliance, delivery, executive)
- * - Photographer: Job-focused access only (my jobs, availability, equipment, KB)
- * 
- * Photographers should feel like: "This is my work app, not the company system."
+ * - Admin: Full access to all modules
+ * - Sales: Clients, Leads, Quotes, Pipeline
+ * - Photographer: Job-focused access only (my jobs, availability, equipment)
  */
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -35,6 +33,9 @@ import {
   FolderOpen,
   BarChart3,
   Briefcase,
+  Target,
+  Building2,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -46,21 +47,23 @@ interface AppLayoutProps {
 }
 
 /**
- * ADMIN NAVIGATION - Operations Scope Only
+ * ADMIN NAVIGATION - Full Platform Access
  * 
  * Grouped by function:
+ * - Sales: Clients, Leads, Quotes
  * - Operations: Events, Job Intake, Series, Calendar, Delivery
  * - Staffing: Staff, Workflows
  * - Equipment: Equipment management
  * - Admin: Event Types, Executive Dashboard
- * 
- * EXCLUDED (handled by external systems):
- * - Leads, Quotes, Clients (Sales CRM - Studio Ninja)
- * - Invoicing, Payments (Accounting - Xero)
  */
 const adminNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/admin/executive', label: 'Executive', icon: BarChart3 },
+  // Sales Section
+  { href: '/sales/clients', label: 'Clients', icon: Building2 },
+  { href: '/sales/leads', label: 'Leads', icon: Target },
+  { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  // Operations Section
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/job-intake', label: 'Job Intake', icon: FileText },
   { href: '/admin/series', label: 'Series', icon: FileCheck },
@@ -74,6 +77,28 @@ const adminNavItems = [
 ];
 
 /**
+ * SALES NAVIGATION - Sales Team Access
+ * 
+ * Sales users can access:
+ * - Clients, Leads, Quotes
+ * - Knowledge Base
+ * - Their profile
+ * 
+ * Sales CANNOT see:
+ * - Staffing, Equipment, Compliance
+ * - Cost data, Photographer feedback
+ * - Executive dashboards (ops metrics)
+ */
+const salesNavItems = [
+  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/sales/clients', label: 'Clients', icon: Building2 },
+  { href: '/sales/leads', label: 'Leads', icon: Target },
+  { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
+  { href: '/staff/me', label: 'My Profile', icon: User },
+];
+
+/**
  * PHOTOGRAPHER NAVIGATION - Personal Work Scope Only
  * 
  * Photographers can ONLY access:
@@ -83,15 +108,6 @@ const adminNavItems = [
  * - My Documents (compliance uploads)
  * - Help & Guides (knowledge base)
  * - My Profile (personal settings)
- * 
- * Photographers CANNOT see:
- * - All events list
- * - Other staff details
- * - Rates, costs, invoices
- * - Executive dashboards
- * - Series management
- * - Equipment admin
- * - Job intake queue
  */
 const photographerNavItems = [
   { href: '/', label: 'My Jobs', icon: Briefcase },
@@ -105,11 +121,16 @@ const photographerNavItems = [
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut, isAdmin, role } = useAuth();
+  const { user, signOut, isAdmin, isSales, role } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = isAdmin ? adminNavItems : photographerNavItems;
+  // Role-based navigation selection
+  const navItems = isAdmin 
+    ? adminNavItems 
+    : isSales 
+      ? salesNavItems 
+      : photographerNavItems;
 
   const handleSignOut = async () => {
     await signOut();

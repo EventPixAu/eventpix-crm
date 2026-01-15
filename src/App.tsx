@@ -35,6 +35,9 @@ import MyDocuments from "./pages/MyDocuments";
 import Equipment from "./pages/Equipment";
 import StaffMe from "./pages/StaffMe";
 import MyJobSheets from "./pages/MyJobSheets";
+import ClientList from "./pages/sales/ClientList";
+import LeadList from "./pages/sales/LeadList";
+import QuoteList from "./pages/sales/QuoteList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +94,10 @@ function AppRoutes() {
       <Route path="/my-job-sheets" element={<ProtectedRoute><MyJobSheets /></ProtectedRoute>} />
       <Route path="/staff/me" element={<ProtectedRoute><StaffMe /></ProtectedRoute>} />
       <Route path="/equipment" element={<ProtectedRoute><Equipment /></ProtectedRoute>} />
+      {/* Sales Routes */}
+      <Route path="/sales/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
+      <Route path="/sales/leads" element={<ProtectedRoute><LeadList /></ProtectedRoute>} />
+      <Route path="/sales/quotes" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
