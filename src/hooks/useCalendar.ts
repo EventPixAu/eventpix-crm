@@ -14,6 +14,8 @@ export interface CalendarEvent {
   end_at: string | null;
   venue_name: string | null;
   venue_address: string | null;
+  onsite_contact_name: string | null;
+  onsite_contact_phone: string | null;
   event_type_id: string | null;
   event_series_id: string | null;
   event_series_name: string | null;
@@ -71,6 +73,8 @@ export function useAdminCalendarEvents(
           end_at,
           venue_name,
           venue_address,
+          onsite_contact_name,
+          onsite_contact_phone,
           event_type_id,
           event_series_id,
           event_series:event_series(id, name),
@@ -156,6 +160,8 @@ export function useAdminCalendarEvents(
           end_at: event.end_at,
           venue_name: event.venue_name,
           venue_address: event.venue_address,
+          onsite_contact_name: event.onsite_contact_name,
+          onsite_contact_phone: event.onsite_contact_phone,
           event_type_id: event.event_type_id,
           event_series_id: event.event_series_id,
           event_series_name: seriesData?.name || null,
@@ -199,6 +205,8 @@ export function useStaffCalendarEvents(currentMonth: Date) {
             end_at,
             venue_name,
             venue_address,
+            onsite_contact_name,
+            onsite_contact_phone,
             event_type_id,
             delivery_method_id,
             delivery_deadline,
@@ -240,7 +248,11 @@ export function useStaffCalendarEvents(currentMonth: Date) {
           end_at: event.end_at,
           venue_name: event.venue_name,
           venue_address: event.venue_address,
+          onsite_contact_name: event.onsite_contact_name,
+          onsite_contact_phone: event.onsite_contact_phone,
           event_type_id: event.event_type_id,
+          event_series_id: null,
+          event_series_name: null,
           delivery_method_id: event.delivery_method_id,
           delivery_deadline: event.delivery_deadline,
           assignment_count: 0, // Not shown for staff
