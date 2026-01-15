@@ -205,6 +205,48 @@ export type Database = {
           },
         ]
       }
+      event_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          event_id: string
+          id: string
+          note_type: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          event_id: string
+          id?: string
+          note_type?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          event_id?: string
+          id?: string
+          note_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_notes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_types: {
         Row: {
           created_at: string | null
