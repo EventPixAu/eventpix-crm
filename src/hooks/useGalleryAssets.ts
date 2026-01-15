@@ -9,6 +9,7 @@ export interface GalleryAsset {
   file_name: string;
   mime_type: string | null;
   file_size: number | null;
+  sort_order: number;
   created_at: string;
 }
 
@@ -23,7 +24,7 @@ export function useGalleryAssets(eventId: string | undefined) {
         .from('gallery_assets')
         .select('*')
         .eq('event_id', eventId)
-        .order('created_at', { ascending: false });
+        .order('sort_order', { ascending: true });
       if (error) throw error;
       return data as GalleryAsset[];
     },
@@ -40,7 +41,7 @@ export function useGalleryAssetsByEventId(eventId: string | undefined) {
         .from('gallery_assets')
         .select('*')
         .eq('event_id', eventId)
-        .order('created_at', { ascending: true });
+        .order('sort_order', { ascending: true });
       if (error) throw error;
       return data as GalleryAsset[];
     },
@@ -54,6 +55,16 @@ export function useUploadGalleryAsset() {
 
   return useMutation({
     mutationFn: async ({ eventId, file }: { eventId: string; file: File }) => {
+      // Get the current max sort_order for this event
+      const { data: existingAssets } = await supabase
+        .from('gallery_assets')
+        .select('sort_order')
+        .eq('event_id', eventId)
+        .order('sort_order', { ascending: false })
+        .limit(1);
+      
+      const nextSortOrder = (existingAssets?.[0]?.sort_order ?? 0) + 1;
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const storagePath = `${eventId}/${fileName}`;
@@ -77,6 +88,7 @@ export function useUploadGalleryAsset() {
           file_name: file.name,
           mime_type: file.type,
           file_size: file.size,
+          sort_order: nextSortOrder,
         })
         .select()
         .single();
@@ -128,6 +140,38 @@ export function useDeleteGalleryAsset() {
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to delete image', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useReorderGalleryAssets() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ eventId, orderedIds }: { eventId: string; orderedIds: string[] }) => {
+      // Update sort_order for each asset
+      const updates = orderedIds.map((id, index) => 
+        supabase
+          .from('gallery_assets')
+          .update({ sort_order: index + 1 })
+          .eq('id', id)
+      );
+
+      const results = await Promise.all(updates);
+      const errors = results.filter(r => r.error);
+      
+      if (errors.length > 0) {
+        throw new Error('Failed to update some images');
+      }
+
+      return { eventId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['gallery-assets', data.eventId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to reorder images', description: error.message, variant: 'destructive' });
     },
   });
 }
