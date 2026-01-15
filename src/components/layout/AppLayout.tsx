@@ -34,7 +34,7 @@ const adminNavItems = [
 
 const photographerNavItems = [
   { href: '/', label: 'My Events', icon: Home },
-  { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
 ];
 
 export function AppLayout({ children }: AppLayoutProps) {
