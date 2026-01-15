@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { format } from 'date-fns';
-import { Check, Copy, Download, ExternalLink, Link2, QrCode, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, QrCode, ToggleLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useDeliveryRecord, useCreateDeliveryRecord, useUpdateDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useDeliveryMethods } from '@/hooks/useLookups';
+import { GalleryUploader } from '@/components/GalleryUploader';
 import type { Database } from '@/integrations/supabase/types';
 
 type DeliveryMethod = Database['public']['Enums']['delivery_method'];
@@ -192,6 +193,15 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
           )}
         </div>
       </div>
+
+      {/* QR Code Section */}
+      {/* Internal Gallery Section - shown when method is internal_gallery */}
+      {record && deliveryMethod === 'internal_gallery' && (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+          <h3 className="text-lg font-display font-semibold mb-4">Internal Gallery</h3>
+          <GalleryUploader eventId={eventId} isAdmin={isAdmin} />
+        </div>
+      )}
 
       {/* QR Code Section */}
       {record && (
