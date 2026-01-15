@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +27,7 @@ export default function DeliveryMetrics() {
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [selectedSeries, setSelectedSeries] = useState<string>('all');
 
-  const { eventTypes } = useLookups();
+  const { data: eventTypes } = useEventTypes();
   const { data: seriesList } = useEventSeries();
 
   // Calculate date range
@@ -76,8 +77,7 @@ export default function DeliveryMetrics() {
     <AppLayout>
       <PageHeader
         title="Delivery Performance"
-        subtitle="SLA tracking and delivery risk reporting"
-        icon={Package}
+        description="SLA tracking and delivery risk reporting"
       />
 
       {/* Filters */}
@@ -130,26 +130,25 @@ export default function DeliveryMetrics() {
         <StatCard
           title="On-Time Rate"
           value={metrics ? `${metrics.onTimeRate}%` : '—'}
-          subtitle={dateRangeLabel}
-          icon={<CheckCircle2 className="h-5 w-5 text-green-500" />}
+          icon={CheckCircle2}
+          variant="success"
         />
         <StatCard
           title="Overdue Events"
           value={metrics?.overdueCount ?? 0}
-          subtitle="Pending delivery"
-          icon={<AlertTriangle className="h-5 w-5 text-amber-500" />}
+          icon={AlertTriangle}
+          variant="warning"
         />
         <StatCard
           title="Avg. Delivery Time"
           value={metrics?.averageDeliveryDays !== null ? `${metrics.averageDeliveryDays} days` : '—'}
-          subtitle="From event date"
-          icon={<Clock className="h-5 w-5 text-blue-500" />}
+          icon={Clock}
+          variant="primary"
         />
         <StatCard
           title="Total Events"
           value={metrics?.totalEvents ?? 0}
-          subtitle={`${metrics?.deliveredCount ?? 0} delivered`}
-          icon={<Calendar className="h-5 w-5 text-primary" />}
+          icon={Calendar}
         />
       </div>
 
