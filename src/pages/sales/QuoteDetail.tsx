@@ -9,7 +9,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
-  Plus, Trash2, ExternalLink, Copy, Mail, FileSignature
+  Plus, Trash2, ExternalLink, Copy, Mail, FileSignature, RefreshCw, Link as LinkIcon
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -74,7 +74,9 @@ export default function QuoteDetail() {
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
-  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
+  const [isSendQuoteOpen, setIsSendQuoteOpen] = useState(false);
+  const [sendingQuote, setSendingQuote] = useState(false);
+  const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -141,9 +143,55 @@ export default function QuoteDetail() {
     await deleteItem.mutateAsync({ id: itemId, quote_id: id });
   };
 
-  const handleMarkAsSent = async () => {
+  const handleSendQuote = async () => {
     if (!id) return;
-    await updateQuote.mutateAsync({ id, status: 'sent' });
+    setSendingQuote(true);
+    try {
+      const { data, error } = await supabase.rpc('mark_quote_as_sent', {
+        p_quote_id: id,
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; public_token?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send quote');
+      }
+      
+      toast({ title: 'Quote marked as sent', description: 'Share the proposal link with your client.' });
+      // Refetch quote to get updated status
+      window.location.reload();
+    } catch (err: any) {
+      toast({ title: 'Failed to send quote', description: err.message, variant: 'destructive' });
+    } finally {
+      setSendingQuote(false);
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    if (!id) return;
+    setRegeneratingToken(true);
+    try {
+      const { data, error } = await supabase.rpc('regenerate_quote_token', {
+        p_quote_id: id,
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; new_token?: string };
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to regenerate token');
+      }
+      
+      toast({ title: 'Link regenerated', description: 'Previous link has been invalidated.' });
+      window.location.reload();
+    } catch (err: any) {
+      toast({ title: 'Failed to regenerate link', description: err.message, variant: 'destructive' });
+    } finally {
+      setRegeneratingToken(false);
+    }
   };
 
   const handleConvertToEvent = async () => {
@@ -222,16 +270,30 @@ export default function QuoteDetail() {
             </Button>
           </Link>
           {!isLocked && quote.status === 'draft' && (
-            <Button variant="outline" onClick={handleMarkAsSent}>
+            <Button onClick={() => setIsSendQuoteOpen(true)}>
               <Send className="h-4 w-4 mr-2" />
-              Mark as Sent
+              Send Quote
             </Button>
           )}
-          {quote.status === 'accepted' && (
+          {!isLocked && quote.status === 'sent' && quote.public_token && (
+            <Button variant="outline" onClick={handleRegenerateToken} disabled={regeneratingToken}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingToken ? 'animate-spin' : ''}`} />
+              Regenerate Link
+            </Button>
+          )}
+          {quote.status === 'accepted' && !(quote as any).linked_event_id && (
             <Button onClick={() => setIsConvertOpen(true)}>
               <CheckCircle className="h-4 w-4 mr-2" />
               Convert to Event
             </Button>
+          )}
+          {(quote as any).linked_event_id && (
+            <Link to={`/events/${(quote as any).linked_event_id}`}>
+              <Button variant="outline">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                View Event
+              </Button>
+            </Link>
           )}
         </div>
       </div>
@@ -380,6 +442,21 @@ export default function QuoteDetail() {
                         by {quote.accepted_by_name}
                       </div>
                     )}
+                  </div>
+                </>
+              )}
+              {(quote as any).linked_event_id && (
+                <>
+                  <Separator />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Converted to Event</div>
+                    <Link 
+                      to={`/events/${(quote as any).linked_event_id}`}
+                      className="font-medium text-primary hover:underline flex items-center gap-1"
+                    >
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      View Event
+                    </Link>
                   </div>
                 </>
               )}
@@ -560,6 +637,58 @@ export default function QuoteDetail() {
               disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
             >
               {convertToEvent.isPending ? 'Creating...' : 'Create Event'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Quote Dialog */}
+      <Dialog open={isSendQuoteOpen} onOpenChange={setIsSendQuoteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Send Quote
+            </DialogTitle>
+            <DialogDescription>
+              Mark this quote as sent and share the proposal link with your client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-4 bg-muted rounded-lg space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <LinkIcon className="h-4 w-4" />
+                Proposal Link
+              </div>
+              <div className="flex items-center gap-2">
+                <Input 
+                  readOnly 
+                  value={quote?.public_token ? `${window.location.origin}/accept/${quote.public_token}` : 'Link will be generated'}
+                  className="text-xs"
+                />
+                {quote?.public_token && (
+                  <Button variant="outline" size="icon" onClick={copyProposalLink}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this link with your client. They can view the proposal and accept it online.
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-2">What happens when you send:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Quote status changes to "Sent"</li>
+                <li>A unique proposal link is generated (if not already)</li>
+                <li>Communication is logged for tracking</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSendQuoteOpen(false)}>Cancel</Button>
+            <Button onClick={handleSendQuote} disabled={sendingQuote}>
+              {sendingQuote ? 'Sending...' : 'Mark as Sent & Copy Link'}
             </Button>
           </DialogFooter>
         </DialogContent>

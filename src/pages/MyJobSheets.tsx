@@ -1,7 +1,7 @@
 /**
  * MY JOB SHEETS - Photographer-focused view
  * 
- * SYSTEM BOUNDARIES (Operations Platform):
+ * PHOTOGRAPHER ROLE BOUNDARIES:
  * - Shows ONLY assigned events with essential operational details
  * - NO financial data (costs, rates, invoices)
  * - NO client contact details beyond on-site contact

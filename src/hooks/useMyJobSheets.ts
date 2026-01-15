@@ -1,7 +1,7 @@
 /**
  * useMyJobSheets - Fetch photographer's assigned events with essential job sheet data
  * 
- * SYSTEM BOUNDARIES (Operations Platform):
+ * PHOTOGRAPHER ROLE BOUNDARIES:
  * - Only fetches events assigned to the current user
  * - Excludes ALL financial data (costs, rates, invoices)
  * - Includes only operational data photographers need:

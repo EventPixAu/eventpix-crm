@@ -405,10 +405,14 @@ export function useConvertQuoteToEvent() {
       
       if (eventError) throw eventError;
 
-      // 3. Update quote status to accepted (locks further edits)
+      // 3. Update quote: set status to accepted and link to created event
       const { error: updateQuoteError } = await supabase
         .from('quotes')
-        .update({ status: 'accepted' })
+        .update({ 
+          status: 'accepted',
+          linked_event_id: event.id,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', quoteId);
       
       if (updateQuoteError) throw updateQuoteError;
@@ -417,7 +421,10 @@ export function useConvertQuoteToEvent() {
       if (quote.lead_id) {
         const { error: updateLeadError } = await supabase
           .from('leads')
-          .update({ status: 'accepted' })
+          .update({ 
+            status: 'accepted',
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', quote.lead_id);
         
         if (updateLeadError) throw updateLeadError;

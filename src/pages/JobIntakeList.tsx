@@ -1,9 +1,12 @@
 /**
- * SALES BOUNDARY: Job Intake List
+ * DEPRECATED: Job Intake List
  * 
- * This page manages the Sales → Operations handoff queue.
- * Jobs come from external CRM (Studio Ninja) and are converted to Events.
- * This is NOT a CRM - no client communications or quoting here.
+ * This page is deprecated in favor of the unified Sales workflow (Clients → Leads → Quotes).
+ * Kept for backward compatibility with legacy intake records.
+ * 
+ * For new workflows, use:
+ * - /sales/leads for pipeline management
+ * - /sales/quotes for proposals
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
