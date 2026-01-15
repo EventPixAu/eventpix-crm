@@ -38,6 +38,7 @@ import {
   DollarSign,
   ShoppingBag,
   Kanban,
+  FileSignature,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -65,6 +66,7 @@ const adminNavItems = [
   { href: '/sales/clients', label: 'Clients', icon: Building2 },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   // Operations Section
@@ -98,6 +100,7 @@ const salesNavItems = [
   { href: '/sales/clients', label: 'Clients', icon: Building2 },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },

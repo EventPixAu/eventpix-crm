@@ -109,6 +109,7 @@ export type Database = {
           email_template_id: string | null
           id: string
           logged_by: string | null
+          related_contract_id: string | null
           related_quote_id: string | null
           status: string | null
           subject: string | null
@@ -122,6 +123,7 @@ export type Database = {
           email_template_id?: string | null
           id?: string
           logged_by?: string | null
+          related_contract_id?: string | null
           related_quote_id?: string | null
           status?: string | null
           subject?: string | null
@@ -135,6 +137,7 @@ export type Database = {
           email_template_id?: string | null
           id?: string
           logged_by?: string | null
+          related_contract_id?: string | null
           related_quote_id?: string | null
           status?: string | null
           subject?: string | null
@@ -153,6 +156,13 @@ export type Database = {
             columns: ["email_template_id"]
             isOneToOne: false
             referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_communications_related_contract_id_fkey"
+            columns: ["related_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {

@@ -49,6 +49,7 @@ import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteIt
 import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -75,6 +76,7 @@ export default function QuoteDetail() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
   const [isSendQuoteOpen, setIsSendQuoteOpen] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -269,6 +271,12 @@ export default function QuoteDetail() {
               View Proposal
             </Button>
           </Link>
+          {!isLocked && (
+            <Button variant="outline" onClick={() => setIsEmailDialogOpen(true)}>
+              <Mail className="h-4 w-4 mr-2" />
+              Send Email
+            </Button>
+          )}
           {!isLocked && quote.status === 'draft' && (
             <Button onClick={() => setIsSendQuoteOpen(true)}>
               <Send className="h-4 w-4 mr-2" />
@@ -693,6 +701,18 @@ export default function QuoteDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Send Email Dialog */}
+      <SendEmailDialog
+        open={isEmailDialogOpen}
+        onOpenChange={setIsEmailDialogOpen}
+        clientId={quote.client_id}
+        clientEmail={clientData?.email}
+        clientName={clientName}
+        relatedQuoteId={quote.id}
+        defaultSubject={`Quote: ${quote.quote_number || quote.id.slice(0, 8)}`}
+        context="quote"
+      />
     </AppLayout>
   );
 }
