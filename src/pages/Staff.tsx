@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileCheck, Mail, Phone, Plus, Search, UserCircle, Users } from 'lucide-react';
+import { ChevronRight, FileCheck, Mail, Phone, Plus, Search, UserCircle, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -210,42 +211,45 @@ export default function Staff() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-card border border-border rounded-xl p-5 shadow-card"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg font-medium text-primary">
-                        {member.name[0]}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium truncate">{member.name}</h3>
-                        <StatusBadge status={member.status} />
+                  <Link
+                    to={member.user_id ? `/staff/${member.user_id}` : '#'}
+                    className="block bg-card border border-border rounded-xl p-5 shadow-card hover:border-primary/50 hover:shadow-lg transition-all"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg font-medium text-primary">
+                          {member.name[0]}
+                        </span>
                       </div>
-                      <p className="text-sm text-muted-foreground capitalize mb-3">
-                        {member.role}
-                      </p>
-                      <div className="space-y-1.5">
-                        <a
-                          href={`mailto:${member.email}`}
-                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground truncate"
-                        >
-                          <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                          {member.email}
-                        </a>
-                        {member.phone && (
-                          <a
-                            href={`tel:${member.phone}`}
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                          >
-                            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                            {member.phone}
-                          </a>
-                        )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium truncate">{member.name}</h3>
+                            <StatusBadge status={member.status} />
+                          </div>
+                          {member.user_id && (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground capitalize mb-3">
+                          {member.role}
+                        </p>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
+                            <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                            {member.email}
+                          </div>
+                          {member.phone && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                              {member.phone}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
