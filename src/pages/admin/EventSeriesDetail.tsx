@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { format, addDays, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { 
   ArrowLeft, 
   Plus, 
@@ -10,10 +10,6 @@ import {
   Clock,
   MapPin,
   Save,
-  Rocket,
-  ChevronDown,
-  ChevronUp,
-  AlertTriangle,
   CheckCircle2,
   Layers,
 } from 'lucide-react';
@@ -55,23 +51,11 @@ import {
   useEventSeriesStats,
   useSeriesEvents,
   useUpdateEventSeries,
-  useBulkCreateEvents,
   useBulkAssignStaff,
 } from '@/hooks/useEventSeries';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 import { useProfiles } from '@/hooks/useStaff';
-
-interface BulkEventRow {
-  id: string;
-  event_date: string;
-  venue_name: string;
-  venue_address: string;
-  start_time: string;
-  end_time: string;
-  onsite_contact_name: string;
-  onsite_contact_phone: string;
-  notes: string;
-}
+import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -86,7 +70,6 @@ export default function EventSeriesDetail() {
   const { data: profiles = [] } = useProfiles();
   
   const updateSeries = useUpdateEventSeries();
-  const bulkCreate = useBulkCreateEvents();
   const bulkAssign = useBulkAssignStaff();
   
   // Edit form state
@@ -97,13 +80,8 @@ export default function EventSeriesDetail() {
   const [editCoverage, setEditCoverage] = useState('');
   const [editNotes, setEditNotes] = useState('');
   
-  // Bulk create state
+  // Bulk create dialog state
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
-  const [bulkRows, setBulkRows] = useState<BulkEventRow[]>([
-    createEmptyRow(),
-  ]);
-  const [bulkClientName, setBulkClientName] = useState('');
-  const [bulkDefaultContact, setBulkDefaultContact] = useState({ name: '', phone: '' });
   
   // Bulk assign state
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
@@ -121,23 +99,8 @@ export default function EventSeriesDetail() {
       setEditDeadlineDays(String(series.default_delivery_deadline_days || 5));
       setEditCoverage(series.default_coverage_details || '');
       setEditNotes(series.notes || '');
-      setBulkClientName(series.name);
     }
   }, [series]);
-  
-  function createEmptyRow(): BulkEventRow {
-    return {
-      id: crypto.randomUUID(),
-      event_date: '',
-      venue_name: '',
-      venue_address: '',
-      start_time: '18:00',
-      end_time: '22:00',
-      onsite_contact_name: '',
-      onsite_contact_phone: '',
-      notes: '',
-    };
-  }
   
   const handleSaveSettings = async () => {
     if (!id) return;
@@ -150,55 +113,6 @@ export default function EventSeriesDetail() {
       default_coverage_details: editCoverage || null,
       notes: editNotes || null,
     });
-  };
-  
-  const handleAddRow = () => {
-    setBulkRows([...bulkRows, {
-      ...createEmptyRow(),
-      onsite_contact_name: bulkDefaultContact.name,
-      onsite_contact_phone: bulkDefaultContact.phone,
-    }]);
-  };
-  
-  const handleRemoveRow = (rowId: string) => {
-    setBulkRows(bulkRows.filter(r => r.id !== rowId));
-  };
-  
-  const handleUpdateRow = (rowId: string, field: keyof BulkEventRow, value: string) => {
-    setBulkRows(bulkRows.map(r => 
-      r.id === rowId ? { ...r, [field]: value } : r
-    ));
-  };
-  
-  const handleBulkCreate = async () => {
-    if (!id || !series) return;
-    
-    const validRows = bulkRows.filter(r => r.event_date && r.venue_name);
-    if (validRows.length === 0) return;
-    
-    const events = validRows.map(row => ({
-      event_name: `${series.name} - ${row.venue_name}`,
-      client_name: bulkClientName || series.name,
-      event_date: row.event_date,
-      start_time: row.start_time || undefined,
-      end_time: row.end_time || undefined,
-      venue_name: row.venue_name,
-      venue_address: row.venue_address || undefined,
-      onsite_contact_name: row.onsite_contact_name || bulkDefaultContact.name || undefined,
-      onsite_contact_phone: row.onsite_contact_phone || bulkDefaultContact.phone || undefined,
-      event_type_id: series.event_type_id || undefined,
-      event_series_id: id,
-      coverage_details: series.default_coverage_details || undefined,
-      delivery_method_id: series.default_delivery_method_id || undefined,
-      delivery_deadline: row.event_date 
-        ? format(addDays(parseISO(row.event_date), series.default_delivery_deadline_days || 5), 'yyyy-MM-dd')
-        : undefined,
-      notes: row.notes || undefined,
-    }));
-    
-    await bulkCreate.mutateAsync(events);
-    setBulkCreateOpen(false);
-    setBulkRows([createEmptyRow()]);
   };
   
   const handleToggleEventSelection = (eventId: string) => {
@@ -269,149 +183,16 @@ export default function EventSeriesDetail() {
         description="Manage events, assignments, and settings for this series"
         actions={
           <div className="flex gap-2">
-            <Dialog open={bulkCreateOpen} onOpenChange={setBulkCreateOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Bulk Create Events
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Bulk Create Events</DialogTitle>
-                  <DialogDescription>
-                    Add multiple events to this series at once. Series defaults will be applied automatically.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-6 py-4">
-                  {/* Default Settings */}
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-                    <div className="space-y-2">
-                      <Label>Client Name</Label>
-                      <Input
-                        value={bulkClientName}
-                        onChange={(e) => setBulkClientName(e.target.value)}
-                        placeholder="Client name for all events"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-2">
-                        <Label>Default Contact Name</Label>
-                        <Input
-                          value={bulkDefaultContact.name}
-                          onChange={(e) => setBulkDefaultContact(prev => ({ ...prev, name: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Default Contact Phone</Label>
-                        <Input
-                          value={bulkDefaultContact.phone}
-                          onChange={(e) => setBulkDefaultContact(prev => ({ ...prev, phone: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Event Rows */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Events</Label>
-                      <Button size="sm" variant="outline" onClick={handleAddRow}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Row
-                      </Button>
-                    </div>
-                    
-                    {bulkRows.map((row, index) => (
-                      <div key={row.id} className="grid grid-cols-12 gap-2 p-3 border rounded-lg">
-                        <div className="col-span-2">
-                          <Input
-                            type="date"
-                            value={row.event_date}
-                            onChange={(e) => handleUpdateRow(row.id, 'event_date', e.target.value)}
-                            placeholder="Date"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            value={row.venue_name}
-                            onChange={(e) => handleUpdateRow(row.id, 'venue_name', e.target.value)}
-                            placeholder="City/Venue"
-                          />
-                        </div>
-                        <div className="col-span-3">
-                          <Input
-                            value={row.venue_address}
-                            onChange={(e) => handleUpdateRow(row.id, 'venue_address', e.target.value)}
-                            placeholder="Address"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <Input
-                            type="time"
-                            value={row.start_time}
-                            onChange={(e) => handleUpdateRow(row.id, 'start_time', e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <Input
-                            type="time"
-                            value={row.end_time}
-                            onChange={(e) => handleUpdateRow(row.id, 'end_time', e.target.value)}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Input
-                            value={row.notes}
-                            onChange={(e) => handleUpdateRow(row.id, 'notes', e.target.value)}
-                            placeholder="Notes"
-                          />
-                        </div>
-                        <div className="col-span-1 flex justify-end">
-                          {bulkRows.length > 1 && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              className="text-destructive"
-                              onClick={() => handleRemoveRow(row.id)}
-                            >
-                              ×
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Preview */}
-                  <div className="p-4 bg-muted/30 rounded-lg">
-                    <h4 className="font-medium mb-2">Preview</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {bulkRows.filter(r => r.event_date && r.venue_name).length} event(s) will be created with:
-                    </p>
-                    <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                      <li>• Event type: {eventTypes.find(t => t.id === series.event_type_id)?.name || 'Not set'}</li>
-                      <li>• Delivery method: {deliveryMethods.find(m => m.id === series.default_delivery_method_id)?.name || 'Not set'}</li>
-                      <li>• Deadline: {series.default_delivery_deadline_days || 5} days after event</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setBulkCreateOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleBulkCreate} 
-                    disabled={bulkCreate.isPending || bulkRows.filter(r => r.event_date && r.venue_name).length === 0}
-                  >
-                    <Rocket className="h-4 w-4 mr-2" />
-                    Create {bulkRows.filter(r => r.event_date && r.venue_name).length} Event(s)
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setBulkCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Bulk Create Events
+            </Button>
+            
+            <BulkEventCreationDialog
+              open={bulkCreateOpen}
+              onOpenChange={setBulkCreateOpen}
+              series={series}
+            />
             
             {selectedEventIds.length > 0 && (
               <Dialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
