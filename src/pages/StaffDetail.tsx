@@ -14,8 +14,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Clock,
-  User
+  Clock
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -23,7 +22,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +30,7 @@ import { useStaffRatesByUser, type StaffRate } from '@/hooks/useStaffRates';
 import { useStaffFeedbackHistory, useStaffPerformanceSummary } from '@/hooks/useStaffFeedback';
 import { StaffCompliancePanel } from '@/components/StaffCompliancePanel';
 import { StaffRateEditor } from '@/components/StaffRateEditor';
+import { AvatarUpload } from '@/components/AvatarUpload';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 import { cn } from '@/lib/utils';
 
@@ -70,7 +69,10 @@ interface Assignment {
 
 export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  
+  // Users can edit their own avatar, admins can edit any
+  const canEditAvatar = user?.id === id || isAdmin;
 
   // Fetch profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -187,12 +189,13 @@ export default function StaffDetail() {
           <div className="flex flex-col md:flex-row gap-6">
             {/* Avatar & Basic Info */}
             <div className="flex items-start gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="text-2xl bg-primary/20 text-primary">
-                  {profile.full_name?.[0] || profile.email[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <AvatarUpload
+                userId={id}
+                currentAvatarUrl={profile.avatar_url}
+                userName={profile.full_name || profile.email}
+                size="lg"
+                editable={canEditAvatar}
+              />
               <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={onboardingConfig.variant}>
