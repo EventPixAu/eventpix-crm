@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +26,10 @@ import {
 } from '@/components/ui/select';
 import { useEvent, useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
+import { EventLockBanner } from '@/components/EventLockBanner';
+import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
+import { useEventLocking } from '@/hooks/useGuardrails';
+import { useAuth } from '@/lib/auth';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -49,6 +53,7 @@ type EventFormValues = z.infer<typeof eventSchema>;
 export default function EventForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isEditing = !!id;
 
   const { data: event, isLoading } = useEvent(id);
@@ -56,6 +61,14 @@ export default function EventForm() {
   const { data: deliveryMethods = [], isLoading: methodsLoading } = useDeliveryMethods();
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  
+  // Event locking state
+  const { isLocked, minutesUntilStart } = useEventLocking(event?.start_at || null);
+  const [showOverrideDialog, setShowOverrideDialog] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  
+  // Determine if form should be disabled due to lock
+  const isFormLocked = isEditing && isLocked && !isUnlocked;
 
   // Create lookup map for finding type ID from legacy enum
   const eventTypeNameToId = useMemo(() => {
@@ -125,6 +138,14 @@ export default function EventForm() {
     }
   }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId]);
 
+  const handleRequestUnlock = () => {
+    setShowOverrideDialog(true);
+  };
+  
+  const handleOverrideConfirmed = () => {
+    setIsUnlocked(true);
+  };
+
   const onSubmit = async (values: EventFormValues) => {
     const cleanValues = {
       event_name: values.event_name,
@@ -178,8 +199,37 @@ export default function EventForm() {
           description={isEditing ? 'Update event details' : 'Create a new event'}
         />
 
+        {/* Event Lock Banner */}
+        {isEditing && isLocked && !isUnlocked && (
+          <div className="mb-6">
+            <EventLockBanner 
+              eventStartAt={event?.start_at || null}
+              onRequestUnlock={handleRequestUnlock}
+              showUnlockButton={true}
+            />
+          </div>
+        )}
+
+        {/* Override Dialog */}
+        <GuardrailOverrideDialog
+          open={showOverrideDialog}
+          onOpenChange={setShowOverrideDialog}
+          hardBlocks={[{
+            type: 'hard_block',
+            rule: 'event_locked',
+            message: `Event starts in ${minutesUntilStart} minutes`,
+            details: 'Editing is locked close to event start time to prevent accidental changes.',
+          }]}
+          softBlocks={[]}
+          eventId={id || ''}
+          userId={user?.id || ''}
+          onOverrideConfirmed={handleOverrideConfirmed}
+          overrideType="event_unlock"
+        />
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <fieldset disabled={isFormLocked} className="space-y-6">
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
               <h3 className="font-display font-semibold">Basic Information</h3>
 
@@ -433,12 +483,13 @@ export default function EventForm() {
                 )}
               />
             </div>
+            </fieldset>
 
             <div className="flex gap-3">
               <Button
                 type="submit"
                 className="bg-gradient-primary hover:opacity-90"
-                disabled={createEvent.isPending || updateEvent.isPending}
+                disabled={createEvent.isPending || updateEvent.isPending || isFormLocked}
               >
                 {(createEvent.isPending || updateEvent.isPending) && (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
