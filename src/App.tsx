@@ -29,6 +29,7 @@ import JobIntakeList from "./pages/JobIntakeList";
 import JobIntakeDetail from "./pages/JobIntakeDetail";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import MyAvailability from "./pages/MyAvailability";
+import Equipment from "./pages/Equipment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ function AppRoutes() {
       <Route path="/job-intake/:id" element={<ProtectedRoute><JobIntakeDetail /></ProtectedRoute>} />
       <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
       <Route path="/my-availability" element={<ProtectedRoute><MyAvailability /></ProtectedRoute>} />
+      <Route path="/equipment" element={<ProtectedRoute><Equipment /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
