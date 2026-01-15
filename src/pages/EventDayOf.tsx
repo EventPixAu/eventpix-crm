@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { format, parseISO, isToday, isBefore, addDays } from 'date-fns';
+import { format, parseISO, isToday, isBefore, addDays, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -11,17 +11,18 @@ import {
   ChevronUp,
   Clock,
   Copy,
-  ExternalLink,
   MapPin,
+  MessageSquarePlus,
   Phone,
   Printer,
-  User,
+  Send,
+  Trash2,
   WifiOff,
-  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
@@ -29,6 +30,7 @@ import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
 import { useStaffRoles } from '@/hooks/useLookups';
 import { useDayOfCache } from '@/hooks/useDayOfCache';
+import { useEventNotes, useCreateEventNote, useDeleteEventNote } from '@/hooks/useEventNotes';
 import { downloadICS } from '@/lib/icsGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -50,11 +52,14 @@ export default function EventDayOf() {
   const { data: worksheets = [] } = useEventWorksheets(id);
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: staffRoles = [] } = useStaffRoles();
+  const { data: eventNotes = [] } = useEventNotes(id);
   
   const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
   
   const updateItem = useUpdateWorksheetItem();
+  const createNote = useCreateEventNote();
+  const deleteNote = useDeleteEventNote();
   
   // Offline caching
   const { cachedData, isOffline, saveToCache, setOfflineMode } = useDayOfCache(id);
@@ -65,6 +70,10 @@ export default function EventDayOf() {
     pre_event: false,
     post_event: false,
   });
+  
+  // Quick note input state
+  const [noteContent, setNoteContent] = useState('');
+  const [showNoteInput, setShowNoteInput] = useState(false);
 
   // Handle fetch errors (offline mode)
   useEffect(() => {
@@ -183,7 +192,33 @@ export default function EventDayOf() {
     });
   };
 
-  // Get items for a worksheet
+  // Quick note handlers
+  const handleAddNote = () => {
+    if (!noteContent.trim() || !id || !user) return;
+    if (isOffline) {
+      toast({ title: 'Cannot add note while offline', variant: 'destructive' });
+      return;
+    }
+    createNote.mutate({
+      eventId: id,
+      content: noteContent.trim(),
+      createdBy: user.id,
+    }, {
+      onSuccess: () => {
+        setNoteContent('');
+        setShowNoteInput(false);
+      },
+    });
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    if (!id) return;
+    if (isOffline) {
+      toast({ title: 'Cannot delete note while offline', variant: 'destructive' });
+      return;
+    }
+    deleteNote.mutate({ noteId, eventId: id });
+  };
   const getItemsForWorksheet = (worksheetId: string) => {
     return displayWorksheetItems.filter((item) => item.worksheet_id === worksheetId);
   };
@@ -432,11 +467,100 @@ export default function EventDayOf() {
           )}
         </motion.section>
 
+        {/* Quick Notes */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="mx-4 mb-4"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">Notes</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNoteInput(!showNoteInput)}
+              className="h-8"
+            >
+              <MessageSquarePlus className="h-4 w-4 mr-1" />
+              Add
+            </Button>
+          </div>
+          
+          {showNoteInput && (
+            <div className="bg-card border border-border rounded-xl p-3 mb-3">
+              <Textarea
+                placeholder="Quick observation, issue, or note..."
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                className="min-h-[80px] resize-none mb-2"
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setNoteContent('');
+                    setShowNoteInput(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleAddNote}
+                  disabled={!noteContent.trim() || createNote.isPending || isOffline}
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  {createNote.isPending ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {eventNotes.length === 0 && !showNoteInput ? (
+            <p className="text-sm text-muted-foreground">No notes yet. Tap Add to capture observations.</p>
+          ) : (
+            <div className="space-y-2">
+              {eventNotes.map((note) => {
+                const authorName = note.profile?.full_name || note.profile?.email || 'Unknown';
+                const isMyNote = note.created_by === user?.id;
+                
+                return (
+                  <div
+                    key={note.id}
+                    className="bg-card border border-border rounded-lg p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm whitespace-pre-wrap flex-1">{note.content}</p>
+                      {(isMyNote || isAdmin) && (
+                        <button
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="p-1 text-muted-foreground hover:text-destructive shrink-0"
+                          disabled={deleteNote.isPending || isOffline}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                      <span>{authorName}</span>
+                      <span>•</span>
+                      <span>{formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </motion.section>
+
         {/* Checklist */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.22 }}
           className="mx-4 mb-4"
         >
           <h3 className="font-semibold mb-3">Checklist</h3>
