@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -17,6 +17,8 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { InvoiceStatusBadge } from '@/components/ui/invoice-status-badge';
+import { OpsStatusBadge } from '@/components/ui/ops-status-badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +30,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
-import { useEvent, useEventAssignments, useDeleteEvent } from '@/hooks/useEvents';
+import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
@@ -46,8 +57,10 @@ export default function EventDetail() {
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: auditLog = [] } = useAuditLog(id);
   const deleteEvent = useDeleteEvent();
-
-  // Create lookup maps
+  const updateEvent = useUpdateEvent();
+  
+  // Status update state
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
       acc[et.id] = et.name;
@@ -128,13 +141,22 @@ export default function EventDetail() {
             <ArrowLeft className="h-4 w-4" />
             Back to Events
           </Link>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <h1 className="text-2xl lg:text-3xl font-display font-bold">
               {event.event_name}
             </h1>
             <StatusBadge
               status={new Date() < date ? 'upcoming' : new Date().toDateString() === date.toDateString() ? 'today' : 'past'}
             />
+            {isAdmin && (
+              <>
+                <OpsStatusBadge status={(event as any).ops_status} />
+                <InvoiceStatusBadge 
+                  status={(event as any).invoice_status} 
+                  reference={(event as any).invoice_reference}
+                />
+              </>
+            )}
           </div>
           <p className="text-muted-foreground capitalize">
             {getEventTypeName()} • {event.client_name}
@@ -302,7 +324,7 @@ export default function EventDetail() {
                   <Link to={`/events/${id}/day-of`} className="block">
                     <Button variant="default" className="w-full justify-start">
                       <Play className="h-4 w-4 mr-2" />
-                      Day-Of View
+                      {isAdmin ? 'Day-Of View' : 'Job Sheet'}
                     </Button>
                   </Link>
                   <Link to={`/events/${id}/worksheets`} className="block">
@@ -312,6 +334,85 @@ export default function EventDetail() {
                   </Link>
                 </div>
               </div>
+
+              {/* Status Management (Admin Only) */}
+              {isAdmin && (
+                <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                  <h2 className="text-lg font-display font-semibold mb-4">Status</h2>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ops_status">Operations Status</Label>
+                      <Select
+                        value={(event as any).ops_status || 'awaiting_details'}
+                        onValueChange={async (value) => {
+                          setIsUpdatingStatus(true);
+                          await updateEvent.mutateAsync({
+                            id: event.id,
+                            ops_status: value,
+                          });
+                          setIsUpdatingStatus(false);
+                        }}
+                        disabled={isUpdatingStatus}
+                      >
+                        <SelectTrigger id="ops_status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="awaiting_details">Awaiting Details</SelectItem>
+                          <SelectItem value="ready">Ready</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="invoice_status">Invoice Status</Label>
+                      <Select
+                        value={(event as any).invoice_status || 'not_invoiced'}
+                        onValueChange={async (value) => {
+                          setIsUpdatingStatus(true);
+                          await updateEvent.mutateAsync({
+                            id: event.id,
+                            invoice_status: value,
+                          });
+                          setIsUpdatingStatus(false);
+                        }}
+                        disabled={isUpdatingStatus}
+                      >
+                        <SelectTrigger id="invoice_status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not_invoiced">Not Invoiced</SelectItem>
+                          <SelectItem value="invoiced">Invoiced</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="invoice_reference">Invoice Reference</Label>
+                      <Input
+                        id="invoice_reference"
+                        placeholder="e.g., INV-12345"
+                        defaultValue={(event as any).invoice_reference || ''}
+                        onBlur={async (e) => {
+                          const value = e.target.value;
+                          if (value !== (event as any).invoice_reference) {
+                            setIsUpdatingStatus(true);
+                            await updateEvent.mutateAsync({
+                              id: event.id,
+                              invoice_reference: value || null,
+                            });
+                            setIsUpdatingStatus(false);
+                          }
+                        }}
+                        disabled={isUpdatingStatus}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         </TabsContent>
