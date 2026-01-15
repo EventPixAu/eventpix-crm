@@ -6,11 +6,9 @@ import {
   Calendar,
   ChevronRight,
   Clock,
-  Filter,
   MapPin,
   Plus,
   Search,
-  Users,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -26,26 +24,32 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
-
-const eventTypes = [
-  { value: 'all', label: 'All Types' },
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'corporate', label: 'Corporate' },
-  { value: 'birthday', label: 'Birthday' },
-  { value: 'conference', label: 'Conference' },
-  { value: 'gala', label: 'Gala' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'private', label: 'Private' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'other', label: 'Other' },
-];
+import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 
 export default function Events() {
   const { isAdmin } = useAuth();
   const { data: events = [], isLoading } = useEvents();
+  const { data: eventTypes = [] } = useEventTypes();
+  const { data: deliveryMethods = [] } = useDeliveryMethods();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deliveryFilter, setDeliveryFilter] = useState('all');
+
+  // Create lookup maps for display
+  const eventTypeMap = useMemo(() => {
+    return eventTypes.reduce((acc, et) => {
+      acc[et.id] = et.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [eventTypes]);
+
+  const deliveryMethodMap = useMemo(() => {
+    return deliveryMethods.reduce((acc, dm) => {
+      acc[dm.id] = dm.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [deliveryMethods]);
 
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
@@ -54,21 +58,40 @@ export default function Events() {
         event.client_name.toLowerCase().includes(search.toLowerCase()) ||
         event.venue_name?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesType = typeFilter === 'all' || event.event_type === typeFilter;
+      // Support both new FK-based and legacy enum-based filtering
+      const eventTypeName = event.event_type_id 
+        ? eventTypeMap[event.event_type_id]?.toLowerCase() 
+        : event.event_type?.toLowerCase();
+      const matchesType = typeFilter === 'all' || eventTypeName === typeFilter.toLowerCase();
+
+      // Delivery method filter
+      const deliveryMethodName = event.delivery_method_id
+        ? deliveryMethodMap[event.delivery_method_id]?.toLowerCase()
+        : event.delivery_method?.replace('_', ' ').toLowerCase();
+      const matchesDelivery = deliveryFilter === 'all' || deliveryMethodName === deliveryFilter.toLowerCase();
 
       const date = parseISO(event.event_date);
       const status = isToday(date) ? 'today' : isFuture(date) ? 'upcoming' : 'past';
       const matchesStatus = statusFilter === 'all' || status === statusFilter;
 
-      return matchesSearch && matchesType && matchesStatus;
+      return matchesSearch && matchesType && matchesStatus && matchesDelivery;
     });
-  }, [events, search, typeFilter, statusFilter]);
+  }, [events, search, typeFilter, statusFilter, deliveryFilter, eventTypeMap, deliveryMethodMap]);
 
   const getEventStatus = (dateStr: string) => {
     const date = parseISO(dateStr);
     if (isToday(date)) return 'today';
     if (isFuture(date)) return 'upcoming';
     return 'past';
+  };
+
+  // Get display name for event type
+  const getEventTypeName = (event: typeof events[0]) => {
+    if (event.event_type_id && eventTypeMap[event.event_type_id]) {
+      return eventTypeMap[event.event_type_id];
+    }
+    // Fallback to legacy enum
+    return event.event_type?.replace('_', ' ') || 'Other';
   };
 
   return (
@@ -104,9 +127,23 @@ export default function Events() {
             <SelectValue placeholder="Event type" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
             {eventTypes.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
+              <SelectItem key={type.id} value={type.name.toLowerCase()}>
+                {type.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
+          <SelectTrigger className="w-full sm:w-40 bg-card border-border">
+            <SelectValue placeholder="Delivery" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Delivery</SelectItem>
+            {deliveryMethods.map((method) => (
+              <SelectItem key={method.id} value={method.name.toLowerCase()}>
+                {method.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -169,7 +206,7 @@ export default function Events() {
                       <StatusBadge status={getEventStatus(event.event_date)} />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <span className="capitalize">{event.event_type}</span>
+                      <span className="capitalize">{getEventTypeName(event)}</span>
                       <span>•</span>
                       <span>{event.client_name}</span>
                       {event.start_time && (
