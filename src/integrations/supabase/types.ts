@@ -14,16 +14,37 @@ export type Database = {
   }
   public: {
     Tables: {
+      delivery_methods_lookup: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       delivery_records: {
         Row: {
           created_at: string | null
           delivered_at: string | null
           delivery_link: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          delivery_method_id: string | null
           event_id: string
           id: string
           notes: string | null
           qr_code_data: string | null
+          qr_enabled: boolean | null
+          qr_token: string | null
           updated_at: string | null
         }
         Insert: {
@@ -31,10 +52,13 @@ export type Database = {
           delivered_at?: string | null
           delivery_link?: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"]
+          delivery_method_id?: string | null
           event_id: string
           id?: string
           notes?: string | null
           qr_code_data?: string | null
+          qr_enabled?: boolean | null
+          qr_token?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -42,13 +66,23 @@ export type Database = {
           delivered_at?: string | null
           delivery_link?: string | null
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
+          delivery_method_id?: string | null
           event_id?: string
           id?: string
           notes?: string | null
           qr_code_data?: string | null
+          qr_enabled?: boolean | null
+          qr_token?: string | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "delivery_records_delivery_method_id_fkey"
+            columns: ["delivery_method_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "delivery_records_event_id_fkey"
             columns: ["event_id"]
@@ -60,6 +94,7 @@ export type Database = {
       }
       event_assignments: {
         Row: {
+          assignment_notes: string | null
           created_at: string | null
           event_id: string
           id: string
@@ -67,8 +102,11 @@ export type Database = {
           notified: boolean | null
           role_on_event: string | null
           staff_id: string
+          staff_role_id: string | null
+          user_id: string | null
         }
         Insert: {
+          assignment_notes?: string | null
           created_at?: string | null
           event_id: string
           id?: string
@@ -76,8 +114,11 @@ export type Database = {
           notified?: boolean | null
           role_on_event?: string | null
           staff_id: string
+          staff_role_id?: string | null
+          user_id?: string | null
         }
         Update: {
+          assignment_notes?: string | null
           created_at?: string | null
           event_id?: string
           id?: string
@@ -85,6 +126,8 @@ export type Database = {
           notified?: boolean | null
           role_on_event?: string | null
           staff_id?: string
+          staff_role_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -101,7 +144,39 @@ export type Database = {
             referencedRelation: "staff"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_assignments_staff_role_id_fkey"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      event_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       events: {
         Row: {
@@ -111,14 +186,18 @@ export type Database = {
           created_by: string | null
           delivery_deadline: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
+          delivery_method_id: string | null
+          end_at: string | null
           end_time: string | null
           event_date: string
           event_name: string
           event_type: Database["public"]["Enums"]["event_type"]
+          event_type_id: string | null
           id: string
           notes: string | null
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
+          start_at: string | null
           start_time: string | null
           updated_at: string | null
           venue_address: string | null
@@ -133,14 +212,18 @@ export type Database = {
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
+          delivery_method_id?: string | null
+          end_at?: string | null
           end_time?: string | null
           event_date: string
           event_name: string
           event_type?: Database["public"]["Enums"]["event_type"]
+          event_type_id?: string | null
           id?: string
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
+          start_at?: string | null
           start_time?: string | null
           updated_at?: string | null
           venue_address?: string | null
@@ -155,47 +238,83 @@ export type Database = {
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
+          delivery_method_id?: string | null
+          end_at?: string | null
           end_time?: string | null
           event_date?: string
           event_name?: string
           event_type?: Database["public"]["Enums"]["event_type"]
+          event_type_id?: string | null
           id?: string
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
+          start_at?: string | null
           start_time?: string | null
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_delivery_method_id_fkey"
+            columns: ["delivery_method_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          default_role_id: string | null
           email: string
           full_name: string | null
           id: string
+          phone: string | null
+          status: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          default_role_id?: string | null
           email: string
           full_name?: string | null
           id: string
+          phone?: string | null
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          default_role_id?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          phone?: string | null
+          status?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_default_role_id_fkey"
+            columns: ["default_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff: {
         Row: {
@@ -236,6 +355,24 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -260,22 +397,25 @@ export type Database = {
       workflow_template_items: {
         Row: {
           created_at: string | null
+          help_text: string | null
           id: string
-          item_text: string
+          label: string
           sort_order: number
           template_id: string
         }
         Insert: {
           created_at?: string | null
+          help_text?: string | null
           id?: string
-          item_text: string
+          label: string
           sort_order?: number
           template_id: string
         }
         Update: {
           created_at?: string | null
+          help_text?: string | null
           id?: string
-          item_text?: string
+          label?: string
           sort_order?: number
           template_id?: string
         }
@@ -321,33 +461,62 @@ export type Database = {
           completed_at: string | null
           completed_by: string | null
           created_at: string | null
+          done_at: string | null
+          done_by: string | null
           id: string
+          is_done: boolean | null
           item_text: string
+          notes: string | null
           sort_order: number
           status: Database["public"]["Enums"]["worksheet_item_status"]
+          template_item_id: string | null
           worksheet_id: string
         }
         Insert: {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string | null
+          done_at?: string | null
+          done_by?: string | null
           id?: string
+          is_done?: boolean | null
           item_text: string
+          notes?: string | null
           sort_order?: number
           status?: Database["public"]["Enums"]["worksheet_item_status"]
+          template_item_id?: string | null
           worksheet_id: string
         }
         Update: {
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string | null
+          done_at?: string | null
+          done_by?: string | null
           id?: string
+          is_done?: boolean | null
           item_text?: string
+          notes?: string | null
           sort_order?: number
           status?: Database["public"]["Enums"]["worksheet_item_status"]
+          template_item_id?: string | null
           worksheet_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "worksheet_items_done_by_fkey"
+            columns: ["done_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worksheet_items_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_template_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "worksheet_items_worksheet_id_fkey"
             columns: ["worksheet_id"]
@@ -363,6 +532,7 @@ export type Database = {
           event_id: string
           id: string
           phase: Database["public"]["Enums"]["workflow_phase"]
+          status: string | null
           template_id: string | null
           template_name: string
           updated_at: string | null
@@ -372,6 +542,7 @@ export type Database = {
           event_id: string
           id?: string
           phase: Database["public"]["Enums"]["workflow_phase"]
+          status?: string | null
           template_id?: string | null
           template_name: string
           updated_at?: string | null
@@ -381,6 +552,7 @@ export type Database = {
           event_id?: string
           id?: string
           phase?: Database["public"]["Enums"]["workflow_phase"]
+          status?: string | null
           template_id?: string | null
           template_name?: string
           updated_at?: string | null

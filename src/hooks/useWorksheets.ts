@@ -109,22 +109,23 @@ export function useUpdateWorksheetItem() {
   return useMutation({
     mutationFn: async ({ 
       itemId, 
-      status, 
-      completedBy 
+      isDone, 
+      doneBy,
+      notes
     }: { 
       itemId: string; 
-      status: 'pending' | 'in_progress' | 'completed';
-      completedBy?: string;
+      isDone: boolean;
+      doneBy?: string;
+      notes?: string;
     }) => {
-      const updateData: Partial<WorksheetItem> = {
-        status,
-        completed_at: status === 'completed' ? new Date().toISOString() : null,
-        completed_by: status === 'completed' ? completedBy : null,
-      };
-      
       const { error } = await supabase
         .from('worksheet_items')
-        .update(updateData)
+        .update({
+          is_done: isDone,
+          done_at: isDone ? new Date().toISOString() : null,
+          done_by: isDone ? doneBy : null,
+          notes: notes,
+        })
         .eq('id', itemId);
       
       if (error) throw error;
@@ -183,9 +184,10 @@ export function useCreateWorksheetFromTemplate() {
       if (templateItems && templateItems.length > 0) {
         const items = templateItems.map((item) => ({
           worksheet_id: worksheet.id,
-          item_text: item.item_text,
+          item_text: item.label,
+          template_item_id: item.id,
           sort_order: item.sort_order,
-          status: 'pending' as const,
+          is_done: false,
         }));
         
         const { error: insertError } = await supabase

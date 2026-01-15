@@ -64,15 +64,15 @@ export default function EventWorksheets() {
   const createWorksheet = useCreateWorksheetFromTemplate();
   const deleteWorksheet = useDeleteWorksheet();
 
-  const handleToggleItem = async (itemId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+  const handleToggleItem = async (itemId: string, currentIsDone: boolean) => {
+    const newIsDone = !currentIsDone;
     try {
       await updateItem.mutateAsync({
         itemId,
-        status: newStatus,
-        completedBy: user?.id,
+        isDone: newIsDone,
+        doneBy: user?.id,
       });
-      toast.success(newStatus === 'completed' ? 'Task completed!' : 'Task marked as pending');
+      toast.success(newIsDone ? 'Task completed!' : 'Task marked as pending');
     } catch (error) {
       toast.error('Failed to update task');
     }
@@ -105,7 +105,7 @@ export default function EventWorksheets() {
   const getProgress = (worksheetId: string) => {
     const items = getItemsForWorksheet(worksheetId);
     if (items.length === 0) return 0;
-    const completed = items.filter(i => i.status === 'completed').length;
+    const completed = items.filter(i => i.is_done).length;
     return Math.round((completed / items.length) * 100);
   };
 
@@ -238,7 +238,7 @@ export default function EventWorksheets() {
                             <div>
                               <h3 className="font-medium">{worksheet.template_name}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {items.filter(i => i.status === 'completed').length} of {items.length} completed
+                                {items.filter(i => i.is_done).length} of {items.length} completed
                               </p>
                             </div>
                           </div>
@@ -291,25 +291,23 @@ export default function EventWorksheets() {
                             <div
                               key={item.id}
                               className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                                item.status === 'completed'
+                                item.is_done
                                   ? 'bg-success/10'
                                   : 'bg-muted/50 hover:bg-muted'
                               }`}
                             >
                               <Checkbox
-                                checked={item.status === 'completed'}
-                                onCheckedChange={() => handleToggleItem(item.id, item.status)}
+                                checked={item.is_done ?? false}
+                                onCheckedChange={() => handleToggleItem(item.id, item.is_done ?? false)}
                                 className="data-[state=checked]:bg-success data-[state=checked]:border-success"
                               />
                               <span className={`flex-1 ${
-                                item.status === 'completed' ? 'line-through text-muted-foreground' : ''
+                                item.is_done ? 'line-through text-muted-foreground' : ''
                               }`}>
                                 {item.item_text}
                               </span>
-                              {item.status === 'completed' ? (
+                              {item.is_done ? (
                                 <CheckCircle2 className="h-4 w-4 text-success" />
-                              ) : item.status === 'in_progress' ? (
-                                <Clock className="h-4 w-4 text-warning" />
                               ) : (
                                 <Circle className="h-4 w-4 text-muted-foreground" />
                               )}

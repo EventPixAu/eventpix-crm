@@ -15,7 +15,8 @@ interface WorkflowTemplate {
 interface WorkflowTemplateItem {
   id: string;
   template_id: string;
-  item_text: string;
+  label: string;
+  help_text: string | null;
   sort_order: number;
 }
 
@@ -100,7 +101,7 @@ export default function Workflows() {
                             className="flex items-start gap-2 text-sm"
                           >
                             <Circle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                            <span className="text-muted-foreground">{item.item_text}</span>
+                            <span className="text-muted-foreground">{item.label}</span>
                           </div>
                         ))}
                       </div>
