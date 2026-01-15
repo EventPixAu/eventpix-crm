@@ -1,0 +1,525 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { format, parseISO, isToday, isBefore, addDays } from 'date-fns';
+import { motion } from 'framer-motion';
+import {
+  ArrowLeft,
+  Calendar,
+  CalendarPlus,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Copy,
+  ExternalLink,
+  MapPin,
+  Phone,
+  Printer,
+  User,
+  WifiOff,
+  AlertTriangle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useAuth } from '@/lib/auth';
+import { useEvent, useEventAssignments } from '@/hooks/useEvents';
+import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
+import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
+import { useStaffRoles } from '@/hooks/useLookups';
+import { useDayOfCache } from '@/hooks/useDayOfCache';
+import { downloadICS } from '@/lib/icsGenerator';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const phases = [
+  { key: 'pre_event', label: 'Pre-Event' },
+  { key: 'day_of', label: 'Day-Of' },
+  { key: 'post_event', label: 'Post-Event' },
+] as const;
+
+export default function EventDayOf() {
+  const { id } = useParams<{ id: string }>();
+  const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
+  
+  // Data fetching
+  const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id);
+  const { data: assignments = [], isLoading: assignmentsLoading } = useEventAssignments(id);
+  const { data: worksheets = [] } = useEventWorksheets(id);
+  const { data: deliveryRecord } = useDeliveryRecord(id);
+  const { data: staffRoles = [] } = useStaffRoles();
+  
+  const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
+  const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
+  
+  const updateItem = useUpdateWorksheetItem();
+  
+  // Offline caching
+  const { cachedData, isOffline, saveToCache, setOfflineMode } = useDayOfCache(id);
+  
+  // Collapsible state for checklist phases
+  const [expandedPhases, setExpandedPhases] = useState<Record<string, boolean>>({
+    day_of: true,
+    pre_event: false,
+    post_event: false,
+  });
+
+  // Handle fetch errors (offline mode)
+  useEffect(() => {
+    if (eventError) {
+      setOfflineMode(true);
+    }
+  }, [eventError, setOfflineMode]);
+
+  // Save to cache when data loads
+  useEffect(() => {
+    if (event && !eventLoading && !assignmentsLoading) {
+      saveToCache({
+        event,
+        assignments,
+        worksheets,
+        worksheetItems,
+        deliveryRecord: deliveryRecord || null,
+      });
+      setOfflineMode(false);
+    }
+  }, [event, assignments, worksheets, worksheetItems, deliveryRecord, eventLoading, assignmentsLoading, saveToCache, setOfflineMode]);
+
+  // Use cached data if offline
+  const displayEvent = isOffline && cachedData ? cachedData.event : event;
+  const displayAssignments = isOffline && cachedData ? cachedData.assignments : assignments;
+  const displayWorksheets = isOffline && cachedData ? cachedData.worksheets : worksheets;
+  const displayWorksheetItems = isOffline && cachedData ? cachedData.worksheetItems : worksheetItems;
+
+  // Find current user's assignment
+  const myAssignment = useMemo(() => {
+    if (!user) return null;
+    return displayAssignments.find((a) => a.user_id === user.id);
+  }, [displayAssignments, user]);
+
+  // Get my role name
+  const myRoleName = useMemo(() => {
+    if (!myAssignment) return null;
+    if (myAssignment.staff_role_id) {
+      const role = staffRoles.find((r) => r.id === myAssignment.staff_role_id);
+      return role?.name || null;
+    }
+    return myAssignment.role_on_event || null;
+  }, [myAssignment, staffRoles]);
+
+  // Status badges
+  const getStatusBadges = () => {
+    if (!displayEvent) return [];
+    const badges: { label: string; variant: 'default' | 'destructive' | 'secondary' | 'outline' }[] = [];
+    
+    const eventDate = parseISO(displayEvent.event_date);
+    
+    if (isToday(eventDate)) {
+      badges.push({ label: 'Today', variant: 'default' });
+    }
+    
+    if (displayEvent.delivery_deadline) {
+      const deadline = parseISO(displayEvent.delivery_deadline);
+      const inSevenDays = addDays(new Date(), 7);
+      if (isBefore(deadline, inSevenDays) && !deliveryRecord?.delivered_at) {
+        badges.push({ label: 'Delivery Due', variant: 'destructive' });
+      }
+    }
+    
+    return badges;
+  };
+
+  // Quick actions
+  const handleCall = () => {
+    if (displayEvent?.onsite_contact_phone) {
+      window.location.href = `tel:${displayEvent.onsite_contact_phone}`;
+    }
+  };
+
+  const handleOpenMaps = () => {
+    if (displayEvent?.venue_address) {
+      const query = encodeURIComponent(displayEvent.venue_address);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    }
+  };
+
+  const handleCopyAddress = async () => {
+    if (displayEvent?.venue_address) {
+      try {
+        await navigator.clipboard.writeText(displayEvent.venue_address);
+        toast({ title: 'Address copied to clipboard' });
+      } catch {
+        toast({ title: 'Failed to copy address', variant: 'destructive' });
+      }
+    }
+  };
+
+  const handleAddToCalendar = () => {
+    if (!displayEvent) return;
+    downloadICS({
+      title: displayEvent.event_name,
+      description: displayEvent.coverage_details || '',
+      location: displayEvent.venue_address || displayEvent.venue_name || '',
+      startDate: displayEvent.event_date,
+      startTime: displayEvent.start_time || undefined,
+      endTime: displayEvent.end_time || undefined,
+      eventId: displayEvent.id,
+    });
+    toast({ title: 'Calendar invite downloaded' });
+  };
+
+  // Checklist toggle
+  const handleToggleItem = (itemId: string, isDone: boolean) => {
+    if (isOffline) {
+      toast({ title: 'Cannot update while offline', variant: 'destructive' });
+      return;
+    }
+    updateItem.mutate({
+      itemId,
+      isDone: !isDone,
+      doneBy: user?.id,
+    });
+  };
+
+  // Get items for a worksheet
+  const getItemsForWorksheet = (worksheetId: string) => {
+    return displayWorksheetItems.filter((item) => item.worksheet_id === worksheetId);
+  };
+
+  // Get worksheets for a phase
+  const getWorksheetsForPhase = (phase: string) => {
+    return displayWorksheets.filter((w) => w.phase === phase);
+  };
+
+  // Loading state
+  if (eventLoading && !cachedData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Not found
+  if (!displayEvent) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <p className="text-muted-foreground mb-4">Event not found</p>
+        <Link to="/events">
+          <Button variant="outline">Back to Events</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const eventDate = parseISO(displayEvent.event_date);
+  const statusBadges = getStatusBadges();
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      {/* Offline Banner */}
+      {isOffline && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500/90 text-amber-950 py-2 px-4 flex items-center justify-center gap-2 text-sm">
+          <WifiOff className="h-4 w-4" />
+          Offline – showing last saved details
+        </div>
+      )}
+
+      <div className={cn('max-w-lg mx-auto', isOffline && 'pt-10')}>
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Link
+                to={`/events/${id}`}
+                className="p-1 -ml-1 text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <span className="text-sm text-muted-foreground">Day-Of View</span>
+            </div>
+            <h1 className="text-xl font-display font-bold mb-1">{displayEvent.event_name}</h1>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              {format(eventDate, 'EEE, MMM d, yyyy')}
+              {displayEvent.start_time && (
+                <>
+                  <Clock className="h-4 w-4 ml-2" />
+                  {format(new Date(`2000-01-01T${displayEvent.start_time}`), 'h:mm a')}
+                  {displayEvent.end_time && (
+                    <span>
+                      – {format(new Date(`2000-01-01T${displayEvent.end_time}`), 'h:mm a')}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            {statusBadges.length > 0 && (
+              <div className="flex gap-2 mt-2">
+                {statusBadges.map((badge) => (
+                  <Badge key={badge.label} variant={badge.variant}>
+                    {badge.label}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* Primary Actions */}
+        <section className="p-4 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="lg"
+              className="h-14"
+              onClick={handleCall}
+              disabled={!displayEvent.onsite_contact_phone}
+            >
+              <Phone className="h-5 w-5 mr-2" />
+              Call Contact
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-14"
+              onClick={handleOpenMaps}
+              disabled={!displayEvent.venue_address}
+            >
+              <MapPin className="h-5 w-5 mr-2" />
+              Open Maps
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="h-12" onClick={handleAddToCalendar}>
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              Add to Calendar
+            </Button>
+            <Button variant="outline" className="h-12" onClick={handleCopyAddress} disabled={!displayEvent.venue_address}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Address
+            </Button>
+          </div>
+          <Link to={`/events/${id}/run-sheet`}>
+            <Button variant="ghost" className="w-full h-10">
+              <Printer className="h-4 w-4 mr-2" />
+              Print Run Sheet
+            </Button>
+          </Link>
+        </section>
+
+        {/* Venue Card */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+              <MapPin className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold mb-1">Venue</h3>
+              {displayEvent.venue_name && (
+                <p className="font-medium">{displayEvent.venue_name}</p>
+              )}
+              {displayEvent.venue_address && (
+                <p className="text-sm text-muted-foreground">{displayEvent.venue_address}</p>
+              )}
+              {displayEvent.notes && (
+                <p className="text-sm text-muted-foreground mt-2 italic">{displayEvent.notes}</p>
+              )}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Contact Card */}
+        {(displayEvent.onsite_contact_name || displayEvent.onsite_contact_phone) && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-muted rounded-lg shrink-0">
+                <Phone className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-semibold mb-1">On-Site Contact</h3>
+                {displayEvent.onsite_contact_name && (
+                  <p className="font-medium">{displayEvent.onsite_contact_name}</p>
+                )}
+                {displayEvent.onsite_contact_phone && (
+                  <a
+                    href={`tel:${displayEvent.onsite_contact_phone}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {displayEvent.onsite_contact_phone}
+                  </a>
+                )}
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Coverage Card */}
+        {(displayEvent.coverage_details || myAssignment) && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
+          >
+            <h3 className="font-semibold mb-2">Coverage Details</h3>
+            {displayEvent.coverage_details && (
+              <p className="text-sm whitespace-pre-wrap mb-3">{displayEvent.coverage_details}</p>
+            )}
+            {myAssignment && (
+              <div className="bg-primary/10 rounded-lg p-3 mt-2">
+                <p className="text-sm font-medium">Your Role</p>
+                <p className="text-sm text-muted-foreground">
+                  {myRoleName || 'Staff'}
+                  {myAssignment.assignment_notes && (
+                    <span className="block mt-1">{myAssignment.assignment_notes}</span>
+                  )}
+                </p>
+              </div>
+            )}
+          </motion.section>
+        )}
+
+        {/* Assignments Snapshot */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
+        >
+          <h3 className="font-semibold mb-3">Team ({displayAssignments.length})</h3>
+          {displayAssignments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No staff assigned</p>
+          ) : (
+            <div className="space-y-2">
+              {displayAssignments.map((assignment) => {
+                const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
+                const role = assignment.staff_role?.name || assignment.role_on_event || 'Staff';
+                const isMe = assignment.user_id === user?.id;
+                
+                return (
+                  <div
+                    key={assignment.id}
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-lg',
+                      isMe && 'bg-primary/10'
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <span className="text-xs font-medium">{name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">
+                        {name}
+                        {isMe && <span className="text-primary ml-1">(You)</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground capitalize">{role}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </motion.section>
+
+        {/* Checklist */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mx-4 mb-4"
+        >
+          <h3 className="font-semibold mb-3">Checklist</h3>
+          
+          {displayWorksheets.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No worksheets added</p>
+          ) : (
+            <div className="space-y-3">
+              {phases.map((phase) => {
+                const phaseWorksheets = getWorksheetsForPhase(phase.key);
+                if (phaseWorksheets.length === 0) return null;
+                
+                const allItems = phaseWorksheets.flatMap((w) => getItemsForWorksheet(w.id));
+                const completedCount = allItems.filter((i) => i.is_done).length;
+                const totalCount = allItems.length;
+                
+                return (
+                  <Collapsible
+                    key={phase.key}
+                    open={expandedPhases[phase.key]}
+                    onOpenChange={(open) =>
+                      setExpandedPhases((prev) => ({ ...prev, [phase.key]: open }))
+                    }
+                  >
+                    <CollapsibleTrigger asChild>
+                      <button className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{phase.label}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {completedCount}/{totalCount}
+                          </span>
+                        </div>
+                        {expandedPhases[phase.key] ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2">
+                      {phaseWorksheets.map((worksheet) => (
+                        <div key={worksheet.id} className="mb-3 last:mb-0">
+                          <p className="text-xs text-muted-foreground mb-2 px-1">
+                            {worksheet.template_name}
+                          </p>
+                          <div className="space-y-1">
+                            {getItemsForWorksheet(worksheet.id).map((item) => (
+                              <div
+                                key={item.id}
+                                className={cn(
+                                  'flex items-start gap-3 p-3 rounded-lg border border-border bg-card',
+                                  item.is_done && 'opacity-60'
+                                )}
+                              >
+                                <Checkbox
+                                  checked={item.is_done || false}
+                                  onCheckedChange={() => handleToggleItem(item.id, item.is_done || false)}
+                                  disabled={updateItem.isPending || isOffline}
+                                />
+                                <span
+                                  className={cn(
+                                    'text-sm flex-1',
+                                    item.is_done && 'line-through'
+                                  )}
+                                >
+                                  {item.item_text}
+                                </span>
+                                {item.is_done && (
+                                  <Check className="h-4 w-4 text-green-500 shrink-0" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          )}
+        </motion.section>
+      </div>
+    </div>
+  );
+}
