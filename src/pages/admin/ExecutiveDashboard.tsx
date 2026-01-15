@@ -238,18 +238,24 @@ export default function ExecutiveDashboard() {
         </div>
       </div>
 
-      {isLoading || !data ? (
+      {isLoading ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-28 rounded-xl" />
+              <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
           <div className="grid lg:grid-cols-2 gap-6">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-xl" />
+              <div key={i} className="h-64 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
+        </div>
+      ) : !data ? (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No dashboard data available for this period</p>
+          <p className="text-sm text-muted-foreground mt-1">Try selecting a different date range</p>
         </div>
       ) : (
         <div className="space-y-8">
