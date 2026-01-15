@@ -35,6 +35,8 @@ export interface ContractInsert {
   title: string;
   file_url?: string | null;
   status?: ContractStatus;
+  sent_at?: string | null;
+  signed_at?: string | null;
 }
 
 export interface ContractUpdate extends Partial<ContractInsert> {
