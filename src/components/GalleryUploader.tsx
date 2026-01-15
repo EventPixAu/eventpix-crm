@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useGalleryAssets, useUploadGalleryAsset, useDeleteGalleryAsset, useReorderGalleryAssets, useUpdateGalleryAsset, getPublicUrl, GalleryAsset } from '@/hooks/useGalleryAssets';
+import { useGalleryAssets, useUploadGalleryAsset, useDeleteGalleryAsset, useReorderGalleryAssets, useUpdateGalleryAsset, getPublicUrl, getThumbnailUrl, GalleryAsset } from '@/hooks/useGalleryAssets';
 import {
   Dialog,
   DialogContent,
@@ -78,7 +78,8 @@ function SortableImage({ asset, isAdmin, onPreview, onDelete, onEdit }: Sortable
     transition,
   };
 
-  const url = getPublicUrl(asset.storage_path);
+  const thumbnailUrl = getThumbnailUrl(asset);
+  const fullUrl = getPublicUrl(asset.storage_path);
 
   return (
     <div
@@ -90,10 +91,10 @@ function SortableImage({ asset, isAdmin, onPreview, onDelete, onEdit }: Sortable
       )}
     >
       <img
-        src={url}
+        src={thumbnailUrl}
         alt={asset.alt_text || asset.file_name}
         className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
-        onClick={() => onPreview(url)}
+        onClick={() => onPreview(fullUrl)}
         loading="lazy"
       />
       {/* Caption overlay */}

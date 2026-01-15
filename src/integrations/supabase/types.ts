@@ -287,6 +287,7 @@ export type Database = {
           mime_type: string | null
           sort_order: number
           storage_path: string
+          thumbnail_path: string | null
         }
         Insert: {
           alt_text?: string | null
@@ -299,6 +300,7 @@ export type Database = {
           mime_type?: string | null
           sort_order?: number
           storage_path: string
+          thumbnail_path?: string | null
         }
         Update: {
           alt_text?: string | null
@@ -311,6 +313,7 @@ export type Database = {
           mime_type?: string | null
           sort_order?: number
           storage_path?: string
+          thumbnail_path?: string | null
         }
         Relationships: [
           {
