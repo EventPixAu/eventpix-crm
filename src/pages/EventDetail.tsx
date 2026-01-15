@@ -13,8 +13,10 @@ import {
   Trash2,
   User,
   History,
+  Wand2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { InvoiceStatusBadge } from '@/components/ui/invoice-status-badge';
@@ -61,6 +63,7 @@ export default function EventDetail() {
   
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
       acc[et.id] = et.name;
@@ -422,7 +425,13 @@ export default function EventDetail() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-display font-semibold">Assigned Staff</h2>
               {isAdmin && id && (
-                <StaffAssignmentDialog eventId={id} assignments={assignments} />
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setRecommendCrewOpen(true)}>
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Recommend Crew
+                  </Button>
+                  <StaffAssignmentDialog eventId={id} assignments={assignments} />
+                </div>
               )}
             </div>
             {assignments.length === 0 ? (
@@ -507,6 +516,16 @@ export default function EventDetail() {
           </div>
         </TabsContent>
       </Tabs>
+      
+      {/* Recommend Crew Dialog */}
+      {id && (
+        <RecommendCrewDialog
+          open={recommendCrewOpen}
+          onOpenChange={setRecommendCrewOpen}
+          eventIds={[id]}
+          scope="single_event"
+        />
+      )}
     </AppLayout>
   );
 }

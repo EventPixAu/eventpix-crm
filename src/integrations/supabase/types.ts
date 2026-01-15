@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_drafts: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          draft_json: Json
+          event_ids: string[]
+          id: string
+          scope: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          draft_json: Json
+          event_ids: string[]
+          id?: string
+          scope: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          draft_json?: Json
+          event_ids?: string[]
+          id?: string
+          scope?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_drafts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"]
@@ -254,6 +295,7 @@ export type Database = {
           default_delivery_deadline_days: number | null
           default_delivery_method_id: string | null
           default_photographers_required: number | null
+          default_roles_json: Json | null
           event_type_id: string | null
           id: string
           is_active: boolean | null
@@ -267,6 +309,7 @@ export type Database = {
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
           default_photographers_required?: number | null
+          default_roles_json?: Json | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -280,6 +323,7 @@ export type Database = {
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
           default_photographers_required?: number | null
+          default_roles_json?: Json | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -361,6 +405,7 @@ export type Database = {
       events: {
         Row: {
           calendar_sequence: number
+          city: string | null
           client_name: string
           coverage_details: string | null
           created_at: string | null
@@ -385,12 +430,15 @@ export type Database = {
           ops_status: string | null
           start_at: string | null
           start_time: string | null
+          state: string | null
           updated_at: string | null
           venue_address: string | null
           venue_name: string | null
+          venue_postcode: string | null
         }
         Insert: {
           calendar_sequence?: number
+          city?: string | null
           client_name: string
           coverage_details?: string | null
           created_at?: string | null
@@ -417,12 +465,15 @@ export type Database = {
           ops_status?: string | null
           start_at?: string | null
           start_time?: string | null
+          state?: string | null
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
+          venue_postcode?: string | null
         }
         Update: {
           calendar_sequence?: number
+          city?: string | null
           client_name?: string
           coverage_details?: string | null
           created_at?: string | null
@@ -449,9 +500,11 @@ export type Database = {
           ops_status?: string | null
           start_at?: string | null
           start_time?: string | null
+          state?: string | null
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
+          venue_postcode?: string | null
         }
         Relationships: [
           {
@@ -641,9 +694,16 @@ export type Database = {
           default_role_id: string | null
           email: string
           full_name: string | null
+          home_city: string | null
+          home_state: string | null
           id: string
+          notes_internal: string | null
           phone: string | null
+          preferred_end_time: string | null
+          preferred_start_time: string | null
+          seniority: string | null
           status: string | null
+          travel_ready: boolean | null
           updated_at: string | null
         }
         Insert: {
@@ -652,9 +712,16 @@ export type Database = {
           default_role_id?: string | null
           email: string
           full_name?: string | null
+          home_city?: string | null
+          home_state?: string | null
           id: string
+          notes_internal?: string | null
           phone?: string | null
+          preferred_end_time?: string | null
+          preferred_start_time?: string | null
+          seniority?: string | null
           status?: string | null
+          travel_ready?: boolean | null
           updated_at?: string | null
         }
         Update: {
@@ -663,9 +730,16 @@ export type Database = {
           default_role_id?: string | null
           email?: string
           full_name?: string | null
+          home_city?: string | null
+          home_state?: string | null
           id?: string
+          notes_internal?: string | null
           phone?: string | null
+          preferred_end_time?: string | null
+          preferred_start_time?: string | null
+          seniority?: string | null
           status?: string | null
+          travel_ready?: boolean | null
           updated_at?: string | null
         }
         Relationships: [
@@ -677,6 +751,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      skills: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       staff: {
         Row: {
@@ -772,6 +864,42 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      staff_skills: {
+        Row: {
+          created_at: string | null
+          id: string
+          skill_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          skill_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          skill_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_skills_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
