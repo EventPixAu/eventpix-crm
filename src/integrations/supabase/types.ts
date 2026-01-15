@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_user_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          event_id: string | null
+          id: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_user_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          actor_user_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_methods_lookup: {
         Row: {
           created_at: string | null
@@ -632,6 +677,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_staff_conflicts: {
+        Args: {
+          p_end_at: string
+          p_exclude_event_id?: string
+          p_start_at: string
+          p_user_id: string
+        }
+        Returns: {
+          end_at: string
+          event_id: string
+          event_name: string
+          start_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -643,9 +702,26 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
+      log_audit_entry: {
+        Args: {
+          p_action: Database["public"]["Enums"]["audit_action"]
+          p_actor_user_id: string
+          p_after?: Json
+          p_before?: Json
+          p_event_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "photographer"
+      audit_action:
+        | "event_created"
+        | "event_updated"
+        | "assignment_created"
+        | "assignment_removed"
+        | "delivery_updated"
+        | "worksheet_item_toggled"
       delivery_method:
         | "dropbox"
         | "zno_instant"
@@ -793,6 +869,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "photographer"],
+      audit_action: [
+        "event_created",
+        "event_updated",
+        "assignment_created",
+        "assignment_removed",
+        "delivery_updated",
+        "worksheet_item_toggled",
+      ],
       delivery_method: [
         "dropbox",
         "zno_instant",

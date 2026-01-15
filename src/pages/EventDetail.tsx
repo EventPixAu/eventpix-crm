@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -8,10 +8,10 @@ import {
   Clock,
   Edit,
   MapPin,
-  Package,
   Phone,
   Trash2,
   User,
+  History,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
+import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 import { DeliveryManager } from '@/components/DeliveryManager';
 
@@ -42,6 +43,7 @@ export default function EventDetail() {
   const { data: assignments = [] } = useEventAssignments(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
+  const { data: auditLog = [] } = useAuditLog(id);
   const deleteEvent = useDeleteEvent();
 
   // Create lookup maps
@@ -179,6 +181,7 @@ export default function EventDetail() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -354,6 +357,46 @@ export default function EventDetail() {
 
         <TabsContent value="delivery">
           {id && <DeliveryManager eventId={id} isAdmin={isAdmin} />}
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-display font-semibold">Activity Log</h2>
+            </div>
+            {auditLog.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No activity recorded yet</p>
+            ) : (
+              <div className="space-y-4">
+                {auditLog.map((entry) => {
+                  const { action, detail } = getActivityDescription(entry);
+                  const actorName = entry.actor?.full_name || entry.actor?.email || 'System';
+                  
+                  return (
+                    <div key={entry.id} className="flex gap-3 pb-4 border-b border-border last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {actorName.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">
+                          <span className="font-medium">{actorName}</span>
+                          {' '}
+                          <span className="text-muted-foreground">{action.toLowerCase()}</span>
+                        </p>
+                        <p className="text-sm text-muted-foreground">{detail}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </AppLayout>
