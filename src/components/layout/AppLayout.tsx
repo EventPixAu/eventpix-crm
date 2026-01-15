@@ -10,6 +10,7 @@ import {
   Menu,
   Package,
   Settings,
+  User,
   Users,
   X,
   FileText,
@@ -44,6 +45,7 @@ const adminNavItems = [
 ];
 
 const photographerNavItems = [
+  { href: '/staff/me', label: 'My Profile', icon: User },
   { href: '/', label: 'My Jobs', icon: Home },
   { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
   { href: '/my-availability', label: 'My Availability', icon: CalendarCheck },
