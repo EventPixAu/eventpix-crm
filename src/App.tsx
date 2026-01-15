@@ -25,6 +25,9 @@ import EventSeriesList from "./pages/admin/EventSeriesList";
 import EventSeriesDetail from "./pages/admin/EventSeriesDetail";
 import Delivery from "./pages/Delivery";
 import GalleryPublic from "./pages/GalleryPublic";
+import JobIntakeList from "./pages/JobIntakeList";
+import JobIntakeDetail from "./pages/JobIntakeDetail";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,6 +74,9 @@ function AppRoutes() {
       <Route path="/admin/series" element={<ProtectedRoute><EventSeriesList /></ProtectedRoute>} />
       <Route path="/admin/series/:id" element={<ProtectedRoute><EventSeriesDetail /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
+      <Route path="/job-intake" element={<ProtectedRoute><JobIntakeList /></ProtectedRoute>} />
+      <Route path="/job-intake/:id" element={<ProtectedRoute><JobIntakeDetail /></ProtectedRoute>} />
+      <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
