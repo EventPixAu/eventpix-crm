@@ -59,6 +59,28 @@ export interface SeriesPerformance {
   staffingCompleteness: number;
 }
 
+export interface CityBreakdown {
+  city: string;
+  state: string;
+  totalEvents: number;
+  deliveredEvents: number;
+  pendingEvents: number;
+  overdueEvents: number;
+  slaOnTrack: boolean;
+}
+
+export interface LocalBusinessAwardsData {
+  found: boolean;
+  seriesId?: string;
+  seriesName?: string;
+  totalEvents: number;
+  deliveredEvents: number;
+  pendingEvents: number;
+  overdueEvents: number;
+  slaPercentage: number;
+  cityBreakdown: CityBreakdown[];
+}
+
 export interface ExecutiveDashboardData {
   snapshot: TodaySnapshot;
   delivery: DeliverySLAMetrics;
@@ -66,6 +88,7 @@ export interface ExecutiveDashboardData {
   costs: CostMetrics;
   compliance: ComplianceRisk;
   seriesPerformance: SeriesPerformance[];
+  localBusinessAwards: LocalBusinessAwardsData;
 }
 
 export function useExecutiveDashboard() {
@@ -510,6 +533,95 @@ export function useExecutiveDashboard() {
         };
       });
 
+      // Calculate Local Business Awards Spotlight
+      const lbaSeries = series.find(s => 
+        s.name.toLowerCase().includes('local business awards') ||
+        s.name.toLowerCase().includes('business awards')
+      );
+
+      let localBusinessAwards: LocalBusinessAwardsData;
+
+      if (lbaSeries) {
+        // Fetch LBA events with city info
+        const { data: lbaEvents } = await supabase
+          .from('events')
+          .select('id, event_name, event_date, city, state, delivery_deadline')
+          .eq('event_series_id', lbaSeries.id);
+
+        const lbaEventList = lbaEvents || [];
+        const lbaDelivered = lbaEventList.filter(e => deliveredEvents.has(e.id));
+        const lbaPending = lbaEventList.filter(e => !deliveredEvents.has(e.id));
+        const lbaOverdue = lbaEventList.filter(e => {
+          if (!e.delivery_deadline) return false;
+          const deadline = parseISO(e.delivery_deadline);
+          return deadline < now && !deliveredEvents.has(e.id);
+        });
+
+        // Group by city
+        const cityMap = new Map<string, { 
+          city: string; 
+          state: string; 
+          events: typeof lbaEventList;
+        }>();
+
+        lbaEventList.forEach(e => {
+          const city = e.city || 'Unknown';
+          const state = e.state || '';
+          const key = `${city}-${state}`;
+          const existing = cityMap.get(key) || { city, state, events: [] };
+          existing.events.push(e);
+          cityMap.set(key, existing);
+        });
+
+        const cityBreakdown: CityBreakdown[] = Array.from(cityMap.values())
+          .map(({ city, state, events }) => {
+            const delivered = events.filter(e => deliveredEvents.has(e.id)).length;
+            const pending = events.filter(e => !deliveredEvents.has(e.id)).length;
+            const overdue = events.filter(e => {
+              if (!e.delivery_deadline) return false;
+              const deadline = parseISO(e.delivery_deadline);
+              return deadline < now && !deliveredEvents.has(e.id);
+            }).length;
+
+            return {
+              city,
+              state,
+              totalEvents: events.length,
+              deliveredEvents: delivered,
+              pendingEvents: pending,
+              overdueEvents: overdue,
+              slaOnTrack: overdue === 0,
+            };
+          })
+          .sort((a, b) => b.totalEvents - a.totalEvents);
+
+        const slaPercentage = lbaEventList.length > 0 
+          ? ((lbaEventList.length - lbaOverdue.length) / lbaEventList.length) * 100
+          : 100;
+
+        localBusinessAwards = {
+          found: true,
+          seriesId: lbaSeries.id,
+          seriesName: lbaSeries.name,
+          totalEvents: lbaEventList.length,
+          deliveredEvents: lbaDelivered.length,
+          pendingEvents: lbaPending.length,
+          overdueEvents: lbaOverdue.length,
+          slaPercentage,
+          cityBreakdown,
+        };
+      } else {
+        localBusinessAwards = {
+          found: false,
+          totalEvents: 0,
+          deliveredEvents: 0,
+          pendingEvents: 0,
+          overdueEvents: 0,
+          slaPercentage: 100,
+          cityBreakdown: [],
+        };
+      }
+
       return {
         snapshot,
         delivery,
@@ -517,6 +629,7 @@ export function useExecutiveDashboard() {
         costs,
         compliance,
         seriesPerformance,
+        localBusinessAwards,
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
