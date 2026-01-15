@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle } from 'lucide-react';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -27,8 +26,10 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
 import { useCheckAssignmentConflicts, useStaffAvailabilityByDate, AssignmentWarning } from '@/hooks/useStaffAvailability';
 import { useLogAuditEntry } from '@/hooks/useAuditLog';
-import { AssignmentEligibilityWarning, EligibilityBadge } from '@/components/AssignmentEligibilityWarning';
-import { useStaffEligibility } from '@/hooks/useCompliance';
+import { EligibilityBadge } from '@/components/AssignmentEligibilityWarning';
+import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGuardrails';
+import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
+import { useAuth } from '@/lib/auth';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -40,9 +41,14 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
-  const [overrideConfirmed, setOverrideConfirmed] = useState(false);
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
+  // Guardrail state
+  const [guardrailChecks, setGuardrailChecks] = useState<{ hardBlocks: GuardrailCheck[]; softBlocks: GuardrailCheck[] } | null>(null);
+  const [showGuardrailDialog, setShowGuardrailDialog] = useState(false);
+  const [guardrailOverridden, setGuardrailOverridden] = useState(false);
+  
+  const { user } = useAuth();
   const { data: profiles = [] } = useStaffProfiles();
   const { data: roles = [] } = useStaffRoles();
   const { data: event } = useEvent(eventId);
@@ -50,11 +56,8 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const deleteAssignment = useDeleteAssignment();
   const sendNotification = useSendNotification();
   const checkConflicts = useCheckAssignmentConflicts();
+  const checkGuardrails = useCheckAssignmentGuardrails();
   const logAuditEntry = useLogAuditEntry();
-  
-  // Fetch eligibility for selected user
-  const { data: eligibility } = useStaffEligibility(selectedUser || undefined);
-  const hasComplianceIssues = selectedUser && eligibility && !eligibility.eligible;
   
   // Fetch availability for the event date
   const { data: dateAvailability = [] } = useStaffAvailabilityByDate(event?.event_date);
@@ -80,6 +83,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   // Check for availability and routing conflicts when user is selected
   useEffect(() => {
     if (selectedUser && event) {
+      // Check legacy conflicts
       checkConflicts.mutate({
         userId: selectedUser,
         eventId,
@@ -89,10 +93,22 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
       }, {
         onSuccess: (result) => setWarnings(result),
       });
+      
+      // Check guardrails
+      checkGuardrails.mutate({
+        userId: selectedUser,
+        eventId,
+        eventDate: event.event_date,
+        startAt: event.start_at || null,
+        endAt: event.end_at || null,
+      }, {
+        onSuccess: (result) => setGuardrailChecks(result),
+      });
     } else {
       setWarnings([]);
+      setGuardrailChecks(null);
     }
-    setOverrideConfirmed(false);
+    setGuardrailOverridden(false);
   }, [selectedUser, event?.event_date, event?.start_at, event?.end_at]);
   
   // Get user availability status
@@ -100,31 +116,40 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
     if (!selectedUser) return null;
     return dateAvailability.find(a => a.user_id === selectedUser);
   }, [selectedUser, dateAvailability]);
+  
   const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
   const availableProfiles = profiles.filter(
     (profile) => !assignedUserIds.includes(profile.id)
   );
 
-  // Check if we have errors that require override
-  const hasErrors = warnings.some(w => w.severity === 'error');
-  const hasWarnings = warnings.length > 0;
-  const requiresOverride = hasErrors || hasComplianceIssues || (hasWarnings && !overrideConfirmed);
+  // Check guardrail status
+  const hasHardBlocks = guardrailChecks?.hardBlocks && guardrailChecks.hardBlocks.length > 0;
+  const hasSoftBlocks = guardrailChecks?.softBlocks && guardrailChecks.softBlocks.length > 0;
+  const hasGuardrailIssues = hasHardBlocks || hasSoftBlocks;
+  const requiresGuardrailOverride = hasGuardrailIssues && !guardrailOverridden;
 
-  const handleAssign = async () => {
+  const handleAssignClick = () => {
     if (!selectedUser) return;
     
-    // Log override if there were warnings
-    if (hasWarnings && overrideConfirmed) {
-      logAuditEntry.mutate({
-        action: 'assignment_override',
-        eventId,
-        after: {
-          user_id: selectedUser,
-          warnings: warnings.map(w => ({ type: w.type, message: w.message })),
-          notes: assignmentNotes,
-        },
-      });
+    // If there are guardrail issues and not yet overridden, show the dialog
+    if (requiresGuardrailOverride) {
+      setShowGuardrailDialog(true);
+      return;
     }
+    
+    // Otherwise proceed with assignment
+    executeAssignment();
+  };
+  
+  const handleGuardrailOverrideConfirmed = () => {
+    setGuardrailOverridden(true);
+    setShowGuardrailDialog(false);
+    // Proceed with assignment after override
+    executeAssignment();
+  };
+  
+  const executeAssignment = async () => {
+    if (!selectedUser) return;
 
     const result = await createAssignment.mutateAsync({
       event_id: eventId,
@@ -146,6 +171,8 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
     setSelectedUser('');
     setSelectedRole('');
     setAssignmentNotes('');
+    setGuardrailChecks(null);
+    setGuardrailOverridden(false);
   };
 
   const handleRemove = async (assignmentId: string) => {
@@ -274,18 +301,55 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
             rows={2}
           />
 
-          {/* Compliance Eligibility Warning */}
-          {selectedUser && hasComplianceIssues && (
-            <AssignmentEligibilityWarning
-              userId={selectedUser}
-              userName={availableProfiles.find(p => p.id === selectedUser)?.full_name || 'Staff Member'}
-              eventId={eventId}
-              showOverrideOption={false}
-            />
+          {/* Guardrail Hard Blocks */}
+          {hasHardBlocks && (
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Assignment Blocked</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 mt-1">
+                  {guardrailChecks?.hardBlocks.map((block, i) => (
+                    <li key={i}>
+                      <span className="font-medium">{block.message}</span>
+                      {block.details && <span className="text-xs block ml-4 opacity-80">{block.details}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Guardrail Soft Blocks */}
+          {hasSoftBlocks && !hasHardBlocks && (
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-600">Warnings</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1 mt-1">
+                  {guardrailChecks?.softBlocks.map((block, i) => (
+                    <li key={i}>
+                      <span className="font-medium">{block.message}</span>
+                      {block.details && <span className="text-xs block ml-4 opacity-80">{block.details}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Override confirmed indicator */}
+          {guardrailOverridden && hasGuardrailIssues && (
+            <Alert className="border-green-500/50 bg-green-500/10">
+              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-600">Override Approved</AlertTitle>
+              <AlertDescription>
+                Guardrail issues have been acknowledged. You can proceed with the assignment.
+              </AlertDescription>
+            </Alert>
           )}
 
           {/* Availability Status Indicator */}
-          {selectedUserAvailability && (
+          {selectedUserAvailability && !hasGuardrailIssues && (
             <Alert 
               variant={selectedUserAvailability.availability_status === 'unavailable' ? 'destructive' : 'default'}
               className={selectedUserAvailability.availability_status === 'limited' ? 'border-amber-500/50 bg-amber-500/10' : ''}
@@ -309,41 +373,8 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
             </Alert>
           )}
 
-          {/* Routing & Conflict Warnings */}
-          {warnings.length > 0 && (
-            <div className="space-y-2">
-              {warnings.filter(w => w.severity === 'error').length > 0 && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Assignment Conflicts</AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-disc list-inside space-y-1 mt-1">
-                      {warnings.filter(w => w.severity === 'error').map((w, i) => (
-                        <li key={i}>{w.message}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {warnings.filter(w => w.severity === 'warning').length > 0 && (
-                <Alert className="border-amber-500/50 bg-amber-500/10">
-                  <Clock className="h-4 w-4 text-amber-600" />
-                  <AlertTitle className="text-amber-600">Warnings</AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-disc list-inside space-y-1 mt-1">
-                      {warnings.filter(w => w.severity === 'warning').map((w, i) => (
-                        <li key={i}>{w.message}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
-
-          {/* Legacy Conflict Warning from calendar check */}
-          {conflicts.length > 0 && warnings.length === 0 && (
+          {/* Legacy Conflict Warning from calendar check (shown only if no guardrail issues) */}
+          {conflicts.length > 0 && !hasGuardrailIssues && (
             <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -357,31 +388,32 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
               </AlertDescription>
             </Alert>
           )}
-          
-          {/* Override Confirmation */}
-          {(hasWarnings || hasComplianceIssues) && (
-            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-              <Checkbox 
-                id="override" 
-                checked={overrideConfirmed}
-                onCheckedChange={(checked) => setOverrideConfirmed(!!checked)}
-              />
-              <label htmlFor="override" className="text-sm cursor-pointer">
-                I acknowledge these {hasComplianceIssues ? 'compliance issues and ' : ''}warnings and want to proceed with the assignment
-              </label>
-            </div>
-          )}
 
           <Button
-            onClick={handleAssign}
-            disabled={!selectedUser || createAssignment.isPending || ((hasWarnings || hasComplianceIssues) && !overrideConfirmed)}
+            onClick={handleAssignClick}
+            disabled={!selectedUser || createAssignment.isPending}
             className="w-full"
-            variant={(hasWarnings || hasComplianceIssues) ? "destructive" : "default"}
+            variant={hasGuardrailIssues && !guardrailOverridden ? "destructive" : "default"}
           >
             <UserPlus className="h-4 w-4 mr-2" />
-            {(hasWarnings || hasComplianceIssues) ? 'Override & Assign' : 'Assign to Event'}
+            {hasGuardrailIssues && !guardrailOverridden 
+              ? (hasHardBlocks ? 'Override Required' : 'Review Warnings & Assign')
+              : 'Assign to Event'
+            }
           </Button>
         </div>
+        
+        {/* Guardrail Override Dialog */}
+        <GuardrailOverrideDialog
+          open={showGuardrailDialog}
+          onOpenChange={setShowGuardrailDialog}
+          hardBlocks={guardrailChecks?.hardBlocks || []}
+          softBlocks={guardrailChecks?.softBlocks || []}
+          eventId={eventId}
+          userId={user?.id || ''}
+          onOverrideConfirmed={handleGuardrailOverrideConfirmed}
+          overrideType="assignment"
+        />
       </DialogContent>
     </Dialog>
   );
