@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -23,10 +24,11 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStaff, useCreateStaff } from '@/hooks/useStaff';
+import { useStaff, useCreateStaff, Staff as StaffType } from '@/hooks/useStaff';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
+import { StaffBulkActions } from '@/components/StaffBulkActions';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -37,6 +39,7 @@ export default function Staff() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
@@ -52,6 +55,30 @@ export default function Staff() {
     const matchesRole = roleFilter === 'all' || member.role === roleFilter;
     return matchesSearch && matchesRole;
   });
+
+  const selectedStaff = staff.filter(s => selectedIds.has(s.id));
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredStaff.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredStaff.map(s => s.id)));
+    }
+  };
+
+  const handleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
+  };
 
   const handleCreateStaff = async () => {
     if (!newStaff.name || !newStaff.email) {
@@ -169,8 +196,25 @@ export default function Staff() {
         </TabsList>
 
         <TabsContent value="directory" className="space-y-6">
+          {/* Bulk Actions Bar */}
+          {isAdmin && (
+            <StaffBulkActions 
+              selectedStaff={selectedStaff} 
+              onClearSelection={handleClearSelection} 
+            />
+          )}
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
+            {isAdmin && filteredStaff.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedIds.size === filteredStaff.length && filteredStaff.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-muted-foreground">Select all</span>
+              </div>
+            )}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -212,44 +256,57 @@ export default function Staff() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Link
-                    to={member.user_id ? `/staff/${member.user_id}` : '#'}
-                    className="block bg-card border border-border rounded-xl p-5 shadow-card hover:border-primary/50 hover:shadow-lg transition-all"
+                  <div
+                    className={`bg-card border rounded-xl p-5 shadow-card hover:border-primary/50 hover:shadow-lg transition-all ${
+                      selectedIds.has(member.id) ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg font-medium text-primary">
-                          {member.name[0]}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium truncate">{member.name}</h3>
-                            <StatusBadge status={member.status} />
-                          </div>
-                          {member.user_id && (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          )}
+                      {isAdmin && (
+                        <Checkbox
+                          checked={selectedIds.has(member.id)}
+                          onCheckedChange={() => handleSelect(member.id)}
+                          className="mt-1"
+                        />
+                      )}
+                      <Link
+                        to={member.user_id ? `/staff/${member.user_id}` : '#'}
+                        className="flex items-start gap-4 flex-1 min-w-0"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <span className="text-lg font-medium text-primary">
+                            {member.name[0]}
+                          </span>
                         </div>
-                        <p className="text-sm text-muted-foreground capitalize mb-3">
-                          {member.role}
-                        </p>
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
-                            <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                            {member.email}
-                          </div>
-                          {member.phone && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                              {member.phone}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium truncate">{member.name}</h3>
+                              <StatusBadge status={member.status} />
                             </div>
-                          )}
+                            {member.user_id && (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground capitalize mb-3">
+                            {member.role}
+                          </p>
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
+                              <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                              {member.email}
+                            </div>
+                            {member.phone && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                                {member.phone}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               ))}
             </div>
