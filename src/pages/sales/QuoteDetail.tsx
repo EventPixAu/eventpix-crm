@@ -9,7 +9,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
-  Plus, Trash2, ExternalLink, Copy, Mail, FileSignature, RefreshCw, Link as LinkIcon
+  Plus, Trash2, ExternalLink, Copy, Mail, FileSignature, RefreshCw, Link as LinkIcon,
+  Save, FolderOpen
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,8 @@ import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { ApplyQuoteTemplateDialog } from '@/components/ApplyQuoteTemplateDialog';
+import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -77,6 +80,8 @@ export default function QuoteDetail() {
   const [isConvertOpen, setIsConvertOpen] = useState(false);
   const [isSendQuoteOpen, setIsSendQuoteOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isApplyTemplateOpen, setIsApplyTemplateOpen] = useState(false);
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -317,10 +322,22 @@ export default function QuoteDetail() {
                 <CardDescription>Products and services included in this quote</CardDescription>
               </div>
               {!isLocked && (
-                <Button size="sm" onClick={() => setIsAddItemOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setIsApplyTemplateOpen(true)}>
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    Apply Template
+                  </Button>
+                  {items && items.length > 0 && (
+                    <Button size="sm" variant="outline" onClick={() => setIsSaveTemplateOpen(true)}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save as Template
+                    </Button>
+                  )}
+                  <Button size="sm" onClick={() => setIsAddItemOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                </div>
               )}
             </CardHeader>
             <CardContent>
@@ -712,6 +729,21 @@ export default function QuoteDetail() {
         relatedQuoteId={quote.id}
         defaultSubject={`Quote: ${quote.quote_number || quote.id.slice(0, 8)}`}
         context="quote"
+      />
+
+      {/* Apply Template Dialog */}
+      <ApplyQuoteTemplateDialog
+        open={isApplyTemplateOpen}
+        onOpenChange={setIsApplyTemplateOpen}
+        quoteId={quote.id}
+      />
+
+      {/* Save as Template Dialog */}
+      <SaveAsTemplateDialog
+        open={isSaveTemplateOpen}
+        onOpenChange={setIsSaveTemplateOpen}
+        quoteId={quote.id}
+        defaultName={quote.quote_number || ''}
       />
     </AppLayout>
   );

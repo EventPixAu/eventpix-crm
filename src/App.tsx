@@ -45,6 +45,7 @@ import PipelineView from "./pages/sales/PipelineView";
 import PublicAcceptQuote from "./pages/sales/PublicAcceptQuote";
 import ContractList from "./pages/sales/ContractList";
 import ContractDetail from "./pages/sales/ContractDetail";
+import QuoteTemplates from "./pages/sales/QuoteTemplates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -111,6 +112,7 @@ function AppRoutes() {
       <Route path="/sales/pipeline" element={<ProtectedRoute><PipelineView /></ProtectedRoute>} />
       <Route path="/sales/contracts" element={<ProtectedRoute><ContractList /></ProtectedRoute>} />
       <Route path="/sales/contracts/:id" element={<ProtectedRoute><ContractDetail /></ProtectedRoute>} />
+      <Route path="/sales/templates" element={<ProtectedRoute><QuoteTemplates /></ProtectedRoute>} />
       <Route path="/quote/:id/proposal" element={<ProtectedRoute><ProposalView /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
