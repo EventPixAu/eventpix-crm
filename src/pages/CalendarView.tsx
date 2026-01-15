@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   format,
   startOfMonth,
@@ -25,7 +25,8 @@ import {
   Calendar,
   List,
   LayoutGrid,
-  Layers
+  Layers,
+  Eye
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -222,6 +223,7 @@ function DaySummaryBadge({ events }: { events: CalendarEvent[] }) {
 }
 
 export default function CalendarView() {
+  const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -561,52 +563,60 @@ export default function CalendarView() {
               <div key={`empty-${index}`} className="min-h-[120px] border-b border-r border-border bg-muted/30" />
             ))}
 
-            {monthDays.map((day) => {
-              const dayEvents = getEventsForDay(day);
-              const isCurrentDay = isToday(day);
-              const isBusyDay = dayEvents.length >= 5;
+              {monthDays.map((day) => {
+                const dayEvents = getEventsForDay(day);
+                const isCurrentDay = isToday(day);
+                const isBusyDay = dayEvents.length >= 5;
+                const dateStr = format(day, 'yyyy-MM-dd');
 
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    'min-h-[120px] border-b border-r border-border p-2 transition-colors',
-                    !isSameMonth(day, currentMonth) && 'bg-muted/30',
-                    isCurrentDay && 'bg-primary/5',
-                    isBusyDay && 'ring-1 ring-inset ring-primary/30'
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={cn(
-                        'w-7 h-7 flex items-center justify-center text-sm rounded-full',
-                        isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className={cn(
+                      'min-h-[120px] border-b border-r border-border p-2 transition-colors',
+                      !isSameMonth(day, currentMonth) && 'bg-muted/30',
+                      isCurrentDay && 'bg-primary/5',
+                      isBusyDay && 'ring-1 ring-inset ring-primary/30'
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={cn(
+                          'w-7 h-7 flex items-center justify-center text-sm rounded-full',
+                          isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
+                        )}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {isBusyDay && (
+                        <button
+                          onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
+                          className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded hover:bg-primary/20 transition-colors"
+                        >
+                          <Eye className="h-3 w-3" />
+                          {dayEvents.length}
+                        </button>
                       )}
-                    >
-                      {format(day, 'd')}
-                    </span>
-                    {isBusyDay && (
-                      <Badge variant="secondary" className="text-xs h-5 px-1.5">
-                        {dayEvents.length}
-                      </Badge>
-                    )}
+                    </div>
+                    <div className="space-y-1">
+                      {dayEvents.slice(0, 3).map((event) => (
+                        <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <>
+                          <button
+                            onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
+                            className="text-xs text-muted-foreground pl-1.5 hover:text-primary transition-colors"
+                          >
+                            +{dayEvents.length - 3} more
+                          </button>
+                          <DaySummaryBadge events={dayEvents} />
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 3).map((event) => (
-                      <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <>
-                        <p className="text-xs text-muted-foreground pl-1.5">
-                          +{dayEvents.length - 3} more
-                        </p>
-                        <DaySummaryBadge events={dayEvents} />
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </motion.div>
       )}
