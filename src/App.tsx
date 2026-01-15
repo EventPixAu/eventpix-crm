@@ -20,6 +20,8 @@ import Workflows from "./pages/Workflows";
 import WorkflowsList from "./pages/admin/WorkflowsList";
 import WorkflowDetail from "./pages/admin/WorkflowDetail";
 import EventTypeDefaults from "./pages/admin/EventTypeDefaults";
+import EventSeriesList from "./pages/admin/EventSeriesList";
+import EventSeriesDetail from "./pages/admin/EventSeriesDetail";
 import Delivery from "./pages/Delivery";
 import GalleryPublic from "./pages/GalleryPublic";
 import NotFound from "./pages/NotFound";
@@ -64,6 +66,8 @@ function AppRoutes() {
       <Route path="/admin/workflows" element={<ProtectedRoute><WorkflowsList /></ProtectedRoute>} />
       <Route path="/admin/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
       <Route path="/admin/event-types" element={<ProtectedRoute><EventTypeDefaults /></ProtectedRoute>} />
+      <Route path="/admin/series" element={<ProtectedRoute><EventSeriesList /></ProtectedRoute>} />
+      <Route path="/admin/series/:id" element={<ProtectedRoute><EventSeriesDetail /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
