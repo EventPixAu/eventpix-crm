@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Circle, CircleDot, CircleSlash, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Circle, CircleDot, CircleSlash, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,11 +13,22 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { 
   useMyAvailability, 
   useSetAvailability,
+  useSameDayEvents,
   AvailabilityStatus,
   StaffAvailability,
 } from '@/hooks/useStaffAvailability';
@@ -35,6 +45,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
+  const [pendingStatus, setPendingStatus] = useState<AvailabilityStatus | null>(null);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -43,6 +55,9 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     format(monthStart, 'yyyy-MM-dd'),
     format(monthEnd, 'yyyy-MM-dd')
   );
+  
+  // Fetch same-day events for the selected date
+  const { data: sameDayEvents = [] } = useSameDayEvents(effectiveUserId, selectedDate || undefined);
   
   const setAvailability = useSetAvailability();
   
@@ -63,6 +78,19 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const handleSetAvailability = async (status: AvailabilityStatus) => {
     if (!effectiveUserId || !selectedDate) return;
     
+    // Check if there are existing assignments and warn user
+    if (sameDayEvents.length > 0 && status !== 'available') {
+      setPendingStatus(status);
+      setShowWarningDialog(true);
+      return;
+    }
+    
+    await executeAvailabilityChange(status);
+  };
+  
+  const executeAvailabilityChange = async (status: AvailabilityStatus) => {
+    if (!effectiveUserId || !selectedDate) return;
+    
     await setAvailability.mutateAsync({
       userId: effectiveUserId,
       date: selectedDate,
@@ -72,6 +100,14 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     
     setSelectedDate(null);
     setEditNotes('');
+    setPendingStatus(null);
+  };
+  
+  const handleConfirmWithWarning = async () => {
+    if (pendingStatus) {
+      await executeAvailabilityChange(pendingStatus);
+    }
+    setShowWarningDialog(false);
   };
   
   const getStatusIcon = (status: AvailabilityStatus | undefined) => {
@@ -258,6 +294,41 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
           );
         })}
       </div>
+      
+      {/* Warning Dialog for Existing Assignments */}
+      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Existing Assignments
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                You are already assigned to <strong>{sameDayEvents.length} event{sameDayEvents.length > 1 ? 's' : ''}</strong> on this day:
+              </p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {sameDayEvents.slice(0, 3).map((event) => (
+                  <li key={event.id}>{event.event_name}</li>
+                ))}
+                {sameDayEvents.length > 3 && (
+                  <li className="text-muted-foreground">...and {sameDayEvents.length - 3} more</li>
+                )}
+              </ul>
+              <p className="text-sm font-medium mt-2">
+                Changing your availability will <strong>not</strong> remove these assignments. 
+                An admin may override your availability if needed.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingStatus(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmWithWarning}>
+              Change Availability Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
