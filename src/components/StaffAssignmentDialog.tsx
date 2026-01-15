@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserPlus, X, Users } from 'lucide-react';
+import { UserPlus, X, Users, Bell } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useStaffProfiles, useStaffRoles } from '@/hooks/useStaff';
 import { useCreateAssignment, useDeleteAssignment, type EventAssignment } from '@/hooks/useEvents';
+import { useSendNotification } from '@/hooks/useNotifications';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -36,6 +37,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const { data: roles = [] } = useStaffRoles();
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
+  const sendNotification = useSendNotification();
 
   // Get assigned user IDs (supporting both new user_id and legacy staff_id)
   const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
@@ -46,12 +48,22 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const handleAssign = async () => {
     if (!selectedUser) return;
 
-    await createAssignment.mutateAsync({
+    const result = await createAssignment.mutateAsync({
       event_id: eventId,
       user_id: selectedUser,
       staff_role_id: selectedRole || undefined,
       assignment_notes: assignmentNotes || undefined,
     });
+
+    // Send notification after successful assignment
+    if (result) {
+      sendNotification.mutate({
+        type: 'assignment',
+        event_id: eventId,
+        user_id: selectedUser,
+        assignment_id: result.id,
+      });
+    }
 
     setSelectedUser('');
     setSelectedRole('');
