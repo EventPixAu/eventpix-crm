@@ -58,6 +58,7 @@ import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLoo
 import { useProfiles } from '@/hooks/useStaff';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
+import { StaffingForecast } from '@/components/StaffingForecast';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -334,6 +335,12 @@ export default function EventSeriesDetail() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Series Settings */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Staffing Forecast */}
+          <StaffingForecast 
+            seriesId={id!} 
+            defaultPhotographersRequired={series.default_photographers_required || 1}
+          />
+
           <div className="bg-card border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-4">Series Settings</h2>
             
