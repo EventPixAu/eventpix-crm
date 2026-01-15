@@ -1,10 +1,11 @@
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, Download, ExternalLink, Lock, AlertCircle, Image } from 'lucide-react';
+import { Camera, Download, ExternalLink, Lock, AlertCircle, Image, Loader2, FolderDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDeliveryRecordByToken } from '@/hooks/useDeliveryRecords';
 import { useGalleryAssetsByEventId, getPublicUrl } from '@/hooks/useGalleryAssets';
 import { useState } from 'react';
+import JSZip from 'jszip';
 
 const deliveryMethodLabels: Record<string, { label: string; action: string }> = {
   dropbox: { label: 'Dropbox', action: 'Open Gallery' },
@@ -20,6 +21,8 @@ export default function GalleryPublic() {
     deliveryRecord?.delivery_method === 'internal_gallery' ? deliveryRecord?.event_id : undefined
   );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   if (isLoading) {
     return (
@@ -73,6 +76,48 @@ export default function GalleryPublic() {
       URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error('Download failed:', err);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (galleryAssets.length === 0 || isDownloadingAll) return;
+    
+    setIsDownloadingAll(true);
+    setDownloadProgress(0);
+    
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder('eventpix-photos');
+      
+      for (let i = 0; i < galleryAssets.length; i++) {
+        const asset = galleryAssets[i];
+        const url = getPublicUrl(asset.storage_path);
+        
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          folder?.file(asset.file_name, blob);
+        } catch (err) {
+          console.error(`Failed to fetch ${asset.file_name}:`, err);
+        }
+        
+        setDownloadProgress(Math.round(((i + 1) / galleryAssets.length) * 100));
+      }
+      
+      const content = await zip.generateAsync({ type: 'blob' });
+      const downloadUrl = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = 'eventpix-photos.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Zip download failed:', err);
+    } finally {
+      setIsDownloadingAll(false);
+      setDownloadProgress(0);
     }
   };
 
@@ -151,6 +196,27 @@ export default function GalleryPublic() {
                   </motion.div>
                 );
               })}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                onClick={handleDownloadAll}
+                disabled={isDownloadingAll}
+                className="bg-gradient-to-r from-primary to-primary/80 hover:opacity-90"
+              >
+                {isDownloadingAll ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Downloading... {downloadProgress}%
+                  </>
+                ) : (
+                  <>
+                    <FolderDown className="h-5 w-5 mr-2" />
+                    Download All Photos
+                  </>
+                )}
+              </Button>
             </div>
 
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
