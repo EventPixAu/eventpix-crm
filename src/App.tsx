@@ -24,6 +24,7 @@ import WorkflowDetail from "./pages/admin/WorkflowDetail";
 import EventTypeDefaults from "./pages/admin/EventTypeDefaults";
 import EventSeriesList from "./pages/admin/EventSeriesList";
 import EventSeriesDetail from "./pages/admin/EventSeriesDetail";
+import ExecutiveDashboard from "./pages/admin/ExecutiveDashboard";
 import Delivery from "./pages/Delivery";
 import GalleryPublic from "./pages/GalleryPublic";
 import JobIntakeList from "./pages/JobIntakeList";
@@ -78,6 +79,7 @@ function AppRoutes() {
       <Route path="/admin/event-types" element={<ProtectedRoute><EventTypeDefaults /></ProtectedRoute>} />
       <Route path="/admin/series" element={<ProtectedRoute><EventSeriesList /></ProtectedRoute>} />
       <Route path="/admin/series/:id" element={<ProtectedRoute><EventSeriesDetail /></ProtectedRoute>} />
+      <Route path="/admin/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="/job-intake" element={<ProtectedRoute><JobIntakeList /></ProtectedRoute>} />
       <Route path="/job-intake/:id" element={<ProtectedRoute><JobIntakeDetail /></ProtectedRoute>} />

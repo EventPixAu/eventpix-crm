@@ -17,6 +17,7 @@ import {
   CalendarCheck,
   Wrench,
   FolderOpen,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -29,6 +30,7 @@ interface AppLayoutProps {
 
 const adminNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/admin/executive', label: 'Executive', icon: BarChart3 },
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/job-intake', label: 'Job Intake', icon: FileText },
   { href: '/admin/series', label: 'Series', icon: FileCheck },
