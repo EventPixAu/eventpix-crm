@@ -30,6 +30,7 @@ import { useStaffRatesByUser, type StaffRate } from '@/hooks/useStaffRates';
 import { useStaffFeedbackHistory, useStaffPerformanceSummary } from '@/hooks/useStaffFeedback';
 import { StaffCompliancePanel } from '@/components/StaffCompliancePanel';
 import { StaffRateEditor } from '@/components/StaffRateEditor';
+import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 import { cn } from '@/lib/utils';
@@ -49,6 +50,7 @@ interface StaffProfile {
   preferred_start_time: string | null;
   preferred_end_time: string | null;
   notes_internal: string | null;
+  default_role_id: string | null;
   default_role: {
     name: string;
   } | null;
@@ -86,7 +88,7 @@ export default function StaffDetail() {
           home_city, home_state, status, seniority,
           onboarding_status, travel_ready, 
           preferred_start_time, preferred_end_time,
-          notes_internal,
+          notes_internal, default_role_id,
           default_role:staff_roles(name)
         `)
         .eq('id', id)
@@ -184,7 +186,13 @@ export default function StaffDetail() {
       />
 
       {/* Profile Summary Card */}
-      <Card className="mb-6">
+      <Card className="mb-6 relative">
+        {/* Edit Button for Admins */}
+        {isAdmin && (
+          <div className="absolute top-4 right-4 z-10">
+            <StaffProfileEditor profile={profile} />
+          </div>
+        )}
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Avatar & Basic Info */}

@@ -1,0 +1,325 @@
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pencil, Save, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useStaffRoles } from '@/hooks/useStaff';
+import { toast } from 'sonner';
+
+interface StaffProfile {
+  id: string;
+  full_name: string | null;
+  email: string;
+  phone: string | null;
+  home_city: string | null;
+  home_state: string | null;
+  status: string | null;
+  seniority: string | null;
+  travel_ready: boolean | null;
+  preferred_start_time: string | null;
+  preferred_end_time: string | null;
+  notes_internal: string | null;
+  default_role_id?: string | null;
+}
+
+interface StaffProfileEditorProps {
+  profile: StaffProfile;
+}
+
+const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+const SENIORITY_LEVELS = ['junior', 'mid', 'senior', 'lead'];
+const STATUS_OPTIONS = ['active', 'inactive', 'on_leave'];
+
+export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: profile.full_name || '',
+    phone: profile.phone || '',
+    home_city: profile.home_city || '',
+    home_state: profile.home_state || '',
+    status: profile.status || 'active',
+    seniority: profile.seniority || 'mid',
+    travel_ready: profile.travel_ready ?? false,
+    preferred_start_time: profile.preferred_start_time || '',
+    preferred_end_time: profile.preferred_end_time || '',
+    notes_internal: profile.notes_internal || '',
+    default_role_id: profile.default_role_id || '',
+  });
+
+  const queryClient = useQueryClient();
+  const { data: roles = [] } = useStaffRoles();
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: data.full_name || null,
+          phone: data.phone || null,
+          home_city: data.home_city || null,
+          home_state: data.home_state || null,
+          status: data.status,
+          seniority: data.seniority,
+          travel_ready: data.travel_ready,
+          preferred_start_time: data.preferred_start_time || null,
+          preferred_end_time: data.preferred_end_time || null,
+          notes_internal: data.notes_internal || null,
+          default_role_id: data.default_role_id || null,
+        })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Profile updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['staff-profile', profile.id] });
+      queryClient.invalidateQueries({ queryKey: ['staff-profiles'] });
+      setOpen(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update profile');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate(formData);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      // Reset form data when opening
+      setFormData({
+        full_name: profile.full_name || '',
+        phone: profile.phone || '',
+        home_city: profile.home_city || '',
+        home_state: profile.home_state || '',
+        status: profile.status || 'active',
+        seniority: profile.seniority || 'mid',
+        travel_ready: profile.travel_ready ?? false,
+        preferred_start_time: profile.preferred_start_time || '',
+        preferred_end_time: profile.preferred_end_time || '',
+        notes_internal: profile.notes_internal || '',
+        default_role_id: profile.default_role_id || '',
+      });
+    }
+    setOpen(isOpen);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit Profile
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Staff Profile</DialogTitle>
+          <DialogDescription>
+            Update profile information for {profile.full_name || profile.email}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Basic Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="Enter full name"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="Enter phone number"
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="home_city">City</Label>
+              <Input
+                id="home_city"
+                value={formData.home_city}
+                onChange={(e) => setFormData({ ...formData, home_city: e.target.value })}
+                placeholder="e.g. Sydney"
+              />
+            </div>
+            <div>
+              <Label htmlFor="home_state">State</Label>
+              <Select
+                value={formData.home_state}
+                onValueChange={(value) => setFormData({ ...formData, home_state: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATES.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Role & Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="default_role_id">Default Role</Label>
+              <Select
+                value={formData.default_role_id}
+                onValueChange={(value) => setFormData({ ...formData, default_role_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      <span className="capitalize">{status.replace('_', ' ')}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Seniority & Travel */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="seniority">Seniority</Label>
+              <Select
+                value={formData.seniority}
+                onValueChange={(value) => setFormData({ ...formData, seniority: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select seniority" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SENIORITY_LEVELS.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      <span className="capitalize">{level}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between pt-6">
+              <Label htmlFor="travel_ready" className="cursor-pointer">
+                Travel Ready
+              </Label>
+              <Switch
+                id="travel_ready"
+                checked={formData.travel_ready}
+                onCheckedChange={(checked) => setFormData({ ...formData, travel_ready: checked })}
+              />
+            </div>
+          </div>
+
+          {/* Preferred Hours */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="preferred_start_time">Preferred Start Time</Label>
+              <Input
+                id="preferred_start_time"
+                type="time"
+                value={formData.preferred_start_time}
+                onChange={(e) => setFormData({ ...formData, preferred_start_time: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="preferred_end_time">Preferred End Time</Label>
+              <Input
+                id="preferred_end_time"
+                type="time"
+                value={formData.preferred_end_time}
+                onChange={(e) => setFormData({ ...formData, preferred_end_time: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Internal Notes */}
+          <div>
+            <Label htmlFor="notes_internal">Internal Notes</Label>
+            <Textarea
+              id="notes_internal"
+              value={formData.notes_internal}
+              onChange={(e) => setFormData({ ...formData, notes_internal: e.target.value })}
+              placeholder="Internal notes about this staff member..."
+              rows={3}
+            />
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={updateMutation.isPending}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending}>
+              <Save className="h-4 w-4 mr-2" />
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
