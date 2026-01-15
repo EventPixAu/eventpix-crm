@@ -8,6 +8,7 @@ import {
   Clock,
   Edit,
   MapPin,
+  Package,
   Phone,
   Play,
   Trash2,
@@ -48,6 +49,7 @@ import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 import { DeliveryManager } from '@/components/DeliveryManager';
+import { EventEquipmentPanel } from '@/components/EventEquipmentPanel';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -206,6 +208,12 @@ export default function EventDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="equipment">
+              <Package className="h-4 w-4 mr-1" />
+              Equipment
+            </TabsTrigger>
+          )}
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -475,6 +483,12 @@ export default function EventDetail() {
         <TabsContent value="delivery">
           {id && <DeliveryManager eventId={id} isAdmin={isAdmin} />}
         </TabsContent>
+        {/* Equipment Tab (Admin Only) */}
+        {isAdmin && id && (
+          <TabsContent value="equipment">
+            <EventEquipmentPanel eventId={id} />
+          </TabsContent>
+        )}
 
         <TabsContent value="activity">
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
