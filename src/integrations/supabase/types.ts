@@ -100,6 +100,42 @@ export type Database = {
           },
         ]
       }
+      compliance_document_types: {
+        Row: {
+          applies_to_roles: string[] | null
+          created_at: string | null
+          description: string | null
+          has_expiry: boolean
+          id: string
+          is_active: boolean
+          name: string
+          required: boolean
+          sort_order: number
+        }
+        Insert: {
+          applies_to_roles?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          has_expiry?: boolean
+          id?: string
+          is_active?: boolean
+          name: string
+          required?: boolean
+          sort_order?: number
+        }
+        Update: {
+          applies_to_roles?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          has_expiry?: boolean
+          id?: string
+          is_active?: boolean
+          name?: string
+          required?: boolean
+          sort_order?: number
+        }
+        Relationships: []
+      }
       delivery_methods_lookup: {
         Row: {
           created_at: string | null
@@ -884,6 +920,8 @@ export type Database = {
           home_state: string | null
           id: string
           notes_internal: string | null
+          onboarding_notes: string | null
+          onboarding_status: string
           phone: string | null
           preferred_end_time: string | null
           preferred_start_time: string | null
@@ -902,6 +940,8 @@ export type Database = {
           home_state?: string | null
           id: string
           notes_internal?: string | null
+          onboarding_notes?: string | null
+          onboarding_status?: string
           phone?: string | null
           preferred_end_time?: string | null
           preferred_start_time?: string | null
@@ -920,6 +960,8 @@ export type Database = {
           home_state?: string | null
           id?: string
           notes_internal?: string | null
+          onboarding_notes?: string | null
+          onboarding_status?: string
           phone?: string | null
           preferred_end_time?: string | null
           preferred_start_time?: string | null
@@ -1026,6 +1068,79 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "staff_availability_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_compliance_documents: {
+        Row: {
+          created_at: string | null
+          document_type_id: string
+          document_url: string
+          expiry_date: string | null
+          file_name: string | null
+          id: string
+          issued_date: string | null
+          notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_type_id: string
+          document_url: string
+          expiry_date?: string | null
+          file_name?: string | null
+          id?: string
+          issued_date?: string | null
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          document_type_id?: string
+          document_url?: string
+          expiry_date?: string | null
+          file_name?: string | null
+          id?: string
+          issued_date?: string | null
+          notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_compliance_documents_document_type_id_fkey"
+            columns: ["document_type_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_document_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_compliance_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_compliance_documents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1409,6 +1524,8 @@ export type Database = {
           start_at: string
         }[]
       }
+      check_staff_eligibility: { Args: { p_user_id: string }; Returns: Json }
+      expire_compliance_documents: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1446,6 +1563,7 @@ export type Database = {
         | "equipment_returned"
         | "equipment_flagged_missing"
         | "equipment_flagged_damaged"
+        | "compliance_override"
       delivery_method:
         | "dropbox"
         | "zno_instant"
@@ -1606,6 +1724,7 @@ export const Constants = {
         "equipment_returned",
         "equipment_flagged_missing",
         "equipment_flagged_damaged",
+        "compliance_override",
       ],
       delivery_method: [
         "dropbox",
