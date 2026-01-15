@@ -14,6 +14,7 @@ import {
   X,
   FileText,
   BookOpen,
+  CalendarCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -40,6 +41,7 @@ const adminNavItems = [
 const photographerNavItems = [
   { href: '/', label: 'My Jobs', icon: Home },
   { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
+  { href: '/my-availability', label: 'My Availability', icon: CalendarCheck },
   { href: '/knowledge-base', label: 'Help & Guides', icon: BookOpen },
 ];
 

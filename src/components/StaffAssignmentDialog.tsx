@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { UserPlus, X, Users, AlertTriangle } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,8 @@ import { useStaffProfiles, useStaffRoles } from '@/hooks/useStaff';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
+import { useCheckAssignmentConflicts, useStaffAvailabilityByDate, AssignmentWarning } from '@/hooks/useStaffAvailability';
+import { useLogAuditEntry } from '@/hooks/useAuditLog';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -35,6 +38,8 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [overrideConfirmed, setOverrideConfirmed] = useState(false);
+  const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
   const { data: profiles = [] } = useStaffProfiles();
   const { data: roles = [] } = useStaffRoles();
@@ -42,6 +47,11 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
   const sendNotification = useSendNotification();
+  const checkConflicts = useCheckAssignmentConflicts();
+  const logAuditEntry = useLogAuditEntry();
+  
+  // Fetch availability for the event date
+  const { data: dateAvailability = [] } = useStaffAvailabilityByDate(event?.event_date);
 
   // Check conflicts for selected user
   const eventStart = useMemo(() => {
@@ -60,15 +70,55 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
     eventEnd,
     eventId
   );
-
-  // Get assigned user IDs (supporting both new user_id and legacy staff_id)
+  
+  // Check for availability and routing conflicts when user is selected
+  useEffect(() => {
+    if (selectedUser && event) {
+      checkConflicts.mutate({
+        userId: selectedUser,
+        eventId,
+        eventDate: event.event_date,
+        startAt: event.start_at,
+        endAt: event.end_at,
+      }, {
+        onSuccess: (result) => setWarnings(result),
+      });
+    } else {
+      setWarnings([]);
+    }
+    setOverrideConfirmed(false);
+  }, [selectedUser, event?.event_date, event?.start_at, event?.end_at]);
+  
+  // Get user availability status
+  const selectedUserAvailability = useMemo(() => {
+    if (!selectedUser) return null;
+    return dateAvailability.find(a => a.user_id === selectedUser);
+  }, [selectedUser, dateAvailability]);
   const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
   const availableProfiles = profiles.filter(
     (profile) => !assignedUserIds.includes(profile.id)
   );
 
+  // Check if we have errors that require override
+  const hasErrors = warnings.some(w => w.severity === 'error');
+  const hasWarnings = warnings.length > 0;
+  const requiresOverride = hasErrors || (hasWarnings && !overrideConfirmed);
+
   const handleAssign = async () => {
     if (!selectedUser) return;
+    
+    // Log override if there were warnings
+    if (hasWarnings && overrideConfirmed) {
+      await logAuditEntry({
+        action: 'assignment_override',
+        eventId,
+        after: {
+          user_id: selectedUser,
+          warnings: warnings.map(w => ({ type: w.type, message: w.message })),
+          notes: assignmentNotes,
+        },
+      });
+    }
 
     const result = await createAssignment.mutateAsync({
       event_id: eventId,
@@ -215,8 +265,66 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
             rows={2}
           />
 
-          {/* Conflict Warning */}
-          {conflicts.length > 0 && (
+          {/* Availability Status Indicator */}
+          {selectedUserAvailability && (
+            <Alert 
+              variant={selectedUserAvailability.availability_status === 'unavailable' ? 'destructive' : 'default'}
+              className={selectedUserAvailability.availability_status === 'limited' ? 'border-amber-500/50 bg-amber-500/10' : ''}
+            >
+              {selectedUserAvailability.availability_status === 'unavailable' ? (
+                <CalendarX className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+              )}
+              <AlertTitle className={selectedUserAvailability.availability_status === 'limited' ? 'text-amber-600' : ''}>
+                {selectedUserAvailability.availability_status === 'unavailable' ? 'Unavailable' : 'Limited Availability'}
+              </AlertTitle>
+              <AlertDescription>
+                {selectedUserAvailability.notes || 
+                  (selectedUserAvailability.availability_status === 'unavailable' 
+                    ? 'This staff member has marked themselves unavailable on this date.'
+                    : 'This staff member has limited availability on this date.'
+                  )
+                }
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Routing & Conflict Warnings */}
+          {warnings.length > 0 && (
+            <div className="space-y-2">
+              {warnings.filter(w => w.severity === 'error').length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Assignment Conflicts</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc list-inside space-y-1 mt-1">
+                      {warnings.filter(w => w.severity === 'error').map((w, i) => (
+                        <li key={i}>{w.message}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {warnings.filter(w => w.severity === 'warning').length > 0 && (
+                <Alert className="border-amber-500/50 bg-amber-500/10">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  <AlertTitle className="text-amber-600">Warnings</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc list-inside space-y-1 mt-1">
+                      {warnings.filter(w => w.severity === 'warning').map((w, i) => (
+                        <li key={i}>{w.message}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {/* Legacy Conflict Warning from calendar check */}
+          {conflicts.length > 0 && warnings.length === 0 && (
             <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
@@ -230,15 +338,29 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
               </AlertDescription>
             </Alert>
           )}
+          
+          {/* Override Confirmation */}
+          {hasWarnings && (
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <Checkbox 
+                id="override" 
+                checked={overrideConfirmed}
+                onCheckedChange={(checked) => setOverrideConfirmed(!!checked)}
+              />
+              <label htmlFor="override" className="text-sm cursor-pointer">
+                I acknowledge these warnings and want to proceed with the assignment
+              </label>
+            </div>
+          )}
 
           <Button
             onClick={handleAssign}
-            disabled={!selectedUser || createAssignment.isPending}
+            disabled={!selectedUser || createAssignment.isPending || (hasWarnings && !overrideConfirmed)}
             className="w-full"
-            variant={conflicts.length > 0 ? "destructive" : "default"}
+            variant={hasWarnings ? "destructive" : "default"}
           >
             <UserPlus className="h-4 w-4 mr-2" />
-            {conflicts.length > 0 ? 'Assign Anyway' : 'Assign to Event'}
+            {hasWarnings ? 'Override & Assign' : 'Assign to Event'}
           </Button>
         </div>
       </DialogContent>
