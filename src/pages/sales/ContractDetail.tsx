@@ -1,7 +1,7 @@
 /**
  * CONTRACT DETAIL PAGE
  * 
- * Displays contract details with actions for sending, uploading, and managing.
+ * Displays contract details with actions for sending, signing, and managing.
  * Access: Admin, Sales roles only (enforced via RLS)
  */
 import { useState } from 'react';
@@ -9,7 +9,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, Mail, Upload, ExternalLink, 
-  CheckCircle, Clock, XCircle, FileSignature
+  CheckCircle, Clock, XCircle, FileSignature, Copy, RefreshCw,
+  Link as LinkIcon, User
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useContract, useUpdateContract, useUploadContractFile } from '@/hooks/useContracts';
+import { 
+  useContract, 
+  useUpdateContract, 
+  useUploadContractFile,
+  useMarkContractAsSent,
+  useRegenerateContractToken 
+} from '@/hooks/useContracts';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon: React.ComponentType<any> }> = {
@@ -36,12 +43,33 @@ export default function ContractDetail() {
   const { data: contract, isLoading } = useContract(id);
   const updateContract = useUpdateContract();
   const uploadFile = useUploadContractFile();
+  const markAsSent = useMarkContractAsSent();
+  const regenerateToken = useRegenerateContractToken();
   
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const isLocked = contract?.status === 'signed' || contract?.status === 'cancelled';
   const clientData = contract?.client as any;
+  
+  // Generate the public signing URL
+  const getPublicSigningUrl = () => {
+    if (!contract?.public_token) return null;
+    return `${window.location.origin}/contract/sign/${contract.public_token}`;
+  };
+
+  const handleCopyLink = () => {
+    const url = getPublicSigningUrl();
+    if (url) {
+      navigator.clipboard.writeText(url);
+      toast({ title: 'Signing link copied to clipboard' });
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    if (!id) return;
+    await regenerateToken.mutateAsync(id);
+  };
   
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!id || !e.target.files?.length) return;
@@ -66,18 +94,7 @@ export default function ContractDetail() {
 
   const handleMarkAsSent = async () => {
     if (!id) return;
-    
-    try {
-      await updateContract.mutateAsync({
-        id,
-        status: 'sent' as any,
-        sent_at: new Date().toISOString(),
-      });
-      
-      toast({ title: 'Contract marked as sent' });
-    } catch (err: any) {
-      toast({ title: 'Failed to update contract', description: err.message, variant: 'destructive' });
-    }
+    await markAsSent.mutateAsync(id);
   };
 
   if (isLoading) {
@@ -105,6 +122,7 @@ export default function ContractDetail() {
 
   const statusConfig = STATUS_CONFIG[contract.status] || STATUS_CONFIG.draft;
   const StatusIcon = statusConfig.icon;
+  const publicSigningUrl = getPublicSigningUrl();
 
   return (
     <AppLayout>
@@ -143,9 +161,9 @@ export default function ContractDetail() {
                 Send Email
               </Button>
               {contract.status === 'draft' && (
-                <Button onClick={handleMarkAsSent}>
+                <Button onClick={handleMarkAsSent} disabled={markAsSent.isPending}>
                   <FileSignature className="h-4 w-4 mr-2" />
-                  Mark as Sent
+                  {markAsSent.isPending ? 'Sending...' : 'Mark as Sent'}
                 </Button>
               )}
             </>
@@ -156,6 +174,44 @@ export default function ContractDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Public Signing Link */}
+          {publicSigningUrl && !isLocked && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-900">
+                  <LinkIcon className="h-5 w-5" />
+                  Client Signing Link
+                </CardTitle>
+                <CardDescription className="text-blue-700">
+                  Share this link with your client to let them sign the contract
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    value={publicSigningUrl} 
+                    readOnly 
+                    className="font-mono text-sm bg-white"
+                  />
+                  <Button variant="outline" onClick={handleCopyLink}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleRegenerateToken}
+                    disabled={regenerateToken.isPending}
+                    title="Regenerate link (invalidates old link)"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${regenerateToken.isPending ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  Regenerating the link will invalidate any previously shared links.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Contract File */}
           <Card>
             <CardHeader>
@@ -279,6 +335,24 @@ export default function ContractDetail() {
                   </div>
                 </>
               )}
+
+              {contract.signed_by_name && (
+                <>
+                  <Separator />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Signed By</div>
+                    <div className="flex items-center gap-2 font-medium">
+                      <User className="h-4 w-4" />
+                      {contract.signed_by_name}
+                    </div>
+                    {contract.signed_by_email && (
+                      <div className="text-sm text-muted-foreground">
+                        {contract.signed_by_email}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -305,7 +379,7 @@ export default function ContractDetail() {
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
         clientId={contract.client_id}
-        clientEmail={clientData?.email}
+        clientEmail={clientData?.primary_contact_email}
         clientName={clientData?.business_name}
         relatedContractId={contract.id}
         defaultSubject={`Contract: ${contract.title}`}

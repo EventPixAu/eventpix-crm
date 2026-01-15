@@ -43,6 +43,7 @@ import ProposalView from "./pages/sales/ProposalView";
 import ProductList from "./pages/sales/ProductList";
 import PipelineView from "./pages/sales/PipelineView";
 import PublicAcceptQuote from "./pages/sales/PublicAcceptQuote";
+import PublicAcceptContract from "./pages/sales/PublicAcceptContract";
 import ContractList from "./pages/sales/ContractList";
 import ContractDetail from "./pages/sales/ContractDetail";
 import QuoteTemplates from "./pages/sales/QuoteTemplates";
@@ -74,6 +75,7 @@ function AppRoutes() {
       <Route path="/auth" element={<Auth />} />
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
+      <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
       <Route path="/events/new" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
