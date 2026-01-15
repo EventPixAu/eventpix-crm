@@ -12,15 +12,28 @@ export type Event = EventRow;
 export interface EventAssignment {
   id: string;
   event_id: string;
-  staff_id: string;
+  user_id: string | null;
+  staff_id: string | null; // Legacy field
+  staff_role_id: string | null;
   role_on_event: string | null;
+  assignment_notes: string | null;
   notes: string | null;
+  profile?: {
+    id: string;
+    full_name: string | null;
+    email: string;
+  } | null;
+  staff_role?: {
+    id: string;
+    name: string;
+  } | null;
+  // Legacy staff relation
   staff?: {
     id: string;
     name: string;
     role: string;
     email: string;
-  };
+  } | null;
 }
 
 export function useEvents() {
@@ -65,6 +78,15 @@ export function useEventAssignments(eventId: string | undefined) {
         .from('event_assignments')
         .select(`
           *,
+          profile:profiles!event_assignments_user_id_fkey (
+            id,
+            full_name,
+            email
+          ),
+          staff_role:staff_roles!event_assignments_staff_role_id_fkey (
+            id,
+            name
+          ),
           staff:staff_id (
             id,
             name,
@@ -160,7 +182,14 @@ export function useCreateAssignment() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (assignment: { event_id: string; staff_id: string; role_on_event?: string; notes?: string }) => {
+    mutationFn: async (assignment: { 
+      event_id: string; 
+      user_id?: string; 
+      staff_id?: string; // Legacy support
+      staff_role_id?: string;
+      role_on_event?: string; 
+      assignment_notes?: string;
+    }) => {
       const { data, error } = await supabase
         .from('event_assignments')
         .insert(assignment)
