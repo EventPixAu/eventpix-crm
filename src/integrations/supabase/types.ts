@@ -955,6 +955,7 @@ export type Database = {
           event_type: Database["public"]["Enums"]["event_type"]
           event_type_id: string | null
           id: string
+          invoice_paid_at: string | null
           invoice_reference: string | null
           invoice_status: string | null
           job_intake_id: string | null
@@ -995,6 +996,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
+          invoice_paid_at?: string | null
           invoice_reference?: string | null
           invoice_status?: string | null
           job_intake_id?: string | null
@@ -1035,6 +1037,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
+          invoice_paid_at?: string | null
           invoice_reference?: string | null
           invoice_status?: string | null
           job_intake_id?: string | null
@@ -2284,6 +2287,47 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      xero_sync_log: {
+        Row: {
+          completed_at: string | null
+          created_by: string | null
+          error_message: string | null
+          events_synced: number | null
+          id: string
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          events_synced?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          events_synced?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xero_sync_log_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
