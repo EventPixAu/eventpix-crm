@@ -12,6 +12,7 @@ export interface GalleryAsset {
   sort_order: number;
   caption: string | null;
   alt_text: string | null;
+  thumbnail_path: string | null;
   created_at: string;
 }
 
@@ -100,6 +101,11 @@ export function useUploadGalleryAsset() {
         await supabase.storage.from(BUCKET_NAME).remove([storagePath]);
         throw insertError;
       }
+
+      // Trigger thumbnail generation in background (don't await)
+      supabase.functions.invoke('generate-thumbnail', {
+        body: { storagePath, assetId: data.id },
+      }).catch(err => console.error('Thumbnail generation failed:', err));
 
       return data;
     },
@@ -215,5 +221,12 @@ export function useUpdateGalleryAsset() {
 
 export function getPublicUrl(storagePath: string): string {
   const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+export function getThumbnailUrl(asset: GalleryAsset): string {
+  // Use thumbnail if available, otherwise fall back to original
+  const path = asset.thumbnail_path || asset.storage_path;
+  const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
   return data.publicUrl;
 }

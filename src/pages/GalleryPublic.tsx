@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Camera, Download, ExternalLink, Lock, AlertCircle, Image, Loader2, FolderDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDeliveryRecordByToken } from '@/hooks/useDeliveryRecords';
-import { useGalleryAssetsByEventId, getPublicUrl } from '@/hooks/useGalleryAssets';
+import { useGalleryAssetsByEventId, getPublicUrl, getThumbnailUrl } from '@/hooks/useGalleryAssets';
 import { useState } from 'react';
 import JSZip from 'jszip';
 
@@ -166,7 +166,8 @@ export default function GalleryPublic() {
           >
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {galleryAssets.map((asset, index) => {
-                const url = getPublicUrl(asset.storage_path);
+                const thumbnailUrl = getThumbnailUrl(asset);
+                const fullUrl = getPublicUrl(asset.storage_path);
                 return (
                   <motion.div
                     key={asset.id}
@@ -176,17 +177,17 @@ export default function GalleryPublic() {
                     className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted shadow-lg"
                   >
                     <img
-                      src={url}
-                      alt={asset.file_name}
+                      src={thumbnailUrl}
+                      alt={asset.alt_text || asset.file_name}
                       className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
-                      onClick={() => setPreviewImage(url)}
+                      onClick={() => setPreviewImage(fullUrl)}
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDownload(url, asset.file_name);
+                          handleDownload(fullUrl, asset.file_name);
                         }}
                         className="p-3 bg-white/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white shadow-lg"
                       >
