@@ -163,7 +163,7 @@ export function StaffCompliancePanel({
                 )}
               </div>
 
-              {eligibility.missing_documents.length > 0 && (
+              {eligibility.missing_documents?.length > 0 && (
                 <div className="flex items-start gap-2 text-sm">
                   <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5" />
                   <div>
@@ -173,7 +173,7 @@ export function StaffCompliancePanel({
                 </div>
               )}
 
-              {eligibility.expired_documents.length > 0 && (
+              {eligibility.expired_documents?.length > 0 && (
                 <div className="flex items-start gap-2 text-sm">
                   <Clock className="h-4 w-4 text-destructive mt-0.5" />
                   <div>
@@ -183,7 +183,7 @@ export function StaffCompliancePanel({
                 </div>
               )}
 
-              {eligibility.pending_documents.length > 0 && (
+              {eligibility.pending_documents?.length > 0 && (
                 <div className="flex items-start gap-2 text-sm">
                   <Clock className="h-4 w-4 text-yellow-500 mt-0.5" />
                   <div>
