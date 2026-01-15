@@ -247,6 +247,42 @@ export type Database = {
           },
         ]
       }
+      event_type_workflow_defaults: {
+        Row: {
+          created_at: string | null
+          event_type_id: string
+          id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type_id: string
+          id?: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type_id?: string
+          id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_type_workflow_defaults_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_type_workflow_defaults_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_types: {
         Row: {
           created_at: string | null
@@ -539,6 +575,7 @@ export type Database = {
           created_at: string | null
           help_text: string | null
           id: string
+          is_active: boolean | null
           label: string
           sort_order: number
           template_id: string
@@ -547,6 +584,7 @@ export type Database = {
           created_at?: string | null
           help_text?: string | null
           id?: string
+          is_active?: boolean | null
           label: string
           sort_order?: number
           template_id: string
@@ -555,6 +593,7 @@ export type Database = {
           created_at?: string | null
           help_text?: string | null
           id?: string
+          is_active?: boolean | null
           label?: string
           sort_order?: number
           template_id?: string

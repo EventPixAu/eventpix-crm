@@ -28,7 +28,8 @@ const adminNavItems = [
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/workflows', label: 'Workflows', icon: ClipboardList },
+  { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
+  { href: '/admin/event-types', label: 'Event Types', icon: Settings },
   { href: '/delivery', label: 'Delivery', icon: Package },
 ];
 
