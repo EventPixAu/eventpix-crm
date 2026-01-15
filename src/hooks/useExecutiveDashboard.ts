@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, addDays, subDays, format, parseISO, differenceInDays } from 'date-fns';
+import { useMemo } from 'react';
 
 export interface DateRange {
   from: Date;
@@ -9,22 +10,36 @@ export interface DateRange {
 
 export type DateRangePreset = 'today' | 'last7days' | 'last30days' | 'last90days' | 'custom';
 
-export function getDateRangeForPreset(preset: DateRangePreset, customRange?: DateRange): DateRange {
+// Returns stable date boundaries based on preset (boundaries at day level, not milliseconds)
+function getStableDateRange(preset: DateRangePreset, customRange?: DateRange): DateRange {
   const now = new Date();
+  const today = startOfDay(now);
+  
   switch (preset) {
     case 'today':
-      return { from: startOfDay(now), to: endOfDay(now) };
+      return { from: startOfDay(today), to: endOfDay(today) };
     case 'last7days':
-      return { from: subDays(now, 7), to: now };
+      return { from: startOfDay(subDays(today, 7)), to: endOfDay(today) };
     case 'last30days':
-      return { from: subDays(now, 30), to: now };
+      return { from: startOfDay(subDays(today, 30)), to: endOfDay(today) };
     case 'last90days':
-      return { from: subDays(now, 90), to: now };
+      return { from: startOfDay(subDays(today, 90)), to: endOfDay(today) };
     case 'custom':
-      return customRange || { from: subDays(now, 30), to: now };
+      if (customRange) {
+        return { 
+          from: startOfDay(customRange.from), 
+          to: endOfDay(customRange.to) 
+        };
+      }
+      return { from: startOfDay(subDays(today, 30)), to: endOfDay(today) };
     default:
-      return { from: subDays(now, 30), to: now };
+      return { from: startOfDay(subDays(today, 30)), to: endOfDay(today) };
   }
+}
+
+// Exported for backward compatibility
+export function getDateRangeForPreset(preset: DateRangePreset, customRange?: DateRange): DateRange {
+  return getStableDateRange(preset, customRange);
 }
 
 export interface TodaySnapshot {
@@ -124,10 +139,29 @@ export interface UseExecutiveDashboardOptions {
 
 export function useExecutiveDashboard(options: UseExecutiveDashboardOptions = { preset: 'last30days' }) {
   const { preset, customRange } = options;
-  const dateRange = getDateRangeForPreset(preset, customRange);
+  
+  // Memoize the date range to prevent re-creation on every render
+  // Key is based on preset + formatted custom dates (stable strings)
+  const dateRange = useMemo(() => {
+    return getStableDateRange(preset, customRange);
+  }, [
+    preset, 
+    customRange ? format(customRange.from, 'yyyy-MM-dd') : null,
+    customRange ? format(customRange.to, 'yyyy-MM-dd') : null
+  ]);
+  
+  // Build a stable query key using formatted date strings
+  const queryKey = useMemo(() => {
+    return [
+      'executive-dashboard', 
+      preset, 
+      format(dateRange.from, 'yyyy-MM-dd'),
+      format(dateRange.to, 'yyyy-MM-dd')
+    ];
+  }, [preset, dateRange]);
   
   return useQuery({
-    queryKey: ['executive-dashboard', preset, dateRange.from.toISOString(), dateRange.to.toISOString()],
+    queryKey,
     queryFn: async (): Promise<ExecutiveDashboardData> => {
       const now = new Date();
       const todayStart = startOfDay(now);
@@ -263,6 +297,26 @@ export function useExecutiveDashboard(options: UseExecutiveDashboardOptions = { 
           `)
           .not('estimated_cost', 'is', null),
       ]);
+
+      // Check for errors and aggregate them
+      const errors: string[] = [];
+      if (todayEventsResult.error) errors.push(`events (today): ${todayEventsResult.error.message}`);
+      if (weekEventsResult.error) errors.push(`events (week): ${weekEventsResult.error.message}`);
+      if (seriesResult.error) errors.push(`event_series: ${seriesResult.error.message}`);
+      if (todayAssignmentsResult.error) errors.push(`event_assignments: ${todayAssignmentsResult.error.message}`);
+      if (allEventsResult.error) errors.push(`events (all): ${allEventsResult.error.message}`);
+      if (deliveryRecordsResult.error) errors.push(`delivery_records: ${deliveryRecordsResult.error.message}`);
+      if (staffFeedbackResult.error) errors.push(`staff_event_feedback: ${staffFeedbackResult.error.message}`);
+      if (profilesResult.error) errors.push(`profiles: ${profilesResult.error.message}`);
+      if (complianceDocsResult.error) errors.push(`staff_compliance_documents: ${complianceDocsResult.error.message}`);
+      if (equipmentResult.error) errors.push(`equipment_allocations: ${equipmentResult.error.message}`);
+      if (auditLogsResult.error) errors.push(`audit_log: ${auditLogsResult.error.message}`);
+      if (assignmentCostsResult.error) errors.push(`event_assignments (costs): ${assignmentCostsResult.error.message}`);
+      
+      if (errors.length > 0) {
+        console.error('Executive Dashboard data fetch errors:', errors);
+        throw new Error(`Failed to fetch dashboard data: ${errors.join('; ')}`);
+      }
 
       const todayEvents = todayEventsResult.data || [];
       const weekEvents = weekEventsResult.data || [];

@@ -129,8 +129,23 @@ export default function ExecutiveDashboard() {
   if (error) {
     return (
       <AppLayout>
+        <PageHeader
+          title="Executive Dashboard"
+          description="Operational overview and risk visibility"
+        />
         <div className="text-center py-12">
-          <p className="text-destructive">Failed to load dashboard data</p>
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-destructive font-medium">Failed to load dashboard data</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+            {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          </p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
         </div>
       </AppLayout>
     );
