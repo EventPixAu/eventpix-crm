@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,10 +25,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEvent, useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
+import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
-  event_type: z.enum(['wedding', 'corporate', 'birthday', 'conference', 'gala', 'festival', 'private', 'sports', 'other']),
+  event_type_id: z.string().min(1, 'Event type is required'),
   event_date: z.string().min(1, 'Date is required'),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
@@ -38,31 +39,12 @@ const eventSchema = z.object({
   onsite_contact_name: z.string().optional(),
   onsite_contact_phone: z.string().optional(),
   coverage_details: z.string().optional(),
-  delivery_method: z.enum(['dropbox', 'zno_instant', 'spotmyphotos', 'internal_gallery']).optional().nullable(),
+  delivery_method_id: z.string().optional().nullable(),
   delivery_deadline: z.string().optional(),
   notes: z.string().optional(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
-
-const eventTypes = [
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'corporate', label: 'Corporate' },
-  { value: 'birthday', label: 'Birthday' },
-  { value: 'conference', label: 'Conference' },
-  { value: 'gala', label: 'Gala' },
-  { value: 'festival', label: 'Festival' },
-  { value: 'private', label: 'Private' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'other', label: 'Other' },
-];
-
-const deliveryMethods = [
-  { value: 'dropbox', label: 'Dropbox' },
-  { value: 'zno_instant', label: 'Zno Instant' },
-  { value: 'spotmyphotos', label: 'SpotMyPhotos' },
-  { value: 'internal_gallery', label: 'Internal Gallery' },
-];
 
 export default function EventForm() {
   const { id } = useParams<{ id: string }>();
@@ -70,14 +52,31 @@ export default function EventForm() {
   const isEditing = !!id;
 
   const { data: event, isLoading } = useEvent(id);
+  const { data: eventTypes = [], isLoading: typesLoading } = useEventTypes();
+  const { data: deliveryMethods = [], isLoading: methodsLoading } = useDeliveryMethods();
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+
+  // Create lookup map for finding type ID from legacy enum
+  const eventTypeNameToId = useMemo(() => {
+    return eventTypes.reduce((acc, et) => {
+      acc[et.name.toLowerCase()] = et.id;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [eventTypes]);
+
+  const deliveryMethodNameToId = useMemo(() => {
+    return deliveryMethods.reduce((acc, dm) => {
+      acc[dm.name.toLowerCase().replace(/ /g, '_')] = dm.id;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [deliveryMethods]);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       event_name: '',
-      event_type: 'other',
+      event_type_id: '',
       event_date: '',
       start_time: '',
       end_time: '',
@@ -87,17 +86,29 @@ export default function EventForm() {
       onsite_contact_name: '',
       onsite_contact_phone: '',
       coverage_details: '',
-      delivery_method: null,
+      delivery_method_id: null,
       delivery_deadline: '',
       notes: '',
     },
   });
 
   useEffect(() => {
-    if (event) {
+    if (event && eventTypes.length > 0) {
+      // Get event_type_id - either from new FK or find from legacy enum
+      let eventTypeId = event.event_type_id || '';
+      if (!eventTypeId && event.event_type) {
+        eventTypeId = eventTypeNameToId[event.event_type.toLowerCase()] || '';
+      }
+
+      // Get delivery_method_id - either from new FK or find from legacy enum
+      let deliveryMethodId = event.delivery_method_id || null;
+      if (!deliveryMethodId && event.delivery_method) {
+        deliveryMethodId = deliveryMethodNameToId[event.delivery_method.toLowerCase()] || null;
+      }
+
       form.reset({
         event_name: event.event_name,
-        event_type: event.event_type as any,
+        event_type_id: eventTypeId,
         event_date: event.event_date,
         start_time: event.start_time || '',
         end_time: event.end_time || '',
@@ -107,17 +118,17 @@ export default function EventForm() {
         onsite_contact_name: event.onsite_contact_name || '',
         onsite_contact_phone: event.onsite_contact_phone || '',
         coverage_details: event.coverage_details || '',
-        delivery_method: event.delivery_method as any,
+        delivery_method_id: deliveryMethodId,
         delivery_deadline: event.delivery_deadline || '',
         notes: event.notes || '',
       });
     }
-  }, [event, form]);
+  }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId]);
 
   const onSubmit = async (values: EventFormValues) => {
     const cleanValues = {
       event_name: values.event_name,
-      event_type: values.event_type,
+      event_type_id: values.event_type_id,
       event_date: values.event_date,
       client_name: values.client_name,
       start_time: values.start_time || null,
@@ -127,7 +138,7 @@ export default function EventForm() {
       onsite_contact_name: values.onsite_contact_name || null,
       onsite_contact_phone: values.onsite_contact_phone || null,
       coverage_details: values.coverage_details || null,
-      delivery_method: values.delivery_method || null,
+      delivery_method_id: values.delivery_method_id || null,
       delivery_deadline: values.delivery_deadline || null,
       notes: values.notes || null,
     };
@@ -141,7 +152,7 @@ export default function EventForm() {
     }
   };
 
-  if (isEditing && isLoading) {
+  if (isEditing && (isLoading || typesLoading || methodsLoading)) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
@@ -189,7 +200,7 @@ export default function EventForm() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="event_type"
+                  name="event_type_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Event Type</FormLabel>
@@ -201,8 +212,8 @@ export default function EventForm() {
                         </FormControl>
                         <SelectContent>
                           {eventTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -344,7 +355,7 @@ export default function EventForm() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="delivery_method"
+                  name="delivery_method_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Delivery Method</FormLabel>
@@ -356,8 +367,8 @@ export default function EventForm() {
                         </FormControl>
                         <SelectContent>
                           {deliveryMethods.map((method) => (
-                            <SelectItem key={method.value} value={method.value}>
-                              {method.label}
+                            <SelectItem key={method.id} value={method.id}>
+                              {method.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

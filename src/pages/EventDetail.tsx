@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent } from '@/hooks/useEvents';
+import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 
 export default function EventDetail() {
@@ -38,7 +40,42 @@ export default function EventDetail() {
   const { isAdmin } = useAuth();
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
+  const { data: eventTypes = [] } = useEventTypes();
+  const { data: deliveryMethods = [] } = useDeliveryMethods();
   const deleteEvent = useDeleteEvent();
+
+  // Create lookup maps
+  const eventTypeMap = useMemo(() => {
+    return eventTypes.reduce((acc, et) => {
+      acc[et.id] = et.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [eventTypes]);
+
+  const deliveryMethodMap = useMemo(() => {
+    return deliveryMethods.reduce((acc, dm) => {
+      acc[dm.id] = dm.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [deliveryMethods]);
+
+  // Helper to get event type name
+  const getEventTypeName = () => {
+    if (!event) return '';
+    if (event.event_type_id && eventTypeMap[event.event_type_id]) {
+      return eventTypeMap[event.event_type_id];
+    }
+    return event.event_type?.replace('_', ' ') || 'Other';
+  };
+
+  // Helper to get delivery method name
+  const getDeliveryMethodName = () => {
+    if (!event) return '';
+    if (event.delivery_method_id && deliveryMethodMap[event.delivery_method_id]) {
+      return deliveryMethodMap[event.delivery_method_id];
+    }
+    return event.delivery_method?.replace('_', ' ') || '';
+  };
 
   const handleDelete = async () => {
     if (id) {
@@ -75,7 +112,8 @@ export default function EventDetail() {
   }
 
   const date = parseISO(event.event_date);
-  const deliveryLink = event.delivery_method ? `https://gallery.eventpix.com.au/${event.id}` : null;
+  const hasDelivery = event.delivery_method_id || event.delivery_method;
+  const deliveryLink = hasDelivery ? `https://gallery.eventpix.com.au/${event.id}` : null;
 
   return (
     <AppLayout>
@@ -98,7 +136,7 @@ export default function EventDetail() {
             />
           </div>
           <p className="text-muted-foreground capitalize">
-            {event.event_type} • {event.client_name}
+            {getEventTypeName()} • {event.client_name}
           </p>
         </div>
         {isAdmin && (
@@ -294,12 +332,12 @@ export default function EventDetail() {
               <Package className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-display font-semibold">Delivery</h2>
             </div>
-            {event.delivery_method ? (
+            {hasDelivery ? (
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Method</p>
                   <p className="font-medium capitalize">
-                    {event.delivery_method.replace('_', ' ')}
+                    {getDeliveryMethodName()}
                   </p>
                 </div>
                 {event.delivery_deadline && (
