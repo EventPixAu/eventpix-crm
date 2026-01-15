@@ -1,8 +1,11 @@
 /**
- * SALES BOUNDARY: Job Intake Detail
+ * DEPRECATED: Job Intake Detail
  * 
- * Displays a single job intake record from the Sales → Operations handoff queue.
- * After conversion to Event, the job intake becomes READ-ONLY (enforced by DB trigger).
+ * This page is deprecated. Use the unified Sales workflow instead:
+ * - Leads (/sales/leads) for opportunities
+ * - Quotes (/sales/quotes) for proposals
+ * 
+ * Kept for backward compatibility with legacy intake records.
  */
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';

@@ -69,7 +69,7 @@ const adminNavItems = [
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   // Operations Section
   { href: '/events', label: 'Events', icon: Calendar },
-  { href: '/job-intake', label: 'Job Intake', icon: FileText },
+  // Job Intake deprecated - hidden from nav, use Sales workflow instead
   { href: '/admin/series', label: 'Series', icon: FileCheck },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },

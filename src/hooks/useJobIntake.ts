@@ -1,16 +1,17 @@
 /**
- * SALES BOUNDARY: Job Intake Hook
+ * DEPRECATED: Job Intake Hook
  * 
- * Job Intake represents the handoff point from Sales CRM (Studio Ninja) to Operations.
- * This is NOT a CRM - it's an intake queue only.
+ * This hook is deprecated. The unified platform now uses:
+ * - useSales hooks for Clients, Leads, Quotes
+ * - useConvertQuoteToEvent for Sales → Ops conversion
  * 
- * Handoff Status Flow:
+ * Kept for backward compatibility with legacy intake records.
+ * 
+ * Handoff Status Flow (legacy):
  * - draft: Initial entry, not ready for operations
  * - ready_for_ops: Sales has confirmed, ready to convert to event
  * - converted: Event created, intake becomes read-only
  * - cancelled: Job rejected or cancelled
- * 
- * IMPORTANT: After conversion, job intake records are IMMUTABLE (enforced by DB trigger)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';

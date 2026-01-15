@@ -1,13 +1,15 @@
 /**
- * OPERATIONS PLATFORM - Dashboard
+ * UNIFIED PLATFORM - Dashboard
  * 
- * ADMIN VIEW: Operations overview (today's events, upcoming, staff, attention queue)
+ * ADMIN VIEW: Full operations overview (today's events, upcoming, staff, attention queue)
+ * SALES VIEW: Sales metrics and pipeline (future enhancement)
  * PHOTOGRAPHER VIEW: My Jobs focus (assigned events only, personal schedule)
  * 
- * SYSTEM BOUNDARIES:
- * - NO client details visible to photographers
- * - NO invoice/cost data shown to photographers (enforced by RLS)
- * - NO sales metrics or CRM data
+ * ROLE BOUNDARIES:
+ * - Photographers see only their assigned work
+ * - Sales users see sales pipeline data
+ * - Admins see all modules
+ * - Invoice data is read-only (accounting in Xero)
  */
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';

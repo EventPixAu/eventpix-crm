@@ -1512,6 +1512,27 @@ export type Database = {
           },
         ]
       }
+      quote_acceptance_attempts: {
+        Row: {
+          attempt_at: string
+          id: string
+          public_token: string
+          success: boolean
+        }
+        Insert: {
+          attempt_at?: string
+          id?: string
+          public_token: string
+          success?: boolean
+        }
+        Update: {
+          attempt_at?: string
+          id?: string
+          public_token?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       quote_items: {
         Row: {
           created_at: string | null
@@ -1576,6 +1597,7 @@ export type Database = {
           created_by: string | null
           id: string
           lead_id: string | null
+          linked_event_id: string | null
           notes: string | null
           public_token: string | null
           quote_number: string | null
@@ -1596,6 +1618,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           lead_id?: string | null
+          linked_event_id?: string | null
           notes?: string | null
           public_token?: string | null
           quote_number?: string | null
@@ -1616,6 +1639,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           lead_id?: string | null
+          linked_event_id?: string | null
           notes?: string | null
           public_token?: string | null
           quote_number?: string | null
@@ -1640,6 +1664,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_linked_event_id_fkey"
+            columns: ["linked_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -2229,6 +2260,8 @@ export type Database = {
         }
         Returns: string
       }
+      mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
+      regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "photographer" | "sales"
