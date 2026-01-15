@@ -137,12 +137,10 @@ export default function ProductList() {
         title="Products & Services"
         description="Manage your product catalog"
         actions={
-          isAdmin && (
-            <Button onClick={handleOpenCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Product
-            </Button>
-          )
+          <Button onClick={handleOpenCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Product
+          </Button>
         }
       />
 

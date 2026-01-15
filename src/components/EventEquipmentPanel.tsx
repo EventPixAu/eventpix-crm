@@ -122,7 +122,22 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
   const returnedAllocations = allocations?.filter(a => a.status === 'returned') || [];
 
   if (isLoading) {
-    return <div className="text-muted-foreground">Loading equipment...</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Equipment
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+            <span className="ml-2 text-muted-foreground">Loading equipment...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

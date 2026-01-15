@@ -135,6 +135,27 @@ export function EquipmentAvailabilityCalendar() {
     };
   };
 
+  // Handle error states
+  if (!allocationsLoading && !equipmentLoading && !equipment?.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Equipment Availability
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No equipment in inventory yet.</p>
+            <p className="text-sm mt-1">Add equipment in the Inventory tab to see availability.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
       {/* Calendar */}
