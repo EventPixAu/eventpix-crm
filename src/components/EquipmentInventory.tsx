@@ -8,22 +8,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Camera, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package } from 'lucide-react';
 import { 
   useEquipmentItems, 
   useCreateEquipmentItem, 
   useUpdateEquipmentItem, 
   useDeleteEquipmentItem,
-  EQUIPMENT_CATEGORIES,
   EQUIPMENT_CONDITIONS,
   EquipmentItem,
-  EquipmentCategory,
   EquipmentCondition,
   EquipmentStatus
 } from '@/hooks/useEquipment';
+import { useEquipmentCategories } from '@/hooks/useLookups';
 
 export function EquipmentInventory() {
   const { data: items, isLoading } = useEquipmentItems();
+  const { data: categories = [] } = useEquipmentCategories();
   const createItem = useCreateEquipmentItem();
   const updateItem = useUpdateEquipmentItem();
   const deleteItem = useDeleteEquipmentItem();
@@ -34,7 +34,7 @@ export function EquipmentInventory() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [formData, setFormData] = useState({
     name: '',
-    category: 'camera' as EquipmentCategory,
+    category: '',
     brand: '',
     model: '',
     serial_number: '',
@@ -46,7 +46,7 @@ export function EquipmentInventory() {
   const resetForm = () => {
     setFormData({
       name: '',
-      category: 'camera',
+      category: categories[0]?.name.toLowerCase() || '',
       brand: '',
       model: '',
       serial_number: '',
@@ -124,6 +124,14 @@ export function EquipmentInventory() {
     return <Badge variant={variants[condition]}>{condition.replace('_', ' ')}</Badge>;
   };
 
+  // Build category options: active categories + any legacy categories from existing items
+  const categoryOptions = (() => {
+    const activeNames = categories.map(c => c.name.toLowerCase());
+    const existingCategories = [...new Set(items?.map(item => item.category) || [])];
+    const allCategories = [...new Set([...activeNames, ...existingCategories])];
+    return allCategories.sort();
+  })();
+
   if (isLoading) {
     return <div className="text-muted-foreground">Loading equipment...</div>;
   }
@@ -164,14 +172,16 @@ export function EquipmentInventory() {
                   <Label>Category *</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(v) => setFormData({ ...formData, category: v as EquipmentCategory })}
+                    onValueChange={(v) => setFormData({ ...formData, category: v })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {EQUIPMENT_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name.toLowerCase()}>
+                          {cat.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -246,8 +256,8 @@ export function EquipmentInventory() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {EQUIPMENT_CATEGORIES.map((cat) => (
-                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+              {categoryOptions.map((cat) => (
+                <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>
               ))}
             </SelectContent>
           </Select>
