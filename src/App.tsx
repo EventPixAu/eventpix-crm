@@ -27,6 +27,7 @@ import EventSeriesDetail from "./pages/admin/EventSeriesDetail";
 import ExecutiveDashboard from "./pages/admin/ExecutiveDashboard";
 import InvoiceSync from "./pages/admin/InvoiceSync";
 import MarginReport from "./pages/admin/MarginReport";
+import AdminLookups from "./pages/admin/AdminLookups";
 import Delivery from "./pages/Delivery";
 import GalleryPublic from "./pages/GalleryPublic";
 import JobIntakeList from "./pages/JobIntakeList";
@@ -101,6 +102,7 @@ function AppRoutes() {
       <Route path="/admin/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
       <Route path="/admin/invoices" element={<ProtectedRoute><InvoiceSync /></ProtectedRoute>} />
       <Route path="/admin/margins" element={<ProtectedRoute><MarginReport /></ProtectedRoute>} />
+      <Route path="/admin/lookups" element={<ProtectedRoute><AdminLookups /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="/job-intake" element={<ProtectedRoute><JobIntakeList /></ProtectedRoute>} />
       <Route path="/job-intake/:id" element={<ProtectedRoute><JobIntakeDetail /></ProtectedRoute>} />

@@ -2,14 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export type EquipmentCategory = 'camera' | 'lens' | 'flash' | 'battery' | 'audio' | 'video' | 'tripod' | 'accessory' | 'computer' | 'other';
+// Category is now a dynamic string from equipment_categories lookup
 export type EquipmentCondition = 'excellent' | 'good' | 'needs_service' | 'out_of_service';
 export type EquipmentStatus = 'available' | 'allocated' | 'in_service' | 'retired';
 
 export interface EquipmentItem {
   id: string;
   name: string;
-  category: EquipmentCategory;
+  category: string; // Now dynamic from lookup table
   brand: string | null;
   model: string | null;
   serial_number: string | null;
@@ -123,7 +123,8 @@ export function useDeleteEquipmentItem() {
   });
 }
 
-export const EQUIPMENT_CATEGORIES: { value: EquipmentCategory; label: string }[] = [
+// Legacy static categories - kept for backward compatibility in filters
+export const EQUIPMENT_CATEGORIES: { value: string; label: string }[] = [
   { value: 'camera', label: 'Camera' },
   { value: 'lens', label: 'Lens' },
   { value: 'flash', label: 'Flash' },

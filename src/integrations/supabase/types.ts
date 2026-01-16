@@ -432,17 +432,26 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_active: boolean | null
           name: string
+          sort_order: number | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           name: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -604,10 +613,38 @@ export type Database = {
           },
         ]
       }
+      equipment_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       equipment_items: {
         Row: {
           brand: string | null
           category: string
+          category_id: string | null
           condition: string
           created_at: string | null
           id: string
@@ -620,6 +657,7 @@ export type Database = {
         Insert: {
           brand?: string | null
           category: string
+          category_id?: string | null
           condition?: string
           created_at?: string | null
           id?: string
@@ -632,6 +670,7 @@ export type Database = {
         Update: {
           brand?: string | null
           category?: string
+          category_id?: string | null
           condition?: string
           created_at?: string | null
           id?: string
@@ -641,7 +680,15 @@ export type Database = {
           serial_number?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "equipment_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       equipment_kit_items: {
         Row: {
@@ -1046,17 +1093,26 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_active: boolean | null
           name: string
+          sort_order: number | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           name: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }

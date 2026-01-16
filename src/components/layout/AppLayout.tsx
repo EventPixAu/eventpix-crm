@@ -79,6 +79,7 @@ const adminNavItems = [
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
   { href: '/admin/event-types', label: 'Event Types', icon: Settings },
+  { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/delivery', label: 'Delivery', icon: Package },
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
   // Finance (Admin Only)
