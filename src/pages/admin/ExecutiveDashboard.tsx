@@ -31,6 +31,7 @@ import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/lib/auth';
 import { useExecutiveDashboard, DateRangePreset, DateRange } from '@/hooks/useExecutiveDashboard';
+import { useReadinessSummary } from '@/hooks/useReadinessGates';
 import { cn } from '@/lib/utils';
 
 function StatTile({ 
@@ -121,7 +122,7 @@ export default function ExecutiveDashboard() {
   const [isToOpen, setIsToOpen] = useState(false);
   
   const { data, isLoading, error } = useExecutiveDashboard({ preset, customRange });
-
+  const { data: readinessSummary } = useReadinessSummary();
   // Allow access for both Admin and Executive roles
   if (!isAdmin && !isExecutive) {
     return <Navigate to="/" replace />;
@@ -294,7 +295,7 @@ export default function ExecutiveDashboard() {
           {/* Today & This Week Snapshot */}
           <section>
             <h2 className="text-lg font-semibold mb-4">Today & This Week</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
               <StatTile 
                 label="Events Today" 
                 value={data.snapshot.eventsToday} 
@@ -331,6 +332,20 @@ export default function ExecutiveDashboard() {
                 value={data.snapshot.conflictsOrOverridesToday} 
                 icon={AlertTriangle}
                 variant={data.snapshot.conflictsOrOverridesToday > 0 ? 'warning' : 'default'}
+              />
+              <StatTile 
+                label="Events Not Ready" 
+                value={readinessSummary?.eventsNotReadyCount ?? 0} 
+                icon={AlertTriangle}
+                variant={(readinessSummary?.eventsNotReadyCount ?? 0) > 0 ? 'danger' : 'default'}
+                subtext="Next 48hrs"
+              />
+              <StatTile 
+                label="Deliveries At Risk" 
+                value={readinessSummary?.deliveriesAtRiskCount ?? 0} 
+                icon={Package}
+                variant={(readinessSummary?.deliveriesAtRiskCount ?? 0) > 0 ? 'warning' : 'default'}
+                subtext="Next 48hrs"
               />
             </div>
           </section>

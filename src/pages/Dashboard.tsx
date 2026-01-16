@@ -30,7 +30,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { NeedsAttentionQueue } from '@/components/NeedsAttentionQueue';
+import { AdminReadinessQueues } from '@/components/AdminReadinessQueues';
 import { EscalationBanners } from '@/components/EscalationBanners';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
@@ -245,14 +245,14 @@ export default function Dashboard() {
           )}
         </motion.div>
 
-        {/* Needs Attention Queue - Admin Only */}
+        {/* Readiness Queues - Admin Only */}
         {isAdmin && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <NeedsAttentionQueue />
+            <AdminReadinessQueues />
           </motion.div>
         )}
       </div>
