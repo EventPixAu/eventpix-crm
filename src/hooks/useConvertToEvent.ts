@@ -3,27 +3,58 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
-export interface ConvertToEventParams {
-  lead_id: string;
-  event_name: string;
-  event_date?: string | null;
-  start_time?: string | null;
-  end_time?: string | null;
-  venue_id?: string | null;
-  venue_name?: string | null;
-  venue_address?: string | null;
-  delivery_deadline?: string | null;
-  coverage_package_id?: string | null;
-  special_instructions?: string | null;
-  date_status?: 'confirmed' | 'tbc' | 'tentative';
+export interface ConvertToEventInput {
+  enquiry_id: string;
+  client_id?: string | null;
+  event_overrides?: {
+    event_name?: string | null;
+    event_date?: string | null;
+    start_time?: string | null;
+    end_time?: string | null;
+    start_at?: string | null;
+    end_at?: string | null;
+    event_type_id?: string | null;
+    coverage_package_id?: string | null;
+    delivery_deadline_at?: string | null;
+    special_instructions?: string | null;
+    date_status?: 'confirmed' | 'tbc' | 'tentative';
+  };
+  venue?: {
+    venue_id?: string | null;
+    create?: {
+      name: string;
+      address_line_1?: string | null;
+      suburb?: string | null;
+      state?: string | null;
+      postcode?: string | null;
+      country?: string | null;
+      parking_notes?: string | null;
+      access_notes?: string | null;
+    };
+  };
+  workflow_pack?: {
+    template_ids: string[];
+  };
+  options?: {
+    create_admin_setup_tasks?: boolean;
+    create_worksheets?: boolean;
+    copy_enquiry_contacts?: boolean;
+  };
 }
 
 export interface ConvertToEventResult {
   success: boolean;
   event_id?: string;
+  venue_id?: string | null;
   error?: string;
-  tasks_created?: number;
-  venue_created?: boolean;
+  created?: {
+    event: boolean;
+    venue: boolean;
+    worksheets: number;
+    tasks: number;
+    event_contacts: number;
+  };
+  warnings?: string[];
 }
 
 export function useConvertToEvent() {
@@ -32,20 +63,9 @@ export function useConvertToEvent() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: async (params: ConvertToEventParams): Promise<ConvertToEventResult> => {
+    mutationFn: async (params: ConvertToEventInput): Promise<ConvertToEventResult> => {
       const { data, error } = await supabase.rpc('convert_enquiry_to_event', {
-        p_lead_id: params.lead_id,
-        p_event_name: params.event_name,
-        p_event_date: params.event_date || null,
-        p_start_time: params.start_time || null,
-        p_end_time: params.end_time || null,
-        p_venue_id: params.venue_id || null,
-        p_venue_name: params.venue_name || null,
-        p_venue_address: params.venue_address || null,
-        p_delivery_deadline: params.delivery_deadline || null,
-        p_coverage_package_id: params.coverage_package_id || null,
-        p_special_instructions: params.special_instructions || null,
-        p_date_status: params.date_status || 'confirmed',
+        p_input: JSON.parse(JSON.stringify(params)),
       });
 
       if (error) throw error;
@@ -63,9 +83,13 @@ export function useConvertToEvent() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['venues'] });
       
+      const warnings = result.warnings || [];
+      const tasksCreated = result.created?.tasks || 0;
+      const worksheetsCreated = result.created?.worksheets || 0;
+      
       toast({
         title: 'Event created successfully',
-        description: `${result.tasks_created || 0} setup tasks created.`,
+        description: `${tasksCreated} setup tasks and ${worksheetsCreated} worksheets created.${warnings.length > 0 ? ` Warnings: ${warnings.join(', ')}` : ''}`,
       });
       
       if (result.event_id) {
