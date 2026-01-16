@@ -75,6 +75,7 @@ import { StaffingForecast } from '@/components/StaffingForecast';
 import { SeriesBulkActionsDialog } from '@/components/SeriesBulkActionsDialog';
 import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
 import { SeriesCostSummary } from '@/components/SeriesCostSummary';
+import { SeriesRepeatIndicators } from '@/components/SeriesRepeatIndicators';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 
@@ -358,6 +359,9 @@ export default function EventSeriesDetail() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Repeat Revenue Indicators */}
+          {id && <SeriesRepeatIndicators seriesId={id} />}
+          
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatCard
               title="Total Events"

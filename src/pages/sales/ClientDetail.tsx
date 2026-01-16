@@ -44,12 +44,16 @@ import { useClient, useUpdateClient, useDeleteClient } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { ClientContactsEditor } from '@/components/ClientContactsEditor';
+import { ClientEventHistoryCard } from '@/components/ClientEventHistoryCard';
+import { RepeatClientBadge } from '@/components/RepeatClientBadge';
+import { useClientEventHistory } from '@/hooks/useClientEventHistory';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: client, isLoading, error } = useClient(id);
+  const { data: eventHistory } = useClientEventHistory(id);
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
 
@@ -144,7 +148,14 @@ export default function ClientDetail() {
         title={client.business_name}
         description="Client details"
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {eventHistory?.is_repeat_client && (
+              <RepeatClientBadge 
+                isRepeatClient={eventHistory.is_repeat_client}
+                completedEvents={eventHistory.completed_events}
+                showCount
+              />
+            )}
             <Button variant="outline" onClick={handleOpenEdit}>
               <Edit2 className="h-4 w-4 mr-2" />
               Edit
@@ -235,6 +246,9 @@ export default function ClientDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Event History & Repeat Indicators */}
+      {id && <ClientEventHistoryCard clientId={id} />}
 
       {/* Tabs for contacts, notes, communications */}
       <Tabs defaultValue="contacts" className="space-y-4">
