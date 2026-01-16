@@ -58,6 +58,8 @@ import ContractTemplates from "./pages/admin/ContractTemplates";
 import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
+import UserManagement from "./pages/admin/UserManagement";
+import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +90,7 @@ function AppRoutes() {
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
+      <Route path="/accept-invite" element={<AcceptInvite />} />
       
       {/* Dashboard - all authenticated users */}
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -121,7 +124,7 @@ function AppRoutes() {
       <Route path="/job-intake/:id" element={<ProtectedRoute><AdminGuard><JobIntakeDetail /></AdminGuard></ProtectedRoute>} />
       <Route path="/equipment" element={<ProtectedRoute><AdminGuard><Equipment /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
-      
+      <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
       {/* Executive routes - admin only (executive role removed, use admin) */}
       <Route path="/executive/dashboard" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/executive" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
