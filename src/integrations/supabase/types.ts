@@ -3221,6 +3221,7 @@ export type Database = {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
       }
+      can_access_operations: { Args: { _user_id: string }; Returns: boolean }
       can_access_sales: { Args: { _user_id: string }; Returns: boolean }
       check_staff_conflicts: {
         Args: {
@@ -3263,8 +3264,10 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
+      is_crew: { Args: { _user_id: string }; Returns: boolean }
       is_executive: { Args: { _user_id: string }; Returns: boolean }
       is_executive_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_operations: { Args: { _user_id: string }; Returns: boolean }
       is_photographer: { Args: { _user_id: string }; Returns: boolean }
       log_audit_entry:
         | {
@@ -3295,7 +3298,13 @@ export type Database = {
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "photographer" | "sales" | "executive"
+      app_role:
+        | "admin"
+        | "photographer"
+        | "sales"
+        | "executive"
+        | "operations"
+        | "crew"
       audit_action:
         | "event_created"
         | "event_updated"
@@ -3481,7 +3490,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "photographer", "sales", "executive"],
+      app_role: [
+        "admin",
+        "photographer",
+        "sales",
+        "executive",
+        "operations",
+        "crew",
+      ],
       audit_action: [
         "event_created",
         "event_updated",
