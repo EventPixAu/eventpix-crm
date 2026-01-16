@@ -11,6 +11,7 @@ import {
   Calendar,
   Truck,
   Box,
+  Beaker,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -33,6 +34,7 @@ import {
   useUpdateEquipmentCategory,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
+import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
   items: LookupItem[];
@@ -329,6 +331,13 @@ export default function AdminLookups() {
                 <Box className="h-4 w-4 mr-2" />
                 Equipment Categories
               </TabsTrigger>
+              <TabsTrigger 
+                value="training-tools"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                <Beaker className="h-4 w-4 mr-2" />
+                Training Tools
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -367,6 +376,10 @@ export default function AdminLookups() {
                 updatePending={updateCategory.isPending}
                 itemLabel="Equipment Category"
               />
+            </TabsContent>
+
+            <TabsContent value="training-tools" className="m-0">
+              <AdminTrainingTools />
             </TabsContent>
           </div>
         </Tabs>
