@@ -359,12 +359,15 @@ export function useBulkSetEventType() {
       eventIds,
       eventTypeId,
       overwrite,
+      userId,
     }: {
       eventIds: string[];
       eventTypeId: string;
       overwrite: boolean;
+      userId?: string;
     }) => {
       let updatedCount = 0;
+      const updatedEventIds: string[] = [];
 
       for (const eventId of eventIds) {
         if (!overwrite) {
@@ -383,7 +386,27 @@ export function useBulkSetEventType() {
           .update({ event_type_id: eventTypeId })
           .eq('id', eventId);
 
-        if (!error) updatedCount++;
+        if (!error) {
+          updatedCount++;
+          updatedEventIds.push(eventId);
+        }
+      }
+
+      // Audit the bulk action
+      if (updatedCount > 0 && userId) {
+        await supabase.from('audit_log').insert({
+          action: 'bulk_update' as any,
+          actor_user_id: userId,
+          event_id: updatedEventIds[0], // Link to first event
+          before: null,
+          after: {
+            action_type: 'set_event_type',
+            event_type_id: eventTypeId,
+            event_count: updatedCount,
+            event_ids: updatedEventIds,
+            overwrite,
+          },
+        });
       }
 
       return { updatedCount };
@@ -407,12 +430,15 @@ export function useBulkSetDeliveryMethod() {
       eventIds,
       deliveryMethodId,
       overwrite,
+      userId,
     }: {
       eventIds: string[];
       deliveryMethodId: string;
       overwrite: boolean;
+      userId?: string;
     }) => {
       let updatedCount = 0;
+      const updatedEventIds: string[] = [];
 
       for (const eventId of eventIds) {
         if (!overwrite) {
@@ -430,7 +456,27 @@ export function useBulkSetDeliveryMethod() {
           .update({ delivery_method_id: deliveryMethodId })
           .eq('id', eventId);
 
-        if (!error) updatedCount++;
+        if (!error) {
+          updatedCount++;
+          updatedEventIds.push(eventId);
+        }
+      }
+
+      // Audit the bulk action
+      if (updatedCount > 0 && userId) {
+        await supabase.from('audit_log').insert({
+          action: 'bulk_update' as any,
+          actor_user_id: userId,
+          event_id: updatedEventIds[0],
+          before: null,
+          after: {
+            action_type: 'set_delivery_method',
+            delivery_method_id: deliveryMethodId,
+            event_count: updatedCount,
+            event_ids: updatedEventIds,
+            overwrite,
+          },
+        });
       }
 
       return { updatedCount };
@@ -453,11 +499,14 @@ export function useBulkSetDeliveryDeadline() {
     mutationFn: async ({
       eventIds,
       daysAfterEvent,
+      userId,
     }: {
       eventIds: string[];
       daysAfterEvent: number;
+      userId?: string;
     }) => {
       let updatedCount = 0;
+      const updatedEventIds: string[] = [];
 
       for (const eventId of eventIds) {
         // Get event date
@@ -479,7 +528,26 @@ export function useBulkSetDeliveryDeadline() {
           .update({ delivery_deadline: deadline })
           .eq('id', eventId);
 
-        if (!error) updatedCount++;
+        if (!error) {
+          updatedCount++;
+          updatedEventIds.push(eventId);
+        }
+      }
+
+      // Audit the bulk action
+      if (updatedCount > 0 && userId) {
+        await supabase.from('audit_log').insert({
+          action: 'bulk_update' as any,
+          actor_user_id: userId,
+          event_id: updatedEventIds[0],
+          before: null,
+          after: {
+            action_type: 'set_delivery_deadline',
+            days_after_event: daysAfterEvent,
+            event_count: updatedCount,
+            event_ids: updatedEventIds,
+          },
+        });
       }
 
       return { updatedCount };
@@ -511,6 +579,7 @@ export function useBulkAddNote() {
       userId: string;
     }) => {
       let addedCount = 0;
+      const addedEventIds: string[] = [];
 
       for (const eventId of eventIds) {
         const { error } = await supabase.from('event_notes').insert({
@@ -520,7 +589,28 @@ export function useBulkAddNote() {
           created_by: userId,
         });
 
-        if (!error) addedCount++;
+        if (!error) {
+          addedCount++;
+          addedEventIds.push(eventId);
+        }
+      }
+
+      // Audit the bulk note addition
+      if (addedCount > 0) {
+        await supabase.from('audit_log').insert({
+          action: 'note_added' as any,
+          actor_user_id: userId,
+          event_id: addedEventIds[0],
+          before: null,
+          after: {
+            action_type: 'bulk_add_note',
+            note_type: noteType,
+            event_count: addedCount,
+            event_ids: addedEventIds,
+            // Don't log full note content for privacy
+            note_preview: noteText.substring(0, 50) + (noteText.length > 50 ? '...' : ''),
+          },
+        });
       }
 
       return { addedCount };
@@ -542,9 +632,11 @@ export function useBulkSetOpsStatus() {
     mutationFn: async ({
       eventIds,
       opsStatus,
+      userId,
     }: {
       eventIds: string[];
       opsStatus: string;
+      userId?: string;
     }) => {
       const { error, count } = await supabase
         .from('events')
@@ -552,6 +644,23 @@ export function useBulkSetOpsStatus() {
         .in('id', eventIds);
 
       if (error) throw error;
+
+      // Audit the bulk status change
+      if (userId && eventIds.length > 0) {
+        await supabase.from('audit_log').insert({
+          action: 'bulk_update' as any,
+          actor_user_id: userId,
+          event_id: eventIds[0],
+          before: null,
+          after: {
+            action_type: 'set_ops_status',
+            ops_status: opsStatus,
+            event_count: eventIds.length,
+            event_ids: eventIds,
+          },
+        });
+      }
+
       return { updatedCount: count || eventIds.length };
     },
     onSuccess: (result) => {
