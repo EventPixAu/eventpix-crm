@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { 
   ArrowLeft, 
@@ -13,6 +13,13 @@ import {
   CheckCircle2,
   Layers,
   Wand2,
+  AlertTriangle,
+  Truck,
+  Settings2,
+  FileText,
+  BarChart3,
+  ChevronRight,
+  Eye,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -23,6 +30,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -31,15 +41,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Table,
   TableBody,
   TableCell,
@@ -47,33 +48,56 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   useEventSeriesDetail,
-  useEventSeriesStats,
   useSeriesEvents,
   useUpdateEventSeries,
   useBulkAssignStaff,
 } from '@/hooks/useEventSeries';
+import {
+  useSeriesOverview,
+  useSeriesCoverage,
+  useSeriesDelivery,
+  useSeriesNeedsAttention,
+} from '@/hooks/useSeriesControlCentre';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 import { useProfiles } from '@/hooks/useStaff';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
 import { StaffingForecast } from '@/components/StaffingForecast';
+import { SeriesBulkActionsDialog } from '@/components/SeriesBulkActionsDialog';
+import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
+import { SeriesCostSummary } from '@/components/SeriesCostSummary';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   
   const { data: series, isLoading } = useEventSeriesDetail(id);
-  const { data: stats } = useEventSeriesStats(id);
   const { data: events = [] } = useSeriesEvents(id);
+  const { data: overview } = useSeriesOverview(id);
+  const { data: coverage = [] } = useSeriesCoverage(id);
+  const { data: delivery = [] } = useSeriesDelivery(id);
+  const { data: needsAttention = [] } = useSeriesNeedsAttention(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
   const { data: profiles = [] } = useProfiles();
   
   const updateSeries = useUpdateEventSeries();
-  const bulkAssign = useBulkAssignStaff();
+  
+  // Tabs state
+  const [activeTab, setActiveTab] = useState('overview');
   
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -82,22 +106,22 @@ export default function EventSeriesDetail() {
   const [editDeadlineDays, setEditDeadlineDays] = useState('5');
   const [editCoverage, setEditCoverage] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editVenueCity, setEditVenueCity] = useState('');
+  const [editNotesPublic, setEditNotesPublic] = useState('');
+  const [editNotesInternal, setEditNotesInternal] = useState('');
   
-  // Bulk create dialog state
+  // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
-  
-  // Bulk assign state
-  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
-  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
-  const [assignUserId, setAssignUserId] = useState('');
-  const [assignRoleId, setAssignRoleId] = useState('');
-  const [assignNotes, setAssignNotes] = useState('');
-  
-  // Recommend crew state
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState<'event_type' | 'delivery_method' | 'delivery_deadline' | 'add_note' | null>(null);
+  
+  // Selection state
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const [needsAttentionFilter, setNeedsAttentionFilter] = useState<string>('all');
   
   // Load series data into form
-  useEffect(() => {
+  useState(() => {
     if (series) {
       setEditName(series.name);
       setEditEventTypeId(series.event_type_id || '');
@@ -105,6 +129,24 @@ export default function EventSeriesDetail() {
       setEditDeadlineDays(String(series.default_delivery_deadline_days || 5));
       setEditCoverage(series.default_coverage_details || '');
       setEditNotes(series.notes || '');
+      setEditVenueCity((series as any).default_venue_city || '');
+      setEditNotesPublic((series as any).default_notes_public || '');
+      setEditNotesInternal((series as any).default_notes_internal || '');
+    }
+  });
+  
+  // Update form when series loads
+  useMemo(() => {
+    if (series) {
+      setEditName(series.name);
+      setEditEventTypeId(series.event_type_id || '');
+      setEditDeliveryMethodId(series.default_delivery_method_id || '');
+      setEditDeadlineDays(String(series.default_delivery_deadline_days || 5));
+      setEditCoverage(series.default_coverage_details || '');
+      setEditNotes(series.notes || '');
+      setEditVenueCity((series as any).default_venue_city || '');
+      setEditNotesPublic((series as any).default_notes_public || '');
+      setEditNotesInternal((series as any).default_notes_internal || '');
     }
   }, [series]);
   
@@ -129,35 +171,14 @@ export default function EventSeriesDetail() {
     );
   };
   
-  const handleSelectAllEvents = () => {
-    if (selectedEventIds.length === events.length) {
+  const handleSelectAllEvents = (eventsList: Array<{ eventId?: string; id?: string }>) => {
+    const ids = eventsList.map(e => e.eventId || e.id || '').filter(Boolean);
+    if (selectedEventIds.length === ids.length) {
       setSelectedEventIds([]);
     } else {
-      setSelectedEventIds(events.map(e => e.id));
+      setSelectedEventIds(ids);
     }
   };
-  
-  const handleBulkAssign = async () => {
-    if (selectedEventIds.length === 0 || !assignUserId) return;
-    
-    await bulkAssign.mutateAsync({
-      eventIds: selectedEventIds,
-      userId: assignUserId,
-      staffRoleId: assignRoleId || undefined,
-      notes: assignNotes || undefined,
-    });
-    
-    setBulkAssignOpen(false);
-    setSelectedEventIds([]);
-    setAssignUserId('');
-    setAssignRoleId('');
-    setAssignNotes('');
-  };
-  
-  const upcomingEvents = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return events.filter(e => e.event_date >= today).slice(0, 10);
-  }, [events]);
   
   // Get unassigned upcoming event IDs for recommendation
   const unassignedEventIds = useMemo(() => {
@@ -166,6 +187,42 @@ export default function EventSeriesDetail() {
       .filter(e => e.event_date >= today)
       .map(e => e.id);
   }, [events]);
+  
+  // Filtered needs attention
+  const filteredNeedsAttention = useMemo(() => {
+    if (needsAttentionFilter === 'all') return needsAttention;
+    return needsAttention.filter(item => 
+      item.issues.some(issue => issue.toLowerCase().includes(needsAttentionFilter.toLowerCase()))
+    );
+  }, [needsAttention, needsAttentionFilter]);
+  
+  // Coverage stats
+  const coverageStats = useMemo(() => {
+    const missingAny = coverage.filter(c => c.assignmentCount === 0);
+    const missingLead = coverage.filter(c => c.assignmentCount > 0 && !c.hasLead);
+    const multiDay = coverage.filter(c => c.staffOnSameDay.length > 0);
+    const conflicts = coverage.filter(c => c.hardConflicts.length > 0);
+    return { missingAny, missingLead, multiDay, conflicts };
+  }, [coverage]);
+  
+  // Delivery stats
+  const deliveryStats = useMemo(() => {
+    const today = new Date();
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+    
+    const dueNext7Days = delivery.filter(d => 
+      d.deliveryDeadline && 
+      d.daysUntilDeadline !== null && 
+      d.daysUntilDeadline >= 0 && 
+      d.daysUntilDeadline <= 7 &&
+      !d.deliveredAt
+    );
+    const overdue = delivery.filter(d => d.isOverdue);
+    const missingLink = delivery.filter(d => !d.hasDeliveryLink && !d.deliveredAt);
+    
+    return { dueNext7Days, overdue, missingLink };
+  }, [delivery]);
   
   if (isLoading) {
     return (
@@ -194,9 +251,9 @@ export default function EventSeriesDetail() {
 
       <PageHeader
         title={series.name}
-        description="Manage events, assignments, and settings for this series"
+        description="Program Control Centre - Manage events, staffing, and delivery"
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {unassignedEventIds.length > 0 && (
               <Button variant="outline" onClick={() => setRecommendCrewOpen(true)}>
                 <Wand2 className="h-4 w-4 mr-2" />
@@ -208,351 +265,671 @@ export default function EventSeriesDetail() {
               <Plus className="h-4 w-4 mr-2" />
               Bulk Create Events
             </Button>
-            
-            <BulkEventCreationDialog
-              open={bulkCreateOpen}
-              onOpenChange={setBulkCreateOpen}
-              series={series}
-            />
-            
-            <RecommendCrewDialog
-              open={recommendCrewOpen}
-              onOpenChange={setRecommendCrewOpen}
-              eventIds={unassignedEventIds}
-              scope="series"
-              seriesDefaults={series.default_roles_json as any}
-            />
-            
-            {selectedEventIds.length > 0 && (
-              <Dialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Users className="h-4 w-4 mr-2" />
-                    Assign Staff ({selectedEventIds.length})
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Bulk Assign Staff</DialogTitle>
-                    <DialogDescription>
-                      Assign a photographer to {selectedEventIds.length} selected event(s).
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Staff Member *</Label>
-                      <Select value={assignUserId} onValueChange={setAssignUserId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select photographer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {profiles.filter(p => p.status === 'active').map(profile => (
-                            <SelectItem key={profile.id} value={profile.id}>
-                              {profile.full_name || profile.email}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Role</Label>
-                      <Select value={assignRoleId} onValueChange={setAssignRoleId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {staffRoles.map(role => (
-                            <SelectItem key={role.id} value={role.id}>
-                              {role.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Assignment Notes</Label>
-                      <Textarea
-                        value={assignNotes}
-                        onChange={(e) => setAssignNotes(e.target.value)}
-                        placeholder="Notes for all assignments..."
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setBulkAssignOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleBulkAssign} 
-                      disabled={bulkAssign.isPending || !assignUserId}
-                    >
-                      Assign to {selectedEventIds.length} Event(s)
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
         }
       />
 
-      {/* Stats Dashboard */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        <StatCard
-          title="Total Events"
-          value={stats?.total_events || 0}
-          icon={Calendar}
-        />
-        <StatCard
-          title="Upcoming"
-          value={stats?.upcoming_events || 0}
-          icon={Clock}
-        />
-        <StatCard
-          title="Delivered"
-          value={stats?.delivered_events || 0}
-          icon={CheckCircle2}
-          variant="success"
-        />
-        <StatCard
-          title="Pending Delivery"
-          value={stats?.pending_delivery || 0}
-          icon={Package}
-          variant={stats?.pending_delivery && stats.pending_delivery > 0 ? 'warning' : 'default'}
-        />
-        <StatCard
-          title="Staff Assigned"
-          value={stats?.assigned_staff || 0}
-          icon={Users}
-        />
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Series Settings */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Staffing Forecast */}
-          <StaffingForecast 
-            seriesId={id!} 
-            defaultPhotographersRequired={series.default_photographers_required || 1}
-          />
-
-          <div className="bg-card border border-border rounded-xl p-6">
-            <h2 className="text-lg font-semibold mb-4">Series Settings</h2>
+      {/* Selection Actions Bar */}
+      {selectedEventIds.length > 0 && (
+        <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+          <span className="text-sm font-medium">
+            {selectedEventIds.length} event{selectedEventIds.length !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  Bulk Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setBulkActionType('event_type')}>
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  Set Event Type
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setBulkActionType('delivery_method')}>
+                  <Truck className="h-4 w-4 mr-2" />
+                  Set Delivery Method
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setBulkActionType('delivery_deadline')}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Set Delivery Deadline
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setBulkActionType('add_note')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Add Note
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Series Name</Label>
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Event Type</Label>
-                <Select value={editEventTypeId} onValueChange={setEditEventTypeId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {eventTypes.map(type => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Delivery Method</Label>
-                <Select value={editDeliveryMethodId} onValueChange={setEditDeliveryMethodId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {deliveryMethods.map(method => (
-                      <SelectItem key={method.id} value={method.id}>
-                        {method.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Deadline Days</Label>
-                <Input
-                  type="number"
-                  value={editDeadlineDays}
-                  onChange={(e) => setEditDeadlineDays(e.target.value)}
-                  min="1"
-                  max="30"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Coverage Details</Label>
-                <Textarea
-                  value={editCoverage}
-                  onChange={(e) => setEditCoverage(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  rows={2}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between pt-2">
-                <Label>Active</Label>
-                <Switch
-                  checked={series.is_active}
-                  onCheckedChange={(checked) => updateSeries.mutate({ id: series.id, is_active: checked })}
-                />
-              </div>
-              
-              <Button 
-                className="w-full" 
-                onClick={handleSaveSettings}
-                disabled={updateSeries.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Settings
-              </Button>
-            </div>
+            <Button size="sm" onClick={() => setBulkAssignOpen(true)}>
+              <Users className="h-4 w-4 mr-2" />
+              Assign Staff
+            </Button>
+            
+            <Button variant="ghost" size="sm" onClick={() => setSelectedEventIds([])}>
+              Clear Selection
+            </Button>
           </div>
         </div>
+      )}
 
-        {/* Events List */}
-        <div className="lg:col-span-2">
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold">Events in Series</h2>
-                <p className="text-sm text-muted-foreground">
-                  {events.length} total • {selectedEventIds.length} selected
-                </p>
-              </div>
-              <Button size="sm" variant="outline" onClick={handleSelectAllEvents}>
-                {selectedEventIds.length === events.length ? 'Deselect All' : 'Select All'}
-              </Button>
-            </div>
-            
-            {events.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No events in this series yet.</p>
-                <Button 
-                  className="mt-4" 
-                  variant="outline"
-                  onClick={() => setBulkCreateOpen(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Events
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedEventIds.length === events.length}
-                        onChange={handleSelectAllEvents}
-                        className="rounded"
-                      />
-                    </TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Venue</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Delivery</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {events.map(event => {
-                    const isSelected = selectedEventIds.includes(event.id);
-                    const isPast = event.event_date < new Date().toISOString().split('T')[0];
-                    
-                    return (
-                      <TableRow 
-                        key={event.id}
-                        className={isPast ? 'opacity-60' : ''}
-                      >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleEventSelection(event.id)}
-                            className="rounded"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">
-                            {format(parseISO(event.event_date), 'MMM d, yyyy')}
-                          </div>
-                          {isPast && (
-                            <Badge variant="outline" className="text-xs mt-1">Past</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{event.venue_name || 'TBD'}</p>
-                              {event.venue_address && (
-                                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                  {event.venue_address}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {event.start_time && (
-                            <span className="text-sm">
-                              {event.start_time.slice(0, 5)}
-                              {event.end_time && ` - ${event.end_time.slice(0, 5)}`}
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {event.delivery_deadline && (
-                            <span className="text-sm text-muted-foreground">
-                              {format(parseISO(event.delivery_deadline), 'MMM d')}
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => navigate(`/events/${event.id}`)}
-                          >
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="coverage" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Coverage
+            {coverageStats.missingAny.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                {coverageStats.missingAny.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="delivery" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Delivery
+            {deliveryStats.overdue.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                {deliveryStats.overdue.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="attention" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Attention
+            {needsAttention.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-amber-500/20 text-amber-700">
+                {needsAttention.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <StatCard
+              title="Total Events"
+              value={overview?.totalEvents || 0}
+              icon={Calendar}
+            />
+            <StatCard
+              title="This Week"
+              value={overview?.eventsThisWeek || 0}
+              icon={Clock}
+            />
+            <StatCard
+              title="Next 30 Days"
+              value={overview?.eventsNext30Days || 0}
+              icon={Calendar}
+            />
+            <StatCard
+              title="Needs Attention"
+              value={needsAttention.length}
+              icon={AlertTriangle}
+              variant={needsAttention.length > 0 ? 'warning' : 'default'}
+            />
+            <StatCard
+              title="Unassigned"
+              value={coverageStats.missingAny.length}
+              icon={Users}
+              variant={coverageStats.missingAny.length > 0 ? 'destructive' : 'success'}
+            />
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Events by Location */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Events by State
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {overview && Object.keys(overview.eventsByState).length > 0 ? (
+                  <div className="space-y-2">
+                    {Object.entries(overview.eventsByState)
+                      .sort((a, b) => b[1] - a[1])
+                      .slice(0, 8)
+                      .map(([state, count]) => (
+                        <div key={state} className="flex justify-between items-center">
+                          <span className="text-sm">{state}</span>
+                          <Badge variant="secondary">{count}</Badge>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No location data</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Staffing Forecast */}
+            <StaffingForecast 
+              seriesId={id!} 
+              defaultPhotographersRequired={series.default_photographers_required || 1}
+            />
+
+            {/* Cost Summary (Admin only) */}
+            {isAdmin && events.length > 0 && (
+              <SeriesCostSummary 
+                seriesId={id!} 
+                eventIds={events.map(e => e.id)}
+              />
             )}
           </div>
-        </div>
-      </div>
+
+          {/* Date Range */}
+          {overview?.dateRange.start && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Date Range</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">
+                  {format(parseISO(overview.dateRange.start), 'MMMM d, yyyy')}
+                  {' '} — {' '}
+                  {overview.dateRange.end && format(parseISO(overview.dateRange.end), 'MMMM d, yyyy')}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Coverage Tab */}
+        <TabsContent value="coverage" className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              title="No Staff"
+              value={coverageStats.missingAny.length}
+              icon={Users}
+              variant={coverageStats.missingAny.length > 0 ? 'destructive' : 'success'}
+            />
+            <StatCard
+              title="Missing Lead"
+              value={coverageStats.missingLead.length}
+              icon={Users}
+              variant={coverageStats.missingLead.length > 0 ? 'warning' : 'default'}
+            />
+            <StatCard
+              title="Multi-Day Staff"
+              value={coverageStats.multiDay.length}
+              icon={AlertTriangle}
+              variant={coverageStats.multiDay.length > 0 ? 'warning' : 'default'}
+            />
+            <StatCard
+              title="Conflicts"
+              value={coverageStats.conflicts.length}
+              icon={AlertTriangle}
+              variant={coverageStats.conflicts.length > 0 ? 'destructive' : 'success'}
+            />
+          </div>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Staffing Issues</CardTitle>
+                <CardDescription>Events with coverage problems</CardDescription>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => handleSelectAllEvents(coverage.filter(c => c.assignmentCount === 0 || !c.hasLead))}
+              >
+                Select All Issues
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {coverage.filter(c => c.assignmentCount === 0 || !c.hasLead || c.staffOnSameDay.length > 0).length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                  <p>All events have adequate coverage</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox 
+                          checked={selectedEventIds.length > 0}
+                          onCheckedChange={() => handleSelectAllEvents(coverage.filter(c => c.assignmentCount === 0 || !c.hasLead))}
+                        />
+                      </TableHead>
+                      <TableHead>Event</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Staff</TableHead>
+                      <TableHead>Issues</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {coverage
+                      .filter(c => c.assignmentCount === 0 || !c.hasLead || c.staffOnSameDay.length > 0)
+                      .map(item => (
+                        <TableRow key={item.eventId}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedEventIds.includes(item.eventId)}
+                              onCheckedChange={() => handleToggleEventSelection(item.eventId)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{item.eventName}</TableCell>
+                          <TableCell>{format(parseISO(item.eventDate), 'MMM d, yyyy')}</TableCell>
+                          <TableCell>{item.city || item.venueName || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant={item.assignmentCount === 0 ? 'destructive' : 'secondary'}>
+                              {item.assignmentCount} assigned
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {item.assignmentCount === 0 && (
+                                <Badge variant="destructive" className="text-xs">No staff</Badge>
+                              )}
+                              {!item.hasLead && item.assignmentCount > 0 && (
+                                <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">No lead</Badge>
+                              )}
+                              {item.staffOnSameDay.length > 0 && (
+                                <Badge variant="outline" className="text-xs">Multi-day</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button asChild size="sm" variant="ghost">
+                              <Link to={`/events/${item.eventId}`}>
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Delivery Tab */}
+        <TabsContent value="delivery" className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <StatCard
+              title="Due Next 7 Days"
+              value={deliveryStats.dueNext7Days.length}
+              icon={Clock}
+              variant={deliveryStats.dueNext7Days.length > 0 ? 'warning' : 'default'}
+            />
+            <StatCard
+              title="Overdue"
+              value={deliveryStats.overdue.length}
+              icon={AlertTriangle}
+              variant={deliveryStats.overdue.length > 0 ? 'destructive' : 'success'}
+            />
+            <StatCard
+              title="Missing Link"
+              value={deliveryStats.missingLink.length}
+              icon={Truck}
+              variant={deliveryStats.missingLink.length > 0 ? 'warning' : 'default'}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Delivery Status</CardTitle>
+              <CardDescription>Events requiring delivery attention</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {delivery.filter(d => d.isOverdue || (d.daysUntilDeadline !== null && d.daysUntilDeadline <= 7 && !d.deliveredAt)).length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                  <p>No urgent delivery items</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox />
+                      </TableHead>
+                      <TableHead>Event</TableHead>
+                      <TableHead>Event Date</TableHead>
+                      <TableHead>Deadline</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {delivery
+                      .filter(d => d.isOverdue || (d.daysUntilDeadline !== null && d.daysUntilDeadline <= 7 && !d.deliveredAt))
+                      .sort((a, b) => (a.daysUntilDeadline || 999) - (b.daysUntilDeadline || 999))
+                      .map(item => (
+                        <TableRow key={item.eventId} className={item.isOverdue ? 'bg-destructive/5' : ''}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedEventIds.includes(item.eventId)}
+                              onCheckedChange={() => handleToggleEventSelection(item.eventId)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{item.eventName}</TableCell>
+                          <TableCell>{format(parseISO(item.eventDate), 'MMM d')}</TableCell>
+                          <TableCell>
+                            {item.deliveryDeadline 
+                              ? format(parseISO(item.deliveryDeadline), 'MMM d')
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {item.isOverdue ? (
+                              <Badge variant="destructive">
+                                Overdue {Math.abs(item.daysUntilDeadline || 0)} days
+                              </Badge>
+                            ) : item.deliveredAt ? (
+                              <Badge variant="outline" className="border-green-500 text-green-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Delivered
+                              </Badge>
+                            ) : !item.hasDeliveryLink ? (
+                              <Badge variant="outline" className="border-amber-500 text-amber-700">
+                                No link
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                {item.daysUntilDeadline} days left
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button asChild size="sm" variant="ghost">
+                              <Link to={`/events/${item.eventId}`}>
+                                <ChevronRight className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Needs Attention Tab */}
+        <TabsContent value="attention" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Label>Filter by issue:</Label>
+            <Select value={needsAttentionFilter} onValueChange={setNeedsAttentionFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Issues</SelectItem>
+                <SelectItem value="session">Missing Sessions</SelectItem>
+                <SelectItem value="venue">Missing Venue</SelectItem>
+                <SelectItem value="contact">Missing Contact</SelectItem>
+                <SelectItem value="delivery">Missing Delivery</SelectItem>
+                <SelectItem value="staff">No Staff</SelectItem>
+                <SelectItem value="lead">Missing Lead</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {filteredNeedsAttention.length > 0 && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => setSelectedEventIds(filteredNeedsAttention.map(i => i.eventId))}
+              >
+                Select All ({filteredNeedsAttention.length})
+              </Button>
+            )}
+          </div>
+
+          {filteredNeedsAttention.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                  <p>No events need attention</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredNeedsAttention.map(item => (
+                <Card 
+                  key={item.eventId}
+                  className={cn(
+                    item.priority === 'high' && 'border-destructive/50 bg-destructive/5',
+                    item.priority === 'medium' && 'border-amber-500/50 bg-amber-500/5'
+                  )}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={selectedEventIds.includes(item.eventId)}
+                          onCheckedChange={() => handleToggleEventSelection(item.eventId)}
+                          className="mt-1"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{item.eventName}</h4>
+                            <Badge variant={item.priority === 'high' ? 'destructive' : item.priority === 'medium' ? 'secondary' : 'outline'}>
+                              {item.priority}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {format(parseISO(item.eventDate), 'EEEE, MMMM d, yyyy')}
+                            {item.venueName && ` • ${item.venueName}`}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.issues.map((issue, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {issue}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <Link to={`/events/${item.eventId}`}>
+                          View Event
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Series Defaults</CardTitle>
+                <CardDescription>Settings applied to new events in this series</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Series Name</Label>
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Event Type</Label>
+                  <Select value={editEventTypeId} onValueChange={setEditEventTypeId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eventTypes.map(type => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Delivery Method</Label>
+                  <Select value={editDeliveryMethodId} onValueChange={setEditDeliveryMethodId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {deliveryMethods.map(method => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Deadline Days (after event)</Label>
+                  <Input
+                    type="number"
+                    value={editDeadlineDays}
+                    onChange={(e) => setEditDeadlineDays(e.target.value)}
+                    min="1"
+                    max="30"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Default City</Label>
+                  <Input
+                    value={editVenueCity}
+                    onChange={(e) => setEditVenueCity(e.target.value)}
+                    placeholder="e.g., Sydney"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Coverage Details</Label>
+                  <Textarea
+                    value={editCoverage}
+                    onChange={(e) => setEditCoverage(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between pt-2">
+                  <Label>Active</Label>
+                  <Switch
+                    checked={series.is_active}
+                    onCheckedChange={(checked) => updateSeries.mutate({ id: series.id, is_active: checked })}
+                  />
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  onClick={handleSaveSettings}
+                  disabled={updateSeries.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Settings
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Default Notes</CardTitle>
+                <CardDescription>Notes applied to events in this series</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Public Notes (visible to photographers)</Label>
+                  <Textarea
+                    value={editNotesPublic}
+                    onChange={(e) => setEditNotesPublic(e.target.value)}
+                    rows={3}
+                    placeholder="General notes visible to all staff..."
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Internal Notes (admin only)</Label>
+                  <Textarea
+                    value={editNotesInternal}
+                    onChange={(e) => setEditNotesInternal(e.target.value)}
+                    rows={3}
+                    placeholder="Private admin notes..."
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Series Notes</Label>
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    rows={2}
+                    placeholder="General series notes..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialogs */}
+      <BulkEventCreationDialog
+        open={bulkCreateOpen}
+        onOpenChange={setBulkCreateOpen}
+        series={series}
+      />
+      
+      <RecommendCrewDialog
+        open={recommendCrewOpen}
+        onOpenChange={setRecommendCrewOpen}
+        eventIds={unassignedEventIds}
+        scope="series"
+        seriesDefaults={series.default_roles_json as any}
+      />
+      
+      {bulkActionType && (
+        <SeriesBulkActionsDialog
+          open={!!bulkActionType}
+          onOpenChange={(open) => !open && setBulkActionType(null)}
+          actionType={bulkActionType}
+          selectedEventIds={selectedEventIds}
+          onComplete={() => setSelectedEventIds([])}
+        />
+      )}
+      
+      <BulkAssignmentDialog
+        open={bulkAssignOpen}
+        onOpenChange={setBulkAssignOpen}
+        eventIds={selectedEventIds}
+        onComplete={() => {
+          setSelectedEventIds([]);
+          setBulkAssignOpen(false);
+        }}
+      />
     </AppLayout>
   );
 }
