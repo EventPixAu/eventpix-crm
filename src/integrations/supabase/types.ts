@@ -1575,6 +1575,54 @@ export type Database = {
           },
         ]
       }
+      lead_workflow_items: {
+        Row: {
+          created_at: string | null
+          done_at: string | null
+          done_by: string | null
+          id: string
+          is_done: boolean | null
+          lead_id: string
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean | null
+          lead_id: string
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean | null
+          lead_id?: string
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_workflow_items_done_by_fkey"
+            columns: ["done_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_workflow_items_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           assigned_to: string | null
@@ -1993,6 +2041,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sales_workflow_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          items: Json
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          items?: Json
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          items?: Json
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       skills: {
         Row: {
