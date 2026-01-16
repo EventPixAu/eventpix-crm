@@ -39,6 +39,7 @@ import {
   ShoppingBag,
   Kanban,
   FileSignature,
+  ListChecks,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -70,6 +71,7 @@ const adminNavItems = [
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
+  { href: '/sales/workflow-templates', label: 'Workflow Templates', icon: ListChecks },
   { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
   // Operations Section
   { href: '/events', label: 'Events', icon: Calendar },

@@ -51,6 +51,8 @@ import PublicAcceptContract from "./pages/sales/PublicAcceptContract";
 import ContractList from "./pages/sales/ContractList";
 import ContractDetail from "./pages/sales/ContractDetail";
 import QuoteTemplates from "./pages/sales/QuoteTemplates";
+import SalesWorkflowTemplates from "./pages/sales/SalesWorkflowTemplates";
+import LeadDetail from "./pages/sales/LeadDetail";
 import ContractTemplates from "./pages/admin/ContractTemplates";
 import NotFound from "./pages/NotFound";
 
@@ -117,6 +119,7 @@ function AppRoutes() {
       <Route path="/sales/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
       <Route path="/sales/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
       <Route path="/sales/leads" element={<ProtectedRoute><LeadList /></ProtectedRoute>} />
+      <Route path="/sales/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
       <Route path="/sales/quotes" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
       <Route path="/sales/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
       <Route path="/sales/products" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
@@ -124,6 +127,7 @@ function AppRoutes() {
       <Route path="/sales/contracts" element={<ProtectedRoute><ContractList /></ProtectedRoute>} />
       <Route path="/sales/contracts/:id" element={<ProtectedRoute><ContractDetail /></ProtectedRoute>} />
       <Route path="/sales/templates" element={<ProtectedRoute><QuoteTemplates /></ProtectedRoute>} />
+      <Route path="/sales/workflow-templates" element={<ProtectedRoute><SalesWorkflowTemplates /></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><ContractTemplates /></ProtectedRoute>} />
       <Route path="/quote/:id/proposal" element={<ProtectedRoute><ProposalView /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
