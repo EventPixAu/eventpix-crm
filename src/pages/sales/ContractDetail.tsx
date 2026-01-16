@@ -5,6 +5,7 @@
  * Access: Admin, Sales roles only (enforced via RLS)
  */
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
@@ -225,7 +226,7 @@ export default function ContractDetail() {
                 <div className="border rounded-lg p-6 bg-white max-h-[500px] overflow-y-auto">
                   <div 
                     className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: (contract as any).rendered_html }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((contract as any).rendered_html) }}
                   />
                 </div>
               ) : contract.file_url ? (
