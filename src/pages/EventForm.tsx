@@ -443,6 +443,7 @@ export default function EventForm() {
                     </FormItem>
                   )}
                 />
+              </div>
             </div>
 
             {/* Sessions Section - only show when editing */}
