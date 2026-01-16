@@ -15,6 +15,7 @@ import {
   User,
   History,
   Wand2,
+  ExternalLink,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -50,6 +51,9 @@ import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 import { DeliveryManager } from '@/components/DeliveryManager';
 import { EventEquipmentPanel } from '@/components/EventEquipmentPanel';
+import { SessionsDisplay } from '@/components/SessionsDisplay';
+import { useEventContacts } from '@/hooks/useEventContacts';
+import { VenueAddressLink } from '@/components/VenueAddressLink';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
