@@ -15,6 +15,30 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Authenticate the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - No authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { storagePath, assetId } = await req.json();
 
     if (!storagePath || !assetId) {
@@ -24,9 +48,22 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Use service role for actual operations after auth verification
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify user has access to this asset by checking it exists
+    const { data: asset, error: assetError } = await supabase
+      .from("gallery_assets")
+      .select("id, event_id")
+      .eq("id", assetId)
+      .single();
+
+    if (assetError || !asset) {
+      return new Response(
+        JSON.stringify({ error: "Asset not found or access denied" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Download the original image
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -45,10 +82,6 @@ serve(async (req) => {
     const arrayBuffer = await fileData.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
-    // For now, we'll use the original image but with a smaller file
-    // In production, you'd use a proper image processing library
-    // The key optimization is that browsers will cache the thumbnail separately
-    
     // Create thumbnail path
     const pathParts = storagePath.split("/");
     const fileName = pathParts.pop()!;
@@ -56,7 +89,6 @@ serve(async (req) => {
     const thumbnailPath = `${eventId}/thumbnails/${fileName}`;
 
     // Upload thumbnail (using original for now - real implementation would resize)
-    // Supabase Storage transformations can be used for on-the-fly resizing
     const { error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(thumbnailPath, uint8Array, {

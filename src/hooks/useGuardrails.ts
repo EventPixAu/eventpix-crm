@@ -466,7 +466,6 @@ export function useLogGuardrailOverride() {
       // Also log to audit trail
       if (eventId) {
         await supabase.rpc('log_audit_entry', {
-          p_actor_user_id: user.id,
           p_event_id: eventId,
           p_action: 'guardrail_override',
           p_before: null,
