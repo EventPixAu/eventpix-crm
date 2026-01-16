@@ -2127,6 +2127,7 @@ export type Database = {
           home_city: string | null
           home_state: string | null
           id: string
+          is_active: boolean | null
           is_training: boolean | null
           notes_internal: string | null
           notification_preferences: Json | null
@@ -2150,6 +2151,7 @@ export type Database = {
           home_city?: string | null
           home_state?: string | null
           id: string
+          is_active?: boolean | null
           is_training?: boolean | null
           notes_internal?: string | null
           notification_preferences?: Json | null
@@ -2173,6 +2175,7 @@ export type Database = {
           home_city?: string | null
           home_state?: string | null
           id?: string
+          is_active?: boolean | null
           is_training?: boolean | null
           notes_internal?: string | null
           notification_preferences?: Json | null
@@ -2908,36 +2911,36 @@ export type Database = {
       }
       user_invitations: {
         Row: {
+          auth_user_id: string | null
           created_at: string
           email: string
-          expires_at: string
+          error: string | null
           id: string
           invited_by: string
           role: string
           status: string
-          token: string
           updated_at: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string
           email: string
-          expires_at: string
+          error?: string | null
           id?: string
           invited_by: string
           role: string
           status?: string
-          token: string
           updated_at?: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string
           email?: string
-          expires_at?: string
+          error?: string | null
           id?: string
           invited_by?: string
           role?: string
           status?: string
-          token?: string
           updated_at?: string
         }
         Relationships: [
@@ -3261,7 +3264,6 @@ export type Database = {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
       }
-      accept_invitation: { Args: { p_token: string }; Returns: Json }
       accept_quote_public: {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
@@ -3296,10 +3298,6 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
-      }
-      create_user_invitation: {
-        Args: { p_email: string; p_role: string }
-        Returns: Json
       }
       current_user_role: { Args: never; Returns: string }
       expire_compliance_documents: { Args: never; Returns: number }
@@ -3345,13 +3343,28 @@ export type Database = {
             Returns: string
           }
       mark_contract_as_sent: { Args: { p_contract_id: string }; Returns: Json }
+      mark_invitation_emailed: {
+        Args: { p_auth_user_id: string; p_invitation_id: string }
+        Returns: undefined
+      }
+      mark_invitation_failed: {
+        Args: {
+          p_auth_user_id?: string
+          p_error: string
+          p_invitation_id: string
+        }
+        Returns: undefined
+      }
       mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
+      provision_user_invitation: {
+        Args: { p_email: string; p_role: string }
+        Returns: Json
+      }
       regenerate_contract_token: {
         Args: { p_contract_id: string }
         Returns: Json
       }
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
-      resend_invitation: { Args: { p_invitation_id: string }; Returns: Json }
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: Json }
       set_user_active: {
         Args: { p_is_active: boolean; p_user_id: string }

@@ -21,8 +21,8 @@ export interface UserInvitation {
   role: string;
   status: string;
   invited_by: string;
-  token: string;
-  expires_at: string;
+  auth_user_id: string | null;
+  error: string | null;
   created_at: string;
   updated_at: string;
   inviter?: { full_name: string | null; email: string | null };
@@ -32,7 +32,7 @@ interface RpcResponse {
   success: boolean;
   error?: string;
   invitation_id?: string;
-  token?: string;
+  user_id?: string;
   role?: string;
 }
 
@@ -51,7 +51,7 @@ export function useUsers() {
       // First get profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, full_name, phone, status, created_at, updated_at')
+        .select('id, email, full_name, phone, status, is_active, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
@@ -71,7 +71,7 @@ export function useUsers() {
         email: p.email,
         full_name: p.full_name,
         phone: p.phone,
-        is_active: p.status === 'active',
+        is_active: p.is_active ?? p.status === 'active',
         created_at: p.created_at,
         updated_at: p.updated_at,
         role: roleMap.get(p.id) || null
@@ -88,25 +88,25 @@ export function useInvitations() {
       const { data, error } = await supabase
         .from('user_invitations')
         .select(`
-          id, email, role, status, invited_by, token, expires_at, created_at, updated_at,
+          id, email, role, status, invited_by, auth_user_id, error, created_at, updated_at,
           inviter:profiles!user_invitations_invited_by_fkey(full_name, email)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as UserInvitation[];
+      return data as unknown as UserInvitation[];
     },
   });
 }
 
-// Create invitation
-export function useCreateInvitation() {
+// Provision invitation (step 1: create invitation record)
+export function useProvisionInvitation() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      const { data, error } = await supabase.rpc('create_user_invitation', {
+      const { data, error } = await supabase.rpc('provision_user_invitation', {
         p_email: email,
         p_role: role,
       });
@@ -115,17 +115,13 @@ export function useCreateInvitation() {
       
       const result = parseRpcResponse(data);
       if (!result.success) {
-        throw new Error(result.error || 'Failed to create invitation');
+        throw new Error(result.error || 'Failed to provision invitation');
       }
       
       return result;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
-      toast({
-        title: 'Invitation created',
-        description: 'The user has been invited. Copy the invitation link to send it.',
-      });
     },
     onError: (error: Error) => {
       toast({
@@ -137,31 +133,106 @@ export function useCreateInvitation() {
   });
 }
 
-// Resend invitation
+// Create user via edge function (step 2: call edge function to create auth user)
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { invitation_id: invitationId },
+      });
+
+      if (error) throw error;
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to create user');
+      }
+      
+      return data as RpcResponse;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({
+        title: 'User invited',
+        description: 'An invitation email has been sent to the user.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to invite user',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Combined hook for invite flow (provision + create)
+export function useInviteUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const provisionMutation = useProvisionInvitation();
+  const createMutation = useCreateUser();
+
+  return useMutation({
+    mutationFn: async ({ email, role }: { email: string; role: string }) => {
+      // Step 1: Provision invitation
+      const provisionResult = await provisionMutation.mutateAsync({ email, role });
+      
+      if (!provisionResult.invitation_id) {
+        throw new Error('Failed to get invitation ID');
+      }
+
+      // Step 2: Create user via edge function
+      const createResult = await createMutation.mutateAsync(provisionResult.invitation_id);
+      
+      return createResult;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({
+        title: 'User invited',
+        description: 'An invitation email has been sent to the user.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to invite user',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Resend invitation (reprovision + create)
 export function useResendInvitation() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
-      const { data, error } = await supabase.rpc('resend_invitation', {
-        p_invitation_id: invitationId,
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { invitation_id: invitationId },
       });
 
       if (error) throw error;
       
-      const result = parseRpcResponse(data);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to resend invitation');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to resend invitation');
       }
       
-      return result;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
       toast({
         title: 'Invitation resent',
-        description: 'A new invitation link has been generated.',
+        description: 'A new invitation email has been sent.',
       });
     },
     onError: (error: Error) => {
@@ -280,41 +351,6 @@ export function useSetUserRole() {
     onError: (error: Error) => {
       toast({
         title: 'Failed to update role',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-}
-
-// Accept invitation (called by invited user)
-export function useAcceptInvitation() {
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (token: string) => {
-      const { data, error } = await supabase.rpc('accept_invitation', {
-        p_token: token,
-      });
-
-      if (error) throw error;
-      
-      const result = parseRpcResponse(data);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to accept invitation');
-      }
-      
-      return result;
-    },
-    onSuccess: (data) => {
-      toast({
-        title: 'Welcome!',
-        description: `You have been assigned the ${data.role} role.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to accept invitation',
         description: error.message,
         variant: 'destructive',
       });
