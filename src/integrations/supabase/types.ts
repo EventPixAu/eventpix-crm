@@ -970,8 +970,11 @@ export type Database = {
           default_delivery_deadline_days: number | null
           default_delivery_method_id: string | null
           default_kit_id: string | null
+          default_notes_internal: string | null
+          default_notes_public: string | null
           default_photographers_required: number | null
           default_roles_json: Json | null
+          default_venue_city: string | null
           event_type_id: string | null
           id: string
           is_active: boolean | null
@@ -985,8 +988,11 @@ export type Database = {
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
           default_kit_id?: string | null
+          default_notes_internal?: string | null
+          default_notes_public?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
+          default_venue_city?: string | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -1000,8 +1006,11 @@ export type Database = {
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
           default_kit_id?: string | null
+          default_notes_internal?: string | null
+          default_notes_public?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
+          default_venue_city?: string | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
