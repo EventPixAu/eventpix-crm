@@ -22,6 +22,8 @@ import {
   ShieldAlert,
   Package,
   AlertTriangle,
+  Car,
+  DoorOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +45,11 @@ import { cn } from '@/lib/utils';
 import { useSameDayEvents } from '@/hooks/useStaffAvailability';
 import { TodaysSchedule } from '@/components/TodaysSchedule';
 import { JobSheetEquipmentSection } from '@/components/JobSheetEquipmentSection';
+import { CrewChecklist } from '@/components/crew/CrewChecklist';
+import { PhotographySection } from '@/components/crew/PhotographySection';
+import { CrewEventContacts } from '@/components/crew/CrewEventContacts';
+import { CrewTeamList } from '@/components/crew/CrewTeamList';
+import { DeliveryInfo } from '@/components/crew/DeliveryInfo';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -417,7 +424,7 @@ export default function EventDayOf() {
           </Link>
         </section>
 
-        {/* Venue Card */}
+        {/* Venue Card - Enhanced with access/parking notes */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -427,7 +434,7 @@ export default function EventDayOf() {
             <div className="p-2 bg-primary/10 rounded-lg shrink-0">
               <MapPin className="h-5 w-5 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="font-semibold mb-1">Venue</h3>
               {displayEvent.venue_name && (
                 <p className="font-medium">{displayEvent.venue_name}</p>
@@ -435,8 +442,23 @@ export default function EventDayOf() {
               {displayEvent.venue_address && (
                 <p className="text-sm text-muted-foreground">{displayEvent.venue_address}</p>
               )}
-              {displayEvent.notes && (
-                <p className="text-sm text-muted-foreground mt-2 italic">{displayEvent.notes}</p>
+              {(displayEvent as any).venue_access_notes && (
+                <div className="mt-3 p-2 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-xs font-medium mb-1">
+                    <DoorOpen className="h-3 w-3" />
+                    Access Notes
+                  </div>
+                  <p className="text-sm">{(displayEvent as any).venue_access_notes}</p>
+                </div>
+              )}
+              {(displayEvent as any).venue_parking_notes && (
+                <div className="mt-2 p-2 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-xs font-medium mb-1">
+                    <Car className="h-3 w-3" />
+                    Parking Notes
+                  </div>
+                  <p className="text-sm">{(displayEvent as any).venue_parking_notes}</p>
+                </div>
               )}
             </div>
           </div>
