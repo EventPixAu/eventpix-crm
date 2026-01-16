@@ -54,6 +54,7 @@ import QuoteTemplates from "./pages/sales/QuoteTemplates";
 import SalesWorkflowTemplates from "./pages/sales/SalesWorkflowTemplates";
 import LeadDetail from "./pages/sales/LeadDetail";
 import ContractTemplates from "./pages/admin/ContractTemplates";
+import DayLoadView from "./pages/admin/DayLoadView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -107,6 +108,7 @@ function AppRoutes() {
       <Route path="/admin/invoices" element={<ProtectedRoute><InvoiceSync /></ProtectedRoute>} />
       <Route path="/admin/margins" element={<ProtectedRoute><MarginReport /></ProtectedRoute>} />
       <Route path="/admin/lookups" element={<ProtectedRoute><AdminLookups /></ProtectedRoute>} />
+      <Route path="/admin/day-load" element={<ProtectedRoute><DayLoadView /></ProtectedRoute>} />
       <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
       <Route path="/job-intake" element={<ProtectedRoute><JobIntakeList /></ProtectedRoute>} />
       <Route path="/job-intake/:id" element={<ProtectedRoute><JobIntakeDetail /></ProtectedRoute>} />

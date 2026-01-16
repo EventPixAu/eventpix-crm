@@ -79,6 +79,7 @@ const adminNavItems = [
   { href: '/admin/series', label: 'Series', icon: FileCheck },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/admin/day-load', label: 'Day Load', icon: Calendar },
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
   { href: '/admin/event-types', label: 'Event Types', icon: Settings },
