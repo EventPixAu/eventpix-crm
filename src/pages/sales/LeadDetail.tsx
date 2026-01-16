@@ -13,6 +13,7 @@ import {
   Check,
   FileText,
   ListChecks,
+  Sparkles,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -48,6 +49,7 @@ import {
   useApplyTemplate,
   SalesWorkflowTemplate,
 } from '@/hooks/useSalesWorkflow';
+import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800',
@@ -74,6 +76,7 @@ export default function LeadDetail() {
   
   const [newItemTitle, setNewItemTitle] = useState('');
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<SalesWorkflowTemplate | null>(null);
   const [applyMode, setApplyMode] = useState<'append' | 'replace'>('append');
 
@@ -154,11 +157,25 @@ export default function LeadDetail() {
               Back
             </Button>
             <Link to={`/sales/quotes?lead=${id}`}>
-              <Button>
+              <Button variant="outline">
                 <FileText className="h-4 w-4 mr-2" />
                 View Quotes
               </Button>
             </Link>
+            {lead.status !== 'accepted' && lead.status !== 'lost' && (
+              <Button onClick={() => setIsConvertDialogOpen(true)}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Convert to Event
+              </Button>
+            )}
+            {lead.status === 'accepted' && (
+              <Link to={`/events?lead=${id}`}>
+                <Button variant="secondary">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  View Event
+                </Button>
+              </Link>
+            )}
           </div>
         }
       />
@@ -445,6 +462,21 @@ export default function LeadDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Convert to Event Dialog */}
+      <ConvertToEventDialog
+        open={isConvertDialogOpen}
+        onOpenChange={setIsConvertDialogOpen}
+        lead={lead ? {
+          id: lead.id,
+          lead_name: lead.lead_name,
+          client_id: lead.client_id,
+          estimated_event_date: lead.estimated_event_date,
+          requirements_summary: (lead as any).requirements_summary,
+          venue_text: (lead as any).venue_text,
+          client: client ? { id: client.id, business_name: client.business_name } : null,
+        } : null}
+      />
     </AppLayout>
   );
 }
