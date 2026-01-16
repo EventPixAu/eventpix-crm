@@ -2906,6 +2906,50 @@ export type Database = {
           },
         ]
       }
+      user_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: string
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          role: string
+          status?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -3217,6 +3261,7 @@ export type Database = {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
       }
+      accept_invitation: { Args: { p_token: string }; Returns: Json }
       accept_quote_public: {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
@@ -3251,6 +3296,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      create_user_invitation: {
+        Args: { p_email: string; p_role: string }
+        Returns: Json
       }
       current_user_role: { Args: never; Returns: string }
       expire_compliance_documents: { Args: never; Returns: number }
@@ -3302,6 +3351,16 @@ export type Database = {
         Returns: Json
       }
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
+      resend_invitation: { Args: { p_invitation_id: string }; Returns: Json }
+      revoke_invitation: { Args: { p_invitation_id: string }; Returns: Json }
+      set_user_active: {
+        Args: { p_is_active: boolean; p_user_id: string }
+        Returns: Json
+      }
+      set_user_role: {
+        Args: { p_role: string; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
