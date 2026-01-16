@@ -100,6 +100,56 @@ export type Database = {
           },
         ]
       }
+      automations: {
+        Row: {
+          action_config: Json
+          action_type: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_communications: {
         Row: {
           client_id: string
@@ -177,43 +227,61 @@ export type Database = {
       client_contacts: {
         Row: {
           client_id: string
+          consent_source: string | null
+          consent_status: string | null
           contact_name: string
           created_at: string | null
           email: string | null
+          first_name: string | null
           id: string
           is_primary: boolean | null
+          last_contacted_at: string | null
+          last_name: string | null
           notes: string | null
           phone: string | null
           phone_mobile: string | null
           phone_office: string | null
+          relationship_type_id: string | null
           role: string | null
           role_title: string | null
         }
         Insert: {
           client_id: string
+          consent_source?: string | null
+          consent_status?: string | null
           contact_name: string
           created_at?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           is_primary?: boolean | null
+          last_contacted_at?: string | null
+          last_name?: string | null
           notes?: string | null
           phone?: string | null
           phone_mobile?: string | null
           phone_office?: string | null
+          relationship_type_id?: string | null
           role?: string | null
           role_title?: string | null
         }
         Update: {
           client_id?: string
+          consent_source?: string | null
+          consent_status?: string | null
           contact_name?: string
           created_at?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           is_primary?: boolean | null
+          last_contacted_at?: string | null
+          last_name?: string | null
           notes?: string | null
           phone?: string | null
           phone_mobile?: string | null
           phone_office?: string | null
+          relationship_type_id?: string | null
           role?: string | null
           role_title?: string | null
         }
@@ -223,6 +291,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_relationship_type_id_fkey"
+            columns: ["relationship_type_id"]
+            isOneToOne: false
+            referencedRelation: "contact_relationship_types"
             referencedColumns: ["id"]
           },
         ]
@@ -261,43 +336,61 @@ export type Database = {
       }
       clients: {
         Row: {
+          abn: string | null
           billing_address: string | null
           business_name: string
           created_at: string | null
           created_by: string | null
           id: string
+          industry: string | null
           is_training: boolean | null
+          legal_name: string | null
           notes: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
+          status: string | null
+          trading_name: string | null
           updated_at: string | null
+          website: string | null
         }
         Insert: {
+          abn?: string | null
           billing_address?: string | null
           business_name: string
           created_at?: string | null
           created_by?: string | null
           id?: string
+          industry?: string | null
           is_training?: boolean | null
+          legal_name?: string | null
           notes?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          status?: string | null
+          trading_name?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Update: {
+          abn?: string | null
           billing_address?: string | null
           business_name?: string
           created_at?: string | null
           created_by?: string | null
           id?: string
+          industry?: string | null
           is_training?: boolean | null
+          legal_name?: string | null
           notes?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          status?: string | null
+          trading_name?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -334,6 +427,33 @@ export type Database = {
           name?: string
           required?: boolean
           sort_order?: number
+        }
+        Relationships: []
+      }
+      contact_relationship_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }
@@ -474,6 +594,42 @@ export type Database = {
           },
         ]
       }
+      coverage_packages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          hours_included: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          photographers_included: number | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          hours_included?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          photographers_included?: number | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          hours_included?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          photographers_included?: number | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       delivery_methods_lookup: {
         Row: {
           created_at: string | null
@@ -503,11 +659,13 @@ export type Database = {
       }
       delivery_records: {
         Row: {
+          client_access_token: string | null
           created_at: string | null
           delivered_at: string | null
           delivery_link: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"]
           delivery_method_id: string | null
+          delivery_status: string | null
           event_id: string
           id: string
           notes: string | null
@@ -517,11 +675,13 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          client_access_token?: string | null
           created_at?: string | null
           delivered_at?: string | null
           delivery_link?: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"]
           delivery_method_id?: string | null
+          delivery_status?: string | null
           event_id: string
           id?: string
           notes?: string | null
@@ -531,11 +691,13 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          client_access_token?: string | null
           created_at?: string | null
           delivered_at?: string | null
           delivery_link?: string | null
           delivery_method?: Database["public"]["Enums"]["delivery_method"]
           delivery_method_id?: string | null
+          delivery_status?: string | null
           event_id?: string
           id?: string
           notes?: string | null
@@ -600,6 +762,45 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      enquiry_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string | null
+          id: string
+          lead_id: string
+          role: string | null
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string | null
+          id?: string
+          lead_id: string
+          role?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string | null
+          id?: string
+          lead_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enquiry_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enquiry_contacts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       equipment_allocations: {
         Row: {
@@ -802,6 +1003,8 @@ export type Database = {
       event_assignments: {
         Row: {
           assignment_notes: string | null
+          assignment_status: string | null
+          call_time_at: string | null
           created_at: string | null
           estimated_cost: number | null
           event_id: string
@@ -812,9 +1015,12 @@ export type Database = {
           staff_id: string | null
           staff_role_id: string | null
           user_id: string | null
+          wrap_time_at: string | null
         }
         Insert: {
           assignment_notes?: string | null
+          assignment_status?: string | null
+          call_time_at?: string | null
           created_at?: string | null
           estimated_cost?: number | null
           event_id: string
@@ -825,9 +1031,12 @@ export type Database = {
           staff_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
+          wrap_time_at?: string | null
         }
         Update: {
           assignment_notes?: string | null
+          assignment_status?: string | null
+          call_time_at?: string | null
           created_at?: string | null
           estimated_cost?: number | null
           event_id?: string
@@ -838,6 +1047,7 @@ export type Database = {
           staff_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
+          wrap_time_at?: string | null
         }
         Relationships: [
           {
@@ -1179,6 +1389,7 @@ export type Database = {
           client_name: string
           cost_threshold: number | null
           coverage_details: string | null
+          coverage_package_id: string | null
           created_at: string | null
           created_by: string | null
           delivery_deadline: string | null
@@ -1204,11 +1415,14 @@ export type Database = {
           ops_status: string | null
           quote_id: string | null
           recommended_kit_id: string | null
+          run_sheet_url: string | null
+          special_instructions: string | null
           start_at: string | null
           start_time: string | null
           state: string | null
           updated_at: string | null
           venue_address: string | null
+          venue_id: string | null
           venue_name: string | null
           venue_postcode: string | null
         }
@@ -1219,6 +1433,7 @@ export type Database = {
           client_name: string
           cost_threshold?: number | null
           coverage_details?: string | null
+          coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
           delivery_deadline?: string | null
@@ -1246,11 +1461,14 @@ export type Database = {
           ops_status?: string | null
           quote_id?: string | null
           recommended_kit_id?: string | null
+          run_sheet_url?: string | null
+          special_instructions?: string | null
           start_at?: string | null
           start_time?: string | null
           state?: string | null
           updated_at?: string | null
           venue_address?: string | null
+          venue_id?: string | null
           venue_name?: string | null
           venue_postcode?: string | null
         }
@@ -1261,6 +1479,7 @@ export type Database = {
           client_name?: string
           cost_threshold?: number | null
           coverage_details?: string | null
+          coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
           delivery_deadline?: string | null
@@ -1288,11 +1507,14 @@ export type Database = {
           ops_status?: string | null
           quote_id?: string | null
           recommended_kit_id?: string | null
+          run_sheet_url?: string | null
+          special_instructions?: string | null
           start_at?: string | null
           start_time?: string | null
           state?: string | null
           updated_at?: string | null
           venue_address?: string | null
+          venue_id?: string | null
           venue_name?: string | null
           venue_postcode?: string | null
         }
@@ -1302,6 +1524,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_coverage_package_id_fkey"
+            columns: ["coverage_package_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_packages"
             referencedColumns: ["id"]
           },
           {
@@ -1351,6 +1580,13 @@ export type Database = {
             columns: ["recommended_kit_id"]
             isOneToOne: false
             referencedRelation: "equipment_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
@@ -1645,14 +1881,20 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           estimated_event_date: string | null
+          event_month_hint: number | null
           event_type_id: string | null
           id: string
           is_training: boolean | null
           lead_name: string
+          lost_reason_id: string | null
           notes: string | null
+          owner_priority: string | null
+          received_at: string | null
+          requirements_summary: string | null
           source: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string | null
+          venue_text: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -1660,14 +1902,20 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           estimated_event_date?: string | null
+          event_month_hint?: number | null
           event_type_id?: string | null
           id?: string
           is_training?: boolean | null
           lead_name: string
+          lost_reason_id?: string | null
           notes?: string | null
+          owner_priority?: string | null
+          received_at?: string | null
+          requirements_summary?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string | null
+          venue_text?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -1675,14 +1923,20 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           estimated_event_date?: string | null
+          event_month_hint?: number | null
           event_type_id?: string | null
           id?: string
           is_training?: boolean | null
           lead_name?: string
+          lost_reason_id?: string | null
           notes?: string | null
+          owner_priority?: string | null
+          received_at?: string | null
+          requirements_summary?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string | null
+          venue_text?: string | null
         }
         Relationships: [
           {
@@ -1699,7 +1953,41 @@ export type Database = {
             referencedRelation: "event_types"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "leads_lost_reason_id_fkey"
+            columns: ["lost_reason_id"]
+            isOneToOne: false
+            referencedRelation: "lost_reasons"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      lost_reasons: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -2116,6 +2404,63 @@ export type Database = {
           },
         ]
       }
+      rebooking_profiles: {
+        Row: {
+          auto_remind: boolean | null
+          client_id: string
+          created_at: string | null
+          id: string
+          last_event_at: string | null
+          next_expected_event_at: string | null
+          rebook_contact_id: string | null
+          rebook_notes: string | null
+          typical_event_month: number | null
+          typical_lead_time_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_remind?: boolean | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          last_event_at?: string | null
+          next_expected_event_at?: string | null
+          rebook_contact_id?: string | null
+          rebook_notes?: string | null
+          typical_event_month?: number | null
+          typical_lead_time_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_remind?: boolean | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          last_event_at?: string | null
+          next_expected_event_at?: string | null
+          rebook_contact_id?: string | null
+          rebook_notes?: string | null
+          typical_event_month?: number | null
+          typical_lead_time_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rebooking_profiles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rebooking_profiles_rebook_contact_id_fkey"
+            columns: ["rebook_contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_workflow_templates: {
         Row: {
           created_at: string | null
@@ -2476,6 +2821,85 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          priority: string | null
+          related_id: string
+          related_type: string
+          snoozed_until: string | null
+          status: string
+          task_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          priority?: string | null
+          related_id: string
+          related_type: string
+          snoozed_until?: string | null
+          status?: string
+          task_type?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          priority?: string | null
+          related_id?: string
+          related_type?: string
+          snoozed_until?: string | null
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2494,6 +2918,63 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      venues: {
+        Row: {
+          access_notes: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          country: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parking_notes: string | null
+          postcode: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          state: string | null
+          suburb: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_notes?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parking_notes?: string | null
+          postcode?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          state?: string | null
+          suburb?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_notes?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          country?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parking_notes?: string | null
+          postcode?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          state?: string | null
+          suburb?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
