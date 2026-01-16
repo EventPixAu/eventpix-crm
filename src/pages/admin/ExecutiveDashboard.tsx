@@ -115,7 +115,7 @@ const PRESET_LABELS: Record<DateRangePreset, string> = {
 };
 
 export default function ExecutiveDashboard() {
-  const { isAdmin, isExecutive } = useAuth();
+  const { isAdmin } = useAuth();
   const [preset, setPreset] = useState<DateRangePreset>('last30days');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [isFromOpen, setIsFromOpen] = useState(false);
@@ -123,8 +123,8 @@ export default function ExecutiveDashboard() {
   
   const { data, isLoading, error } = useExecutiveDashboard({ preset, customRange });
   const { data: readinessSummary } = useReadinessSummary();
-  // Allow access for both Admin and Executive roles
-  if (!isAdmin && !isExecutive) {
+  // Allow access for Admin role only (executive role has been removed)
+  if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
 

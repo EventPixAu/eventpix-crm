@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { RoleGuard, AdminGuard, SalesGuard, ExecutiveGuard, PhotographerGuard } from "@/components/RoleGuard";
+import { RoleGuard, AdminGuard, SalesGuard, OpsGuard, CrewGuard } from "@/components/RoleGuard";
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -122,9 +122,9 @@ function AppRoutes() {
       <Route path="/equipment" element={<ProtectedRoute><AdminGuard><Equipment /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       
-      {/* Executive routes - admin + executive */}
-      <Route path="/executive/dashboard" element={<ProtectedRoute><ExecutiveGuard><ExecutiveDashboard /></ExecutiveGuard></ProtectedRoute>} />
-      <Route path="/admin/executive" element={<ProtectedRoute><ExecutiveGuard><ExecutiveDashboard /></ExecutiveGuard></ProtectedRoute>} />
+      {/* Executive routes - admin only (executive role removed, use admin) */}
+      <Route path="/executive/dashboard" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/executive" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
       
       {/* Sales routes - admin + sales */}
       <Route path="/sales/clients" element={<ProtectedRoute><SalesGuard><ClientList /></SalesGuard></ProtectedRoute>} />
@@ -141,11 +141,11 @@ function AppRoutes() {
       <Route path="/sales/workflow-templates" element={<ProtectedRoute><SalesGuard><SalesWorkflowTemplates /></SalesGuard></ProtectedRoute>} />
       <Route path="/quote/:id/proposal" element={<ProtectedRoute><SalesGuard><ProposalView /></SalesGuard></ProtectedRoute>} />
       
-      {/* Photographer routes - admin + photographer */}
-      <Route path="/my-calendar" element={<ProtectedRoute><PhotographerGuard><MyCalendar /></PhotographerGuard></ProtectedRoute>} />
-      <Route path="/my-availability" element={<ProtectedRoute><PhotographerGuard><MyAvailability /></PhotographerGuard></ProtectedRoute>} />
-      <Route path="/my-documents" element={<ProtectedRoute><PhotographerGuard><MyDocuments /></PhotographerGuard></ProtectedRoute>} />
-      <Route path="/my-job-sheets" element={<ProtectedRoute><PhotographerGuard><MyJobSheets /></PhotographerGuard></ProtectedRoute>} />
+      {/* Crew routes - admin + operations + crew */}
+      <Route path="/my-calendar" element={<ProtectedRoute><CrewGuard><MyCalendar /></CrewGuard></ProtectedRoute>} />
+      <Route path="/my-availability" element={<ProtectedRoute><CrewGuard><MyAvailability /></CrewGuard></ProtectedRoute>} />
+      <Route path="/my-documents" element={<ProtectedRoute><CrewGuard><MyDocuments /></CrewGuard></ProtectedRoute>} />
+      <Route path="/my-job-sheets" element={<ProtectedRoute><CrewGuard><MyJobSheets /></CrewGuard></ProtectedRoute>} />
       
       {/* Common routes - all authenticated users */}
       <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />

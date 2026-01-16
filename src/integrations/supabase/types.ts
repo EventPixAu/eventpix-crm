@@ -3252,6 +3252,7 @@ export type Database = {
         }
         Returns: string
       }
+      current_user_role: { Args: never; Returns: string }
       expire_compliance_documents: { Args: never; Returns: number }
       has_role: {
         Args: {
@@ -3260,15 +3261,20 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_assigned_to_event: {
-        Args: { _event_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_crew: { Args: { _user_id: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_assigned_to_event:
+        | { Args: { _event_id: string; _user_id: string }; Returns: boolean }
+        | { Args: { p_event_id: string }; Returns: boolean }
+      is_crew:
+        | { Args: never; Returns: boolean }
+        | { Args: { _user_id: string }; Returns: boolean }
       is_executive: { Args: { _user_id: string }; Returns: boolean }
       is_executive_or_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_operations: { Args: { _user_id: string }; Returns: boolean }
+      is_operations:
+        | { Args: never; Returns: boolean }
+        | { Args: { _user_id: string }; Returns: boolean }
       is_photographer: { Args: { _user_id: string }; Returns: boolean }
+      is_sales: { Args: never; Returns: boolean }
       log_audit_entry:
         | {
             Args: {
