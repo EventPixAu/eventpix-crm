@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useConvertToEvent, ConvertToEventParams } from '@/hooks/useConvertToEvent';
+import { useConvertToEvent, ConvertToEventInput } from '@/hooks/useConvertToEvent';
 import { useActiveVenues } from '@/hooks/useVenues';
 import { useActiveCoveragePackages } from '@/hooks/useCoveragePackages';
 
@@ -91,19 +91,29 @@ export function ConvertToEventDialog({ open, onOpenChange, lead }: ConvertToEven
   const handleSubmit = () => {
     if (!lead) return;
 
-    const params: ConvertToEventParams = {
-      lead_id: lead.id,
-      event_name: eventName,
-      event_date: eventDate ? format(eventDate, 'yyyy-MM-dd') : null,
-      start_time: startTime || null,
-      end_time: endTime || null,
-      venue_id: venueOption === 'existing' ? selectedVenueId || null : null,
-      venue_name: venueOption === 'new' ? newVenueName || null : null,
-      venue_address: venueOption === 'new' ? newVenueAddress || null : null,
-      delivery_deadline: deliveryDeadline ? format(deliveryDeadline, 'yyyy-MM-dd') : null,
-      coverage_package_id: coveragePackageId || null,
-      special_instructions: specialInstructions || null,
-      date_status: dateStatus,
+    const params: ConvertToEventInput = {
+      enquiry_id: lead.id,
+      client_id: lead.client_id,
+      event_overrides: {
+        event_name: eventName,
+        event_date: eventDate ? format(eventDate, 'yyyy-MM-dd') : null,
+        start_time: startTime || null,
+        end_time: endTime || null,
+        coverage_package_id: coveragePackageId || null,
+        delivery_deadline_at: deliveryDeadline ? format(deliveryDeadline, 'yyyy-MM-dd') : null,
+        special_instructions: specialInstructions || null,
+        date_status: dateStatus,
+      },
+      venue: venueOption === 'existing' && selectedVenueId
+        ? { venue_id: selectedVenueId }
+        : venueOption === 'new' && newVenueName
+          ? { create: { name: newVenueName, address_line_1: newVenueAddress || null } }
+          : undefined,
+      options: {
+        create_admin_setup_tasks: true,
+        create_worksheets: true,
+        copy_enquiry_contacts: true,
+      },
     };
 
     convertToEvent(params, {
