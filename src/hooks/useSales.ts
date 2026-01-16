@@ -156,7 +156,9 @@ export function useLeads() {
         .select(`
           *,
           client:clients(id, business_name),
-          event_type:event_types(id, name)
+          event_type:event_types(id, name),
+          lead_source:lead_sources(id, name),
+          lost_reason:lost_reasons(id, name)
         `)
         .order('created_at', { ascending: false });
       
@@ -177,6 +179,8 @@ export function useLead(id: string | undefined) {
           *,
           client:clients(*),
           event_type:event_types(id, name),
+          lead_source:lead_sources(id, name),
+          lost_reason:lost_reasons(id, name),
           quotes(*)
         `)
         .eq('id', id)
