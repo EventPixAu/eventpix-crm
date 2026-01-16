@@ -22,6 +22,7 @@ interface PublicContractData {
   title: string;
   status: string;
   file_url: string | null;
+  rendered_html: string | null;
   signed_at: string | null;
   signed_by_name: string | null;
 }
@@ -61,6 +62,7 @@ export default function PublicAcceptContract() {
           title,
           status,
           file_url,
+          rendered_html,
           signed_at,
           signed_by_name
         `)
@@ -224,7 +226,14 @@ export default function PublicAcceptContract() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {contract.file_url ? (
+            {contract.rendered_html ? (
+              <div className="border rounded-lg p-6 bg-white max-h-[400px] overflow-y-auto">
+                <div 
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: contract.rendered_html }}
+                />
+              </div>
+            ) : contract.file_url ? (
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
                   <FileText className="h-8 w-8 text-primary" />

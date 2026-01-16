@@ -69,7 +69,8 @@ const adminNavItems = [
   { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
-  { href: '/sales/templates', label: 'Templates', icon: FileText },
+  { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
+  { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
   // Operations Section
   { href: '/events', label: 'Events', icon: Calendar },
   // Job Intake deprecated - hidden from nav, use Sales workflow instead

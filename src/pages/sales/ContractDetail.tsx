@@ -212,14 +212,23 @@ export default function ContractDetail() {
             </Card>
           )}
 
-          {/* Contract File */}
+          {/* Contract Content */}
           <Card>
             <CardHeader>
               <CardTitle>Contract Document</CardTitle>
-              <CardDescription>Upload or view the contract document</CardDescription>
+              <CardDescription>
+                {(contract as any).rendered_html ? 'Generated from template' : 'Upload or view the contract document'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {contract.file_url ? (
+              {(contract as any).rendered_html ? (
+                <div className="border rounded-lg p-6 bg-white max-h-[500px] overflow-y-auto">
+                  <div 
+                    className="prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: (contract as any).rendered_html }}
+                  />
+                </div>
+              ) : contract.file_url ? (
                 <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div className="flex items-center gap-3">
                     <FileText className="h-8 w-8 text-primary" />
