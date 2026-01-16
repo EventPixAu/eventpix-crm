@@ -5,6 +5,7 @@
  * Security: Only exposes minimal contract info, no internal data.
  */
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CheckCircle, FileText, ExternalLink, Shield } from 'lucide-react';
@@ -230,7 +231,7 @@ export default function PublicAcceptContract() {
               <div className="border rounded-lg p-6 bg-white max-h-[400px] overflow-y-auto">
                 <div 
                   className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: contract.rendered_html }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.rendered_html) }}
                 />
               </div>
             ) : contract.file_url ? (

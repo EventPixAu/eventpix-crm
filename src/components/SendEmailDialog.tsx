@@ -6,6 +6,7 @@
  * Logs communication to client_communications table.
  */
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Mail, Send, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -240,7 +241,7 @@ export function SendEmailDialog({
               <div className="border-t pt-4">
                 <div 
                   className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: body || '<p class="text-muted-foreground">No message content</p>' }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body || '<p class="text-muted-foreground">No message content</p>') }}
                 />
               </div>
             </div>

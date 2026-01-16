@@ -5,6 +5,7 @@
  * Used in QuoteDetail and ContractList pages.
  */
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { FileSignature, FileText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -212,7 +213,7 @@ export function GenerateContractDialog({
               <div className="border rounded-lg p-4 bg-white max-h-[400px] overflow-y-auto">
                 <div 
                   className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: previewHtml }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
                 />
               </div>
             </div>

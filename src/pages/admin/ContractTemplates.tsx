@@ -4,6 +4,7 @@
  * Admin-only page to manage contract templates.
  */
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { format } from 'date-fns';
 import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -403,7 +404,7 @@ export default function ContractTemplates() {
           <div className="border rounded-lg p-6 bg-white">
             <div 
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: selectedTemplate?.body_html || '' }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedTemplate?.body_html || '') }}
             />
           </div>
           <DialogFooter>
