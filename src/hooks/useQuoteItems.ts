@@ -20,6 +20,7 @@ export interface QuoteItem {
   tax_rate: number;
   line_total: number;
   sort_order: number;
+  group_label: string | null;
   created_at: string;
   product?: Product | null;
 }
@@ -32,6 +33,7 @@ export interface QuoteItemInsert {
   unit_price: number;
   tax_rate?: number;
   sort_order?: number;
+  group_label?: string | null;
 }
 
 export interface QuoteItemUpdate extends Partial<Omit<QuoteItemInsert, 'quote_id'>> {

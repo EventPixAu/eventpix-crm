@@ -4,13 +4,13 @@
  * Displays quote details with line items, totals, and actions.
  * Access: Admin, Sales roles only (enforced via RLS)
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
   Plus, Trash2, ExternalLink, Copy, Mail, FileSignature, RefreshCw, Link as LinkIcon,
-  Save, FolderOpen
+  Save, FolderOpen, Edit2
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useQuote, useUpdateQuote, useConvertQuoteToEvent } from '@/hooks/useSales';
-import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem } from '@/hooks/useQuoteItems';
+import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,6 +60,15 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   accepted: { label: 'Accepted', variant: 'default' },
   rejected: { label: 'Rejected', variant: 'destructive' },
 };
+
+const GROUP_LABELS = [
+  'Coverage',
+  'Delivery',
+  'Add-ons',
+  'Equipment',
+  'Travel',
+  'Other',
+];
 
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -82,6 +91,7 @@ export default function QuoteDetail() {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isApplyTemplateOpen, setIsApplyTemplateOpen] = useState(false);
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
+  const [isEditSectionsOpen, setIsEditSectionsOpen] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -90,6 +100,7 @@ export default function QuoteDetail() {
     quantity: 1,
     unit_price: 0,
     tax_rate: 0.1,
+    group_label: '',
   });
   const [eventData, setEventData] = useState({
     event_name: '',
@@ -100,11 +111,41 @@ export default function QuoteDetail() {
     venue_address: '',
     notes: '',
   });
+  const [sectionEdits, setSectionEdits] = useState({
+    intro_text: '',
+    scope_text: '',
+    terms_text: '',
+    notes_internal: '',
+  });
 
   const isLocked = quote?.status === 'accepted' || quote?.status === 'rejected';
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
   const clientName = clientData?.business_name || leadData?.client?.business_name;
+  
+  // Group items by group_label
+  const groupedItems = useMemo(() => {
+    if (!items) return {};
+    return items.reduce((acc, item) => {
+      const group = item.group_label || 'Other';
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {} as Record<string, QuoteItem[]>);
+  }, [items]);
+
+  const sortedGroupKeys = useMemo(() => {
+    const keys = Object.keys(groupedItems);
+    // Sort by predefined order, then alphabetically for custom groups
+    return keys.sort((a, b) => {
+      const indexA = GROUP_LABELS.indexOf(a);
+      const indexB = GROUP_LABELS.indexOf(b);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }, [groupedItems]);
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
@@ -120,6 +161,7 @@ export default function QuoteDetail() {
       quantity: newItem.quantity,
       unit_price: newItem.unit_price,
       tax_rate: newItem.tax_rate,
+      group_label: newItem.group_label || null,
     });
     
     setIsAddItemOpen(false);
@@ -129,6 +171,7 @@ export default function QuoteDetail() {
       quantity: 1,
       unit_price: 0,
       tax_rate: 0.1,
+      group_label: '',
     });
   };
 
@@ -150,6 +193,15 @@ export default function QuoteDetail() {
     await deleteItem.mutateAsync({ id: itemId, quote_id: id });
   };
 
+  const handleItemGroupChange = async (itemId: string, groupLabel: string) => {
+    if (!id) return;
+    await updateItem.mutateAsync({
+      id: itemId,
+      quote_id: id,
+      group_label: groupLabel || null,
+    });
+  };
+
   const handleSendQuote = async () => {
     if (!id) return;
     setSendingQuote(true);
@@ -167,7 +219,6 @@ export default function QuoteDetail() {
       }
       
       toast({ title: 'Quote marked as sent', description: 'Share the proposal link with your client.' });
-      // Refetch quote to get updated status
       window.location.reload();
     } catch (err: any) {
       toast({ title: 'Failed to send quote', description: err.message, variant: 'destructive' });
@@ -220,6 +271,28 @@ export default function QuoteDetail() {
     toast({ title: 'Link copied to clipboard' });
   };
 
+  const openEditSections = () => {
+    setSectionEdits({
+      intro_text: (quote as any)?.intro_text || '',
+      scope_text: (quote as any)?.scope_text || '',
+      terms_text: quote?.terms_text || '',
+      notes_internal: (quote as any)?.notes_internal || '',
+    });
+    setIsEditSectionsOpen(true);
+  };
+
+  const handleSaveSections = async () => {
+    if (!id) return;
+    await updateQuote.mutateAsync({
+      id,
+      intro_text: sectionEdits.intro_text || null,
+      scope_text: sectionEdits.scope_text || null,
+      terms_text: sectionEdits.terms_text || null,
+      notes_internal: sectionEdits.notes_internal || null,
+    } as any);
+    setIsEditSectionsOpen(false);
+  };
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -244,6 +317,7 @@ export default function QuoteDetail() {
   }
 
   const statusConfig = STATUS_CONFIG[quote.status] || STATUS_CONFIG.draft;
+  const quoteVersion = (quote as any).quote_version || 1;
 
   return (
     <AppLayout>
@@ -256,7 +330,9 @@ export default function QuoteDetail() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">{quote.quote_number || `Quote ${quote.id.slice(0, 8)}`}</h1>
-              <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+              <Badge variant={statusConfig.variant}>
+                {statusConfig.label}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
+              </Badge>
             </div>
             <p className="text-muted-foreground">
               Created {quote.created_at ? format(new Date(quote.created_at), 'PPP') : '—'}
@@ -314,6 +390,45 @@ export default function QuoteDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Quote Sections */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Quote Content</CardTitle>
+                <CardDescription>Intro, scope, and terms displayed on the proposal</CardDescription>
+              </div>
+              {!isLocked && (
+                <Button size="sm" variant="outline" onClick={openEditSections}>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Sections
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(quote as any).intro_text && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Introduction</h4>
+                  <p className="text-sm whitespace-pre-wrap">{(quote as any).intro_text}</p>
+                </div>
+              )}
+              {(quote as any).scope_text && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Scope of Work</h4>
+                  <p className="text-sm whitespace-pre-wrap">{(quote as any).scope_text}</p>
+                </div>
+              )}
+              {quote.terms_text && (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Terms & Conditions</h4>
+                  <p className="text-sm whitespace-pre-wrap">{quote.terms_text}</p>
+                </div>
+              )}
+              {!(quote as any).intro_text && !(quote as any).scope_text && !quote.terms_text && (
+                <p className="text-muted-foreground text-sm">No content sections added yet. Click "Edit Sections" to add intro, scope, or terms.</p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Line Items */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -346,72 +461,112 @@ export default function QuoteDetail() {
                   No items yet. Add products or services to this quote.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Unit Price</TableHead>
-                      <TableHead className="text-right">Tax</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      {!isLocked && <TableHead className="w-[50px]"></TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{item.description}</div>
-                            {item.product && (
-                              <div className="text-xs text-muted-foreground">
-                                Product: {item.product.name}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                        <TableCell className="text-right">{(item.tax_rate * 100).toFixed(0)}%</TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(item.line_total)}
-                        </TableCell>
-                        {!isLocked && (
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleDeleteItem(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell colSpan={isLocked ? 4 : 5} className="text-right">Subtotal</TableCell>
-                      <TableCell className="text-right">{formatCurrency(quote.subtotal || 0)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={isLocked ? 4 : 5} className="text-right">Tax</TableCell>
-                      <TableCell className="text-right">{formatCurrency(quote.tax_total || 0)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={isLocked ? 4 : 5} className="text-right font-bold">Total</TableCell>
-                      <TableCell className="text-right font-bold text-lg">
-                        {formatCurrency(quote.total_estimate || 0)}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                <div className="space-y-6">
+                  {sortedGroupKeys.map((groupKey) => (
+                    <div key={groupKey}>
+                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        {groupKey}
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Description</TableHead>
+                            <TableHead className="text-right">Qty</TableHead>
+                            <TableHead className="text-right">Unit Price</TableHead>
+                            <TableHead className="text-right">Tax</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            {!isLocked && <TableHead className="w-[120px]">Group</TableHead>}
+                            {!isLocked && <TableHead className="w-[50px]"></TableHead>}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {groupedItems[groupKey].map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{item.description}</div>
+                                  {item.product && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Product: {item.product.name}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">{item.quantity}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                              <TableCell className="text-right">{(item.tax_rate * 100).toFixed(0)}%</TableCell>
+                              <TableCell className="text-right font-medium">
+                                {formatCurrency(item.line_total)}
+                              </TableCell>
+                              {!isLocked && (
+                                <TableCell>
+                                  <Select
+                                    value={item.group_label || ''}
+                                    onValueChange={(val) => handleItemGroupChange(item.id, val)}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="Group" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {GROUP_LABELS.map((label) => (
+                                        <SelectItem key={label} value={label}>{label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                              )}
+                              {!isLocked && (
+                                <TableCell>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleDeleteItem(item.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ))}
+                  
+                  {/* Totals */}
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-end gap-8">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium w-24 text-right">{formatCurrency(quote.subtotal || 0)}</span>
+                    </div>
+                    <div className="flex justify-end gap-8">
+                      <span className="text-muted-foreground">GST (10%)</span>
+                      <span className="font-medium w-24 text-right">{formatCurrency(quote.tax_total || 0)}</span>
+                    </div>
+                    <div className="flex justify-end gap-8 text-lg">
+                      <span className="font-bold">Total</span>
+                      <span className="font-bold w-24 text-right">{formatCurrency(quote.total_estimate || 0)}</span>
+                    </div>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Notes */}
+          {/* Internal Notes (Admin/Sales only) */}
+          {(quote as any).notes_internal && (
+            <Card className="border-amber-200 bg-amber-50/50">
+              <CardHeader>
+                <CardTitle className="text-amber-800">Internal Notes</CardTitle>
+                <CardDescription className="text-amber-700">These notes are not visible to clients</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap text-amber-900">{(quote as any).notes_internal}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Public Notes */}
           {quote.notes && (
             <Card>
               <CardHeader>
@@ -454,6 +609,12 @@ export default function QuoteDetail() {
                     : 'Not set'}
                 </div>
               </div>
+              {quoteVersion > 1 && (
+                <div>
+                  <div className="text-sm text-muted-foreground">Version</div>
+                  <div className="font-medium">v{quoteVersion}</div>
+                </div>
+              )}
               {quote.accepted_at && (
                 <>
                   <Separator />
@@ -543,6 +704,22 @@ export default function QuoteDetail() {
                 placeholder="Event Photography - 4 hours"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="group_label">Group</Label>
+              <Select 
+                value={newItem.group_label} 
+                onValueChange={(val) => setNewItem({ ...newItem, group_label: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a group" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROUP_LABELS.map((label) => (
+                    <SelectItem key={label} value={label}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="quantity">Qty</Label>
@@ -582,6 +759,75 @@ export default function QuoteDetail() {
               disabled={!newItem.description.trim() || createItem.isPending}
             >
               {createItem.isPending ? 'Adding...' : 'Add Item'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sections Dialog */}
+      <Dialog open={isEditSectionsOpen} onOpenChange={setIsEditSectionsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Quote Content</DialogTitle>
+            <DialogDescription>
+              Customize the intro, scope, terms, and internal notes for this quote.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="intro_text">Introduction</Label>
+              <Textarea
+                id="intro_text"
+                value={sectionEdits.intro_text}
+                onChange={(e) => setSectionEdits({ ...sectionEdits, intro_text: e.target.value })}
+                placeholder="Thank you for considering Eventpix for your upcoming event..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">Displayed at the top of the proposal</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scope_text">Scope of Work</Label>
+              <Textarea
+                id="scope_text"
+                value={sectionEdits.scope_text}
+                onChange={(e) => setSectionEdits({ ...sectionEdits, scope_text: e.target.value })}
+                placeholder="We will provide professional photography coverage including..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground">Describes what's included in the quote</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="terms_text">Terms & Conditions</Label>
+              <Textarea
+                id="terms_text"
+                value={sectionEdits.terms_text}
+                onChange={(e) => setSectionEdits({ ...sectionEdits, terms_text: e.target.value })}
+                placeholder="• A 30% deposit is required to secure your booking.&#10;• Balance is due 7 days before the event date."
+                rows={5}
+              />
+              <p className="text-xs text-muted-foreground">Legal terms displayed at the bottom of the proposal</p>
+            </div>
+            <Separator />
+            <div className="space-y-2">
+              <Label htmlFor="notes_internal" className="text-amber-700">Internal Notes (Not visible to clients)</Label>
+              <Textarea
+                id="notes_internal"
+                value={sectionEdits.notes_internal}
+                onChange={(e) => setSectionEdits({ ...sectionEdits, notes_internal: e.target.value })}
+                placeholder="Negotiation notes, special considerations, etc."
+                rows={3}
+                className="border-amber-200 focus:border-amber-400"
+              />
+              <p className="text-xs text-amber-600">⚠️ These notes are for internal use only and will never be shown to clients</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditSectionsOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleSaveSections} 
+              disabled={updateQuote.isPending}
+            >
+              {updateQuote.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

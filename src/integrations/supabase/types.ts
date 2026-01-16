@@ -1762,6 +1762,7 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string
+          group_label: string | null
           id: string
           line_total: number | null
           product_id: string | null
@@ -1774,6 +1775,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description: string
+          group_label?: string | null
           id?: string
           line_total?: number | null
           product_id?: string | null
@@ -1786,6 +1788,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string
+          group_label?: string | null
           id?: string
           line_total?: number | null
           product_id?: string | null
@@ -1857,11 +1860,15 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
+          intro_text: string | null
           lead_id: string | null
           linked_event_id: string | null
           notes: string | null
+          notes_internal: string | null
           public_token: string | null
           quote_number: string | null
+          quote_version: number
+          scope_text: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number | null
           tax_total: number | null
@@ -1878,11 +1885,15 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          intro_text?: string | null
           lead_id?: string | null
           linked_event_id?: string | null
           notes?: string | null
+          notes_internal?: string | null
           public_token?: string | null
           quote_number?: string | null
+          quote_version?: number
+          scope_text?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
           tax_total?: number | null
@@ -1899,11 +1910,15 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          intro_text?: string | null
           lead_id?: string | null
           linked_event_id?: string | null
           notes?: string | null
+          notes_internal?: string | null
           public_token?: string | null
           quote_number?: string | null
+          quote_version?: number
+          scope_text?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
           tax_total?: number | null
