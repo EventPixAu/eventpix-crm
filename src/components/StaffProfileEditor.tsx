@@ -40,6 +40,9 @@ interface StaffProfile {
   preferred_end_time: string | null;
   notes_internal: string | null;
   default_role_id?: string | null;
+  vehicle_registration?: string | null;
+  dietary_requirements?: string | null;
+  assigned_equipment_notes?: string | null;
 }
 
 interface StaffProfileEditorProps {
@@ -64,6 +67,9 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
     preferred_end_time: profile.preferred_end_time || '',
     notes_internal: profile.notes_internal || '',
     default_role_id: profile.default_role_id || '',
+    vehicle_registration: profile.vehicle_registration || '',
+    dietary_requirements: profile.dietary_requirements || '',
+    assigned_equipment_notes: profile.assigned_equipment_notes || '',
   });
 
   const queryClient = useQueryClient();
@@ -85,6 +91,9 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
           preferred_end_time: data.preferred_end_time || null,
           notes_internal: data.notes_internal || null,
           default_role_id: data.default_role_id || null,
+          vehicle_registration: data.vehicle_registration || null,
+          dietary_requirements: data.dietary_requirements || null,
+          assigned_equipment_notes: data.assigned_equipment_notes || null,
         })
         .eq('id', profile.id);
 
@@ -121,6 +130,9 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
         preferred_end_time: profile.preferred_end_time || '',
         notes_internal: profile.notes_internal || '',
         default_role_id: profile.default_role_id || '',
+        vehicle_registration: profile.vehicle_registration || '',
+        dietary_requirements: profile.dietary_requirements || '',
+        assigned_equipment_notes: profile.assigned_equipment_notes || '',
       });
     }
     setOpen(isOpen);
@@ -289,6 +301,40 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
                 onChange={(e) => setFormData({ ...formData, preferred_end_time: e.target.value })}
               />
             </div>
+          </div>
+
+          {/* Operational Details */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="vehicle_registration">Vehicle Registration</Label>
+              <Input
+                id="vehicle_registration"
+                value={formData.vehicle_registration}
+                onChange={(e) => setFormData({ ...formData, vehicle_registration: e.target.value })}
+                placeholder="e.g. ABC123"
+              />
+            </div>
+            <div>
+              <Label htmlFor="dietary_requirements">Dietary Requirements</Label>
+              <Input
+                id="dietary_requirements"
+                value={formData.dietary_requirements}
+                onChange={(e) => setFormData({ ...formData, dietary_requirements: e.target.value })}
+                placeholder="e.g. Vegetarian"
+              />
+            </div>
+          </div>
+
+          {/* Equipment Notes */}
+          <div>
+            <Label htmlFor="assigned_equipment_notes">Assigned Equipment Notes</Label>
+            <Textarea
+              id="assigned_equipment_notes"
+              value={formData.assigned_equipment_notes}
+              onChange={(e) => setFormData({ ...formData, assigned_equipment_notes: e.target.value })}
+              placeholder="Notes about assigned equipment..."
+              rows={2}
+            />
           </div>
 
           {/* Internal Notes */}
