@@ -68,6 +68,12 @@ export function SessionsDisplay({ eventId, compact = false, className }: Session
                   </div>
                   
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    {(session as any).arrival_time && (
+                      <span className="flex items-center gap-1 text-orange-600">
+                        <Clock className="h-3.5 w-3.5" />
+                        Call: {format(new Date(`2000-01-01T${(session as any).arrival_time}`), 'h:mm a')}
+                      </span>
+                    )}
                     {session.start_time && (
                       <span className="flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />

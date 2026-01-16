@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 
 interface SessionFormData {
   session_date: string;
+  arrival_time: string;
   start_time: string;
   end_time: string;
   label: string;
@@ -33,6 +34,7 @@ interface SessionFormData {
 
 const emptySession: SessionFormData = {
   session_date: '',
+  arrival_time: '',
   start_time: '',
   end_time: '',
   label: '',
@@ -70,6 +72,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
     setEditingSession(session.id);
     setFormData({
       session_date: session.session_date,
+      arrival_time: (session as any).arrival_time || '',
       start_time: session.start_time || '',
       end_time: session.end_time || '',
       label: session.label || '',
@@ -85,6 +88,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
 
     const sessionData = {
       session_date: formData.session_date,
+      arrival_time: formData.arrival_time || null,
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
       label: formData.label || null,
@@ -157,6 +161,12 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
                     </div>
                     
                     <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                      {(session as any).arrival_time && (
+                        <span className="flex items-center gap-1 text-orange-600">
+                          <Clock className="h-3.5 w-3.5" />
+                          Call: {format(new Date(`2000-01-01T${(session as any).arrival_time}`), 'h:mm a')}
+                        </span>
+                      )}
                       {session.start_time && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
@@ -241,9 +251,18 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="start_time">Start Time</Label>
+                <Label htmlFor="arrival_time">Crew Call Time</Label>
+                <Input
+                  id="arrival_time"
+                  type="time"
+                  value={formData.arrival_time}
+                  onChange={(e) => setFormData({ ...formData, arrival_time: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="start_time">Event Start</Label>
                 <Input
                   id="start_time"
                   type="time"
@@ -252,7 +271,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="end_time">End Time</Label>
+                <Label htmlFor="end_time">Event End</Label>
                 <Input
                   id="end_time"
                   type="time"

@@ -50,6 +50,7 @@ import {
   SalesWorkflowTemplate,
 } from '@/hooks/useSalesWorkflow';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
+import { EventSessionsEditor } from '@/components/EventSessionsEditor';
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800',
@@ -216,6 +217,9 @@ export default function LeadDetail() {
                       ? format(new Date(lead.estimated_event_date), 'PP')
                       : '—'}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    (Legacy field – see Sessions below for full schedule)
+                  </p>
                 </div>
               </div>
               {lead.notes && (
@@ -224,6 +228,22 @@ export default function LeadDetail() {
                   <p className="mt-1 text-sm whitespace-pre-wrap">{lead.notes}</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Sessions - Multi-date/time support */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Event Sessions
+              </CardTitle>
+              <CardDescription>
+                Define multiple days and time slots for this enquiry
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EventSessionsEditor leadId={id} />
             </CardContent>
           </Card>
 

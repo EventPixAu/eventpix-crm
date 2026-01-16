@@ -1257,6 +1257,7 @@ export type Database = {
       }
       event_sessions: {
         Row: {
+          arrival_time: string | null
           created_at: string | null
           end_time: string | null
           event_id: string | null
@@ -1272,6 +1273,7 @@ export type Database = {
           venue_name: string | null
         }
         Insert: {
+          arrival_time?: string | null
           created_at?: string | null
           end_time?: string | null
           event_id?: string | null
@@ -1287,6 +1289,7 @@ export type Database = {
           venue_name?: string | null
         }
         Update: {
+          arrival_time?: string | null
           created_at?: string | null
           end_time?: string | null
           event_id?: string | null
