@@ -18,6 +18,8 @@ export interface Contract {
   quote_id: string | null;
   title: string;
   file_url: string | null;
+  template_id: string | null;
+  rendered_html: string | null;
   status: ContractStatus;
   sent_at: string | null;
   signed_at: string | null;

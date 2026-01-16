@@ -355,6 +355,36 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_templates: {
+        Row: {
+          body_html: string
+          body_text: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          body_text?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          body_text?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           client_id: string
@@ -364,11 +394,13 @@ export type Database = {
           lead_id: string | null
           public_token: string | null
           quote_id: string | null
+          rendered_html: string | null
           sent_at: string | null
           signed_at: string | null
           signed_by_email: string | null
           signed_by_name: string | null
           status: Database["public"]["Enums"]["contract_status"] | null
+          template_id: string | null
           title: string
           updated_at: string | null
         }
@@ -380,11 +412,13 @@ export type Database = {
           lead_id?: string | null
           public_token?: string | null
           quote_id?: string | null
+          rendered_html?: string | null
           sent_at?: string | null
           signed_at?: string | null
           signed_by_email?: string | null
           signed_by_name?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
+          template_id?: string | null
           title: string
           updated_at?: string | null
         }
@@ -396,11 +430,13 @@ export type Database = {
           lead_id?: string | null
           public_token?: string | null
           quote_id?: string | null
+          rendered_html?: string | null
           sent_at?: string | null
           signed_at?: string | null
           signed_by_email?: string | null
           signed_by_name?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
+          template_id?: string | null
           title?: string
           updated_at?: string | null
         }
@@ -424,6 +460,13 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
             referencedColumns: ["id"]
           },
         ]
