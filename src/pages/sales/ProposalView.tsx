@@ -3,10 +3,13 @@
  * 
  * Print-ready proposal view for a quote.
  * Access: Admin, Sales roles only (enforced via RLS)
+ * 
+ * NOTE: This view must NOT display notes_internal - it is for internal use only.
  */
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, Printer, FileDown } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -20,8 +23,17 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import { useQuote } from '@/hooks/useSales';
-import { useQuoteItems } from '@/hooks/useQuoteItems';
+import { useQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import logo from '@/assets/eventpix-logo.png';
+
+const GROUP_LABELS = [
+  'Coverage',
+  'Delivery',
+  'Add-ons',
+  'Equipment',
+  'Travel',
+  'Other',
+];
 
 export default function ProposalView() {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +47,31 @@ export default function ProposalView() {
   const clientName = clientData?.business_name || leadData?.client?.business_name;
   const clientEmail = clientData?.primary_contact_email;
   const clientPhone = clientData?.primary_contact_phone;
+  
+  // Group items by group_label
+  const groupedItems = useMemo(() => {
+    if (!items) return {};
+    return items.reduce((acc, item) => {
+      const group = item.group_label || 'Other';
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(item);
+      return acc;
+    }, {} as Record<string, QuoteItem[]>);
+  }, [items]);
+
+  const sortedGroupKeys = useMemo(() => {
+    const keys = Object.keys(groupedItems);
+    return keys.sort((a, b) => {
+      const indexA = GROUP_LABELS.indexOf(a);
+      const indexB = GROUP_LABELS.indexOf(b);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }, [groupedItems]);
+
+  const hasGroupedItems = sortedGroupKeys.length > 1 || (sortedGroupKeys.length === 1 && sortedGroupKeys[0] !== 'Other');
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
@@ -65,8 +102,10 @@ export default function ProposalView() {
     );
   }
 
+  const quoteVersion = (quote as any).quote_version || 1;
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 print:bg-white">
       {/* Print Controls - Hidden when printing */}
       <div className="print:hidden bg-white border-b sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -75,9 +114,9 @@ export default function ProposalView() {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handlePrint}>
+            <Button onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-2" />
-              Print
+              Print / Save PDF
             </Button>
           </div>
         </div>
@@ -101,6 +140,7 @@ export default function ProposalView() {
                 <h1 className="text-3xl font-bold text-primary">PROPOSAL</h1>
                 <p className="text-lg font-medium mt-2">
                   {quote.quote_number || `#${quote.id.slice(0, 8)}`}
+                  {quoteVersion > 1 && <span className="text-muted-foreground ml-2">v{quoteVersion}</span>}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Date: {quote.created_at ? format(new Date(quote.created_at), 'dd MMMM yyyy') : '—'}
@@ -130,54 +170,113 @@ export default function ProposalView() {
               )}
             </div>
 
-            {/* Line Items */}
+            {/* Introduction */}
+            {(quote as any).intro_text && (
+              <div className="mb-8">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Introduction
+                </h2>
+                <p className="text-muted-foreground whitespace-pre-wrap">{(quote as any).intro_text}</p>
+              </div>
+            )}
+
+            {/* Scope of Work */}
+            {(quote as any).scope_text && (
+              <div className="mb-8">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  Scope of Work
+                </h2>
+                <p className="text-muted-foreground whitespace-pre-wrap">{(quote as any).scope_text}</p>
+              </div>
+            )}
+
+            {/* Line Items - Grouped or Flat */}
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
                 Services & Pricing
               </h2>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Description</TableHead>
-                    <TableHead className="text-right font-semibold">Qty</TableHead>
-                    <TableHead className="text-right font-semibold">Unit Price</TableHead>
-                    <TableHead className="text-right font-semibold">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items?.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
-                    </TableRow>
+              
+              {hasGroupedItems ? (
+                // Grouped display
+                <div className="space-y-6">
+                  {sortedGroupKeys.map((groupKey) => (
+                    <div key={groupKey}>
+                      <h3 className="text-sm font-semibold mb-2 text-foreground">{groupKey}</h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/50">
+                            <TableHead className="font-semibold">Description</TableHead>
+                            <TableHead className="text-right font-semibold w-20">Qty</TableHead>
+                            <TableHead className="text-right font-semibold w-28">Unit Price</TableHead>
+                            <TableHead className="text-right font-semibold w-28">Amount</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {groupedItems[groupKey].map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>{item.description}</TableCell>
+                              <TableCell className="text-right">{item.quantity}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   ))}
-                  {(!items || items.length === 0) && (
+                </div>
+              ) : (
+                // Flat display (no grouping or only "Other")
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="font-semibold">Description</TableHead>
+                      <TableHead className="text-right font-semibold w-20">Qty</TableHead>
+                      <TableHead className="text-right font-semibold w-28">Unit Price</TableHead>
+                      <TableHead className="text-right font-semibold w-28">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items?.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {(!items || items.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          No items in this quote
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+
+              {/* Totals */}
+              <div className="mt-4 border-t pt-4">
+                <Table>
+                  <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        No items in this quote
+                      <TableCell colSpan={3} className="text-right">Subtotal</TableCell>
+                      <TableCell className="text-right w-28">{formatCurrency(quote.subtotal || 0)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-right">GST (10%)</TableCell>
+                      <TableCell className="text-right w-28">{formatCurrency(quote.tax_total || 0)}</TableCell>
+                    </TableRow>
+                    <TableRow className="bg-primary/5">
+                      <TableCell colSpan={3} className="text-right text-lg font-bold">Total</TableCell>
+                      <TableCell className="text-right text-lg font-bold w-28">
+                        {formatCurrency(quote.total_estimate || 0)}
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-right">Subtotal</TableCell>
-                    <TableCell className="text-right">{formatCurrency(quote.subtotal || 0)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-right">GST (10%)</TableCell>
-                    <TableCell className="text-right">{formatCurrency(quote.tax_total || 0)}</TableCell>
-                  </TableRow>
-                  <TableRow className="bg-primary/5">
-                    <TableCell colSpan={3} className="text-right text-lg font-bold">Total</TableCell>
-                    <TableCell className="text-right text-lg font-bold">
-                      {formatCurrency(quote.total_estimate || 0)}
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
+                  </TableFooter>
+                </Table>
+              </div>
             </div>
 
             {/* Terms */}
@@ -199,7 +298,7 @@ export default function ProposalView() {
               </div>
             </div>
 
-            {/* Notes */}
+            {/* Notes (public notes only - notes_internal is NEVER shown here) */}
             {quote.notes && (
               <div className="mb-8">
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
