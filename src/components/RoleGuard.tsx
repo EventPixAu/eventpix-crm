@@ -11,7 +11,7 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 
-type AppRole = 'admin' | 'photographer' | 'sales' | 'executive';
+type AppRole = 'admin' | 'sales' | 'operations' | 'crew';
 
 interface RoleGuardProps {
   children: ReactNode;
@@ -76,28 +76,19 @@ export function SalesGuard({ children }: { children: ReactNode }) {
   );
 }
 
-/** Executive-only routes (read-only dashboard) */
-export function ExecutiveGuard({ children }: { children: ReactNode }) {
-  return (
-    <RoleGuard allowedRoles={['admin', 'executive']}>
-      {children}
-    </RoleGuard>
-  );
-}
-
-/** Photographer routes (includes admin for debugging) */
-export function PhotographerGuard({ children }: { children: ReactNode }) {
-  return (
-    <RoleGuard allowedRoles={['admin', 'photographer']}>
-      {children}
-    </RoleGuard>
-  );
-}
-
-/** Operations routes (Admin + read access for executives) */
+/** Operations routes (Admin + Operations) */
 export function OpsGuard({ children }: { children: ReactNode }) {
   return (
-    <RoleGuard allowedRoles={['admin']}>
+    <RoleGuard allowedRoles={['admin', 'operations']}>
+      {children}
+    </RoleGuard>
+  );
+}
+
+/** Crew routes (Admin + Operations + Crew for assigned events) */
+export function CrewGuard({ children }: { children: ReactNode }) {
+  return (
+    <RoleGuard allowedRoles={['admin', 'operations', 'crew']}>
       {children}
     </RoleGuard>
   );

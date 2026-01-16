@@ -227,17 +227,7 @@ function SalesSidebarContent({ onItemClick }: SidebarContentProps) {
   );
 }
 
-function ExecutiveSidebarContent({ onItemClick }: SidebarContentProps) {
-  return (
-    <>
-      {executiveNavItems.map(item => (
-        <SidebarNavItem key={item.href} item={item} onItemClick={onItemClick} />
-      ))}
-    </>
-  );
-}
-
-function PhotographerSidebarContent({ onItemClick }: SidebarContentProps) {
+function CrewSidebarContent({ onItemClick }: SidebarContentProps) {
   return (
     <>
       {photographerNavItems.map(item => (
@@ -249,7 +239,7 @@ function PhotographerSidebarContent({ onItemClick }: SidebarContentProps) {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut, isAdmin, isSales, isExecutive, role } = useAuth();
+  const { user, signOut, isAdmin, isSales, isOperations, isCrew, role } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -262,9 +252,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Render appropriate sidebar content based on role
   const renderSidebarContent = (onItemClick?: () => void) => {
     if (isAdmin) return <AdminSidebarContent onItemClick={onItemClick} />;
-    if (isExecutive) return <ExecutiveSidebarContent onItemClick={onItemClick} />;
+    if (isOperations) return <AdminSidebarContent onItemClick={onItemClick} />; // Ops sees same as admin
     if (isSales) return <SalesSidebarContent onItemClick={onItemClick} />;
-    return <PhotographerSidebarContent onItemClick={onItemClick} />;
+    if (isCrew) return <CrewSidebarContent onItemClick={onItemClick} />;
+    return <CrewSidebarContent onItemClick={onItemClick} />; // Default fallback
   };
 
   return (
