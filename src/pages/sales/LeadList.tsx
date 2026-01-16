@@ -40,30 +40,23 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useLeads, useCreateLead, useClients } from '@/hooks/useSales';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useEventTypes } from '@/hooks/useLookups';
+import { useLeadSources } from '@/hooks/useLeadSources';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   new: { label: 'New', variant: 'default' },
   qualified: { label: 'Qualified', variant: 'secondary' },
   quoted: { label: 'Quoted', variant: 'outline' },
-  accepted: { label: 'Accepted', variant: 'default' },
+  accepted: { label: 'Won', variant: 'default' },
   lost: { label: 'Lost', variant: 'destructive' },
 };
 
 export default function LeadList() {
   const { data: leads, isLoading } = useLeads();
   const { data: clients } = useClients();
+  const { data: eventTypes } = useEventTypes();
+  const { data: leadSources } = useLeadSources();
   const createLead = useCreateLead();
-  
-  // Fetch event types directly
-  const { data: eventTypes } = useQuery({
-    queryKey: ['event-types'],
-    queryFn: async () => {
-      const { data } = await supabase.from('event_types').select('*').order('name');
-      return data || [];
-    },
-  });
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -71,7 +64,7 @@ export default function LeadList() {
   const [formData, setFormData] = useState({
     lead_name: '',
     client_id: '',
-    source: '',
+    lead_source_id: '',
     estimated_event_date: '',
     event_type_id: '',
     notes: '',
@@ -91,7 +84,7 @@ export default function LeadList() {
     await createLead.mutateAsync({
       lead_name: formData.lead_name,
       client_id: formData.client_id || null,
-      source: formData.source || null,
+      lead_source_id: formData.lead_source_id || null,
       estimated_event_date: formData.estimated_event_date || null,
       event_type_id: formData.event_type_id || null,
       notes: formData.notes || null,
@@ -100,7 +93,7 @@ export default function LeadList() {
     setFormData({
       lead_name: '',
       client_id: '',
-      source: '',
+      lead_source_id: '',
       estimated_event_date: '',
       event_type_id: '',
       notes: '',
@@ -226,7 +219,9 @@ export default function LeadList() {
                           </span>
                         ) : '—'}
                       </TableCell>
-                      <TableCell>{lead.source || '—'}</TableCell>
+                      <TableCell>
+                        {(lead as any).lead_source?.name || lead.source || '—'}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusConfig.variant}>
                           {statusConfig.label}
@@ -309,13 +304,22 @@ export default function LeadList() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="source">Source</Label>
-              <Input
-                id="source"
-                value={formData.source}
-                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                placeholder="Website, Referral, etc."
-              />
+              <Label htmlFor="lead_source_id">Lead Source</Label>
+              <Select 
+                value={formData.lead_source_id} 
+                onValueChange={(value) => setFormData({ ...formData, lead_source_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select lead source" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leadSources?.map((source) => (
+                    <SelectItem key={source.id} value={source.id}>
+                      {source.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
