@@ -1450,9 +1450,11 @@ export type Database = {
           start_time: string | null
           state: string | null
           updated_at: string | null
+          venue_access_notes: string | null
           venue_address: string | null
           venue_id: string | null
           venue_name: string | null
+          venue_parking_notes: string | null
           venue_postcode: string | null
         }
         Insert: {
@@ -1498,9 +1500,11 @@ export type Database = {
           start_time?: string | null
           state?: string | null
           updated_at?: string | null
+          venue_access_notes?: string | null
           venue_address?: string | null
           venue_id?: string | null
           venue_name?: string | null
+          venue_parking_notes?: string | null
           venue_postcode?: string | null
         }
         Update: {
@@ -1546,9 +1550,11 @@ export type Database = {
           start_time?: string | null
           state?: string | null
           updated_at?: string | null
+          venue_access_notes?: string | null
           venue_address?: string | null
           venue_id?: string | null
           venue_name?: string | null
+          venue_parking_notes?: string | null
           venue_postcode?: string | null
         }
         Relationships: [
@@ -3494,6 +3500,8 @@ export type Database = {
         | "quote_followup"
         | "booking_confirmed"
         | "event_reminder"
+        | "photographer_assignment"
+        | "event_update"
       event_type:
         | "wedding"
         | "corporate"
@@ -3689,6 +3697,8 @@ export const Constants = {
         "quote_followup",
         "booking_confirmed",
         "event_reminder",
+        "photographer_assignment",
+        "event_update",
       ],
       event_type: [
         "wedding",

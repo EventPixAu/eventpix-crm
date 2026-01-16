@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,8 @@ const eventSchema = z.object({
   end_time: z.string().optional(),
   venue_name: z.string().optional(),
   venue_address: z.string().optional(),
+  venue_access_notes: z.string().optional(),
+  venue_parking_notes: z.string().optional(),
   client_name: z.string().min(1, 'Client name is required'),
   onsite_contact_name: z.string().optional(),
   onsite_contact_phone: z.string().optional(),
@@ -97,6 +99,8 @@ export default function EventForm() {
       end_time: '',
       venue_name: '',
       venue_address: '',
+      venue_access_notes: '',
+      venue_parking_notes: '',
       client_name: '',
       onsite_contact_name: '',
       onsite_contact_phone: '',
@@ -129,6 +133,8 @@ export default function EventForm() {
         end_time: event.end_time || '',
         venue_name: event.venue_name || '',
         venue_address: event.venue_address || '',
+        venue_access_notes: (event as any).venue_access_notes || '',
+        venue_parking_notes: (event as any).venue_parking_notes || '',
         client_name: event.client_name,
         onsite_contact_name: event.onsite_contact_name || '',
         onsite_contact_phone: event.onsite_contact_phone || '',
@@ -158,6 +164,8 @@ export default function EventForm() {
       end_time: values.end_time || null,
       venue_name: values.venue_name || null,
       venue_address: values.venue_address || null,
+      venue_access_notes: values.venue_access_notes || null,
+      venue_parking_notes: values.venue_parking_notes || null,
       onsite_contact_name: values.onsite_contact_name || null,
       onsite_contact_phone: values.onsite_contact_phone || null,
       coverage_details: values.coverage_details || null,
@@ -345,7 +353,48 @@ export default function EventForm() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Full address" className="bg-secondary" />
+                      <div className="flex gap-2">
+                        <Input {...field} placeholder="Full address (links to Google Maps)" className="bg-secondary flex-1" />
+                        {field.value && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(field.value)}`, '_blank')}
+                            title="Open in Google Maps"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="venue_access_notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Access Notes</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="e.g., Enter via loading dock, use staff elevator..." className="bg-secondary min-h-[60px]" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="venue_parking_notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parking Notes</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="e.g., Street parking available, paid parking at 123 Main St..." className="bg-secondary min-h-[60px]" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

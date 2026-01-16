@@ -7,6 +7,7 @@ import {
   Calendar,
   Clock,
   Edit,
+  Mail,
   MapPin,
   Package,
   Phone,
@@ -55,6 +56,7 @@ import { SessionsDisplay } from '@/components/SessionsDisplay';
 import { useEventContacts } from '@/hooks/useEventContacts';
 import { VenueAddressLink } from '@/components/VenueAddressLink';
 import { EventTasksCard } from '@/components/EventTasksCard';
+import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -71,6 +73,30 @@ export default function EventDetail() {
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
+  const [sendEmailOpen, setSendEmailOpen] = useState(false);
+  
+  // Build recipients for email dialog
+  const emailRecipients = useMemo(() => {
+    const recipients: { id: string; name: string; email: string; type: 'client' | 'photographer' | 'assistant' }[] = [];
+    
+    // Add assigned staff
+    assignments.forEach((assignment: any) => {
+      const profile = assignment.user || assignment.profile;
+      if (profile?.email) {
+        const roleOnEvent = assignment.role_on_event?.toLowerCase() || '';
+        const type = roleOnEvent.includes('assistant') ? 'assistant' : 'photographer';
+        recipients.push({
+          id: assignment.id,
+          name: profile.full_name || profile.email,
+          email: profile.email,
+          type,
+        });
+      }
+    });
+    
+    return recipients;
+  }, [assignments]);
+  
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
       acc[et.id] = et.name;
@@ -266,16 +292,34 @@ export default function EventDetail() {
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <MapPin className="h-4 w-4 text-primary" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm text-muted-foreground">Venue</p>
-                        <p className="font-medium">{event.venue_name}</p>
-                        {event.venue_address && (
-                          <p className="text-sm text-muted-foreground">{event.venue_address}</p>
-                        )}
+                        <VenueAddressLink 
+                          address={event.venue_address} 
+                          venueName={event.venue_name} 
+                        />
                       </div>
                     </div>
                   )}
                 </div>
+                
+                {/* Venue Access & Parking Notes */}
+                {((event as any).venue_access_notes || (event as any).venue_parking_notes) && (
+                  <div className="mt-4 pt-4 border-t border-border grid sm:grid-cols-2 gap-4">
+                    {(event as any).venue_access_notes && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Access Notes</p>
+                        <p className="text-sm">{(event as any).venue_access_notes}</p>
+                      </div>
+                    )}
+                    {(event as any).venue_parking_notes && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Parking Notes</p>
+                        <p className="text-sm">{(event as any).venue_parking_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Contact Info */}
@@ -348,6 +392,12 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
+                  {isAdmin && (
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setSendEmailOpen(true)}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -545,6 +595,26 @@ export default function EventDetail() {
           onOpenChange={setRecommendCrewOpen}
           eventIds={[id]}
           scope="single_event"
+        />
+      )}
+      
+      {/* Send Email Dialog */}
+      {id && event && (
+        <SendOpsEmailDialog
+          open={sendEmailOpen}
+          onOpenChange={setSendEmailOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+          }}
+          recipients={emailRecipients}
         />
       )}
     </AppLayout>
