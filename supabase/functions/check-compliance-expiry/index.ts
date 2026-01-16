@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 interface ExpiringDocument {
@@ -35,8 +35,48 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const resendKey = Deno.env.get("RESEND_API_KEY");
     const appUrl = Deno.env.get("APP_URL") || "https://app.eventpix.com.au";
+    const cronSecret = Deno.env.get("CRON_SECRET");
+
+    // Check for cron secret header first (for scheduled jobs)
+    const requestCronSecret = req.headers.get('X-Cron-Secret');
+    let isAuthorized = false;
+
+    if (cronSecret && requestCronSecret === cronSecret) {
+      // Authorized via cron secret
+      isAuthorized = true;
+    } else {
+      // Fall back to JWT authentication for manual triggers
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+        const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+        
+        if (!authError && user) {
+          // Verify user is an admin
+          const supabaseCheck = createClient(supabaseUrl, supabaseServiceKey);
+          const { data: userRole } = await supabaseCheck
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (userRole?.role === 'admin') {
+            isAuthorized = true;
+          }
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Valid cron secret or admin JWT required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

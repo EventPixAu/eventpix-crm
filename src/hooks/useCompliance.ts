@@ -307,9 +307,8 @@ export function useLogComplianceOverride() {
     }) => {
       const { data, error } = await supabase
         .rpc('log_audit_entry', {
-          p_action: 'compliance_override',
-          p_actor_user_id: userId,
           p_event_id: eventId,
+          p_action: 'compliance_override',
           p_after: { reason, overridden_user_id: userId },
         });
 

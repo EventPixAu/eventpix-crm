@@ -2778,16 +2778,26 @@ export type Database = {
       is_executive: { Args: { _user_id: string }; Returns: boolean }
       is_executive_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_photographer: { Args: { _user_id: string }; Returns: boolean }
-      log_audit_entry: {
-        Args: {
-          p_action: Database["public"]["Enums"]["audit_action"]
-          p_actor_user_id: string
-          p_after?: Json
-          p_before?: Json
-          p_event_id: string
-        }
-        Returns: string
-      }
+      log_audit_entry:
+        | {
+            Args: {
+              p_action: Database["public"]["Enums"]["audit_action"]
+              p_actor_user_id: string
+              p_after?: Json
+              p_before?: Json
+              p_event_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_action: Database["public"]["Enums"]["audit_action"]
+              p_after?: Json
+              p_before?: Json
+              p_event_id: string
+            }
+            Returns: string
+          }
       mark_contract_as_sent: { Args: { p_contract_id: string }; Returns: Json }
       mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
       regenerate_contract_token: {
