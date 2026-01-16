@@ -114,7 +114,7 @@ const PRESET_LABELS: Record<DateRangePreset, string> = {
 };
 
 export default function ExecutiveDashboard() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isExecutive } = useAuth();
   const [preset, setPreset] = useState<DateRangePreset>('last30days');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [isFromOpen, setIsFromOpen] = useState(false);
@@ -122,7 +122,8 @@ export default function ExecutiveDashboard() {
   
   const { data, isLoading, error } = useExecutiveDashboard({ preset, customRange });
 
-  if (!isAdmin) {
+  // Allow access for both Admin and Executive roles
+  if (!isAdmin && !isExecutive) {
     return <Navigate to="/" replace />;
   }
 
@@ -382,12 +383,14 @@ export default function ExecutiveDashboard() {
                   </div>
                 </div>
 
-                <Link 
-                  to="/delivery" 
-                  className="flex items-center gap-1 text-sm text-primary hover:underline"
-                >
-                  View delivery queue <ArrowRight className="h-4 w-4" />
-                </Link>
+                {isAdmin && (
+                  <Link 
+                    to="/delivery" 
+                    className="flex items-center gap-1 text-sm text-primary hover:underline"
+                  >
+                    View delivery queue <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
               </CardContent>
             </Card>
 
@@ -435,66 +438,70 @@ export default function ExecutiveDashboard() {
                   </div>
                 </div>
 
-                <Link 
-                  to="/staff" 
-                  className="flex items-center gap-1 text-sm text-primary hover:underline"
-                >
-                  View staff directory <ArrowRight className="h-4 w-4" />
-                </Link>
+                {isAdmin && (
+                  <Link 
+                    to="/staff" 
+                    className="flex items-center gap-1 text-sm text-primary hover:underline"
+                  >
+                    View staff directory <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
               </CardContent>
             </Card>
 
-            {/* Cost & Margin */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  Cost Overview
-                </CardTitle>
-                <CardDescription>Staffing costs and outliers</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-3 bg-secondary rounded-lg">
-                    <p className="text-xl font-semibold">${data.costs.costToday.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">Today</p>
-                  </div>
-                  <div className="p-3 bg-secondary rounded-lg">
-                    <p className="text-xl font-semibold">${data.costs.costThisWeek.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">This Week</p>
-                  </div>
-                  <div className="p-3 bg-secondary rounded-lg">
-                    <p className="text-xl font-semibold">${data.costs.avgCostPerEvent.toFixed(0)}</p>
-                    <p className="text-xs text-muted-foreground">Avg/Event</p>
-                  </div>
-                </div>
-
-                {data.costs.eventsExceedingThreshold > 0 && (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm font-medium">{data.costs.eventsExceedingThreshold} events exceeding cost threshold</span>
+            {/* Cost & Margin - Admin Only (Executives cannot see cost data) */}
+            {isAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    Cost Overview
+                  </CardTitle>
+                  <CardDescription>Staffing costs and outliers</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-3 bg-secondary rounded-lg">
+                      <p className="text-xl font-semibold">${data.costs.costToday.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Today</p>
+                    </div>
+                    <div className="p-3 bg-secondary rounded-lg">
+                      <p className="text-xl font-semibold">${data.costs.costThisWeek.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">This Week</p>
+                    </div>
+                    <div className="p-3 bg-secondary rounded-lg">
+                      <p className="text-xl font-semibold">${data.costs.avgCostPerEvent.toFixed(0)}</p>
+                      <p className="text-xs text-muted-foreground">Avg/Event</p>
                     </div>
                   </div>
-                )}
 
-                {data.costs.costBySeries.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Top Series by Cost</p>
-                    {data.costs.costBySeries.slice(0, 3).map((series) => (
-                      <Link 
-                        key={series.seriesId} 
-                        to={`/admin/series/${series.seriesId}`}
-                        className="flex items-center justify-between p-2 bg-secondary/50 rounded hover:bg-secondary transition-colors"
-                      >
-                        <span className="text-sm truncate">{series.seriesName}</span>
-                        <span className="text-sm font-medium">${series.cost.toLocaleString()}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  {data.costs.eventsExceedingThreshold > 0 && (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-medium">{data.costs.eventsExceedingThreshold} events exceeding cost threshold</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {data.costs.costBySeries.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Top Series by Cost</p>
+                      {data.costs.costBySeries.slice(0, 3).map((series) => (
+                        <Link 
+                          key={series.seriesId} 
+                          to={`/admin/series/${series.seriesId}`}
+                          className="flex items-center justify-between p-2 bg-secondary/50 rounded hover:bg-secondary transition-colors"
+                        >
+                          <span className="text-sm truncate">{series.seriesName}</span>
+                          <span className="text-sm font-medium">${series.cost.toLocaleString()}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Compliance & Risk */}
             <Card>
@@ -544,20 +551,23 @@ export default function ExecutiveDashboard() {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Link 
-                    to="/staff?tab=compliance" 
-                    className="flex items-center gap-1 text-sm text-primary hover:underline"
-                  >
-                    Staff Compliance <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <Link 
-                    to="/equipment" 
-                    className="flex items-center gap-1 text-sm text-primary hover:underline"
-                  >
-                    Equipment <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
+                {/* Navigation links - Admin only */}
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Link 
+                      to="/staff?tab=compliance" 
+                      className="flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                      Staff Compliance <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <Link 
+                      to="/equipment" 
+                      className="flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                      Equipment <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -580,7 +590,7 @@ export default function ExecutiveDashboard() {
                       </CardTitle>
                       <CardDescription>National program rollup</CardDescription>
                     </div>
-                    {data.localBusinessAwards.found && (
+                    {data.localBusinessAwards.found && isAdmin && (
                       <Link 
                         to={`/admin/series/${data.localBusinessAwards.seriesId}`}
                         className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -718,14 +728,14 @@ export default function ExecutiveDashboard() {
                         <th className="text-center p-4 font-medium text-muted-foreground">Delivered</th>
                         <th className="text-center p-4 font-medium text-muted-foreground">Staffing</th>
                         <th className="text-center p-4 font-medium text-muted-foreground">Avg Delivery</th>
-                        <th className="text-center p-4 font-medium text-muted-foreground">Avg Cost</th>
+                        {isAdmin && <th className="text-center p-4 font-medium text-muted-foreground">Avg Cost</th>}
                         <th className="text-center p-4 font-medium text-muted-foreground">Overrides</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.seriesPerformance.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={isAdmin ? 7 : 6} className="p-8 text-center text-muted-foreground">
                             No active series data available
                           </td>
                         </tr>
@@ -733,12 +743,16 @@ export default function ExecutiveDashboard() {
                         data.seriesPerformance.map((series) => (
                           <tr key={series.seriesId} className="border-b border-border last:border-0 hover:bg-muted/50">
                             <td className="p-4">
-                              <Link 
-                                to={`/admin/series/${series.seriesId}`}
-                                className="font-medium hover:text-primary transition-colors"
-                              >
-                                {series.seriesName}
-                              </Link>
+                              {isAdmin ? (
+                                <Link 
+                                  to={`/admin/series/${series.seriesId}`}
+                                  className="font-medium hover:text-primary transition-colors"
+                                >
+                                  {series.seriesName}
+                                </Link>
+                              ) : (
+                                <span className="font-medium">{series.seriesName}</span>
+                              )}
                             </td>
                             <td className="text-center p-4">{series.totalEvents}</td>
                             <td className="text-center p-4">
@@ -758,9 +772,11 @@ export default function ExecutiveDashboard() {
                             <td className="text-center p-4">
                               {series.avgDeliveryTimeDays > 0 ? `${series.avgDeliveryTimeDays.toFixed(0)}d` : '—'}
                             </td>
-                            <td className="text-center p-4">
-                              ${series.avgCostPerEvent.toFixed(0)}
-                            </td>
+                            {isAdmin && (
+                              <td className="text-center p-4">
+                                ${series.avgCostPerEvent.toFixed(0)}
+                              </td>
+                            )}
                             <td className="text-center p-4">
                               <Badge variant={series.overrideCount > 0 ? 'outline' : 'secondary'}>
                                 {series.overrideCount}
