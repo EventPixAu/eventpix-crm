@@ -39,23 +39,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
-  Users, 
   UserPlus, 
   Mail, 
   MoreHorizontal, 
-  Copy, 
   RefreshCw, 
   XCircle,
   Check,
   Clock,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react';
-import { format, formatDistanceToNow, isPast } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import {
   useUsers,
   useInvitations,
-  useCreateInvitation,
+  useInviteUser,
   useResendInvitation,
   useRevokeInvitation,
   useSetUserActive,
@@ -84,11 +84,24 @@ function getRoleBadgeVariant(role: string | null) {
 function getStatusBadgeVariant(status: string) {
   switch (status) {
     case 'pending': return 'secondary';
-    case 'sent': return 'default';
+    case 'provisioned': return 'secondary';
+    case 'emailed': return 'default';
     case 'accepted': return 'outline';
-    case 'expired': return 'destructive';
+    case 'failed': return 'destructive';
     case 'revoked': return 'destructive';
     default: return 'outline';
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case 'pending': return <Clock className="h-3 w-3" />;
+    case 'provisioned': return <Clock className="h-3 w-3" />;
+    case 'emailed': return <Mail className="h-3 w-3" />;
+    case 'accepted': return <Check className="h-3 w-3" />;
+    case 'failed': return <AlertTriangle className="h-3 w-3" />;
+    case 'revoked': return <AlertCircle className="h-3 w-3" />;
+    default: return null;
   }
 }
 
@@ -96,24 +109,13 @@ function InviteUserDialog() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('crew');
-  const { toast } = useToast();
   
-  const createInvitation = useCreateInvitation();
+  const inviteUser = useInviteUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const result = await createInvitation.mutateAsync({ email, role });
-    
-    if (result.token) {
-      // Copy invite link to clipboard
-      const inviteUrl = `${window.location.origin}/accept-invite?token=${encodeURIComponent(result.token)}`;
-      await navigator.clipboard.writeText(inviteUrl);
-      toast({
-        title: 'Invite link copied!',
-        description: 'Send this link to the user to complete their registration.',
-      });
-    }
+    await inviteUser.mutateAsync({ email, role });
     
     setOpen(false);
     setEmail('');
@@ -132,7 +134,7 @@ function InviteUserDialog() {
         <DialogHeader>
           <DialogTitle>Invite New User</DialogTitle>
           <DialogDescription>
-            Send an invitation to add a new team member. They'll receive a link to create their account.
+            Create an account and send an invitation email. The user will be able to set their password when they click the link.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -171,8 +173,8 @@ function InviteUserDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createInvitation.isPending}>
-              {createInvitation.isPending ? 'Sending...' : 'Send Invitation'}
+            <Button type="submit" disabled={inviteUser.isPending}>
+              {inviteUser.isPending ? 'Sending...' : 'Send Invitation'}
             </Button>
           </DialogFooter>
         </form>
@@ -284,14 +286,8 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
   const resendInvitation = useResendInvitation();
   const revokeInvitation = useRevokeInvitation();
 
-  const copyInviteLink = async (token: string) => {
-    const inviteUrl = `${window.location.origin}/accept-invite?token=${encodeURIComponent(token)}`;
-    await navigator.clipboard.writeText(inviteUrl);
-    toast({
-      title: 'Link copied',
-      description: 'Invitation link copied to clipboard.',
-    });
-  };
+  const canResend = (status: string) => status === 'pending' || status === 'failed';
+  const canRevoke = (status: string) => status === 'pending' || status === 'emailed';
 
   return (
     <Table>
@@ -301,7 +297,7 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
           <TableHead>Role</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Invited By</TableHead>
-          <TableHead>Expires</TableHead>
+          <TableHead>Created</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
@@ -309,77 +305,73 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
         {invitations.length === 0 ? (
           <TableRow>
             <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-              No pending invitations
+              No invitations
             </TableCell>
           </TableRow>
         ) : (
-          invitations.map((invite) => {
-            const isExpired = isPast(new Date(invite.expires_at));
-            const canResend = invite.status === 'pending' || invite.status === 'sent' || invite.status === 'expired';
-            const canRevoke = invite.status === 'pending' || invite.status === 'sent';
-
-            return (
-              <TableRow key={invite.id}>
-                <TableCell className="font-medium">{invite.email}</TableCell>
-                <TableCell>
-                  <Badge variant={getRoleBadgeVariant(invite.role)}>
-                    {invite.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(invite.status)} className="gap-1">
-                    {invite.status === 'pending' && <Clock className="h-3 w-3" />}
-                    {invite.status === 'sent' && <Mail className="h-3 w-3" />}
-                    {invite.status === 'accepted' && <Check className="h-3 w-3" />}
-                    {(invite.status === 'expired' || invite.status === 'revoked') && <AlertCircle className="h-3 w-3" />}
+          invitations.map((invite) => (
+            <TableRow key={invite.id}>
+              <TableCell className="font-medium">{invite.email}</TableCell>
+              <TableCell>
+                <Badge variant={getRoleBadgeVariant(invite.role)}>
+                  {invite.role}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  <Badge variant={getStatusBadgeVariant(invite.status)} className="gap-1 w-fit">
+                    {getStatusIcon(invite.status)}
                     {invite.status}
                   </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {invite.inviter?.full_name || invite.inviter?.email || 'Unknown'}
-                </TableCell>
-                <TableCell className={isExpired ? 'text-destructive' : 'text-muted-foreground'}>
-                  {format(new Date(invite.expires_at), 'MMM d, yyyy')}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {canResend && (
-                        <DropdownMenuItem onClick={() => copyInviteLink(invite.token)}>
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copy Link
-                        </DropdownMenuItem>
-                      )}
-                      {canResend && (
-                        <DropdownMenuItem 
-                          onClick={() => resendInvitation.mutate(invite.id)}
-                          disabled={resendInvitation.isPending}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Resend
-                        </DropdownMenuItem>
-                      )}
-                      {canRevoke && (
-                        <DropdownMenuItem 
-                          onClick={() => revokeInvitation.mutate(invite.id)}
-                          disabled={revokeInvitation.isPending}
-                          className="text-destructive"
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Revoke
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            );
-          })
+                  {invite.error && (
+                    <span className="text-xs text-destructive">{invite.error}</span>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {invite.inviter?.full_name || invite.inviter?.email || 'Unknown'}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {formatDistanceToNow(new Date(invite.created_at), { addSuffix: true })}
+              </TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canResend(invite.status) && (
+                      <DropdownMenuItem 
+                        onClick={() => resendInvitation.mutate(invite.id)}
+                        disabled={resendInvitation.isPending}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        {invite.status === 'failed' ? 'Retry' : 'Send Email'}
+                      </DropdownMenuItem>
+                    )}
+                    {canRevoke(invite.status) && (
+                      <DropdownMenuItem 
+                        onClick={() => revokeInvitation.mutate(invite.id)}
+                        disabled={revokeInvitation.isPending}
+                        className="text-destructive"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Revoke
+                      </DropdownMenuItem>
+                    )}
+                    {invite.status === 'emailed' && (
+                      <DropdownMenuItem disabled className="text-muted-foreground">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Email sent - awaiting user
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))
         )}
       </TableBody>
     </Table>
@@ -390,7 +382,9 @@ export default function UserManagement() {
   const { data: users = [], isLoading: usersLoading } = useUsers();
   const { data: invitations = [], isLoading: invitationsLoading } = useInvitations();
 
-  const pendingInvites = invitations.filter(i => i.status === 'pending' || i.status === 'sent');
+  const pendingInvites = invitations.filter(i => 
+    i.status === 'pending' || i.status === 'emailed' || i.status === 'provisioned'
+  );
 
   return (
     <AppLayout>

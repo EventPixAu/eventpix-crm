@@ -59,7 +59,7 @@ import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
-import AcceptInvite from "./pages/AcceptInvite";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,7 +90,7 @@ function AppRoutes() {
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
-      <Route path="/accept-invite" element={<AcceptInvite />} />
+      
       
       {/* Dashboard - all authenticated users */}
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
