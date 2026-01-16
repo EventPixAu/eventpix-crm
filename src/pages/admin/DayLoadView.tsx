@@ -470,11 +470,23 @@ export default function DayLoadView() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{summary.totalEvents}</div>
             <p className="text-xs text-muted-foreground">Events Today</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold text-primary">{summary.totalCrewAssigned}</div>
+            <p className="text-xs text-muted-foreground">Crew Assigned</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-2xl font-bold">{summary.totalSessions}</div>
+            <p className="text-xs text-muted-foreground">Total Sessions</p>
           </CardContent>
         </Card>
         <Card className={summary.eventsWithWarnings > 0 ? 'border-amber-500/50' : ''}>

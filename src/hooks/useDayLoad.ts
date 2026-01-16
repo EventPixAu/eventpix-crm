@@ -30,6 +30,7 @@ export interface DayLoadEvent {
   has_delivery_method: boolean;
   has_staff: boolean;
   assignment_count: number;
+  session_count: number;
   equipment_allocated: boolean;
   equipment_picked_up: boolean;
   // Guardrail warnings
@@ -150,6 +151,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
         const contacts = event.event_contacts || [];
         const allocations = event.equipment_allocations || [];
         const deliveryRecords = event.delivery_records || [];
+        const session_count = sessions.length || 1;
 
         // Compute readiness indicators
         const has_sessions = sessions.length > 0;
@@ -284,6 +286,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
           has_delivery_method,
           has_staff,
           assignment_count: assignments.length,
+          session_count,
           equipment_allocated,
           equipment_picked_up,
           guardrail_warning_count,
@@ -342,6 +345,23 @@ export function useDayLoadSummary(events: DayLoadEvent[]) {
     .filter(([_, count]) => count > 1)
     .map(([userId]) => userId);
 
+  // Calculate total crew assigned (unique staff across all events)
+  const uniqueStaff = new Set<string>();
+  events.forEach(e => {
+    e.assignments.forEach(a => {
+      if (a.user_id) {
+        uniqueStaff.add(a.user_id);
+      }
+    });
+  });
+  const totalCrewAssigned = uniqueStaff.size;
+
+  // Calculate total assignments (all assignments across all events)
+  const totalAssignments = events.reduce((sum, e) => sum + e.assignment_count, 0);
+
+  // Calculate total sessions (from session_count field or default to 1 per event)
+  const totalSessions = events.reduce((sum, e) => sum + (e.session_count || 1), 0);
+
   return {
     totalEvents,
     eventsWithWarnings,
@@ -353,6 +373,9 @@ export function useDayLoadSummary(events: DayLoadEvent[]) {
     eventsWithMissingDelivery,
     staffWithConflicts: staffWithConflicts.size,
     staffWithMultipleEvents: staffWithMultipleEvents.length,
+    totalCrewAssigned,
+    totalAssignments,
+    totalSessions,
   };
 }
 
