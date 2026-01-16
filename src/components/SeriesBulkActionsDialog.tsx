@@ -106,6 +106,7 @@ export function SeriesBulkActionsDialog({
             eventIds: selectedEventIds,
             eventTypeId,
             overwrite,
+            userId: user?.id,
           });
           break;
 
@@ -115,6 +116,7 @@ export function SeriesBulkActionsDialog({
             eventIds: selectedEventIds,
             deliveryMethodId,
             overwrite,
+            userId: user?.id,
           });
           break;
 
@@ -122,6 +124,7 @@ export function SeriesBulkActionsDialog({
           await bulkSetDeliveryDeadline.mutateAsync({
             eventIds: selectedEventIds,
             daysAfterEvent: parseInt(deadlineDays) || 5,
+            userId: user?.id,
           });
           break;
 

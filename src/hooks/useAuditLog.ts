@@ -160,6 +160,106 @@ export function getActivityDescription(entry: AuditLogEntry): { action: string; 
         action: 'Checklist item ' + (after.is_done ? 'completed' : 'unchecked'),
         detail: after.item_text || 'Task updated',
       };
+
+    case 'guardrail_override':
+      return {
+        action: 'Guardrail override',
+        detail: after.override_type ? `Override: ${after.override_type}` : 'Rules bypassed with justification',
+      };
+
+    case 'quote_token_regenerated':
+      return {
+        action: 'Quote link regenerated',
+        detail: after.success ? 'New public link created' : `Failed: ${after.reason || 'Unknown error'}`,
+      };
+
+    case 'contract_token_regenerated':
+      return {
+        action: 'Contract link regenerated',
+        detail: after.success ? 'New signing link created' : `Failed: ${after.reason || 'Unknown error'}`,
+      };
+
+    case 'quote_accepted_public':
+      return {
+        action: 'Quote accepted',
+        detail: `Accepted by ${after.accepted_by_name || 'client'}`,
+      };
+
+    case 'quote_acceptance_failed':
+      return {
+        action: 'Quote acceptance failed',
+        detail: after.reason || 'Acceptance attempt unsuccessful',
+      };
+
+    case 'contract_accepted_public':
+      return {
+        action: 'Contract signed',
+        detail: `Signed by ${after.signed_by_name || 'client'}`,
+      };
+
+    case 'contract_acceptance_failed':
+      return {
+        action: 'Contract signing failed',
+        detail: after.reason || 'Signing attempt unsuccessful',
+      };
+
+    case 'bulk_update':
+      return {
+        action: 'Bulk update',
+        detail: after.action_type 
+          ? `${after.action_type.replace(/_/g, ' ')} on ${after.event_count || 'multiple'} events`
+          : 'Multiple events updated',
+      };
+
+    case 'note_added':
+      return {
+        action: 'Note added',
+        detail: after.action_type === 'bulk_add_note' 
+          ? `Added to ${after.event_count || 'multiple'} events`
+          : 'Note recorded',
+      };
+
+    case 'assignment_override':
+      return {
+        action: 'Assignment override',
+        detail: 'Staff assigned despite warnings',
+      };
+
+    case 'compliance_override':
+      return {
+        action: 'Compliance override',
+        detail: after.reason || 'Compliance check bypassed',
+      };
+
+    case 'equipment_allocated':
+      return {
+        action: 'Equipment allocated',
+        detail: 'Equipment assigned to event',
+      };
+
+    case 'equipment_pickup_marked':
+      return {
+        action: 'Equipment picked up',
+        detail: 'Marked as collected',
+      };
+
+    case 'equipment_returned':
+      return {
+        action: 'Equipment returned',
+        detail: 'Marked as returned',
+      };
+
+    case 'equipment_flagged_missing':
+      return {
+        action: 'Equipment missing',
+        detail: after.notes || 'Flagged as missing',
+      };
+
+    case 'equipment_flagged_damaged':
+      return {
+        action: 'Equipment damaged',
+        detail: after.notes || 'Flagged as damaged',
+      };
       
     default:
       return {

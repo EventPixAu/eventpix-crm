@@ -2801,6 +2801,14 @@ export type Database = {
         | "equipment_flagged_damaged"
         | "compliance_override"
         | "guardrail_override"
+        | "quote_token_regenerated"
+        | "contract_token_regenerated"
+        | "quote_accepted_public"
+        | "quote_acceptance_failed"
+        | "contract_accepted_public"
+        | "contract_acceptance_failed"
+        | "bulk_update"
+        | "note_added"
       contract_status: "draft" | "sent" | "signed" | "cancelled"
       delivery_method:
         | "dropbox"
@@ -2973,6 +2981,14 @@ export const Constants = {
         "equipment_flagged_damaged",
         "compliance_override",
         "guardrail_override",
+        "quote_token_regenerated",
+        "contract_token_regenerated",
+        "quote_accepted_public",
+        "quote_acceptance_failed",
+        "contract_accepted_public",
+        "contract_acceptance_failed",
+        "bulk_update",
+        "note_added",
       ],
       contract_status: ["draft", "sent", "signed", "cancelled"],
       delivery_method: [
