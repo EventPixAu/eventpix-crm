@@ -54,6 +54,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { useDayLoadEvents, useDayLoadSummary, useDayLoadFilterOptions, type DayLoadEvent, type DayLoadAssignment } from '@/hooks/useDayLoad';
 import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
+import { EscalationBannersCompact } from '@/components/EscalationBanners';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 

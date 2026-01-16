@@ -31,6 +31,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { NeedsAttentionQueue } from '@/components/NeedsAttentionQueue';
+import { EscalationBanners } from '@/components/EscalationBanners';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 
@@ -85,6 +86,9 @@ export default function Dashboard() {
           )
         }
       />
+
+      {/* Escalation Banners - Admin Only */}
+      {isAdmin && <EscalationBanners maxItems={3} />}
 
       {/* Stats Grid - Admin Only */}
       {isAdmin && (
