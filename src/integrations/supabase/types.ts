@@ -266,6 +266,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           id: string
+          is_training: boolean | null
           notes: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
@@ -278,6 +279,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          is_training?: boolean | null
           notes?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
@@ -290,6 +292,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+          is_training?: boolean | null
           notes?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
@@ -1192,6 +1195,7 @@ export type Database = {
           invoice_paid_at: string | null
           invoice_reference: string | null
           invoice_status: string | null
+          is_training: boolean | null
           job_intake_id: string | null
           lead_id: string | null
           notes: string | null
@@ -1233,6 +1237,7 @@ export type Database = {
           invoice_paid_at?: string | null
           invoice_reference?: string | null
           invoice_status?: string | null
+          is_training?: boolean | null
           job_intake_id?: string | null
           lead_id?: string | null
           notes?: string | null
@@ -1274,6 +1279,7 @@ export type Database = {
           invoice_paid_at?: string | null
           invoice_reference?: string | null
           invoice_status?: string | null
+          is_training?: boolean | null
           job_intake_id?: string | null
           lead_id?: string | null
           notes?: string | null
@@ -1641,6 +1647,7 @@ export type Database = {
           estimated_event_date: string | null
           event_type_id: string | null
           id: string
+          is_training: boolean | null
           lead_name: string
           notes: string | null
           source: string | null
@@ -1655,6 +1662,7 @@ export type Database = {
           estimated_event_date?: string | null
           event_type_id?: string | null
           id?: string
+          is_training?: boolean | null
           lead_name: string
           notes?: string | null
           source?: string | null
@@ -1669,6 +1677,7 @@ export type Database = {
           estimated_event_date?: string | null
           event_type_id?: string | null
           id?: string
+          is_training?: boolean | null
           lead_name?: string
           notes?: string | null
           source?: string | null
@@ -1824,6 +1833,7 @@ export type Database = {
           home_city: string | null
           home_state: string | null
           id: string
+          is_training: boolean | null
           notes_internal: string | null
           notification_preferences: Json | null
           onboarding_notes: string | null
@@ -1846,6 +1856,7 @@ export type Database = {
           home_city?: string | null
           home_state?: string | null
           id: string
+          is_training?: boolean | null
           notes_internal?: string | null
           notification_preferences?: Json | null
           onboarding_notes?: string | null
@@ -1868,6 +1879,7 @@ export type Database = {
           home_city?: string | null
           home_state?: string | null
           id?: string
+          is_training?: boolean | null
           notes_internal?: string | null
           notification_preferences?: Json | null
           onboarding_notes?: string | null
