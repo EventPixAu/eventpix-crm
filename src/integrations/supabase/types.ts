@@ -184,7 +184,10 @@ export type Database = {
           is_primary: boolean | null
           notes: string | null
           phone: string | null
+          phone_mobile: string | null
+          phone_office: string | null
           role: string | null
+          role_title: string | null
         }
         Insert: {
           client_id: string
@@ -195,7 +198,10 @@ export type Database = {
           is_primary?: boolean | null
           notes?: string | null
           phone?: string | null
+          phone_mobile?: string | null
+          phone_office?: string | null
           role?: string | null
+          role_title?: string | null
         }
         Update: {
           client_id?: string
@@ -206,7 +212,10 @@ export type Database = {
           is_primary?: boolean | null
           notes?: string | null
           phone?: string | null
+          phone_mobile?: string | null
+          phone_office?: string | null
           role?: string | null
+          role_title?: string | null
         }
         Relationships: [
           {
@@ -768,6 +777,60 @@ export type Database = {
           },
         ]
       }
+      event_contacts: {
+        Row: {
+          client_contact_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_type: string
+          created_at: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          client_contact_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_type?: string
+          created_at?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          client_contact_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_type?: string
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_contacts_client_contact_id_fkey"
+            columns: ["client_contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_contacts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_notes: {
         Row: {
           content: string
@@ -876,6 +939,69 @@ export type Database = {
             columns: ["event_type_id"]
             isOneToOne: false
             referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_sessions: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          event_id: string | null
+          id: string
+          label: string | null
+          lead_id: string | null
+          notes: string | null
+          session_date: string
+          sort_order: number | null
+          start_time: string | null
+          updated_at: string | null
+          venue_address: string | null
+          venue_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          event_id?: string | null
+          id?: string
+          label?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          session_date: string
+          sort_order?: number | null
+          start_time?: string | null
+          updated_at?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          event_id?: string | null
+          id?: string
+          label?: string | null
+          lead_id?: string | null
+          notes?: string | null
+          session_date?: string
+          sort_order?: number | null
+          start_time?: string | null
+          updated_at?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]

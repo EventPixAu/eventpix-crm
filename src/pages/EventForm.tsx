@@ -30,6 +30,8 @@ import { EventLockBanner } from '@/components/EventLockBanner';
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useEventLocking } from '@/hooks/useGuardrails';
 import { useAuth } from '@/lib/auth';
+import { EventSessionsEditor } from '@/components/EventSessionsEditor';
+import { EventContactsEditor } from '@/components/EventContactsEditor';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -441,8 +443,25 @@ export default function EventForm() {
                     </FormItem>
                   )}
                 />
-              </div>
             </div>
+
+            {/* Sessions Section - only show when editing */}
+            {isEditing && id && (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <EventSessionsEditor eventId={id} disabled={isFormLocked} />
+              </div>
+            )}
+
+            {/* Event Contacts Section - only show when editing */}
+            {isEditing && id && (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <EventContactsEditor 
+                  eventId={id} 
+                  clientId={event?.client_id} 
+                  disabled={isFormLocked} 
+                />
+              </div>
+            )}
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
               <h3 className="font-display font-semibold">Additional Details</h3>
