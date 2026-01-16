@@ -45,6 +45,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import eventpixLogo from '@/assets/eventpix-logo.png';
+import { NotificationBell } from '@/components/NotificationBell';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -188,7 +189,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center gap-2">
             <img src={eventpixLogo} alt="Eventpix" className="h-6" />
           </div>
-          <div className="w-9" />
+          <NotificationBell />
         </div>
       </header>
 
@@ -257,8 +258,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:flex lg:h-screen lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
-        <div className="flex items-center gap-2 p-6 border-b border-sidebar-border">
+        <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
           <img src={eventpixLogo} alt="Eventpix" className="h-8" />
+          <NotificationBell />
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

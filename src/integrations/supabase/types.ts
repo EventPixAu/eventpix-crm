@@ -1683,6 +1683,56 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          delivery_channel: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          message: string
+          severity: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_channel?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          severity?: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_channel?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          severity?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           created_at: string | null
@@ -1760,6 +1810,7 @@ export type Database = {
           created_at: string | null
           default_role_id: string | null
           email: string
+          email_notifications_enabled: boolean | null
           full_name: string | null
           home_city: string | null
           home_state: string | null
@@ -1781,6 +1832,7 @@ export type Database = {
           created_at?: string | null
           default_role_id?: string | null
           email: string
+          email_notifications_enabled?: boolean | null
           full_name?: string | null
           home_city?: string | null
           home_state?: string | null
@@ -1802,6 +1854,7 @@ export type Database = {
           created_at?: string | null
           default_role_id?: string | null
           email?: string
+          email_notifications_enabled?: boolean | null
           full_name?: string | null
           home_city?: string | null
           home_state?: string | null
@@ -2676,6 +2729,19 @@ export type Database = {
         }[]
       }
       check_staff_eligibility: { Args: { p_user_id: string }; Returns: Json }
+      create_notification: {
+        Args: {
+          p_dedupe_hours?: number
+          p_entity_id?: string
+          p_entity_type?: string
+          p_message: string
+          p_severity?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       expire_compliance_documents: { Args: never; Returns: number }
       has_role: {
         Args: {
