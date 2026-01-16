@@ -457,6 +457,30 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       contract_acceptance_attempts: {
         Row: {
           attempt_at: string
@@ -1835,6 +1859,30 @@ export type Database = {
           },
         ]
       }
+      lead_sources: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       lead_workflow_items: {
         Row: {
           created_at: string | null
@@ -1895,6 +1943,7 @@ export type Database = {
           id: string
           is_training: boolean | null
           lead_name: string
+          lead_source_id: string | null
           lost_reason_id: string | null
           notes: string | null
           owner_priority: string | null
@@ -1916,6 +1965,7 @@ export type Database = {
           id?: string
           is_training?: boolean | null
           lead_name: string
+          lead_source_id?: string | null
           lost_reason_id?: string | null
           notes?: string | null
           owner_priority?: string | null
@@ -1937,6 +1987,7 @@ export type Database = {
           id?: string
           is_training?: boolean | null
           lead_name?: string
+          lead_source_id?: string | null
           lost_reason_id?: string | null
           notes?: string | null
           owner_priority?: string | null
@@ -1960,6 +2011,13 @@ export type Database = {
             columns: ["event_type_id"]
             isOneToOne: false
             referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_lead_source_id_fkey"
+            columns: ["lead_source_id"]
+            isOneToOne: false
+            referencedRelation: "lead_sources"
             referencedColumns: ["id"]
           },
           {
@@ -2121,9 +2179,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          assigned_equipment_notes: string | null
           avatar_url: string | null
           created_at: string | null
           default_role_id: string | null
+          dietary_requirements: string | null
           email: string
           email_notifications_enabled: boolean | null
           full_name: string | null
@@ -2143,11 +2203,14 @@ export type Database = {
           status: string | null
           travel_ready: boolean | null
           updated_at: string | null
+          vehicle_registration: string | null
         }
         Insert: {
+          assigned_equipment_notes?: string | null
           avatar_url?: string | null
           created_at?: string | null
           default_role_id?: string | null
+          dietary_requirements?: string | null
           email: string
           email_notifications_enabled?: boolean | null
           full_name?: string | null
@@ -2167,11 +2230,14 @@ export type Database = {
           status?: string | null
           travel_ready?: boolean | null
           updated_at?: string | null
+          vehicle_registration?: string | null
         }
         Update: {
+          assigned_equipment_notes?: string | null
           avatar_url?: string | null
           created_at?: string | null
           default_role_id?: string | null
+          dietary_requirements?: string | null
           email?: string
           email_notifications_enabled?: boolean | null
           full_name?: string | null
@@ -2191,6 +2257,7 @@ export type Database = {
           status?: string | null
           travel_ready?: boolean | null
           updated_at?: string | null
+          vehicle_registration?: string | null
         }
         Relationships: [
           {

@@ -43,6 +43,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useClient, useUpdateClient, useDeleteClient } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
+import { ClientContactsEditor } from '@/components/ClientContactsEditor';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -254,48 +255,11 @@ export default function ClientDetail() {
 
         <TabsContent value="contacts">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Contacts</CardTitle>
-              <CardDescription>People associated with this client</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!(client as any).contacts || (client as any).contacts.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                  No additional contacts recorded
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {((client as any).contacts || []).map((contact: any) => (
-                    <div key={contact.id} className="p-3 border rounded-lg bg-card">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-medium">{contact.contact_name}</h4>
-                          {contact.role && (
-                            <Badge variant="outline" className="mt-1">{contact.role}</Badge>
-                          )}
-                        </div>
-                        {contact.is_primary && (
-                          <Badge>Primary</Badge>
-                        )}
-                      </div>
-                      <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                        {contact.email && (
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-3 w-3" />
-                            {contact.email}
-                          </div>
-                        )}
-                        {contact.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-3 w-3" />
-                            {contact.phone}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <CardContent className="pt-6">
+              <ClientContactsEditor 
+                clientId={id} 
+                contacts={(client as any).client_contacts || []} 
+              />
             </CardContent>
           </Card>
         </TabsContent>

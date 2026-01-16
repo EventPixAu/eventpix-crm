@@ -12,6 +12,8 @@ import {
   Truck,
   Box,
   Beaker,
+  Users,
+  Target,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -34,6 +36,16 @@ import {
   useUpdateEquipmentCategory,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
+import {
+  useAllContactRoles,
+  useCreateContactRole,
+  useUpdateContactRole,
+} from '@/hooks/useContactRoles';
+import {
+  useAllLeadSources,
+  useCreateLeadSource,
+  useUpdateLeadSource,
+} from '@/hooks/useLeadSources';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
@@ -295,6 +307,16 @@ export default function AdminLookups() {
   const createCategory = useCreateEquipmentCategory();
   const updateCategory = useUpdateEquipmentCategory();
 
+  // Contact Roles
+  const { data: contactRoles = [], isLoading: contactRolesLoading } = useAllContactRoles();
+  const createContactRole = useCreateContactRole();
+  const updateContactRole = useUpdateContactRole();
+
+  // Lead Sources
+  const { data: leadSources = [], isLoading: leadSourcesLoading } = useAllLeadSources();
+  const createLeadSource = useCreateLeadSource();
+  const updateLeadSource = useUpdateLeadSource();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -309,7 +331,7 @@ export default function AdminLookups() {
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Tabs defaultValue="event-types">
           <div className="border-b border-border bg-muted/30">
-            <TabsList className="w-full justify-start rounded-none border-0 h-auto p-0">
+            <TabsList className="w-full justify-start rounded-none border-0 h-auto p-0 flex-wrap">
               <TabsTrigger 
                 value="event-types" 
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
@@ -329,14 +351,28 @@ export default function AdminLookups() {
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
               >
                 <Box className="h-4 w-4 mr-2" />
-                Equipment Categories
+                Equipment
+              </TabsTrigger>
+              <TabsTrigger 
+                value="contact-roles"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Contact Roles
+              </TabsTrigger>
+              <TabsTrigger 
+                value="lead-sources"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+              >
+                <Target className="h-4 w-4 mr-2" />
+                Lead Sources
               </TabsTrigger>
               <TabsTrigger 
                 value="training-tools"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
               >
                 <Beaker className="h-4 w-4 mr-2" />
-                Training Tools
+                Training
               </TabsTrigger>
             </TabsList>
           </div>
@@ -375,6 +411,30 @@ export default function AdminLookups() {
                 createPending={createCategory.isPending}
                 updatePending={updateCategory.isPending}
                 itemLabel="Equipment Category"
+              />
+            </TabsContent>
+
+            <TabsContent value="contact-roles" className="m-0">
+              <LookupTable
+                items={contactRoles}
+                isLoading={contactRolesLoading}
+                onCreate={async (name) => { await createContactRole.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateContactRole.mutateAsync({ id, ...updates }); }}
+                createPending={createContactRole.isPending}
+                updatePending={updateContactRole.isPending}
+                itemLabel="Contact Role"
+              />
+            </TabsContent>
+
+            <TabsContent value="lead-sources" className="m-0">
+              <LookupTable
+                items={leadSources}
+                isLoading={leadSourcesLoading}
+                onCreate={async (name) => { await createLeadSource.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateLeadSource.mutateAsync({ id, ...updates }); }}
+                createPending={createLeadSource.isPending}
+                updatePending={updateLeadSource.isPending}
+                itemLabel="Lead Source"
               />
             </TabsContent>
 
