@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { RoleGuard, AdminGuard, SalesGuard, ExecutiveGuard, PhotographerGuard } from "@/components/RoleGuard";
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -55,6 +56,8 @@ import SalesWorkflowTemplates from "./pages/sales/SalesWorkflowTemplates";
 import LeadDetail from "./pages/sales/LeadDetail";
 import ContractTemplates from "./pages/admin/ContractTemplates";
 import DayLoadView from "./pages/admin/DayLoadView";
+import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
+import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,59 +83,74 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public routes - no auth required */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
+      
+      {/* Dashboard - all authenticated users */}
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-      <Route path="/events/new" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
-      <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
-      <Route path="/events/:id/edit" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
-      <Route path="/events/:id/worksheets" element={<ProtectedRoute><EventWorksheets /></ProtectedRoute>} />
-      <Route path="/events/:id/day-of" element={<ProtectedRoute><EventDayOf /></ProtectedRoute>} />
-      <Route path="/events/:id/run-sheet" element={<ProtectedRoute><EventRunSheet /></ProtectedRoute>} />
-      <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
-      <Route path="/staff/:id" element={<ProtectedRoute><StaffDetail /></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
-      <Route path="/calendar/day" element={<ProtectedRoute><CalendarDayView /></ProtectedRoute>} />
-      <Route path="/my-calendar" element={<ProtectedRoute><MyCalendar /></ProtectedRoute>} />
-      <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
-      <Route path="/admin/workflows" element={<ProtectedRoute><WorkflowsList /></ProtectedRoute>} />
-      <Route path="/admin/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
-      <Route path="/admin/event-types" element={<ProtectedRoute><EventTypeDefaults /></ProtectedRoute>} />
-      <Route path="/admin/series" element={<ProtectedRoute><EventSeriesList /></ProtectedRoute>} />
-      <Route path="/admin/series/:id" element={<ProtectedRoute><EventSeriesDetail /></ProtectedRoute>} />
-      <Route path="/executive/dashboard" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
-      <Route path="/admin/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
-      <Route path="/admin/invoices" element={<ProtectedRoute><InvoiceSync /></ProtectedRoute>} />
-      <Route path="/admin/margins" element={<ProtectedRoute><MarginReport /></ProtectedRoute>} />
-      <Route path="/admin/lookups" element={<ProtectedRoute><AdminLookups /></ProtectedRoute>} />
-      <Route path="/admin/day-load" element={<ProtectedRoute><DayLoadView /></ProtectedRoute>} />
-      <Route path="/delivery" element={<ProtectedRoute><Delivery /></ProtectedRoute>} />
-      <Route path="/job-intake" element={<ProtectedRoute><JobIntakeList /></ProtectedRoute>} />
-      <Route path="/job-intake/:id" element={<ProtectedRoute><JobIntakeDetail /></ProtectedRoute>} />
+      
+      {/* Admin-only routes */}
+      <Route path="/events" element={<ProtectedRoute><AdminGuard><Events /></AdminGuard></ProtectedRoute>} />
+      <Route path="/events/new" element={<ProtectedRoute><AdminGuard><EventForm /></AdminGuard></ProtectedRoute>} />
+      <Route path="/events/:id" element={<ProtectedRoute><AdminGuard><EventDetail /></AdminGuard></ProtectedRoute>} />
+      <Route path="/events/:id/edit" element={<ProtectedRoute><AdminGuard><EventForm /></AdminGuard></ProtectedRoute>} />
+      <Route path="/events/:id/worksheets" element={<ProtectedRoute><AdminGuard><EventWorksheets /></AdminGuard></ProtectedRoute>} />
+      <Route path="/events/:id/day-of" element={<ProtectedRoute><AdminGuard><EventDayOf /></AdminGuard></ProtectedRoute>} />
+      <Route path="/events/:id/run-sheet" element={<ProtectedRoute><AdminGuard><EventRunSheet /></AdminGuard></ProtectedRoute>} />
+      <Route path="/staff" element={<ProtectedRoute><AdminGuard><Staff /></AdminGuard></ProtectedRoute>} />
+      <Route path="/staff/:id" element={<ProtectedRoute><AdminGuard><StaffDetail /></AdminGuard></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><AdminGuard><CalendarView /></AdminGuard></ProtectedRoute>} />
+      <Route path="/calendar/day" element={<ProtectedRoute><AdminGuard><CalendarDayView /></AdminGuard></ProtectedRoute>} />
+      <Route path="/workflows" element={<ProtectedRoute><AdminGuard><Workflows /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/workflows" element={<ProtectedRoute><AdminGuard><WorkflowsList /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/workflows/:id" element={<ProtectedRoute><AdminGuard><WorkflowDetail /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/event-types" element={<ProtectedRoute><AdminGuard><EventTypeDefaults /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/series" element={<ProtectedRoute><AdminGuard><EventSeriesList /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/series/:id" element={<ProtectedRoute><AdminGuard><EventSeriesDetail /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/invoices" element={<ProtectedRoute><AdminGuard><InvoiceSync /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/margins" element={<ProtectedRoute><AdminGuard><MarginReport /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/lookups" element={<ProtectedRoute><AdminGuard><AdminLookups /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/day-load" element={<ProtectedRoute><AdminGuard><DayLoadView /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/delivery-metrics" element={<ProtectedRoute><AdminGuard><DeliveryMetrics /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/photographer-trends" element={<ProtectedRoute><AdminGuard><PhotographerTrends /></AdminGuard></ProtectedRoute>} />
+      <Route path="/delivery" element={<ProtectedRoute><AdminGuard><Delivery /></AdminGuard></ProtectedRoute>} />
+      <Route path="/job-intake" element={<ProtectedRoute><AdminGuard><JobIntakeList /></AdminGuard></ProtectedRoute>} />
+      <Route path="/job-intake/:id" element={<ProtectedRoute><AdminGuard><JobIntakeDetail /></AdminGuard></ProtectedRoute>} />
+      <Route path="/equipment" element={<ProtectedRoute><AdminGuard><Equipment /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
+      
+      {/* Executive routes - admin + executive */}
+      <Route path="/executive/dashboard" element={<ProtectedRoute><ExecutiveGuard><ExecutiveDashboard /></ExecutiveGuard></ProtectedRoute>} />
+      <Route path="/admin/executive" element={<ProtectedRoute><ExecutiveGuard><ExecutiveDashboard /></ExecutiveGuard></ProtectedRoute>} />
+      
+      {/* Sales routes - admin + sales */}
+      <Route path="/sales/clients" element={<ProtectedRoute><SalesGuard><ClientList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/clients/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/leads" element={<ProtectedRoute><SalesGuard><LeadList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/leads/:id" element={<ProtectedRoute><SalesGuard><LeadDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/quotes" element={<ProtectedRoute><SalesGuard><QuoteList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/quotes/:id" element={<ProtectedRoute><SalesGuard><QuoteDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/products" element={<ProtectedRoute><SalesGuard><ProductList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/pipeline" element={<ProtectedRoute><SalesGuard><PipelineView /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/contracts" element={<ProtectedRoute><SalesGuard><ContractList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/contracts/:id" element={<ProtectedRoute><SalesGuard><ContractDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/templates" element={<ProtectedRoute><SalesGuard><QuoteTemplates /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/workflow-templates" element={<ProtectedRoute><SalesGuard><SalesWorkflowTemplates /></SalesGuard></ProtectedRoute>} />
+      <Route path="/quote/:id/proposal" element={<ProtectedRoute><SalesGuard><ProposalView /></SalesGuard></ProtectedRoute>} />
+      
+      {/* Photographer routes - admin + photographer */}
+      <Route path="/my-calendar" element={<ProtectedRoute><PhotographerGuard><MyCalendar /></PhotographerGuard></ProtectedRoute>} />
+      <Route path="/my-availability" element={<ProtectedRoute><PhotographerGuard><MyAvailability /></PhotographerGuard></ProtectedRoute>} />
+      <Route path="/my-documents" element={<ProtectedRoute><PhotographerGuard><MyDocuments /></PhotographerGuard></ProtectedRoute>} />
+      <Route path="/my-job-sheets" element={<ProtectedRoute><PhotographerGuard><MyJobSheets /></PhotographerGuard></ProtectedRoute>} />
+      
+      {/* Common routes - all authenticated users */}
       <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
-      <Route path="/my-availability" element={<ProtectedRoute><MyAvailability /></ProtectedRoute>} />
-      <Route path="/my-documents" element={<ProtectedRoute><MyDocuments /></ProtectedRoute>} />
-      <Route path="/my-job-sheets" element={<ProtectedRoute><MyJobSheets /></ProtectedRoute>} />
       <Route path="/staff/me" element={<ProtectedRoute><StaffMe /></ProtectedRoute>} />
-      <Route path="/equipment" element={<ProtectedRoute><Equipment /></ProtectedRoute>} />
-      {/* Sales Routes */}
-      <Route path="/sales/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
-      <Route path="/sales/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-      <Route path="/sales/leads" element={<ProtectedRoute><LeadList /></ProtectedRoute>} />
-      <Route path="/sales/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-      <Route path="/sales/quotes" element={<ProtectedRoute><QuoteList /></ProtectedRoute>} />
-      <Route path="/sales/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
-      <Route path="/sales/products" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
-      <Route path="/sales/pipeline" element={<ProtectedRoute><PipelineView /></ProtectedRoute>} />
-      <Route path="/sales/contracts" element={<ProtectedRoute><ContractList /></ProtectedRoute>} />
-      <Route path="/sales/contracts/:id" element={<ProtectedRoute><ContractDetail /></ProtectedRoute>} />
-      <Route path="/sales/templates" element={<ProtectedRoute><QuoteTemplates /></ProtectedRoute>} />
-      <Route path="/sales/workflow-templates" element={<ProtectedRoute><SalesWorkflowTemplates /></ProtectedRoute>} />
-      <Route path="/admin/contract-templates" element={<ProtectedRoute><ContractTemplates /></ProtectedRoute>} />
-      <Route path="/quote/:id/proposal" element={<ProtectedRoute><ProposalView /></ProtectedRoute>} />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
