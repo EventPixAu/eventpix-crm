@@ -1392,11 +1392,13 @@ export type Database = {
           coverage_package_id: string | null
           created_at: string | null
           created_by: string | null
+          date_status: string | null
           delivery_deadline: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
           delivery_method_id: string | null
           end_at: string | null
           end_time: string | null
+          enquiry_source: string | null
           event_date: string
           event_name: string
           event_series_id: string | null
@@ -1436,6 +1438,7 @@ export type Database = {
           coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          date_status?: string | null
           delivery_deadline?: string | null
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
@@ -1443,6 +1446,7 @@ export type Database = {
           delivery_method_id?: string | null
           end_at?: string | null
           end_time?: string | null
+          enquiry_source?: string | null
           event_date: string
           event_name: string
           event_series_id?: string | null
@@ -1482,6 +1486,7 @@ export type Database = {
           coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          date_status?: string | null
           delivery_deadline?: string | null
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
@@ -1489,6 +1494,7 @@ export type Database = {
           delivery_method_id?: string | null
           end_at?: string | null
           end_time?: string | null
+          enquiry_source?: string | null
           event_date?: string
           event_name?: string
           event_series_id?: string | null
@@ -3231,6 +3237,23 @@ export type Database = {
         }[]
       }
       check_staff_eligibility: { Args: { p_user_id: string }; Returns: Json }
+      convert_enquiry_to_event: {
+        Args: {
+          p_coverage_package_id?: string
+          p_date_status?: string
+          p_delivery_deadline?: string
+          p_end_time?: string
+          p_event_date?: string
+          p_event_name: string
+          p_lead_id: string
+          p_special_instructions?: string
+          p_start_time?: string
+          p_venue_address?: string
+          p_venue_id?: string
+          p_venue_name?: string
+        }
+        Returns: Json
+      }
       create_notification: {
         Args: {
           p_dedupe_hours?: number
@@ -3312,6 +3335,12 @@ export type Database = {
         | "contract_acceptance_failed"
         | "bulk_update"
         | "note_added"
+        | "enquiry_won"
+        | "event_created_from_enquiry"
+        | "workflow_pack_applied"
+        | "tasks_created"
+        | "venue_created_or_linked"
+        | "event_cancelled"
       contract_status: "draft" | "sent" | "signed" | "cancelled"
       delivery_method:
         | "dropbox"
@@ -3492,6 +3521,12 @@ export const Constants = {
         "contract_acceptance_failed",
         "bulk_update",
         "note_added",
+        "enquiry_won",
+        "event_created_from_enquiry",
+        "workflow_pack_applied",
+        "tasks_created",
+        "venue_created_or_linked",
+        "event_cancelled",
       ],
       contract_status: ["draft", "sent", "signed", "cancelled"],
       delivery_method: [

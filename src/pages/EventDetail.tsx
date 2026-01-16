@@ -54,6 +54,7 @@ import { EventEquipmentPanel } from '@/components/EventEquipmentPanel';
 import { SessionsDisplay } from '@/components/SessionsDisplay';
 import { useEventContacts } from '@/hooks/useEventContacts';
 import { VenueAddressLink } from '@/components/VenueAddressLink';
+import { EventTasksCard } from '@/components/EventTasksCard';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -350,7 +351,9 @@ export default function EventDetail() {
                 </div>
               </div>
 
-              {/* Status Management (Admin Only) */}
+              {/* Setup Tasks */}
+              {isAdmin && id && <EventTasksCard eventId={id} />}
+
               {isAdmin && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <h2 className="text-lg font-display font-semibold mb-4">Status</h2>
