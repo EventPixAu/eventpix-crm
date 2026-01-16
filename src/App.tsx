@@ -102,6 +102,7 @@ function AppRoutes() {
       <Route path="/admin/event-types" element={<ProtectedRoute><EventTypeDefaults /></ProtectedRoute>} />
       <Route path="/admin/series" element={<ProtectedRoute><EventSeriesList /></ProtectedRoute>} />
       <Route path="/admin/series/:id" element={<ProtectedRoute><EventSeriesDetail /></ProtectedRoute>} />
+      <Route path="/executive/dashboard" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
       <Route path="/admin/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
       <Route path="/admin/invoices" element={<ProtectedRoute><InvoiceSync /></ProtectedRoute>} />
       <Route path="/admin/margins" element={<ProtectedRoute><MarginReport /></ProtectedRoute>} />

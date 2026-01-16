@@ -62,7 +62,7 @@ interface AppLayoutProps {
  */
 const adminNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/admin/executive', label: 'Executive', icon: BarChart3 },
+  { href: '/executive/dashboard', label: 'Executive', icon: BarChart3 },
   // Sales Section
   { href: '/sales/clients', label: 'Clients', icon: Building2 },
   { href: '/sales/leads', label: 'Leads', icon: Target },
@@ -88,6 +88,22 @@ const adminNavItems = [
   // Finance (Admin Only)
   { href: '/admin/invoices', label: 'Invoices', icon: DollarSign },
   { href: '/admin/margins', label: 'Margins', icon: BarChart3 },
+];
+
+/**
+ * EXECUTIVE NAVIGATION - Read-Only Dashboard Access
+ * 
+ * Executives can ONLY access:
+ * - Executive Dashboard (health, risk, scale indicators)
+ * - Read-only event viewing
+ * 
+ * Executives CANNOT:
+ * - Edit anything
+ * - Access rates, invoices, personal staff documents
+ */
+const executiveNavItems = [
+  { href: '/executive/dashboard', label: 'Dashboard', icon: BarChart3 },
+  { href: '/staff/me', label: 'My Profile', icon: User },
 ];
 
 /**
@@ -139,16 +155,18 @@ const photographerNavItems = [
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut, isAdmin, isSales, role } = useAuth();
+  const { user, signOut, isAdmin, isSales, isExecutive, role } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   // Role-based navigation selection
   const navItems = isAdmin 
     ? adminNavItems 
-    : isSales 
-      ? salesNavItems 
-      : photographerNavItems;
+    : isExecutive
+      ? executiveNavItems
+      : isSales 
+        ? salesNavItems 
+        : photographerNavItems;
 
   const handleSignOut = async () => {
     await signOut();

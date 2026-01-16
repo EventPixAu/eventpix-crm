@@ -2688,6 +2688,8 @@ export type Database = {
         Args: { _event_id: string; _user_id: string }
         Returns: boolean
       }
+      is_executive: { Args: { _user_id: string }; Returns: boolean }
+      is_executive_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_photographer: { Args: { _user_id: string }; Returns: boolean }
       log_audit_entry: {
         Args: {
@@ -2708,7 +2710,7 @@ export type Database = {
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "photographer" | "sales"
+      app_role: "admin" | "photographer" | "sales" | "executive"
       audit_action:
         | "event_created"
         | "event_updated"
@@ -2880,7 +2882,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "photographer", "sales"],
+      app_role: ["admin", "photographer", "sales", "executive"],
       audit_action: [
         "event_created",
         "event_updated",
