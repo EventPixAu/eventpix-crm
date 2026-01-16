@@ -68,7 +68,6 @@ import {
   useSeriesNeedsAttention,
 } from '@/hooks/useSeriesControlCentre';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
-import { useProfiles } from '@/hooks/useStaff';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
 import { StaffingForecast } from '@/components/StaffingForecast';
@@ -93,7 +92,6 @@ export default function EventSeriesDetail() {
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
-  const { data: profiles = [] } = useProfiles();
   
   const updateSeries = useUpdateEventSeries();
   

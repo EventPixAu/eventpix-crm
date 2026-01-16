@@ -62,7 +62,35 @@ export function useStaffRoles() {
   });
 }
 
-// Fetch all profiles for assignment
+// Staff directory interface (non-sensitive fields only)
+export interface StaffDirectoryEntry {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  default_role_id: string | null;
+  status: string | null;
+  is_active: boolean | null;
+}
+
+// Fetch staff directory (limited fields for general use - team lists, dropdowns)
+// Uses staff_directory view which exposes only non-sensitive fields
+export function useStaffDirectory() {
+  return useQuery({
+    queryKey: ['staff-directory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_directory')
+        .select('*')
+        .order('full_name');
+      
+      if (error) throw error;
+      return data as StaffDirectoryEntry[];
+    },
+  });
+}
+
+// Fetch all profiles for admin/ops contexts that need full profile data
+// This relies on RLS to restrict access to admin/ops/sales roles
 export function useProfiles() {
   return useQuery({
     queryKey: ['profiles'],
