@@ -384,7 +384,7 @@ export default function EventSeriesDetail() {
               title="Unassigned"
               value={coverageStats.missingAny.length}
               icon={Users}
-              variant={coverageStats.missingAny.length > 0 ? 'destructive' : 'success'}
+              variant={coverageStats.missingAny.length > 0 ? 'warning' : 'success'}
             />
           </div>
 
@@ -455,7 +455,7 @@ export default function EventSeriesDetail() {
               title="No Staff"
               value={coverageStats.missingAny.length}
               icon={Users}
-              variant={coverageStats.missingAny.length > 0 ? 'destructive' : 'success'}
+              variant={coverageStats.missingAny.length > 0 ? 'warning' : 'success'}
             />
             <StatCard
               title="Missing Lead"
@@ -473,7 +473,7 @@ export default function EventSeriesDetail() {
               title="Conflicts"
               value={coverageStats.conflicts.length}
               icon={AlertTriangle}
-              variant={coverageStats.conflicts.length > 0 ? 'destructive' : 'success'}
+              variant={coverageStats.conflicts.length > 0 ? 'warning' : 'success'}
             />
           </div>
 
@@ -576,7 +576,7 @@ export default function EventSeriesDetail() {
               title="Overdue"
               value={deliveryStats.overdue.length}
               icon={AlertTriangle}
-              variant={deliveryStats.overdue.length > 0 ? 'destructive' : 'success'}
+              variant={deliveryStats.overdue.length > 0 ? 'warning' : 'success'}
             />
             <StatCard
               title="Missing Link"
@@ -924,7 +924,29 @@ export default function EventSeriesDetail() {
       <BulkAssignmentDialog
         open={bulkAssignOpen}
         onOpenChange={setBulkAssignOpen}
-        eventIds={selectedEventIds}
+        selectedEvents={events.filter(e => selectedEventIds.includes(e.id)).map(e => ({
+          id: e.id,
+          event_name: e.event_name,
+          client_name: e.client_name,
+          event_date: e.event_date,
+          start_time: e.start_time,
+          end_time: e.end_time,
+          start_at: e.start_at,
+          end_at: e.end_at,
+          venue_name: e.venue_name,
+          venue_address: e.venue_address,
+          onsite_contact_name: null,
+          onsite_contact_phone: null,
+          event_type_id: e.event_type_id,
+          event_series_id: e.event_series_id,
+          event_series_name: null,
+          delivery_method_id: e.delivery_method_id,
+          delivery_deadline: e.delivery_deadline,
+          assignment_count: 0,
+          has_conflict: false,
+          needs_attention: false,
+          is_delivered: false,
+        }))}
         onComplete={() => {
           setSelectedEventIds([]);
           setBulkAssignOpen(false);
