@@ -654,6 +654,119 @@ export type Database = {
         }
         Relationships: []
       }
+      crew_checklist_items: {
+        Row: {
+          checklist_id: string
+          created_at: string | null
+          done_at: string | null
+          id: string
+          is_done: boolean
+          item_text: string
+          notes: string | null
+          sort_order: number
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string | null
+          done_at?: string | null
+          id?: string
+          is_done?: boolean
+          item_text: string
+          notes?: string | null
+          sort_order?: number
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string | null
+          done_at?: string | null
+          id?: string
+          is_done?: boolean
+          item_text?: string
+          notes?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "crew_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crew_checklist_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          items: Json
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          items?: Json
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          items?: Json
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      crew_checklists: {
+        Row: {
+          created_at: string | null
+          event_id: string
+          id: string
+          template_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id: string
+          id?: string
+          template_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          template_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_checklists_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crew_checklists_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crew_checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_methods_lookup: {
         Row: {
           created_at: string | null
@@ -1411,6 +1524,7 @@ export type Database = {
       events: {
         Row: {
           calendar_sequence: number
+          camera_settings: string | null
           city: string | null
           client_id: string | null
           client_name: string
@@ -1423,6 +1537,7 @@ export type Database = {
           delivery_deadline: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
           delivery_method_id: string | null
+          dress_code: string | null
           end_at: string | null
           end_time: string | null
           enquiry_source: string | null
@@ -1442,6 +1557,7 @@ export type Database = {
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
           ops_status: string | null
+          photography_brief: string | null
           quote_id: string | null
           recommended_kit_id: string | null
           run_sheet_url: string | null
@@ -1459,6 +1575,7 @@ export type Database = {
         }
         Insert: {
           calendar_sequence?: number
+          camera_settings?: string | null
           city?: string | null
           client_id?: string | null
           client_name: string
@@ -1473,6 +1590,7 @@ export type Database = {
             | Database["public"]["Enums"]["delivery_method"]
             | null
           delivery_method_id?: string | null
+          dress_code?: string | null
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
@@ -1492,6 +1610,7 @@ export type Database = {
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
+          photography_brief?: string | null
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
@@ -1509,6 +1628,7 @@ export type Database = {
         }
         Update: {
           calendar_sequence?: number
+          camera_settings?: string | null
           city?: string | null
           client_id?: string | null
           client_name?: string
@@ -1523,6 +1643,7 @@ export type Database = {
             | Database["public"]["Enums"]["delivery_method"]
             | null
           delivery_method_id?: string | null
+          dress_code?: string | null
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
@@ -1542,6 +1663,7 @@ export type Database = {
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
+          photography_brief?: string | null
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
