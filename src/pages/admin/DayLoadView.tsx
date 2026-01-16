@@ -413,12 +413,12 @@ export default function DayLoadView() {
           <div className="flex flex-wrap gap-4">
             <div className="w-48">
               <Label className="text-xs mb-1 block">Event Series</Label>
-              <Select value={eventSeriesId} onValueChange={setEventSeriesId}>
+              <Select value={eventSeriesId || "all"} onValueChange={(val) => setEventSeriesId(val === "all" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All series" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All series</SelectItem>
+                  <SelectItem value="all">All series</SelectItem>
                   {eventSeries.map(s => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
@@ -427,12 +427,12 @@ export default function DayLoadView() {
             </div>
             <div className="w-48">
               <Label className="text-xs mb-1 block">City</Label>
-              <Select value={city} onValueChange={setCity}>
+              <Select value={city || "all"} onValueChange={(val) => setCity(val === "all" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All cities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All cities</SelectItem>
+                  <SelectItem value="all">All cities</SelectItem>
                   {cities.map(c => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
@@ -441,12 +441,12 @@ export default function DayLoadView() {
             </div>
             <div className="w-48">
               <Label className="text-xs mb-1 block">Event Type</Label>
-              <Select value={eventTypeId} onValueChange={setEventTypeId}>
+              <Select value={eventTypeId || "all"} onValueChange={(val) => setEventTypeId(val === "all" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {eventTypes.map(t => (
                     <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                   ))}
