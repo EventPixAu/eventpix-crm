@@ -9,11 +9,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
+export type TemplateFormat = 'text' | 'html';
+
 export interface ContractTemplate {
   id: string;
   name: string;
   body_html: string;
   body_text: string | null;
+  format: TemplateFormat;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -23,6 +26,7 @@ export interface ContractTemplateInsert {
   name: string;
   body_html: string;
   body_text?: string | null;
+  format?: TemplateFormat;
   is_active?: boolean;
 }
 
@@ -480,8 +484,24 @@ export function useGenerateContractFromTemplate() {
         company_name: 'Eventpix',
       };
 
-      // Render the template
-      const renderedHtml = renderMergeFields(template.body_html, context);
+      // Render the template based on format
+      const templateFormat = (template as any).format || 'html';
+      const sourceContent = templateFormat === 'text' 
+        ? (template.body_text || template.body_html)
+        : template.body_html;
+      
+      let renderedHtml: string;
+      if (templateFormat === 'text') {
+        // For text templates, render merge fields and convert to HTML
+        const renderedText = renderMergeFields(sourceContent, context);
+        const escaped = renderedText
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        renderedHtml = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escaped}</div>`;
+      } else {
+        renderedHtml = renderMergeFields(template.body_html, context);
+      }
 
       // Create contract
       const { data: contract, error: contractError } = await supabase
