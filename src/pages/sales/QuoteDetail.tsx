@@ -53,6 +53,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ApplyQuoteTemplateDialog } from '@/components/ApplyQuoteTemplateDialog';
 import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';
+import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
+import { QuoteContextPanel } from '@/components/quote/QuoteContextPanel';
+import { useAddPackageToQuote } from '@/hooks/usePackages';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -84,6 +87,7 @@ export default function QuoteDetail() {
   const updateItem = useUpdateQuoteItem();
   const deleteItem = useDeleteQuoteItem();
   const convertToEvent = useConvertQuoteToEvent();
+  const addPackageToQuote = useAddPackageToQuote();
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -91,6 +95,7 @@ export default function QuoteDetail() {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isApplyTemplateOpen, setIsApplyTemplateOpen] = useState(false);
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
+  const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
   const [isEditSectionsOpen, setIsEditSectionsOpen] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
@@ -175,7 +180,37 @@ export default function QuoteDetail() {
     });
   };
 
-  const handleProductSelect = (productId: string) => {
+  const handleAddProductsPackages = async (items: Array<{
+    type: 'product' | 'package';
+    id: string;
+    name: string;
+    description: string | null;
+    unit_price: number;
+    tax_rate: number;
+    quantity: number;
+  }>) => {
+    if (!id) return;
+    
+    for (const item of items) {
+      if (item.type === 'package') {
+        await addPackageToQuote.mutateAsync({
+          quote_id: id,
+          package_id: item.id,
+          quantity: item.quantity,
+        });
+      } else {
+        await createItem.mutateAsync({
+          quote_id: id,
+          product_id: item.id,
+          description: item.name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate,
+        });
+      }
+    }
+  };
+
     if (productId === 'custom') {
       setNewItem({
         ...newItem,
@@ -458,9 +493,13 @@ export default function QuoteDetail() {
                       Save as Template
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => setIsAddItemOpen(true)}>
+                  <Button size="sm" onClick={() => setIsProductsDialogOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Item
+                    Add Products & Packages
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setIsAddItemOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Custom Item
                   </Button>
                 </div>
               )}
@@ -1000,6 +1039,13 @@ export default function QuoteDetail() {
         onOpenChange={setIsSaveTemplateOpen}
         quoteId={quote.id}
         defaultName={quote.quote_number || ''}
+      />
+
+      {/* Add Products & Packages Dialog */}
+      <AddProductsPackagesDialog
+        open={isProductsDialogOpen}
+        onOpenChange={setIsProductsDialogOpen}
+        onAdd={handleAddProductsPackages}
       />
     </AppLayout>
   );
