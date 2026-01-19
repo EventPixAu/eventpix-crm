@@ -553,9 +553,42 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_views: {
+        Row: {
+          contract_id: string
+          id: string
+          viewed_at: string | null
+          viewer_ip: string | null
+          viewer_user_agent: string | null
+        }
+        Insert: {
+          contract_id: string
+          id?: string
+          viewed_at?: string | null
+          viewer_ip?: string | null
+          viewer_user_agent?: string | null
+        }
+        Update: {
+          contract_id?: string
+          id?: string
+          viewed_at?: string | null
+          viewer_ip?: string | null
+          viewer_user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_views_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           client_id: string
+          contract_status: string | null
           created_at: string | null
           file_url: string | null
           id: string
@@ -574,6 +607,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          contract_status?: string | null
           created_at?: string | null
           file_url?: string | null
           id?: string
@@ -592,6 +626,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          contract_status?: string | null
           created_at?: string | null
           file_url?: string | null
           id?: string
@@ -1575,8 +1610,89 @@ export type Database = {
         }
         Relationships: []
       }
+      event_workflow_steps: {
+        Row: {
+          auto_trigger_event: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_type: string | null
+          created_at: string | null
+          due_date: string | null
+          event_id: string
+          id: string
+          is_completed: boolean | null
+          notes: string | null
+          step_label: string
+          step_order: number
+          template_item_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_trigger_event?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_type?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          event_id: string
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          step_label: string
+          step_order?: number
+          template_item_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_trigger_event?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_type?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          event_id?: string
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          step_label?: string
+          step_order?: number
+          template_item_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_workflow_steps_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_workflow_steps_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_workflow_steps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_workflow_steps_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
+          booking_date: string | null
           calendar_sequence: number
           camera_settings: string | null
           city: string | null
@@ -1607,6 +1723,7 @@ export type Database = {
           is_training: boolean | null
           job_intake_id: string | null
           lead_id: string | null
+          main_shoot_date: string | null
           notes: string | null
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
@@ -1626,8 +1743,10 @@ export type Database = {
           venue_name: string | null
           venue_parking_notes: string | null
           venue_postcode: string | null
+          workflow_template_id: string | null
         }
         Insert: {
+          booking_date?: string | null
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
@@ -1660,6 +1779,7 @@ export type Database = {
           is_training?: boolean | null
           job_intake_id?: string | null
           lead_id?: string | null
+          main_shoot_date?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
@@ -1679,8 +1799,10 @@ export type Database = {
           venue_name?: string | null
           venue_parking_notes?: string | null
           venue_postcode?: string | null
+          workflow_template_id?: string | null
         }
         Update: {
+          booking_date?: string | null
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
@@ -1713,6 +1835,7 @@ export type Database = {
           is_training?: boolean | null
           job_intake_id?: string | null
           lead_id?: string | null
+          main_shoot_date?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
@@ -1732,6 +1855,7 @@ export type Database = {
           venue_name?: string | null
           venue_parking_notes?: string | null
           venue_postcode?: string | null
+          workflow_template_id?: string | null
         }
         Relationships: [
           {
@@ -1802,6 +1926,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_workflow_template_id_fkey"
+            columns: ["workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -2330,6 +2461,48 @@ export type Database = {
           },
         ]
       }
+      package_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          package_id: string
+          product_id: string
+          quantity: number | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          package_id: string
+          product_id: string
+          quantity?: number | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          package_id?: string
+          product_id?: string
+          quantity?: number | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           created_at: string | null
@@ -2364,7 +2537,10 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_package: boolean | null
           name: string
+          package_discount_amount: number | null
+          package_discount_percent: number | null
           tax_rate: number | null
           unit_price: number
           updated_at: string | null
@@ -2375,7 +2551,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_package?: boolean | null
           name: string
+          package_discount_amount?: number | null
+          package_discount_percent?: number | null
           tax_rate?: number | null
           unit_price?: number
           updated_at?: string | null
@@ -2386,7 +2565,10 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_package?: boolean | null
           name?: string
+          package_discount_amount?: number | null
+          package_discount_percent?: number | null
           tax_rate?: number | null
           unit_price?: number
           updated_at?: string | null
@@ -2615,6 +2797,8 @@ export type Database = {
           client_id: string | null
           created_at: string | null
           created_by: string | null
+          declined_at: string | null
+          expires_at: string | null
           id: string
           intro_text: string | null
           lead_id: string | null
@@ -2623,8 +2807,10 @@ export type Database = {
           notes_internal: string | null
           public_token: string | null
           quote_number: string | null
+          quote_status: string | null
           quote_version: number
           scope_text: string | null
+          sent_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number | null
           tax_total: number | null
@@ -2640,6 +2826,8 @@ export type Database = {
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          declined_at?: string | null
+          expires_at?: string | null
           id?: string
           intro_text?: string | null
           lead_id?: string | null
@@ -2648,8 +2836,10 @@ export type Database = {
           notes_internal?: string | null
           public_token?: string | null
           quote_number?: string | null
+          quote_status?: string | null
           quote_version?: number
           scope_text?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
           tax_total?: number | null
@@ -2665,6 +2855,8 @@ export type Database = {
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          declined_at?: string | null
+          expires_at?: string | null
           id?: string
           intro_text?: string | null
           lead_id?: string | null
@@ -2673,8 +2865,10 @@ export type Database = {
           notes_internal?: string | null
           public_token?: string | null
           quote_number?: string | null
+          quote_status?: string | null
           quote_version?: number
           scope_text?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
           tax_total?: number | null
@@ -3413,28 +3607,46 @@ export type Database = {
       }
       workflow_template_items: {
         Row: {
+          auto_trigger_event: string | null
+          completion_type: string | null
           created_at: string | null
+          date_offset_days: number | null
+          date_offset_reference: string | null
+          description: string | null
           help_text: string | null
           id: string
           is_active: boolean | null
+          is_required: boolean | null
           label: string
           sort_order: number
           template_id: string
         }
         Insert: {
+          auto_trigger_event?: string | null
+          completion_type?: string | null
           created_at?: string | null
+          date_offset_days?: number | null
+          date_offset_reference?: string | null
+          description?: string | null
           help_text?: string | null
           id?: string
           is_active?: boolean | null
+          is_required?: boolean | null
           label: string
           sort_order?: number
           template_id: string
         }
         Update: {
+          auto_trigger_event?: string | null
+          completion_type?: string | null
           created_at?: string | null
+          date_offset_days?: number | null
+          date_offset_reference?: string | null
+          description?: string | null
           help_text?: string | null
           id?: string
           is_active?: boolean | null
+          is_required?: boolean | null
           label?: string
           sort_order?: number
           template_id?: string
@@ -3869,6 +4081,7 @@ export type Database = {
       handoff_status: "draft" | "ready_for_ops" | "converted" | "cancelled"
       lead_status: "new" | "qualified" | "quoted" | "accepted" | "lost"
       quote_status: "draft" | "sent" | "accepted" | "rejected"
+      quote_status_enum: "draft" | "sent" | "accepted" | "declined" | "expired"
       staff_role: "photographer" | "videographer" | "assistant"
       staff_status: "active" | "inactive"
       workflow_phase: "pre_event" | "day_of" | "post_event"
@@ -4068,6 +4281,7 @@ export const Constants = {
       handoff_status: ["draft", "ready_for_ops", "converted", "cancelled"],
       lead_status: ["new", "qualified", "quoted", "accepted", "lost"],
       quote_status: ["draft", "sent", "accepted", "rejected"],
+      quote_status_enum: ["draft", "sent", "accepted", "declined", "expired"],
       staff_role: ["photographer", "videographer", "assistant"],
       staff_status: ["active", "inactive"],
       workflow_phase: ["pre_event", "day_of", "post_event"],
