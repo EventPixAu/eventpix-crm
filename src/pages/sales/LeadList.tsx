@@ -66,7 +66,8 @@ export default function LeadList() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [leadType, setLeadType] = useState<LeadType>('new_prospect');
   const [formData, setFormData] = useState({
-    lead_name: '',
+    company_name: '',
+    event_name: '',
     client_id: '',
     lead_source_id: '',
     estimated_event_date: '',
@@ -83,13 +84,20 @@ export default function LeadList() {
   });
 
   const handleCreate = async () => {
-    if (!formData.lead_name.trim()) return;
-    // For existing client, require client selection
-    if (leadType === 'existing_client' && !formData.client_id) return;
+    // Validate based on lead type
+    if (leadType === 'new_prospect') {
+      if (!formData.company_name.trim() || !formData.event_name.trim()) return;
+    } else {
+      if (!formData.client_id || !formData.event_name.trim()) return;
+    }
+    
+    // Compose lead_name based on type
+    const leadName = leadType === 'new_prospect'
+      ? `${formData.company_name.trim()} - ${formData.event_name.trim()}`
+      : formData.event_name.trim();
     
     await createLead.mutateAsync({
-      lead_name: formData.lead_name,
-      // Only set client_id if existing client type is selected
+      lead_name: leadName,
       client_id: leadType === 'existing_client' ? formData.client_id : null,
       lead_source_id: formData.lead_source_id || null,
       estimated_event_date: formData.estimated_event_date || null,
@@ -103,7 +111,8 @@ export default function LeadList() {
   const resetForm = () => {
     setLeadType('new_prospect');
     setFormData({
-      lead_name: '',
+      company_name: '',
+      event_name: '',
       client_id: '',
       lead_source_id: '',
       estimated_event_date: '',
@@ -280,10 +289,19 @@ export default function LeadList() {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="new_prospect" className="mt-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Create a lead for a new potential client. You can add their details later.
+              <TabsContent value="new_prospect" className="mt-4 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Create a lead for a new potential client.
                 </p>
+                <div className="space-y-2">
+                  <Label htmlFor="company_name">Company Name *</Label>
+                  <Input
+                    id="company_name"
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                    placeholder="e.g., Acme Corporation"
+                  />
+                </div>
               </TabsContent>
               
               <TabsContent value="existing_client" className="mt-4 space-y-2">
@@ -306,16 +324,14 @@ export default function LeadList() {
               </TabsContent>
             </Tabs>
 
-            {/* Common Fields */}
+            {/* Event Name - Common for both */}
             <div className="space-y-2">
-              <Label htmlFor="lead_name">
-                {leadType === 'existing_client' ? 'Event Name *' : 'Lead Name *'}
-              </Label>
+              <Label htmlFor="event_name">Event Name *</Label>
               <Input
-                id="lead_name"
-                value={formData.lead_name}
-                onChange={(e) => setFormData({ ...formData, lead_name: e.target.value })}
-                placeholder={leadType === 'existing_client' ? 'e.g., Annual Gala 2026' : 'e.g., New Prospect - Annual Event'}
+                id="event_name"
+                value={formData.event_name}
+                onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
+                placeholder="e.g., Annual Gala 2026"
               />
             </div>
             
@@ -386,7 +402,8 @@ export default function LeadList() {
             <Button 
               onClick={handleCreate} 
               disabled={
-                !formData.lead_name.trim() || 
+                !formData.event_name.trim() || 
+                (leadType === 'new_prospect' && !formData.company_name.trim()) ||
                 (leadType === 'existing_client' && !formData.client_id) ||
                 createLead.isPending
               }
