@@ -53,8 +53,8 @@ import {
   SalesWorkflowTemplate,
 } from '@/hooks/useSalesWorkflow';
 import { useLeadSessions } from '@/hooks/useEventSessions';
-import { useLeadContracts } from '@/hooks/useContracts';
 import { useLeadEmailLogs } from '@/hooks/useEmailLogs';
+import { ContractsPanel } from '@/components/ContractsPanel';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
   LeadWorkflowRailV2,
@@ -79,7 +79,6 @@ export default function LeadDetail() {
   
   // Related data
   const { data: sessions = [] } = useLeadSessions(id);
-  const { data: contracts = [] } = useLeadContracts(id);
   const { data: emailLogs = [] } = useLeadEmailLogs(id);
   
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
@@ -257,48 +256,13 @@ export default function LeadDetail() {
             </div>
           </LeadCollapsiblePanel>
 
-          {/* Contracts Panel */}
-          <LeadCollapsiblePanel
-            icon={FileSignature}
-            title="Contracts"
-            count={contracts.length}
-            onAdd={() => {}}
-            isEmpty={contracts.length === 0}
-            emptyMessage="No contracts yet"
-            defaultOpen={contracts.length > 0}
-          >
-            <div className="space-y-2">
-              {contracts.map((contract: any) => (
-                <Link
-                  key={contract.id}
-                  to={`/sales/contracts/${contract.id}`}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <FileSignature className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{contract.title}</span>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs ${
-                        contract.status === 'signed' 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : contract.status === 'sent'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200'
-                          : ''
-                      }`}
-                    >
-                      {contract.status}
-                    </Badge>
-                  </div>
-                  {contract.signed_at && (
-                    <span className="text-xs text-muted-foreground">
-                      Signed {format(new Date(contract.signed_at), 'd MMM')}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </LeadCollapsiblePanel>
+          {/* Contracts Panel - Studio Ninja Style */}
+          <ContractsPanel
+            leadId={id}
+            clientId={(lead as any).client_id}
+            quoteId={quotes[0]?.id}
+            defaultOpen={false}
+          />
 
           {/* Questionnaires Panel */}
           <LeadCollapsiblePanel

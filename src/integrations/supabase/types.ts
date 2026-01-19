@@ -590,6 +590,7 @@ export type Database = {
           client_id: string
           contract_status: string | null
           created_at: string | null
+          event_id: string | null
           file_url: string | null
           id: string
           lead_id: string | null
@@ -609,6 +610,7 @@ export type Database = {
           client_id: string
           contract_status?: string | null
           created_at?: string | null
+          event_id?: string | null
           file_url?: string | null
           id?: string
           lead_id?: string | null
@@ -628,6 +630,7 @@ export type Database = {
           client_id?: string
           contract_status?: string | null
           created_at?: string | null
+          event_id?: string | null
           file_url?: string | null
           id?: string
           lead_id?: string | null
@@ -649,6 +652,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
@@ -4409,6 +4419,14 @@ export type Database = {
       }
       set_user_role: {
         Args: { p_role: string; p_user_id: string }
+        Returns: Json
+      }
+      sign_contract_internal: {
+        Args: {
+          p_contract_id: string
+          p_signed_by_email?: string
+          p_signed_by_name?: string
+        }
         Returns: Json
       }
       track_email_click: {

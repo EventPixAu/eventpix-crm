@@ -59,6 +59,8 @@ import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
+import { ContractsPanel } from '@/components/ContractsPanel';
+import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -418,6 +420,21 @@ export default function EventDetail() {
 
               {/* Setup Tasks */}
               {isAdmin && id && <EventTasksCard eventId={id} />}
+
+              {/* Contracts Panel - Studio Ninja Style */}
+              {isAdmin && id && event.client_id && (
+                <ContractsPanel
+                  eventId={id}
+                  clientId={event.client_id}
+                  quoteId={(event as any).quote_id}
+                  defaultOpen={false}
+                />
+              )}
+
+              {/* Mail History */}
+              {isAdmin && id && (
+                <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
 
               {isAdmin && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">

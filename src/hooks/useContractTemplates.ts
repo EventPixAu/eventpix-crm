@@ -490,6 +490,7 @@ export function useGenerateContractFromTemplate() {
           title: params.title,
           client_id: params.clientId,
           lead_id: params.leadId,
+          event_id: params.eventId,
           quote_id: params.quoteId,
           template_id: params.templateId,
           rendered_html: renderedHtml,

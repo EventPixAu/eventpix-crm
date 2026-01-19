@@ -15,6 +15,7 @@ export interface Contract {
   id: string;
   client_id: string;
   lead_id: string | null;
+  event_id: string | null;
   quote_id: string | null;
   title: string;
   file_url: string | null;
@@ -30,12 +31,14 @@ export interface Contract {
   updated_at: string;
   client?: any;
   lead?: any;
+  event?: any;
   quote?: any;
 }
 
 export interface ContractInsert {
   client_id: string;
   lead_id?: string | null;
+  event_id?: string | null;
   quote_id?: string | null;
   title: string;
   file_url?: string | null;
@@ -136,6 +139,29 @@ export function useLeadContracts(leadId: string | undefined) {
       return data as Contract[];
     },
     enabled: !!leadId,
+  });
+}
+
+// Fetch contracts for an event (Job)
+export function useEventContracts(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ['contracts', 'event', eventId],
+    queryFn: async () => {
+      if (!eventId) return [];
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          *,
+          client:clients(id, business_name),
+          quote:quotes(id, quote_number)
+        `)
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Contract[];
+    },
+    enabled: !!eventId,
   });
 }
 
@@ -296,6 +322,46 @@ export function useRegenerateContractToken() {
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to regenerate link', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+// Sign a contract internally (simulate signing)
+export function useSignContractInternal() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      contractId,
+      signedByName,
+      signedByEmail,
+    }: {
+      contractId: string;
+      signedByName?: string;
+      signedByEmail?: string;
+    }) => {
+      const { data, error } = await supabase.rpc('sign_contract_internal', {
+        p_contract_id: contractId,
+        p_signed_by_name: signedByName || null,
+        p_signed_by_email: signedByEmail || null,
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; contract_id?: string; signed_at?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to sign contract');
+      }
+      
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      toast({ title: 'Contract signed successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to sign contract', description: error.message, variant: 'destructive' });
     },
   });
 }
