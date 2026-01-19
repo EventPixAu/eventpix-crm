@@ -8,7 +8,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/lib/auth';
 
 type WorkflowInstance = Database['public']['Tables']['workflow_instances']['Row'];
 type WorkflowInstanceStep = Database['public']['Tables']['workflow_instance_steps']['Row'];
@@ -151,39 +150,36 @@ export function useInitializeWorkflow() {
 }
 
 // Toggle a workflow step completion (manual steps only)
+// Uses RPC for server-side authorization and lock checks
 export function useToggleWorkflowStep() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({
       stepId,
-      instanceId,
       entityType,
       entityId,
       isComplete,
     }: {
       stepId: string;
-      instanceId: string;
       entityType: 'lead' | 'job';
       entityId: string;
       isComplete: boolean;
     }) => {
-      const { data, error } = await supabase
-        .from('workflow_instance_steps')
-        .update({
-          is_complete: isComplete,
-          completed_at: isComplete ? new Date().toISOString() : null,
-          completed_by: isComplete ? user?.id : null,
-        })
-        .eq('id', stepId)
-        .eq('is_locked', false) // Cannot update locked steps
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('complete_workflow_step', {
+        p_step_id: stepId,
+        p_is_complete: isComplete,
+      });
       
       if (error) throw error;
-      return data;
+      
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update step');
+      }
+      
+      return result;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ 

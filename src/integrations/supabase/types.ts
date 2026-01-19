@@ -4287,6 +4287,10 @@ export type Database = {
         }[]
       }
       check_staff_eligibility: { Args: { p_user_id: string }; Returns: Json }
+      complete_workflow_step: {
+        Args: { p_is_complete: boolean; p_step_id: string }
+        Returns: Json
+      }
       convert_enquiry_to_event:
         | { Args: { p_input: Json }; Returns: Json }
         | { Args: { p_lead_id: string }; Returns: Json }
