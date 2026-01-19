@@ -2421,6 +2421,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           client_id: string | null
+          converted_job_id: string | null
           created_at: string | null
           created_by: string | null
           estimated_event_date: string | null
@@ -2431,6 +2432,8 @@ export type Database = {
           lead_name: string
           lead_source_id: string | null
           lost_reason_id: string | null
+          main_shoot_end_at: string | null
+          main_shoot_start_at: string | null
           notes: string | null
           owner_priority: string | null
           received_at: string | null
@@ -2439,10 +2442,12 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string | null
           venue_text: string | null
+          workflow_template_id: string | null
         }
         Insert: {
           assigned_to?: string | null
           client_id?: string | null
+          converted_job_id?: string | null
           created_at?: string | null
           created_by?: string | null
           estimated_event_date?: string | null
@@ -2453,6 +2458,8 @@ export type Database = {
           lead_name: string
           lead_source_id?: string | null
           lost_reason_id?: string | null
+          main_shoot_end_at?: string | null
+          main_shoot_start_at?: string | null
           notes?: string | null
           owner_priority?: string | null
           received_at?: string | null
@@ -2461,10 +2468,12 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string | null
           venue_text?: string | null
+          workflow_template_id?: string | null
         }
         Update: {
           assigned_to?: string | null
           client_id?: string | null
+          converted_job_id?: string | null
           created_at?: string | null
           created_by?: string | null
           estimated_event_date?: string | null
@@ -2475,6 +2484,8 @@ export type Database = {
           lead_name?: string
           lead_source_id?: string | null
           lost_reason_id?: string | null
+          main_shoot_end_at?: string | null
+          main_shoot_start_at?: string | null
           notes?: string | null
           owner_priority?: string | null
           received_at?: string | null
@@ -2483,6 +2494,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string | null
           venue_text?: string | null
+          workflow_template_id?: string | null
         }
         Relationships: [
           {
@@ -2490,6 +2502,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_converted_job_id_fkey"
+            columns: ["converted_job_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
@@ -2511,6 +2530,13 @@ export type Database = {
             columns: ["lost_reason_id"]
             isOneToOne: false
             referencedRelation: "lost_reasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_workflow_template_id_fkey"
+            columns: ["workflow_template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -2844,6 +2870,7 @@ export type Database = {
           id: string
           is_package_item: boolean | null
           line_total: number | null
+          locked_snapshot: Json | null
           package_source_id: string | null
           product_id: string | null
           quantity: number
@@ -2861,6 +2888,7 @@ export type Database = {
           id?: string
           is_package_item?: boolean | null
           line_total?: number | null
+          locked_snapshot?: Json | null
           package_source_id?: string | null
           product_id?: string | null
           quantity?: number
@@ -2878,6 +2906,7 @@ export type Database = {
           id?: string
           is_package_item?: boolean | null
           line_total?: number | null
+          locked_snapshot?: Json | null
           package_source_id?: string | null
           product_id?: string | null
           quantity?: number
@@ -2960,10 +2989,13 @@ export type Database = {
           id: string
           intro_text: string | null
           is_locked: boolean | null
+          issue_date: string | null
           lead_id: string | null
           linked_event_id: string | null
+          locked_at: string | null
           notes: string | null
           notes_internal: string | null
+          po_number: string | null
           public_token: string | null
           quote_number: string | null
           quote_status: string | null
@@ -2991,10 +3023,13 @@ export type Database = {
           id?: string
           intro_text?: string | null
           is_locked?: boolean | null
+          issue_date?: string | null
           lead_id?: string | null
           linked_event_id?: string | null
+          locked_at?: string | null
           notes?: string | null
           notes_internal?: string | null
+          po_number?: string | null
           public_token?: string | null
           quote_number?: string | null
           quote_status?: string | null
@@ -3022,10 +3057,13 @@ export type Database = {
           id?: string
           intro_text?: string | null
           is_locked?: boolean | null
+          issue_date?: string | null
           lead_id?: string | null
           linked_event_id?: string | null
+          locked_at?: string | null
           notes?: string | null
           notes_internal?: string | null
+          po_number?: string | null
           public_token?: string | null
           quote_number?: string | null
           quote_status?: string | null
@@ -3775,6 +3813,112 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_instance_steps: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          due_at: string | null
+          id: string
+          instance_id: string
+          is_complete: boolean
+          is_locked: boolean
+          notes: string | null
+          step_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          due_at?: string | null
+          id?: string
+          instance_id: string
+          is_complete?: boolean
+          is_locked?: boolean
+          notes?: string | null
+          step_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          due_at?: string | null
+          id?: string
+          instance_id?: string
+          is_complete?: boolean
+          is_locked?: boolean
+          notes?: string | null
+          step_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instance_steps_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instance_steps_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instance_steps_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instance_steps_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_instances: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          template_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          template_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          template_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instances_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_template_items: {
         Row: {
           auto_trigger_event: string | null
@@ -3788,8 +3932,13 @@ export type Database = {
           is_active: boolean | null
           is_required: boolean | null
           label: string
+          schedule_anchor_step_id: string | null
+          schedule_anchor_type: string | null
+          section: string | null
           sort_order: number
+          step_type: string | null
           template_id: string
+          trigger_event: string | null
         }
         Insert: {
           auto_trigger_event?: string | null
@@ -3803,8 +3952,13 @@ export type Database = {
           is_active?: boolean | null
           is_required?: boolean | null
           label: string
+          schedule_anchor_step_id?: string | null
+          schedule_anchor_type?: string | null
+          section?: string | null
           sort_order?: number
+          step_type?: string | null
           template_id: string
+          trigger_event?: string | null
         }
         Update: {
           auto_trigger_event?: string | null
@@ -3818,10 +3972,22 @@ export type Database = {
           is_active?: boolean | null
           is_required?: boolean | null
           label?: string
+          schedule_anchor_step_id?: string | null
+          schedule_anchor_type?: string | null
+          section?: string | null
           sort_order?: number
+          step_type?: string | null
           template_id?: string
+          trigger_event?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "workflow_template_items_schedule_anchor_step_id_fkey"
+            columns: ["schedule_anchor_step_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_template_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workflow_template_items_template_id_fkey"
             columns: ["template_id"]
@@ -3833,7 +3999,9 @@ export type Database = {
       }
       workflow_templates: {
         Row: {
+          applies_to: string | null
           created_at: string | null
+          description: string | null
           id: string
           is_active: boolean | null
           phase: Database["public"]["Enums"]["workflow_phase"]
@@ -3841,7 +4009,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          applies_to?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           phase: Database["public"]["Enums"]["workflow_phase"]
@@ -3849,7 +4019,9 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          applies_to?: string | null
           created_at?: string | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           phase?: Database["public"]["Enums"]["workflow_phase"]
@@ -4090,6 +4262,14 @@ export type Database = {
         Args: { p_package_id: string; p_quantity?: number; p_quote_id: string }
         Returns: Json
       }
+      auto_complete_workflow_step: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_trigger_event: string
+        }
+        Returns: number
+      }
       can_access_operations: { Args: { _user_id: string }; Returns: boolean }
       can_access_sales: { Args: { _user_id: string }; Returns: boolean }
       check_staff_conflicts: {
@@ -4120,6 +4300,15 @@ export type Database = {
           p_title: string
           p_type: string
           p_user_id: string
+        }
+        Returns: string
+      }
+      create_workflow_instance: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_main_shoot_at?: string
+          p_template_id: string
         }
         Returns: string
       }
@@ -4275,6 +4464,7 @@ export type Database = {
         | "event_reminder"
         | "photographer_assignment"
         | "event_update"
+      entity_type: "lead" | "job"
       event_type:
         | "wedding"
         | "corporate"
@@ -4286,12 +4476,24 @@ export type Database = {
         | "sports"
         | "other"
       handoff_status: "draft" | "ready_for_ops" | "converted" | "cancelled"
-      lead_status: "new" | "qualified" | "quoted" | "accepted" | "lost"
+      lead_status: "new" | "qualified" | "quoted" | "accepted" | "lost" | "won"
       quote_status: "draft" | "sent" | "accepted" | "rejected"
       quote_status_enum: "draft" | "sent" | "accepted" | "declined" | "expired"
+      schedule_anchor_type:
+        | "main_shoot"
+        | "step"
+        | "booking_date"
+        | "delivery_deadline"
       staff_role: "photographer" | "videographer" | "assistant"
       staff_status: "active" | "inactive"
       workflow_phase: "pre_event" | "day_of" | "post_event"
+      workflow_step_type: "manual" | "auto" | "scheduled" | "milestone"
+      workflow_trigger_event:
+        | "quote_accepted"
+        | "contract_signed"
+        | "invoice_paid"
+        | "lead_created"
+        | "job_created"
       worksheet_item_status: "pending" | "in_progress" | "completed"
     }
     CompositeTypes: {
@@ -4474,6 +4676,7 @@ export const Constants = {
         "photographer_assignment",
         "event_update",
       ],
+      entity_type: ["lead", "job"],
       event_type: [
         "wedding",
         "corporate",
@@ -4486,12 +4689,26 @@ export const Constants = {
         "other",
       ],
       handoff_status: ["draft", "ready_for_ops", "converted", "cancelled"],
-      lead_status: ["new", "qualified", "quoted", "accepted", "lost"],
+      lead_status: ["new", "qualified", "quoted", "accepted", "lost", "won"],
       quote_status: ["draft", "sent", "accepted", "rejected"],
       quote_status_enum: ["draft", "sent", "accepted", "declined", "expired"],
+      schedule_anchor_type: [
+        "main_shoot",
+        "step",
+        "booking_date",
+        "delivery_deadline",
+      ],
       staff_role: ["photographer", "videographer", "assistant"],
       staff_status: ["active", "inactive"],
       workflow_phase: ["pre_event", "day_of", "post_event"],
+      workflow_step_type: ["manual", "auto", "scheduled", "milestone"],
+      workflow_trigger_event: [
+        "quote_accepted",
+        "contract_signed",
+        "invoice_paid",
+        "lead_created",
+        "job_created",
+      ],
       worksheet_item_status: ["pending", "in_progress", "completed"],
     },
   },
