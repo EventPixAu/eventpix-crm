@@ -4,14 +4,17 @@
  * Manages contacts for a lead/enquiry with support for:
  * - Up to 4 contacts per lead
  * - Primary, secondary, on-site, and billing roles
- * - Selection from existing client contacts
+ * - Direct contact entry (no client required)
+ * - Selection from existing client contacts (when client is assigned)
  */
 import { useState } from 'react';
-import { Plus, Trash2, Phone, Mail, User, Building2 } from 'lucide-react';
+import { Plus, Trash2, Phone, Mail, User, Building2, UserPlus, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -53,8 +56,14 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
   const deleteContact = useDeleteLeadContact();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogTab, setDialogTab] = useState<'new' | 'existing'>('new');
   const [selectedContactId, setSelectedContactId] = useState('');
   const [selectedRole, setSelectedRole] = useState<LeadContactRole>('primary');
+  
+  // Direct contact form fields
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
 
   // Fetch client contacts if client is set
   const { data: clientContacts = [] } = useQuery({
@@ -81,21 +90,42 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
   const handleOpenCreate = () => {
     setSelectedContactId('');
     setSelectedRole('primary');
+    setContactName('');
+    setContactEmail('');
+    setContactPhone('');
+    setDialogTab(clientId && availableContacts.length > 0 ? 'existing' : 'new');
     setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!selectedContactId) return;
-
-    await createContact.mutateAsync({
-      lead_id: leadId,
-      contact_id: selectedContactId,
-      role: selectedRole,
-    });
+    if (dialogTab === 'existing') {
+      if (!selectedContactId) return;
+      await createContact.mutateAsync({
+        lead_id: leadId,
+        contact_id: selectedContactId,
+        role: selectedRole,
+      });
+    } else {
+      if (!contactName.trim()) return;
+      await createContact.mutateAsync({
+        lead_id: leadId,
+        contact_name: contactName.trim(),
+        contact_email: contactEmail.trim() || undefined,
+        contact_phone: contactPhone.trim() || undefined,
+        role: selectedRole,
+      });
+    }
     
     setIsDialogOpen(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
     setSelectedContactId('');
     setSelectedRole('primary');
+    setContactName('');
+    setContactEmail('');
+    setContactPhone('');
   };
 
   const handleDelete = async (contactId: string) => {
@@ -110,7 +140,29 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
     return LEAD_CONTACT_ROLES.find(r => r.value === role)?.label || role || 'Contact';
   };
 
-  const canAddMore = contacts.length < MAX_CONTACTS && availableContacts.length > 0;
+  const canAddMore = contacts.length < MAX_CONTACTS;
+  const hasExistingContacts = clientId && availableContacts.length > 0;
+
+  // Helper to get display info for a contact
+  const getContactDisplay = (contact: typeof contacts[0]) => {
+    if (contact.client_contact) {
+      const cc = contact.client_contact;
+      return {
+        name: cc.contact_name || 'Unknown Contact',
+        email: cc.email,
+        phone: cc.phone_mobile || cc.phone_office || cc.phone,
+        jobTitle: cc.role_title || cc.role,
+        isLinked: true,
+      };
+    }
+    return {
+      name: contact.contact_name || 'Unknown Contact',
+      email: contact.contact_email,
+      phone: contact.contact_phone,
+      jobTitle: null,
+      isLinked: false,
+    };
+  };
 
   return (
     <div className="space-y-4">
@@ -126,27 +178,22 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
         )}
       </div>
 
-      {!clientId ? (
+      {contacts.length === 0 ? (
         <div className="py-4 text-center border border-dashed rounded-lg space-y-2">
           <p className="text-sm text-muted-foreground">
-            Assign a client to this lead to add contacts
+            No contacts assigned yet
           </p>
-          <p className="text-xs text-muted-foreground">
-            Click "Edit Lead" in Lead Details above to assign a client
-          </p>
+          {!disabled && (
+            <Button variant="ghost" size="sm" onClick={handleOpenCreate}>
+              <UserPlus className="h-4 w-4 mr-1" />
+              Add First Contact
+            </Button>
+          )}
         </div>
-      ) : contacts.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-          No contacts assigned. Add contacts from the client's contact list.
-        </p>
       ) : (
         <div className="space-y-2">
           {contacts.map((contact) => {
-            const cc = contact.client_contact;
-            const phone = cc?.phone_mobile || cc?.phone_office || cc?.phone;
-            const email = cc?.email;
-            const name = cc?.contact_name || 'Unknown Contact';
-            const jobTitle = cc?.role_title || cc?.role;
+            const display = getContactDisplay(contact);
             
             return (
               <Card key={contact.id}>
@@ -158,7 +205,7 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
                     
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-medium">{name}</span>
+                        <span className="font-medium">{display.name}</span>
                         {!disabled ? (
                           <Select
                             value={contact.role || 'primary'}
@@ -180,31 +227,37 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
                             {getRoleLabel(contact.role)}
                           </Badge>
                         )}
-                        {jobTitle && (
+                        {display.isLinked && (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <Link className="h-3 w-3" />
+                            Linked
+                          </Badge>
+                        )}
+                        {display.jobTitle && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
-                            {jobTitle}
+                            {display.jobTitle}
                           </span>
                         )}
                       </div>
                       
                       <div className="flex flex-wrap gap-3 text-sm">
-                        {phone && (
+                        {display.phone && (
                           <a
-                            href={`tel:${phone}`}
+                            href={`tel:${display.phone}`}
                             className="flex items-center gap-1 text-primary hover:underline"
                           >
                             <Phone className="h-3.5 w-3.5" />
-                            {phone}
+                            {display.phone}
                           </a>
                         )}
-                        {email && (
+                        {display.email && (
                           <a
-                            href={`mailto:${email}`}
+                            href={`mailto:${display.email}`}
                             className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
                           >
                             <Mail className="h-3.5 w-3.5" />
-                            {email}
+                            {display.email}
                           </a>
                         )}
                       </div>
@@ -235,43 +288,113 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
         </p>
       )}
 
-      {/* No more contacts available message */}
-      {clientId && contacts.length < MAX_CONTACTS && availableContacts.length === 0 && contacts.length > 0 && !disabled && (
-        <p className="text-xs text-muted-foreground text-center">
-          All client contacts have been added
-        </p>
-      )}
-
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add Contact to Lead</DialogTitle>
             <DialogDescription>
-              Select a contact from the client's contact list
+              {hasExistingContacts 
+                ? 'Create a new contact or select from the client\'s contacts'
+                : 'Enter contact details for this lead'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Select Contact</Label>
-              <Select
-                value={selectedContactId}
-                onValueChange={setSelectedContactId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a contact..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableContacts.map((cc) => (
-                    <SelectItem key={cc.id} value={cc.id}>
-                      {cc.contact_name}
-                      {cc.role_title && ` - ${cc.role_title}`}
-                      {cc.is_primary && ' (Primary)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {hasExistingContacts ? (
+              <Tabs value={dialogTab} onValueChange={(v) => setDialogTab(v as 'new' | 'existing')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="new" className="gap-1">
+                    <UserPlus className="h-4 w-4" />
+                    New Contact
+                  </TabsTrigger>
+                  <TabsTrigger value="existing" className="gap-1">
+                    <Link className="h-4 w-4" />
+                    From Client
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="new" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Name *</Label>
+                    <Input
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      placeholder="Contact name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone</Label>
+                    <Input
+                      type="tel"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="+61 400 000 000"
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="existing" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Select Contact</Label>
+                    <Select
+                      value={selectedContactId}
+                      onValueChange={setSelectedContactId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a contact..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableContacts.map((cc) => (
+                          <SelectItem key={cc.id} value={cc.id}>
+                            {cc.contact_name}
+                            {cc.role_title && ` - ${cc.role_title}`}
+                            {cc.is_primary && ' (Primary)'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name *</Label>
+                  <Input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Contact name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="email@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input
+                    type="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+61 400 000 000"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Role on this Lead</Label>
@@ -299,7 +422,10 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={!selectedContactId || createContact.isPending}
+              disabled={
+                createContact.isPending || 
+                (dialogTab === 'existing' ? !selectedContactId : !contactName.trim())
+              }
             >
               Add Contact
             </Button>

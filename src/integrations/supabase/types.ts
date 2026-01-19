@@ -923,24 +923,36 @@ export type Database = {
       }
       enquiry_contacts: {
         Row: {
-          contact_id: string
+          contact_email: string | null
+          contact_id: string | null
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string | null
           id: string
           lead_id: string
+          notes: string | null
           role: string | null
         }
         Insert: {
-          contact_id: string
+          contact_email?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           id?: string
           lead_id: string
+          notes?: string | null
           role?: string | null
         }
         Update: {
-          contact_id?: string
+          contact_email?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           id?: string
           lead_id?: string
+          notes?: string | null
           role?: string | null
         }
         Relationships: [
@@ -3701,7 +3713,9 @@ export type Database = {
         }[]
       }
       check_staff_eligibility: { Args: { p_user_id: string }; Returns: Json }
-      convert_enquiry_to_event: { Args: { p_input: Json }; Returns: Json }
+      convert_enquiry_to_event:
+        | { Args: { p_input: Json }; Returns: Json }
+        | { Args: { p_lead_id: string }; Returns: Json }
       create_notification: {
         Args: {
           p_dedupe_hours?: number
