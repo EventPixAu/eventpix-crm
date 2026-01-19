@@ -528,6 +528,7 @@ export type Database = {
           body_html: string
           body_text: string | null
           created_at: string
+          format: string
           id: string
           is_active: boolean
           name: string
@@ -537,6 +538,7 @@ export type Database = {
           body_html: string
           body_text?: string | null
           created_at?: string
+          format?: string
           id?: string
           is_active?: boolean
           name: string
@@ -546,6 +548,7 @@ export type Database = {
           body_html?: string
           body_text?: string | null
           created_at?: string
+          format?: string
           id?: string
           is_active?: boolean
           name?: string
@@ -1069,6 +1072,7 @@ export type Database = {
           body_html: string
           body_text: string | null
           created_at: string | null
+          format: string
           id: string
           is_active: boolean | null
           name: string
@@ -1080,6 +1084,7 @@ export type Database = {
           body_html: string
           body_text?: string | null
           created_at?: string | null
+          format?: string
           id?: string
           is_active?: boolean | null
           name: string
@@ -1093,6 +1098,7 @@ export type Database = {
           body_html?: string
           body_text?: string | null
           created_at?: string | null
+          format?: string
           id?: string
           is_active?: boolean | null
           name?: string

@@ -2,16 +2,17 @@
  * CONTRACT TEMPLATES ADMIN PAGE
  * 
  * Admin-only page to manage contract templates.
+ * Supports both plain text (preferred) and legacy HTML templates.
  */
 import { useState } from 'react';
 import DOMPurify from 'dompurify';
 import { format } from 'date-fns';
-import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X } from 'lucide-react';
+import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, RefreshCw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -50,16 +51,11 @@ import {
   useDeleteContractTemplate,
   ContractTemplate 
 } from '@/hooks/useContractTemplates';
-
-const MERGE_FIELDS = [
-  { field: '{{client.business_name}}', description: 'Client business name' },
-  { field: '{{client.primary_contact_name}}', description: 'Client primary contact' },
-  { field: '{{event.venue_name}}', description: 'Event venue name' },
-  { field: '{{event.venue_address}}', description: 'Event venue address' },
-  { field: '{{event.sessions}}', description: 'Formatted session dates/times' },
-  { field: '{{quote.quote_number}}', description: 'Quote reference number' },
-  { field: '{{quote.total_estimate}}', description: 'Quote total (formatted)' },
-];
+import { 
+  PlainTextTemplateEditor, 
+  convertHtmlToText,
+  type TemplateFormat 
+} from '@/components/PlainTextTemplateEditor';
 
 export default function ContractTemplates() {
   const { toast } = useToast();
@@ -72,34 +68,37 @@ export default function ContractTemplates() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isConvertOpen, setIsConvertOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
-    body_html: '',
     body_text: '',
+    body_html: '',
+    format: 'text' as TemplateFormat,
     is_active: true,
   });
 
   const resetForm = () => {
     setFormData({
       name: '',
-      body_html: '',
       body_text: '',
+      body_html: '',
+      format: 'text',
       is_active: true,
     });
   };
 
   const handleCreate = async () => {
-    if (!formData.name || !formData.body_html) {
+    if (!formData.name || !formData.body_text) {
       toast({ title: 'Please fill in all required fields', variant: 'destructive' });
       return;
     }
 
     await createTemplate.mutateAsync({
       name: formData.name,
-      body_html: formData.body_html,
-      body_text: formData.body_text || null,
+      body_text: formData.body_text,
+      body_html: formData.body_text, // Store same content in both for compatibility
       is_active: formData.is_active,
     });
 
@@ -109,26 +108,33 @@ export default function ContractTemplates() {
 
   const handleEdit = (template: ContractTemplate) => {
     setSelectedTemplate(template);
+    const templateFormat = (template as any).format as TemplateFormat || 'html';
     setFormData({
       name: template.name,
+      body_text: templateFormat === 'text' 
+        ? (template.body_text || template.body_html || '')
+        : template.body_html,
       body_html: template.body_html,
-      body_text: template.body_text || '',
+      format: templateFormat,
       is_active: template.is_active,
     });
     setIsEditOpen(true);
   };
 
   const handleUpdate = async () => {
-    if (!selectedTemplate || !formData.name || !formData.body_html) {
+    if (!selectedTemplate || !formData.name || !formData.body_text) {
       toast({ title: 'Please fill in all required fields', variant: 'destructive' });
       return;
     }
 
+    const templateFormat = (selectedTemplate as any).format as TemplateFormat || 'html';
+
     await updateTemplate.mutateAsync({
       id: selectedTemplate.id,
       name: formData.name,
-      body_html: formData.body_html,
-      body_text: formData.body_text || null,
+      body_text: formData.body_text,
+      // For text templates, sync to body_html for legacy compatibility
+      body_html: templateFormat === 'text' ? formData.body_text : formData.body_text,
       is_active: formData.is_active,
     });
 
@@ -154,6 +160,51 @@ export default function ContractTemplates() {
   const openPreview = (template: ContractTemplate) => {
     setSelectedTemplate(template);
     setIsPreviewOpen(true);
+  };
+
+  const openConvertDialog = (template: ContractTemplate) => {
+    setSelectedTemplate(template);
+    setIsConvertOpen(true);
+  };
+
+  const handleConvertToText = async () => {
+    if (!selectedTemplate) return;
+    
+    const convertedText = convertHtmlToText(selectedTemplate.body_html);
+    
+    await updateTemplate.mutateAsync({
+      id: selectedTemplate.id,
+      body_text: convertedText,
+      // Keep original HTML for rollback
+    });
+
+    toast({ title: 'Template converted to plain text' });
+    setIsConvertOpen(false);
+    setSelectedTemplate(null);
+  };
+
+  const getTemplateFormat = (template: ContractTemplate): TemplateFormat => {
+    return (template as any).format || 'html';
+  };
+
+  const renderPreviewContent = (template: ContractTemplate) => {
+    const templateFormat = getTemplateFormat(template);
+    
+    if (templateFormat === 'text') {
+      const content = template.body_text || template.body_html || '';
+      return (
+        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+          {content}
+        </div>
+      );
+    }
+    
+    return (
+      <div 
+        className="prose prose-sm max-w-none"
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(template.body_html || '') }}
+      />
+    );
   };
 
   return (
@@ -188,67 +239,89 @@ export default function ContractTemplates() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Format</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {templates.map((template) => (
-                  <TableRow key={template.id}>
-                    <TableCell>
-                      <div className="font-medium">{template.name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={template.is_active ? 'default' : 'secondary'}>
-                        {template.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(template.updated_at), 'PP')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openPreview(template)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleToggleActive(template)}
-                          title={template.is_active ? 'Deactivate' : 'Activate'}
-                        >
-                          {template.is_active ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Check className="h-4 w-4" />
+                {templates.map((template) => {
+                  const templateFormat = getTemplateFormat(template);
+                  return (
+                    <TableRow key={template.id}>
+                      <TableCell>
+                        <div className="font-medium">{template.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={templateFormat === 'text' ? 'default' : 'outline'}>
+                          {templateFormat === 'text' ? 'Text' : 'HTML'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={template.is_active ? 'default' : 'secondary'}>
+                          {template.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(template.updated_at), 'PP')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openPreview(template)}
+                            title="Preview"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {templateFormat === 'html' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => openConvertDialog(template)}
+                              title="Convert to Text"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
                           )}
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleEdit(template)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTemplate(template);
-                            setIsDeleteOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleToggleActive(template)}
+                            title={template.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {template.is_active ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Check className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleEdit(template)}
+                            title="Edit"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedTemplate(template);
+                              setIsDeleteOpen(true);
+                            }}
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -257,11 +330,11 @@ export default function ContractTemplates() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Contract Template</DialogTitle>
             <DialogDescription>
-              Create a new contract template with merge fields.
+              Create a new contract template using plain text. Use merge fields to personalize contracts.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -275,36 +348,29 @@ export default function ContractTemplates() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="body_html">Contract Body (HTML) *</Label>
-              <Textarea
-                id="body_html"
-                value={formData.body_html}
-                onChange={(e) => setFormData({ ...formData, body_html: e.target.value })}
-                placeholder="<p>This agreement is between Eventpix and {{client.business_name}}...</p>"
-                className="min-h-[300px] font-mono text-sm"
-              />
-            </div>
+            <PlainTextTemplateEditor
+              value={formData.body_text}
+              onChange={(value) => setFormData({ ...formData, body_text: value })}
+              format="text"
+              label="Contract Body *"
+              placeholder={`PHOTOGRAPHY SERVICES AGREEMENT
 
-            <Card className="bg-muted">
-              <CardHeader className="py-3">
-                <CardTitle className="text-sm">Available Merge Fields</CardTitle>
-              </CardHeader>
-              <CardContent className="py-0 pb-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {MERGE_FIELDS.map((field) => (
-                    <div key={field.field} className="flex items-center gap-2">
-                      <code className="text-xs bg-background px-1 py-0.5 rounded">
-                        {field.field}
-                      </code>
-                      <span className="text-muted-foreground text-xs">
-                        {field.description}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+This agreement is made between Eventpix ("the Photographer") and {{client.business_name}} ("the Client").
+
+EVENT DETAILS
+Event: {{event.event_name}}
+Date: {{event.event_date}}
+Venue: {{event.venue_name}}
+Address: {{event.venue_address}}
+
+INVESTMENT
+Total: {{quote.total_estimate}}
+
+The parties agree to the terms and conditions outlined herein.
+
+Date: {{today}}`}
+              minHeight="350px"
+            />
 
             <div className="flex items-center gap-2">
               <Switch
@@ -328,11 +394,16 @@ export default function ContractTemplates() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Contract Template</DialogTitle>
             <DialogDescription>
-              Update the contract template.
+              Update the contract template. 
+              {formData.format === 'html' && (
+                <span className="text-amber-600 ml-1">
+                  This is a legacy HTML template. Consider converting to plain text.
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -345,35 +416,28 @@ export default function ContractTemplates() {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="edit-body_html">Contract Body (HTML) *</Label>
-              <Textarea
-                id="edit-body_html"
-                value={formData.body_html}
-                onChange={(e) => setFormData({ ...formData, body_html: e.target.value })}
-                className="min-h-[300px] font-mono text-sm"
+            {formData.format === 'html' ? (
+              <div className="space-y-2">
+                <Label htmlFor="edit-body_html">Contract Body (HTML) *</Label>
+                <Textarea
+                  id="edit-body_html"
+                  value={formData.body_text}
+                  onChange={(e) => setFormData({ ...formData, body_text: e.target.value })}
+                  className="min-h-[300px] font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This template uses legacy HTML format. Use the convert action to switch to plain text.
+                </p>
+              </div>
+            ) : (
+              <PlainTextTemplateEditor
+                value={formData.body_text}
+                onChange={(value) => setFormData({ ...formData, body_text: value })}
+                format="text"
+                label="Contract Body *"
+                minHeight="350px"
               />
-            </div>
-
-            <Card className="bg-muted">
-              <CardHeader className="py-3">
-                <CardTitle className="text-sm">Available Merge Fields</CardTitle>
-              </CardHeader>
-              <CardContent className="py-0 pb-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {MERGE_FIELDS.map((field) => (
-                    <div key={field.field} className="flex items-center gap-2">
-                      <code className="text-xs bg-background px-1 py-0.5 rounded">
-                        {field.field}
-                      </code>
-                      <span className="text-muted-foreground text-xs">
-                        {field.description}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            )}
 
             <div className="flex items-center gap-2">
               <Switch
@@ -399,19 +463,46 @@ export default function ContractTemplates() {
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Preview: {selectedTemplate?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Preview: {selectedTemplate?.name}
+              <Badge variant="outline" className="ml-2">
+                {selectedTemplate && getTemplateFormat(selectedTemplate) === 'text' ? 'Text' : 'HTML'}
+              </Badge>
+            </DialogTitle>
           </DialogHeader>
-          <div className="border rounded-lg p-6 bg-white">
-            <div 
-              className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedTemplate?.body_html || '') }}
-            />
+          <div className="border rounded-lg p-6 bg-white min-h-[300px]">
+            {selectedTemplate && renderPreviewContent(selectedTemplate)}
           </div>
           <DialogFooter>
             <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Convert to Text Dialog */}
+      <AlertDialog open={isConvertOpen} onOpenChange={setIsConvertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Convert to Plain Text?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will convert "{selectedTemplate?.name}" from HTML to plain text format.
+              <br /><br />
+              The conversion will:
+              <ul className="list-disc ml-4 mt-2 space-y-1">
+                <li>Strip HTML tags and convert to readable text</li>
+                <li>Convert line breaks and paragraphs to newlines</li>
+                <li>Keep the original HTML stored for rollback if needed</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConvertToText}>
+              Convert to Text
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
