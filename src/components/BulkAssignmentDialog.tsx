@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useStaffProfiles, useStaffRoles } from '@/hooks/useStaff';
+import { useStaffDirectory, useStaffRoles } from '@/hooks/useStaff';
 import { useCreateAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,7 +79,7 @@ export function BulkAssignmentDialog({
   const [guardrailsOverridden, setGuardrailsOverridden] = useState(false);
 
   const { user } = useAuth();
-  const { data: profiles = [] } = useStaffProfiles();
+  const { data: profiles = [] } = useStaffDirectory();
   const { data: roles = [] } = useStaffRoles();
   const sendNotification = useSendNotification();
   const checkGuardrails = useCheckAssignmentGuardrails();
@@ -349,7 +349,7 @@ export function BulkAssignmentDialog({
 
   const getProfileName = (id: string) => {
     const profile = profiles.find((p) => p.id === id);
-    return profile?.full_name || profile?.email || 'Unknown';
+    return profile?.full_name || 'Unknown';
   };
 
   return (
@@ -414,13 +414,8 @@ export function BulkAssignmentDialog({
                         htmlFor={profile.id}
                         className="text-sm font-medium cursor-pointer"
                       >
-                        {profile.full_name || profile.email}
+                        {profile.full_name || 'Unnamed Staff'}
                       </label>
-                      {profile.default_role?.name && (
-                        <p className="text-xs text-muted-foreground">
-                          {profile.default_role.name}
-                        </p>
-                      )}
                     </div>
                     {hasConflict && (
                       <Badge

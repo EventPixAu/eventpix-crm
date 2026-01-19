@@ -43,7 +43,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
-import { useStaffProfiles } from '@/hooks/useStaff';
+import { useStaffDirectory } from '@/hooks/useStaff';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useActiveEventSeries } from '@/hooks/useEventSeries';
 import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
@@ -232,7 +232,7 @@ export default function CalendarView() {
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('all');
   const [selectedSeries, setSelectedSeries] = useState('all');
   
-  const { data: staffProfiles = [] } = useStaffProfiles();
+  const { data: staffProfiles = [] } = useStaffDirectory();
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: eventSeries = [] } = useActiveEventSeries();
@@ -412,7 +412,7 @@ export default function CalendarView() {
               <SelectItem value="all">All Staff</SelectItem>
               {staffProfiles.map((profile) => (
                 <SelectItem key={profile.id} value={profile.id}>
-                  {profile.full_name || profile.email}
+                  {profile.full_name || 'Unnamed Staff'}
                 </SelectItem>
               ))}
             </SelectContent>
