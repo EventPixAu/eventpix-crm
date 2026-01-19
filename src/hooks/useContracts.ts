@@ -117,6 +117,28 @@ export function useClientContracts(clientId: string | undefined) {
   });
 }
 
+export function useLeadContracts(leadId: string | undefined) {
+  return useQuery({
+    queryKey: ['contracts', 'lead', leadId],
+    queryFn: async () => {
+      if (!leadId) return [];
+      const { data, error } = await supabase
+        .from('contracts')
+        .select(`
+          *,
+          client:clients(id, business_name),
+          quote:quotes(id, quote_number)
+        `)
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Contract[];
+    },
+    enabled: !!leadId,
+  });
+}
+
 export function useCreateContract() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
