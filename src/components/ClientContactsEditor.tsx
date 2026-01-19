@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Phone, Mail, User, X, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, Mail, ChevronsUpDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,15 +23,22 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { supabase } from '@/integrations/supabase/client';
-import { useContactRoles } from '@/hooks/useContactRoles';
+import { useContactRoles, useCreateContactRole } from '@/hooks/useContactRoles';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface ClientContact {
   id: string;
@@ -78,9 +85,12 @@ export function ClientContactsEditor({ clientId, contacts }: ClientContactsEdito
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ContactFormData>(emptyForm);
+  const [rolePopoverOpen, setRolePopoverOpen] = useState(false);
+  const [roleSearchValue, setRoleSearchValue] = useState('');
 
   const queryClient = useQueryClient();
   const { data: contactRoles = [] } = useContactRoles();
+  const createContactRole = useCreateContactRole();
 
   const createMutation = useMutation({
     mutationFn: async (data: ContactFormData) => {
@@ -339,21 +349,77 @@ export function ClientContactsEditor({ clientId, contacts }: ClientContactsEdito
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contactRoles.map((role) => (
-                      <SelectItem key={role.id} value={role.name}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={rolePopoverOpen} onOpenChange={setRolePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={rolePopoverOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {formData.role || "Select role..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Search or add role..." 
+                        value={roleSearchValue}
+                        onValueChange={setRoleSearchValue}
+                      />
+                      <CommandList>
+                        <CommandEmpty className="py-2">
+                          {roleSearchValue.trim() ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start"
+                              onClick={async () => {
+                                try {
+                                  await createContactRole.mutateAsync(roleSearchValue.trim());
+                                  setFormData({ ...formData, role: roleSearchValue.trim() });
+                                  setRoleSearchValue('');
+                                  setRolePopoverOpen(false);
+                                  toast.success(`Role "${roleSearchValue.trim()}" added`);
+                                } catch (error) {
+                                  toast.error('Failed to create role');
+                                }
+                              }}
+                              disabled={createContactRole.isPending}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add "{roleSearchValue.trim()}"
+                            </Button>
+                          ) : (
+                            <span className="text-sm text-muted-foreground px-2">No roles found</span>
+                          )}
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {contactRoles.map((role) => (
+                            <CommandItem
+                              key={role.id}
+                              value={role.name}
+                              onSelect={(currentValue) => {
+                                setFormData({ ...formData, role: currentValue === formData.role ? '' : currentValue });
+                                setRolePopoverOpen(false);
+                                setRoleSearchValue('');
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.role === role.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {role.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <Label htmlFor="role_title">Job Title</Label>
