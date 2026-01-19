@@ -1,34 +1,17 @@
 /**
  * CLIENT DETAIL PAGE
  * 
- * Displays detailed client information including contacts, notes, and communications.
- * Access: Admin, Sales roles only (enforced via RLS)
+ * Studio Ninja-style layout:
+ * - Left: Client profile, Notes, Consent
+ * - Right: Leads list, Jobs list, Invoices, Mail history
  */
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { format } from 'date-fns';
-import { 
-  ArrowLeft, 
-  Building2, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Edit2,
-  Trash2,
-  Plus,
-  User,
-  MessageSquare,
-  FileText,
-  Calendar
-} from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -40,20 +23,24 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useClient, useUpdateClient, useDeleteClient } from '@/hooks/useSales';
+import { useClient, useUpdateClient, useDeleteClient, useClientEvents } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
-import { useNavigate } from 'react-router-dom';
-import { ClientContactsEditor } from '@/components/ClientContactsEditor';
-import { ClientEventHistoryCard } from '@/components/ClientEventHistoryCard';
-import { RepeatClientBadge } from '@/components/RepeatClientBadge';
-import { useClientEventHistory } from '@/hooks/useClientEventHistory';
+import {
+  ClientProfileCard,
+  ClientLeadsList,
+  ClientJobsList,
+  ClientNotesPanel,
+  ClientInvoicesSummary,
+  ClientConsentPanel,
+} from '@/components/client';
+import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: client, isLoading, error } = useClient(id);
-  const { data: eventHistory } = useClientEventHistory(id);
+  const { data: events = [] } = useClientEvents(id);
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
 
@@ -89,6 +76,11 @@ export default function ClientDetail() {
 
   const handleDelete = async () => {
     if (!id) return;
+    // Block deletion if jobs exist
+    if (events.length > 0) {
+      alert('Cannot delete client with existing jobs. Please delete or reassign jobs first.');
+      return;
+    }
     if (confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
       await deleteClient.mutateAsync(id);
       navigate('/sales/clients');
@@ -108,8 +100,13 @@ export default function ClientDetail() {
       <AppLayout>
         <div className="space-y-6">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-64 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+            <Skeleton className="h-96" />
+            <div className="space-y-6">
+              <Skeleton className="h-64" />
+              <Skeleton className="h-64" />
+            </div>
+          </div>
         </div>
       </AppLayout>
     );
@@ -133,216 +130,73 @@ export default function ClientDetail() {
     );
   }
 
+  const clientNotes = (client as any).client_notes || [];
+
   return (
     <AppLayout>
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
-          <Link to="/sales/clients">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Clients
-          </Link>
-        </Button>
+      {/* Breadcrumb */}
+      <div className="mb-4 text-sm text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Dashboard</Link>
+        {' > '}
+        <Link to="/sales/clients" className="hover:text-foreground">Clients Overview</Link>
+        {' > '}
+        <span className="text-foreground">{client.primary_contact_name || client.business_name}</span>
       </div>
 
+      {/* Header */}
       <PageHeader
-        title={client.business_name}
-        description="Client details"
+        title={client.primary_contact_name || client.business_name}
         actions={
-          <div className="flex items-center gap-2">
-            {eventHistory?.is_repeat_client && (
-              <RepeatClientBadge 
-                isRepeatClient={eventHistory.is_repeat_client}
-                completedEvents={eventHistory.completed_events}
-                showCount
-              />
-            )}
-            <Button variant="outline" onClick={handleOpenEdit}>
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-            {isAdmin && (
-              <Button variant="destructive" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            )}
-          </div>
+          <Button onClick={() => navigate('/sales/leads/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add New
+          </Button>
         }
       />
 
-      {/* Client Summary Card */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Avatar & Basic Info */}
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Building2 className="h-8 w-8 text-primary" />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold">{client.business_name}</h2>
-                <div className="space-y-1 text-sm">
-                  {client.primary_contact_name && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4" />
-                      {client.primary_contact_name}
-                    </div>
-                  )}
-                  {client.primary_contact_email && (
-                    <a 
-                      href={`mailto:${client.primary_contact_email}`} 
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Mail className="h-4 w-4" />
-                      {client.primary_contact_email}
-                    </a>
-                  )}
-                  {client.primary_contact_phone && (
-                    <a 
-                      href={`tel:${client.primary_contact_phone}`} 
-                      className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Phone className="h-4 w-4" />
-                      {client.primary_contact_phone}
-                    </a>
-                  )}
-                  {client.billing_address && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      {client.billing_address}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+      {/* Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 mt-6">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Client Profile Card */}
+          <ClientProfileCard
+            client={client}
+            onEdit={handleOpenEdit}
+            onDelete={handleDelete}
+            canDelete={events.length === 0}
+          />
 
-            {/* Stats */}
-            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <FileText className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-2xl font-bold">{(client as any).contacts?.length || 0}</p>
-                <p className="text-xs text-muted-foreground">Contacts</p>
-              </div>
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <MessageSquare className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-2xl font-bold">{(client as any).notes_list?.length || 0}</p>
-                <p className="text-xs text-muted-foreground">Notes</p>
-              </div>
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <Calendar className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
-                <p className="text-sm font-medium">
-                  {client.created_at ? format(new Date(client.created_at), 'MMM d, yyyy') : '—'}
-                </p>
-                <p className="text-xs text-muted-foreground">Created</p>
-              </div>
-            </div>
-          </div>
+          {/* Client Notes */}
+          <ClientNotesPanel
+            clientId={id}
+            notes={clientNotes}
+          />
 
-          {client.notes && (
-            <div className="mt-4 pt-4 border-t">
-              <h4 className="text-sm font-medium mb-1">Notes</h4>
-              <p className="text-sm text-muted-foreground">{client.notes}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          {/* Consent */}
+          <ClientConsentPanel clientId={id} />
+        </div>
 
-      {/* Event History & Repeat Indicators */}
-      {id && <ClientEventHistoryCard clientId={id} />}
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Leads List */}
+          <ClientLeadsList
+            clientId={id}
+            onAddLead={() => navigate(`/sales/leads/new?client_id=${id}`)}
+          />
 
-      {/* Tabs for contacts, notes, communications */}
-      <Tabs defaultValue="contacts" className="space-y-4">
-        <TabsList className="bg-secondary/50">
-          <TabsTrigger value="contacts" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Contacts
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Notes
-          </TabsTrigger>
-          <TabsTrigger value="communications" className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            Communications
-          </TabsTrigger>
-        </TabsList>
+          {/* Jobs List */}
+          <ClientJobsList
+            clientId={id}
+            onAddJob={() => navigate(`/events/new?client_id=${id}`)}
+          />
 
-        <TabsContent value="contacts">
-          <Card>
-            <CardContent className="pt-6">
-              <ClientContactsEditor 
-                clientId={id} 
-                contacts={(client as any).client_contacts || []} 
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Invoices Summary */}
+          <ClientInvoicesSummary clientId={id} />
 
-        <TabsContent value="notes">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Notes</CardTitle>
-              <CardDescription>Internal notes about this client</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!(client as any).notes_list || (client as any).notes_list.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                  No notes recorded
-                </p>
-              ) : (
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-3">
-                    {((client as any).notes_list || []).map((note: any) => (
-                      <div key={note.id} className="p-3 border rounded-lg bg-card">
-                        <p className="text-sm">{note.note}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {note.created_at && format(new Date(note.created_at), 'PPp')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="communications">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Communications</CardTitle>
-              <CardDescription>Communication history with this client</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!(client as any).communications || (client as any).communications.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">
-                  No communications recorded
-                </p>
-              ) : (
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-3">
-                    {((client as any).communications || []).map((comm: any) => (
-                      <div key={comm.id} className="p-3 border rounded-lg bg-card">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="outline">{comm.communication_type}</Badge>
-                          {comm.status && (
-                            <Badge variant="secondary">{comm.status}</Badge>
-                          )}
-                        </div>
-                        {comm.subject && <h4 className="font-medium">{comm.subject}</h4>}
-                        {comm.summary && <p className="text-sm text-muted-foreground">{comm.summary}</p>}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {comm.communication_date && format(new Date(comm.communication_date), 'PPp')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          {/* Mail History */}
+          <MailHistoryPanel clientId={id} maxItems={10} />
+        </div>
+      </div>
 
       {/* Edit Client Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -386,12 +240,13 @@ export default function ClientDetail() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="billing_address">Billing Address</Label>
+              <Label htmlFor="billing_address">Address (Street, Suburb, Postcode, State, Country)</Label>
               <Textarea
                 id="billing_address"
                 value={formData.billing_address}
                 onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })}
-                rows={2}
+                rows={3}
+                placeholder="123 Main St&#10;Sydney&#10;2000&#10;NSW&#10;Australia"
               />
             </div>
             <div className="space-y-2">
