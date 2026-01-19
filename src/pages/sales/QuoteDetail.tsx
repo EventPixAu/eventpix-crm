@@ -176,6 +176,16 @@ export default function QuoteDetail() {
   };
 
   const handleProductSelect = (productId: string) => {
+    if (productId === 'custom') {
+      setNewItem({
+        ...newItem,
+        product_id: '',
+        description: '',
+        unit_price: 0,
+        tax_rate: 0.1,
+      });
+      return;
+    }
     const product = products?.find(p => p.id === productId);
     if (product) {
       setNewItem({
@@ -686,7 +696,7 @@ export default function QuoteDetail() {
                   <SelectValue placeholder="Select a product or enter custom" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Custom item</SelectItem>
+                  <SelectItem value="custom">Custom item</SelectItem>
                   {products?.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
                       {product.name} - {formatCurrency(product.unit_price)}

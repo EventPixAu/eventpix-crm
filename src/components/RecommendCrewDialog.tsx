@@ -401,14 +401,14 @@ export function RecommendCrewDialog({
                       <Select
                         value={role.required_skills?.join(',') || ''}
                         onValueChange={(value) => updateRole(index, { 
-                          required_skills: value ? value.split(',') : undefined 
+                          required_skills: value && value !== 'none' ? value.split(',') : undefined 
                         })}
                       >
                         <SelectTrigger className="w-48">
                           <SelectValue placeholder="Skills (optional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No specific skills</SelectItem>
+                          <SelectItem value="none">No specific skills</SelectItem>
                           {skills?.map((skill) => (
                             <SelectItem key={skill.id} value={skill.name}>
                               {skill.name}

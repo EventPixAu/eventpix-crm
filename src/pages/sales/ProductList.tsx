@@ -278,13 +278,13 @@ export default function ProductList() {
               <Label htmlFor="category">Category</Label>
               <Select 
                 value={formData.category_id || ''} 
-                onValueChange={(value) => setFormData({ ...formData, category_id: value || null })}
+                onValueChange={(value) => setFormData({ ...formData, category_id: value === 'none' ? null : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
+                  <SelectItem value="none">No category</SelectItem>
                   {categories?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))}
