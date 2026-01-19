@@ -4,8 +4,8 @@
  * Studio Ninja-style workflow rail using workflow_instances.
  * Displays steps grouped by section with due dates and step types.
  */
-import { useState } from 'react';
-import { format, isPast, isToday, addDays } from 'date-fns';
+import { useState, useEffect, useCallback } from 'react';
+import { format, isPast, isToday, isBefore, startOfDay } from 'date-fns';
 import {
   Check,
   Clock,
@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Plus,
   Settings,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,11 +33,14 @@ import {
   useToggleWorkflowStep,
   WorkflowInstanceStepWithDetails,
 } from '@/hooks/useWorkflowInstances';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface LeadWorkflowRailV2Props {
   leadId: string;
   mainShootDate?: string | null;
   onInitializeWorkflow?: () => void;
+  hasExistingWorkflow?: boolean;
 }
 
 const SECTION_COLORS: Record<string, string> = {
@@ -47,42 +51,62 @@ const SECTION_COLORS: Record<string, string> = {
 
 const SECTION_ORDER = ['Lead', 'Production', 'Post Production'];
 
-function getDueDateBadge(dueAt: string | null, isComplete: boolean) {
+const STORAGE_KEY = 'workflow-section-state';
+
+function getSectionExpandState(leadId: string): Record<string, boolean> {
+  try {
+    const stored = localStorage.getItem(`${STORAGE_KEY}-${leadId}`);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSectionExpandState(leadId: string, state: Record<string, boolean>) {
+  try {
+    localStorage.setItem(`${STORAGE_KEY}-${leadId}`, JSON.stringify(state));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function getDueDateBadge(dueAt: string | null, isComplete: boolean, stepType: string) {
+  // For scheduled steps with no due date
+  if (stepType === 'scheduled' && !dueAt && !isComplete) {
+    return (
+      <Badge variant="outline" className="text-xs text-muted-foreground">
+        <Calendar className="h-3 w-3 mr-1" />
+        No date
+      </Badge>
+    );
+  }
+  
   if (!dueAt || isComplete) return null;
   
-  const dueDate = new Date(dueAt);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const dueDate = startOfDay(new Date(dueAt));
+  const today = startOfDay(new Date());
   
-  if (isPast(dueDate) && !isToday(dueDate)) {
+  // Overdue: due date is before today
+  if (isBefore(dueDate, today)) {
     return (
       <Badge variant="destructive" className="text-xs">
         <AlertCircle className="h-3 w-3 mr-1" />
-        Overdue
-      </Badge>
-    );
-  }
-  
-  if (isToday(dueDate)) {
-    return (
-      <Badge className="text-xs bg-amber-500">
-        <Calendar className="h-3 w-3 mr-1" />
-        Due Today
-      </Badge>
-    );
-  }
-  
-  // Within next 7 days
-  const weekFromNow = addDays(today, 7);
-  if (dueDate <= weekFromNow) {
-    return (
-      <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
-        <Calendar className="h-3 w-3 mr-1" />
         {format(dueDate, 'd MMM')}
       </Badge>
     );
   }
   
+  // Due today
+  if (isToday(dueDate)) {
+    return (
+      <Badge className="text-xs bg-amber-500 hover:bg-amber-600">
+        <Calendar className="h-3 w-3 mr-1" />
+        Today
+      </Badge>
+    );
+  }
+  
+  // Upcoming (future)
   return (
     <Badge variant="outline" className="text-xs">
       <Calendar className="h-3 w-3 mr-1" />
@@ -172,8 +196,8 @@ function WorkflowStepRow({
             </Badge>
           )}
           
-          {/* Due date */}
-          {!isComplete && getDueDateBadge(instanceStep.due_at, isComplete)}
+          {/* Due date badge */}
+          {!isComplete && getDueDateBadge(instanceStep.due_at, isComplete, step.step_type)}
           
           {/* Auto step indicator */}
           {isAuto && !isComplete && (
@@ -185,7 +209,7 @@ function WorkflowStepRow({
           
           {/* Milestone indicator */}
           {isMilestone && (
-            <Badge className="text-xs bg-teal-500">
+            <Badge className="text-xs bg-teal-500 hover:bg-teal-600">
               Main Shoot
             </Badge>
           )}
@@ -214,20 +238,21 @@ function WorkflowSection({
   steps,
   leadId,
   entityType = 'lead',
-  defaultOpen = true,
+  isOpen,
+  onToggle,
 }: {
   section: string;
   steps: WorkflowInstanceStepWithDetails[];
   leadId: string;
   entityType?: 'lead' | 'job';
-  defaultOpen?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
 }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
   const completedCount = steps.filter(s => s.is_complete).length;
   const color = SECTION_COLORS[section] || 'bg-gray-400';
   
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
         <button className="flex items-center gap-2 w-full py-2 hover:bg-muted/50 rounded-lg px-2 transition-colors">
           <div className={`w-1 h-5 rounded ${color}`} />
@@ -263,9 +288,60 @@ function WorkflowSection({
 export function LeadWorkflowRailV2({ 
   leadId, 
   mainShootDate,
-  onInitializeWorkflow 
+  onInitializeWorkflow,
+  hasExistingWorkflow = false,
 }: LeadWorkflowRailV2Props) {
-  const { data: instance, isLoading } = useLeadWorkflowInstance(leadId);
+  const queryClient = useQueryClient();
+  const { data: instance, isLoading, refetch } = useLeadWorkflowInstance(leadId);
+  
+  // Section expand states with localStorage persistence
+  const [expandStates, setExpandStates] = useState<Record<string, boolean>>(() => {
+    const saved = getSectionExpandState(leadId);
+    // Default: all sections expanded
+    return Object.keys(saved).length > 0 
+      ? saved 
+      : { 'Lead': true, 'Production': true, 'Post Production': true };
+  });
+  
+  // Persist expand states
+  useEffect(() => {
+    saveSectionExpandState(leadId, expandStates);
+  }, [leadId, expandStates]);
+  
+  const toggleSection = useCallback((section: string) => {
+    setExpandStates(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  }, []);
+  
+  // Realtime subscription for workflow step updates
+  useEffect(() => {
+    if (!instance?.id) return;
+    
+    const channel = supabase
+      .channel(`workflow-steps-${instance.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workflow_instance_steps',
+          filter: `instance_id=eq.${instance.id}`,
+        },
+        () => {
+          // Refetch workflow instance when steps change
+          queryClient.invalidateQueries({ 
+            queryKey: ['workflow-instance', 'lead', leadId] 
+          });
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [instance?.id, leadId, queryClient]);
   
   if (isLoading) {
     return (
@@ -353,11 +429,31 @@ export function LeadWorkflowRailV2({
             {instance.template?.template_name || 'Custom'}
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold">{progressPercent}%</div>
-          <p className="text-xs text-muted-foreground">
-            {completedSteps}/{totalSteps} complete
-          </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => refetch()}
+            title="Refresh workflow"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onInitializeWorkflow}
+            title="Replace workflow"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+          <div className="text-right">
+            <div className="text-2xl font-bold">{progressPercent}%</div>
+            <p className="text-xs text-muted-foreground">
+              {completedSteps}/{totalSteps}
+            </p>
+          </div>
         </div>
       </div>
       
@@ -371,14 +467,15 @@ export function LeadWorkflowRailV2({
       
       {/* Sections */}
       <div className="space-y-2">
-        {sortedSections.map((section, idx) => (
+        {sortedSections.map((section) => (
           <WorkflowSection
             key={section}
             section={section}
             steps={stepsBySection[section]}
             leadId={leadId}
             entityType="lead"
-            defaultOpen={idx < 2} // First 2 sections open by default
+            isOpen={expandStates[section] !== false}
+            onToggle={() => toggleSection(section)}
           />
         ))}
       </div>
