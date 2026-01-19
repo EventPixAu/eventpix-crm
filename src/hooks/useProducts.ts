@@ -17,6 +17,9 @@ export interface Product {
   unit_price: number;
   tax_rate: number;
   is_active: boolean;
+  is_package: boolean;
+  package_discount_percent: number;
+  package_discount_amount: number;
   created_at: string;
   updated_at: string;
   category?: ProductCategory | null;
@@ -38,6 +41,9 @@ export interface ProductInsert {
   unit_price: number;
   tax_rate?: number;
   is_active?: boolean;
+  is_package?: boolean;
+  package_discount_percent?: number;
+  package_discount_amount?: number;
 }
 
 export interface ProductUpdate extends Partial<ProductInsert> {
@@ -102,6 +108,28 @@ export function useProducts() {
           *,
           category:product_categories(*)
         `)
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data as Product[];
+    },
+  });
+}
+
+/**
+ * Fetch only non-package products (atomic products)
+ */
+export function useAtomicProducts() {
+  return useQuery({
+    queryKey: ['products', 'atomic'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          category:product_categories(*)
+        `)
+        .eq('is_package', false)
         .order('name', { ascending: true });
       
       if (error) throw error;

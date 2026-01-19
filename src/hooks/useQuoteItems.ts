@@ -21,6 +21,10 @@ export interface QuoteItem {
   line_total: number;
   sort_order: number;
   group_label: string | null;
+  discount_percent: number;
+  discount_amount: number;
+  is_package_item: boolean;
+  package_source_id: string | null;
   created_at: string;
   product?: Product | null;
 }
@@ -34,6 +38,10 @@ export interface QuoteItemInsert {
   tax_rate?: number;
   sort_order?: number;
   group_label?: string | null;
+  discount_percent?: number;
+  discount_amount?: number;
+  is_package_item?: boolean;
+  package_source_id?: string | null;
 }
 
 export interface QuoteItemUpdate extends Partial<Omit<QuoteItemInsert, 'quote_id'>> {
@@ -53,7 +61,7 @@ export function useQuoteItems(quoteId: string | undefined) {
         .from('quote_items')
         .select(`
           *,
-          product:products(*)
+          product:products!quote_items_product_id_fkey(*)
         `)
         .eq('quote_id', quoteId)
         .order('sort_order', { ascending: true });

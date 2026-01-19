@@ -2700,9 +2700,13 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string
+          discount_amount: number | null
+          discount_percent: number | null
           group_label: string | null
           id: string
+          is_package_item: boolean | null
           line_total: number | null
+          package_source_id: string | null
           product_id: string | null
           quantity: number
           quote_id: string
@@ -2713,9 +2717,13 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description: string
+          discount_amount?: number | null
+          discount_percent?: number | null
           group_label?: string | null
           id?: string
+          is_package_item?: boolean | null
           line_total?: number | null
+          package_source_id?: string | null
           product_id?: string | null
           quantity?: number
           quote_id: string
@@ -2726,9 +2734,13 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string
+          discount_amount?: number | null
+          discount_percent?: number | null
           group_label?: string | null
           id?: string
+          is_package_item?: boolean | null
           line_total?: number | null
+          package_source_id?: string | null
           product_id?: string | null
           quantity?: number
           quote_id?: string
@@ -2737,6 +2749,13 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quote_items_package_source_id_fkey"
+            columns: ["package_source_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quote_items_product_id_fkey"
             columns: ["product_id"]
@@ -2798,9 +2817,11 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           declined_at: string | null
+          event_id: string | null
           expires_at: string | null
           id: string
           intro_text: string | null
+          is_locked: boolean | null
           lead_id: string | null
           linked_event_id: string | null
           notes: string | null
@@ -2827,9 +2848,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           declined_at?: string | null
+          event_id?: string | null
           expires_at?: string | null
           id?: string
           intro_text?: string | null
+          is_locked?: boolean | null
           lead_id?: string | null
           linked_event_id?: string | null
           notes?: string | null
@@ -2856,9 +2879,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           declined_at?: string | null
+          event_id?: string | null
           expires_at?: string | null
           id?: string
           intro_text?: string | null
+          is_locked?: boolean | null
           lead_id?: string | null
           linked_event_id?: string | null
           notes?: string | null
@@ -2883,6 +2908,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
@@ -3904,8 +3936,20 @@ export type Database = {
         Args: { p_email: string; p_name: string; p_token: string }
         Returns: Json
       }
+      accept_quote: {
+        Args: {
+          p_accepted_by_email?: string
+          p_accepted_by_name?: string
+          p_quote_id: string
+        }
+        Returns: Json
+      }
       accept_quote_public: {
         Args: { p_email: string; p_name: string; p_token: string }
+        Returns: Json
+      }
+      add_package_to_quote: {
+        Args: { p_package_id: string; p_quantity?: number; p_quote_id: string }
         Returns: Json
       }
       can_access_operations: { Args: { _user_id: string }; Returns: boolean }
