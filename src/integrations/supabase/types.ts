@@ -3994,6 +3994,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_event_workflow_steps: {
+        Args: { p_event_id: string; p_template_id: string }
+        Returns: number
+      }
       is_admin: { Args: never; Returns: boolean }
       is_assigned_to_event:
         | { Args: { _event_id: string; _user_id: string }; Returns: boolean }
