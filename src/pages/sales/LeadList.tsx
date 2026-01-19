@@ -7,13 +7,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Plus, Search, Target, Calendar, Building2 } from 'lucide-react';
+import { Plus, Search, Target, Calendar, Building2, UserPlus, Users } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -51,6 +52,8 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   lost: { label: 'Lost', variant: 'destructive' },
 };
 
+type LeadType = 'new_prospect' | 'existing_client';
+
 export default function LeadList() {
   const { data: leads, isLoading } = useLeads();
   const { data: clients } = useClients();
@@ -61,6 +64,7 @@ export default function LeadList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [leadType, setLeadType] = useState<LeadType>('new_prospect');
   const [formData, setFormData] = useState({
     lead_name: '',
     client_id: '',
@@ -80,16 +84,24 @@ export default function LeadList() {
 
   const handleCreate = async () => {
     if (!formData.lead_name.trim()) return;
+    // For existing client, require client selection
+    if (leadType === 'existing_client' && !formData.client_id) return;
     
     await createLead.mutateAsync({
       lead_name: formData.lead_name,
-      client_id: formData.client_id || null,
+      // Only set client_id if existing client type is selected
+      client_id: leadType === 'existing_client' ? formData.client_id : null,
       lead_source_id: formData.lead_source_id || null,
       estimated_event_date: formData.estimated_event_date || null,
       event_type_id: formData.event_type_id || null,
       notes: formData.notes || null,
     });
     setIsCreateOpen(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setLeadType('new_prospect');
     setFormData({
       lead_name: '',
       client_id: '',
@@ -98,6 +110,11 @@ export default function LeadList() {
       event_type_id: '',
       notes: '',
     });
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsCreateOpen(open);
+    if (!open) resetForm();
   };
 
   // Count leads by status
@@ -240,42 +257,66 @@ export default function LeadList() {
       </Card>
 
       {/* Create Lead Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>New Lead</DialogTitle>
             <DialogDescription>
-              Add a new lead to your sales pipeline.
+              Add a new lead to your sales pipeline
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-4 py-4">
+            {/* Lead Type Selection */}
+            <Tabs value={leadType} onValueChange={(v) => setLeadType(v as LeadType)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="new_prospect" className="gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  New Prospect
+                </TabsTrigger>
+                <TabsTrigger value="existing_client" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  Existing Client
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="new_prospect" className="mt-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Create a lead for a new potential client. You can add their details later.
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="existing_client" className="mt-4 space-y-2">
+                <Label htmlFor="client_id">Select Client *</Label>
+                <Select 
+                  value={formData.client_id} 
+                  onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an existing client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients?.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.business_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TabsContent>
+            </Tabs>
+
+            {/* Common Fields */}
             <div className="space-y-2">
               <Label htmlFor="lead_name">Lead Name *</Label>
               <Input
                 id="lead_name"
                 value={formData.lead_name}
                 onChange={(e) => setFormData({ ...formData, lead_name: e.target.value })}
-                placeholder="Company Annual Gala 2026"
+                placeholder="e.g., Company Annual Gala 2026"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="client_id">Client</Label>
-              <Select 
-                value={formData.client_id} 
-                onValueChange={(value) => setFormData({ ...formData, client_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a client (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.business_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="event_type_id">Event Type</Label>
               <Select 
@@ -294,6 +335,7 @@ export default function LeadList() {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="estimated_event_date">Estimated Event Date</Label>
               <Input
@@ -303,6 +345,7 @@ export default function LeadList() {
                 onChange={(e) => setFormData({ ...formData, estimated_event_date: e.target.value })}
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="lead_source_id">Lead Source</Label>
               <Select 
@@ -321,6 +364,7 @@ export default function LeadList() {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -332,13 +376,18 @@ export default function LeadList() {
               />
             </div>
           </div>
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+            <Button variant="outline" onClick={() => handleDialogClose(false)}>
               Cancel
             </Button>
             <Button 
               onClick={handleCreate} 
-              disabled={!formData.lead_name.trim() || createLead.isPending}
+              disabled={
+                !formData.lead_name.trim() || 
+                (leadType === 'existing_client' && !formData.client_id) ||
+                createLead.isPending
+              }
             >
               {createLead.isPending ? 'Creating...' : 'Create Lead'}
             </Button>
