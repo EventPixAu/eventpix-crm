@@ -308,12 +308,14 @@ export default function LeadList() {
 
             {/* Common Fields */}
             <div className="space-y-2">
-              <Label htmlFor="lead_name">Lead Name *</Label>
+              <Label htmlFor="lead_name">
+                {leadType === 'existing_client' ? 'Event Name *' : 'Lead Name *'}
+              </Label>
               <Input
                 id="lead_name"
                 value={formData.lead_name}
                 onChange={(e) => setFormData({ ...formData, lead_name: e.target.value })}
-                placeholder="e.g., Company Annual Gala 2026"
+                placeholder={leadType === 'existing_client' ? 'e.g., Annual Gala 2026' : 'e.g., New Prospect - Annual Event'}
               />
             </div>
             
