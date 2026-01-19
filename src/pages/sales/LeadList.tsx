@@ -43,6 +43,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLeads, useCreateLead, useClients } from '@/hooks/useSales';
 import { useEventTypes } from '@/hooks/useLookups';
 import { useLeadSources } from '@/hooks/useLeadSources';
+import { useCreateLeadContact } from '@/hooks/useLeadContacts';
+import { Separator } from '@/components/ui/separator';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   new: { label: 'New', variant: 'default' },
@@ -60,6 +62,7 @@ export default function LeadList() {
   const { data: eventTypes } = useEventTypes();
   const { data: leadSources } = useLeadSources();
   const createLead = useCreateLead();
+  const createLeadContact = useCreateLeadContact();
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -73,6 +76,10 @@ export default function LeadList() {
     estimated_event_date: '',
     event_type_id: '',
     notes: '',
+    // Contact fields
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
   });
 
   const filteredLeads = leads?.filter(lead => {
@@ -91,12 +98,15 @@ export default function LeadList() {
       if (!formData.client_id || !formData.event_name.trim()) return;
     }
     
+    // Validate contact (required for both)
+    if (!formData.contact_name.trim()) return;
+    
     // Compose lead_name based on type
     const leadName = leadType === 'new_prospect'
       ? `${formData.company_name.trim()} - ${formData.event_name.trim()}`
       : formData.event_name.trim();
     
-    await createLead.mutateAsync({
+    const newLead = await createLead.mutateAsync({
       lead_name: leadName,
       client_id: leadType === 'existing_client' ? formData.client_id : null,
       lead_source_id: formData.lead_source_id || null,
@@ -104,6 +114,18 @@ export default function LeadList() {
       event_type_id: formData.event_type_id || null,
       notes: formData.notes || null,
     });
+    
+    // Create the primary contact for this lead
+    if (newLead?.id) {
+      await createLeadContact.mutateAsync({
+        lead_id: newLead.id,
+        contact_name: formData.contact_name.trim(),
+        contact_email: formData.contact_email.trim() || undefined,
+        contact_phone: formData.contact_phone.trim() || undefined,
+        role: 'primary',
+      });
+    }
+    
     setIsCreateOpen(false);
     resetForm();
   };
@@ -118,6 +140,9 @@ export default function LeadList() {
       estimated_event_date: '',
       event_type_id: '',
       notes: '',
+      contact_name: '',
+      contact_email: '',
+      contact_phone: '',
     });
   };
 
@@ -334,6 +359,51 @@ export default function LeadList() {
                 placeholder="e.g., Annual Gala 2026"
               />
             </div>
+
+            {/* Contact Details Section */}
+            <Separator className="my-2" />
+            <div className="space-y-1">
+              <Label className="text-base font-semibold">Primary Contact</Label>
+              <p className="text-xs text-muted-foreground">Who should we contact about this lead?</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="contact_name">Contact Name *</Label>
+              <Input
+                id="contact_name"
+                value={formData.contact_name}
+                onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                placeholder="e.g., John Smith"
+                maxLength={100}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="contact_email">Email Address</Label>
+                <Input
+                  id="contact_email"
+                  type="email"
+                  value={formData.contact_email}
+                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                  placeholder="john@company.com"
+                  maxLength={255}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact_phone">Phone Number</Label>
+                <Input
+                  id="contact_phone"
+                  type="tel"
+                  value={formData.contact_phone}
+                  onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                  placeholder="+61 400 000 000"
+                  maxLength={20}
+                />
+              </div>
+            </div>
+            
+            <Separator className="my-2" />
             
             <div className="space-y-2">
               <Label htmlFor="event_type_id">Event Type</Label>
@@ -391,6 +461,7 @@ export default function LeadList() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Additional notes..."
                 rows={2}
+                maxLength={1000}
               />
             </div>
           </div>
@@ -403,12 +474,14 @@ export default function LeadList() {
               onClick={handleCreate} 
               disabled={
                 !formData.event_name.trim() || 
+                !formData.contact_name.trim() ||
                 (leadType === 'new_prospect' && !formData.company_name.trim()) ||
                 (leadType === 'existing_client' && !formData.client_id) ||
-                createLead.isPending
+                createLead.isPending ||
+                createLeadContact.isPending
               }
             >
-              {createLead.isPending ? 'Creating...' : 'Create Lead'}
+              {(createLead.isPending || createLeadContact.isPending) ? 'Creating...' : 'Create Lead'}
             </Button>
           </DialogFooter>
         </DialogContent>
