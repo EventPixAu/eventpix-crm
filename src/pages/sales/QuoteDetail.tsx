@@ -211,6 +211,7 @@ export default function QuoteDetail() {
     }
   };
 
+  const handleProductSelect = (productId: string) => {
     if (productId === 'custom') {
       setNewItem({
         ...newItem,
