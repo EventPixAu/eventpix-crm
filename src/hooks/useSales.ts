@@ -168,6 +168,49 @@ export function useLeads() {
   });
 }
 
+export function useClientLeads(clientId: string | undefined) {
+  return useQuery({
+    queryKey: ['leads', 'client', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          *,
+          event_type:event_types(id, name),
+          lead_source:lead_sources(id, name)
+        `)
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+}
+
+export function useClientEvents(clientId: string | undefined) {
+  return useQuery({
+    queryKey: ['events', 'client', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await supabase
+        .from('events')
+        .select(`
+          *,
+          event_type:event_types(id, name)
+        `)
+        .eq('client_id', clientId)
+        .order('event_date', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+}
+
 export function useLead(id: string | undefined) {
   return useQuery({
     queryKey: ['leads', id],
