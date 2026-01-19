@@ -127,9 +127,14 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
       </div>
 
       {!clientId ? (
-        <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-          Select a client first to add contacts
-        </p>
+        <div className="py-4 text-center border border-dashed rounded-lg space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Assign a client to this lead to add contacts
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Click "Edit Lead" in Lead Details above to assign a client
+          </p>
+        </div>
       ) : contacts.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
           No contacts assigned. Add contacts from the client's contact list.
