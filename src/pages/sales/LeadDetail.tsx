@@ -14,6 +14,7 @@ import {
   FileText,
   ListChecks,
   Sparkles,
+  Pencil,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -52,6 +53,7 @@ import {
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import { EventSessionsEditor } from '@/components/EventSessionsEditor';
 import { LeadContactsEditor } from '@/components/LeadContactsEditor';
+import { EditLeadDialog } from '@/components/EditLeadDialog';
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800',
@@ -187,10 +189,25 @@ export default function LeadDetail() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Lead Details
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Lead Details
+                </CardTitle>
+                <EditLeadDialog 
+                  lead={{
+                    id: lead.id,
+                    lead_name: lead.lead_name,
+                    client_id: (lead as any).client_id,
+                    event_type_id: (lead as any).event_type_id,
+                    lead_source_id: (lead as any).lead_source_id,
+                    estimated_event_date: lead.estimated_event_date,
+                    notes: lead.notes,
+                    status: lead.status,
+                    source: lead.source,
+                  }}
+                />
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
