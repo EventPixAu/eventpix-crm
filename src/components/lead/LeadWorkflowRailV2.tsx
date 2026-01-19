@@ -3,8 +3,10 @@
  * 
  * Studio Ninja-style workflow rail using workflow_instances.
  * Displays steps grouped by section with due dates and step types.
+ * Includes automatic lead-to-job conversion redirect when "Job accepted" completes.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, isPast, isToday, isBefore, startOfDay } from 'date-fns';
 import {
   Check,
@@ -35,6 +37,7 @@ import {
 } from '@/hooks/useWorkflowInstances';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface LeadWorkflowRailV2Props {
   leadId: string;
@@ -138,7 +141,6 @@ function WorkflowStepRow({
     
     toggleStep.mutate({
       stepId: instanceStep.id,
-      instanceId: instanceStep.instance_id,
       entityType,
       entityId: leadId,
       isComplete: checked,
@@ -291,6 +293,8 @@ export function LeadWorkflowRailV2({
   onInitializeWorkflow,
   hasExistingWorkflow = false,
 }: LeadWorkflowRailV2Props) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: instance, isLoading, refetch } = useLeadWorkflowInstance(leadId);
   
@@ -342,6 +346,39 @@ export function LeadWorkflowRailV2({
       supabase.removeChannel(channel);
     };
   }, [instance?.id, leadId, queryClient]);
+  
+  // Realtime subscription for lead conversion redirect
+  useEffect(() => {
+    const channel = supabase
+      .channel(`lead-conversion-${leadId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'leads',
+          filter: `id=eq.${leadId}`,
+        },
+        (payload) => {
+          const newData = payload.new as { converted_job_id?: string };
+          if (newData.converted_job_id) {
+            toast({ 
+              title: 'Lead converted to Job!',
+              description: 'Redirecting to the new job...'
+            });
+            // Small delay to let user see the toast
+            setTimeout(() => {
+              navigate(`/events/${newData.converted_job_id}`);
+            }, 1500);
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [leadId, navigate, toast]);
   
   if (isLoading) {
     return (
