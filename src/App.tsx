@@ -46,6 +46,7 @@ import QuoteList from "./pages/sales/QuoteList";
 import QuoteDetail from "./pages/sales/QuoteDetail";
 import ProposalView from "./pages/sales/ProposalView";
 import ProductList from "./pages/sales/ProductList";
+import PackageList from "./pages/sales/PackageList";
 import PipelineView from "./pages/sales/PipelineView";
 import PublicAcceptQuote from "./pages/sales/PublicAcceptQuote";
 import PublicAcceptContract from "./pages/sales/PublicAcceptContract";
@@ -137,6 +138,7 @@ function AppRoutes() {
       <Route path="/sales/quotes" element={<ProtectedRoute><SalesGuard><QuoteList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/quotes/:id" element={<ProtectedRoute><SalesGuard><QuoteDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/products" element={<ProtectedRoute><SalesGuard><ProductList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/packages" element={<ProtectedRoute><SalesGuard><PackageList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/pipeline" element={<ProtectedRoute><SalesGuard><PipelineView /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/contracts" element={<ProtectedRoute><SalesGuard><ContractList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/contracts/:id" element={<ProtectedRoute><SalesGuard><ContractDetail /></SalesGuard></ProtectedRoute>} />
