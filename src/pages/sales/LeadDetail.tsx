@@ -51,6 +51,7 @@ import {
 } from '@/hooks/useSalesWorkflow';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import { EventSessionsEditor } from '@/components/EventSessionsEditor';
+import { LeadContactsEditor } from '@/components/LeadContactsEditor';
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800',
@@ -244,6 +245,25 @@ export default function LeadDetail() {
             </CardHeader>
             <CardContent>
               <EventSessionsEditor leadId={id} />
+            </CardContent>
+          </Card>
+
+          {/* Contacts */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Contacts
+              </CardTitle>
+              <CardDescription>
+                Key contacts for this enquiry (up to 4)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LeadContactsEditor 
+                leadId={id!} 
+                clientId={client?.id}
+              />
             </CardContent>
           </Card>
 
