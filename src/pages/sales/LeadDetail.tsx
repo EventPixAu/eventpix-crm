@@ -57,12 +57,14 @@ import { useLeadContracts } from '@/hooks/useContracts';
 import { useLeadEmailLogs } from '@/hooks/useEmailLogs';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
-  LeadWorkflowRail,
+  LeadWorkflowRailV2,
   LeadSummaryCard,
   LeadClientCard,
   LeadCollapsiblePanel,
+  InitializeLeadWorkflowDialog,
 } from '@/components/lead';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
+import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
@@ -82,6 +84,7 @@ export default function LeadDetail() {
   
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+  const [isInitWorkflowOpen, setIsInitWorkflowOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<SalesWorkflowTemplate | null>(null);
   const [applyMode, setApplyMode] = useState<'append' | 'replace'>('append');
 
@@ -180,10 +183,10 @@ export default function LeadDetail() {
         {/* LEFT COLUMN: Workflow Rail */}
         <div className="lg:col-span-5 xl:col-span-5">
           <div className="bg-card border rounded-lg p-4">
-            <LeadWorkflowRail
+            <LeadWorkflowRailV2
               leadId={id!}
               mainShootDate={mainShootStart}
-              onApplyTemplate={() => setIsTemplateDialogOpen(true)}
+              onInitializeWorkflow={() => setIsInitWorkflowOpen(true)}
             />
           </div>
         </div>
@@ -462,6 +465,15 @@ export default function LeadDetail() {
           venue_text: (lead as any).venue_text,
           client: client ? { id: client.id, business_name: client.business_name } : null,
         } : null}
+      />
+
+      {/* Initialize Workflow Dialog */}
+      <InitializeLeadWorkflowDialog
+        open={isInitWorkflowOpen}
+        onOpenChange={setIsInitWorkflowOpen}
+        entityType="lead"
+        entityId={id!}
+        mainShootAt={mainShootStart}
       />
     </AppLayout>
   );
