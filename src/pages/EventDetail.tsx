@@ -57,6 +57,8 @@ import { useEventContacts } from '@/hooks/useEventContacts';
 import { VenueAddressLink } from '@/components/VenueAddressLink';
 import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
+import { JobWorkflowRail } from '@/components/JobWorkflowRail';
+import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -400,6 +402,19 @@ export default function EventDetail() {
                   )}
                 </div>
               </div>
+
+              {/* Workflow Rail - Admin/Ops Only */}
+              {isAdmin && id && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <InitializeWorkflowDialog 
+                      eventId={id} 
+                      currentTemplateId={(event as any).workflow_template_id}
+                    />
+                  </div>
+                  <JobWorkflowRail eventId={id} isAdmin={isAdmin} />
+                </div>
+              )}
 
               {/* Setup Tasks */}
               {isAdmin && id && <EventTasksCard eventId={id} />}
