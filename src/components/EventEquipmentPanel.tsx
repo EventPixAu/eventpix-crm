@@ -59,7 +59,7 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
     await allocateEquipment.mutateAsync({
       eventId,
       equipmentItemId: selectedItemId,
-      userId: selectedUserId || undefined,
+      userId: selectedUserId && selectedUserId !== 'unassigned' ? selectedUserId : undefined,
     });
     setSelectedItemId('');
     setSelectedUserId('');
@@ -71,7 +71,7 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
     await allocateKit.mutateAsync({
       eventId,
       kitId: selectedKitId,
-      userId: selectedUserId || undefined,
+      userId: selectedUserId && selectedUserId !== 'unassigned' ? selectedUserId : undefined,
     });
     setSelectedKitId('');
     setSelectedUserId('');
@@ -167,7 +167,7 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
                       <SelectValue placeholder="Unassigned" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {assignedStaff.map((s) => (
                         <SelectItem key={s.userId} value={s.userId}>{s.name}</SelectItem>
                       ))}
