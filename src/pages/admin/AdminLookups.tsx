@@ -14,6 +14,11 @@ import {
   Beaker,
   Users,
   Target,
+  Briefcase,
+  XCircle,
+  Heart,
+  Package,
+  FileCheck,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -46,6 +51,31 @@ import {
   useCreateLeadSource,
   useUpdateLeadSource,
 } from '@/hooks/useLeadSources';
+import {
+  useAllStaffRoles,
+  useCreateStaffRole,
+  useUpdateStaffRole,
+} from '@/hooks/useAdminStaffRoles';
+import {
+  useAllLostReasons,
+  useCreateLostReason,
+  useUpdateLostReason,
+} from '@/hooks/useAdminLostReasons';
+import {
+  useAllRelationshipTypes,
+  useCreateRelationshipType,
+  useUpdateRelationshipType,
+} from '@/hooks/useAdminRelationshipTypes';
+import {
+  useCoveragePackages,
+  useCreateCoveragePackage,
+  useUpdateCoveragePackage,
+} from '@/hooks/useCoveragePackages';
+import {
+  useComplianceDocumentTypes,
+  useCreateComplianceDocumentType,
+  useUpdateComplianceDocumentType,
+} from '@/hooks/useCompliance';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
@@ -317,6 +347,31 @@ export default function AdminLookups() {
   const createLeadSource = useCreateLeadSource();
   const updateLeadSource = useUpdateLeadSource();
 
+  // Staff Roles
+  const { data: staffRoles = [], isLoading: staffRolesLoading } = useAllStaffRoles();
+  const createStaffRole = useCreateStaffRole();
+  const updateStaffRole = useUpdateStaffRole();
+
+  // Lost Reasons
+  const { data: lostReasons = [], isLoading: lostReasonsLoading } = useAllLostReasons();
+  const createLostReason = useCreateLostReason();
+  const updateLostReason = useUpdateLostReason();
+
+  // Relationship Types
+  const { data: relationshipTypes = [], isLoading: relationshipTypesLoading } = useAllRelationshipTypes();
+  const createRelationshipType = useCreateRelationshipType();
+  const updateRelationshipType = useUpdateRelationshipType();
+
+  // Coverage Packages
+  const { data: coveragePackages = [], isLoading: coveragePackagesLoading } = useCoveragePackages();
+  const createCoveragePackage = useCreateCoveragePackage();
+  const updateCoveragePackage = useUpdateCoveragePackage();
+
+  // Compliance Document Types
+  const { data: complianceDocTypes = [], isLoading: complianceDocTypesLoading } = useComplianceDocumentTypes();
+  const createComplianceDocType = useCreateComplianceDocumentType();
+  const updateComplianceDocType = useUpdateComplianceDocumentType();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -325,51 +380,86 @@ export default function AdminLookups() {
     <AppLayout>
       <PageHeader
         title="Manage Lookups"
-        description="Configure dropdown values for Event Types, Delivery Methods, and Equipment Categories"
+        description="Configure dropdown values used across the system"
       />
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <Tabs defaultValue="event-types">
-          <div className="border-b border-border bg-muted/30">
+          <div className="border-b border-border bg-muted/30 overflow-x-auto">
             <TabsList className="w-full justify-start rounded-none border-0 h-auto p-0 flex-wrap">
               <TabsTrigger 
                 value="event-types" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 Event Types
               </TabsTrigger>
               <TabsTrigger 
                 value="delivery-methods"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Truck className="h-4 w-4 mr-2" />
-                Delivery Methods
+                Delivery
               </TabsTrigger>
               <TabsTrigger 
                 value="equipment-categories"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Box className="h-4 w-4 mr-2" />
                 Equipment
               </TabsTrigger>
               <TabsTrigger 
+                value="staff-roles"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Briefcase className="h-4 w-4 mr-2" />
+                Staff Roles
+              </TabsTrigger>
+              <TabsTrigger 
                 value="contact-roles"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Users className="h-4 w-4 mr-2" />
                 Contact Roles
               </TabsTrigger>
               <TabsTrigger 
+                value="relationship-types"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Heart className="h-4 w-4 mr-2" />
+                Relationships
+              </TabsTrigger>
+              <TabsTrigger 
                 value="lead-sources"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Target className="h-4 w-4 mr-2" />
                 Lead Sources
               </TabsTrigger>
               <TabsTrigger 
+                value="lost-reasons"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Lost Reasons
+              </TabsTrigger>
+              <TabsTrigger 
+                value="coverage-packages"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Coverage
+              </TabsTrigger>
+              <TabsTrigger 
+                value="compliance-docs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <FileCheck className="h-4 w-4 mr-2" />
+                Compliance
+              </TabsTrigger>
+              <TabsTrigger 
                 value="training-tools"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Beaker className="h-4 w-4 mr-2" />
                 Training
@@ -414,6 +504,18 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
+            <TabsContent value="staff-roles" className="m-0">
+              <LookupTable
+                items={staffRoles}
+                isLoading={staffRolesLoading}
+                onCreate={async (name) => { await createStaffRole.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateStaffRole.mutateAsync({ id, ...updates }); }}
+                createPending={createStaffRole.isPending}
+                updatePending={updateStaffRole.isPending}
+                itemLabel="Staff Role"
+              />
+            </TabsContent>
+
             <TabsContent value="contact-roles" className="m-0">
               <LookupTable
                 items={contactRoles}
@@ -426,6 +528,18 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
+            <TabsContent value="relationship-types" className="m-0">
+              <LookupTable
+                items={relationshipTypes}
+                isLoading={relationshipTypesLoading}
+                onCreate={async (name) => { await createRelationshipType.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateRelationshipType.mutateAsync({ id, ...updates }); }}
+                createPending={createRelationshipType.isPending}
+                updatePending={updateRelationshipType.isPending}
+                itemLabel="Relationship Type"
+              />
+            </TabsContent>
+
             <TabsContent value="lead-sources" className="m-0">
               <LookupTable
                 items={leadSources}
@@ -435,6 +549,62 @@ export default function AdminLookups() {
                 createPending={createLeadSource.isPending}
                 updatePending={updateLeadSource.isPending}
                 itemLabel="Lead Source"
+              />
+            </TabsContent>
+
+            <TabsContent value="lost-reasons" className="m-0">
+              <LookupTable
+                items={lostReasons}
+                isLoading={lostReasonsLoading}
+                onCreate={async (name) => { await createLostReason.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateLostReason.mutateAsync({ id, ...updates }); }}
+                createPending={createLostReason.isPending}
+                updatePending={updateLostReason.isPending}
+                itemLabel="Lost Reason"
+              />
+            </TabsContent>
+
+            <TabsContent value="coverage-packages" className="m-0">
+              <LookupTable
+                items={coveragePackages.map(p => ({ 
+                  id: p.id, 
+                  name: p.name, 
+                  is_active: p.is_active, 
+                  sort_order: p.sort_order 
+                }))}
+                isLoading={coveragePackagesLoading}
+                onCreate={async (name) => { await createCoveragePackage.mutateAsync({ name }); }}
+                onUpdate={async (id, updates) => { await updateCoveragePackage.mutateAsync({ id, ...updates }); }}
+                createPending={createCoveragePackage.isPending}
+                updatePending={updateCoveragePackage.isPending}
+                itemLabel="Coverage Package"
+              />
+            </TabsContent>
+
+            <TabsContent value="compliance-docs" className="m-0">
+              <LookupTable
+                items={complianceDocTypes.map(d => ({ 
+                  id: d.id, 
+                  name: d.name, 
+                  is_active: d.is_active, 
+                  sort_order: d.sort_order 
+                }))}
+                isLoading={complianceDocTypesLoading}
+                onCreate={async (name) => { 
+                  await createComplianceDocType.mutateAsync({ 
+                    name, 
+                    required: false, 
+                    has_expiry: false, 
+                    is_active: true, 
+                    sort_order: complianceDocTypes.length,
+                    applies_to_roles: null,
+                    description: null
+                  }); 
+                }}
+                onUpdate={async (id, updates) => { await updateComplianceDocType.mutateAsync({ id, ...updates }); }}
+                createPending={createComplianceDocType.isPending}
+                updatePending={updateComplianceDocType.isPending}
+                itemLabel="Compliance Document Type"
               />
             </TabsContent>
 
