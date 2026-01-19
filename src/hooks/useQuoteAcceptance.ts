@@ -50,13 +50,16 @@ export function useAcceptQuote() {
       
       return result;
     },
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes', result.quote_id] });
+      // Invalidate workflow instances to reflect auto-completed steps
+      queryClient.invalidateQueries({ queryKey: ['workflow-instance'] });
       if (result.event_id) {
         queryClient.invalidateQueries({ queryKey: ['events'] });
         queryClient.invalidateQueries({ queryKey: ['events', result.event_id] });
         queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', result.event_id] });
+        queryClient.invalidateQueries({ queryKey: ['workflow-instance', 'job', result.event_id] });
       }
       toast({ 
         title: 'Quote accepted', 
