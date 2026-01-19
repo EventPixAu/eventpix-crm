@@ -53,6 +53,7 @@ export interface ConvertToEventResult {
     worksheets: number;
     tasks: number;
     event_contacts: number;
+    sessions: number;
   };
   warnings?: string[];
 }
@@ -86,10 +87,17 @@ export function useConvertToEvent() {
       const warnings = result.warnings || [];
       const tasksCreated = result.created?.tasks || 0;
       const worksheetsCreated = result.created?.worksheets || 0;
+      const sessionsTransferred = result.created?.sessions || 0;
+      
+      const details = [
+        tasksCreated > 0 ? `${tasksCreated} tasks` : null,
+        worksheetsCreated > 0 ? `${worksheetsCreated} worksheets` : null,
+        sessionsTransferred > 0 ? `${sessionsTransferred} sessions` : null,
+      ].filter(Boolean).join(', ');
       
       toast({
         title: 'Event created successfully',
-        description: `${tasksCreated} setup tasks and ${worksheetsCreated} worksheets created.${warnings.length > 0 ? ` Warnings: ${warnings.join(', ')}` : ''}`,
+        description: `${details || 'Event ready'}${warnings.length > 0 ? `. Warnings: ${warnings.join(', ')}` : ''}`,
       });
       
       if (result.event_id) {
