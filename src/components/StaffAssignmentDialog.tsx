@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useStaffProfiles, useStaffRoles } from '@/hooks/useStaff';
+import { useStaffDirectory, useStaffRoles } from '@/hooks/useStaff';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
@@ -49,7 +49,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const [guardrailOverridden, setGuardrailOverridden] = useState(false);
   
   const { user } = useAuth();
-  const { data: profiles = [] } = useStaffProfiles();
+  const { data: profiles = [] } = useStaffDirectory();
   const { data: roles = [] } = useStaffRoles();
   const { data: event } = useEvent(eventId);
   const createAssignment = useCreateAssignment();
@@ -271,8 +271,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
                 availableProfiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
                     <div className="flex items-center gap-2">
-                      <span>{profile.full_name || profile.email}</span>
-                      {profile.default_role?.name && <span className="text-muted-foreground">({profile.default_role.name})</span>}
+                      <span>{profile.full_name || 'Unnamed Staff'}</span>
                       <EligibilityBadge userId={profile.id} />
                     </div>
                   </SelectItem>

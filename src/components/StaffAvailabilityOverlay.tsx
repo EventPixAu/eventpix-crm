@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useStaffProfiles } from '@/hooks/useStaff';
+import { useStaffDirectory } from '@/hooks/useStaff';
 import { useStaffAvailabilityByDate, type AvailabilityStatus } from '@/hooks/useStaffAvailability';
 import { cn } from '@/lib/utils';
 
@@ -17,7 +17,6 @@ interface StaffAvailabilityOverlayProps {
 interface StaffWithAvailability {
   id: string;
   name: string;
-  email: string;
   status: AvailabilityStatus;
   notes: string | null;
 }
@@ -91,7 +90,7 @@ function StaffAvailabilityItem({ staff }: { staff: StaffWithAvailability }) {
 
 export function StaffAvailabilityOverlay({ date, className }: StaffAvailabilityOverlayProps) {
   const dateStr = format(date, 'yyyy-MM-dd');
-  const { data: profiles = [] } = useStaffProfiles();
+  const { data: profiles = [] } = useStaffDirectory();
   const { data: availabilityData = [], isLoading } = useStaffAvailabilityByDate(dateStr);
 
   // Merge profiles with availability data
@@ -104,8 +103,7 @@ export function StaffAvailabilityOverlay({ date, className }: StaffAvailabilityO
       const availability = availabilityMap.get(profile.id);
       return {
         id: profile.id,
-        name: profile.full_name || profile.email,
-        email: profile.email,
+        name: profile.full_name || 'Unnamed Staff',
         status: (availability?.availability_status || 'available') as AvailabilityStatus,
         notes: availability?.notes || null,
       };
