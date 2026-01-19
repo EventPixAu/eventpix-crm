@@ -4,7 +4,7 @@
  * Displays sales pipeline with leads at various stages.
  * Access: Admin, Sales roles only (enforced via RLS)
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Plus, Search, Target, Calendar, Building2, UserPlus, Users } from 'lucide-react';
@@ -44,7 +44,8 @@ import { useLeads, useCreateLead, useClients } from '@/hooks/useSales';
 import { useEventTypes } from '@/hooks/useLookups';
 import { useLeadSources } from '@/hooks/useLeadSources';
 import { useCreateLeadContact } from '@/hooks/useLeadContacts';
-import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   new: { label: 'New', variant: 'default' },
@@ -81,6 +82,36 @@ export default function LeadList() {
     contact_email: '',
     contact_phone: '',
   });
+
+  // Fetch client contacts when a client is selected (for existing client mode)
+  const { data: clientContacts } = useQuery({
+    queryKey: ['client-contacts-for-lead-form', formData.client_id],
+    queryFn: async () => {
+      if (!formData.client_id) return [];
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .select('*')
+        .eq('client_id', formData.client_id)
+        .order('is_primary', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!formData.client_id && leadType === 'existing_client',
+  });
+
+  // Auto-populate contact fields when client is selected
+  useEffect(() => {
+    if (leadType === 'existing_client' && clientContacts && clientContacts.length > 0) {
+      const primaryContact = clientContacts[0]; // Already sorted by is_primary desc
+      setFormData(prev => ({
+        ...prev,
+        contact_name: primaryContact.contact_name || '',
+        contact_email: primaryContact.email || '',
+        contact_phone: primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office || '',
+      }));
+    }
+  }, [clientContacts, leadType]);
 
   const filteredLeads = leads?.filter(lead => {
     const matchesSearch = 
