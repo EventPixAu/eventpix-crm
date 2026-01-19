@@ -178,7 +178,7 @@ export function EquipmentInventory() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
+                      {categories.filter(cat => cat.is_active).map((cat) => (
                         <SelectItem key={cat.id} value={cat.name.toLowerCase()}>
                           {cat.name}
                         </SelectItem>
