@@ -916,6 +916,144 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          body_html: string | null
+          body_preview: string | null
+          click_count: number | null
+          clicked_at: string | null
+          client_id: string | null
+          contract_id: string | null
+          created_at: string
+          delivered_at: string | null
+          email_type: string
+          error_message: string | null
+          event_id: string | null
+          id: string
+          lead_id: string | null
+          open_count: number | null
+          opened_at: string | null
+          quote_id: string | null
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_preview?: string | null
+          click_count?: number | null
+          clicked_at?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          email_type: string
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          open_count?: number | null
+          opened_at?: string | null
+          quote_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          body_preview?: string | null
+          click_count?: number | null
+          clicked_at?: string | null
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          email_type?: string
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          open_count?: number | null
+          opened_at?: string | null
+          quote_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           body_html: string
@@ -4032,6 +4170,22 @@ export type Database = {
             }
             Returns: string
           }
+      log_email_send: {
+        Args: {
+          p_body_html?: string
+          p_client_id?: string
+          p_contract_id?: string
+          p_email_type: string
+          p_event_id?: string
+          p_lead_id?: string
+          p_quote_id?: string
+          p_recipient_email: string
+          p_recipient_name: string
+          p_subject: string
+          p_template_id?: string
+        }
+        Returns: string
+      }
       mark_contract_as_sent: { Args: { p_contract_id: string }; Returns: Json }
       mark_invitation_emailed: {
         Args: { p_auth_user_id: string; p_invitation_id: string }
@@ -4064,6 +4218,11 @@ export type Database = {
         Args: { p_role: string; p_user_id: string }
         Returns: Json
       }
+      track_email_click: {
+        Args: { p_email_log_id: string }
+        Returns: undefined
+      }
+      track_email_open: { Args: { p_email_log_id: string }; Returns: undefined }
     }
     Enums: {
       app_role:
