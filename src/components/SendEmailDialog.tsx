@@ -75,7 +75,7 @@ export function SendEmailDialog({
 
   // Apply template when selected
   const handleTemplateSelect = (templateId: string) => {
-    setSelectedTemplateId(templateId);
+    setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
     if (template) {
       // Replace basic placeholders
@@ -173,7 +173,7 @@ export function SendEmailDialog({
                   <SelectValue placeholder="Choose a template or write custom" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No template (custom email)</SelectItem>
+                  <SelectItem value="none">No template (custom email)</SelectItem>
                   {templates?.map((template) => (
                     <SelectItem key={template.id} value={template.id}>
                       {template.name}
