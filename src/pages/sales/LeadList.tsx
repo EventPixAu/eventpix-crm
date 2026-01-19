@@ -292,7 +292,7 @@ export default function LeadList() {
 
       {/* Create Lead Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>New Lead</DialogTitle>
             <DialogDescription>
@@ -300,7 +300,7 @@ export default function LeadList() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="py-2">
             {/* Lead Type Selection */}
             <Tabs value={leadType} onValueChange={(v) => setLeadType(v as LeadType)}>
               <TabsList className="grid w-full grid-cols-2">
@@ -314,155 +314,171 @@ export default function LeadList() {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="new_prospect" className="mt-4 space-y-4">
-                <p className="text-sm text-muted-foreground">
+              <TabsContent value="new_prospect" className="mt-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   Create a lead for a new potential client.
                 </p>
-                <div className="space-y-2">
-                  <Label htmlFor="company_name">Company Name *</Label>
-                  <Input
-                    id="company_name"
-                    value={formData.company_name}
-                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    placeholder="e.g., Acme Corporation"
-                  />
-                </div>
               </TabsContent>
               
-              <TabsContent value="existing_client" className="mt-4 space-y-2">
-                <Label htmlFor="client_id">Select Client *</Label>
-                <Select 
-                  value={formData.client_id} 
-                  onValueChange={(value) => setFormData({ ...formData, client_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an existing client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients?.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.business_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <TabsContent value="existing_client" className="mt-3">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Create a new event lead for an existing client.
+                </p>
               </TabsContent>
             </Tabs>
 
-            {/* Event Name - Common for both */}
-            <div className="space-y-2">
-              <Label htmlFor="event_name">Event Name *</Label>
-              <Input
-                id="event_name"
-                value={formData.event_name}
-                onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-                placeholder="e.g., Annual Gala 2026"
-              />
-            </div>
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-2 gap-6 mt-4">
+              {/* Left Column - Company/Client & Event Details */}
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                  {leadType === 'new_prospect' ? 'Company & Event' : 'Client & Event'}
+                </div>
+                
+                {leadType === 'new_prospect' ? (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="company_name">Company Name *</Label>
+                    <Input
+                      id="company_name"
+                      value={formData.company_name}
+                      onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                      placeholder="e.g., Acme Corporation"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="client_id">Select Client *</Label>
+                    <Select 
+                      value={formData.client_id} 
+                      onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an existing client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients?.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.business_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            {/* Contact Details Section */}
-            <Separator className="my-2" />
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">Primary Contact</Label>
-              <p className="text-xs text-muted-foreground">Who should we contact about this lead?</p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="contact_name">Contact Name *</Label>
-              <Input
-                id="contact_name"
-                value={formData.contact_name}
-                onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                placeholder="e.g., John Smith"
-                maxLength={100}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="contact_email">Email Address</Label>
-                <Input
-                  id="contact_email"
-                  type="email"
-                  value={formData.contact_email}
-                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                  placeholder="john@company.com"
-                  maxLength={255}
-                />
+                <div className="space-y-1.5">
+                  <Label htmlFor="event_name">Event Name *</Label>
+                  <Input
+                    id="event_name"
+                    value={formData.event_name}
+                    onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
+                    placeholder="e.g., Annual Gala 2026"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="event_type_id">Event Type</Label>
+                    <Select 
+                      value={formData.event_type_id} 
+                      onValueChange={(value) => setFormData({ ...formData, event_type_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {eventTypes?.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="estimated_event_date">Event Date</Label>
+                    <Input
+                      id="estimated_event_date"
+                      type="date"
+                      value={formData.estimated_event_date}
+                      onChange={(e) => setFormData({ ...formData, estimated_event_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="lead_source_id">Lead Source</Label>
+                  <Select 
+                    value={formData.lead_source_id} 
+                    onValueChange={(value) => setFormData({ ...formData, lead_source_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select lead source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {leadSources?.map((source) => (
+                        <SelectItem key={source.id} value={source.id}>
+                          {source.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="contact_phone">Phone Number</Label>
-                <Input
-                  id="contact_phone"
-                  type="tel"
-                  value={formData.contact_phone}
-                  onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                  placeholder="+61 400 000 000"
-                  maxLength={20}
-                />
+
+              {/* Right Column - Contact Details */}
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                  Primary Contact
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="contact_name">Contact Name *</Label>
+                  <Input
+                    id="contact_name"
+                    value={formData.contact_name}
+                    onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                    placeholder="e.g., John Smith"
+                    maxLength={100}
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="contact_email">Email Address</Label>
+                  <Input
+                    id="contact_email"
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                    placeholder="john@company.com"
+                    maxLength={255}
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="contact_phone">Phone Number</Label>
+                  <Input
+                    id="contact_phone"
+                    type="tel"
+                    value={formData.contact_phone}
+                    onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                    placeholder="+61 400 000 000"
+                    maxLength={20}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Any additional details..."
+                    rows={3}
+                    maxLength={1000}
+                  />
+                </div>
               </div>
-            </div>
-            
-            <Separator className="my-2" />
-            
-            <div className="space-y-2">
-              <Label htmlFor="event_type_id">Event Type</Label>
-              <Select 
-                value={formData.event_type_id} 
-                onValueChange={(value) => setFormData({ ...formData, event_type_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {eventTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="estimated_event_date">Estimated Event Date</Label>
-              <Input
-                id="estimated_event_date"
-                type="date"
-                value={formData.estimated_event_date}
-                onChange={(e) => setFormData({ ...formData, estimated_event_date: e.target.value })}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="lead_source_id">Lead Source</Label>
-              <Select 
-                value={formData.lead_source_id} 
-                onValueChange={(value) => setFormData({ ...formData, lead_source_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select lead source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leadSources?.map((source) => (
-                    <SelectItem key={source.id} value={source.id}>
-                      {source.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes..."
-                rows={2}
-                maxLength={1000}
-              />
             </div>
           </div>
           
@@ -473,15 +489,15 @@ export default function LeadList() {
             <Button 
               onClick={handleCreate} 
               disabled={
-                !formData.event_name.trim() || 
+                createLead.isPending || 
+                createLeadContact.isPending ||
+                !formData.event_name.trim() ||
                 !formData.contact_name.trim() ||
                 (leadType === 'new_prospect' && !formData.company_name.trim()) ||
-                (leadType === 'existing_client' && !formData.client_id) ||
-                createLead.isPending ||
-                createLeadContact.isPending
+                (leadType === 'existing_client' && !formData.client_id)
               }
             >
-              {(createLead.isPending || createLeadContact.isPending) ? 'Creating...' : 'Create Lead'}
+              {createLead.isPending || createLeadContact.isPending ? 'Creating...' : 'Create Lead'}
             </Button>
           </DialogFooter>
         </DialogContent>
