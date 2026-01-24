@@ -242,16 +242,26 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header - Show on screens smaller than md */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border">
+      {/* Global Header with Hamburger Menu - Always visible */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 -ml-2 text-muted-foreground hover:text-foreground"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Button - Always visible on all screen sizes */}
+            <button
+              onClick={() => {
+                // On mobile, open the overlay sidebar
+                // On desktop/tablet, toggle collapsed state
+                if (window.innerWidth < 768) {
+                  setSidebarOpen(true);
+                } else {
+                  toggleCollapsed();
+                }
+              }}
+              className="p-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
             <img src={eventpixLogo} alt="Eventpix" className="h-6" />
           </div>
           <NotificationBell />
@@ -314,33 +324,14 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Desktop/Tablet Sidebar - Always visible, collapsible */}
+      {/* Desktop/Tablet Sidebar - Collapsible via hamburger */}
       <aside 
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          "fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
           "hidden md:flex",
           sidebarWidth
         )}
       >
-        <div className={cn(
-          "flex items-center border-b border-sidebar-border transition-all duration-300",
-          sidebarCollapsed ? "justify-center p-3" : "justify-between p-4"
-        )}>
-          {sidebarCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <img src={eventpixLogo} alt="Eventpix" className="h-7 w-7 object-contain" />
-              </TooltipTrigger>
-              <TooltipContent side="right">Eventpix</TooltipContent>
-            </Tooltip>
-          ) : (
-            <>
-              <img src={eventpixLogo} alt="Eventpix" className="h-8" />
-              <NotificationBell />
-            </>
-          )}
-        </div>
-
         <nav className={cn(
           "flex-1 overflow-y-auto transition-all duration-300",
           sidebarCollapsed ? "p-2" : "p-4"
@@ -406,22 +397,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           )}
         </div>
 
-        {/* Collapse Toggle Button */}
-        <button
-          onClick={toggleCollapsed}
-          className="absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:text-foreground hover:bg-muted transition-colors"
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronLeft className="h-3 w-3" />
-          )}
-        </button>
+        {/* Collapse Toggle Button - Hidden since we now have global hamburger */}
       </aside>
 
       {/* Main Content */}
       <main className={cn(
-        "pt-14 md:pt-0 min-h-screen transition-all duration-300",
+        "pt-14 min-h-screen transition-all duration-300",
         mainPadding
       )}>
         <div className="p-3 sm:p-4 md:p-6 xl:p-8">
