@@ -256,6 +256,7 @@ export type Database = {
           first_name: string | null
           id: string
           is_primary: boolean | null
+          job_title_id: string | null
           last_contacted_at: string | null
           last_name: string | null
           notes: string | null
@@ -276,6 +277,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_primary?: boolean | null
+          job_title_id?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
           notes?: string | null
@@ -296,6 +298,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           is_primary?: boolean | null
+          job_title_id?: string | null
           last_contacted_at?: string | null
           last_name?: string | null
           notes?: string | null
@@ -312,6 +315,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_job_title_id_fkey"
+            columns: ["job_title_id"]
+            isOneToOne: false
+            referencedRelation: "job_titles"
             referencedColumns: ["id"]
           },
           {
@@ -491,6 +501,50 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      contact_activities: {
+        Row: {
+          activity_date: string
+          activity_type: string
+          contact_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          notes: string | null
+          subject: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          activity_date?: string
+          activity_type: string
+          contact_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          subject?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          activity_date?: string
+          activity_type?: string
+          contact_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          subject?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_relationship_types: {
         Row: {
@@ -2343,6 +2397,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_titles: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
       }
       knowledge_base: {
         Row: {

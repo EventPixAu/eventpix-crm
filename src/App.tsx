@@ -62,6 +62,7 @@ import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
 import { CompanyList, ContactList } from "./pages/crm";
+import ContactDetail from "./pages/crm/ContactDetail";
 
 import NotFound from "./pages/NotFound";
 
@@ -138,6 +139,7 @@ function AppRoutes() {
       <Route path="/crm/companies/new" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/companies/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/contacts" element={<ProtectedRoute><SalesGuard><ContactList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/crm/contacts/:id" element={<ProtectedRoute><SalesGuard><ContactDetail /></SalesGuard></ProtectedRoute>} />
       
       {/* Sales routes - admin + sales */}
       <Route path="/sales/clients" element={<ProtectedRoute><SalesGuard><ClientList /></SalesGuard></ProtectedRoute>} />
