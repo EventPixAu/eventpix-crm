@@ -317,7 +317,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Desktop/Tablet Sidebar - Always visible, collapsible */}
       <aside 
         className={cn(
-          "hidden md:fixed md:left-0 md:top-0 md:z-40 md:flex md:h-screen md:flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          "fixed left-0 top-0 z-40 h-screen flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          "hidden md:flex",
           sidebarWidth
         )}
       >
