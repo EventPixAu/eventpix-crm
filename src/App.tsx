@@ -61,6 +61,7 @@ import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
+import { CompanyList, ContactList } from "./pages/crm";
 
 import NotFound from "./pages/NotFound";
 
@@ -131,6 +132,12 @@ function AppRoutes() {
       {/* Executive routes - admin only (executive role removed, use admin) */}
       <Route path="/executive/dashboard" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/executive" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
+      
+      {/* CRM routes - admin + sales */}
+      <Route path="/crm/companies" element={<ProtectedRoute><SalesGuard><CompanyList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/crm/companies/new" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/crm/companies/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/crm/contacts" element={<ProtectedRoute><SalesGuard><ContactList /></SalesGuard></ProtectedRoute>} />
       
       {/* Sales routes - admin + sales */}
       <Route path="/sales/clients" element={<ProtectedRoute><SalesGuard><ClientList /></SalesGuard></ProtectedRoute>} />

@@ -57,7 +57,8 @@ interface AppLayoutProps {
 // ===== CRM SECTION =====
 const crmItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/sales/clients', label: 'Clients', icon: Building2 },
+  { href: '/crm/companies', label: 'Companies', icon: Building2 },
+  { href: '/crm/contacts', label: 'Contacts', icon: User },
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
 ];
 
