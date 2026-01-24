@@ -61,9 +61,10 @@ import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
-import { CompanyList, ContactList, CrmEmails } from "./pages/crm";
+import { CompanyList, ContactList, CrmEmails, PromotionsDashboard } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
 import ResetPassword from "./pages/ResetPassword";
+import SalesDashboard from "./pages/sales/SalesDashboard";
 
 import NotFound from "./pages/NotFound";
 
@@ -137,6 +138,7 @@ function AppRoutes() {
       <Route path="/admin/executive" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
       
       {/* CRM routes - admin + sales */}
+      <Route path="/crm/promotions" element={<ProtectedRoute><SalesGuard><PromotionsDashboard /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/companies" element={<ProtectedRoute><SalesGuard><CompanyList /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/companies/new" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/companies/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
@@ -145,6 +147,7 @@ function AppRoutes() {
       <Route path="/crm/emails" element={<ProtectedRoute><SalesGuard><CrmEmails /></SalesGuard></ProtectedRoute>} />
       
       {/* Sales routes - admin + sales */}
+      <Route path="/sales/dashboard" element={<ProtectedRoute><SalesGuard><SalesDashboard /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/clients" element={<ProtectedRoute><SalesGuard><ClientList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/clients/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/leads" element={<ProtectedRoute><SalesGuard><LeadList /></SalesGuard></ProtectedRoute>} />

@@ -61,7 +61,7 @@ interface AppLayoutProps {
 
 // ===== CRM SECTION =====
 const crmItems: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/crm/promotions', label: 'Promotions', icon: Home },
   { href: '/crm/companies', label: 'Companies', icon: Building2 },
   { href: '/crm/contacts', label: 'Contacts', icon: User },
   { href: '/crm/emails', label: 'Emails', icon: Mail },
@@ -70,6 +70,7 @@ const crmItems: NavItem[] = [
 
 // ===== SALES SECTION =====
 const salesItems: NavItem[] = [
+  { href: '/sales/dashboard', label: 'Dashboard', icon: Home },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
@@ -82,6 +83,7 @@ const salesItems: NavItem[] = [
 
 // ===== OPERATIONS SECTION =====
 const operationsItems: NavItem[] = [
+  { href: '/', label: 'Dashboard', icon: Home },
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/day-load', label: 'Day Load', icon: CalendarCheck },
@@ -154,6 +156,7 @@ function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
 function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   // Sales users see CRM and Sales only
   const salesOnlyItems: NavItem[] = [
+    { href: '/sales/dashboard', label: 'Dashboard', icon: Home },
     { href: '/sales/leads', label: 'Leads', icon: Target },
     { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
     { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
