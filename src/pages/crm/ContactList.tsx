@@ -29,7 +29,9 @@ import {
   Phone,
   ExternalLink,
   Briefcase,
+  Upload,
 } from 'lucide-react';
+import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 
 interface Contact {
   id: string;
@@ -100,19 +102,32 @@ export default function ContactList() {
     },
   });
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Individual Contacts"
         description="Manage contacts across all companies"
         actions={
-          <Button asChild>
-            <Link to="/crm/contacts/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Contact
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button asChild>
+              <Link to="/crm/contacts/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Contact
+              </Link>
+            </Button>
+          </div>
         }
+      />
+
+      <ContactImportDialog 
+        open={importDialogOpen} 
+        onOpenChange={setImportDialogOpen} 
       />
 
       <Card>

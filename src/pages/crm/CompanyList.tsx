@@ -34,7 +34,9 @@ import {
   Phone,
   ExternalLink,
   Tag,
+  Upload,
 } from 'lucide-react';
+import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
@@ -165,19 +167,32 @@ export default function CompanyList() {
     }
   };
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Company Accounts"
         description="Manage your business relationships"
         actions={
-          <Button asChild>
-            <Link to="/crm/companies/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Company
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button asChild>
+              <Link to="/crm/companies/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Company
+              </Link>
+            </Button>
+          </div>
         }
+      />
+      
+      <ContactImportDialog 
+        open={importDialogOpen} 
+        onOpenChange={setImportDialogOpen} 
       />
 
       <Card>
