@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface NavItem {
   href: string;
@@ -16,13 +17,46 @@ interface SidebarNavGroupProps {
   items: NavItem[];
   defaultOpen?: boolean;
   onItemClick?: () => void;
+  collapsed?: boolean;
 }
 
 export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
-  function SidebarNavGroup({ label, icon: Icon, items, defaultOpen = false, onItemClick }, ref) {
+  function SidebarNavGroup({ label, icon: Icon, items, defaultOpen = false, onItemClick, collapsed = false }, ref) {
     const location = useLocation();
     const hasActiveChild = items.some(item => location.pathname === item.href);
     const [isOpen, setIsOpen] = useState(defaultOpen || hasActiveChild);
+
+    // Collapsed mode: show icons only with tooltips
+    if (collapsed) {
+      return (
+        <div ref={ref} className="mb-1 space-y-1">
+          {items.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.href}
+                    onClick={onItemClick}
+                    className={cn(
+                      'flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors',
+                      isActive
+                        ? 'bg-sidebar-accent text-sidebar-primary'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      );
+    }
 
     return (
       <div ref={ref} className="mb-1">
@@ -88,12 +122,38 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
 interface SidebarNavItemProps {
   item: NavItem;
   onItemClick?: () => void;
+  collapsed?: boolean;
 }
 
 export const SidebarNavItem = forwardRef<HTMLAnchorElement, SidebarNavItemProps>(
-  function SidebarNavItem({ item, onItemClick }, ref) {
+  function SidebarNavItem({ item, onItemClick, collapsed = false }, ref) {
     const location = useLocation();
     const isActive = location.pathname === item.href;
+
+    if (collapsed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              ref={ref}
+              to={item.href}
+              onClick={onItemClick}
+              className={cn(
+                'flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors mb-1',
+                isActive
+                  ? 'bg-sidebar-accent text-sidebar-primary'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
     
     return (
       <Link
