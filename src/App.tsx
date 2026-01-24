@@ -63,6 +63,7 @@ import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
 import { CompanyList, ContactList, CrmEmails } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
+import ResetPassword from "./pages/ResetPassword";
 
 import NotFound from "./pages/NotFound";
 
@@ -91,6 +92,7 @@ function AppRoutes() {
     <Routes>
       {/* Public routes - no auth required */}
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
