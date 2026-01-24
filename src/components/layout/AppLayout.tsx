@@ -21,6 +21,7 @@ import {
   FileCheck,
   Home,
   LogOut,
+  Mail,
   Menu,
   Package,
   Settings,
@@ -59,6 +60,7 @@ const crmItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/crm/companies', label: 'Companies', icon: Building2 },
   { href: '/crm/contacts', label: 'Contacts', icon: User },
+  { href: '/crm/emails', label: 'Emails', icon: Mail },
   { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
 ];
 
