@@ -59,6 +59,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useToast } from '@/hooks/use-toast';
+import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
 
 interface Contact {
   id: string;
@@ -388,6 +389,12 @@ export default function ContactDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Company Associations */}
+          <ContactCompanyAssociationsPanel 
+            contactId={id!} 
+            primaryCompanyId={contact.client_id} 
+          />
         </div>
 
         {/* Right Column - Activity Timeline */}

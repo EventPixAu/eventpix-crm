@@ -334,7 +334,7 @@ export type Database = {
       }
       client_contacts: {
         Row: {
-          client_id: string
+          client_id: string | null
           consent_source: string | null
           consent_status: string | null
           contact_name: string
@@ -342,6 +342,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          is_freelance: boolean | null
           is_primary: boolean | null
           job_title_id: string | null
           last_contacted_at: string | null
@@ -355,7 +356,7 @@ export type Database = {
           role_title: string | null
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           consent_source?: string | null
           consent_status?: string | null
           contact_name: string
@@ -363,6 +364,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_freelance?: boolean | null
           is_primary?: boolean | null
           job_title_id?: string | null
           last_contacted_at?: string | null
@@ -376,7 +378,7 @@ export type Database = {
           role_title?: string | null
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           consent_source?: string | null
           consent_status?: string | null
           contact_name?: string
@@ -384,6 +386,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_freelance?: boolean | null
           is_primary?: boolean | null
           job_title_id?: string | null
           last_contacted_at?: string | null
@@ -629,6 +632,70 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_company_associations: {
+        Row: {
+          company_id: string
+          contact_id: string
+          created_at: string | null
+          custom_title: string | null
+          id: string
+          is_active: boolean | null
+          job_title_id: string | null
+          notes: string | null
+          relationship_type: string | null
+          started_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          contact_id: string
+          created_at?: string | null
+          custom_title?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_title_id?: string | null
+          notes?: string | null
+          relationship_type?: string | null
+          started_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          contact_id?: string
+          created_at?: string | null
+          custom_title?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_title_id?: string | null
+          notes?: string | null
+          relationship_type?: string | null
+          started_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_company_associations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_company_associations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_company_associations_job_title_id_fkey"
+            columns: ["job_title_id"]
+            isOneToOne: false
+            referencedRelation: "job_titles"
             referencedColumns: ["id"]
           },
         ]
