@@ -1,3 +1,8 @@
+/**
+ * CONTACT LIST PAGE
+ * 
+ * CRM Contacts list with search and job title display
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +28,7 @@ import {
   Mail,
   Phone,
   ExternalLink,
+  Briefcase,
 } from 'lucide-react';
 
 interface Contact {
@@ -33,6 +39,8 @@ interface Contact {
   email: string | null;
   phone: string | null;
   phone_mobile: string | null;
+  job_title_id: string | null;
+  job_title: { id: string; name: string } | null;
   role_title: string | null;
   is_primary: boolean | null;
   client_id: string;
@@ -55,6 +63,8 @@ export default function ContactList() {
           email,
           phone,
           phone_mobile,
+          job_title_id,
+          job_title:job_titles(id, name),
           role_title,
           is_primary,
           client_id,
@@ -80,6 +90,8 @@ export default function ContactList() {
         email: contact.email,
         phone: contact.phone,
         phone_mobile: contact.phone_mobile,
+        job_title_id: contact.job_title_id,
+        job_title: contact.job_title,
         role_title: contact.role_title,
         is_primary: contact.is_primary,
         client_id: contact.client_id,
@@ -137,9 +149,9 @@ export default function ContactList() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Company</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Job Title</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead>Mobile</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -152,7 +164,9 @@ export default function ContactList() {
                           to={`/crm/contacts/${contact.id}`}
                           className="font-medium hover:text-primary"
                         >
-                          {contact.contact_name}
+                          {contact.first_name || contact.last_name 
+                            ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
+                            : contact.contact_name}
                         </Link>
                         {contact.is_primary && (
                           <Badge variant="outline" className="text-xs">
@@ -171,9 +185,16 @@ export default function ContactList() {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">
-                        {contact.role_title || '—'}
-                      </span>
+                      {contact.job_title?.name ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <Briefcase className="h-3 w-3" />
+                          {contact.job_title.name}
+                        </Badge>
+                      ) : contact.role_title ? (
+                        <span className="text-sm">{contact.role_title}</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {contact.email ? (
@@ -182,20 +203,20 @@ export default function ContactList() {
                           className="flex items-center gap-1 text-sm hover:text-primary"
                         >
                           <Mail className="h-3 w-3" />
-                          {contact.email}
+                          <span className="truncate max-w-[180px]">{contact.email}</span>
                         </a>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {(contact.phone_mobile || contact.phone) ? (
+                      {contact.phone_mobile ? (
                         <a
-                          href={`tel:${contact.phone_mobile || contact.phone}`}
+                          href={`tel:${contact.phone_mobile}`}
                           className="flex items-center gap-1 text-sm hover:text-primary"
                         >
                           <Phone className="h-3 w-3" />
-                          {contact.phone_mobile || contact.phone}
+                          {contact.phone_mobile}
                         </a>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
