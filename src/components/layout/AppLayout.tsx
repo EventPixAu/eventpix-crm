@@ -94,7 +94,6 @@ const operationsItems: NavItem[] = [
   { href: '/admin/event-types', label: 'Event Types', icon: Layers },
   { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
-  { href: '/executive/dashboard', label: 'Executive Dashboard', icon: BarChart3 },
   { href: '/admin/invoices', label: 'Invoice Sync', icon: DollarSign },
   { href: '/admin/margins', label: 'Margin Report', icon: TrendingUp },
 ];
