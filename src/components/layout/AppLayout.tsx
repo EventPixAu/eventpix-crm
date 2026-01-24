@@ -1,19 +1,19 @@
 /**
  * EVENTPIX PLATFORM - Main Layout
  * 
- * UNIFIED SYSTEM supporting:
- * - Sales: Clients, Leads, Quotes (replaces Studio Ninja CRM)
- * - Operations: Events, Staffing, Equipment, Delivery (replaces ClickUp)
- * - Xero integration for accounting (external)
+ * THREE SECTION NAVIGATION:
+ * - CRM: Clients, Contacts, Knowledge Base
+ * - Sales: Leads, Pipeline, Quotes, Contracts, Products, Templates
+ * - Operations: Events, Calendar, Staff, Equipment, Delivery, Admin Tools
  * 
  * ROLE SEPARATION:
- * - Admin: Full access to all modules (grouped navigation)
- * - Sales: Clients, Leads, Quotes, Pipeline
- * - Executive: Dashboard only
- * - Photographer: Job-focused access only
+ * - Admin: Full access to all sections
+ * - Operations: Full access to all sections
+ * - Sales: CRM + Sales sections only
+ * - Crew: Simplified job-focused navigation
  */
 import { ReactNode, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -40,10 +40,9 @@ import {
   ShoppingBag,
   Kanban,
   FileSignature,
-  ListChecks,
   TrendingUp,
   Layers,
-  Cog,
+  UserCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -55,70 +54,44 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-// ===== ADMIN NAVIGATION STRUCTURE =====
-
-const adminDashboardItems: NavItem[] = [
+// ===== CRM SECTION =====
+const crmItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/executive/dashboard', label: 'Executive', icon: BarChart3 },
+  { href: '/sales/clients', label: 'Clients', icon: Building2 },
+  { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
 ];
 
+// ===== SALES SECTION =====
 const salesItems: NavItem[] = [
-  { href: '/sales/clients', label: 'Clients', icon: Building2 },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
   { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
-  { href: '/admin/invoices', label: 'Invoices', icon: DollarSign },
-  { href: '/admin/margins', label: 'Margins', icon: TrendingUp },
-];
-
-const salesSetupItems: NavItem[] = [
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
   { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
-  { href: '/sales/workflow-templates', label: 'Workflow Templates', icon: ListChecks },
+  { href: '/sales/workflow-templates', label: 'Sales Workflows', icon: ClipboardList },
 ];
 
+// ===== OPERATIONS SECTION =====
 const operationsItems: NavItem[] = [
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/day-load', label: 'Day Load', icon: CalendarCheck },
-  { href: '/admin/series', label: 'Series', icon: FileCheck },
+  { href: '/admin/series', label: 'Event Series', icon: FileCheck },
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/delivery', label: 'Delivery', icon: Package },
-];
-
-const operationsSetupItems: NavItem[] = [
   { href: '/admin/event-types', label: 'Event Types', icon: Layers },
   { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
+  { href: '/executive/dashboard', label: 'Executive Dashboard', icon: BarChart3 },
+  { href: '/admin/invoices', label: 'Invoice Sync', icon: DollarSign },
+  { href: '/admin/margins', label: 'Margin Report', icon: TrendingUp },
 ];
 
-const knowledgeItem: NavItem = { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen };
-
-// ===== EXECUTIVE NAVIGATION =====
-const executiveNavItems: NavItem[] = [
-  { href: '/executive/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { href: '/staff/me', label: 'My Profile', icon: User },
-];
-
-// ===== SALES NAVIGATION =====
-const salesUserItems: NavItem[] = [
-  { href: '/sales/clients', label: 'Clients', icon: Building2 },
-  { href: '/sales/leads', label: 'Leads', icon: Target },
-  { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
-  { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
-];
-
-const salesUserSetupItems: NavItem[] = [
-  { href: '/sales/products', label: 'Products', icon: ShoppingBag },
-  { href: '/sales/templates', label: 'Templates', icon: FileText },
-];
-
-// ===== PHOTOGRAPHER NAVIGATION =====
-const photographerNavItems: NavItem[] = [
+// ===== CREW (Photographer) NAVIGATION =====
+const crewNavItems: NavItem[] = [
   { href: '/', label: 'My Jobs', icon: Briefcase },
   { href: '/my-job-sheets', label: 'Job Sheets', icon: FileText },
   { href: '/my-calendar', label: 'My Calendar', icon: Calendar },
@@ -137,16 +110,16 @@ interface SidebarContentProps {
 function AdminSidebarContent({ onItemClick }: SidebarContentProps) {
   return (
     <>
-      {/* Dashboard Section */}
-      <div className="mb-2">
-        {adminDashboardItems.map(item => (
-          <SidebarNavItem key={item.href} item={item} onItemClick={onItemClick} />
-        ))}
-      </div>
+      {/* CRM Section */}
+      <SidebarNavGroup 
+        label="CRM" 
+        icon={UserCircle} 
+        items={crmItems}
+        defaultOpen={true}
+        onItemClick={onItemClick}
+      />
       
-      <div className="h-px bg-sidebar-border my-3" />
-      
-      {/* Sales Group */}
+      {/* Sales Section */}
       <SidebarNavGroup 
         label="Sales" 
         icon={TrendingUp} 
@@ -155,73 +128,52 @@ function AdminSidebarContent({ onItemClick }: SidebarContentProps) {
         onItemClick={onItemClick}
       />
       
-      {/* Sales Setup Group */}
-      <SidebarNavGroup 
-        label="Sales Setup" 
-        icon={Cog} 
-        items={salesSetupItems}
-        defaultOpen={false}
-        onItemClick={onItemClick}
-      />
-      
-      <div className="h-px bg-sidebar-border my-3" />
-      
-      {/* Operations Group */}
+      {/* Operations Section */}
       <SidebarNavGroup 
         label="Operations" 
         icon={Briefcase} 
         items={operationsItems}
-        defaultOpen={true}
-        onItemClick={onItemClick}
-      />
-      
-      {/* Operations Setup Group */}
-      <SidebarNavGroup 
-        label="Ops Setup" 
-        icon={Settings} 
-        items={operationsSetupItems}
         defaultOpen={false}
         onItemClick={onItemClick}
       />
-      
-      <div className="h-px bg-sidebar-border my-3" />
-      
-      {/* Knowledge Base */}
-      <SidebarNavItem item={knowledgeItem} onItemClick={onItemClick} />
     </>
   );
 }
 
 function SalesSidebarContent({ onItemClick }: SidebarContentProps) {
+  // Sales users see CRM and Sales only
+  const salesOnlyItems: NavItem[] = [
+    { href: '/sales/leads', label: 'Leads', icon: Target },
+    { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
+    { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+    { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
+    { href: '/sales/products', label: 'Products', icon: ShoppingBag },
+    { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
+  ];
+
   return (
     <>
-      {/* Dashboard */}
-      <SidebarNavItem item={{ href: '/', label: 'Dashboard', icon: Home }} onItemClick={onItemClick} />
-      
-      <div className="h-px bg-sidebar-border my-3" />
-      
-      {/* Sales Group - Default expanded for Sales users */}
+      {/* CRM Section */}
       <SidebarNavGroup 
-        label="Sales" 
-        icon={TrendingUp} 
-        items={salesUserItems}
+        label="CRM" 
+        icon={UserCircle} 
+        items={crmItems}
         defaultOpen={true}
         onItemClick={onItemClick}
       />
       
-      {/* Sales Setup Group */}
+      {/* Sales Section */}
       <SidebarNavGroup 
-        label="Sales Setup" 
-        icon={Cog} 
-        items={salesUserSetupItems}
+        label="Sales" 
+        icon={TrendingUp} 
+        items={salesOnlyItems}
         defaultOpen={false}
         onItemClick={onItemClick}
       />
       
       <div className="h-px bg-sidebar-border my-3" />
       
-      {/* Knowledge Base & Profile */}
-      <SidebarNavItem item={knowledgeItem} onItemClick={onItemClick} />
+      {/* Profile */}
       <SidebarNavItem item={{ href: '/staff/me', label: 'My Profile', icon: User }} onItemClick={onItemClick} />
     </>
   );
@@ -230,7 +182,7 @@ function SalesSidebarContent({ onItemClick }: SidebarContentProps) {
 function CrewSidebarContent({ onItemClick }: SidebarContentProps) {
   return (
     <>
-      {photographerNavItems.map(item => (
+      {crewNavItems.map(item => (
         <SidebarNavItem key={item.href} item={item} onItemClick={onItemClick} />
       ))}
     </>
@@ -252,10 +204,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Render appropriate sidebar content based on role
   const renderSidebarContent = (onItemClick?: () => void) => {
     if (isAdmin) return <AdminSidebarContent onItemClick={onItemClick} />;
-    if (isOperations) return <AdminSidebarContent onItemClick={onItemClick} />; // Ops sees same as admin
+    if (isOperations) return <AdminSidebarContent onItemClick={onItemClick} />;
     if (isSales) return <SalesSidebarContent onItemClick={onItemClick} />;
     if (isCrew) return <CrewSidebarContent onItemClick={onItemClick} />;
-    return <CrewSidebarContent onItemClick={onItemClick} />; // Default fallback
+    return <CrewSidebarContent onItemClick={onItemClick} />;
   };
 
   return (
