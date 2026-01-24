@@ -54,6 +54,7 @@ export function useClient(id: string | undefined) {
         .from('clients')
         .select(`
           *,
+          category:company_categories(id, name),
           client_contacts (*),
           client_notes (*),
           client_communications (*)

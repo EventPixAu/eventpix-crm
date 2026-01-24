@@ -360,6 +360,9 @@ export type Database = {
           abn: string | null
           billing_address: string | null
           business_name: string
+          category_id: string | null
+          company_email: string | null
+          company_phone: string | null
           created_at: string | null
           created_by: string | null
           id: string
@@ -379,6 +382,9 @@ export type Database = {
           abn?: string | null
           billing_address?: string | null
           business_name: string
+          category_id?: string | null
+          company_email?: string | null
+          company_phone?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -398,6 +404,9 @@ export type Database = {
           abn?: string | null
           billing_address?: string | null
           business_name?: string
+          category_id?: string | null
+          company_email?: string | null
+          company_phone?: string | null
           created_at?: string | null
           created_by?: string | null
           id?: string
@@ -412,6 +421,38 @@ export type Database = {
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "company_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }

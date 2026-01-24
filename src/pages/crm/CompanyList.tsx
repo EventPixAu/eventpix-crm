@@ -1,3 +1,8 @@
+/**
+ * COMPANY LIST PAGE
+ * 
+ * CRM Companies list with search and category display
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -23,18 +28,22 @@ import {
   Mail,
   Phone,
   ExternalLink,
+  Tag,
 } from 'lucide-react';
 
 interface Company {
   id: string;
   business_name: string;
   trading_name: string | null;
+  company_phone: string | null;
+  company_email: string | null;
   primary_contact_name: string | null;
   primary_contact_email: string | null;
   primary_contact_phone: string | null;
-  industry: string | null;
+  billing_address: string | null;
+  category_id: string | null;
+  category: { id: string; name: string } | null;
   status: string | null;
-  website: string | null;
   contact_count: number;
 }
 
@@ -50,19 +59,22 @@ export default function CompanyList() {
           id,
           business_name,
           trading_name,
+          company_phone,
+          company_email,
           primary_contact_name,
           primary_contact_email,
           primary_contact_phone,
-          industry,
-          status,
-          website
+          billing_address,
+          category_id,
+          category:company_categories(id, name),
+          status
         `)
         .eq('is_training', false)
         .order('business_name');
 
       if (search) {
         query = query.or(
-          `business_name.ilike.%${search}%,trading_name.ilike.%${search}%,primary_contact_name.ilike.%${search}%,primary_contact_email.ilike.%${search}%`
+          `business_name.ilike.%${search}%,trading_name.ilike.%${search}%,company_email.ilike.%${search}%`
         );
       }
 
@@ -90,11 +102,11 @@ export default function CompanyList() {
   const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'active':
-        return 'bg-green-500/10 text-green-500';
+        return 'bg-green-500/10 text-green-600';
       case 'inactive':
         return 'bg-muted text-muted-foreground';
       case 'prospect':
-        return 'bg-blue-500/10 text-blue-500';
+        return 'bg-blue-500/10 text-blue-600';
       default:
         return 'bg-muted text-muted-foreground';
     }
@@ -148,8 +160,8 @@ export default function CompanyList() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Company</TableHead>
-                  <TableHead>Primary Contact</TableHead>
-                  <TableHead>Industry</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -172,32 +184,36 @@ export default function CompanyList() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {company.primary_contact_name ? (
-                        <div className="space-y-1">
-                          <p className="text-sm">{company.primary_contact_name}</p>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            {company.primary_contact_email && (
-                              <span className="flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {company.primary_contact_email}
-                              </span>
-                            )}
-                            {company.primary_contact_phone && (
-                              <span className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {company.primary_contact_phone}
-                              </span>
-                            )}
+                      <div className="space-y-1">
+                        {(company.company_email || company.primary_contact_email) && (
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate max-w-[200px]">
+                              {company.company_email || company.primary_contact_email}
+                            </span>
                           </div>
-                        </div>
+                        )}
+                        {(company.company_phone || company.primary_contact_phone) && (
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Phone className="h-3.5 w-3.5 shrink-0" />
+                            {company.company_phone || company.primary_contact_phone}
+                          </div>
+                        )}
+                        {!company.company_email && !company.primary_contact_email && 
+                         !company.company_phone && !company.primary_contact_phone && (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {company.category?.name ? (
+                        <Badge variant="outline" className="gap-1">
+                          <Tag className="h-3 w-3" />
+                          {company.category.name}
+                        </Badge>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {company.industry || '—'}
-                      </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
