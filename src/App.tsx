@@ -25,7 +25,6 @@ import WorkflowDetail from "./pages/admin/WorkflowDetail";
 import EventTypeDefaults from "./pages/admin/EventTypeDefaults";
 import EventSeriesList from "./pages/admin/EventSeriesList";
 import EventSeriesDetail from "./pages/admin/EventSeriesDetail";
-import ExecutiveDashboard from "./pages/admin/ExecutiveDashboard";
 import InvoiceSync from "./pages/admin/InvoiceSync";
 import MarginReport from "./pages/admin/MarginReport";
 import AdminLookups from "./pages/admin/AdminLookups";
@@ -133,9 +132,6 @@ function AppRoutes() {
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
-      {/* Executive routes - admin only (executive role removed, use admin) */}
-      <Route path="/executive/dashboard" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/executive" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />
       
       {/* CRM routes - admin + sales */}
       <Route path="/crm/promotions" element={<ProtectedRoute><SalesGuard><PromotionsDashboard /></SalesGuard></ProtectedRoute>} />
