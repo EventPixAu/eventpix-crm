@@ -12,7 +12,7 @@
  * - Sales: CRM + Sales sections only
  * - Crew: Simplified job-focused navigation
  */
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -44,12 +44,16 @@ import {
   TrendingUp,
   Layers,
   UserCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SidebarNavGroup, SidebarNavItem, NavItem } from './SidebarNavGroup';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -108,9 +112,10 @@ const crewNavItems: NavItem[] = [
 
 interface SidebarContentProps {
   onItemClick?: () => void;
+  collapsed?: boolean;
 }
 
-function AdminSidebarContent({ onItemClick }: SidebarContentProps) {
+function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   return (
     <>
       {/* CRM Section */}
@@ -120,6 +125,7 @@ function AdminSidebarContent({ onItemClick }: SidebarContentProps) {
         items={crmItems}
         defaultOpen={true}
         onItemClick={onItemClick}
+        collapsed={collapsed}
       />
       
       {/* Sales Section */}
@@ -129,6 +135,7 @@ function AdminSidebarContent({ onItemClick }: SidebarContentProps) {
         items={salesItems}
         defaultOpen={false}
         onItemClick={onItemClick}
+        collapsed={collapsed}
       />
       
       {/* Operations Section */}
@@ -138,12 +145,13 @@ function AdminSidebarContent({ onItemClick }: SidebarContentProps) {
         items={operationsItems}
         defaultOpen={false}
         onItemClick={onItemClick}
+        collapsed={collapsed}
       />
     </>
   );
 }
 
-function SalesSidebarContent({ onItemClick }: SidebarContentProps) {
+function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   // Sales users see CRM and Sales only
   const salesOnlyItems: NavItem[] = [
     { href: '/sales/leads', label: 'Leads', icon: Target },
@@ -163,6 +171,7 @@ function SalesSidebarContent({ onItemClick }: SidebarContentProps) {
         items={crmItems}
         defaultOpen={true}
         onItemClick={onItemClick}
+        collapsed={collapsed}
       />
       
       {/* Sales Section */}
@@ -172,30 +181,44 @@ function SalesSidebarContent({ onItemClick }: SidebarContentProps) {
         items={salesOnlyItems}
         defaultOpen={false}
         onItemClick={onItemClick}
+        collapsed={collapsed}
       />
       
-      <div className="h-px bg-sidebar-border my-3" />
+      {!collapsed && <div className="h-px bg-sidebar-border my-3" />}
       
       {/* Profile */}
-      <SidebarNavItem item={{ href: '/staff/me', label: 'My Profile', icon: User }} onItemClick={onItemClick} />
+      <SidebarNavItem item={{ href: '/staff/me', label: 'My Profile', icon: User }} onItemClick={onItemClick} collapsed={collapsed} />
     </>
   );
 }
 
-function CrewSidebarContent({ onItemClick }: SidebarContentProps) {
+function CrewSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   return (
     <>
       {crewNavItems.map(item => (
-        <SidebarNavItem key={item.href} item={item} onItemClick={onItemClick} />
+        <SidebarNavItem key={item.href} item={item} onItemClick={onItemClick} collapsed={collapsed} />
       ))}
     </>
   );
 }
 
+const SIDEBAR_COLLAPSED_KEY = 'eventpix-sidebar-collapsed';
+
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      return saved === 'true';
+    }
+    return false;
+  });
   const { user, signOut, isAdmin, isSales, isOperations, isCrew, role } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -203,20 +226,24 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   const closeSidebar = () => setSidebarOpen(false);
+  const toggleCollapsed = () => setSidebarCollapsed(prev => !prev);
 
   // Render appropriate sidebar content based on role
-  const renderSidebarContent = (onItemClick?: () => void) => {
-    if (isAdmin) return <AdminSidebarContent onItemClick={onItemClick} />;
-    if (isOperations) return <AdminSidebarContent onItemClick={onItemClick} />;
-    if (isSales) return <SalesSidebarContent onItemClick={onItemClick} />;
-    if (isCrew) return <CrewSidebarContent onItemClick={onItemClick} />;
-    return <CrewSidebarContent onItemClick={onItemClick} />;
+  const renderSidebarContent = (onItemClick?: () => void, collapsed?: boolean) => {
+    if (isAdmin) return <AdminSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
+    if (isOperations) return <AdminSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
+    if (isSales) return <SalesSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
+    if (isCrew) return <CrewSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
+    return <CrewSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
   };
+
+  const sidebarWidth = sidebarCollapsed ? 'w-16' : 'w-64';
+  const mainPadding = sidebarCollapsed ? 'md:pl-16' : 'md:pl-64';
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile/Tablet Header - Show on screens smaller than xl (1280px) */}
-      <header className="xl:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border">
+      {/* Mobile Header - Show on screens smaller than md */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -231,7 +258,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Mobile/Tablet Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -240,14 +267,14 @@ export function AppLayout({ children }: AppLayoutProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeSidebar}
-              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm xl:hidden"
+              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden"
             />
             <motion.aside
               initial={{ x: -300 }}
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed left-0 top-0 z-50 h-full w-[300px] bg-sidebar border-r border-sidebar-border xl:hidden flex flex-col"
+              className="fixed left-0 top-0 z-50 h-full w-[300px] bg-sidebar border-r border-sidebar-border md:hidden flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
                 <img src={eventpixLogo} alt="Eventpix" className="h-7" />
@@ -259,7 +286,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </button>
               </div>
               <nav className="flex-1 p-4 overflow-y-auto">
-                {renderSidebarContent(closeSidebar)}
+                {renderSidebarContent(closeSidebar, false)}
               </nav>
               <div className="p-4 border-t border-sidebar-border">
                 <div className="flex items-center gap-3 px-3 py-2 mb-2">
@@ -287,42 +314,115 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar - Show on xl screens (1280px+) */}
-      <aside className="hidden xl:fixed xl:left-0 xl:top-0 xl:z-40 xl:flex xl:h-screen xl:w-64 xl:flex-col bg-sidebar border-r border-sidebar-border">
-        <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
-          <img src={eventpixLogo} alt="Eventpix" className="h-8" />
-          <NotificationBell />
+      {/* Desktop/Tablet Sidebar - Always visible, collapsible */}
+      <aside 
+        className={cn(
+          "hidden md:fixed md:left-0 md:top-0 md:z-40 md:flex md:h-screen md:flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300",
+          sidebarWidth
+        )}
+      >
+        <div className={cn(
+          "flex items-center border-b border-sidebar-border transition-all duration-300",
+          sidebarCollapsed ? "justify-center p-3" : "justify-between p-4"
+        )}>
+          {sidebarCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <img src={eventpixLogo} alt="Eventpix" className="h-7 w-7 object-contain" />
+              </TooltipTrigger>
+              <TooltipContent side="right">Eventpix</TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <img src={eventpixLogo} alt="Eventpix" className="h-8" />
+              <NotificationBell />
+            </>
+          )}
         </div>
 
-        <nav className="flex-1 p-4 overflow-y-auto">
-          {renderSidebarContent()}
+        <nav className={cn(
+          "flex-1 overflow-y-auto transition-all duration-300",
+          sidebarCollapsed ? "p-2" : "p-4"
+        )}>
+          {renderSidebarContent(undefined, sidebarCollapsed)}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-sm font-medium text-primary">
-                {user?.email?.[0].toUpperCase()}
-              </span>
+        <div className={cn(
+          "border-t border-sidebar-border transition-all duration-300",
+          sidebarCollapsed ? "p-2" : "p-4"
+        )}>
+          {sidebarCollapsed ? (
+            <div className="space-y-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-10 h-10 mx-auto rounded-full bg-primary/20 flex items-center justify-center cursor-pointer">
+                    <span className="text-sm font-medium text-primary">
+                      {user?.email?.[0].toUpperCase()}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{user?.email}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{role || 'No role'}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-full text-muted-foreground hover:text-foreground"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Sign Out</TooltipContent>
+              </Tooltip>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.email}</p>
-              <p className="text-xs text-muted-foreground capitalize">{role || 'No role'}</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-3" />
-            Sign Out
-          </Button>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 px-3 py-2 mb-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-sm font-medium text-primary">
+                    {user?.email?.[0].toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.email}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{role || 'No role'}</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4 mr-3" />
+                Sign Out
+              </Button>
+            </>
+          )}
         </div>
+
+        {/* Collapse Toggle Button */}
+        <button
+          onClick={toggleCollapsed}
+          className="absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:text-foreground hover:bg-muted transition-colors"
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
+        </button>
       </aside>
 
       {/* Main Content */}
-      <main className="xl:pl-64 pt-14 xl:pt-0 min-h-screen">
+      <main className={cn(
+        "pt-14 md:pt-0 min-h-screen transition-all duration-300",
+        mainPadding
+      )}>
         <div className="p-3 sm:p-4 md:p-6 xl:p-8">
           {children}
         </div>
