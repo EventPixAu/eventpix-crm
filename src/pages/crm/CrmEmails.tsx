@@ -18,16 +18,17 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText } from 'lucide-react';
+import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone } from 'lucide-react';
 import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useScheduledEmails, useCancelScheduledEmail, useCreateScheduledEmail, useDeleteScheduledEmail } from '@/hooks/useScheduledEmails';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
+import { EmailCampaignManager } from '@/components/crm/EmailCampaignManager';
 
 export default function CrmEmails() {
-  const [activeTab, setActiveTab] = useState('compose');
+  const [activeTab, setActiveTab] = useState('campaigns');
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   
   // Compose state
@@ -153,6 +154,10 @@ export default function CrmEmails() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+              <Megaphone className="h-4 w-4" />
+              Campaigns
+            </TabsTrigger>
             <TabsTrigger value="compose" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
               Compose
@@ -171,6 +176,11 @@ export default function CrmEmails() {
               Templates
             </TabsTrigger>
           </TabsList>
+
+          {/* Campaigns Tab */}
+          <TabsContent value="campaigns" className="mt-6">
+            <EmailCampaignManager />
+          </TabsContent>
 
           {/* Compose Tab */}
           <TabsContent value="compose" className="mt-6">
