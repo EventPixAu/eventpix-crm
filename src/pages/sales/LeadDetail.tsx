@@ -61,6 +61,7 @@ import {
   LeadSummaryCard,
   LeadClientCard,
   LeadCollapsiblePanel,
+  LeadContactsPanel,
   InitializeLeadWorkflowDialog,
 } from '@/components/lead';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
@@ -276,12 +277,19 @@ export default function LeadDetail() {
           </LeadCollapsiblePanel>
         </div>
 
-        {/* RIGHT COLUMN: Client Card + Files + Notes */}
+        {/* RIGHT COLUMN: Client Card + Contacts + Files + Notes */}
         <div className="lg:col-span-3 xl:col-span-3 space-y-4">
           {/* Client Card */}
           <LeadClientCard
             client={client}
             onSendEmail={() => {}}
+          />
+
+          {/* Contacts Panel */}
+          <LeadContactsPanel
+            leadId={id!}
+            clientId={(lead as any).client_id}
+            defaultOpen={true}
           />
 
           {/* Files Panel */}
