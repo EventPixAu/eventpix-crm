@@ -1031,6 +1031,7 @@ export type Database = {
           click_count: number | null
           clicked_at: string | null
           client_id: string | null
+          contact_id: string | null
           contract_id: string | null
           created_at: string
           delivered_at: string | null
@@ -1057,6 +1058,7 @@ export type Database = {
           click_count?: number | null
           clicked_at?: string | null
           client_id?: string | null
+          contact_id?: string | null
           contract_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -1083,6 +1085,7 @@ export type Database = {
           click_count?: number | null
           clicked_at?: string | null
           client_id?: string | null
+          contact_id?: string | null
           contract_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -1109,6 +1112,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
             referencedColumns: ["id"]
           },
           {
@@ -3327,6 +3337,116 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      scheduled_emails: {
+        Row: {
+          body_html: string
+          client_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          event_id: string | null
+          id: string
+          lead_id: string | null
+          recipient_email: string
+          recipient_name: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          subject: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          client_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          client_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_emails_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skills: {
         Row: {
