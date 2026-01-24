@@ -215,8 +215,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border">
+      {/* Mobile/Tablet Header - Show on screens smaller than xl (1280px) */}
+      <header className="xl:hidden fixed top-0 left-0 right-0 z-50 glass border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -231,7 +231,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile/Tablet Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -240,14 +240,14 @@ export function AppLayout({ children }: AppLayoutProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeSidebar}
-              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm xl:hidden"
             />
             <motion.aside
-              initial={{ x: -280 }}
+              initial={{ x: -300 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
+              exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed left-0 top-0 z-50 h-full w-[280px] bg-sidebar border-r border-sidebar-border lg:hidden flex flex-col"
+              className="fixed left-0 top-0 z-50 h-full w-[300px] bg-sidebar border-r border-sidebar-border xl:hidden flex flex-col"
             >
               <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
                 <img src={eventpixLogo} alt="Eventpix" className="h-7" />
@@ -287,8 +287,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:flex lg:h-screen lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
+      {/* Desktop Sidebar - Show on xl screens (1280px+) */}
+      <aside className="hidden xl:fixed xl:left-0 xl:top-0 xl:z-40 xl:flex xl:h-screen xl:w-64 xl:flex-col bg-sidebar border-r border-sidebar-border">
         <div className="flex items-center justify-between p-6 border-b border-sidebar-border">
           <img src={eventpixLogo} alt="Eventpix" className="h-8" />
           <NotificationBell />
@@ -322,8 +322,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen">
-        <div className="p-4 lg:p-8">
+      <main className="xl:pl-64 pt-14 xl:pt-0 min-h-screen">
+        <div className="p-3 sm:p-4 md:p-6 xl:p-8">
           {children}
         </div>
       </main>

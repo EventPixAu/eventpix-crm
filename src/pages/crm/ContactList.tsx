@@ -105,20 +105,20 @@ export default function ContactList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Individual Contacts"
         description="Manage contacts across all companies"
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Import
+            <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Import</span>
             </Button>
-            <Button asChild>
+            <Button size="sm" asChild>
               <Link to="/crm/contacts/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Contact
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Contact</span>
               </Link>
             </Button>
           </div>
@@ -131,9 +131,9 @@ export default function ContactList() {
       />
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-md">
+        <CardContent className="p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="relative flex-1 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search contacts..."
@@ -159,95 +159,151 @@ export default function ContactList() {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Job Title</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Mobile</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
                 {contacts.map((contact) => (
-                  <TableRow key={contact.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Link
-                          to={`/crm/contacts/${contact.id}`}
-                          className="font-medium hover:text-primary"
-                        >
+                  <Link
+                    key={contact.id}
+                    to={`/crm/contacts/${contact.id}`}
+                    className="block p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium truncate">
                           {contact.first_name || contact.last_name 
                             ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
                             : contact.contact_name}
-                        </Link>
+                        </span>
                         {contact.is_primary && (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs shrink-0">
                             Primary
                           </Badge>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to={`/crm/companies/${contact.client_id}`}
-                        className="flex items-center gap-2 text-sm hover:text-primary"
-                      >
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        {contact.company_name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {contact.job_title?.name ? (
-                        <Badge variant="secondary" className="gap-1">
-                          <Briefcase className="h-3 w-3" />
-                          {contact.job_title.name}
-                        </Badge>
-                      ) : contact.role_title ? (
-                        <span className="text-sm">{contact.role_title}</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </div>
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Building2 className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{contact.company_name}</span>
+                      </div>
+                      {contact.job_title?.name && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Briefcase className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{contact.job_title.name}</span>
+                        </div>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {contact.email ? (
-                        <a
-                          href={`mailto:${contact.email}`}
-                          className="flex items-center gap-1 text-sm hover:text-primary"
-                        >
-                          <Mail className="h-3 w-3" />
-                          <span className="truncate max-w-[180px]">{contact.email}</span>
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
+                      {contact.email && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{contact.email}</span>
+                        </div>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {contact.phone_mobile ? (
-                        <a
-                          href={`tel:${contact.phone_mobile}`}
-                          className="flex items-center gap-1 text-sm hover:text-primary"
-                        >
-                          <Phone className="h-3 w-3" />
-                          {contact.phone_mobile}
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
+                      {contact.phone_mobile && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
+                          <span>{contact.phone_mobile}</span>
+                        </div>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/crm/contacts/${contact.id}`}>
-                          <ExternalLink className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </Link>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Tablet/Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto -mx-3 sm:-mx-6 px-3 sm:px-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px]">Name</TableHead>
+                      <TableHead className="min-w-[150px]">Company</TableHead>
+                      <TableHead className="min-w-[120px]">Job Title</TableHead>
+                      <TableHead className="min-w-[180px]">Email</TableHead>
+                      <TableHead className="min-w-[120px]">Mobile</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {contacts.map((contact) => (
+                      <TableRow key={contact.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to={`/crm/contacts/${contact.id}`}
+                              className="font-medium hover:text-primary"
+                            >
+                              {contact.first_name || contact.last_name 
+                                ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
+                                : contact.contact_name}
+                            </Link>
+                            {contact.is_primary && (
+                              <Badge variant="outline" className="text-xs">
+                                Primary
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            to={`/crm/companies/${contact.client_id}`}
+                            className="flex items-center gap-2 text-sm hover:text-primary"
+                          >
+                            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="truncate">{contact.company_name}</span>
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          {contact.job_title?.name ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <Briefcase className="h-3 w-3" />
+                              {contact.job_title.name}
+                            </Badge>
+                          ) : contact.role_title ? (
+                            <span className="text-sm">{contact.role_title}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.email ? (
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="flex items-center gap-1 text-sm hover:text-primary"
+                            >
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <span className="truncate max-w-[180px]">{contact.email}</span>
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.phone_mobile ? (
+                            <a
+                              href={`tel:${contact.phone_mobile}`}
+                              className="flex items-center gap-1 text-sm hover:text-primary whitespace-nowrap"
+                            >
+                              <Phone className="h-3 w-3 shrink-0" />
+                              {contact.phone_mobile}
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link to={`/crm/contacts/${contact.id}`}>
+                              <ExternalLink className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
