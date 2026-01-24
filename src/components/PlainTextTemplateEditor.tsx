@@ -22,9 +22,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { AVAILABLE_MERGE_FIELDS, renderMergeFields, MergeFieldContext } from '@/hooks/useContractTemplates';
+import { AVAILABLE_MERGE_FIELDS, renderMergeFields as renderMergeFieldsFromHook, MergeFieldContext } from '@/hooks/useContractTemplates';
 
 export type TemplateFormat = 'text' | 'html';
+
+// Re-export for use by other components
+export { AVAILABLE_MERGE_FIELDS };
+export type { MergeFieldContext };
+export const renderMergeFields = renderMergeFieldsFromHook;
 
 interface PlainTextTemplateEditorProps {
   value: string;
@@ -39,7 +44,7 @@ interface PlainTextTemplateEditorProps {
 }
 
 // Sample context for preview when no real data available
-const SAMPLE_CONTEXT: MergeFieldContext = {
+export const SAMPLE_CONTEXT: MergeFieldContext = {
   client: {
     business_name: 'Acme Corporation',
     primary_contact_name: 'Jane Smith',
