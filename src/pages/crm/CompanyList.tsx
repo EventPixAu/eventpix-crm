@@ -2,6 +2,11 @@
  * COMPANY LIST PAGE
  * 
  * CRM Companies list with search and category display
+ * Status is computed from event data:
+ * - Active Event: has current/upcoming event
+ * - Current Client: delivered event in last 12 months
+ * - Previous Client: delivered event older than 12 months
+ * - Prospect: no delivered events
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -30,6 +35,9 @@ import {
   ExternalLink,
   Tag,
 } from 'lucide-react';
+import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
+
+type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
 
 interface Company {
   id: string;
@@ -43,8 +51,39 @@ interface Company {
   billing_address: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
-  status: string | null;
+  computed_status: ComputedStatus;
   contact_count: number;
+}
+
+function computeClientStatus(events: Array<{ event_date: string; ops_status: string | null }>): ComputedStatus {
+  if (!events || events.length === 0) return 'prospect';
+  
+  const today = startOfDay(new Date());
+  const twelveMonthsAgo = subMonths(today, 12);
+  
+  // Check for active events (not completed/cancelled, date is today or future)
+  const hasActiveEvent = events.some(e => {
+    const eventDate = parseISO(e.event_date);
+    const isActive = !['completed', 'cancelled'].includes(e.ops_status || '');
+    return isActive && !isBefore(eventDate, today);
+  });
+  
+  if (hasActiveEvent) return 'active_event';
+  
+  // Check for completed events
+  const completedEvents = events.filter(e => e.ops_status === 'completed');
+  if (completedEvents.length === 0) return 'prospect';
+  
+  // Find most recent completed event
+  const mostRecentCompleted = completedEvents
+    .map(e => parseISO(e.event_date))
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  
+  if (isAfter(mostRecentCompleted, twelveMonthsAgo)) {
+    return 'current_client';
+  }
+  
+  return 'previous_client';
 }
 
 export default function CompanyList() {
@@ -66,8 +105,7 @@ export default function CompanyList() {
           primary_contact_phone,
           billing_address,
           category_id,
-          category:company_categories(id, name),
-          status
+          category:company_categories(id, name)
         `)
         .eq('is_training', false)
         .order('business_name');
@@ -81,34 +119,49 @@ export default function CompanyList() {
       const { data: clientsData, error } = await query;
       if (error) throw error;
 
-      // Get contact counts for each company
-      const { data: contactCounts } = await supabase
-        .from('client_contacts')
-        .select('client_id')
-        .in('client_id', clientsData?.map(c => c.id) || []);
+      const clientIds = clientsData?.map(c => c.id) || [];
 
-      const countMap = (contactCounts || []).reduce((acc, c) => {
+      // Get contact counts and events in parallel
+      const [contactCountsResult, eventsResult] = await Promise.all([
+        supabase
+          .from('client_contacts')
+          .select('client_id')
+          .in('client_id', clientIds),
+        supabase
+          .from('events')
+          .select('client_id, event_date, ops_status')
+          .in('client_id', clientIds)
+      ]);
+
+      const countMap = (contactCountsResult.data || []).reduce((acc, c) => {
         acc[c.client_id] = (acc[c.client_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
+      const eventsMap = (eventsResult.data || []).reduce((acc, e) => {
+        if (!acc[e.client_id]) acc[e.client_id] = [];
+        acc[e.client_id].push({ event_date: e.event_date, ops_status: e.ops_status });
+        return acc;
+      }, {} as Record<string, Array<{ event_date: string; ops_status: string | null }>>);
+
       return (clientsData || []).map(company => ({
         ...company,
         contact_count: countMap[company.id] || 0,
+        computed_status: computeClientStatus(eventsMap[company.id] || []),
       })) as Company[];
     },
   });
 
-  const getStatusColor = (status: string | null) => {
+  const getStatusConfig = (status: ComputedStatus) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-500/10 text-green-600';
-      case 'inactive':
-        return 'bg-muted text-muted-foreground';
+      case 'active_event':
+        return { label: 'Active Event', className: 'bg-green-500/10 text-green-600 border-green-500/20' };
+      case 'current_client':
+        return { label: 'Current Client', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
+      case 'previous_client':
+        return { label: 'Previous Client', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
       case 'prospect':
-        return 'bg-blue-500/10 text-blue-600';
-      default:
-        return 'bg-muted text-muted-foreground';
+        return { label: 'Prospect', className: 'bg-muted text-muted-foreground' };
     }
   };
 
@@ -223,10 +276,10 @@ export default function CompanyList() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant="secondary"
-                        className={getStatusColor(company.status)}
+                        variant="outline"
+                        className={getStatusConfig(company.computed_status).className}
                       >
-                        {company.status || 'Unknown'}
+                        {getStatusConfig(company.computed_status).label}
                       </Badge>
                     </TableCell>
                     <TableCell>
