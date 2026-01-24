@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -105,6 +106,7 @@ export default function ContactList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   return (
+    <AppLayout>
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Individual Contacts"
@@ -308,5 +310,6 @@ export default function ContactList() {
         </CardContent>
       </Card>
     </div>
+    </AppLayout>
   );
 }

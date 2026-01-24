@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -170,6 +171,7 @@ export default function CompanyList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   return (
+    <AppLayout>
     <div className="space-y-6">
       <PageHeader
         title="Company Accounts"
@@ -312,5 +314,6 @@ export default function CompanyList() {
         </CardContent>
       </Card>
     </div>
+    </AppLayout>
   );
 }
