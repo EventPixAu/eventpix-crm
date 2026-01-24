@@ -1,31 +1,34 @@
 /**
  * CLIENT PROFILE CARD
  * 
- * Studio Ninja-style client profile with:
- * - Avatar and name
- * - Phone, Email, Address fields
- * - Edit Client, Delete Client buttons
+ * Company profile card with:
+ * - Company Name, Phone, Email, Address, Category
+ * - Edit/Delete buttons
  */
-import { Users, Pencil, Trash2, Camera } from 'lucide-react';
+import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface ClientProfileCardProps {
   client: {
     id: string;
     business_name: string;
+    company_phone?: string | null;
+    company_email?: string | null;
     primary_contact_name?: string | null;
     primary_contact_email?: string | null;
     primary_contact_phone?: string | null;
     billing_address?: string | null;
+    category_id?: string | null;
+    category?: { id: string; name: string } | null;
   };
   onEdit: () => void;
   onDelete: () => void;
   canDelete?: boolean;
 }
 
-// Parse billing_address into structured fields (Studio Ninja format)
+// Parse billing_address into structured fields
 function parseAddress(address: string | null | undefined) {
   if (!address) {
     return {
@@ -37,7 +40,6 @@ function parseAddress(address: string | null | undefined) {
     };
   }
   
-  // Simple parsing - assumes comma-separated or line-separated
   const parts = address.split(/[,\n]/).map(p => p.trim()).filter(Boolean);
   
   return {
@@ -55,96 +57,86 @@ export function ClientProfileCard({
   onDelete,
   canDelete = true 
 }: ClientProfileCardProps) {
-  const initials = client.primary_contact_name
-    ?.split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || client.business_name.slice(0, 2).toUpperCase();
-  
   const addressFields = parseAddress(client.billing_address);
+  const hasAddress = Object.values(addressFields).some(v => v);
 
   return (
     <Card>
-      <CardContent className="pt-6">
-        {/* Avatar and Name */}
-        <div className="flex items-start gap-3 mb-6">
-          <div className="relative">
-            <Avatar className="h-14 w-14">
-              <AvatarFallback className="bg-muted text-muted-foreground text-lg">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1 -right-1 p-1 bg-primary rounded-full">
-              <Camera className="h-3 w-3 text-primary-foreground" />
+      <CardHeader className="pb-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Building2 className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-xl truncate">{client.business_name}</CardTitle>
+            {client.category?.name && (
+              <Badge variant="secondary" className="mt-1.5">
+                <Tag className="h-3 w-3 mr-1" />
+                {client.category.name}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {/* Company Contact Details */}
+        <div className="space-y-3 text-sm">
+          <div className="flex items-start gap-3">
+            <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <div className="text-muted-foreground text-xs mb-0.5">Company Phone</div>
+              <span>{client.company_phone || client.primary_contact_phone || '-'}</span>
             </div>
           </div>
           
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold">
-              {client.primary_contact_name || client.business_name}
-            </h2>
-          </div>
-        </div>
-
-        {/* Contact Details - Studio Ninja style table layout */}
-        <div className="space-y-3 text-sm">
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">Phone:</span>
-            <span>{client.primary_contact_phone || '-'}</span>
-          </div>
-          
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">Email:</span>
-            <span className="break-all">
-              {client.primary_contact_email ? (
+          <div className="flex items-start gap-3">
+            <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <div className="text-muted-foreground text-xs mb-0.5">Company Email</div>
+              {(client.company_email || client.primary_contact_email) ? (
                 <a 
-                  href={`mailto:${client.primary_contact_email}`}
-                  className="text-primary hover:underline"
+                  href={`mailto:${client.company_email || client.primary_contact_email}`}
+                  className="text-primary hover:underline break-all"
                 >
-                  {client.primary_contact_email}
+                  {client.company_email || client.primary_contact_email}
                 </a>
               ) : '-'}
-            </span>
+            </div>
           </div>
           
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">Street Address:</span>
-            <span>{addressFields.street || '-'}</span>
-          </div>
-          
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">Suburb/Town:</span>
-            <span>{addressFields.suburb || '-'}</span>
-          </div>
-          
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">Postcode/Zip:</span>
-            <span>{addressFields.postcode || '-'}</span>
-          </div>
-          
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">State:</span>
-            <span>{addressFields.state || '-'}</span>
-          </div>
-          
-          <div className="flex">
-            <span className="text-muted-foreground w-28 shrink-0">Country:</span>
-            <span>{addressFields.country || '-'}</span>
+          <div className="flex items-start gap-3">
+            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <div className="text-muted-foreground text-xs mb-0.5">Address</div>
+              {hasAddress ? (
+                <div className="space-y-0.5">
+                  {addressFields.street && <div>{addressFields.street}</div>}
+                  {(addressFields.suburb || addressFields.state || addressFields.postcode) && (
+                    <div>
+                      {[addressFields.suburb, addressFields.state, addressFields.postcode]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </div>
+                  )}
+                  {addressFields.country && <div>{addressFields.country}</div>}
+                </div>
+              ) : '-'}
+            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 mt-6 pt-4 border-t">
+        <div className="flex gap-2 pt-4 border-t">
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="h-4 w-4 mr-1.5" />
-            Edit Client
+            Edit
           </Button>
           
           {canDelete && (
             <Button variant="outline" size="sm" onClick={onDelete}>
               <Trash2 className="h-4 w-4 mr-1.5" />
-              Delete Client
+              Delete
             </Button>
           )}
         </div>
