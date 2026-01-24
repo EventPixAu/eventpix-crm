@@ -56,6 +56,7 @@ import QuoteTemplates from "./pages/sales/QuoteTemplates";
 import SalesWorkflowTemplates from "./pages/sales/SalesWorkflowTemplates";
 import LeadDetail from "./pages/sales/LeadDetail";
 import ContractTemplates from "./pages/admin/ContractTemplates";
+import EmailTemplates from "./pages/admin/EmailTemplates";
 import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
@@ -125,6 +126,7 @@ function AppRoutes() {
       <Route path="/job-intake/:id" element={<ProtectedRoute><AdminGuard><JobIntakeDetail /></AdminGuard></ProtectedRoute>} />
       <Route path="/equipment" element={<ProtectedRoute><AdminGuard><Equipment /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
       {/* Executive routes - admin only (executive role removed, use admin) */}
       <Route path="/executive/dashboard" element={<ProtectedRoute><AdminGuard><ExecutiveDashboard /></AdminGuard></ProtectedRoute>} />

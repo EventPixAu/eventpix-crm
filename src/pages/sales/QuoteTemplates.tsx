@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Table,
@@ -49,6 +48,7 @@ import {
   QuoteTemplate,
   QuoteTemplateItem 
 } from '@/hooks/useQuoteTemplates';
+import { PlainTextTemplateEditor } from '@/components/PlainTextTemplateEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 
@@ -242,7 +242,7 @@ export default function QuoteTemplates() {
 
       {/* Create Template Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Quote Template</DialogTitle>
             <DialogDescription>
@@ -261,24 +261,28 @@ export default function QuoteTemplates() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
+              <Input
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description..."
-                rows={2}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="terms">Default Terms</Label>
-              <Textarea
-                id="terms"
-                value={formData.terms_text}
-                onChange={(e) => setFormData({ ...formData, terms_text: e.target.value })}
-                placeholder="Terms and conditions..."
-                rows={3}
-              />
-            </div>
+            <PlainTextTemplateEditor
+              value={formData.terms_text}
+              onChange={(value) => setFormData({ ...formData, terms_text: value })}
+              format="text"
+              label="Default Terms"
+              placeholder={`TERMS AND CONDITIONS
+
+1. A 30% deposit is required to secure your booking.
+2. Final payment is due 7 days before the event.
+3. Images will be delivered within {{quote.delivery_days}} days.
+
+{{company_name}}`}
+              minHeight="200px"
+              showPreview={true}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
@@ -291,7 +295,7 @@ export default function QuoteTemplates() {
 
       {/* Edit Template Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Template</DialogTitle>
             <DialogDescription>
@@ -309,22 +313,20 @@ export default function QuoteTemplates() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-description">Description</Label>
-              <Textarea
+              <Input
                 id="edit-description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={2}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-terms">Default Terms</Label>
-              <Textarea
-                id="edit-terms"
-                value={formData.terms_text}
-                onChange={(e) => setFormData({ ...formData, terms_text: e.target.value })}
-                rows={3}
-              />
-            </div>
+            <PlainTextTemplateEditor
+              value={formData.terms_text}
+              onChange={(value) => setFormData({ ...formData, terms_text: value })}
+              format="text"
+              label="Default Terms"
+              minHeight="200px"
+              showPreview={true}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>

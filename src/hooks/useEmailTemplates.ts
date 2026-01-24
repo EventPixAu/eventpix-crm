@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 // Types
 export type EmailTriggerType = 'manual' | 'quote_sent' | 'quote_followup' | 'booking_confirmed' | 'event_reminder';
+export type TemplateFormat = 'text' | 'html';
 
 export interface EmailTemplate {
   id: string;
@@ -19,6 +20,7 @@ export interface EmailTemplate {
   body_text: string | null;
   trigger_type: EmailTriggerType;
   is_active: boolean;
+  format: TemplateFormat;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +32,7 @@ export interface EmailTemplateInsert {
   body_text?: string | null;
   trigger_type?: EmailTriggerType;
   is_active?: boolean;
+  format?: TemplateFormat;
 }
 
 export interface EmailTemplateUpdate extends Partial<EmailTemplateInsert> {
