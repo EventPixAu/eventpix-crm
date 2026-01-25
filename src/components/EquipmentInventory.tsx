@@ -257,10 +257,10 @@ export function EquipmentInventory() {
                   <SelectContent>
                     <SelectItem value="eventpix">EventPix (Company)</SelectItem>
                     {staffDirectory
-                      .filter(s => s.source === 'profile' && s.full_name?.trim())
+                      .filter(s => s.full_name?.trim())
                       .map((staff) => (
                         <SelectItem key={staff.id} value={staff.id}>
-                          {staff.full_name}
+                          {staff.full_name}{staff.source === 'staff' ? ' (no account)' : ''}
                         </SelectItem>
                       ))}
                   </SelectContent>
