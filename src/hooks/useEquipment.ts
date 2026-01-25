@@ -26,7 +26,6 @@ export function useEquipmentItems() {
       const { data, error } = await supabase
         .from('equipment_items')
         .select('*')
-        .order('category')
         .order('name');
 
       if (error) throw error;
@@ -43,7 +42,6 @@ export function useAvailableEquipment() {
         .from('equipment_items')
         .select('*')
         .eq('status', 'available')
-        .order('category')
         .order('name');
 
       if (error) throw error;
