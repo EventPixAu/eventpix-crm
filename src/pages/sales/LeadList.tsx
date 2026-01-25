@@ -31,11 +31,14 @@ import {
 } from '@/components/ui/select';
 import { useLeads } from '@/hooks/useSales';
 
+// Studio Ninja-style pipeline stages
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
-  new: { label: 'New', variant: 'default' },
+  new: { label: 'New Lead', variant: 'default' },
   qualified: { label: 'Qualified', variant: 'secondary' },
   quoted: { label: 'Quoted', variant: 'outline' },
-  accepted: { label: 'Won', variant: 'default' },
+  contract_sent: { label: 'Contract Sent', variant: 'outline' },
+  won: { label: 'Won', variant: 'default' },
+  accepted: { label: 'Won', variant: 'default' }, // Legacy support
   lost: { label: 'Lost', variant: 'destructive' },
 };
 
