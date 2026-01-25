@@ -127,6 +127,7 @@ serve(async (req) => {
     }
 
     // 5) Upsert profile (with staff data if available)
+    // Note: onboarding_status must be one of: 'incomplete', 'pending_review', 'active', 'suspended'
     const { error: profErr } = await admin
       .from("profiles")
       .upsert({
@@ -137,7 +138,7 @@ serve(async (req) => {
         notes_internal: staffData?.notes || null,
         home_city: staffData?.location || null,
         is_active: true,
-        onboarding_status: 'pending',
+        onboarding_status: 'incomplete',
         updated_at: new Date().toISOString(),
       });
 
