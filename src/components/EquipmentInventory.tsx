@@ -126,10 +126,15 @@ export function EquipmentInventory() {
 
   // Build category options: active categories + any legacy categories from existing items
   const categoryOptions = (() => {
-    const activeNames = categories.map(c => c.name.toLowerCase());
-    const existingCategories = [...new Set(items?.map(item => item.category) || [])];
+    const activeNames = categories
+      .map(c => c.name?.toLowerCase())
+      .filter((name): name is string => !!name && name.trim() !== '');
+    const existingCategories = [...new Set(
+      (items?.map(item => item.category) || [])
+        .filter((cat): cat is string => !!cat && cat.trim() !== '')
+    )];
     const allCategories = [...new Set([...activeNames, ...existingCategories])];
-    return allCategories.sort();
+    return allCategories.filter(cat => cat.trim() !== '').sort();
   })();
 
   if (isLoading) {
@@ -178,11 +183,13 @@ export function EquipmentInventory() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.filter(cat => cat.is_active).map((cat) => (
-                        <SelectItem key={cat.id} value={cat.name.toLowerCase()}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
+                      {categories
+                        .filter(cat => cat.is_active && cat.name?.trim())
+                        .map((cat) => (
+                          <SelectItem key={cat.id} value={cat.name.toLowerCase()}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
