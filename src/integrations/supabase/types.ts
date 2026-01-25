@@ -3252,8 +3252,15 @@ export type Database = {
       }
       profiles: {
         Row: {
+          abn: string | null
+          address_city: string | null
+          address_line1: string | null
+          address_line2: string | null
+          address_postcode: string | null
+          address_state: string | null
           assigned_equipment_notes: string | null
           avatar_url: string | null
+          business_name: string | null
           created_at: string | null
           default_role_id: string | null
           dietary_requirements: string | null
@@ -3273,17 +3280,28 @@ export type Database = {
           onboarding_notes: string | null
           onboarding_status: string
           phone: string | null
+          photography_equipment: string | null
+          pli_details: string | null
+          pli_expiry: string | null
           preferred_end_time: string | null
           preferred_start_time: string | null
           seniority: string | null
           status: string | null
           travel_ready: boolean | null
           updated_at: string | null
+          vehicle_make_model: string | null
           vehicle_registration: string | null
         }
         Insert: {
+          abn?: string | null
+          address_city?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          address_postcode?: string | null
+          address_state?: string | null
           assigned_equipment_notes?: string | null
           avatar_url?: string | null
+          business_name?: string | null
           created_at?: string | null
           default_role_id?: string | null
           dietary_requirements?: string | null
@@ -3303,17 +3321,28 @@ export type Database = {
           onboarding_notes?: string | null
           onboarding_status?: string
           phone?: string | null
+          photography_equipment?: string | null
+          pli_details?: string | null
+          pli_expiry?: string | null
           preferred_end_time?: string | null
           preferred_start_time?: string | null
           seniority?: string | null
           status?: string | null
           travel_ready?: boolean | null
           updated_at?: string | null
+          vehicle_make_model?: string | null
           vehicle_registration?: string | null
         }
         Update: {
+          abn?: string | null
+          address_city?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          address_postcode?: string | null
+          address_state?: string | null
           assigned_equipment_notes?: string | null
           avatar_url?: string | null
+          business_name?: string | null
           created_at?: string | null
           default_role_id?: string | null
           dietary_requirements?: string | null
@@ -3333,12 +3362,16 @@ export type Database = {
           onboarding_notes?: string | null
           onboarding_status?: string
           phone?: string | null
+          photography_equipment?: string | null
+          pli_details?: string | null
+          pli_expiry?: string | null
           preferred_end_time?: string | null
           preferred_start_time?: string | null
           seniority?: string | null
           status?: string | null
           travel_ready?: boolean | null
           updated_at?: string | null
+          vehicle_make_model?: string | null
           vehicle_registration?: string | null
         }
         Relationships: [

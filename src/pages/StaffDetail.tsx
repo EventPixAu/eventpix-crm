@@ -61,6 +61,18 @@ interface StaffProfile {
   vehicle_registration: string | null;
   dietary_requirements: string | null;
   location?: string | null;
+  // New fields
+  business_name?: string | null;
+  abn?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_postcode?: string | null;
+  vehicle_make_model?: string | null;
+  pli_details?: string | null;
+  pli_expiry?: string | null;
+  photography_equipment?: string | null;
   default_role: {
     name: string;
   } | null;
@@ -99,6 +111,9 @@ export default function StaffDetail() {
           preferred_start_time, preferred_end_time,
           notes_internal, default_role_id,
           vehicle_registration, dietary_requirements, location,
+          business_name, abn, address_line1, address_line2,
+          address_city, address_state, address_postcode,
+          vehicle_make_model, pli_details, pli_expiry, photography_equipment,
           default_role:staff_roles(name)
         `)
         .eq('id', id)
@@ -126,6 +141,9 @@ export default function StaffDetail() {
             preferred_start_time, preferred_end_time,
             notes_internal, default_role_id,
             vehicle_registration, dietary_requirements, location,
+            business_name, abn, address_line1, address_line2,
+            address_city, address_state, address_postcode,
+            vehicle_make_model, pli_details, pli_expiry, photography_equipment,
             default_role:staff_roles(name)
           `)
           .eq('id', staffData.user_id)
