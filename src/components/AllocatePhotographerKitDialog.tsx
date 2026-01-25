@@ -16,6 +16,7 @@ import { Camera, Sun, Image, Package, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
 
 interface PhotographerKit {
   category: 'camera' | 'lighting' | 'backdrop' | 'other';
@@ -61,6 +62,7 @@ export function AllocatePhotographerKitDialog({
 }: AllocatePhotographerKitDialogProps) {
   const [selectedKits, setSelectedKits] = useState<Set<string>>(new Set());
   const [isAllocating, setIsAllocating] = useState(false);
+  const allocateKits = useAllocatePhotographerKits();
 
   // Extract all assigned staff (both profile-linked and legacy)
   const allAssignedStaff = useMemo(() => {
@@ -221,32 +223,32 @@ export function AllocatePhotographerKitDialog({
 
   const handleAllocate = async () => {
     if (selectedKits.size === 0) {
-      toast.error('Please select at least one kit to allocate');
       return;
     }
 
     setIsAllocating(true);
 
     try {
-      // For now, just log what would be allocated
-      // In a full implementation, you'd create allocation records linking photographer gear to the event
-      const allocations = Array.from(selectedKits).map(key => {
+      const kitsToAllocate = Array.from(selectedKits).map(key => {
         const [userId, category] = key.split(':');
         const photographer = photographers.find(p => p.userId === userId);
         const kit = photographer?.kits.find(k => k.category === category);
-        return { userId, category, photographerName: photographer?.name, items: kit?.items };
+        return { 
+          userId, 
+          category, 
+          items: kit?.items || [] 
+        };
       });
 
-      console.log('Allocating photographer kits:', allocations);
-      
-      // TODO: Store these allocations in a photographer_kit_allocations table
-      // For now, we'll show a success message
-      toast.success(`Allocated ${selectedKits.size} kit(s) to this event`);
+      await allocateKits.mutateAsync({
+        eventId,
+        kits: kitsToAllocate,
+      });
       
       setSelectedKits(new Set());
       onOpenChange(false);
     } catch (error) {
-      toast.error('Failed to allocate kits');
+      console.error('Failed to allocate kits:', error);
     } finally {
       setIsAllocating(false);
     }
