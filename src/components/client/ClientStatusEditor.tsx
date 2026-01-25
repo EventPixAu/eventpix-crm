@@ -3,6 +3,7 @@
  * 
  * Allows Admin/Sales to manually override company status.
  * Shows badge when status is manually set vs auto-derived.
+ * Logs all status changes to company_status_audit table.
  */
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ import {
 import { Edit2, Info, X, Check } from 'lucide-react';
 import { useUpdateClient } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 const STATUS_OPTIONS = [
   { value: 'prospect', label: 'Prospect', color: 'bg-slate-100 text-slate-700 border-slate-200' },
@@ -59,26 +61,57 @@ export function ClientStatusEditor({
   const handleSave = async () => {
     if (!selectedStatus) return;
     
-    await updateClient.mutateAsync({
-      id: clientId,
-      manual_status: selectedStatus,
-      status_override_at: new Date().toISOString(),
-    } as any);
-    
-    setIsEditing(false);
-    onUpdate?.();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Log to audit
+      await supabase.from('company_status_audit').insert({
+        company_id: clientId,
+        action: 'status_override_set',
+        old_status: displayStatus,
+        new_status: selectedStatus,
+        changed_by: user?.id,
+      });
+      
+      await updateClient.mutateAsync({
+        id: clientId,
+        manual_status: selectedStatus,
+        status_override_at: new Date().toISOString(),
+        status_override_by: user?.id,
+      } as any);
+      
+      setIsEditing(false);
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error saving status:', error);
+    }
   };
 
   const handleClearOverride = async () => {
-    await updateClient.mutateAsync({
-      id: clientId,
-      manual_status: null,
-      status_override_at: null,
-      status_override_by: null,
-    } as any);
-    
-    setIsEditing(false);
-    onUpdate?.();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Log to audit
+      await supabase.from('company_status_audit').insert({
+        company_id: clientId,
+        action: 'status_override_cleared',
+        old_status: manualStatus,
+        new_status: computedStatus,
+        changed_by: user?.id,
+      });
+      
+      await updateClient.mutateAsync({
+        id: clientId,
+        manual_status: null,
+        status_override_at: null,
+        status_override_by: null,
+      } as any);
+      
+      setIsEditing(false);
+      onUpdate?.();
+    } catch (error) {
+      console.error('Error clearing override:', error);
+    }
   };
 
   const handleCancel = () => {

@@ -7,10 +7,14 @@
  * - Current Client: delivered event in last 12 months
  * - Previous Client: delivered event older than 12 months
  * - Prospect: no delivered events
+ * 
+ * Features:
+ * - Inline status editing for Admin/Sales
+ * - Bulk status update for selected companies
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -18,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -36,8 +41,12 @@ import {
   ExternalLink,
   Tag,
   Upload,
+  CheckSquare,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
+import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
+import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog';
+import { useAuth } from '@/lib/auth';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
@@ -94,6 +103,13 @@ function computeClientStatus(events: Array<{ event_date: string; ops_status: str
 
 export default function CompanyList() {
   const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  
+  const { isAdmin, isSales } = useAuth();
+  const queryClient = useQueryClient();
+  const canBulkEdit = isAdmin || isSales;
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['crm-companies', search],
@@ -165,20 +181,32 @@ export default function CompanyList() {
     },
   });
 
-  const getStatusConfig = (status: ComputedStatus) => {
-    switch (status) {
-      case 'active_event':
-        return { label: 'Active Event', className: 'bg-green-500/10 text-green-600 border-green-500/20' };
-      case 'current_client':
-        return { label: 'Current Client', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
-      case 'previous_client':
-        return { label: 'Previous Client', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' };
-      case 'prospect':
-        return { label: 'Prospect', className: 'bg-muted text-muted-foreground' };
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
+  };
+
+  const toggleSelection = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === companies.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(companies.map(c => c.id)));
     }
   };
 
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const handleBulkComplete = () => {
+    setSelectedIds(new Set());
+    handleRefresh();
+  };
 
   return (
     <AppLayout>
@@ -188,6 +216,12 @@ export default function CompanyList() {
         description="Manage your business relationships"
         actions={
           <div className="flex items-center gap-2">
+            {canBulkEdit && selectedIds.size > 0 && (
+              <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Set Status ({selectedIds.size})
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Import
@@ -205,6 +239,14 @@ export default function CompanyList() {
       <ContactImportDialog 
         open={importDialogOpen} 
         onOpenChange={setImportDialogOpen} 
+      />
+
+      <BulkStatusUpdateDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        selectedCompanyIds={Array.from(selectedIds)}
+        companies={companies}
+        onComplete={handleBulkComplete}
       />
 
       <Card>
@@ -239,6 +281,14 @@ export default function CompanyList() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {canBulkEdit && (
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={selectedIds.size === companies.length && companies.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Company</TableHead>
                   <TableHead>Contact Info</TableHead>
                   <TableHead>Category</TableHead>
@@ -250,6 +300,14 @@ export default function CompanyList() {
               <TableBody>
                 {companies.map((company) => (
                   <TableRow key={company.id}>
+                    {canBulkEdit && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(company.id)}
+                          onCheckedChange={() => toggleSelection(company.id)}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Link
                         to={`/crm/companies/${company.id}`}
@@ -302,19 +360,13 @@ export default function CompanyList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Badge
-                          variant="outline"
-                          className={getStatusConfig(company.display_status).className}
-                        >
-                          {getStatusConfig(company.display_status).label}
-                        </Badge>
-                        {company.is_override && (
-                          <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
-                            Manual
-                          </Badge>
-                        )}
-                      </div>
+                      <InlineStatusEditor
+                        companyId={company.id}
+                        currentStatus={company.display_status}
+                        isOverride={company.is_override}
+                        computedStatus={company.computed_status}
+                        onStatusChange={handleRefresh}
+                      />
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" asChild>
