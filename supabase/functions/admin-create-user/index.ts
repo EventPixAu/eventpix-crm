@@ -46,10 +46,10 @@ serve(async (req) => {
       );
     }
 
-    // 2) Read invitation
+    // 2) Read invitation (including staff_id for linking)
     const { data: inv, error: invErr } = await admin
       .from("user_invitations")
-      .select("id, email, role, status")
+      .select("id, email, role, status, staff_id")
       .eq("id", invitation_id)
       .single();
 
@@ -111,12 +111,31 @@ serve(async (req) => {
 
     const userId = created.user.id;
 
-    // 4) Upsert profile
+    // 4) If this invitation has a linked staff record, fetch that data for the profile
+    let staffData: { name?: string; phone?: string; notes?: string; location?: string } | null = null;
+    if (inv.staff_id) {
+      const { data: staff, error: staffErr } = await admin
+        .from("staff")
+        .select("name, phone, notes, location")
+        .eq("id", inv.staff_id)
+        .single();
+      
+      if (!staffErr && staff) {
+        staffData = staff;
+        console.log("Found linked staff record:", staffData);
+      }
+    }
+
+    // 5) Upsert profile (with staff data if available)
     const { error: profErr } = await admin
       .from("profiles")
       .upsert({
         id: userId,
         email: inv.email,
+        full_name: staffData?.name || null,
+        phone: staffData?.phone || null,
+        notes_internal: staffData?.notes || null,
+        home_city: staffData?.location || null,
         is_active: true,
         onboarding_status: 'pending',
         updated_at: new Date().toISOString(),
@@ -135,6 +154,21 @@ serve(async (req) => {
         JSON.stringify({ success: false, error: profErr.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // 5.5) If there's a linked staff record, update it to point to the new user_id
+    if (inv.staff_id) {
+      const { error: staffUpdateErr } = await admin
+        .from("staff")
+        .update({ user_id: userId })
+        .eq("id", inv.staff_id);
+      
+      if (staffUpdateErr) {
+        console.error("Failed to link staff record to user:", staffUpdateErr);
+        // Don't fail the whole operation for this
+      } else {
+        console.log("Linked staff record", inv.staff_id, "to user", userId);
+      }
     }
 
     // 5) Set role in user_roles table

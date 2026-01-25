@@ -17,7 +17,8 @@ import {
   Clock,
   Car,
   Utensils,
-  Package
+  Package,
+  UserPlus
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -27,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useStaffRatesByUser, type StaffRate } from '@/hooks/useStaffRates';
@@ -35,6 +37,7 @@ import { StaffCompliancePanel } from '@/components/StaffCompliancePanel';
 import { StaffRateEditor } from '@/components/StaffRateEditor';
 import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
@@ -271,6 +274,32 @@ export default function StaffDetail() {
         title={profile.full_name || 'Team Member'}
         description={profile.default_role?.name || 'Team Member'}
       />
+
+      {/* Staff-only member notice */}
+      {sourceTable === 'staff' && isAdmin && (
+        <Alert className="mb-6">
+          <UserPlus className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              This team member doesn't have a user account yet. Invite them to create one to unlock full profile features.
+            </span>
+            <InviteStaffToAccountDialog
+              staff={{
+                id: staffId || id!,
+                name: profile.full_name || 'Team Member',
+                email: profile.email,
+                role: profile.default_role?.name || 'photographer',
+              }}
+              trigger={
+                <Button size="sm" className="ml-4">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Invitation
+                </Button>
+              }
+            />
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Profile Summary Card */}
       <Card className="mb-6 relative">
