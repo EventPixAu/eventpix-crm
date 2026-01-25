@@ -60,6 +60,7 @@ interface StaffProfile {
   default_role_id: string | null;
   vehicle_registration: string | null;
   dietary_requirements: string | null;
+  location?: string | null;
   default_role: {
     name: string;
   } | null;
@@ -97,7 +98,7 @@ export default function StaffDetail() {
           onboarding_status, travel_ready, 
           preferred_start_time, preferred_end_time,
           notes_internal, default_role_id,
-          vehicle_registration, dietary_requirements,
+          vehicle_registration, dietary_requirements, location,
           default_role:staff_roles(name)
         `)
         .eq('id', id)
@@ -124,7 +125,7 @@ export default function StaffDetail() {
             onboarding_status, travel_ready, 
             preferred_start_time, preferred_end_time,
             notes_internal, default_role_id,
-            vehicle_registration, dietary_requirements,
+            vehicle_registration, dietary_requirements, location,
             default_role:staff_roles(name)
           `)
           .eq('id', staffData.user_id)
@@ -157,6 +158,7 @@ export default function StaffDetail() {
             vehicle_registration: null,
             dietary_requirements: null,
             default_role: { name: staffData.role },
+            location: staffData.location,
           } as StaffProfile,
           sourceTable: 'staff' as const,
           staffId: id,
