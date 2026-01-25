@@ -12,6 +12,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -30,9 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useClient, useUpdateClient, useDeleteClient, useClientEvents } from '@/hooks/useSales';
+import { useClient, useUpdateClient, useDeleteClient, useClientEvents, useCreateClient } from '@/hooks/useSales';
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
 import {
   ClientProfileCard,
   ClientLeadsList,
@@ -48,11 +50,15 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const { data: client, isLoading, error } = useClient(id);
   const { data: events = [] } = useClientEvents(id);
   const { data: categories = [] } = useCompanyCategories();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
+  const createClient = useCreateClient();
+  
+  const isCreateMode = !id;
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -94,6 +100,25 @@ export default function ClientDetail() {
     setIsEditOpen(false);
   };
 
+  const handleCreate = async () => {
+    if (!formData.business_name.trim()) {
+      toast({ title: 'Please enter a business name', variant: 'destructive' });
+      return;
+    }
+    const result = await createClient.mutateAsync({
+      business_name: formData.business_name,
+      company_phone: formData.company_phone || null,
+      company_email: formData.company_email || null,
+      billing_address: formData.billing_address || null,
+      category_id: formData.category_id || null,
+      primary_contact_name: formData.primary_contact_name || null,
+      primary_contact_email: formData.primary_contact_email || null,
+      primary_contact_phone: formData.primary_contact_phone || null,
+      notes: formData.notes || null,
+    });
+    navigate(`/crm/companies/${result.id}`);
+  };
+
   const handleDelete = async () => {
     if (!id) return;
     if (events.length > 0) {
@@ -106,10 +131,155 @@ export default function ClientDetail() {
     }
   };
 
-  if (!id) {
+  // Create mode - show creation form
+  if (isCreateMode) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Company not found</div>
+        {/* Breadcrumb */}
+        <div className="mb-4 text-sm text-muted-foreground">
+          <Link to="/" className="hover:text-foreground">Dashboard</Link>
+          {' > '}
+          <Link to="/crm/companies" className="hover:text-foreground">Companies</Link>
+          {' > '}
+          <span className="text-foreground">New Company</span>
+        </div>
+
+        <PageHeader
+          title="New Company"
+          actions={
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/crm/companies">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Cancel
+              </Link>
+            </Button>
+          }
+        />
+
+        <Card className="max-w-2xl mt-6">
+          <CardHeader>
+            <CardTitle>Company Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="create_business_name">Business Name *</Label>
+              <Input
+                id="create_business_name"
+                value={formData.business_name}
+                onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                placeholder="Acme Corp"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create_category_id">Category</Label>
+              <Select
+                value={formData.category_id}
+                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create_company_phone">Company Phone</Label>
+                <Input
+                  id="create_company_phone"
+                  value={formData.company_phone}
+                  onChange={(e) => setFormData({ ...formData, company_phone: e.target.value })}
+                  placeholder="+61 2 0000 0000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create_company_email">Company Email</Label>
+                <Input
+                  id="create_company_email"
+                  type="email"
+                  value={formData.company_email}
+                  onChange={(e) => setFormData({ ...formData, company_email: e.target.value })}
+                  placeholder="info@acme.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create_billing_address">Billing Address</Label>
+              <Textarea
+                id="create_billing_address"
+                value={formData.billing_address}
+                onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })}
+                rows={2}
+                placeholder="123 Main St, Sydney NSW 2000"
+              />
+            </div>
+
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Primary Contact</h4>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="create_primary_contact_name">Contact Name</Label>
+                  <Input
+                    id="create_primary_contact_name"
+                    value={formData.primary_contact_name}
+                    onChange={(e) => setFormData({ ...formData, primary_contact_name: e.target.value })}
+                    placeholder="John Smith"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="create_primary_contact_email">Email</Label>
+                    <Input
+                      id="create_primary_contact_email"
+                      type="email"
+                      value={formData.primary_contact_email}
+                      onChange={(e) => setFormData({ ...formData, primary_contact_email: e.target.value })}
+                      placeholder="john@acme.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create_primary_contact_phone">Phone</Label>
+                    <Input
+                      id="create_primary_contact_phone"
+                      value={formData.primary_contact_phone}
+                      onChange={(e) => setFormData({ ...formData, primary_contact_phone: e.target.value })}
+                      placeholder="+61 400 000 000"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create_notes">Notes</Label>
+              <Textarea
+                id="create_notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+                placeholder="Additional notes..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleCreate} disabled={createClient.isPending}>
+                {createClient.isPending ? 'Creating...' : 'Create Company'}
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/crm/companies">Cancel</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </AppLayout>
     );
   }

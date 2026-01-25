@@ -84,6 +84,8 @@ export default function ContactDetail() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
+  const isCreateMode = !id;
+  
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [activityDate, setActivityDate] = useState<Date>(new Date());
@@ -94,6 +96,7 @@ export default function ContactDetail() {
     phone_mobile: '',
     job_title_id: '',
     notes: '',
+    client_id: '',
   });
   const [activityData, setActivityData] = useState({
     activity_type: 'email' as 'email' | 'phone_call' | 'meeting',
@@ -105,6 +108,21 @@ export default function ContactDetail() {
   const { data: activities = [], isLoading: activitiesLoading } = useContactActivities(id);
   const createActivity = useCreateContactActivity();
   const deleteActivity = useDeleteContactActivity();
+
+  // Fetch companies for the dropdown when creating a new contact
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies-simple'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, business_name')
+        .eq('is_training', false)
+        .order('business_name');
+      if (error) throw error;
+      return data;
+    },
+    enabled: isCreateMode,
+  });
 
   const { data: contact, isLoading, error } = useQuery({
     queryKey: ['contact', id],
@@ -124,6 +142,46 @@ export default function ContactDetail() {
       return data as Contact;
     },
     enabled: !!id,
+  });
+
+  // Create contact mutation
+  const createContact = useMutation({
+    mutationFn: async (data: {
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone_mobile: string;
+      job_title_id: string | null;
+      notes: string;
+      client_id: string;
+    }) => {
+      const contactName = `${data.first_name} ${data.last_name}`.trim() || data.first_name || 'Unnamed';
+      const { data: result, error } = await supabase
+        .from('client_contacts')
+        .insert({
+          contact_name: contactName,
+          first_name: data.first_name || null,
+          last_name: data.last_name || null,
+          email: data.email || null,
+          phone_mobile: data.phone_mobile || null,
+          job_title_id: data.job_title_id,
+          notes: data.notes || null,
+          client_id: data.client_id,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast({ title: 'Contact created successfully' });
+      navigate(`/crm/contacts/${data.id}`);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to create contact', description: error.message, variant: 'destructive' });
+    },
   });
 
   const updateContact = useMutation({
@@ -179,9 +237,30 @@ export default function ContactDetail() {
         phone_mobile: contact.phone_mobile || '',
         job_title_id: contact.job_title_id || '',
         notes: contact.notes || '',
+        client_id: contact.client_id || '',
       });
       setIsEditOpen(true);
     }
+  };
+
+  const handleCreate = () => {
+    if (!formData.first_name.trim() && !formData.last_name.trim()) {
+      toast({ title: 'Please enter a name', variant: 'destructive' });
+      return;
+    }
+    if (!formData.client_id) {
+      toast({ title: 'Please select a company', variant: 'destructive' });
+      return;
+    }
+    createContact.mutate({
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email,
+      phone_mobile: formData.phone_mobile,
+      job_title_id: formData.job_title_id || null,
+      notes: formData.notes,
+      client_id: formData.client_id,
+    });
   };
 
   const handleUpdate = () => {
@@ -241,10 +320,137 @@ export default function ContactDetail() {
     }
   };
 
-  if (!id) {
+  // Create mode - show creation form
+  if (isCreateMode) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Contact not found</div>
+        {/* Breadcrumb */}
+        <div className="mb-4 text-sm text-muted-foreground">
+          <Link to="/" className="hover:text-foreground">Dashboard</Link>
+          {' > '}
+          <Link to="/crm/contacts" className="hover:text-foreground">Contacts</Link>
+          {' > '}
+          <span className="text-foreground">New Contact</span>
+        </div>
+
+        <PageHeader
+          title="New Contact"
+          actions={
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/crm/contacts">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Cancel
+              </Link>
+            </Button>
+          }
+        />
+
+        <Card className="max-w-2xl mt-6">
+          <CardHeader>
+            <CardTitle>Contact Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create_first_name">First Name *</Label>
+                <Input
+                  id="create_first_name"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  placeholder="John"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create_last_name">Last Name</Label>
+                <Input
+                  id="create_last_name"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  placeholder="Smith"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="create_client_id">Company *</Label>
+              <Select
+                value={formData.client_id}
+                onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.business_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="create_email">Email</Label>
+              <Input
+                id="create_email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="john@example.com"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="create_phone_mobile">Mobile</Label>
+              <Input
+                id="create_phone_mobile"
+                value={formData.phone_mobile}
+                onChange={(e) => setFormData({ ...formData, phone_mobile: e.target.value })}
+                placeholder="+61 400 000 000"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="create_job_title_id">Job Title</Label>
+              <Select
+                value={formData.job_title_id}
+                onValueChange={(value) => setFormData({ ...formData, job_title_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job title" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobTitles.map((title) => (
+                    <SelectItem key={title.id} value={title.id}>
+                      {title.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="create_notes">Notes</Label>
+              <Textarea
+                id="create_notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={3}
+                placeholder="Additional notes..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button onClick={handleCreate} disabled={createContact.isPending}>
+                {createContact.isPending ? 'Creating...' : 'Create Contact'}
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/crm/contacts">Cancel</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </AppLayout>
     );
   }
