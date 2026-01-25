@@ -1,3 +1,9 @@
+/**
+ * BULK EVENT CREATION DIALOG
+ * 
+ * Create multiple events at once for an event series.
+ * Uses ContactSelector for onsite contact selection.
+ */
 import { useState, useEffect } from 'react';
 import { format, addDays, parseISO } from 'date-fns';
 import { 
@@ -17,7 +23,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -37,6 +42,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useBulkCreateEvents, EventSeries } from '@/hooks/useEventSeries';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface BulkEventRow {
   id: string;
@@ -46,6 +53,7 @@ interface BulkEventRow {
   venue_address: string;
   start_time: string;
   end_time: string;
+  onsite_contact_id: string | null;
   onsite_contact_name: string;
   onsite_contact_phone: string;
   notes: string;
@@ -67,6 +75,7 @@ function createEmptyRow(defaults?: Partial<BulkEventRow>): BulkEventRow {
     venue_address: '',
     start_time: '18:00',
     end_time: '22:00',
+    onsite_contact_id: null,
     onsite_contact_name: '',
     onsite_contact_phone: '',
     notes: '',
@@ -87,7 +96,8 @@ export function BulkEventCreationDialog({
   // State
   const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow()]);
   const [clientName, setClientName] = useState('');
-  const [defaultContact, setDefaultContact] = useState({ name: '', phone: '' });
+  const [defaultContactId, setDefaultContactId] = useState<string | null>(null);
+  const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
   const [useDefaultContact, setUseDefaultContact] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
   
@@ -96,19 +106,49 @@ export function BulkEventCreationDialog({
     if (open) {
       setRows([createEmptyRow()]);
       setClientName(series.name);
-      setDefaultContact({ name: '', phone: '' });
+      setDefaultContactId(null);
+      setDefaultContactInfo({ name: '', phone: '' });
       setUseDefaultContact(true);
     }
   }, [open, series.name]);
   
   const validRows = rows.filter(r => r.event_date && (r.city || r.venue_name));
   
+  // Handle default contact selection
+  const handleDefaultContactChange = (contactId: string | null, contact?: CrmContact | null) => {
+    setDefaultContactId(contactId);
+    if (contact) {
+      const phone = contact.phone_mobile || contact.phone_office || contact.phone || '';
+      setDefaultContactInfo({
+        name: contact.contact_name || '',
+        phone: phone,
+      });
+    } else {
+      setDefaultContactInfo({ name: '', phone: '' });
+    }
+  };
+
+  // Handle row contact selection
+  const handleRowContactChange = (rowId: string, contactId: string | null, contact?: CrmContact | null) => {
+    setRows(rows.map(r => {
+      if (r.id !== rowId) return r;
+      const phone = contact?.phone_mobile || contact?.phone_office || contact?.phone || '';
+      return {
+        ...r,
+        onsite_contact_id: contactId,
+        onsite_contact_name: contact?.contact_name || '',
+        onsite_contact_phone: phone,
+      };
+    }));
+  };
+  
   const handleAddRow = () => {
     setRows([...rows, createEmptyRow({
       start_time: rows[rows.length - 1]?.start_time || '18:00',
       end_time: rows[rows.length - 1]?.end_time || '22:00',
-      onsite_contact_name: useDefaultContact ? defaultContact.name : '',
-      onsite_contact_phone: useDefaultContact ? defaultContact.phone : '',
+      onsite_contact_id: useDefaultContact ? defaultContactId : null,
+      onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
+      onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
     })]);
   };
   
@@ -150,12 +190,9 @@ export function BulkEventCreationDialog({
     
     const events = validRows.map(row => {
       const venueName = row.city || row.venue_name;
-      const contactName = useDefaultContact && !row.onsite_contact_name 
-        ? defaultContact.name 
-        : row.onsite_contact_name;
-      const contactPhone = useDefaultContact && !row.onsite_contact_phone 
-        ? defaultContact.phone 
-        : row.onsite_contact_phone;
+      // Use row-specific contact, or fall back to default if enabled
+      const contactName = row.onsite_contact_name || (useDefaultContact ? defaultContactInfo.name : '');
+      const contactPhone = row.onsite_contact_phone || (useDefaultContact ? defaultContactInfo.phone : '');
       
       return {
         event_name: `${series.name} - ${venueName}`,
@@ -212,7 +249,7 @@ export function BulkEventCreationDialog({
                 Default Settings
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Client Name</Label>
                   <Input
@@ -223,20 +260,11 @@ export function BulkEventCreationDialog({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Default Contact Name</Label>
-                  <Input
-                    value={defaultContact.name}
-                    onChange={(e) => setDefaultContact(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Contact name"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Default Contact Phone</Label>
-                  <Input
-                    value={defaultContact.phone}
-                    onChange={(e) => setDefaultContact(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Phone number"
+                  <Label>Default Contact</Label>
+                  <ContactSelector
+                    value={defaultContactId}
+                    onChange={handleDefaultContactChange}
+                    placeholder="Search for a contact..."
                   />
                 </div>
               </div>
@@ -371,24 +399,14 @@ export function BulkEventCreationDialog({
                               placeholder="Full address"
                             />
                           </div>
-                          <div className="col-span-2">
+                          <div className="col-span-4">
                             <Label className="text-xs text-muted-foreground mb-1 block">
-                              Contact Name
+                              Onsite Contact
                             </Label>
-                            <Input
-                              value={row.onsite_contact_name}
-                              onChange={(e) => handleUpdateRow(row.id, 'onsite_contact_name', e.target.value)}
-                              placeholder={useDefaultContact && defaultContact.name ? defaultContact.name : 'Contact name'}
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <Label className="text-xs text-muted-foreground mb-1 block">
-                              Contact Phone
-                            </Label>
-                            <Input
-                              value={row.onsite_contact_phone}
-                              onChange={(e) => handleUpdateRow(row.id, 'onsite_contact_phone', e.target.value)}
-                              placeholder={useDefaultContact && defaultContact.phone ? defaultContact.phone : 'Phone'}
+                            <ContactSelector
+                              value={row.onsite_contact_id}
+                              onChange={(contactId, contact) => handleRowContactChange(row.id, contactId, contact)}
+                              placeholder={useDefaultContact && defaultContactInfo.name ? defaultContactInfo.name : 'Search contact...'}
                             />
                           </div>
                           <div className="col-span-3">
@@ -453,16 +471,16 @@ export function BulkEventCreationDialog({
           </div>
         </ScrollArea>
         
-        <DialogFooter className="border-t border-border pt-4">
+        <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button 
-            onClick={handleBulkCreate} 
-            disabled={bulkCreate.isPending || validRows.length === 0}
+            onClick={handleBulkCreate}
+            disabled={validRows.length === 0 || bulkCreate.isPending}
           >
             <Rocket className="h-4 w-4 mr-2" />
-            Create {validRows.length} Event{validRows.length !== 1 ? 's' : ''}
+            {bulkCreate.isPending ? 'Creating...' : `Create ${validRows.length} Event${validRows.length !== 1 ? 's' : ''}`}
           </Button>
         </DialogFooter>
       </DialogContent>

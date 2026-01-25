@@ -22,17 +22,18 @@ import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone 
 import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useScheduledEmails, useCancelScheduledEmail, useCreateScheduledEmail, useDeleteScheduledEmail } from '@/hooks/useScheduledEmails';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
 import { EmailCampaignManager } from '@/components/crm/EmailCampaignManager';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 export default function CrmEmails() {
   const [activeTab, setActiveTab] = useState('campaigns');
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   
   // Compose state
-  const [selectedContactId, setSelectedContactId] = useState<string>('');
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
@@ -50,19 +51,6 @@ export default function CrmEmails() {
   const createScheduledEmail = useCreateScheduledEmail();
   const sendEmail = useSendCrmEmail();
 
-  // Fetch contacts for dropdown
-  const { data: contacts = [] } = useQuery({
-    queryKey: ['client-contacts-dropdown'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('client_contacts')
-        .select('id, contact_name, email, client_id, clients(business_name)')
-        .order('contact_name');
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId);
     const template = templates.find(t => t.id === templateId);
@@ -72,19 +60,25 @@ export default function CrmEmails() {
     }
   };
 
-  const handleContactSelect = (contactId: string) => {
+  const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
     setSelectedContactId(contactId);
-    const contact = contacts.find(c => c.id === contactId);
+    setSelectedContact(contact || null);
     if (contact) {
       setRecipientEmail(contact.email || '');
       setRecipientName(contact.contact_name || '');
+    } else if (!contactId) {
+      setRecipientEmail('');
+      setRecipientName('');
     }
   };
 
   const handleSendNow = async () => {
     if (!recipientEmail || !subject || !bodyHtml) return;
 
-    const contact = contacts.find(c => c.id === selectedContactId);
+    // Get client_id from selected contact or its company association
+    const clientId = selectedContact?.client_id || 
+      selectedContact?.companies?.find(c => c.is_primary)?.company_id ||
+      selectedContact?.companies?.[0]?.company_id;
     
     await sendEmail.mutateAsync({
       recipientEmail,
@@ -92,7 +86,7 @@ export default function CrmEmails() {
       subject,
       bodyHtml,
       contactId: selectedContactId || undefined,
-      clientId: contact?.client_id || undefined,
+      clientId: clientId || undefined,
       templateId: selectedTemplateId || undefined,
     });
 
@@ -104,7 +98,11 @@ export default function CrmEmails() {
     if (!recipientEmail || !subject || !bodyHtml || !scheduledDate) return;
 
     const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
-    const contact = contacts.find(c => c.id === selectedContactId);
+    
+    // Get client_id from selected contact
+    const clientId = selectedContact?.client_id || 
+      selectedContact?.companies?.find(c => c.is_primary)?.company_id ||
+      selectedContact?.companies?.[0]?.company_id;
 
     await createScheduledEmail.mutateAsync({
       recipient_email: recipientEmail,
@@ -113,7 +111,7 @@ export default function CrmEmails() {
       body_html: bodyHtml,
       scheduled_at: scheduledAt,
       contact_id: selectedContactId || null,
-      client_id: contact?.client_id || null,
+      client_id: clientId || null,
       template_id: selectedTemplateId || null,
     });
 
@@ -123,7 +121,8 @@ export default function CrmEmails() {
   };
 
   const resetComposeForm = () => {
-    setSelectedContactId('');
+    setSelectedContactId(null);
+    setSelectedContact(null);
     setSelectedTemplateId('');
     setRecipientEmail('');
     setRecipientName('');
@@ -194,19 +193,15 @@ export default function CrmEmails() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Contact (optional)</Label>
-                    <Select value={selectedContactId} onValueChange={handleContactSelect}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a contact..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {contacts.map((contact) => (
-                          <SelectItem key={contact.id} value={contact.id}>
-                            {contact.contact_name} {contact.clients?.business_name ? `(${contact.clients.business_name})` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Recipient Contact</Label>
+                    <ContactSelector
+                      value={selectedContactId}
+                      onChange={handleContactChange}
+                      placeholder="Search for a contact..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Select a CRM contact or enter details manually below
+                    </p>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
