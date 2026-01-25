@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Plus, Trash2, Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { FileText, Plus, Trash2, Edit2, ToggleLeft, ToggleRight, Archive, RotateCcw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -48,6 +49,7 @@ import {
   QuoteTemplate,
   QuoteTemplateItem 
 } from '@/hooks/useQuoteTemplates';
+import { useArchiveTemplate, useRestoreTemplate } from '@/hooks/useTemplateArchive';
 import { PlainTextTemplateEditor } from '@/components/PlainTextTemplateEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
@@ -59,17 +61,27 @@ export default function QuoteTemplates() {
   const createTemplate = useCreateQuoteTemplate();
   const updateTemplate = useUpdateQuoteTemplate();
   const deleteTemplate = useDeleteQuoteTemplate();
+  const archiveTemplate = useArchiveTemplate('quote');
+  const restoreTemplate = useRestoreTemplate('quote');
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [archiveId, setArchiveId] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<QuoteTemplate | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     terms_text: '',
   });
+
+  // Filter templates based on archived status
+  const filteredTemplates = templates?.filter(t => {
+    const isArchived = !!(t as any).archived_at;
+    return showArchived ? isArchived : !isArchived;
+  }) || [];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
@@ -134,16 +146,36 @@ export default function QuoteTemplates() {
     setDeleteId(null);
   };
 
+  const handleArchive = async () => {
+    if (!archiveId) return;
+    await archiveTemplate.mutateAsync(archiveId);
+    setArchiveId(null);
+  };
+
+  const handleRestore = async (id: string) => {
+    await restoreTemplate.mutateAsync(id);
+  };
+
   return (
     <AppLayout>
       <PageHeader
         title="Quote Templates"
         description="Create and manage reusable quote templates"
         actions={
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Template
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-archived"
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+              />
+              <Label htmlFor="show-archived" className="text-sm">Show archived</Label>
+            </div>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Template
+            </Button>
+          </div>
         }
       />
 
@@ -153,11 +185,11 @@ export default function QuoteTemplates() {
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
-          ) : !templates?.length ? (
+          ) : !filteredTemplates?.length ? (
             <div className="text-center py-16 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No templates yet</p>
-              <p className="text-sm">Create a template or save one from an existing quote.</p>
+              <p>{showArchived ? 'No archived templates' : 'No templates yet'}</p>
+              {!showArchived && <p className="text-sm">Create a template or save one from an existing quote.</p>}
             </div>
           ) : (
             <Table>
@@ -172,68 +204,104 @@ export default function QuoteTemplates() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {templates.map((template) => (
-                  <TableRow key={template.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{template.name}</div>
-                        {template.description && (
-                          <div className="text-sm text-muted-foreground truncate max-w-xs">
-                            {template.description}
+                {filteredTemplates.map((template) => {
+                  const isArchived = !!(template as any).archived_at;
+                  return (
+                    <TableRow key={template.id} className={isArchived ? 'opacity-60' : ''}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {template.name}
+                            {isArchived && (
+                              <Badge variant="outline" className="text-xs">Archived</Badge>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {template.items_json?.length || 0} items
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(calculateTemplateTotal(template.items_json || []))}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={template.is_active ? 'default' : 'outline'}>
-                        {template.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {template.created_at ? format(new Date(template.created_at), 'PP') : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleToggleActive(template)}
-                          title={template.is_active ? 'Deactivate' : 'Activate'}
-                        >
-                          {template.is_active ? (
-                            <ToggleRight className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <ToggleLeft className="h-4 w-4" />
+                          {template.description && (
+                            <div className="text-sm text-muted-foreground truncate max-w-xs">
+                              {template.description}
+                            </div>
                           )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(template)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteId(template.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {template.items_json?.length || 0} items
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {formatCurrency(calculateTemplateTotal(template.items_json || []))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={template.is_active ? 'default' : 'outline'}>
+                          {template.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {template.created_at ? format(new Date(template.created_at), 'PP') : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          {isArchived ? (
+                            // Archived: show restore button
+                            isAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRestore(template.id)}
+                                title="Restore template"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            )
+                          ) : (
+                            // Active: show normal actions
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleToggleActive(template)}
+                                title={template.is_active ? 'Deactivate' : 'Activate'}
+                              >
+                                {template.is_active ? (
+                                  <ToggleRight className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <ToggleLeft className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(template)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              {isAdmin && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setArchiveId(template.id)}
+                                    title="Archive template"
+                                  >
+                                    <Archive className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setDeleteId(template.id)}
+                                    title="Delete permanently"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -341,14 +409,35 @@ export default function QuoteTemplates() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Template Permanently?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the template. This action cannot be undone.
+              <br /><br />
+              <strong>Tip:</strong> Consider archiving instead if you might need this template later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive Confirmation */}
+      <AlertDialog open={!!archiveId} onOpenChange={() => setArchiveId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archiving will hide this template from selection dropdowns but preserve it for reference.
+              You can restore it later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleArchive}>Archive</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

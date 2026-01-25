@@ -4,10 +4,10 @@
  * Admin-only page to manage contract templates.
  * Supports both plain text (preferred) and legacy HTML templates.
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { format } from 'date-fns';
-import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, RefreshCw } from 'lucide-react';
+import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, RefreshCw, Archive, RotateCcw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,11 @@ import {
   convertHtmlToText,
   type TemplateFormat 
 } from '@/components/PlainTextTemplateEditor';
+import { 
+  useTemplateUsageBatch, 
+  useArchiveTemplate, 
+  useRestoreTemplate 
+} from '@/hooks/useTemplateArchive';
 
 export default function ContractTemplates() {
   const { toast } = useToast();
@@ -63,12 +68,20 @@ export default function ContractTemplates() {
   const createTemplate = useCreateContractTemplate();
   const updateTemplate = useUpdateContractTemplate();
   const deleteTemplate = useDeleteContractTemplate();
+  const archiveTemplate = useArchiveTemplate('contract');
+  const restoreTemplate = useRestoreTemplate('contract');
+
+  // Get template IDs for usage check
+  const templateIds = useMemo(() => templates?.map(t => t.id) || [], [templates]);
+  const { data: usageMap } = useTemplateUsageBatch('contract', templateIds);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<ContractTemplate | null>(null);
   
   const [formData, setFormData] = useState({
@@ -152,10 +165,40 @@ export default function ContractTemplates() {
 
   const handleDelete = async () => {
     if (!selectedTemplate) return;
+    
+    // Check if template is in use
+    const usage = usageMap?.[selectedTemplate.id];
+    if (usage?.isInUse) {
+      toast({ 
+        title: 'Cannot delete template', 
+        description: 'This template is in use by contracts. Archive it instead.',
+        variant: 'destructive'
+      });
+      setIsDeleteOpen(false);
+      return;
+    }
+    
     await deleteTemplate.mutateAsync(selectedTemplate.id);
     setIsDeleteOpen(false);
     setSelectedTemplate(null);
   };
+
+  const handleArchive = async () => {
+    if (!selectedTemplate) return;
+    await archiveTemplate.mutateAsync(selectedTemplate.id);
+    setIsArchiveOpen(false);
+    setSelectedTemplate(null);
+  };
+
+  const handleRestore = async (template: ContractTemplate) => {
+    await restoreTemplate.mutateAsync(template.id);
+  };
+
+  // Filter templates based on archived status
+  const filteredTemplates = templates?.filter(t => {
+    const isArchived = !!(t as any).archived_at;
+    return showArchived ? isArchived : !isArchived;
+  }) || [];
 
   const openPreview = (template: ContractTemplate) => {
     setSelectedTemplate(template);
@@ -213,10 +256,20 @@ export default function ContractTemplates() {
         title="Contract Templates"
         description="Manage contract templates with merge fields"
         actions={
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Template
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-archived-contracts"
+                checked={showArchived}
+                onCheckedChange={setShowArchived}
+              />
+              <Label htmlFor="show-archived-contracts" className="text-sm">Show archived</Label>
+            </div>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Template
+            </Button>
+          </div>
         }
       />
 
@@ -226,13 +279,15 @@ export default function ContractTemplates() {
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
-          ) : !templates?.length ? (
+          ) : !filteredTemplates?.length ? (
             <div className="text-center py-16 text-muted-foreground">
               <FileSignature className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No contract templates yet</p>
-              <Button className="mt-4" onClick={() => setIsCreateOpen(true)}>
-                Create First Template
-              </Button>
+              <p>{showArchived ? 'No archived templates' : 'No contract templates yet'}</p>
+              {!showArchived && (
+                <Button className="mt-4" onClick={() => setIsCreateOpen(true)}>
+                  Create First Template
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
@@ -240,23 +295,41 @@ export default function ContractTemplates() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Format</TableHead>
+                  <TableHead>Usage</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {templates.map((template) => {
+                {filteredTemplates.map((template) => {
                   const templateFormat = getTemplateFormat(template);
+                  const usage = usageMap?.[template.id];
+                  const isArchived = !!(template as any).archived_at;
+                  
                   return (
-                    <TableRow key={template.id}>
+                    <TableRow key={template.id} className={isArchived ? 'opacity-60' : ''}>
                       <TableCell>
-                        <div className="font-medium">{template.name}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {template.name}
+                          {isArchived && (
+                            <Badge variant="outline" className="text-xs">Archived</Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={templateFormat === 'text' ? 'default' : 'outline'}>
                           {templateFormat === 'text' ? 'Text' : 'HTML'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {usage?.isInUse ? (
+                          <Badge variant="secondary" className="text-xs">
+                            {usage.usageDescription}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant={template.is_active ? 'default' : 'secondary'}>
@@ -268,55 +341,85 @@ export default function ContractTemplates() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => openPreview(template)}
-                            title="Preview"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {templateFormat === 'html' && (
+                          {isArchived ? (
+                            // Archived: show restore button
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              onClick={() => openConvertDialog(template)}
-                              title="Convert to Text"
+                              onClick={() => handleRestore(template)}
+                              title="Restore template"
                             >
-                              <RefreshCw className="h-4 w-4" />
+                              <RotateCcw className="h-4 w-4" />
                             </Button>
+                          ) : (
+                            // Active: show normal actions
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => openPreview(template)}
+                                title="Preview"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {templateFormat === 'html' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => openConvertDialog(template)}
+                                  title="Convert to Text"
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleToggleActive(template)}
+                                title={template.is_active ? 'Deactivate' : 'Activate'}
+                              >
+                                {template.is_active ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Check className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEdit(template)}
+                                title="Edit"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              {/* Archive button (always visible for in-use templates) */}
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedTemplate(template);
+                                  setIsArchiveOpen(true);
+                                }}
+                                title="Archive template"
+                              >
+                                <Archive className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              {/* Delete button (only if not in use) */}
+                              {!usage?.isInUse && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTemplate(template);
+                                    setIsDeleteOpen(true);
+                                  }}
+                                  title="Delete permanently"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </>
                           )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleToggleActive(template)}
-                            title={template.is_active ? 'Deactivate' : 'Activate'}
-                          >
-                            {template.is_active ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleEdit(template)}
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTemplate(template);
-                              setIsDeleteOpen(true);
-                            }}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -508,17 +611,35 @@ Date: {{today}}`}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogTitle>Delete Template Permanently?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{selectedTemplate?.name}"? This action cannot be undone.
-              Existing contracts using this template will not be affected.
+              <br /><br />
+              <strong>Note:</strong> Templates in use by contracts cannot be deleted. Archive them instead.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Delete
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Permanently
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive Confirmation */}
+      <AlertDialog open={isArchiveOpen} onOpenChange={setIsArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archiving will hide "{selectedTemplate?.name}" from selection dropdowns but preserve it for existing contracts.
+              You can restore it later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleArchive}>Archive</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
