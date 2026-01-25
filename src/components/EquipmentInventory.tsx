@@ -255,7 +255,7 @@ export function EquipmentInventory() {
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="eventpixii">Eventpixii (Company)</SelectItem>
+                    <SelectItem value="eventpixii">EventPix (Company)</SelectItem>
                     {staffDirectory
                       .filter(s => s.source === 'profile' && s.full_name?.trim())
                       .map((staff) => (
@@ -320,7 +320,7 @@ export function EquipmentInventory() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Owners</SelectItem>
-              <SelectItem value="eventpixii">Eventpixii Only</SelectItem>
+              <SelectItem value="eventpixii">EventPix Only</SelectItem>
               <SelectItem value="photographer">Photographer Gear</SelectItem>
             </SelectContent>
           </Select>
@@ -346,7 +346,7 @@ export function EquipmentInventory() {
                   {item.owner?.full_name ? (
                     <Badge variant="outline">{item.owner.full_name}</Badge>
                   ) : (
-                    <Badge variant="secondary">Eventpixii</Badge>
+                    <Badge variant="secondary">EventPix</Badge>
                   )}
                 </TableCell>
                 <TableCell className="capitalize">{item.category}</TableCell>
