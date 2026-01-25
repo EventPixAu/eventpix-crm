@@ -139,6 +139,7 @@ function AppRoutes() {
       <Route path="/crm/companies/new" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/companies/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/contacts" element={<ProtectedRoute><SalesGuard><ContactList /></SalesGuard></ProtectedRoute>} />
+      <Route path="/crm/contacts/new" element={<ProtectedRoute><SalesGuard><ContactDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/contacts/:id" element={<ProtectedRoute><SalesGuard><ContactDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/emails" element={<ProtectedRoute><SalesGuard><CrmEmails /></SalesGuard></ProtectedRoute>} />
       
