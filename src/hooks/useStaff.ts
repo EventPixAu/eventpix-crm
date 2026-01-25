@@ -96,20 +96,19 @@ export function useStaffDirectory() {
       
       if (staffError) throw staffError;
       
-      // Get linked staff IDs to avoid duplicates
-      const linkedStaffIds = new Set(
-        staffData?.filter(s => s.user_id).map(s => s.user_id) || []
-      );
-      
       // Combine profiles and unlinked staff
       const profiles: StaffDirectoryEntry[] = (profileData || []).map(p => ({
         ...p,
         source: 'profile' as const,
       }));
       
-      // Add unlinked staff members (those without user_id or not already in profiles)
+      // Get profile IDs set for quick lookup
+      const profileIds = new Set(profiles.map(p => p.id));
+      
+      // Add unlinked staff members (those without user_id linking to an existing profile)
+      // Staff with user_id pointing to a profile should NOT be duplicated
       const unlinkedStaff: StaffDirectoryEntry[] = (staffData || [])
-        .filter(s => !profiles.some(p => p.id === s.id))
+        .filter(s => !s.user_id || !profileIds.has(s.user_id))
         .map(s => ({
           id: s.id,
           full_name: s.name,
