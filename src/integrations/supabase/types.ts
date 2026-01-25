@@ -653,6 +653,7 @@ export type Database = {
           custom_title: string | null
           id: string
           is_active: boolean | null
+          is_primary: boolean
           job_title_id: string | null
           notes: string | null
           relationship_type: string | null
@@ -666,6 +667,7 @@ export type Database = {
           custom_title?: string | null
           id?: string
           is_active?: boolean | null
+          is_primary?: boolean
           job_title_id?: string | null
           notes?: string | null
           relationship_type?: string | null
@@ -679,6 +681,7 @@ export type Database = {
           custom_title?: string | null
           id?: string
           is_active?: boolean | null
+          is_primary?: boolean
           job_title_id?: string | null
           notes?: string | null
           relationship_type?: string | null

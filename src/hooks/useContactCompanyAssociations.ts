@@ -14,6 +14,7 @@ export interface ContactCompanyAssociation {
   job_title_id: string | null;
   custom_title: string | null;
   is_active: boolean;
+  is_primary: boolean;
   notes: string | null;
   started_at: string | null;
   created_at: string;
@@ -147,18 +148,23 @@ export function useUpdateContactAssociation() {
       notes?: string | null;
       started_at?: string | null;
       is_active?: boolean;
+      is_primary?: boolean;
     }) => {
+      const updatePayload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (data.relationship_type !== undefined) updatePayload.relationship_type = data.relationship_type;
+      if (data.job_title_id !== undefined) updatePayload.job_title_id = data.job_title_id;
+      if (data.custom_title !== undefined) updatePayload.custom_title = data.custom_title;
+      if (data.notes !== undefined) updatePayload.notes = data.notes;
+      if (data.started_at !== undefined) updatePayload.started_at = data.started_at;
+      if (data.is_active !== undefined) updatePayload.is_active = data.is_active;
+      if (data.is_primary !== undefined) updatePayload.is_primary = data.is_primary;
+      
       const { data: result, error } = await supabase
         .from('contact_company_associations')
-        .update({
-          relationship_type: data.relationship_type,
-          job_title_id: data.job_title_id,
-          custom_title: data.custom_title,
-          notes: data.notes,
-          started_at: data.started_at,
-          is_active: data.is_active,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', data.id)
         .select()
         .single();
