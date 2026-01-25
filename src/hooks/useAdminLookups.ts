@@ -267,3 +267,100 @@ export function useUpdateEquipmentCategory() {
     },
   });
 }
+
+// =============================================
+// LOCATIONS
+// =============================================
+
+export interface Location extends LookupItem {}
+
+export function useAllLocations() {
+  return useQuery({
+    queryKey: ['locations', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .order('sort_order')
+        .order('name');
+      
+      if (error) throw error;
+      return data as Location[];
+    },
+  });
+}
+
+export function useActiveLocations() {
+  return useQuery({
+    queryKey: ['locations', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order')
+        .order('name');
+      
+      if (error) throw error;
+      return data as Location[];
+    },
+  });
+}
+
+export function useCreateLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data: maxData } = await supabase
+        .from('locations')
+        .select('sort_order')
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const nextOrder = (maxData?.sort_order || 0) + 1;
+
+      const { data, error } = await supabase
+        .from('locations')
+        .insert({ name, sort_order: nextOrder })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
+      toast.success('Location created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateLocation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Location> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('locations')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
+      toast.success('Location updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update: ' + error.message);
+    },
+  });
+}
