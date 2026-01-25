@@ -42,11 +42,11 @@ interface StaffProfile {
   default_role_id?: string | null;
   vehicle_registration?: string | null;
   dietary_requirements?: string | null;
+  certificates?: string | null;
   assigned_equipment_notes?: string | null;
   location?: string | null;
   location_state?: string | null;
   location_postcode?: string | null;
-  // New fields
   business_name?: string | null;
   abn?: string | null;
   address_line1?: string | null;
@@ -86,11 +86,11 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
     default_role_id: profile.default_role_id || '',
     vehicle_registration: profile.vehicle_registration || '',
     dietary_requirements: profile.dietary_requirements || '',
+    certificates: profile.certificates || '',
     assigned_equipment_notes: profile.assigned_equipment_notes || '',
     location: profile.location || '',
     location_state: profile.location_state || '',
     location_postcode: profile.location_postcode || '',
-    // New fields
     business_name: profile.business_name || '',
     abn: profile.abn || '',
     address_line1: profile.address_line1 || '',
@@ -131,6 +131,8 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             pli_details: data.pli_details || null,
             pli_expiry: data.pli_expiry || null,
             photography_equipment: data.photography_equipment || null,
+            dietary_requirements: data.dietary_requirements || null,
+            certificates: data.certificates || null,
           })
           .eq('id', staffId);
 
@@ -153,6 +155,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             default_role_id: data.default_role_id || null,
             vehicle_registration: data.vehicle_registration || null,
             dietary_requirements: data.dietary_requirements || null,
+            certificates: data.certificates || null,
             assigned_equipment_notes: data.assigned_equipment_notes || null,
             location: data.location || null,
             location_state: data.location_state || null,
@@ -211,11 +214,11 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         default_role_id: profile.default_role_id || '',
         vehicle_registration: profile.vehicle_registration || '',
         dietary_requirements: profile.dietary_requirements || '',
+        certificates: profile.certificates || '',
         assigned_equipment_notes: profile.assigned_equipment_notes || '',
         location: profile.location || '',
         location_state: profile.location_state || '',
         location_postcode: profile.location_postcode || '',
-        // New fields
         business_name: profile.business_name || '',
         abn: profile.abn || '',
         address_line1: profile.address_line1 || '',
@@ -504,6 +507,30 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                   onChange={(e) => setFormData({ ...formData, pli_expiry: e.target.value })}
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="certificates">Certificates</Label>
+              <Textarea
+                id="certificates"
+                value={formData.certificates}
+                onChange={(e) => setFormData({ ...formData, certificates: e.target.value })}
+                placeholder="List certifications (e.g., First Aid, RSA, Working with Children)"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          {/* Dietary Requirements */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Other</h3>
+            <div>
+              <Label htmlFor="dietary_requirements">Dietary Requirements</Label>
+              <Input
+                id="dietary_requirements"
+                value={formData.dietary_requirements}
+                onChange={(e) => setFormData({ ...formData, dietary_requirements: e.target.value })}
+                placeholder="Any dietary restrictions or requirements"
+              />
             </div>
           </div>
 
