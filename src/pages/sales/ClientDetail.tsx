@@ -44,7 +44,7 @@ import {
   ClientEventsPanel,
 } from '@/components/client';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
-import { CompanyAssociatedContactsPanel } from '@/components/crm/CompanyAssociatedContactsPanel';
+import { CompanyContactsPanel } from '@/components/crm/CompanyContactsPanel';
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -361,8 +361,8 @@ export default function ClientDetail() {
             notes={clientNotes}
           />
 
-          {/* Associated Contacts (contractors, consultants, etc.) */}
-          <CompanyAssociatedContactsPanel companyId={id} />
+          {/* Company Contacts Management */}
+          <CompanyContactsPanel companyId={id!} companyName={client.business_name} />
 
           {/* Consent */}
           <ClientConsentPanel clientId={id} />
