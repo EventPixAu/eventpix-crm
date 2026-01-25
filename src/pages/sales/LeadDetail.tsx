@@ -63,6 +63,7 @@ import {
   LeadCollapsiblePanel,
   LeadContactsPanel,
   InitializeLeadWorkflowDialog,
+  LeadProposedDatesPanel,
 } from '@/components/lead';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
@@ -213,6 +214,9 @@ export default function LeadDetail() {
             mainShootEnd={mainShootEnd}
             onDelete={handleDelete}
           />
+
+          {/* Proposed Dates Panel */}
+          <LeadProposedDatesPanel leadId={id!} />
 
           {/* Invoices Panel */}
           <LeadCollapsiblePanel

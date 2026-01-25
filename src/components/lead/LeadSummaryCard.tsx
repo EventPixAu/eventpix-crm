@@ -5,16 +5,16 @@
  * - Lead name with status indicator
  * - Type, Workflow, Main Shoot dates
  * - Lead source
- * - Edit, Archive, Delete actions
+ * - Archive, Delete actions (read-only after creation)
  */
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Pencil, Archive, Trash2, Target } from 'lucide-react';
+import { Archive, Trash2, Target, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EditLeadDialog } from '@/components/EditLeadDialog';
 import { useUpdateLead } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,27 +162,14 @@ export function LeadSummaryCard({
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions - Lead details are read-only after creation */}
         <div className="flex gap-2 pt-2 border-t">
-          <EditLeadDialog 
-            lead={{
-              id: lead.id,
-              lead_name: lead.lead_name,
-              client_id: lead.client_id,
-              event_type_id: lead.event_type_id,
-              lead_source_id: lead.lead_source_id,
-              estimated_event_date: lead.estimated_event_date,
-              notes: lead.notes,
-              status: lead.status,
-              source: lead.source,
-            }}
-            trigger={
-              <Button variant="outline" size="sm">
-                <Pencil className="h-4 w-4 mr-1.5" />
-                Edit
-              </Button>
-            }
-          />
+          <Badge variant="outline" className="text-muted-foreground gap-1">
+            <Lock className="h-3 w-3" />
+            Read-only
+          </Badge>
+          
+          <div className="flex-1" />
           
           <AlertDialog>
             <AlertDialogTrigger asChild>
