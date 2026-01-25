@@ -42,6 +42,7 @@ import {
   ClientInvoicesSummary,
   ClientConsentPanel,
   ClientEventsPanel,
+  ClientWorkflowDashboard,
 } from '@/components/client';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { CompanyContactsPanel } from '@/components/crm/CompanyContactsPanel';
@@ -404,6 +405,9 @@ export default function ClientDetail() {
 
         {/* Right Column */}
         <div className="space-y-6">
+          {/* Combined Workflow Dashboard - Sales & Operations */}
+          <ClientWorkflowDashboard clientId={id!} />
+
           {/* Leads List - Top priority for Sales visibility */}
           <ClientLeadsList
             clientId={id}
@@ -411,13 +415,13 @@ export default function ClientDetail() {
           />
 
           {/* Events Panel - Current & Previous */}
-          <ClientEventsPanel clientId={id} />
+          <ClientEventsPanel clientId={id!} />
 
           {/* Invoices Summary */}
-          <ClientInvoicesSummary clientId={id} />
+          <ClientInvoicesSummary clientId={id!} />
 
           {/* Mail History */}
-          <MailHistoryPanel clientId={id} maxItems={10} />
+          <MailHistoryPanel clientId={id!} maxItems={10} />
         </div>
       </div>
 
