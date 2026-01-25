@@ -85,8 +85,9 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const [selectedKitId, setSelectedKitId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [selectedAllocation, setSelectedAllocation] = useState<{ id: string; status: AllocationStatus } | null>(null);
+  const [selectedAllocation, setSelectedAllocation] = useState<{ id: string; status: AllocationStatus; userId: string | null } | null>(null);
   const [newStatus, setNewStatus] = useState<AllocationStatus>('allocated');
+  const [newAssigneeId, setNewAssigneeId] = useState<string>('');
   const [statusNotes, setStatusNotes] = useState('');
 
   const handleAllocateItem = async () => {
@@ -113,9 +114,10 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
     setAddDialogOpen(false);
   };
 
-  const openStatusDialog = (id: string, currentStatus: AllocationStatus) => {
-    setSelectedAllocation({ id, status: currentStatus });
+  const openStatusDialog = (id: string, currentStatus: AllocationStatus, currentUserId: string | null) => {
+    setSelectedAllocation({ id, status: currentStatus, userId: currentUserId });
     setNewStatus(currentStatus);
+    setNewAssigneeId(currentUserId || 'unassigned');
     setStatusNotes('');
     setStatusDialogOpen(true);
   };
@@ -128,10 +130,15 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       return;
     }
 
+    // Determine if assignment changed
+    const newUserId = newAssigneeId === 'unassigned' ? null : newAssigneeId;
+    const assignmentChanged = newUserId !== selectedAllocation.userId;
+
     await updateStatus.mutateAsync({
       id: selectedAllocation.id,
       status: newStatus,
       notes: statusNotes || undefined,
+      userId: assignmentChanged ? newUserId : undefined,
       eventId,
     });
     setStatusDialogOpen(false);
@@ -318,7 +325,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => openStatusDialog(alloc.id, alloc.status)}
+                          onClick={() => openStatusDialog(alloc.id, alloc.status, alloc.user_id)}
                           title="Update status"
                         >
                           <ArrowLeftRight className="h-4 w-4" />
@@ -363,11 +370,26 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Update Equipment Status</DialogTitle>
+            <DialogTitle>Update Equipment</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>New Status</Label>
+              <Label>Assign To</Label>
+              <Select value={newAssigneeId} onValueChange={setNewAssigneeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {profileLinkedStaff.map((s) => (
+                    <SelectItem key={s.oderId} value={s.oderId}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
               <Select value={newStatus} onValueChange={(v) => setNewStatus(v as AllocationStatus)}>
                 <SelectTrigger>
                   <SelectValue />

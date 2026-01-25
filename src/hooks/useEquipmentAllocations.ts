@@ -180,17 +180,20 @@ export function useUpdateAllocationStatus() {
       id, 
       status, 
       notes, 
+      userId,
       eventId 
     }: { 
       id: string; 
       status: AllocationStatus; 
-      notes?: string; 
+      notes?: string;
+      userId?: string | null;
       eventId: string 
     }) => {
-      const updates: Partial<EquipmentAllocation> = { status };
+      const updates: Partial<EquipmentAllocation> & { user_id?: string | null } = { status };
       
       if (notes) updates.notes = notes;
       if (status === 'returned') updates.returned_at = new Date().toISOString();
+      if (userId !== undefined) updates.user_id = userId;
 
       const { data, error } = await supabase
         .from('equipment_allocations')
@@ -202,13 +205,13 @@ export function useUpdateAllocationStatus() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, { eventId }) => {
+    onSuccess: (_, { eventId, userId }) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-allocations', eventId] });
       queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
-      toast.success('Status updated');
+      toast.success(userId !== undefined ? 'Assignment updated' : 'Status updated');
     },
     onError: (error) => {
-      toast.error('Failed to update status: ' + error.message);
+      toast.error('Failed to update: ' + error.message);
     },
   });
 }
