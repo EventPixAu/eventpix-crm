@@ -4,6 +4,7 @@
  * Reusable dialog for sending emails from quotes or contracts.
  * Uses placeholder/simulated sending - no actual email provider.
  * Logs communication to client_communications table.
+ * Uses ContactSelector for CRM-linked recipient selection.
  */
 import { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
@@ -31,6 +32,8 @@ import { useActiveEmailTemplates, EmailTemplate } from '@/hooks/useEmailTemplate
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface SendEmailDialogProps {
   open: boolean;
@@ -60,18 +63,53 @@ export function SendEmailDialog({
   const { data: templates } = useActiveEmailTemplates();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [recipientEmail, setRecipientEmail] = useState(clientEmail || '');
+  const [recipientName, setRecipientName] = useState(clientName || '');
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
 
-  // Update recipient when clientEmail changes
+  // Update recipient when clientEmail changes (for legacy/fallback)
   useEffect(() => {
-    if (clientEmail) {
+    if (clientEmail && !selectedContactId) {
       setRecipientEmail(clientEmail);
     }
-  }, [clientEmail]);
+    if (clientName && !selectedContactId) {
+      setRecipientName(clientName);
+    }
+  }, [clientEmail, clientName, selectedContactId]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedTemplateId('');
+      setSelectedContactId(null);
+      setSelectedContact(null);
+      setSubject(defaultSubject);
+      setBody('');
+      setShowPreview(false);
+      // Restore default recipient
+      setRecipientEmail(clientEmail || '');
+      setRecipientName(clientName || '');
+    }
+  }, [open, defaultSubject, clientEmail, clientName]);
+
+  // Handle contact selection
+  const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
+    setSelectedContactId(contactId);
+    setSelectedContact(contact || null);
+    if (contact) {
+      setRecipientEmail(contact.email || '');
+      setRecipientName(contact.contact_name || '');
+    } else if (!contactId) {
+      // Cleared - restore defaults
+      setRecipientEmail(clientEmail || '');
+      setRecipientName(clientName || '');
+    }
+  };
 
   // Apply template when selected
   const handleTemplateSelect = (templateId: string) => {
@@ -80,9 +118,9 @@ export function SendEmailDialog({
     if (template) {
       // Replace basic placeholders
       let processedSubject = template.subject
-        .replace(/\{\{client_name\}\}/g, clientName || 'Client');
+        .replace(/\{\{client_name\}\}/g, recipientName || clientName || 'Client');
       let processedBody = template.body_html
-        .replace(/\{\{client_name\}\}/g, clientName || 'Client');
+        .replace(/\{\{client_name\}\}/g, recipientName || clientName || 'Client');
       
       setSubject(processedSubject);
       setBody(processedBody);
@@ -109,6 +147,7 @@ export function SendEmailDialog({
         body,
         relatedQuoteId,
         relatedContractId,
+        contactId: selectedContactId,
       });
 
       // Log the communication
@@ -133,11 +172,6 @@ export function SendEmailDialog({
         description: 'Email sending is not configured. Communication has been logged for tracking.' 
       });
       
-      // Reset form and close
-      setSelectedTemplateId('');
-      setSubject(defaultSubject);
-      setBody('');
-      setShowPreview(false);
       onOpenChange(false);
     } catch (err: any) {
       toast({ 
@@ -165,6 +199,45 @@ export function SendEmailDialog({
 
         {!showPreview ? (
           <div className="space-y-4 py-4">
+            {/* Contact Selection */}
+            <div className="space-y-2">
+              <Label>Recipient Contact</Label>
+              <ContactSelector
+                value={selectedContactId}
+                onChange={handleContactChange}
+                placeholder="Search for a contact..."
+                companyId={clientId}
+                legacyName={!selectedContactId ? clientName : undefined}
+                legacyEmail={!selectedContactId ? clientEmail : undefined}
+              />
+              <p className="text-xs text-muted-foreground">
+                Select a CRM contact or type directly below
+              </p>
+            </div>
+
+            {/* Manual Email Override */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="recipient">Recipient Email *</Label>
+                <Input
+                  id="recipient"
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  placeholder="client@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="recipientName">Recipient Name</Label>
+                <Input
+                  id="recipientName"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="John Smith"
+                />
+              </div>
+            </div>
+
             {/* Template Selection */}
             <div className="space-y-2">
               <Label>Email Template (optional)</Label>
@@ -181,18 +254,6 @@ export function SendEmailDialog({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Recipient */}
-            <div className="space-y-2">
-              <Label htmlFor="recipient">Recipient Email *</Label>
-              <Input
-                id="recipient"
-                type="email"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="client@example.com"
-              />
             </div>
 
             {/* Subject */}
@@ -222,7 +283,7 @@ export function SendEmailDialog({
             </div>
 
             {/* Placeholder Notice */}
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+            <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg text-warning-foreground text-sm">
               <strong>Note:</strong> Email sending is not configured. This will log the communication 
               for tracking purposes but won't actually send an email.
             </div>
@@ -232,7 +293,7 @@ export function SendEmailDialog({
             <div className="border rounded-lg p-4 bg-muted/30">
               <div className="space-y-2 mb-4">
                 <div className="text-sm">
-                  <span className="font-medium">To:</span> {recipientEmail}
+                  <span className="font-medium">To:</span> {recipientName ? `${recipientName} <${recipientEmail}>` : recipientEmail}
                 </div>
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
