@@ -104,12 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // No user => no role.
+    // No user => no role. But only clear once authLoading is done to avoid premature null.
     if (!user?.id) {
-      setRole(null);
-      setRoleLoading(false);
+      if (!authLoading) {
+        setRole(null);
+        setRoleLoading(false);
+      }
       return;
     }
+
+    // Only fetch once user is defined and auth loading is done.
+    if (authLoading) return;
 
     setRoleLoading(true);
 
@@ -129,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
