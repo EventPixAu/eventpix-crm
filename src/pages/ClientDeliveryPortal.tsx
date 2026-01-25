@@ -167,7 +167,7 @@ export default function ClientDeliveryPortal() {
                 <Camera className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <span className="font-bold text-xl">Eventpix</span>
+                <span className="font-bold text-xl">Eventpixii</span>
                 <p className="text-xs text-muted-foreground">Professional Event Photography</p>
               </div>
             </div>
@@ -344,7 +344,7 @@ export default function ClientDeliveryPortal() {
 
       {/* Footer */}
       <footer className="fixed bottom-0 left-0 right-0 py-4 text-center text-sm text-muted-foreground bg-white/80 backdrop-blur-sm border-t border-slate-200/50">
-        <p>Photos by <strong>Eventpix</strong> • Professional Event Photography</p>
+        <p>Photos by <strong>Eventpixii</strong> • Professional Event Photography</p>
       </footer>
 
       {/* Image Preview Modal */}

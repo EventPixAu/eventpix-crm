@@ -109,7 +109,7 @@ export function EquipmentInventory() {
   const filteredItems = items?.filter((item) => {
     if (filterCategory !== 'all' && item.category !== filterCategory) return false;
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
-    if (filterOwner === 'eventpix' && item.owner_user_id !== null) return false;
+    if (filterOwner === 'eventpixii' && item.owner_user_id !== null) return false;
     if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
     return true;
   });
@@ -248,14 +248,14 @@ export function EquipmentInventory() {
               <div className="space-y-2">
                 <Label>Owner</Label>
                 <Select
-                  value={formData.owner_user_id || 'eventpix'}
-                  onValueChange={(v) => setFormData({ ...formData, owner_user_id: v === 'eventpix' ? '' : v })}
+                  value={formData.owner_user_id || 'eventpixii'}
+                  onValueChange={(v) => setFormData({ ...formData, owner_user_id: v === 'eventpixii' ? '' : v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select owner" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="eventpix">EventPix (Company)</SelectItem>
+                    <SelectItem value="eventpixii">Eventpixii (Company)</SelectItem>
                     {staffDirectory
                       .filter(s => s.source === 'profile' && s.full_name?.trim())
                       .map((staff) => (
@@ -320,7 +320,7 @@ export function EquipmentInventory() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Owners</SelectItem>
-              <SelectItem value="eventpix">EventPix Only</SelectItem>
+              <SelectItem value="eventpixii">Eventpixii Only</SelectItem>
               <SelectItem value="photographer">Photographer Gear</SelectItem>
             </SelectContent>
           </Select>
@@ -346,7 +346,7 @@ export function EquipmentInventory() {
                   {item.owner?.full_name ? (
                     <Badge variant="outline">{item.owner.full_name}</Badge>
                   ) : (
-                    <Badge variant="secondary">EventPix</Badge>
+                    <Badge variant="secondary">Eventpixii</Badge>
                   )}
                 </TableCell>
                 <TableCell className="capitalize">{item.category}</TableCell>
