@@ -48,6 +48,29 @@ export function useEventAllocations(eventId: string | undefined) {
   });
 }
 
+export function useUserAllocations(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['equipment-allocations', 'user', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from('equipment_allocations')
+        .select(`
+          *,
+          equipment_item:equipment_items(*),
+          event:events(id, event_name, event_date)
+        `)
+        .eq('user_id', userId)
+        .order('allocated_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
+}
+
 export function useItemAllocations(equipmentItemId: string | undefined) {
   return useQuery({
     queryKey: ['equipment-allocations', 'item', equipmentItemId],
