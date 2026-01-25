@@ -46,51 +46,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Track if we've completed initial load
-    let initialLoadComplete = false;
+    let mounted = true;
     
+    // First, get the initial session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const userRole = await fetchUserRole(session.user.id);
+          if (mounted) {
+            setRole(userRole);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Then set up the listener for future changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Only show loading on initial load, not on subsequent auth changes
-          if (!initialLoadComplete) {
-            const userRole = await fetchUserRole(session.user.id);
-            setRole(userRole);
-            setLoading(false);
-            initialLoadComplete = true;
-          } else {
-            // For subsequent changes, update role without resetting loading
-            fetchUserRole(session.user.id).then(setRole);
-          }
+          // Use setTimeout to avoid potential deadlock with Supabase internals
+          setTimeout(() => {
+            if (mounted) {
+              fetchUserRole(session.user.id).then((userRole) => {
+                if (mounted) {
+                  setRole(userRole);
+                }
+              });
+            }
+          }, 0);
         } else {
           setRole(null);
-          if (!initialLoadComplete) {
-            setLoading(false);
-            initialLoadComplete = true;
-          }
         }
       }
     );
 
-    // Check for existing session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (initialLoadComplete) return; // Already handled by onAuthStateChange
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const userRole = await fetchUserRole(session.user.id);
-        setRole(userRole);
-      }
-      setLoading(false);
-      initialLoadComplete = true;
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
