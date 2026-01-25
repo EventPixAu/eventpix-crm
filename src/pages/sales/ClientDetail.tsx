@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ import {
 } from '@/components/client';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { CompanyContactsPanel } from '@/components/crm/CompanyContactsPanel';
+import { CompanyStatusBadgeDropdown } from '@/components/lead/CompanyStatusBadgeDropdown';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
@@ -85,12 +87,19 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: client, isLoading, error } = useClient(id);
   const { data: events = [] } = useClientEvents(id);
   const { data: categories = [] } = useCompanyCategories();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createClient = useCreateClient();
+
+  const handleStatusChange = () => {
+    queryClient.invalidateQueries({ queryKey: ['client', id] });
+    queryClient.invalidateQueries({ queryKey: ['clients'] });
+    queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
+  };
   
   const isCreateMode = !id;
 
@@ -313,7 +322,17 @@ export default function ClientDetail() {
 
       {/* Header */}
       <PageHeader
-        title={client.business_name}
+        title={
+          <span className="flex items-center gap-3">
+            {client.business_name}
+            <CompanyStatusBadgeDropdown
+              companyId={client.id}
+              currentStatus={computeStatus(events)}
+              manualStatus={(client as any).manual_status}
+              onStatusChange={handleStatusChange}
+            />
+          </span>
+        }
         actions={
           <Button onClick={() => navigate('/sales/leads/new')}>
             <Plus className="h-4 w-4 mr-2" />
