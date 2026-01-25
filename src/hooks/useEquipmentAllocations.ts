@@ -237,6 +237,84 @@ export function useRemoveAllocation() {
   });
 }
 
+export function useAllocatePhotographerKits() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      eventId, 
+      kits 
+    }: { 
+      eventId: string; 
+      kits: Array<{ userId: string; category: string; items: Array<{ name: string; }> }> 
+    }) => {
+      const allAllocations: Array<{ event_id: string; equipment_item_id: string; user_id: string; status: string }> = [];
+
+      // Process each kit
+      for (const kit of kits) {
+        for (const item of kit.items) {
+          // Check if this equipment item already exists for this photographer
+          const { data: existingItems } = await supabase
+            .from('equipment_items')
+            .select('id')
+            .eq('name', item.name)
+            .eq('owner_user_id', kit.userId)
+            .maybeSingle();
+
+          let equipmentItemId: string;
+
+          if (existingItems) {
+            equipmentItemId = existingItems.id;
+          } else {
+            // Create new equipment item for this photographer
+            const { data: newItem, error: createError } = await supabase
+              .from('equipment_items')
+              .insert({
+                name: item.name,
+                category: kit.category,
+                owner_user_id: kit.userId,
+                status: 'available',
+                condition: 'good',
+              })
+              .select('id')
+              .single();
+
+            if (createError) throw createError;
+            equipmentItemId = newItem.id;
+          }
+
+          // Add to allocations list
+          allAllocations.push({
+            event_id: eventId,
+            equipment_item_id: equipmentItemId,
+            user_id: kit.userId,
+            status: 'allocated',
+          });
+        }
+      }
+
+      // Insert all allocations
+      const { data, error } = await supabase
+        .from('equipment_allocations')
+        .insert(allAllocations)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-allocations', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
+      queryClient.invalidateQueries({ queryKey: ['photographer-equipment'] });
+      toast.success('Photographer kits allocated to event');
+    },
+    onError: (error) => {
+      console.error('Failed to allocate photographer kits:', error);
+      toast.error('Failed to allocate photographer kits: ' + error.message);
+    },
+  });
+}
+
 export const ALLOCATION_STATUS_CONFIG: Record<AllocationStatus, { label: string; color: string }> = {
   allocated: { label: 'Allocated', color: 'bg-blue-500' },
   picked_up: { label: 'Picked Up', color: 'bg-green-500' },
