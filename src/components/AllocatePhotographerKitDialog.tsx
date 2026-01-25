@@ -84,20 +84,43 @@ export function AllocatePhotographerKitDialog({
     }).filter((s): s is { oderId: string; name: string; hasProfile: boolean; roleName: string } => s !== null);
   }, [assignments]);
 
-  // Only fetch equipment for staff who have profiles (user_id)
-  const profileLinkedUserIds = allAssignedStaff.filter(s => s.hasProfile).map(s => s.oderId);
+  // Collect all staff IDs to check which ones have linked profiles
+  const allStaffIds = allAssignedStaff.filter(s => !s.hasProfile).map(s => s.oderId);
+  const directUserIds = allAssignedStaff.filter(s => s.hasProfile).map(s => s.oderId);
 
-  // Fetch photographer equipment from profiles AND linked staff records
-  const { data: photographerData = [], isLoading } = useQuery({
-    queryKey: ['photographer-equipment', profileLinkedUserIds],
+  // Query to get user_ids for staff records that might be linked
+  const { data: staffUserLinks } = useQuery({
+    queryKey: ['staff-user-links', allStaffIds],
     queryFn: async () => {
-      if (profileLinkedUserIds.length === 0) return [];
+      if (allStaffIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('staff')
+        .select('id, user_id')
+        .in('id', allStaffIds)
+        .not('user_id', 'is', null);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && allStaffIds.length > 0,
+  });
+
+  // Combine direct user_ids with user_ids from linked staff records
+  const allUserIds = useMemo(() => {
+    const linkedUserIds = (staffUserLinks || []).map(s => s.user_id).filter(Boolean);
+    return [...new Set([...directUserIds, ...linkedUserIds])];
+  }, [directUserIds, staffUserLinks]);
+
+  // Fetch photographer equipment
+  const { data: photographerData = [], isLoading: isLoadingEquipment } = useQuery({
+    queryKey: ['photographer-equipment', allUserIds],
+    queryFn: async () => {
+      if (allUserIds.length === 0) return [];
 
       // Get profiles with their equipment
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, photography_equipment_json')
-        .in('id', profileLinkedUserIds);
+        .in('id', allUserIds);
 
       if (profilesError) throw profilesError;
 
@@ -105,7 +128,7 @@ export function AllocatePhotographerKitDialog({
       const { data: staffRecords, error: staffError } = await supabase
         .from('staff')
         .select('user_id, photography_equipment_json')
-        .in('user_id', profileLinkedUserIds);
+        .in('user_id', allUserIds);
 
       if (staffError) throw staffError;
 
@@ -130,19 +153,30 @@ export function AllocatePhotographerKitDialog({
         };
       });
     },
-    enabled: open && profileLinkedUserIds.length > 0,
+    enabled: open && allUserIds.length > 0,
   });
+
+  const isLoading = isLoadingEquipment;
 
   // Transform data into photographers with kits
   const photographers: AssignedPhotographer[] = useMemo(() => {
     console.log('[AllocateKit] allAssignedStaff:', allAssignedStaff);
     console.log('[AllocateKit] photographerData:', photographerData);
+    console.log('[AllocateKit] staffUserLinks:', staffUserLinks);
     
     return allAssignedStaff.map(staff => {
-      // Only profile-linked staff can have equipment in the profiles table
+      // For staff-based assignments, check if staff record has a linked user_id
+      let userIdToLookup = staff.oderId;
+      if (!staff.hasProfile) {
+        const linkedStaff = (staffUserLinks || []).find(s => s.id === staff.oderId);
+        if (linkedStaff?.user_id) {
+          userIdToLookup = linkedStaff.user_id;
+        }
+      }
+
       const profile = staff.hasProfile 
         ? photographerData.find(p => p.id === staff.oderId) 
-        : null;
+        : photographerData.find(p => p.id === userIdToLookup);
       const equipment = (profile?.photography_equipment_json as Record<string, any>) || {};
       
       console.log('[AllocateKit] Processing staff:', staff.name, 'hasProfile:', staff.hasProfile, 'equipment:', equipment);
@@ -170,7 +204,7 @@ export function AllocatePhotographerKitDialog({
         kits,
       };
     });
-  }, [allAssignedStaff, photographerData]);
+  }, [allAssignedStaff, photographerData, staffUserLinks]);
 
   const toggleKit = (photographerId: string, category: string) => {
     const key = `${photographerId}:${category}`;
