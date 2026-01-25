@@ -3261,6 +3261,7 @@ export type Database = {
           assigned_equipment_notes: string | null
           avatar_url: string | null
           business_name: string | null
+          certificates: string | null
           created_at: string | null
           default_role_id: string | null
           dietary_requirements: string | null
@@ -3302,6 +3303,7 @@ export type Database = {
           assigned_equipment_notes?: string | null
           avatar_url?: string | null
           business_name?: string | null
+          certificates?: string | null
           created_at?: string | null
           default_role_id?: string | null
           dietary_requirements?: string | null
@@ -3343,6 +3345,7 @@ export type Database = {
           assigned_equipment_notes?: string | null
           avatar_url?: string | null
           business_name?: string | null
+          certificates?: string | null
           created_at?: string | null
           default_role_id?: string | null
           dietary_requirements?: string | null
@@ -3926,7 +3929,9 @@ export type Database = {
           address_postcode: string | null
           address_state: string | null
           business_name: string | null
+          certificates: string | null
           created_at: string | null
+          dietary_requirements: string | null
           email: string
           id: string
           location: string | null
@@ -3951,7 +3956,9 @@ export type Database = {
           address_postcode?: string | null
           address_state?: string | null
           business_name?: string | null
+          certificates?: string | null
           created_at?: string | null
+          dietary_requirements?: string | null
           email: string
           id?: string
           location?: string | null
@@ -3976,7 +3983,9 @@ export type Database = {
           address_postcode?: string | null
           address_state?: string | null
           business_name?: string | null
+          certificates?: string | null
           created_at?: string | null
+          dietary_requirements?: string | null
           email?: string
           id?: string
           location?: string | null
