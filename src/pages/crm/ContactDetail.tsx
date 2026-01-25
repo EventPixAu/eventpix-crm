@@ -60,6 +60,7 @@ import { useJobTitles } from '@/hooks/useJobTitles';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useToast } from '@/hooks/use-toast';
 import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
+import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
 
 interface Contact {
   id: string;
@@ -106,6 +107,7 @@ export default function ContactDetail() {
 
   const { data: jobTitles = [] } = useJobTitles();
   const { data: activities = [], isLoading: activitiesLoading } = useContactActivities(id);
+  const { data: associations = [] } = useContactAssociations(id);
   const createActivity = useCreateContactActivity();
   const deleteActivity = useDeleteContactActivity();
 
@@ -537,21 +539,38 @@ export default function ContactDetail() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {/* Company Link - show link or "No company" message */}
-              {contact.client ? (
-                <Link 
-                  to={`/crm/companies/${contact.client.id}`}
-                  className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium">{contact.client.business_name}</span>
-                </Link>
-              ) : (
-                <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed text-muted-foreground">
-                  <Building2 className="h-5 w-5" />
-                  <span className="text-sm">Standalone contact - not linked to a company</span>
-                </div>
-              )}
+              {/* Company Link - show link from direct client or primary association */}
+              {(() => {
+                const primaryAssociation = associations.find(a => a.is_primary && a.is_active);
+                const displayCompany = contact.client || (primaryAssociation?.company ? {
+                  id: primaryAssociation.company.id,
+                  business_name: primaryAssociation.company.business_name,
+                } : null);
+                
+                if (displayCompany) {
+                  return (
+                    <Link 
+                      to={`/crm/companies/${displayCompany.id}`}
+                      className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-medium">{displayCompany.business_name}</span>
+                      {!contact.client && primaryAssociation && (
+                        <Badge variant="outline" className="ml-auto text-xs">
+                          {primaryAssociation.relationship_type}
+                        </Badge>
+                      )}
+                    </Link>
+                  );
+                }
+                
+                return (
+                  <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed text-muted-foreground">
+                    <Building2 className="h-5 w-5" />
+                    <span className="text-sm">Standalone contact - not linked to a company</span>
+                  </div>
+                );
+              })()}
 
               {/* Contact Details */}
               <div className="space-y-3 text-sm">
