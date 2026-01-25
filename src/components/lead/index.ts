@@ -8,3 +8,4 @@ export { LeadContactsPanel } from './LeadContactsPanel';
 export { InitializeLeadWorkflowDialog } from './InitializeLeadWorkflowDialog';
 export { LeadProposedDatesPanel } from './LeadProposedDatesPanel';
 export { MarkAsClientButton } from './MarkAsClientButton';
+export { CompanyStatusBadgeDropdown } from './CompanyStatusBadgeDropdown';
