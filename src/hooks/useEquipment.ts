@@ -31,32 +31,38 @@ export function useEquipmentItems() {
   return useQuery({
     queryKey: ['equipment-items'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch equipment items
+      const { data: items, error } = await supabase
         .from('equipment_items')
-        .select(`
-          *,
-          owner:profiles!equipment_items_owner_user_id_fkey (
-            id,
-            full_name
-          )
-        `)
+        .select('*')
         .order('name');
 
       if (error) throw error;
+      if (!items || items.length === 0) return [] as EquipmentItemWithOwner[];
       
-      // Transform the result - owner might come back as array for some FK configs
-      return (data || []).map(item => {
-        const ownerData = item.owner;
-        // Handle both array and object forms from Supabase
-        const owner = Array.isArray(ownerData) 
-          ? (ownerData[0] as { id: string; full_name: string | null } | undefined) || null
-          : (ownerData as { id: string; full_name: string | null } | null);
+      // Get unique owner IDs
+      const ownerIds = [...new Set(
+        items.map(i => i.owner_user_id).filter((id): id is string => !!id)
+      )];
+      
+      // Fetch owner profiles if any
+      let owners: Record<string, { id: string; full_name: string | null }> = {};
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', ownerIds);
         
-        return {
-          ...item,
-          owner,
-        };
-      }) as EquipmentItemWithOwner[];
+        if (profiles) {
+          owners = Object.fromEntries(profiles.map(p => [p.id, p]));
+        }
+      }
+      
+      // Combine items with owners
+      return items.map(item => ({
+        ...item,
+        owner: item.owner_user_id ? owners[item.owner_user_id] || null : null,
+      })) as EquipmentItemWithOwner[];
     },
   });
 }
