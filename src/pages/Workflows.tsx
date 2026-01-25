@@ -22,12 +22,13 @@ interface WorkflowTemplateItem {
 
 export default function Workflows() {
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
-    queryKey: ['workflow-templates'],
+    queryKey: ['workflow-templates', 'operations'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workflow_templates')
         .select('*')
         .eq('is_active', true)
+        .eq('workflow_domain', 'operations')
         .order('phase');
       if (error) throw error;
       return data as WorkflowTemplate[];

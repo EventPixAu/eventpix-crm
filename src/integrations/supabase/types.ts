@@ -3610,6 +3610,7 @@ export type Database = {
           name: string
           phase: string | null
           updated_at: string | null
+          workflow_domain: string
         }
         Insert: {
           created_at?: string | null
@@ -3620,6 +3621,7 @@ export type Database = {
           name: string
           phase?: string | null
           updated_at?: string | null
+          workflow_domain?: string
         }
         Update: {
           created_at?: string | null
@@ -3630,6 +3632,7 @@ export type Database = {
           name?: string
           phase?: string | null
           updated_at?: string | null
+          workflow_domain?: string
         }
         Relationships: []
       }
@@ -4557,6 +4560,7 @@ export type Database = {
           phase: Database["public"]["Enums"]["workflow_phase"]
           template_name: string
           updated_at: string | null
+          workflow_domain: string
         }
         Insert: {
           applies_to?: string | null
@@ -4567,6 +4571,7 @@ export type Database = {
           phase: Database["public"]["Enums"]["workflow_phase"]
           template_name: string
           updated_at?: string | null
+          workflow_domain?: string
         }
         Update: {
           applies_to?: string | null
@@ -4577,6 +4582,7 @@ export type Database = {
           phase?: Database["public"]["Enums"]["workflow_phase"]
           template_name?: string
           updated_at?: string | null
+          workflow_domain?: string
         }
         Relationships: []
       }
