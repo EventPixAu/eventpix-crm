@@ -45,7 +45,40 @@ import {
 } from '@/components/client';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { CompanyContactsPanel } from '@/components/crm/CompanyContactsPanel';
+import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
+type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
+
+function computeStatus(events: Array<{ event_date: string; ops_status: string | null }>): ComputedStatus {
+  if (!events || events.length === 0) return 'prospect';
+  
+  const today = startOfDay(new Date());
+  const twelveMonthsAgo = subMonths(today, 12);
+  
+  // Check for active events (not completed/cancelled, date is today or future)
+  const hasActiveEvent = events.some(e => {
+    const eventDate = parseISO(e.event_date);
+    const isActive = !['completed', 'cancelled'].includes(e.ops_status || '');
+    return isActive && !isBefore(eventDate, today);
+  });
+  
+  if (hasActiveEvent) return 'active_event';
+  
+  // Check for completed events
+  const completedEvents = events.filter(e => e.ops_status === 'completed');
+  if (completedEvents.length === 0) return 'prospect';
+  
+  // Find most recent completed event
+  const mostRecentCompleted = completedEvents
+    .map(e => parseISO(e.event_date))
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  
+  if (isAfter(mostRecentCompleted, twelveMonthsAgo)) {
+    return 'current_client';
+  }
+  
+  return 'previous_client';
+}
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -350,6 +383,7 @@ export default function ClientDetail() {
           {/* Company Profile Card */}
           <ClientProfileCard
             client={client as any}
+            computedStatus={computeStatus(events)}
             onEdit={handleOpenEdit}
             onDelete={handleDelete}
             canDelete={events.length === 0}

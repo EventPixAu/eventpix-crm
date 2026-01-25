@@ -54,7 +54,10 @@ interface Company {
   billing_address: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
+  manual_status: string | null;
   computed_status: ComputedStatus;
+  display_status: ComputedStatus;
+  is_override: boolean;
   contact_count: number;
 }
 
@@ -108,6 +111,7 @@ export default function CompanyList() {
           primary_contact_phone,
           billing_address,
           category_id,
+          manual_status,
           category:company_categories(id, name)
         `)
         .eq('is_training', false)
@@ -147,11 +151,17 @@ export default function CompanyList() {
         return acc;
       }, {} as Record<string, Array<{ event_date: string; ops_status: string | null }>>);
 
-      return (clientsData || []).map(company => ({
-        ...company,
-        contact_count: countMap[company.id] || 0,
-        computed_status: computeClientStatus(eventsMap[company.id] || []),
-      })) as Company[];
+      return (clientsData || []).map(company => {
+        const computed = computeClientStatus(eventsMap[company.id] || []);
+        const manualStatus = company.manual_status as ComputedStatus | null;
+        return {
+          ...company,
+          contact_count: countMap[company.id] || 0,
+          computed_status: computed,
+          display_status: manualStatus || computed,
+          is_override: !!manualStatus,
+        };
+      }) as Company[];
     },
   });
 
@@ -292,12 +302,19 @@ export default function CompanyList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getStatusConfig(company.computed_status).className}
-                      >
-                        {getStatusConfig(company.computed_status).label}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant="outline"
+                          className={getStatusConfig(company.display_status).className}
+                        >
+                          {getStatusConfig(company.display_status).label}
+                        </Badge>
+                        {company.is_override && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-600 border-purple-200">
+                            Manual
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" asChild>

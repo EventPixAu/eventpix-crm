@@ -469,11 +469,14 @@ export type Database = {
           industry: string | null
           is_training: boolean | null
           legal_name: string | null
+          manual_status: string | null
           notes: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
           status: string | null
+          status_override_at: string | null
+          status_override_by: string | null
           trading_name: string | null
           updated_at: string | null
           website: string | null
@@ -491,11 +494,14 @@ export type Database = {
           industry?: string | null
           is_training?: boolean | null
           legal_name?: string | null
+          manual_status?: string | null
           notes?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
           status?: string | null
+          status_override_at?: string | null
+          status_override_by?: string | null
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
@@ -513,11 +519,14 @@ export type Database = {
           industry?: string | null
           is_training?: boolean | null
           legal_name?: string | null
+          manual_status?: string | null
           notes?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
           status?: string | null
+          status_override_at?: string | null
+          status_override_by?: string | null
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
