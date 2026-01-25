@@ -209,6 +209,7 @@ export function useDeleteContactAssociation() {
 
 // Relationship type options
 export const RELATIONSHIP_TYPES = [
+  { value: 'employee', label: 'Employee' },
   { value: 'contractor', label: 'Contractor' },
   { value: 'consultant', label: 'Consultant' },
   { value: 'freelancer', label: 'Freelancer' },

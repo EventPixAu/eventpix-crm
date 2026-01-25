@@ -57,9 +57,6 @@ interface Company {
   trading_name: string | null;
   company_phone: string | null;
   company_email: string | null;
-  primary_contact_name: string | null;
-  primary_contact_email: string | null;
-  primary_contact_phone: string | null;
   billing_address: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
@@ -69,6 +66,9 @@ interface Company {
   display_status: ComputedStatus;
   is_override: boolean;
   contact_count: number;
+  // Primary contact from linked contacts
+  primary_contact_name: string | null;
+  primary_contact_email: string | null;
 }
 
 function computeClientStatus(events: Array<{ event_date: string; ops_status: string | null }>): ComputedStatus {
@@ -123,9 +123,6 @@ export default function CompanyList() {
           trading_name,
           company_phone,
           company_email,
-          primary_contact_name,
-          primary_contact_email,
-          primary_contact_phone,
           billing_address,
           category_id,
           manual_status,
@@ -146,12 +143,21 @@ export default function CompanyList() {
 
       const clientIds = clientsData?.map(c => c.id) || [];
 
-      // Get contact counts and events in parallel
-      const [contactCountsResult, eventsResult] = await Promise.all([
+      // Get contact counts, primary contacts, and events in parallel
+      const [contactCountsResult, primaryContactsResult, eventsResult] = await Promise.all([
         supabase
           .from('client_contacts')
           .select('client_id')
           .in('client_id', clientIds),
+        // Get primary contacts from contact_company_associations
+        supabase
+          .from('contact_company_associations')
+          .select(`
+            company_id,
+            contact:client_contacts(contact_name, email)
+          `)
+          .in('company_id', clientIds)
+          .eq('is_primary', true),
         supabase
           .from('events')
           .select('client_id, event_date, ops_status')
@@ -163,6 +169,18 @@ export default function CompanyList() {
         return acc;
       }, {} as Record<string, number>);
 
+      // Map primary contacts by company_id
+      const primaryContactMap = (primaryContactsResult.data || []).reduce((acc, pc) => {
+        const contact = pc.contact as { contact_name: string; email: string | null } | null;
+        if (contact) {
+          acc[pc.company_id] = {
+            name: contact.contact_name,
+            email: contact.email,
+          };
+        }
+        return acc;
+      }, {} as Record<string, { name: string; email: string | null }>);
+
       const eventsMap = (eventsResult.data || []).reduce((acc, e) => {
         if (!acc[e.client_id]) acc[e.client_id] = [];
         acc[e.client_id].push({ event_date: e.event_date, ops_status: e.ops_status });
@@ -172,6 +190,7 @@ export default function CompanyList() {
       return (clientsData || []).map(company => {
         const computed = computeClientStatus(eventsMap[company.id] || []);
         const manualStatus = company.manual_status as ComputedStatus | null;
+        const primaryContact = primaryContactMap[company.id];
         return {
           ...company,
           contact_count: countMap[company.id] || 0,
@@ -179,6 +198,8 @@ export default function CompanyList() {
           display_status: manualStatus || computed,
           is_override: !!manualStatus,
           status_override_reason: company.status_override_reason,
+          primary_contact_name: primaryContact?.name || null,
+          primary_contact_email: primaryContact?.email || null,
         };
       }) as Company[];
     },
@@ -326,22 +347,27 @@ export default function CompanyList() {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {(company.company_email || company.primary_contact_email) && (
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        {company.primary_contact_name && (
+                          <div className="text-sm font-medium">
+                            {company.primary_contact_name}
+                          </div>
+                        )}
+                        {(company.primary_contact_email || company.company_email) && (
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Mail className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate max-w-[200px]">
-                              {company.company_email || company.primary_contact_email}
+                              {company.primary_contact_email || company.company_email}
                             </span>
                           </div>
                         )}
-                        {(company.company_phone || company.primary_contact_phone) && (
+                        {company.company_phone && (
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <Phone className="h-3.5 w-3.5 shrink-0" />
-                            {company.company_phone || company.primary_contact_phone}
+                            {company.company_phone}
                           </div>
                         )}
-                        {!company.company_email && !company.primary_contact_email && 
-                         !company.company_phone && !company.primary_contact_phone && (
+                        {!company.primary_contact_name && !company.primary_contact_email && 
+                         !company.company_email && !company.company_phone && (
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
                       </div>

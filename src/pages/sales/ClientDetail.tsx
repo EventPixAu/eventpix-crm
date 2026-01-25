@@ -101,9 +101,6 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     category_id: '',
-    primary_contact_name: '',
-    primary_contact_email: '',
-    primary_contact_phone: '',
     notes: '',
   });
 
@@ -115,9 +112,6 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
-        primary_contact_name: client.primary_contact_name || '',
-        primary_contact_email: client.primary_contact_email || '',
-        primary_contact_phone: client.primary_contact_phone || '',
         notes: client.notes || '',
       });
       setIsEditOpen(true);
@@ -145,9 +139,6 @@ export default function ClientDetail() {
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
       category_id: formData.category_id || null,
-      primary_contact_name: formData.primary_contact_name || null,
-      primary_contact_email: formData.primary_contact_email || null,
-      primary_contact_phone: formData.primary_contact_phone || null,
       notes: formData.notes || null,
     });
     navigate(`/crm/companies/${result.id}`);
@@ -257,42 +248,6 @@ export default function ClientDetail() {
               />
             </div>
 
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-3">Primary Contact</h4>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create_primary_contact_name">Contact Name</Label>
-                  <Input
-                    id="create_primary_contact_name"
-                    value={formData.primary_contact_name}
-                    onChange={(e) => setFormData({ ...formData, primary_contact_name: e.target.value })}
-                    placeholder="John Smith"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="create_primary_contact_email">Email</Label>
-                    <Input
-                      id="create_primary_contact_email"
-                      type="email"
-                      value={formData.primary_contact_email}
-                      onChange={(e) => setFormData({ ...formData, primary_contact_email: e.target.value })}
-                      placeholder="john@acme.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="create_primary_contact_phone">Phone</Label>
-                    <Input
-                      id="create_primary_contact_phone"
-                      value={formData.primary_contact_phone}
-                      onChange={(e) => setFormData({ ...formData, primary_contact_phone: e.target.value })}
-                      placeholder="+61 400 000 000"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="create_notes">Notes</Label>
               <Textarea
@@ -303,6 +258,10 @@ export default function ClientDetail() {
                 placeholder="Additional notes..."
               />
             </div>
+
+            <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+              After creating the company, you can add contacts from the Contacts panel on the company detail page.
+            </p>
 
             <div className="flex gap-3 pt-4">
               <Button onClick={handleCreate} disabled={createClient.isPending}>
@@ -487,39 +446,6 @@ export default function ClientDetail() {
                 rows={3}
                 placeholder="Street Address&#10;Suburb, State, Postcode&#10;Country"
               />
-            </div>
-            
-            <div className="border-t pt-4 mt-4">
-              <h4 className="text-sm font-medium mb-3">Primary Contact</h4>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="primary_contact_name">Contact Name</Label>
-                  <Input
-                    id="primary_contact_name"
-                    value={formData.primary_contact_name}
-                    onChange={(e) => setFormData({ ...formData, primary_contact_name: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="primary_contact_email">Contact Email</Label>
-                    <Input
-                      id="primary_contact_email"
-                      type="email"
-                      value={formData.primary_contact_email}
-                      onChange={(e) => setFormData({ ...formData, primary_contact_email: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="primary_contact_phone">Contact Phone</Label>
-                    <Input
-                      id="primary_contact_phone"
-                      value={formData.primary_contact_phone}
-                      onChange={(e) => setFormData({ ...formData, primary_contact_phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
             
             <div className="space-y-2">
