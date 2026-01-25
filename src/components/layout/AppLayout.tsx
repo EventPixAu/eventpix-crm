@@ -14,7 +14,7 @@
  * - Sales: CRM + Sales sections only (no Operations or Administration)
  * - Crew: Simplified job-focused navigation
  */
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -264,7 +264,7 @@ function CrewSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
 
 const SIDEBAR_COLLAPSED_KEY = 'eventpix-sidebar-collapsed';
 
-export function AppLayout({ children }: AppLayoutProps) {
+export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function AppLayout({ children }, ref) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -471,4 +471,4 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
     </div>
   );
-}
+});
