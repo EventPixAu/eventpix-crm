@@ -334,12 +334,15 @@ export function ContactCompanyAssociationsPanel({
 
             <div className="space-y-2">
               <Label>Job Title</Label>
-              <Select value={jobTitleId} onValueChange={setJobTitleId}>
+              <Select 
+                value={jobTitleId || "none"} 
+                onValueChange={(val) => setJobTitleId(val === "none" ? "" : val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select or leave blank" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover">
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {jobTitles.map((title) => (
                     <SelectItem key={title.id} value={title.id}>
                       {title.name}
