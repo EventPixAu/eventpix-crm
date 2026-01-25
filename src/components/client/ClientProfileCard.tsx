@@ -3,12 +3,14 @@
  * 
  * Company profile card with:
  * - Company Name, Phone, Email, Address, Category
+ * - Editable Company Status
  * - Edit/Delete buttons
  */
 import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ClientStatusEditor } from './ClientStatusEditor';
 
 interface ClientProfileCardProps {
   client: {
@@ -22,9 +24,13 @@ interface ClientProfileCardProps {
     billing_address?: string | null;
     category_id?: string | null;
     category?: { id: string; name: string } | null;
+    manual_status?: string | null;
+    status_override_at?: string | null;
   };
+  computedStatus?: string;
   onEdit: () => void;
   onDelete: () => void;
+  onStatusUpdate?: () => void;
   canDelete?: boolean;
 }
 
@@ -53,13 +59,14 @@ function parseAddress(address: string | null | undefined) {
 
 export function ClientProfileCard({ 
   client, 
+  computedStatus = 'prospect',
   onEdit, 
   onDelete,
+  onStatusUpdate,
   canDelete = true 
 }: ClientProfileCardProps) {
   const addressFields = parseAddress(client.billing_address);
   const hasAddress = Object.values(addressFields).some(v => v);
-
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -78,6 +85,18 @@ export function ClientProfileCard({
           </div>
         </div>
       </CardHeader>
+
+      {/* Status Section */}
+      <div className="px-6 pb-4">
+        <div className="text-sm text-muted-foreground mb-1.5">Status</div>
+        <ClientStatusEditor
+          clientId={client.id}
+          manualStatus={client.manual_status || null}
+          computedStatus={computedStatus}
+          statusOverrideAt={client.status_override_at}
+          onUpdate={onStatusUpdate}
+        />
+      </div>
       
       <CardContent className="space-y-4">
         {/* Company Contact Details */}

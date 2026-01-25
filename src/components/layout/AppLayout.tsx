@@ -1,16 +1,17 @@
 /**
  * EVENTPIX PLATFORM - Main Layout
  * 
- * THREE SECTION NAVIGATION + CROSS-FUNCTIONAL:
+ * FOUR SECTION NAVIGATION + CROSS-FUNCTIONAL:
  * - CRM: Promotions, Companies, Contacts, Emails
- * - Sales: Leads, Pipeline, Quotes, Contracts, Products, Templates
- * - Operations: Events, Calendar, Staff, Equipment, Delivery, Admin Tools
+ * - Sales: Leads, Pipeline, Quotes, Contracts, Products
+ * - Operations: Events, Calendar, Staff, Equipment, Delivery
+ * - Administration: Admin-only system configuration
  * - Knowledge Base: Cross-functional, available to all roles
  * 
  * ROLE SEPARATION:
- * - Admin: Full access to all sections
- * - Operations: Full access to all sections
- * - Sales: CRM + Sales sections only
+ * - Admin: Full access to all sections including Administration
+ * - Operations: CRM, Sales, Operations (no Administration)
+ * - Sales: CRM + Sales sections only (no Operations or Administration)
  * - Crew: Simplified job-focused navigation
  */
 import { ReactNode, useState, useEffect } from 'react';
@@ -34,7 +35,6 @@ import {
   CalendarCheck,
   Wrench,
   FolderOpen,
-  BarChart3,
   Briefcase,
   Target,
   Building2,
@@ -45,8 +45,7 @@ import {
   TrendingUp,
   Layers,
   UserCircle,
-  ChevronLeft,
-  ChevronRight,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -71,7 +70,7 @@ const crmItems: NavItem[] = [
 // ===== KNOWLEDGE BASE (Cross-functional) =====
 const knowledgeBaseItem: NavItem = { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen };
 
-// ===== SALES SECTION =====
+// ===== SALES SECTION (Admin sees this, cleaned of templates) =====
 const salesItems: NavItem[] = [
   { href: '/sales/dashboard', label: 'Dashboard', icon: Home },
   { href: '/sales/leads', label: 'Leads', icon: Target },
@@ -79,13 +78,9 @@ const salesItems: NavItem[] = [
   { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
   { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
-  { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
-  { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
-  { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
-  { href: '/sales/workflow-templates', label: 'Workflow Templates', icon: ClipboardList },
 ];
 
-// ===== OPERATIONS SECTION =====
+// ===== OPERATIONS SECTION (Cleaned of admin settings) =====
 const operationsItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/events', label: 'Events', icon: Calendar },
@@ -95,6 +90,15 @@ const operationsItems: NavItem[] = [
   { href: '/staff', label: 'Staff', icon: Users },
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/delivery', label: 'Delivery', icon: Package },
+];
+
+// ===== ADMINISTRATION SECTION (Admin-only) =====
+const administrationItems: NavItem[] = [
+  { href: '/admin/users', label: 'User Management', icon: Users },
+  { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
+  { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
+  { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
+  { href: '/sales/workflow-templates', label: 'Sales Workflows', icon: ClipboardList },
   { href: '/admin/event-types', label: 'Event Types', icon: Layers },
   { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
@@ -153,6 +157,16 @@ function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
         collapsed={collapsed}
       />
 
+      {/* Administration Section - Admin Only */}
+      <SidebarNavGroup 
+        label="Administration" 
+        icon={Shield} 
+        items={administrationItems}
+        defaultOpen={false}
+        onItemClick={onItemClick}
+        collapsed={collapsed}
+      />
+
       {!collapsed && <div className="h-px bg-sidebar-border my-3" />}
       
       {/* Knowledge Base - Cross-functional */}
@@ -161,21 +175,8 @@ function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   );
 }
 
-function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
-  // Sales users see CRM and Sales only
-  const salesOnlyItems: NavItem[] = [
-    { href: '/sales/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/sales/leads', label: 'Leads', icon: Target },
-    { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
-    { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
-    { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
-    { href: '/sales/products', label: 'Products', icon: ShoppingBag },
-    { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
-    { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
-    { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
-    { href: '/sales/workflow-templates', label: 'Workflow Templates', icon: ClipboardList },
-  ];
-
+function OperationsSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
+  // Operations users see CRM, Sales, and Operations - but NOT Administration
   return (
     <>
       {/* CRM Section */}
@@ -192,7 +193,49 @@ function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
       <SidebarNavGroup 
         label="Sales" 
         icon={TrendingUp} 
-        items={salesOnlyItems}
+        items={salesItems}
+        defaultOpen={false}
+        onItemClick={onItemClick}
+        collapsed={collapsed}
+      />
+      
+      {/* Operations Section */}
+      <SidebarNavGroup 
+        label="Operations" 
+        icon={Briefcase} 
+        items={operationsItems}
+        defaultOpen={false}
+        onItemClick={onItemClick}
+        collapsed={collapsed}
+      />
+
+      {!collapsed && <div className="h-px bg-sidebar-border my-3" />}
+      
+      {/* Knowledge Base - Cross-functional */}
+      <SidebarNavItem item={knowledgeBaseItem} onItemClick={onItemClick} collapsed={collapsed} />
+    </>
+  );
+}
+
+function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
+  // Sales users see CRM and Sales only - no templates (moved to Admin)
+  return (
+    <>
+      {/* CRM Section */}
+      <SidebarNavGroup 
+        label="CRM" 
+        icon={UserCircle} 
+        items={crmItems}
+        defaultOpen={true}
+        onItemClick={onItemClick}
+        collapsed={collapsed}
+      />
+      
+      {/* Sales Section */}
+      <SidebarNavGroup 
+        label="Sales" 
+        icon={TrendingUp} 
+        items={salesItems}
         defaultOpen={false}
         onItemClick={onItemClick}
         collapsed={collapsed}
@@ -248,7 +291,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   // Render appropriate sidebar content based on role
   const renderSidebarContent = (onItemClick?: () => void, collapsed?: boolean) => {
     if (isAdmin) return <AdminSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
-    if (isOperations) return <AdminSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
+    if (isOperations) return <OperationsSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
     if (isSales) return <SalesSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
     if (isCrew) return <CrewSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;
     return <CrewSidebarContent onItemClick={onItemClick} collapsed={collapsed} />;

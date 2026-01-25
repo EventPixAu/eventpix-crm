@@ -1,4 +1,5 @@
 export { ClientProfileCard } from './ClientProfileCard';
+export { ClientStatusEditor } from './ClientStatusEditor';
 export { ClientLeadsList } from './ClientLeadsList';
 export { ClientJobsList } from './ClientJobsList';
 export { ClientNotesPanel } from './ClientNotesPanel';
