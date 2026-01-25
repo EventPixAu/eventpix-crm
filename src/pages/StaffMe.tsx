@@ -8,7 +8,6 @@ import {
   Camera,
   CheckCircle,
   ChevronRight,
-  Clock,
   FileText,
   MapPin,
   Phone,
@@ -60,8 +59,6 @@ interface ProfileData {
   home_city: string | null;
   home_state: string | null;
   travel_ready: boolean;
-  preferred_start_time: string | null;
-  preferred_end_time: string | null;
   seniority: string | null;
   onboarding_status: string;
   notification_preferences: {
@@ -70,6 +67,17 @@ interface ProfileData {
     in_app_notifications: boolean;
   } | null;
   photography_equipment_json: PhotographyEquipment | null;
+  // Additional editable fields
+  business_name: string | null;
+  abn: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  address_postcode: string | null;
+  vehicle_make_model: string | null;
+  vehicle_registration: string | null;
+  dietary_requirements: string | null;
 }
 
 interface UpcomingEvent {
@@ -94,7 +102,7 @@ function useMyProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, photography_equipment_json')
+        .select('*, photography_equipment_json, business_name, abn, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements')
         .eq('id', user.id)
         .single();
       
@@ -217,8 +225,16 @@ export default function StaffMe() {
         home_city: profile.home_city || '',
         home_state: profile.home_state || '',
         travel_ready: profile.travel_ready ?? false,
-        preferred_start_time: profile.preferred_start_time || '',
-        preferred_end_time: profile.preferred_end_time || '',
+        business_name: profile.business_name || '',
+        abn: profile.abn || '',
+        address_line1: profile.address_line1 || '',
+        address_line2: profile.address_line2 || '',
+        address_city: profile.address_city || '',
+        address_state: profile.address_state || '',
+        address_postcode: profile.address_postcode || '',
+        vehicle_make_model: profile.vehicle_make_model || '',
+        vehicle_registration: profile.vehicle_registration || '',
+        dietary_requirements: profile.dietary_requirements || '',
       });
     }
   };
@@ -400,35 +416,137 @@ export default function StaffMe() {
                   
                   <Separator />
                   
-                  {/* Preferred Times */}
+                  {/* Business Details */}
                   <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Preferred Working Hours
-                    </h4>
+                    <h4 className="font-medium mb-3">Business Details</h4>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="preferred_start_time">Earliest Start</Label>
+                        <Label htmlFor="business_name">Business Name</Label>
                         <Input
-                          id="preferred_start_time"
-                          type="time"
-                          value={formData.preferred_start_time || ''}
-                          onChange={(e) => handleFieldChange('preferred_start_time', e.target.value)}
+                          id="business_name"
+                          placeholder="Trading or business name"
+                          value={formData.business_name || ''}
+                          onChange={(e) => handleFieldChange('business_name', e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="preferred_end_time">Latest End</Label>
+                        <Label htmlFor="abn">ABN</Label>
                         <Input
-                          id="preferred_end_time"
-                          type="time"
-                          value={formData.preferred_end_time || ''}
-                          onChange={(e) => handleFieldChange('preferred_end_time', e.target.value)}
+                          id="abn"
+                          placeholder="Australian Business Number"
+                          value={formData.abn || ''}
+                          onChange={(e) => handleFieldChange('abn', e.target.value)}
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      These are preferences only. Admins may still assign outside these times for urgent needs.
-                    </p>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Address */}
+                  <div>
+                    <h4 className="font-medium mb-3">Address</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="address_line1">Street Address</Label>
+                        <Input
+                          id="address_line1"
+                          placeholder="123 Main Street"
+                          value={formData.address_line1 || ''}
+                          onChange={(e) => handleFieldChange('address_line1', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="address_line2">Address Line 2</Label>
+                        <Input
+                          id="address_line2"
+                          placeholder="Unit, apartment, etc."
+                          value={formData.address_line2 || ''}
+                          onChange={(e) => handleFieldChange('address_line2', e.target.value)}
+                        />
+                      </div>
+                      <div className="grid sm:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="address_city">City/Suburb</Label>
+                          <Input
+                            id="address_city"
+                            placeholder="Sydney"
+                            value={formData.address_city || ''}
+                            onChange={(e) => handleFieldChange('address_city', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="address_state">State</Label>
+                          <Select
+                            value={formData.address_state || ''}
+                            onValueChange={(value) => handleFieldChange('address_state', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AUSTRALIAN_STATES.map(state => (
+                                <SelectItem key={state.value} value={state.value}>
+                                  {state.value}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="address_postcode">Postcode</Label>
+                          <Input
+                            id="address_postcode"
+                            placeholder="2000"
+                            value={formData.address_postcode || ''}
+                            onChange={(e) => handleFieldChange('address_postcode', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Vehicle Details */}
+                  <div>
+                    <h4 className="font-medium mb-3">Vehicle Details</h4>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="vehicle_make_model">Make & Model</Label>
+                        <Input
+                          id="vehicle_make_model"
+                          placeholder="e.g. Toyota Camry"
+                          value={formData.vehicle_make_model || ''}
+                          onChange={(e) => handleFieldChange('vehicle_make_model', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="vehicle_registration">Registration</Label>
+                        <Input
+                          id="vehicle_registration"
+                          placeholder="e.g. ABC123"
+                          value={formData.vehicle_registration || ''}
+                          onChange={(e) => handleFieldChange('vehicle_registration', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Other */}
+                  <div>
+                    <h4 className="font-medium mb-3">Other</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor="dietary_requirements">Dietary Requirements</Label>
+                      <Input
+                        id="dietary_requirements"
+                        placeholder="Any dietary restrictions or requirements"
+                        value={formData.dietary_requirements || ''}
+                        onChange={(e) => handleFieldChange('dietary_requirements', e.target.value)}
+                      />
+                    </div>
                   </div>
                   
                   {/* Save Button */}
