@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useClientLeads, useUpdateLead } from '@/hooks/useSales';
+import { CreateLeadDialog } from '@/components/CreateLeadDialog';
 import { toast } from 'sonner';
 
 interface LeadWithType {
@@ -148,11 +149,10 @@ function LeadItem({ lead, onSendEmail, onArchive, onDelete }: LeadItemProps) {
 
 interface ClientLeadsListProps {
   clientId: string;
-  onAddLead?: () => void;
   onSendEmail?: (leadId: string) => void;
 }
 
-export function ClientLeadsList({ clientId, onAddLead, onSendEmail }: ClientLeadsListProps) {
+export function ClientLeadsList({ clientId, onSendEmail }: ClientLeadsListProps) {
   const { data: leads = [], isLoading } = useClientLeads(clientId);
   const updateLead = useUpdateLead();
   
@@ -176,13 +176,17 @@ export function ClientLeadsList({ clientId, onAddLead, onSendEmail }: ClientLead
             <Target className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-lg">Leads</CardTitle>
           </div>
-          <Button 
-            size="icon" 
-            className="h-7 w-7 rounded-full bg-primary"
-            onClick={onAddLead}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          <CreateLeadDialog 
+            defaultClientId={clientId}
+            trigger={
+              <Button 
+                size="icon" 
+                className="h-7 w-7 rounded-full bg-primary"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            }
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
