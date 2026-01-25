@@ -70,7 +70,7 @@ import {
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
 
-export default function LeadDetail() {
+export default function LeadDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
