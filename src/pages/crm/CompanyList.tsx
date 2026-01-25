@@ -64,6 +64,7 @@ interface Company {
   category_id: string | null;
   category: { id: string; name: string } | null;
   manual_status: string | null;
+  status_override_reason: string | null;
   computed_status: ComputedStatus;
   display_status: ComputedStatus;
   is_override: boolean;
@@ -107,9 +108,9 @@ export default function CompanyList() {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   
-  const { isAdmin, isSales } = useAuth();
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
-  const canBulkEdit = isAdmin || isSales;
+  const canBulkEdit = isAdmin; // Only Admin can bulk edit
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['crm-companies', search],
@@ -128,6 +129,7 @@ export default function CompanyList() {
           billing_address,
           category_id,
           manual_status,
+          status_override_reason,
           category:company_categories(id, name)
         `)
         .eq('is_training', false)
@@ -176,6 +178,7 @@ export default function CompanyList() {
           computed_status: computed,
           display_status: manualStatus || computed,
           is_override: !!manualStatus,
+          status_override_reason: company.status_override_reason,
         };
       }) as Company[];
     },
@@ -365,6 +368,7 @@ export default function CompanyList() {
                         currentStatus={company.display_status}
                         isOverride={company.is_override}
                         computedStatus={company.computed_status}
+                        overrideReason={company.status_override_reason}
                         onStatusChange={handleRefresh}
                       />
                     </TableCell>

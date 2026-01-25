@@ -477,6 +477,7 @@ export type Database = {
           status: string | null
           status_override_at: string | null
           status_override_by: string | null
+          status_override_reason: string | null
           trading_name: string | null
           updated_at: string | null
           website: string | null
@@ -502,6 +503,7 @@ export type Database = {
           status?: string | null
           status_override_at?: string | null
           status_override_by?: string | null
+          status_override_reason?: string | null
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
@@ -527,6 +529,7 @@ export type Database = {
           status?: string | null
           status_override_at?: string | null
           status_override_by?: string | null
+          status_override_reason?: string | null
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
@@ -574,6 +577,7 @@ export type Database = {
           id: string
           new_status: string | null
           old_status: string | null
+          override_reason: string | null
         }
         Insert: {
           action: string
@@ -583,6 +587,7 @@ export type Database = {
           id?: string
           new_status?: string | null
           old_status?: string | null
+          override_reason?: string | null
         }
         Update: {
           action?: string
@@ -592,6 +597,7 @@ export type Database = {
           id?: string
           new_status?: string | null
           old_status?: string | null
+          override_reason?: string | null
         }
         Relationships: [
           {
