@@ -125,7 +125,7 @@ export function PhotographyEquipmentEditor({
   };
 
   const totalItems = CATEGORIES.reduce(
-    (sum, cat) => sum + equipment[cat.key].length,
+    (sum, cat) => sum + (equipment[cat.key]?.length || 0),
     0
   );
 
@@ -159,20 +159,20 @@ export function PhotographyEquipmentEditor({
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4 text-muted-foreground" />
                   <span>{label}</span>
-                  {equipment[key].length > 0 && (
+                  {(equipment[key]?.length || 0) > 0 && (
                     <span className="text-xs text-muted-foreground ml-1">
-                      ({equipment[key].length})
+                      ({equipment[key]?.length || 0})
                     </span>
                   )}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-4 space-y-3">
-                {equipment[key].length === 0 ? (
+                {(equipment[key]?.length || 0) === 0 ? (
                   <p className="text-sm text-muted-foreground py-2">
                     No {label.toLowerCase()} added yet
                   </p>
                 ) : (
-                  equipment[key].map((item, index) => (
+                  (equipment[key] || []).map((item, index) => (
                     <div
                       key={item.id}
                       className="grid gap-3 p-3 bg-muted/30 rounded-lg relative"
