@@ -170,10 +170,10 @@ export function useCreateStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({ title: 'Staff member added successfully' });
+      toast({ title: 'Team member added successfully' });
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to add staff', description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to add team member', description: error.message });
     },
   });
 }
@@ -196,10 +196,10 @@ export function useUpdateStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({ title: 'Staff member updated successfully' });
+      toast({ title: 'Team member updated successfully' });
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to update staff', description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to update team member', description: error.message });
     },
   });
 }
@@ -219,10 +219,10 @@ export function useDeleteStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({ title: 'Staff member deleted successfully' });
+      toast({ title: 'Team member deleted successfully' });
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to delete staff', description: error.message });
+      toast({ variant: 'destructive', title: 'Failed to delete team member', description: error.message });
     },
   });
 }

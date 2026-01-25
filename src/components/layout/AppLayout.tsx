@@ -87,7 +87,7 @@ const operationsItems: NavItem[] = [
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/day-load', label: 'Day Load', icon: CalendarCheck },
   { href: '/admin/series', label: 'Event Series', icon: FileCheck },
-  { href: '/staff', label: 'Staff', icon: Users },
+  { href: '/staff', label: 'Team', icon: Users },
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/delivery', label: 'Delivery', icon: Package },
 ];

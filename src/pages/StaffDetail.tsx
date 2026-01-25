@@ -203,7 +203,7 @@ export default function StaffDetail() {
   if (!id) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Staff member not found</div>
+        <div className="text-center py-12 text-muted-foreground">Team member not found</div>
       </AppLayout>
     );
   }
@@ -227,12 +227,12 @@ export default function StaffDetail() {
           <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
             <Link to="/staff">
               <ArrowLeft className="h-4 w-4" />
-              Back to Staff
+              Back to Team
             </Link>
           </Button>
         </div>
         <div className="text-center py-12 text-muted-foreground">
-          Staff member not found. They may not have a linked user account yet.
+          Team member not found. They may not have a linked user account yet.
         </div>
       </AppLayout>
     );
@@ -254,13 +254,13 @@ export default function StaffDetail() {
         <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
           <Link to="/staff">
             <ArrowLeft className="h-4 w-4" />
-            Back to Staff
+            Back to Team
           </Link>
         </Button>
       </div>
 
       <PageHeader
-        title={profile.full_name || 'Staff Member'}
+        title={profile.full_name || 'Team Member'}
         description={profile.default_role?.name || 'Team Member'}
       />
 

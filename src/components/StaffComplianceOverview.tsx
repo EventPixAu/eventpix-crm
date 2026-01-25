@@ -70,7 +70,7 @@ export function StaffComplianceOverview() {
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to staff list
+          Back to team list
         </Button>
         
         <Card>
@@ -84,7 +84,7 @@ export function StaffComplianceOverview() {
               </Avatar>
               <div>
                 <CardTitle className="text-base">
-                  {selectedStaff.full_name || 'Unnamed Staff'}
+                  {selectedStaff.full_name || 'Unnamed Team Member'}
                 </CardTitle>
                 <CardDescription>{selectedStaff.email}</CardDescription>
               </div>
@@ -150,18 +150,18 @@ export function StaffComplianceOverview() {
         </Card>
       </div>
 
-      {/* Staff List */}
+      {/* Team List */}
       <Card>
         <CardHeader>
-          <CardTitle>Staff Compliance Status</CardTitle>
-          <CardDescription>Review and manage staff compliance documents</CardDescription>
+          <CardTitle>Team Compliance Status</CardTitle>
+          <CardDescription>Review and manage team compliance documents</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search staff..."
+              placeholder="Search team..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -176,7 +176,7 @@ export function StaffComplianceOverview() {
               ))}
             </div>
           ) : filteredProfiles.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No staff found</p>
+            <p className="text-center text-muted-foreground py-8">No team members found</p>
           ) : (
             <ScrollArea className="h-[400px]">
               <div className="space-y-2">
@@ -198,8 +198,8 @@ export function StaffComplianceOverview() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">
-                            {profile.full_name || 'Unnamed Staff'}
+                        <p className="font-medium">
+                            {profile.full_name || 'Unnamed Team Member'}
                           </p>
                           <p className="text-sm text-muted-foreground">{profile.email}</p>
                         </div>

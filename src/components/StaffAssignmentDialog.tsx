@@ -266,28 +266,28 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
         {isAtMaxCapacity ? (
           <Alert className="mt-4">
             <Users className="h-4 w-4" />
-            <AlertTitle>Maximum Staff Reached</AlertTitle>
+            <AlertTitle>Maximum Team Members Reached</AlertTitle>
             <AlertDescription>
-              This event has reached the maximum of {maxStaff} staff assignments. Remove an existing assignment to add another.
+              This event has reached the maximum of {maxStaff} team assignments. Remove an existing assignment to add another.
             </AlertDescription>
           </Alert>
         ) : (
         <div className="space-y-3 pt-4 border-t">
-          <Label>Add Staff Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
+          <Label>Add Team Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
           <Select value={selectedUser} onValueChange={setSelectedUser}>
             <SelectTrigger>
-              <SelectValue placeholder="Select staff member" />
+              <SelectValue placeholder="Select team member" />
             </SelectTrigger>
             <SelectContent>
               {availableProfiles.length === 0 ? (
                 <SelectItem value="none" disabled>
-                  No available staff
+                  No available team members
                 </SelectItem>
               ) : (
                 availableProfiles.map((profile) => (
                   <SelectItem key={profile.id} value={profile.id}>
                     <div className="flex items-center gap-2">
-                      <span>{profile.full_name || 'Unnamed Staff'}</span>
+                      <span>{profile.full_name || 'Unnamed Team Member'}</span>
                       <EligibilityBadge userId={profile.id} />
                     </div>
                   </SelectItem>
@@ -380,8 +380,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               <AlertDescription>
                 {selectedUserAvailability.notes || 
                   (selectedUserAvailability.availability_status === 'unavailable' 
-                    ? 'This staff member has marked themselves unavailable on this date.'
-                    : 'This staff member has limited availability on this date.'
+                    ? 'This team member has marked themselves unavailable on this date.'
+                    : 'This team member has limited availability on this date.'
                   )
                 }
               </AlertDescription>
@@ -393,7 +393,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Conflict:</strong> This staff member is already assigned to{' '}
+                <strong>Conflict:</strong> This team member is already assigned to{' '}
                 {conflicts.map((c, i) => (
                   <span key={c.event_id}>
                     {i > 0 && ', '}

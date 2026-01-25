@@ -106,7 +106,7 @@ export default function Staff() {
   return (
     <AppLayout>
       <PageHeader
-        title="Staff"
+        title="Team"
         description={`${staff.length} team members`}
         actions={
           isAdmin && (
@@ -114,12 +114,12 @@ export default function Staff() {
               <DialogTrigger asChild>
                 <Button className="bg-gradient-primary hover:opacity-90">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Staff
+                  Add Team Member
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add Staff Member</DialogTitle>
+                  <DialogTitle>Add Team Member</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="space-y-2">
@@ -172,7 +172,7 @@ export default function Staff() {
                     className="w-full bg-gradient-primary"
                     disabled={createStaff.isPending}
                   >
-                    {createStaff.isPending ? 'Adding...' : 'Add Staff Member'}
+                    {createStaff.isPending ? 'Adding...' : 'Add Team Member'}
                   </Button>
                 </div>
               </DialogContent>
@@ -218,7 +218,7 @@ export default function Staff() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search staff..."
+                placeholder="Search team..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 bg-card border-border"
@@ -237,15 +237,15 @@ export default function Staff() {
             </Select>
           </div>
 
-          {/* Staff Grid */}
+          {/* Team Grid */}
           {isLoading ? (
             <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
-              Loading staff...
+              Loading team...
             </div>
           ) : filteredStaff.length === 0 ? (
             <div className="bg-card border border-border rounded-xl p-8 text-center">
               <UserCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">No staff found</p>
+              <p className="text-muted-foreground">No team members found</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

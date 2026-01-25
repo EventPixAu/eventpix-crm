@@ -344,7 +344,7 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
               id="notes_internal"
               value={formData.notes_internal}
               onChange={(e) => setFormData({ ...formData, notes_internal: e.target.value })}
-              placeholder="Internal notes about this staff member..."
+              placeholder="Internal notes about this team member..."
               rows={3}
             />
           </div>
