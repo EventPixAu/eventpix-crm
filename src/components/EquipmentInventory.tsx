@@ -16,22 +16,26 @@ import {
   useDeleteEquipmentItem,
   EQUIPMENT_CONDITIONS,
   EquipmentItem,
+  EquipmentItemWithOwner,
   EquipmentCondition,
   EquipmentStatus
 } from '@/hooks/useEquipment';
 import { useEquipmentCategories } from '@/hooks/useLookups';
+import { useStaffDirectory } from '@/hooks/useStaff';
 
 export function EquipmentInventory() {
   const { data: items, isLoading } = useEquipmentItems();
   const { data: categories = [] } = useEquipmentCategories();
+  const { data: staffDirectory = [] } = useStaffDirectory();
   const createItem = useCreateEquipmentItem();
   const updateItem = useUpdateEquipmentItem();
   const deleteItem = useDeleteEquipmentItem();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<EquipmentItem | null>(null);
+  const [editingItem, setEditingItem] = useState<EquipmentItemWithOwner | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterOwner, setFilterOwner] = useState<string>('all');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -41,6 +45,7 @@ export function EquipmentInventory() {
     condition: 'good' as EquipmentCondition,
     status: 'available' as EquipmentStatus,
     notes: '',
+    owner_user_id: '' as string, // empty = EventPix
   });
 
   const resetForm = () => {
@@ -53,6 +58,7 @@ export function EquipmentInventory() {
       condition: 'good',
       status: 'available',
       notes: '',
+      owner_user_id: '',
     });
     setEditingItem(null);
   };
@@ -65,6 +71,7 @@ export function EquipmentInventory() {
       model: formData.model || null,
       serial_number: formData.serial_number || null,
       notes: formData.notes || null,
+      owner_user_id: formData.owner_user_id || null, // empty string -> null (EventPix)
     };
 
     if (editingItem) {
@@ -77,7 +84,7 @@ export function EquipmentInventory() {
     resetForm();
   };
 
-  const handleEdit = (item: EquipmentItem) => {
+  const handleEdit = (item: EquipmentItemWithOwner) => {
     setEditingItem(item);
     setFormData({
       name: item.name,
@@ -88,6 +95,7 @@ export function EquipmentInventory() {
       condition: item.condition,
       status: item.status,
       notes: item.notes || '',
+      owner_user_id: item.owner_user_id || '',
     });
     setDialogOpen(true);
   };
@@ -101,6 +109,8 @@ export function EquipmentInventory() {
   const filteredItems = items?.filter((item) => {
     if (filterCategory !== 'all' && item.category !== filterCategory) return false;
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
+    if (filterOwner === 'eventpix' && item.owner_user_id !== null) return false;
+    if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
     return true;
   });
 
@@ -236,6 +246,30 @@ export function EquipmentInventory() {
                 />
               </div>
               <div className="space-y-2">
+                <Label>Owner</Label>
+                <Select
+                  value={formData.owner_user_id || 'eventpix'}
+                  onValueChange={(v) => setFormData({ ...formData, owner_user_id: v === 'eventpix' ? '' : v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="eventpix">EventPix (Company)</SelectItem>
+                    {staffDirectory
+                      .filter(s => s.source === 'profile' && s.full_name?.trim())
+                      .map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.full_name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select a photographer if this is their personal gear
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label>Notes</Label>
                 <Textarea
                   value={formData.notes}
@@ -256,7 +290,7 @@ export function EquipmentInventory() {
         </Dialog>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <Select value={filterCategory} onValueChange={setFilterCategory}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Category" />
@@ -280,12 +314,23 @@ export function EquipmentInventory() {
               <SelectItem value="retired">Retired</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={filterOwner} onValueChange={setFilterOwner}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Owner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Owners</SelectItem>
+              <SelectItem value="eventpix">EventPix Only</SelectItem>
+              <SelectItem value="photographer">Photographer Gear</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Owner</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Brand/Model</TableHead>
               <TableHead>Condition</TableHead>
@@ -297,6 +342,13 @@ export function EquipmentInventory() {
             {filteredItems?.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell>
+                  {item.owner?.full_name ? (
+                    <Badge variant="outline">{item.owner.full_name}</Badge>
+                  ) : (
+                    <Badge variant="secondary">EventPix</Badge>
+                  )}
+                </TableCell>
                 <TableCell className="capitalize">{item.category}</TableCell>
                 <TableCell>
                   {item.brand && item.model ? `${item.brand} ${item.model}` : item.brand || item.model || '—'}
@@ -317,7 +369,7 @@ export function EquipmentInventory() {
             ))}
             {(!filteredItems || filteredItems.length === 0) && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No equipment items found
                 </TableCell>
               </TableRow>
