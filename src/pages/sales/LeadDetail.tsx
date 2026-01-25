@@ -73,17 +73,21 @@ import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: lead, isLoading } = useLead(id);
+  
+  // Don't fetch data for "new" - it's not a valid UUID
+  const isCreateMode = id === 'new';
+  
+  const { data: lead, isLoading } = useLead(isCreateMode ? undefined : id);
   const updateLead = useUpdateLead();
   
   // Workflow state
-  const { data: workflowItems = [] } = useLeadWorkflowItems(id);
+  const { data: workflowItems = [] } = useLeadWorkflowItems(isCreateMode ? undefined : id);
   const { data: templates = [] } = useActiveWorkflowTemplates();
   const applyTemplate = useApplyTemplate();
   
   // Related data
-  const { data: sessions = [] } = useLeadSessions(id);
-  const { data: emailLogs = [] } = useLeadEmailLogs(id);
+  const { data: sessions = [] } = useLeadSessions(isCreateMode ? undefined : id);
+  const { data: emailLogs = [] } = useLeadEmailLogs(isCreateMode ? undefined : id);
   
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
@@ -91,7 +95,7 @@ export default function LeadDetail() {
   const [selectedTemplate, setSelectedTemplate] = useState<SalesWorkflowTemplate | null>(null);
   const [applyMode, setApplyMode] = useState<'append' | 'replace'>('append');
 
-  if (isLoading) {
+  if (isLoading && !isCreateMode) {
     return (
       <AppLayout>
         <div className="space-y-6">
@@ -112,12 +116,19 @@ export default function LeadDetail() {
     );
   }
 
-  if (!lead) {
+  if (!lead || isCreateMode) {
     return (
       <AppLayout>
         <div className="text-center py-16">
-          <h2 className="text-xl font-semibold">Lead not found</h2>
-          <Link to="/sales/leads" className="text-primary hover:underline mt-2 block">
+          <h2 className="text-xl font-semibold">
+            {isCreateMode ? 'Create Lead' : 'Lead not found'}
+          </h2>
+          <p className="text-muted-foreground mt-2">
+            {isCreateMode 
+              ? 'Use the Create Lead dialog from the Leads list page.' 
+              : 'The lead you are looking for does not exist.'}
+          </p>
+          <Link to="/sales/leads" className="text-primary hover:underline mt-4 block">
             Back to Leads
           </Link>
         </div>
