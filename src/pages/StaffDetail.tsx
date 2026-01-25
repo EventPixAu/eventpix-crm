@@ -80,13 +80,13 @@ export default function StaffDetail() {
   const { isAdmin, user } = useAuth();
   
   // First try to find a profile with this ID
-  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
+  const { data: profileData, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['staff-profile', id],
     queryFn: async () => {
       if (!id) return null;
       
       // First try to find directly in profiles table
-      const { data: profileData, error: profileErr } = await supabase
+      const { data: profileResult, error: profileErr } = await supabase
         .from('profiles')
         .select(`
           id, full_name, email, phone, avatar_url, 
@@ -100,14 +100,14 @@ export default function StaffDetail() {
         .eq('id', id)
         .maybeSingle();
 
-      if (profileData) {
-        return profileData as StaffProfile;
+      if (profileResult) {
+        return { profile: profileResult as StaffProfile, sourceTable: 'profiles' as const, staffId: undefined };
       }
       
       // If not found, check if this is a staff table ID and get the linked user_id
       const { data: staffData, error: staffErr } = await supabase
         .from('staff')
-        .select('user_id, name, email, phone, role, status')
+        .select('user_id, name, email, phone, role, status, notes, location')
         .eq('id', id)
         .maybeSingle();
       
@@ -128,38 +128,46 @@ export default function StaffDetail() {
           .single();
         
         if (linkedProfile) {
-          return linkedProfile as StaffProfile;
+          return { profile: linkedProfile as StaffProfile, sourceTable: 'profiles' as const, staffId: id };
         }
       }
       
       // If we have staff data but no profile, create a minimal profile object
       if (staffData) {
         return {
-          id: id,
-          full_name: staffData.name,
-          email: staffData.email,
-          phone: staffData.phone,
-          avatar_url: null,
-          home_city: null,
-          home_state: null,
-          status: staffData.status,
-          seniority: null,
-          onboarding_status: 'incomplete',
-          travel_ready: null,
-          preferred_start_time: null,
-          preferred_end_time: null,
-          notes_internal: null,
-          default_role_id: null,
-          vehicle_registration: null,
-          dietary_requirements: null,
-          default_role: { name: staffData.role },
-        } as StaffProfile;
+          profile: {
+            id: id,
+            full_name: staffData.name,
+            email: staffData.email,
+            phone: staffData.phone,
+            avatar_url: null,
+            home_city: null,
+            home_state: null,
+            status: staffData.status,
+            seniority: null,
+            onboarding_status: 'incomplete',
+            travel_ready: null,
+            preferred_start_time: null,
+            preferred_end_time: null,
+            notes_internal: staffData.notes,
+            default_role_id: null,
+            vehicle_registration: null,
+            dietary_requirements: null,
+            default_role: { name: staffData.role },
+          } as StaffProfile,
+          sourceTable: 'staff' as const,
+          staffId: id,
+        };
       }
       
       return null;
     },
     enabled: !!id,
   });
+  
+  const profile = profileData?.profile;
+  const sourceTable = profileData?.sourceTable || 'profiles';
+  const staffId = profileData?.staffId;
   
   // Determine the actual user ID for related queries (might be different from route ID)
   const actualUserId = profile?.id || id;
@@ -269,7 +277,7 @@ export default function StaffDetail() {
         {/* Edit Button for Admins */}
         {isAdmin && (
           <div className="absolute top-4 right-4 z-10">
-            <StaffProfileEditor profile={profile} />
+            <StaffProfileEditor profile={profile} sourceTable={sourceTable} staffId={staffId} />
           </div>
         )}
         <CardContent className="pt-6">
