@@ -565,6 +565,44 @@ export type Database = {
         }
         Relationships: []
       }
+      company_status_audit: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          company_id: string
+          id: string
+          new_status: string | null
+          old_status: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          company_id: string
+          id?: string
+          new_status?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          company_id?: string
+          id?: string
+          new_status?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_status_audit_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_document_types: {
         Row: {
           applies_to_roles: string[] | null
