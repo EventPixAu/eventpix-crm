@@ -70,21 +70,59 @@ export interface StaffDirectoryEntry {
   default_role_id: string | null;
   status: string | null;
   is_active: boolean | null;
+  source?: 'profile' | 'staff';
 }
 
-// Fetch staff directory (limited fields for general use - team lists, dropdowns)
-// Uses staff_directory view which exposes only non-sensitive fields
+// Fetch staff directory - combines profiles (with accounts) and staff (legacy/unlinked)
+// This ensures all team members appear in assignment dropdowns
 export function useStaffDirectory() {
   return useQuery({
     queryKey: ['staff-directory'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch from staff_directory view (profiles with accounts)
+      const { data: profileData, error: profileError } = await supabase
         .from('staff_directory')
         .select('*')
         .order('full_name');
       
-      if (error) throw error;
-      return data as StaffDirectoryEntry[];
+      if (profileError) throw profileError;
+      
+      // Fetch from staff table (legacy/unlinked team members)
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('id, name, status, user_id')
+        .or('status.is.null,status.eq.active')
+        .order('name');
+      
+      if (staffError) throw staffError;
+      
+      // Get linked staff IDs to avoid duplicates
+      const linkedStaffIds = new Set(
+        staffData?.filter(s => s.user_id).map(s => s.user_id) || []
+      );
+      
+      // Combine profiles and unlinked staff
+      const profiles: StaffDirectoryEntry[] = (profileData || []).map(p => ({
+        ...p,
+        source: 'profile' as const,
+      }));
+      
+      // Add unlinked staff members (those without user_id or not already in profiles)
+      const unlinkedStaff: StaffDirectoryEntry[] = (staffData || [])
+        .filter(s => !profiles.some(p => p.id === s.id))
+        .map(s => ({
+          id: s.id,
+          full_name: s.name,
+          avatar_url: null,
+          default_role_id: null,
+          status: s.status,
+          is_active: s.status === 'active' || s.status === null,
+          source: 'staff' as const,
+        }));
+      
+      return [...profiles, ...unlinkedStaff].sort((a, b) => 
+        (a.full_name || '').localeCompare(b.full_name || '')
+      );
     },
   });
 }
