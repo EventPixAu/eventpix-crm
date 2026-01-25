@@ -4,17 +4,15 @@
  * Manages contacts for a lead/enquiry with support for:
  * - Up to 4 contacts per lead
  * - Primary, secondary, on-site, and billing roles
- * - Direct contact entry (no client required)
- * - Selection from existing client contacts (when client is assigned)
+ * - CRM Contact search and selection via ContactSelector
+ * - Inline contact creation
  */
 import { useState } from 'react';
-import { Plus, Trash2, Phone, Mail, User, Building2, UserPlus, Link } from 'lucide-react';
+import { Plus, Trash2, Phone, Mail, User, Building2, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -38,8 +36,8 @@ import {
   LEAD_CONTACT_ROLES,
   type LeadContactRole,
 } from '@/hooks/useLeadContacts';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 const MAX_CONTACTS = 4;
 
@@ -56,76 +54,44 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
   const deleteContact = useDeleteLeadContact();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogTab, setDialogTab] = useState<'new' | 'existing'>('new');
-  const [selectedContactId, setSelectedContactId] = useState('');
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [selectedRole, setSelectedRole] = useState<LeadContactRole>('primary');
-  
-  // Direct contact form fields
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-
-  // Fetch client contacts if client is set
-  const { data: clientContacts = [] } = useQuery({
-    queryKey: ['client-contacts-for-lead', clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const { data, error } = await supabase
-        .from('client_contacts')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('is_primary', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!clientId,
-  });
 
   // Filter out contacts already added to the lead
-  const availableContacts = clientContacts.filter(
-    cc => !contacts.some(c => c.contact_id === cc.id)
-  );
+  const existingContactIds = contacts
+    .filter(c => c.contact_id)
+    .map(c => c.contact_id);
 
   const handleOpenCreate = () => {
-    setSelectedContactId('');
+    setSelectedContactId(null);
+    setSelectedContact(null);
     setSelectedRole('primary');
-    setContactName('');
-    setContactEmail('');
-    setContactPhone('');
-    setDialogTab(clientId && availableContacts.length > 0 ? 'existing' : 'new');
     setIsDialogOpen(true);
   };
 
+  const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
+    setSelectedContactId(contactId);
+    setSelectedContact(contact || null);
+  };
+
   const handleSave = async () => {
-    if (dialogTab === 'existing') {
-      if (!selectedContactId) return;
-      await createContact.mutateAsync({
-        lead_id: leadId,
-        contact_id: selectedContactId,
-        role: selectedRole,
-      });
-    } else {
-      if (!contactName.trim()) return;
-      await createContact.mutateAsync({
-        lead_id: leadId,
-        contact_name: contactName.trim(),
-        contact_email: contactEmail.trim() || undefined,
-        contact_phone: contactPhone.trim() || undefined,
-        role: selectedRole,
-      });
-    }
+    if (!selectedContactId) return;
+    
+    await createContact.mutateAsync({
+      lead_id: leadId,
+      contact_id: selectedContactId,
+      role: selectedRole,
+    });
     
     setIsDialogOpen(false);
     resetForm();
   };
 
   const resetForm = () => {
-    setSelectedContactId('');
+    setSelectedContactId(null);
+    setSelectedContact(null);
     setSelectedRole('primary');
-    setContactName('');
-    setContactEmail('');
-    setContactPhone('');
   };
 
   const handleDelete = async (contactId: string) => {
@@ -141,7 +107,6 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
   };
 
   const canAddMore = contacts.length < MAX_CONTACTS;
-  const hasExistingContacts = clientId && availableContacts.length > 0;
 
   // Helper to get display info for a contact
   const getContactDisplay = (contact: typeof contacts[0]) => {
@@ -185,7 +150,7 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
           </p>
           {!disabled && (
             <Button variant="ghost" size="sm" onClick={handleOpenCreate}>
-              <UserPlus className="h-4 w-4 mr-1" />
+              <Plus className="h-4 w-4 mr-1" />
               Add First Contact
             </Button>
           )}
@@ -230,7 +195,7 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
                         {display.isLinked && (
                           <Badge variant="secondary" className="text-xs gap-1">
                             <Link className="h-3 w-3" />
-                            Linked
+                            CRM
                           </Badge>
                         )}
                         {display.jobTitle && (
@@ -293,109 +258,23 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
           <DialogHeader>
             <DialogTitle>Add Contact to Lead</DialogTitle>
             <DialogDescription>
-              {hasExistingContacts 
-                ? 'Create a new contact or select from the client\'s contacts'
-                : 'Enter contact details for this lead'}
+              Search for an existing CRM contact or create a new one
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {hasExistingContacts ? (
-              <Tabs value={dialogTab} onValueChange={(v) => setDialogTab(v as 'new' | 'existing')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="new" className="gap-1">
-                    <UserPlus className="h-4 w-4" />
-                    New Contact
-                  </TabsTrigger>
-                  <TabsTrigger value="existing" className="gap-1">
-                    <Link className="h-4 w-4" />
-                    From Client
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="new" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Name *</Label>
-                    <Input
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      placeholder="Contact name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <Input
-                      type="tel"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
-                      placeholder="+61 400 000 000"
-                    />
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="existing" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Select Contact</Label>
-                    <Select
-                      value={selectedContactId}
-                      onValueChange={setSelectedContactId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a contact..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableContacts.map((cc) => (
-                          <SelectItem key={cc.id} value={cc.id}>
-                            {cc.contact_name}
-                            {cc.role_title && ` - ${cc.role_title}`}
-                            {cc.is_primary && ' (Primary)'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Name *</Label>
-                  <Input
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    placeholder="Contact name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="email@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input
-                    type="tel"
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="+61 400 000 000"
-                  />
-                </div>
-              </div>
-            )}
+            {/* Contact Selector */}
+            <div className="space-y-2">
+              <Label>Select Contact</Label>
+              <ContactSelector
+                value={selectedContactId}
+                onChange={handleContactChange}
+                companyId={clientId}
+                placeholder="Search contacts..."
+              />
+            </div>
 
+            {/* Role Selection */}
             <div className="space-y-2">
               <Label>Role on this Lead</Label>
               <Select
@@ -422,10 +301,7 @@ export function LeadContactsEditor({ leadId, clientId, disabled }: LeadContactsE
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={
-                createContact.isPending || 
-                (dialogTab === 'existing' ? !selectedContactId : !contactName.trim())
-              }
+              disabled={!selectedContactId || createContact.isPending}
             >
               Add Contact
             </Button>

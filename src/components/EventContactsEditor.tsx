@@ -1,5 +1,14 @@
+/**
+ * EVENT CONTACTS EDITOR
+ * 
+ * Manages contacts for an event with support for:
+ * - Multiple contacts with different types (primary, onsite, billing, etc.)
+ * - CRM Contact search and selection via ContactSelector
+ * - Inline contact creation
+ * - Backwards compatibility with legacy text fields
+ */
 import { useState } from 'react';
-import { Plus, Trash2, Phone, Mail, User, Building2 } from 'lucide-react';
+import { Plus, Trash2, Phone, Mail, User, Building2, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,8 +35,8 @@ import {
   CONTACT_TYPES,
   type ContactType,
 } from '@/hooks/useEventContacts';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface EventContactsEditorProps {
   eventId: string;
@@ -36,87 +45,55 @@ interface EventContactsEditorProps {
   maxContacts?: number;
 }
 
-interface ContactFormData {
-  client_contact_id: string;
-  contact_type: ContactType;
-  contact_name: string;
-  contact_phone: string;
-  contact_email: string;
-  notes: string;
-}
-
-const emptyForm: ContactFormData = {
-  client_contact_id: '',
-  contact_type: 'primary',
-  contact_name: '',
-  contact_phone: '',
-  contact_email: '',
-  notes: '',
-};
-
 export function EventContactsEditor({ eventId, clientId, disabled, maxContacts = 5 }: EventContactsEditorProps) {
   const { data: contacts = [] } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState<ContactFormData>(emptyForm);
-  const [useClientContact, setUseClientContact] = useState(true);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
+  const [contactType, setContactType] = useState<ContactType>('primary');
+  const [notes, setNotes] = useState('');
   
   const canAddMore = contacts.length < maxContacts;
 
-  // Fetch client contacts if client is set
-  const { data: clientContacts = [] } = useQuery({
-    queryKey: ['client-contacts-for-event', clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const { data, error } = await supabase
-        .from('client_contacts')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('is_primary', { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!clientId,
-  });
-
   const handleOpenCreate = () => {
-    setFormData(emptyForm);
-    setUseClientContact(clientContacts.length > 0);
+    setSelectedContactId(null);
+    setSelectedContact(null);
+    setContactType('primary');
+    setNotes('');
     setIsDialogOpen(true);
   };
 
-  const handleSelectClientContact = (contactId: string) => {
-    const contact = clientContacts.find(c => c.id === contactId);
-    if (contact) {
-      setFormData({
-        ...formData,
-        client_contact_id: contactId,
-        contact_name: contact.contact_name,
-        contact_phone: contact.phone_mobile || contact.phone_office || contact.phone || '',
-        contact_email: contact.email || '',
-      });
-    }
+  const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
+    setSelectedContactId(contactId);
+    setSelectedContact(contact || null);
   };
 
   const handleSave = async () => {
-    if (!formData.contact_name && !formData.client_contact_id) return;
+    if (!selectedContactId || !selectedContact) return;
 
     await createContact.mutateAsync({
       event_id: eventId,
-      client_contact_id: formData.client_contact_id || null,
-      contact_type: formData.contact_type,
-      contact_name: formData.contact_name || null,
-      contact_phone: formData.contact_phone || null,
-      contact_email: formData.contact_email || null,
-      notes: formData.notes || null,
+      client_contact_id: selectedContactId,
+      contact_type: contactType,
+      contact_name: selectedContact.contact_name,
+      contact_phone: selectedContact.phone_mobile || selectedContact.phone_office || selectedContact.phone || null,
+      contact_email: selectedContact.email || null,
+      notes: notes || null,
       sort_order: contacts.length,
     });
     
     setIsDialogOpen(false);
-    setFormData(emptyForm);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setSelectedContactId(null);
+    setSelectedContact(null);
+    setContactType('primary');
+    setNotes('');
   };
 
   const handleDelete = async (contactId: string) => {
@@ -149,9 +126,17 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
       </div>
 
       {contacts.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-          No contacts assigned. Add contacts for on-site coordination.
-        </p>
+        <div className="py-4 text-center border border-dashed rounded-lg space-y-2">
+          <p className="text-sm text-muted-foreground">
+            No contacts assigned. Add contacts for on-site coordination.
+          </p>
+          {!disabled && (
+            <Button variant="ghost" size="sm" onClick={handleOpenCreate}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add First Contact
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           {contacts.map((contact) => {
@@ -159,6 +144,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
             const email = contact.contact_email || contact.client_contact?.email;
             const name = contact.contact_name || contact.client_contact?.contact_name;
             const role = contact.client_contact?.role_title || contact.client_contact?.role;
+            const isLinked = !!contact.client_contact_id;
             
             return (
               <Card key={contact.id}>
@@ -174,6 +160,12 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
                         <Badge variant="outline" className="text-xs">
                           {getContactTypeLabel(contact.contact_type)}
                         </Badge>
+                        {isLinked && (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <Link className="h-3 w-3" />
+                            CRM
+                          </Badge>
+                        )}
                         {role && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Building2 className="h-3 w-3" />
@@ -233,11 +225,12 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Contact Type */}
             <div className="space-y-2">
               <Label>Contact Type</Label>
               <Select
-                value={formData.contact_type}
-                onValueChange={(v) => setFormData({ ...formData, contact_type: v as ContactType })}
+                value={contactType}
+                onValueChange={(v) => setContactType(v as ContactType)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -252,75 +245,26 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
               </Select>
             </div>
 
-            {clientContacts.length > 0 && (
-              <div className="space-y-2">
-                <Label>Select from Client Contacts</Label>
-                <Select
-                  value={formData.client_contact_id}
-                  onValueChange={handleSelectClientContact}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose existing contact..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientContacts.map((cc) => (
-                      <SelectItem key={cc.id} value={cc.id}>
-                        {cc.contact_name}
-                        {cc.role_title && ` - ${cc.role_title}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Contact Selector */}
+            <div className="space-y-2">
+              <Label>Select Contact</Label>
+              <ContactSelector
+                value={selectedContactId}
+                onChange={handleContactChange}
+                companyId={clientId}
+                placeholder="Search CRM contacts..."
+              />
+            </div>
 
-            <div className="border-t pt-4 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {clientContacts.length > 0 ? 'Or enter contact details manually:' : 'Enter contact details:'}
-              </p>
-              
-              <div className="space-y-2">
-                <Label htmlFor="contact_name">Name</Label>
-                <Input
-                  id="contact_name"
-                  value={formData.contact_name}
-                  onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                  placeholder="Contact name"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact_phone">Phone</Label>
-                  <Input
-                    id="contact_phone"
-                    type="tel"
-                    value={formData.contact_phone}
-                    onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                    placeholder="Phone number"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact_email">Email</Label>
-                  <Input
-                    id="contact_email"
-                    type="email"
-                    value={formData.contact_email}
-                    onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                    placeholder="Email"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Input
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="e.g., Best to call after 5pm"
-                />
-              </div>
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g., Best to call after 5pm"
+              />
             </div>
           </div>
 
@@ -330,7 +274,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={(!formData.contact_name && !formData.client_contact_id) || createContact.isPending}
+              disabled={!selectedContactId || createContact.isPending}
             >
               Add Contact
             </Button>
