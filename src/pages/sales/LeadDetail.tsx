@@ -152,11 +152,37 @@ export default function LeadDetail() {
 
   const completedCount = workflowItems.filter(i => i.is_done).length;
 
+  // Derive company status for display
+  const getCompanyStatusDisplay = () => {
+    if (!client) return null;
+    const status = client.manual_status || client.status || 'prospect';
+    const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+      prospect: { label: 'Prospect', variant: 'secondary' },
+      current_client: { label: 'Current Client', variant: 'default' },
+      previous_client: { label: 'Previous Client', variant: 'outline' },
+      active: { label: 'Active Client', variant: 'default' },
+      inactive: { label: 'Inactive', variant: 'outline' },
+      lost: { label: 'Lost', variant: 'destructive' },
+    };
+    return statusMap[status] || { label: status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()), variant: 'secondary' as const };
+  };
+
+  const companyStatus = getCompanyStatusDisplay();
+
   return (
     <AppLayout>
       {/* Page Header */}
       <PageHeader
-        title={lead.lead_name}
+        title={
+          <div className="flex items-center gap-3">
+            <span>{lead.lead_name}</span>
+            {client && companyStatus && (
+              <Badge variant={companyStatus.variant} className="text-xs">
+                {companyStatus.label}
+              </Badge>
+            )}
+          </div>
+        }
         description={`Dashboard > Leads > ${lead.lead_name}`}
         actions={
           <div className="flex gap-2">
@@ -177,7 +203,7 @@ export default function LeadDetail() {
               leadStatus={lead.status}
             />
             <Button 
-              className="bg-emerald-500 hover:bg-emerald-600"
+              className="bg-primary hover:bg-primary/90"
               onClick={() => setIsConvertDialogOpen(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -356,7 +382,7 @@ export default function LeadDetail() {
             <Button 
               variant="default" 
               size="icon" 
-              className="h-8 w-8 rounded-full bg-emerald-500 hover:bg-emerald-600"
+              className="h-8 w-8 rounded-full"
             >
               <Plus className="h-4 w-4" />
             </Button>
