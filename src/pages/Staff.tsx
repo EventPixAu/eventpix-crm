@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, FileCheck, Mail, Phone, Plus, Search, UserCircle, Users } from 'lucide-react';
+import { ChevronRight, FileCheck, Mail, MapPin, Phone, Plus, Search, UserCircle, Users, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -22,6 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStaff, useCreateStaff, Staff as StaffType } from '@/hooks/useStaff';
@@ -38,22 +51,38 @@ export default function Staff() {
   
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
     phone: '',
+    location: '',
     role: 'photographer' as const,
     status: 'active' as const,
   });
 
+  // Get unique locations for filter dropdown
+  const uniqueLocations = useMemo(() => {
+    const locations = staff
+      .map(m => m.location)
+      .filter((loc): loc is string => !!loc && loc.trim() !== '');
+    return [...new Set(locations)].sort();
+  }, [staff]);
+
   const filteredStaff = staff.filter((member) => {
+    const searchLower = search.toLowerCase();
     const matchesSearch =
-      member.name.toLowerCase().includes(search.toLowerCase()) ||
-      member.email.toLowerCase().includes(search.toLowerCase());
+      member.name.toLowerCase().includes(searchLower) ||
+      member.email.toLowerCase().includes(searchLower) ||
+      (member.phone && member.phone.toLowerCase().includes(searchLower)) ||
+      (member.location && member.location.toLowerCase().includes(searchLower));
     const matchesRole = roleFilter === 'all' || member.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesLocation = !locationFilter || 
+      (member.location && member.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    return matchesSearch && matchesRole && matchesLocation;
   });
 
   const selectedStaff = staff.filter(s => selectedIds.has(s.id));
@@ -91,6 +120,7 @@ export default function Staff() {
       user_id: null,
       notes: null,
       phone: newStaff.phone || null,
+      location: newStaff.location || null,
     });
     
     setDialogOpen(false);
@@ -98,6 +128,7 @@ export default function Staff() {
       name: '',
       email: '',
       phone: '',
+      location: '',
       role: 'photographer',
       status: 'active',
     });
@@ -148,6 +179,15 @@ export default function Staff() {
                       value={newStaff.phone}
                       onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
                       placeholder="Phone number"
+                      className="bg-secondary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Location</Label>
+                    <Input
+                      value={newStaff.location}
+                      onChange={(e) => setNewStaff({ ...newStaff, location: e.target.value })}
+                      placeholder="e.g. Sydney, Melbourne"
                       className="bg-secondary"
                     />
                   </div>
@@ -235,6 +275,72 @@ export default function Staff() {
                 <SelectItem value="assistant">Assistant</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Location Filter */}
+            <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={locationPopoverOpen}
+                  className="w-full sm:w-48 justify-between bg-card border-border"
+                >
+                  {locationFilter ? (
+                    <span className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {locationFilter}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      All Locations
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search location..." />
+                  <CommandList>
+                    <CommandEmpty>No location found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value=""
+                        onSelect={() => {
+                          setLocationFilter('');
+                          setLocationPopoverOpen(false);
+                        }}
+                      >
+                        All Locations
+                      </CommandItem>
+                      {uniqueLocations.map((loc) => (
+                        <CommandItem
+                          key={loc}
+                          value={loc}
+                          onSelect={() => {
+                            setLocationFilter(loc);
+                            setLocationPopoverOpen(false);
+                          }}
+                        >
+                          {loc}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            
+            {locationFilter && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocationFilter('')}
+                className="h-10 w-10"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
 
           {/* Team Grid */}
@@ -298,6 +404,12 @@ export default function Staff() {
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Phone className="h-3.5 w-3.5 flex-shrink-0" />
                                 {member.phone}
+                              </div>
+                            )}
+                            {member.location && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                                {member.location}
                               </div>
                             )}
                           </div>

@@ -43,6 +43,9 @@ interface StaffProfile {
   vehicle_registration?: string | null;
   dietary_requirements?: string | null;
   assigned_equipment_notes?: string | null;
+  location?: string | null;
+  location_state?: string | null;
+  location_postcode?: string | null;
 }
 
 interface StaffProfileEditorProps {
@@ -70,6 +73,9 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
     vehicle_registration: profile.vehicle_registration || '',
     dietary_requirements: profile.dietary_requirements || '',
     assigned_equipment_notes: profile.assigned_equipment_notes || '',
+    location: profile.location || '',
+    location_state: profile.location_state || '',
+    location_postcode: profile.location_postcode || '',
   });
 
   const queryClient = useQueryClient();
@@ -94,6 +100,9 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
           vehicle_registration: data.vehicle_registration || null,
           dietary_requirements: data.dietary_requirements || null,
           assigned_equipment_notes: data.assigned_equipment_notes || null,
+          location: data.location || null,
+          location_state: data.location_state || null,
+          location_postcode: data.location_postcode || null,
         })
         .eq('id', profile.id);
 
@@ -133,6 +142,9 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
         vehicle_registration: profile.vehicle_registration || '',
         dietary_requirements: profile.dietary_requirements || '',
         assigned_equipment_notes: profile.assigned_equipment_notes || '',
+        location: profile.location || '',
+        location_state: profile.location_state || '',
+        location_postcode: profile.location_postcode || '',
       });
     }
     setOpen(isOpen);
@@ -179,6 +191,17 @@ export function StaffProfileEditor({ profile }: StaffProfileEditorProps) {
           </div>
 
           {/* Location */}
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              placeholder="e.g. Sydney, Melbourne"
+            />
+          </div>
+
+          {/* Home City & State (Legacy) */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="home_city">City</Label>

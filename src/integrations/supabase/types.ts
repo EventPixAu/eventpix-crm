@@ -3238,6 +3238,9 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_training: boolean | null
+          location: string | null
+          location_postcode: string | null
+          location_state: string | null
           notes_internal: string | null
           notification_preferences: Json | null
           onboarding_notes: string | null
@@ -3265,6 +3268,9 @@ export type Database = {
           id: string
           is_active?: boolean | null
           is_training?: boolean | null
+          location?: string | null
+          location_postcode?: string | null
+          location_state?: string | null
           notes_internal?: string | null
           notification_preferences?: Json | null
           onboarding_notes?: string | null
@@ -3292,6 +3298,9 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_training?: boolean | null
+          location?: string | null
+          location_postcode?: string | null
+          location_state?: string | null
           notes_internal?: string | null
           notification_preferences?: Json | null
           onboarding_notes?: string | null
@@ -3853,6 +3862,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          location: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -3865,6 +3875,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          location?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -3877,6 +3888,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          location?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
