@@ -68,14 +68,16 @@ export function useAllWorksheetItems(worksheetIds: string[]) {
   });
 }
 
+// Fetch active workflow templates (Operations domain only - for event worksheets)
 export function useWorkflowTemplates() {
   return useQuery({
-    queryKey: ['workflow-templates'],
+    queryKey: ['workflow-templates', 'operations'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workflow_templates')
         .select('*')
         .eq('is_active', true)
+        .eq('workflow_domain', 'operations')
         .order('phase');
       
       if (error) throw error;

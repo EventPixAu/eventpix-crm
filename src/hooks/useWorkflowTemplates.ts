@@ -6,22 +6,29 @@ import { toast } from 'sonner';
 type WorkflowTemplate = Database['public']['Tables']['workflow_templates']['Row'];
 type WorkflowTemplateItem = Database['public']['Tables']['workflow_template_items']['Row'];
 
+export type WorkflowDomain = 'sales' | 'operations';
+
 export interface WorkflowTemplateWithItems extends WorkflowTemplate {
   items: WorkflowTemplateItem[];
   item_count: number;
 }
 
-// Fetch all templates (including inactive for admin)
-export function useAllWorkflowTemplates() {
+// Fetch all templates (including inactive for admin), optionally filtered by domain
+export function useAllWorkflowTemplates(domain?: WorkflowDomain) {
   return useQuery({
-    queryKey: ['workflow-templates-all'],
+    queryKey: ['workflow-templates-all', domain],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('workflow_templates')
         .select('*')
         .order('phase')
         .order('template_name');
       
+      if (domain) {
+        query = query.eq('workflow_domain', domain);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as WorkflowTemplate[];
     },
@@ -92,10 +99,17 @@ export function useCreateTemplate() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: { template_name: string; phase: 'pre_event' | 'day_of' | 'post_event' }) => {
+    mutationFn: async (data: { 
+      template_name: string; 
+      phase: 'pre_event' | 'day_of' | 'post_event';
+      workflow_domain?: WorkflowDomain;
+    }) => {
       const { data: template, error } = await supabase
         .from('workflow_templates')
-        .insert(data)
+        .insert({
+          ...data,
+          workflow_domain: data.workflow_domain || 'operations',
+        })
         .select()
         .single();
       
@@ -126,6 +140,7 @@ export function useUpdateTemplate() {
       template_name?: string; 
       phase?: 'pre_event' | 'day_of' | 'post_event';
       is_active?: boolean;
+      workflow_domain?: WorkflowDomain;
     }) => {
       const { error } = await supabase
         .from('workflow_templates')
