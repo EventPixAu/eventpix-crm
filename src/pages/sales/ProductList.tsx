@@ -121,9 +121,11 @@ export default function ProductList() {
     resetForm();
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      await deleteProduct.mutateAsync(id);
+  const handleArchive = async (product: Product) => {
+    const newStatus = !product.is_active;
+    const action = newStatus ? 'restore' : 'archive';
+    if (confirm(`Are you sure you want to ${action} this product?`)) {
+      await updateProduct.mutateAsync({ id: product.id, is_active: newStatus });
     }
   };
 
@@ -224,15 +226,21 @@ export default function ProductList() {
                             variant="ghost" 
                             size="icon"
                             onClick={() => handleOpenEdit(product)}
+                            title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => handleDelete(product.id)}
+                            onClick={() => handleArchive(product)}
+                            title={product.is_active ? 'Archive' : 'Restore'}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {product.is_active ? (
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 text-primary" />
+                            )}
                           </Button>
                         </div>
                       </TableCell>

@@ -4,6 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 
 // Types
+export type WorkflowPhase = 'lead' | 'production' | 'post_production';
+
 export interface WorkflowTemplateItem {
   title: string;
   sort_order: number;
@@ -12,11 +14,19 @@ export interface WorkflowTemplateItem {
 export interface SalesWorkflowTemplate {
   id: string;
   name: string;
+  description: string | null;
+  phase: WorkflowPhase;
   items: WorkflowTemplateItem[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
+
+export const PHASE_CONFIG: Record<WorkflowPhase, { label: string; description: string; color: string }> = {
+  lead: { label: 'Lead', description: 'Sales qualification and proposal', color: 'bg-blue-500' },
+  production: { label: 'Production', description: 'Pre-event and day-of execution', color: 'bg-amber-500' },
+  post_production: { label: 'Post-Production', description: 'Editing and delivery', color: 'bg-emerald-500' },
+};
 
 export interface LeadWorkflowItem {
   id: string;
@@ -34,18 +44,27 @@ export interface LeadWorkflowItem {
 }
 
 // Templates Hooks
-export function useSalesWorkflowTemplates() {
+export function useSalesWorkflowTemplates(phase?: WorkflowPhase) {
   return useQuery({
-    queryKey: ['sales-workflow-templates'],
+    queryKey: ['sales-workflow-templates', phase],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sales_workflow_templates')
         .select('*')
+        .order('phase')
         .order('name');
+      
+      if (phase) {
+        query = query.eq('phase', phase);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return (data || []).map(t => ({
         ...t,
+        phase: (t as any).phase || 'lead',
+        description: (t as any).description || null,
         items: (t.items as unknown as WorkflowTemplateItem[]) || []
       })) as SalesWorkflowTemplate[];
     },
@@ -76,10 +95,20 @@ export function useCreateWorkflowTemplate() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: { name: string; items: WorkflowTemplateItem[] }) => {
+    mutationFn: async (data: { 
+      name: string; 
+      description?: string;
+      phase?: WorkflowPhase;
+      items: WorkflowTemplateItem[] 
+    }) => {
       const { data: result, error } = await supabase
         .from('sales_workflow_templates')
-        .insert({ name: data.name, items: JSON.parse(JSON.stringify(data.items)) })
+        .insert({ 
+          name: data.name, 
+          description: data.description || null,
+          phase: data.phase || 'lead',
+          items: JSON.parse(JSON.stringify(data.items)) 
+        })
         .select()
         .single();
       
@@ -104,6 +133,8 @@ export function useUpdateWorkflowTemplate() {
     mutationFn: async ({ id, ...updates }: Partial<SalesWorkflowTemplate> & { id: string }) => {
       const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.phase !== undefined) updateData.phase = updates.phase;
       if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
       if (updates.items !== undefined) updateData.items = JSON.parse(JSON.stringify(updates.items));
       
