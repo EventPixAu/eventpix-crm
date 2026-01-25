@@ -87,19 +87,48 @@ export function AllocatePhotographerKitDialog({
   // Only fetch equipment for staff who have profiles (user_id)
   const profileLinkedUserIds = allAssignedStaff.filter(s => s.hasProfile).map(s => s.oderId);
 
-  // Fetch photographer equipment for profile-linked staff
+  // Fetch photographer equipment from profiles AND linked staff records
   const { data: photographerData = [], isLoading } = useQuery({
     queryKey: ['photographer-equipment', profileLinkedUserIds],
     queryFn: async () => {
       if (profileLinkedUserIds.length === 0) return [];
 
-      const { data, error } = await supabase
+      // Get profiles with their equipment
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, photography_equipment_json')
         .in('id', profileLinkedUserIds);
 
-      if (error) throw error;
-      return data || [];
+      if (profilesError) throw profilesError;
+
+      // Also get staff records that are linked to these profiles (may have equipment there)
+      const { data: staffRecords, error: staffError } = await supabase
+        .from('staff')
+        .select('user_id, photography_equipment_json')
+        .in('user_id', profileLinkedUserIds);
+
+      if (staffError) throw staffError;
+
+      // Merge: prefer staff equipment if profile equipment is empty
+      const staffEquipmentMap = (staffRecords || []).reduce((acc, s) => {
+        if (s.user_id) acc[s.user_id] = s.photography_equipment_json;
+        return acc;
+      }, {} as Record<string, any>);
+
+      return (profiles || []).map(p => {
+        const profileEquip = p.photography_equipment_json as Record<string, any> || {};
+        const staffEquip = staffEquipmentMap[p.id] || {};
+        
+        // Check if profile equipment is essentially empty
+        const profileHasEquip = Object.values(profileEquip).some(
+          arr => Array.isArray(arr) && arr.length > 0
+        );
+        
+        return {
+          ...p,
+          photography_equipment_json: profileHasEquip ? profileEquip : staffEquip,
+        };
+      });
     },
     enabled: open && profileLinkedUserIds.length > 0,
   });
