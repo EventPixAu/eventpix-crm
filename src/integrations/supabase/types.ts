@@ -3919,6 +3919,13 @@ export type Database = {
       }
       staff: {
         Row: {
+          abn: string | null
+          address_city: string | null
+          address_line1: string | null
+          address_line2: string | null
+          address_postcode: string | null
+          address_state: string | null
+          business_name: string | null
           created_at: string | null
           email: string
           id: string
@@ -3926,12 +3933,24 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          photography_equipment: string | null
+          pli_details: string | null
+          pli_expiry: string | null
           role: Database["public"]["Enums"]["staff_role"]
           status: Database["public"]["Enums"]["staff_status"]
           updated_at: string | null
           user_id: string | null
+          vehicle_make_model: string | null
+          vehicle_registration: string | null
         }
         Insert: {
+          abn?: string | null
+          address_city?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          address_postcode?: string | null
+          address_state?: string | null
+          business_name?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -3939,12 +3958,24 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          photography_equipment?: string | null
+          pli_details?: string | null
+          pli_expiry?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
           status?: Database["public"]["Enums"]["staff_status"]
           updated_at?: string | null
           user_id?: string | null
+          vehicle_make_model?: string | null
+          vehicle_registration?: string | null
         }
         Update: {
+          abn?: string | null
+          address_city?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
+          address_postcode?: string | null
+          address_state?: string | null
+          business_name?: string | null
           created_at?: string | null
           email?: string
           id?: string
@@ -3952,10 +3983,15 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          photography_equipment?: string | null
+          pli_details?: string | null
+          pli_expiry?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
           status?: Database["public"]["Enums"]["staff_status"]
           updated_at?: string | null
           user_id?: string | null
+          vehicle_make_model?: string | null
+          vehicle_registration?: string | null
         }
         Relationships: []
       }
