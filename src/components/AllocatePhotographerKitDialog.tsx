@@ -135,19 +135,24 @@ export function AllocatePhotographerKitDialog({
 
   // Transform data into photographers with kits
   const photographers: AssignedPhotographer[] = useMemo(() => {
+    console.log('[AllocateKit] allAssignedStaff:', allAssignedStaff);
+    console.log('[AllocateKit] photographerData:', photographerData);
+    
     return allAssignedStaff.map(staff => {
       // Only profile-linked staff can have equipment in the profiles table
       const profile = staff.hasProfile 
         ? photographerData.find(p => p.id === staff.oderId) 
         : null;
       const equipment = (profile?.photography_equipment_json as Record<string, any>) || {};
+      
+      console.log('[AllocateKit] Processing staff:', staff.name, 'hasProfile:', staff.hasProfile, 'equipment:', equipment);
 
-      // Map old keys to new keys for compatibility
+      // Map old keys to new keys for compatibility - filter out items with empty names
       const normalizedEquipment: Record<string, any[]> = {
-        camera: equipment.camera || equipment.cameras || [],
-        lighting: equipment.lighting || equipment.lights || [],
-        backdrop: equipment.backdrop || equipment.backdrops || [],
-        other: equipment.other || equipment.lenses || [],
+        camera: (equipment.camera || equipment.cameras || []).filter((i: any) => i?.name?.trim()),
+        lighting: (equipment.lighting || equipment.lights || []).filter((i: any) => i?.name?.trim()),
+        backdrop: (equipment.backdrop || equipment.backdrops || []).filter((i: any) => i?.name?.trim()),
+        other: (equipment.other || equipment.lenses || []).filter((i: any) => i?.name?.trim()),
       };
 
       const kits: PhotographerKit[] = KIT_CONFIG.map(config => ({
@@ -156,6 +161,8 @@ export function AllocatePhotographerKitDialog({
         icon: config.icon,
         items: normalizedEquipment[config.key] || [],
       })).filter(kit => kit.items.length > 0);
+      
+      console.log('[AllocateKit] Staff:', staff.name, 'kits:', kits.length);
 
       return {
         userId: staff.oderId,
