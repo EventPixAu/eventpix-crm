@@ -257,16 +257,16 @@ export function EquipmentInventory() {
                   <SelectContent>
                     <SelectItem value="eventpix">EventPix (Company)</SelectItem>
                     {staffDirectory
-                      .filter(s => s.full_name?.trim())
+                      .filter(s => s.source === 'profile' && s.full_name?.trim())
                       .map((staff) => (
                         <SelectItem key={staff.id} value={staff.id}>
-                          {staff.full_name}{staff.source === 'staff' ? ' (no account)' : ''}
+                          {staff.full_name}
                         </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Select a photographer if this is their personal gear
+                  Only photographers with accounts can own equipment. Invite staff to create accounts first.
                 </p>
               </div>
               <div className="space-y-2">
