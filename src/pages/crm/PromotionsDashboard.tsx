@@ -6,7 +6,7 @@
  * - Previous clients (last event > 12 months ago)
  * - Win-back opportunities
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format, parseISO, subMonths, isAfter, isBefore } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -18,7 +18,12 @@ import {
   UserPlus,
   Users,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Bug,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  X
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,8 +33,26 @@ import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
+// Type for debug contact info
+interface DebugContactInfo {
+  id: string;
+  contact_name: string;
+  email: string | null;
+  created_at: string;
+  client_id: string | null;
+  association_count: number;
+  is_truly_orphan: boolean;
+}
 
 export default function PromotionsDashboard() {
+  const [debugOpen, setDebugOpen] = useState(false);
+
   // Fetch clients with their event history
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ['clients-with-events'],
@@ -48,43 +71,62 @@ export default function PromotionsDashboard() {
     }
   });
 
-  // Fetch truly unassigned contacts:
-  // - No direct client_id assignment, AND
-  // - No links in contact_company_associations table
-  // This matches the Contact detail page's source of truth
-  const { data: orphanContacts = [] } = useQuery({
-    queryKey: ['orphan-contacts'],
+  // Fetch truly unassigned contacts with debug info
+  const { data: orphanContactsData } = useQuery({
+    queryKey: ['orphan-contacts-debug'],
     queryFn: async () => {
-      // First, get contacts with null client_id
+      // Get ALL contacts with null client_id to show debug info
       const { data: contactsWithoutClient, error: contactsError } = await supabase
         .from('client_contacts')
-        .select('id, contact_name, email, created_at')
+        .select('id, contact_name, email, created_at, client_id')
         .is('client_id', null)
         .order('created_at', { ascending: false });
       
       if (contactsError) throw contactsError;
-      if (!contactsWithoutClient || contactsWithoutClient.length === 0) return [];
+      if (!contactsWithoutClient || contactsWithoutClient.length === 0) {
+        return { orphanContacts: [], debugContacts: [] };
+      }
       
-      // Then filter out those that have associations in contact_company_associations
       const contactIds = contactsWithoutClient.map(c => c.id);
       
+      // Get association counts for each contact
       const { data: associations, error: assocError } = await supabase
         .from('contact_company_associations')
-        .select('contact_id')
-        .in('contact_id', contactIds)
-        .eq('is_active', true);
+        .select('contact_id, is_active')
+        .in('contact_id', contactIds);
       
       if (assocError) throw assocError;
       
-      // Get set of contact IDs that have active associations
-      const assignedContactIds = new Set(associations?.map(a => a.contact_id) || []);
+      // Count active associations per contact
+      const associationCounts = new Map<string, number>();
+      associations?.forEach(a => {
+        if (a.is_active) {
+          associationCounts.set(a.contact_id, (associationCounts.get(a.contact_id) || 0) + 1);
+        }
+      });
       
-      // Return only contacts with NO associations (truly unassigned)
-      const trulyOrphan = contactsWithoutClient.filter(c => !assignedContactIds.has(c.id));
+      // Build debug info for all contacts
+      const debugContacts: DebugContactInfo[] = contactsWithoutClient.map(c => ({
+        id: c.id,
+        contact_name: c.contact_name,
+        email: c.email,
+        created_at: c.created_at,
+        client_id: c.client_id,
+        association_count: associationCounts.get(c.id) || 0,
+        is_truly_orphan: !associationCounts.has(c.id) || associationCounts.get(c.id) === 0
+      }));
       
-      return trulyOrphan.slice(0, 10);
+      // Filter to truly orphan contacts for display
+      const orphanContacts = debugContacts
+        .filter(c => c.is_truly_orphan)
+        .slice(0, 10);
+      
+      return { orphanContacts, debugContacts };
     }
   });
+
+  const orphanContacts = orphanContactsData?.orphanContacts || [];
+  const debugContacts = orphanContactsData?.debugContacts || [];
 
   // Calculate client segments
   const segments = useMemo(() => {
@@ -258,7 +300,7 @@ export default function PromotionsDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-amber-500" />
+                <TrendingUp className="h-5 w-5 text-warning" />
                 Win-Back Opportunities
               </CardTitle>
             </CardHeader>
@@ -352,6 +394,140 @@ export default function PromotionsDashboard() {
               )}
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* Debug Panel - Assignment Verification */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="lg:col-span-2"
+        >
+          <Collapsible open={debugOpen} onOpenChange={setDebugOpen}>
+            <Card className="border-dashed border-muted-foreground/30">
+              <CardHeader className="pb-3">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                    <CardTitle className="flex items-center gap-2 text-muted-foreground">
+                      <Bug className="h-5 w-5" />
+                      Debug: Assignment Verification
+                      <Badge variant="outline" className="ml-2 font-normal">
+                        {debugContacts.length} contacts analyzed
+                      </Badge>
+                    </CardTitle>
+                    {debugOpen ? (
+                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted/50 rounded-lg">
+                    <p className="font-medium mb-1">Assignment Logic:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li><strong>client_id</strong>: Direct FK to clients table (legacy assignment)</li>
+                      <li><strong>association_count</strong>: Active links in contact_company_associations</li>
+                      <li><strong>Truly Orphan</strong>: client_id IS NULL AND association_count = 0</li>
+                    </ul>
+                  </div>
+
+                  {debugContacts.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-4">No contacts with null client_id</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2 px-3 font-medium">Contact</th>
+                            <th className="text-left py-2 px-3 font-medium">client_id</th>
+                            <th className="text-center py-2 px-3 font-medium">Associations</th>
+                            <th className="text-center py-2 px-3 font-medium">Truly Orphan?</th>
+                            <th className="text-left py-2 px-3 font-medium">Created</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {debugContacts.slice(0, 20).map((contact) => (
+                            <tr key={contact.id} className="hover:bg-muted/30">
+                              <td className="py-2 px-3">
+                                <Link 
+                                  to={`/crm/contacts/${contact.id}`}
+                                  className="text-primary hover:underline"
+                                >
+                                  {contact.contact_name}
+                                </Link>
+                                {contact.email && (
+                                  <span className="text-xs text-muted-foreground block">
+                                    {contact.email}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3">
+                                <Badge variant="outline" className="font-mono text-xs">
+                                  {contact.client_id || 'NULL'}
+                                </Badge>
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                <Badge 
+                                  variant={contact.association_count > 0 ? 'default' : 'secondary'}
+                                  className="min-w-[2rem]"
+                                >
+                                  {contact.association_count}
+                                </Badge>
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                {contact.is_truly_orphan ? (
+                                  <Check className="h-4 w-4 text-primary mx-auto" />
+                                ) : (
+                                  <X className="h-4 w-4 text-destructive mx-auto" />
+                                )}
+                              </td>
+                              <td className="py-2 px-3 text-muted-foreground text-xs">
+                                {format(parseISO(contact.created_at), 'MMM d, yyyy')}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {debugContacts.length > 20 && (
+                        <p className="text-xs text-muted-foreground text-center py-2">
+                          Showing 20 of {debugContacts.length} contacts
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs">
+                    <p className="font-medium mb-2">Summary:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div>
+                        <span className="text-muted-foreground">Total analyzed:</span>
+                        <span className="font-medium ml-1">{debugContacts.length}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Truly orphan:</span>
+                        <span className="font-medium ml-1 text-primary">
+                          {debugContacts.filter(c => c.is_truly_orphan).length}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Has associations:</span>
+                        <span className="font-medium ml-1 text-destructive">
+                          {debugContacts.filter(c => !c.is_truly_orphan).length}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Displayed:</span>
+                        <span className="font-medium ml-1">{orphanContacts.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         </motion.div>
       </div>
     </AppLayout>
