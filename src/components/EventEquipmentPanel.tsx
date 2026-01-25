@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Trash2,
   User,
-  Users
+  Users,
+  Camera
 } from 'lucide-react';
 import { 
   useEventAllocations, 
@@ -31,6 +32,7 @@ import { useAvailableEquipment } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useAuth } from '@/lib/auth';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
+import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
 
 interface EventEquipmentPanelProps {
   eventId: string;
@@ -49,6 +51,7 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [photographerKitDialogOpen, setPhotographerKitDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedKitId, setSelectedKitId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -152,6 +155,10 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
         </CardTitle>
         {isAdmin && (
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setPhotographerKitDialogOpen(true)}>
+              <Camera className="h-4 w-4 mr-1" />
+              Photographer Kits
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setBulkDialogOpen(true)}>
               <Users className="h-4 w-4 mr-1" />
               Bulk Assign
@@ -239,6 +246,13 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
           onOpenChange={setBulkDialogOpen}
           eventId={eventId}
           preselectedStaffIds={assignedStaff.map(s => s.userId)}
+        />
+        
+        <AllocatePhotographerKitDialog
+          open={photographerKitDialogOpen}
+          onOpenChange={setPhotographerKitDialogOpen}
+          eventId={eventId}
+          assignedStaff={assignedStaff}
         />
       </CardHeader>
       <CardContent>
