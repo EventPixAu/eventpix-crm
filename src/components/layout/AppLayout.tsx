@@ -264,7 +264,7 @@ function CrewSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
 
 const SIDEBAR_COLLAPSED_KEY = 'eventpix-sidebar-collapsed';
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
