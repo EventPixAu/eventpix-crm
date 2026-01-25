@@ -4976,7 +4976,14 @@ export type Database = {
         | "sports"
         | "other"
       handoff_status: "draft" | "ready_for_ops" | "converted" | "cancelled"
-      lead_status: "new" | "qualified" | "quoted" | "accepted" | "lost" | "won"
+      lead_status:
+        | "new"
+        | "qualified"
+        | "quoted"
+        | "contract_sent"
+        | "accepted"
+        | "lost"
+        | "won"
       quote_status: "draft" | "sent" | "accepted" | "rejected"
       quote_status_enum: "draft" | "sent" | "accepted" | "declined" | "expired"
       schedule_anchor_type:
@@ -5189,7 +5196,15 @@ export const Constants = {
         "other",
       ],
       handoff_status: ["draft", "ready_for_ops", "converted", "cancelled"],
-      lead_status: ["new", "qualified", "quoted", "accepted", "lost", "won"],
+      lead_status: [
+        "new",
+        "qualified",
+        "quoted",
+        "contract_sent",
+        "accepted",
+        "lost",
+        "won",
+      ],
       quote_status: ["draft", "sent", "accepted", "rejected"],
       quote_status_enum: ["draft", "sent", "accepted", "declined", "expired"],
       schedule_anchor_type: [
