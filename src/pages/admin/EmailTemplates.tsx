@@ -393,7 +393,7 @@ Thank you for your enquiry about photography services for {{lead_or_job_name}}.
 Please find your quote attached. The total is {{quote.total_amount}}.
 
 Kind regards,
-The Eventpix Team`}
+The Eventpixii Team`}
               minHeight="250px"
             />
           </div>

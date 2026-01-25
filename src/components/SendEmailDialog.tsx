@@ -263,7 +263,7 @@ export function SendEmailDialog({
                 id="subject"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Your Quote from Eventpix"
+                placeholder="Your Quote from Eventpixii"
               />
             </div>
 

@@ -1,5 +1,5 @@
 /**
- * EVENTPIX PLATFORM - Main Layout
+ * EVENTPIXII PLATFORM - Main Layout
  * 
  * FOUR SECTION NAVIGATION + CROSS-FUNCTIONAL:
  * - CRM: Promotions, Companies, Contacts, Emails
@@ -262,7 +262,7 @@ function CrewSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   );
 }
 
-const SIDEBAR_COLLAPSED_KEY = 'eventpix-sidebar-collapsed';
+const SIDEBAR_COLLAPSED_KEY = 'eventpixii-sidebar-collapsed';
 
 export function AppLayout({ children }: AppLayoutProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false);

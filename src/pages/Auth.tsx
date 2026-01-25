@@ -142,7 +142,7 @@ export default function Auth() {
           >
             <img 
               src={eventpixLogo} 
-              alt="Eventpix" 
+              alt="Eventpixii" 
               className="h-12 mx-auto"
             />
           </motion.div>
