@@ -123,8 +123,9 @@ export function CreateAndLinkContactDialog({
         custom_title: formData.custom_title || null,
       });
 
-      // 3. Invalidate queries
+      // 3. Invalidate queries - both company associations and CRM contacts list
       queryClient.invalidateQueries({ queryKey: ['all-contacts-for-linking'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
 
       toast.success(`Contact "${formData.contact_name}" created and linked`);
       

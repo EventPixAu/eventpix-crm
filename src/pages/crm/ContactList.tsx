@@ -46,8 +46,9 @@ interface Contact {
   job_title: { id: string; name: string } | null;
   role_title: string | null;
   is_primary: boolean | null;
-  client_id: string;
-  company_name: string;
+  client_id: string | null;
+  company_name: string | null;
+  company_id: string | null;
 }
 
 export default function ContactList() {
@@ -56,6 +57,7 @@ export default function ContactList() {
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['crm-contacts', search],
     queryFn: async () => {
+      // Fetch all contacts from master table
       let query = supabase
         .from('client_contacts')
         .select(`
@@ -71,9 +73,9 @@ export default function ContactList() {
           role_title,
           is_primary,
           client_id,
-          clients!inner(business_name, is_training)
+          is_freelance,
+          clients(id, business_name, is_training)
         `)
-        .eq('clients.is_training', false)
         .order('contact_name');
 
       if (search) {
@@ -85,21 +87,75 @@ export default function ContactList() {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((contact: any) => ({
-        id: contact.id,
-        contact_name: contact.contact_name,
-        first_name: contact.first_name,
-        last_name: contact.last_name,
-        email: contact.email,
-        phone: contact.phone,
-        phone_mobile: contact.phone_mobile,
-        job_title_id: contact.job_title_id,
-        job_title: contact.job_title,
-        role_title: contact.role_title,
-        is_primary: contact.is_primary,
-        client_id: contact.client_id,
-        company_name: contact.clients?.business_name || 'Unknown',
-      })) as Contact[];
+      // Filter out training company contacts
+      const filteredData = (data || []).filter((contact: any) => {
+        // If contact has a client_id, check if the client is a training company
+        if (contact.client_id && contact.clients?.is_training) {
+          return false;
+        }
+        return true;
+      });
+
+      // For freelance contacts, we need to fetch their primary company from associations
+      const freelanceContactIds = filteredData
+        .filter((c: any) => !c.client_id || c.is_freelance)
+        .map((c: any) => c.id);
+
+      let associationsMap: Record<string, { company_id: string; company_name: string; is_primary: boolean }> = {};
+
+      if (freelanceContactIds.length > 0) {
+        const { data: associations } = await supabase
+          .from('contact_company_associations')
+          .select(`
+            contact_id,
+            company_id,
+            is_primary,
+            company:clients(id, business_name)
+          `)
+          .in('contact_id', freelanceContactIds)
+          .eq('is_active', true)
+          .order('is_primary', { ascending: false });
+
+        // Build a map of contact_id -> primary company (or first company)
+        (associations || []).forEach((assoc: any) => {
+          if (!associationsMap[assoc.contact_id] || assoc.is_primary) {
+            associationsMap[assoc.contact_id] = {
+              company_id: assoc.company_id,
+              company_name: assoc.company?.business_name || 'Unknown',
+              is_primary: assoc.is_primary,
+            };
+          }
+        });
+      }
+
+      return filteredData.map((contact: any) => {
+        // Determine company info from direct link or associations
+        let companyName = contact.clients?.business_name || null;
+        let companyId = contact.client_id;
+
+        // For freelance contacts, use association data
+        if (!companyId && associationsMap[contact.id]) {
+          companyName = associationsMap[contact.id].company_name;
+          companyId = associationsMap[contact.id].company_id;
+        }
+
+        return {
+          id: contact.id,
+          contact_name: contact.contact_name,
+          first_name: contact.first_name,
+          last_name: contact.last_name,
+          email: contact.email,
+          phone: contact.phone,
+          phone_mobile: contact.phone_mobile,
+          job_title_id: contact.job_title_id,
+          job_title: contact.job_title,
+          role_title: contact.role_title,
+          is_primary: contact.is_primary,
+          client_id: contact.client_id,
+          company_name: companyName,
+          company_id: companyId,
+        };
+      }) as Contact[];
     },
   });
 
@@ -186,10 +242,17 @@ export default function ContactList() {
                       <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
                     <div className="space-y-1.5 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Building2 className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">{contact.company_name}</span>
-                      </div>
+                      {contact.company_name ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{contact.company_name}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate italic">No company</span>
+                        </div>
+                      )}
                       {contact.job_title?.name && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Briefcase className="h-3.5 w-3.5 shrink-0" />
@@ -247,13 +310,20 @@ export default function ContactList() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Link
-                            to={`/crm/companies/${contact.client_id}`}
-                            className="flex items-center gap-2 text-sm hover:text-primary"
-                          >
-                            <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <span className="truncate">{contact.company_name}</span>
-                          </Link>
+                          {contact.company_id ? (
+                            <Link
+                              to={`/crm/companies/${contact.company_id}`}
+                              className="flex items-center gap-2 text-sm hover:text-primary"
+                            >
+                              <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="truncate">{contact.company_name}</span>
+                            </Link>
+                          ) : (
+                            <span className="flex items-center gap-2 text-sm text-muted-foreground italic">
+                              <Building2 className="h-4 w-4 shrink-0" />
+                              No company
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {contact.job_title?.name ? (
