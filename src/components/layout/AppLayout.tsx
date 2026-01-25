@@ -81,7 +81,8 @@ const salesItems: NavItem[] = [
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
   { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
   { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
-  { href: '/sales/workflow-templates', label: 'Sales Workflows', icon: ClipboardList },
+  { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
+  { href: '/sales/workflow-templates', label: 'Workflow Templates', icon: ClipboardList },
 ];
 
 // ===== OPERATIONS SECTION =====
@@ -170,6 +171,9 @@ function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
     { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
     { href: '/sales/products', label: 'Products', icon: ShoppingBag },
     { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
+    { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
+    { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
+    { href: '/sales/workflow-templates', label: 'Workflow Templates', icon: ClipboardList },
   ];
 
   return (
