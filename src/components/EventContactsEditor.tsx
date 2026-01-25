@@ -54,7 +54,7 @@ const emptyForm: ContactFormData = {
   notes: '',
 };
 
-export function EventContactsEditor({ eventId, clientId, disabled, maxContacts = 3 }: EventContactsEditorProps) {
+export function EventContactsEditor({ eventId, clientId, disabled, maxContacts = 5 }: EventContactsEditorProps) {
   const { data: contacts = [] } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
