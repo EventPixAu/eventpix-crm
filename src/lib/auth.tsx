@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,21 +24,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(false);
 
-  const fetchUserRole = async (userId: string) => {
+  const loading = useMemo(() => authLoading || roleLoading, [authLoading, roleLoading]);
+
+  const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_resolve, reject) => {
+        setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms);
+      }),
+    ]);
+  };
+
+  const resolveRoleFromRows = (rows: Array<{ role: string }> | null | undefined): AppRole | null => {
+    const roles = new Set((rows ?? []).map(r => r.role));
+    if (roles.has('admin')) return 'admin';
+    if (roles.has('operations')) return 'operations';
+    if (roles.has('sales')) return 'sales';
+    if (roles.has('crew')) return 'crew';
+    return null;
+  };
+
+  const fetchUserRole = async (userId: string): Promise<AppRole | null> => {
     try {
+      // NOTE: A user can technically have multiple roles; we pick the highest priority.
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
 
       if (error) {
         console.error('Error fetching role:', error);
         return null;
       }
-      return data?.role as AppRole | null;
+
+      return resolveRoleFromRows(data as Array<{ role: string }> | null);
     } catch (err) {
       console.error('Error in fetchUserRole:', err);
       return null;
@@ -47,64 +69,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    
-    // First, get the initial session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+
+    setAuthLoading(true);
+
+    // IMPORTANT: subscribe first, then fetch initial session (prevents missed events).
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: initialSession } }) => {
         if (!mounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const userRole = await fetchUserRole(session.user.id);
-          if (mounted) {
-            setRole(userRole);
-          }
-        }
-      } catch (error) {
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+      })
+      .catch((error) => {
         console.error('Error initializing auth:', error);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    // Then set up the listener for future changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          // Use setTimeout to avoid potential deadlock with Supabase internals
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserRole(session.user.id).then((userRole) => {
-                if (mounted) {
-                  setRole(userRole);
-                }
-              });
-            }
-          }, 0);
-        } else {
-          setRole(null);
-        }
-      }
-    );
+      })
+      .finally(() => {
+        if (mounted) setAuthLoading(false);
+      });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // No user => no role.
+    if (!user?.id) {
+      setRole(null);
+      setRoleLoading(false);
+      return;
+    }
+
+    setRoleLoading(true);
+
+    void (async () => {
+      try {
+        const nextRole = await withTimeout(fetchUserRole(user.id), 8000);
+        if (!cancelled) setRole(nextRole);
+      } catch (error) {
+        // If role fetch fails, we still need to stop loading to avoid infinite spinners.
+        console.error('Error resolving role:', error);
+        if (!cancelled) setRole(null);
+      } finally {
+        if (!cancelled) setRoleLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
