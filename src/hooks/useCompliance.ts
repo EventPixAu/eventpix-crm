@@ -268,7 +268,7 @@ export function useUpdateOnboardingStatus() {
       status: OnboardingStatus;
       notes?: string;
     }) => {
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('profiles')
         .update({
           onboarding_status: status,
@@ -276,14 +276,25 @@ export function useUpdateOnboardingStatus() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId)
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      
+      // Handle case where no rows were updated
+      if (!data || data.length === 0) {
+        throw new Error('No record updated. Check the selected item.');
+      }
+      
+      // Handle case where multiple rows were updated (shouldn't happen with id filter)
+      if (data.length > 1) {
+        throw new Error('Update matched multiple records. Fix filter.');
+      }
+      
+      return data[0];
     },
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-profile', userId] });
       queryClient.invalidateQueries({ queryKey: ['staff-eligibility', userId] });
       toast.success('Onboarding status updated');
     },
