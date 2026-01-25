@@ -3,7 +3,7 @@
  * 
  * Modal dialog for creating new leads with:
  * - Company selection (existing or new)
- * - Primary contact details
+ * - Primary contact via CRM ContactSelector
  * - Event type and lead source
  * - Multiple proposed dates/times
  * 
@@ -47,6 +47,8 @@ import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface CreateLeadDialogProps {
   trigger?: React.ReactNode;
@@ -82,10 +84,9 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   const [selectedClientId, setSelectedClientId] = useState<string>(defaultClientId || '');
   const [newCompanyName, setNewCompanyName] = useState('');
   
-  // Form state - Primary Contact
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
+  // Form state - Primary Contact (now uses CRM contact_id)
+  const [primaryContactId, setPrimaryContactId] = useState<string | null>(null);
+  const [primaryContact, setPrimaryContact] = useState<CrmContact | null>(null);
   
   // Form state - Lead Details
   const [eventName, setEventName] = useState('');
@@ -102,9 +103,8 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       setSelectedClientId(defaultClientId || '');
       setCompanyTab(defaultClientId ? 'existing' : 'existing');
       setNewCompanyName('');
-      setContactName('');
-      setContactEmail('');
-      setContactPhone('');
+      setPrimaryContactId(null);
+      setPrimaryContact(null);
       setEventName('');
       setEventTypeId('');
       setLeadSourceId('');
@@ -113,17 +113,11 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
     }
   }, [open, defaultClientId]);
   
-  // Auto-populate contact from selected client
-  useEffect(() => {
-    if (selectedClientId && companyTab === 'existing') {
-      const client = clients.find(c => c.id === selectedClientId);
-      if (client) {
-        setContactName(client.primary_contact_name || '');
-        setContactEmail(client.primary_contact_email || '');
-        setContactPhone(client.primary_contact_phone || '');
-      }
-    }
-  }, [selectedClientId, companyTab, clients]);
+  // Handle contact selection
+  const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
+    setPrimaryContactId(contactId);
+    setPrimaryContact(contact || null);
+  };
   
   // Generate lead name
   const generateLeadName = () => {
@@ -162,7 +156,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
     ? !!selectedClientId 
     : newCompanyName.trim().length > 0;
   
-  const isContactValid = contactName.trim().length > 0 && contactEmail.trim().length > 0;
+  const isContactValid = !!primaryContactId;
   
   const isFormValid = isCompanyValid && isContactValid && eventName.trim().length > 0;
   
@@ -176,7 +170,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   
   // Submit handler
   const handleSubmit = async () => {
-    if (!isFormValid) return;
+    if (!isFormValid || !primaryContactId) return;
     
     try {
       let clientId = selectedClientId;
@@ -185,11 +179,23 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       if (companyTab === 'new') {
         const newClient = await createClient.mutateAsync({
           business_name: newCompanyName.trim(),
-          primary_contact_name: contactName.trim(),
-          primary_contact_email: contactEmail.trim(),
-          primary_contact_phone: contactPhone.trim() || null,
+          primary_contact_name: primaryContact?.contact_name || null,
+          primary_contact_email: primaryContact?.email || null,
+          primary_contact_phone: primaryContact?.phone_mobile || primaryContact?.phone || null,
         });
         clientId = newClient.id;
+        
+        // Link the contact to the new company if not already linked
+        if (primaryContactId && !primaryContact?.client_id) {
+          await supabase
+            .from('contact_company_associations')
+            .insert({
+              contact_id: primaryContactId,
+              company_id: newClient.id,
+              is_primary: true,
+              is_active: true,
+            });
+        }
       }
       
       // Create the lead
@@ -205,14 +211,15 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         status: 'new',
       });
       
-      // Create enquiry contact from primary contact
+      // Create enquiry contact linking to the CRM contact
       const { error: contactError } = await supabase
         .from('enquiry_contacts')
         .insert({
           lead_id: newLead.id,
-          contact_name: contactName.trim(),
-          contact_email: contactEmail.trim(),
-          contact_phone: contactPhone.trim() || null,
+          contact_id: primaryContactId, // Store contact_id reference
+          contact_name: primaryContact?.contact_name || null,
+          contact_email: primaryContact?.email || null,
+          contact_phone: primaryContact?.phone_mobile || primaryContact?.phone || null,
           role: 'primary',
         });
       
@@ -319,33 +326,21 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
             </Tabs>
           </div>
           
-          {/* Primary Contact */}
+          {/* Primary Contact - Now uses ContactSelector */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm font-medium">Primary Contact *</Label>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="md:col-span-2">
-                <Input
-                  placeholder="Contact name *"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                />
-              </div>
-              <Input
-                type="email"
-                placeholder="Email *"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-              />
-              <Input
-                type="tel"
-                placeholder="Phone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-              />
-            </div>
+            <ContactSelector
+              value={primaryContactId}
+              onChange={handleContactChange}
+              companyId={companyTab === 'existing' ? selectedClientId : undefined}
+              placeholder="Search CRM contacts or create new..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Search existing contacts or create a new one. Contacts are stored in CRM for reuse.
+            </p>
           </div>
           
           {/* Event Details */}
