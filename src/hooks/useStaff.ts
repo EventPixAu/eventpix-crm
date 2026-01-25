@@ -116,6 +116,7 @@ export interface Staff {
   phone: string | null;
   status: 'active' | 'inactive';
   notes: string | null;
+  location: string | null;
   created_at: string;
   updated_at: string;
 }
