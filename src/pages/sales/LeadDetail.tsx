@@ -171,6 +171,9 @@ export default function LeadDetail() {
             <MarkAsClientButton
               clientId={client?.id}
               clientStatus={client?.manual_status || client?.status}
+              clientName={client?.business_name}
+              leadId={id}
+              leadName={lead.lead_name}
               leadStatus={lead.status}
             />
             <Button 

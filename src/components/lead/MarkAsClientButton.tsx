@@ -6,7 +6,8 @@
  * Requires Admin role to confirm the status change.
  */
 import { useState } from 'react';
-import { UserCheck } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { UserCheck, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -17,17 +18,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth';
+import { toast } from 'sonner';
 
 interface MarkAsClientButtonProps {
   clientId: string | null | undefined;
   clientStatus: string | null | undefined;
+  clientName?: string;
+  leadId?: string;
+  leadName?: string;
   leadStatus: string | null | undefined;
   onStatusChanged?: () => void;
 }
@@ -35,25 +39,23 @@ interface MarkAsClientButtonProps {
 export function MarkAsClientButton({
   clientId,
   clientStatus,
+  clientName,
+  leadId,
+  leadName,
   leadStatus,
   onStatusChanged,
 }: MarkAsClientButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [reason, setReason] = useState('Lead converted to client');
+  const [reason, setReason] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
-  const { toast } = useToast();
-  const { user, isAdmin, isSales } = useAuth();
   const queryClient = useQueryClient();
+  const { user, isAdmin, isSales } = useAuth();
 
-  // Only show if:
-  // 1. Lead has a linked company
-  // 2. Company status is 'prospect'
-  // 3. Lead is not already converted (accepted/won)
-  const isProspect = clientStatus === 'prospect';
+  // Only show for Prospect companies that haven't been converted yet
+  const isProspect = clientStatus?.toLowerCase() === 'prospect';
   const isLeadConverted = leadStatus === 'accepted' || leadStatus === 'won';
-  const canShow = clientId && isProspect && !isLeadConverted;
   
-  // Sales can trigger, but only Admin can confirm
+  const canShow = clientId && isProspect && !isLeadConverted;
   const canTrigger = isAdmin || isSales;
   const canConfirm = isAdmin;
 
@@ -62,22 +64,14 @@ export function MarkAsClientButton({
   }
 
   const handleConfirm = async () => {
-    if (!clientId || !user) return;
-
-    // Only Admin can confirm
     if (!canConfirm) {
-      toast({
-        title: 'Admin Required',
-        description: 'Only administrators can confirm this status change. Please contact an admin.',
-        variant: 'destructive',
-      });
+      toast.error('Only Admins can confirm this action');
       return;
     }
 
     setIsUpdating(true);
-
     try {
-      // 1. Insert audit log entry
+      // Insert audit log first
       const { error: auditError } = await supabase
         .from('company_status_audit')
         .insert({
@@ -85,109 +79,154 @@ export function MarkAsClientButton({
           action: 'status_override_set',
           old_status: 'prospect',
           new_status: 'current_client',
-          changed_by: user.id,
+          changed_by: user?.id,
           override_reason: reason.trim(),
         });
 
-      if (auditError) {
-        console.error('Audit log error:', auditError);
-      }
+      if (auditError) throw auditError;
 
-      // 2. Update company status
+      // Update company status with manual override
       const { error: updateError } = await supabase
         .from('clients')
         .update({
           manual_status: 'current_client',
           status_override_at: new Date().toISOString(),
-          status_override_by: user.id,
+          status_override_by: user?.id,
           status_override_reason: reason.trim(),
         })
         .eq('id', clientId);
 
-      if (updateError) {
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      // 3. Invalidate queries to refresh UI
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['lead'] });
       queryClient.invalidateQueries({ queryKey: ['client'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
 
-      toast({
-        title: 'Success',
-        description: 'Company status updated to Current Client.',
-      });
-
+      toast.success('Company status updated to Current Client');
       setIsDialogOpen(false);
+      setReason('');
       onStatusChanged?.();
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update company status. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Error updating company status:', error);
+      toast.error('Failed to update company status');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleRequestApproval = async () => {
+    if (!isSales || isAdmin) return;
+
+    setIsUpdating(true);
+    try {
+      // Get all admin users to notify
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (adminError) throw adminError;
+
+      if (!adminUsers || adminUsers.length === 0) {
+        toast.error('No admin users found to notify');
+        return;
+      }
+
+      // Create notifications for all admin users
+      const notificationPromises = adminUsers.map((admin) =>
+        supabase.rpc('create_notification', {
+          p_user_id: admin.user_id,
+          p_type: 'approval_request',
+          p_title: 'Client Status Approval Required',
+          p_message: `${user?.user_metadata?.full_name || 'A Sales user'} requests approval to mark "${clientName || 'a company'}" as Current Client. Reason: ${reason.trim()}`,
+          p_entity_type: 'lead',
+          p_entity_id: leadId || null,
+          p_severity: 'warning',
+          p_dedupe_hours: 24,
+        })
+      );
+
+      await Promise.all(notificationPromises);
+
+      toast.success('Approval request sent to Admins');
+      setIsDialogOpen(false);
+      setReason('');
+    } catch (error) {
+      console.error('Error sending approval request:', error);
+      toast.error('Failed to send approval request');
     } finally {
       setIsUpdating(false);
     }
   };
 
   return (
-    <>
-      <Button
-        variant="secondary"
-        className="bg-primary hover:bg-primary/90"
-        onClick={() => setIsDialogOpen(true)}
-      >
-        <UserCheck className="h-4 w-4 mr-2" />
-        Mark as Client
-      </Button>
+    <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="secondary" size="sm">
+          <UserCheck className="h-4 w-4 mr-1" />
+          Mark as Client
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {canConfirm ? 'Confirm Client Status Change' : 'Request Approval'}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {canConfirm ? (
+              <>
+                This will change the company status from <strong>Prospect</strong> to{' '}
+                <strong>Current Client</strong>. This action sets a manual override and will be
+                logged in the audit trail.
+              </>
+            ) : (
+              <>
+                You're requesting Admin approval to change the company status from{' '}
+                <strong>Prospect</strong> to <strong>Current Client</strong>. An Admin will
+                review and confirm this request.
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Convert Prospect to Client</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will update the linked company status from <strong>Prospect</strong> to{' '}
-              <strong>Current Client</strong>. This is a manual override that will be logged
-              for audit purposes.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <div className="py-4">
+          <Label htmlFor="reason">
+            {canConfirm ? 'Reason for status change' : 'Reason for request'}
+          </Label>
+          <Input
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g., Contract signed, first invoice paid..."
+            className="mt-2"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Minimum 10 characters required
+          </p>
+        </div>
 
-          <div className="py-4">
-            <Label htmlFor="reason">Reason for Status Change</Label>
-            <Textarea
-              id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter reason for converting to client..."
-              className="mt-2"
-              rows={3}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Minimum 10 characters required for audit trail.
-            </p>
-          </div>
-
-          {!canConfirm && (
-            <div className="bg-muted border border-border rounded-md p-3 text-sm text-muted-foreground">
-              <strong>Note:</strong> Only administrators can confirm this action.
-            </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          {canConfirm ? (
             <AlertDialogAction
               onClick={handleConfirm}
-              disabled={isUpdating || reason.trim().length < 10 || !canConfirm}
-              className="bg-primary hover:bg-primary/90"
+              disabled={reason.trim().length < 10 || isUpdating}
             >
               {isUpdating ? 'Updating...' : 'Confirm'}
             </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+          ) : (
+            <Button
+              onClick={handleRequestApproval}
+              disabled={reason.trim().length < 10 || isUpdating}
+            >
+              <Send className="h-4 w-4 mr-1" />
+              {isUpdating ? 'Sending...' : 'Request Approval'}
+            </Button>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
