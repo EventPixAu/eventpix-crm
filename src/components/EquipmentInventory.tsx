@@ -46,7 +46,7 @@ export function EquipmentInventory() {
   const resetForm = () => {
     setFormData({
       name: '',
-      category: categories[0]?.name.toLowerCase() || '',
+      category: categories[0]?.name?.toLowerCase() || '',
       brand: '',
       model: '',
       serial_number: '',
