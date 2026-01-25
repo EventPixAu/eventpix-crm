@@ -55,7 +55,7 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
 
       if (error) throw error;
 
-      toast({ title: `Updated status for ${selectedStaff.length} staff members` });
+      toast({ title: `Updated status for ${selectedStaff.length} team members` });
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       setStatusDialogOpen(false);
       onClearSelection();
@@ -76,7 +76,7 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
 
       if (error) throw error;
 
-      toast({ title: `Updated role for ${selectedStaff.length} staff members` });
+      toast({ title: `Updated role for ${selectedStaff.length} team members` });
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       setRoleDialogOpen(false);
       onClearSelection();
@@ -112,7 +112,7 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
     link.click();
     document.body.removeChild(link);
     
-    toast({ title: `Exported ${selectedStaff.length} staff members to CSV` });
+    toast({ title: `Exported ${selectedStaff.length} team members to CSV` });
   };
 
   if (selectedStaff.length === 0) return null;
@@ -162,7 +162,7 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
           <DialogHeader>
             <DialogTitle>Change Status</DialogTitle>
             <DialogDescription>
-              Update the status for {selectedStaff.length} selected staff member{selectedStaff.length > 1 ? 's' : ''}.
+              Update the status for {selectedStaff.length} selected team member{selectedStaff.length > 1 ? 's' : ''}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -196,7 +196,7 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
           <DialogHeader>
             <DialogTitle>Change Role</DialogTitle>
             <DialogDescription>
-              Update the role for {selectedStaff.length} selected staff member{selectedStaff.length > 1 ? 's' : ''}.
+              Update the role for {selectedStaff.length} selected team member{selectedStaff.length > 1 ? 's' : ''}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

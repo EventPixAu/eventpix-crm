@@ -112,11 +112,11 @@ export function StaffFeedbackForm({ eventId, userId, staffName }: StaffFeedbackF
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any notes about this staff member's performance..."
+              placeholder="Add any notes about this team member's performance..."
               rows={3}
             />
             <p className="text-xs text-muted-foreground">
-              This feedback is internal only and will not be visible to staff.
+              This feedback is internal only and will not be visible to the team member.
             </p>
           </div>
 

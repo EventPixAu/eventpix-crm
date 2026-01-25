@@ -143,7 +143,7 @@ export function StaffAvailabilityOverlay({ date, className }: StaffAvailabilityO
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <User className="h-4 w-4" />
-          Staff Availability
+          Team Availability
           {hasIssues && (
             <Badge variant="outline" className="ml-auto text-xs text-amber-600 border-amber-300">
               <AlertCircle className="h-3 w-3 mr-1" />
@@ -203,7 +203,7 @@ export function StaffAvailabilityOverlay({ date, className }: StaffAvailabilityO
             {staffWithAvailability.length === 0 && (
               <div className="text-center py-6 text-muted-foreground">
                 <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No staff members found</p>
+                <p className="text-sm">No team members found</p>
               </div>
             )}
           </div>

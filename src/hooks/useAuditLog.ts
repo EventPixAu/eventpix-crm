@@ -123,13 +123,13 @@ export function getActivityDescription(entry: AuditLogEntry): { action: string; 
     
     case 'assignment_created':
       return {
-        action: 'Staff assigned',
+        action: 'Team member assigned',
         detail: 'New team member added',
       };
       
     case 'assignment_removed':
       return {
-        action: 'Staff removed',
+        action: 'Team member removed',
         detail: 'Team member removed from event',
       };
       
