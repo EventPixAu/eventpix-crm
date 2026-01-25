@@ -5,14 +5,14 @@
  * - Company selection (existing or new)
  * - Primary contact details
  * - Event type and lead source
- * - Estimated event date
+ * - Multiple proposed dates/times
  * 
  * Access: Admin, Sales roles only
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Target, Plus, Building2, CalendarIcon, User } from 'lucide-react';
+import { Target, Plus, Building2, CalendarIcon, User, Clock, Trash2, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,15 +45,29 @@ import { useEventTypes } from '@/hooks/useLookups';
 import { useLeadSources } from '@/hooks/useLeadSources';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateLeadDialogProps {
   trigger?: React.ReactNode;
   defaultClientId?: string;
 }
 
+interface ProposedSession {
+  id: string;
+  date: Date | undefined;
+  startTime: string;
+  endTime: string;
+  label: string;
+  venueName: string;
+}
+
+const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogProps) {
   const navigate = useNavigate();
   const { isAdmin, isSales } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   
   // Data hooks
@@ -77,8 +91,10 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   const [eventName, setEventName] = useState('');
   const [eventTypeId, setEventTypeId] = useState('');
   const [leadSourceId, setLeadSourceId] = useState('');
-  const [estimatedDate, setEstimatedDate] = useState<Date | undefined>();
   const [notes, setNotes] = useState('');
+  
+  // Form state - Proposed Sessions (multiple dates/times)
+  const [proposedSessions, setProposedSessions] = useState<ProposedSession[]>([]);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -92,8 +108,8 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       setEventName('');
       setEventTypeId('');
       setLeadSourceId('');
-      setEstimatedDate(undefined);
       setNotes('');
+      setProposedSessions([]);
     }
   }, [open, defaultClientId]);
   
@@ -121,6 +137,26 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
     return eventName || companyName || '';
   };
   
+  // Session management
+  const addSession = () => {
+    setProposedSessions(prev => [...prev, {
+      id: generateTempId(),
+      date: undefined,
+      startTime: '',
+      endTime: '',
+      label: '',
+      venueName: '',
+    }]);
+  };
+  
+  const updateSession = (id: string, updates: Partial<ProposedSession>) => {
+    setProposedSessions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+  
+  const removeSession = (id: string) => {
+    setProposedSessions(prev => prev.filter(s => s.id !== id));
+  };
+  
   // Validation
   const isCompanyValid = companyTab === 'existing' 
     ? !!selectedClientId 
@@ -131,6 +167,12 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   const isFormValid = isCompanyValid && isContactValid && eventName.trim().length > 0;
   
   const isSubmitting = createClient.isPending || createLead.isPending;
+  
+  // Get estimated event date from first session or undefined
+  const getEstimatedDate = () => {
+    const firstSessionWithDate = proposedSessions.find(s => s.date);
+    return firstSessionWithDate?.date;
+  };
   
   // Submit handler
   const handleSubmit = async () => {
@@ -152,6 +194,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       
       // Create the lead
       const leadName = generateLeadName();
+      const estimatedDate = getEstimatedDate();
       const newLead = await createLead.mutateAsync({
         lead_name: leadName,
         client_id: clientId || null,
@@ -161,6 +204,34 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         notes: notes.trim() || null,
         status: 'new',
       });
+      
+      // Create event sessions for proposed dates
+      const sessionsToCreate = proposedSessions
+        .filter(s => s.date) // Only sessions with dates
+        .map((s, index) => ({
+          lead_id: newLead.id,
+          session_date: format(s.date!, 'yyyy-MM-dd'),
+          start_time: s.startTime || null,
+          end_time: s.endTime || null,
+          label: s.label.trim() || null,
+          venue_name: s.venueName.trim() || null,
+          sort_order: index,
+        }));
+      
+      if (sessionsToCreate.length > 0) {
+        const { error: sessionsError } = await supabase
+          .from('event_sessions')
+          .insert(sessionsToCreate);
+        
+        if (sessionsError) {
+          console.error('Failed to create sessions:', sessionsError);
+          toast({
+            title: 'Lead created',
+            description: 'But some proposed dates could not be saved.',
+            variant: 'destructive',
+          });
+        }
+      }
       
       // Close dialog and navigate to lead detail
       setOpen(false);
@@ -186,7 +257,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -299,29 +370,126 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                 </SelectContent>
               </Select>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !estimatedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {estimatedDate ? format(estimatedDate, 'PPP') : 'Estimated event date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={estimatedDate}
-                  onSelect={setEstimatedDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
+          </div>
+          
+          {/* Proposed Dates/Times */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Proposed Dates & Times</Label>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addSession}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Date
+              </Button>
+            </div>
+            
+            {proposedSessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-3 text-center border border-dashed rounded-lg">
+                No proposed dates added. Click "Add Date" to add event dates.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {proposedSessions.map((session, index) => (
+                  <div 
+                    key={session.id} 
+                    className="p-3 border rounded-lg bg-muted/30 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Session {index + 1}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSession(session.id)}
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Date Picker */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !session.date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {session.date ? format(session.date, 'PPP') : 'Select date *'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={session.date}
+                            onSelect={(date) => updateSession(session.id, { date })}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      
+                      {/* Session Label */}
+                      <Input
+                        placeholder="Session label (e.g., Day 1, Awards Night)"
+                        value={session.label}
+                        onChange={(e) => updateSession(session.id, { label: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {/* Start Time */}
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          type="time"
+                          placeholder="Start"
+                          value={session.startTime}
+                          onChange={(e) => updateSession(session.id, { startTime: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      
+                      {/* End Time */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-xs">to</span>
+                        <Input
+                          type="time"
+                          placeholder="End"
+                          value={session.endTime}
+                          onChange={(e) => updateSession(session.id, { endTime: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      
+                      {/* Venue */}
+                      <div className="col-span-2 flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <Input
+                          placeholder="Venue (optional)"
+                          value={session.venueName}
+                          onChange={(e) => updateSession(session.id, { venueName: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Notes */}
@@ -340,6 +508,11 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
             <div className="p-3 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground mb-1">Lead will be created as:</p>
               <p className="font-medium text-sm">{generateLeadName()}</p>
+              {proposedSessions.filter(s => s.date).length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {proposedSessions.filter(s => s.date).length} proposed date(s)
+                </p>
+              )}
             </div>
           )}
         </div>
