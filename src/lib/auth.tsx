@@ -46,33 +46,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Track if we've completed initial load
+    let initialLoadComplete = false;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setTimeout(() => {
+          // Only show loading on initial load, not on subsequent auth changes
+          if (!initialLoadComplete) {
+            const userRole = await fetchUserRole(session.user.id);
+            setRole(userRole);
+            setLoading(false);
+            initialLoadComplete = true;
+          } else {
+            // For subsequent changes, update role without resetting loading
             fetchUserRole(session.user.id).then(setRole);
-          }, 0);
+          }
         } else {
           setRole(null);
+          if (!initialLoadComplete) {
+            setLoading(false);
+            initialLoadComplete = true;
+          }
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check for existing session on mount
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (initialLoadComplete) return; // Already handled by onAuthStateChange
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserRole(session.user.id).then((r) => {
-          setRole(r);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
+        const userRole = await fetchUserRole(session.user.id);
+        setRole(userRole);
       }
+      setLoading(false);
+      initialLoadComplete = true;
     });
 
     return () => subscription.unsubscribe();
