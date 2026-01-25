@@ -698,30 +698,27 @@ export default function StaffDetail() {
         {isAdmin && (
           <TabsContent value="equipment" className="space-y-6">
             {/* Photography Equipment (Owned Gear) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Photography Equipment
-                </CardTitle>
-                <CardDescription>
-                  Personal photography gear owned by this team member
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {equipmentLoading ? (
+            {equipmentLoading ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Camera className="h-4 w-4" />
+                    Photography Equipment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-2">
                     {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
                   </div>
-                ) : (
-                  <PhotographyEquipmentEditor
-                    initialData={photographyEquipment || undefined}
-                    onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
-                    isSaving={updateEquipmentMutation.isPending}
-                  />
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              <PhotographyEquipmentEditor
+                initialData={photographyEquipment || undefined}
+                onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
+                isSaving={updateEquipmentMutation.isPending}
+              />
+            )}
 
             {/* Assigned Equipment (Company Allocations) */}
             <Card>
