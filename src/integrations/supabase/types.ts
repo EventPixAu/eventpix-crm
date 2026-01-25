@@ -4369,6 +4369,7 @@ export type Database = {
           id: string
           invited_by: string
           role: string
+          staff_id: string | null
           status: string
           updated_at: string
         }
@@ -4380,6 +4381,7 @@ export type Database = {
           id?: string
           invited_by: string
           role: string
+          staff_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -4391,6 +4393,7 @@ export type Database = {
           id?: string
           invited_by?: string
           role?: string
+          staff_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -4407,6 +4410,13 @@ export type Database = {
             columns: ["invited_by"]
             isOneToOne: false
             referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invitations_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
