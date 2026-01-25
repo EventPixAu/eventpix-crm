@@ -26,7 +26,8 @@ interface PhotographerKit {
 }
 
 interface AssignedPhotographer {
-  userId: string;
+  userId: string | null;
+  displayId: string;
   name: string;
   kits: PhotographerKit[];
 }
@@ -69,26 +70,28 @@ export function AllocatePhotographerKitDialog({
     return assignments.map(a => {
       if (a.user_id && a.profile) {
         return {
-          oderId: a.user_id,
+          ownerId: a.user_id,
+          profileUserId: a.user_id,
           name: a.profile.full_name || a.profile.email,
           hasProfile: true,
           roleName: a.staff_role?.name || 'Staff',
         };
       } else if (a.staff_id && a.staff) {
         return {
-          oderId: a.staff_id,
+          ownerId: a.staff_id,
+          profileUserId: null,
           name: a.staff.name,
           hasProfile: false,
           roleName: a.staff_role?.name || 'Staff',
         };
       }
       return null;
-    }).filter((s): s is { oderId: string; name: string; hasProfile: boolean; roleName: string } => s !== null);
+    }).filter((s): s is { ownerId: string; profileUserId: string | null; name: string; hasProfile: boolean; roleName: string } => s !== null);
   }, [assignments]);
 
   // Collect all staff IDs to check which ones have linked profiles
-  const allStaffIds = allAssignedStaff.filter(s => !s.hasProfile).map(s => s.oderId);
-  const directUserIds = allAssignedStaff.filter(s => s.hasProfile).map(s => s.oderId);
+  const allStaffIds = allAssignedStaff.filter(s => !s.hasProfile).map(s => s.ownerId);
+  const directUserIds = allAssignedStaff.filter(s => s.hasProfile).map(s => s.ownerId);
 
   // Query to get user_ids for staff records that might be linked
   const { data: staffUserLinks } = useQuery({
@@ -168,16 +171,16 @@ export function AllocatePhotographerKitDialog({
     
     return allAssignedStaff.map(staff => {
       // For staff-based assignments, check if staff record has a linked user_id
-      let userIdToLookup = staff.oderId;
+      let userIdToLookup = staff.profileUserId;
       if (!staff.hasProfile) {
-        const linkedStaff = (staffUserLinks || []).find(s => s.id === staff.oderId);
+        const linkedStaff = (staffUserLinks || []).find(s => s.id === staff.ownerId);
         if (linkedStaff?.user_id) {
           userIdToLookup = linkedStaff.user_id;
         }
       }
 
       const profile = staff.hasProfile 
-        ? photographerData.find(p => p.id === staff.oderId) 
+        ? photographerData.find(p => p.id === staff.ownerId) 
         : photographerData.find(p => p.id === userIdToLookup);
       const equipment = (profile?.photography_equipment_json as Record<string, any>) || {};
       
@@ -201,7 +204,8 @@ export function AllocatePhotographerKitDialog({
       console.log('[AllocateKit] Staff:', staff.name, 'kits:', kits.length);
 
       return {
-        userId: staff.oderId,
+        userId: userIdToLookup, // Use resolved profile user_id for FK constraint
+        displayId: staff.ownerId, // Keep original ID for UI keys
         name: staff.name,
         kits,
       };
@@ -230,15 +234,26 @@ export function AllocatePhotographerKitDialog({
 
     try {
       const kitsToAllocate = Array.from(selectedKits).map(key => {
-        const [userId, category] = key.split(':');
-        const photographer = photographers.find(p => p.userId === userId);
+        const [displayId, category] = key.split(':');
+        const photographer = photographers.find(p => p.displayId === displayId);
         const kit = photographer?.kits.find(k => k.category === category);
+        
+        if (!photographer?.userId) {
+          console.warn('[AllocateKit] Skipping kit - no profile user_id for:', photographer?.name);
+          return null;
+        }
+        
         return { 
-          userId, 
+          userId: photographer.userId, // Use resolved profile user_id
           category, 
           items: kit?.items || [] 
         };
-      });
+      }).filter((kit): kit is { userId: string; category: string; items: any[] } => kit !== null);
+
+      if (kitsToAllocate.length === 0) {
+        toast.error('Unable to allocate - selected photographers must have linked accounts');
+        return;
+      }
 
       await allocateKits.mutateAsync({
         eventId,
@@ -295,7 +310,7 @@ export function AllocatePhotographerKitDialog({
           ) : (
             <div className="space-y-6">
               {photographersWithKits.map(photographer => (
-                <div key={photographer.userId} className="space-y-3">
+                <div key={photographer.displayId} className="space-y-3">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <Label className="font-medium">{photographer.name}</Label>
@@ -303,7 +318,7 @@ export function AllocatePhotographerKitDialog({
                   
                   <div className="grid gap-2 pl-6">
                     {photographer.kits.map(kit => {
-                      const key = `${photographer.userId}:${kit.category}`;
+                      const key = `${photographer.displayId}:${kit.category}`;
                       const isSelected = selectedKits.has(key);
                       const Icon = kit.icon;
 
@@ -315,11 +330,11 @@ export function AllocatePhotographerKitDialog({
                               ? 'bg-primary/10 border-primary' 
                               : 'bg-muted/30 border-border hover:bg-muted/50'
                           }`}
-                          onClick={() => toggleKit(photographer.userId, kit.category)}
+                          onClick={() => toggleKit(photographer.displayId, kit.category)}
                         >
                           <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => toggleKit(photographer.userId, kit.category)}
+                            onCheckedChange={() => toggleKit(photographer.displayId, kit.category)}
                           />
                           <Icon className="h-4 w-4 text-muted-foreground" />
                           <div className="flex-1">
@@ -345,7 +360,7 @@ export function AllocatePhotographerKitDialog({
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {photographersWithoutKits.map(p => (
-                      <Badge key={p.userId} variant="outline" className="text-muted-foreground">
+                      <Badge key={p.displayId} variant="outline" className="text-muted-foreground">
                         {p.name}
                       </Badge>
                     ))}
