@@ -75,8 +75,11 @@ export function ContactCompanyAssociationsPanel({
 
   // Fetch available companies (excluding already associated)
   const associatedCompanyIds = associations.map(a => a.company_id);
+  // Create a stable string for query key to prevent unnecessary refetches
+  const excludeIdsKey = [...associatedCompanyIds, primaryCompanyId].filter(Boolean).sort().join(',');
+  
   const { data: availableCompanies = [] } = useQuery({
-    queryKey: ['available-companies', primaryCompanyId, associatedCompanyIds],
+    queryKey: ['available-companies', contactId, excludeIdsKey],
     queryFn: async () => {
       const excludeIds = [...associatedCompanyIds];
       if (primaryCompanyId) excludeIds.push(primaryCompanyId);
@@ -95,6 +98,7 @@ export function ContactCompanyAssociationsPanel({
       if (error) throw error;
       return data;
     },
+    enabled: dialogOpen, // Only fetch when dialog is open
   });
 
   const handleAdd = async () => {
@@ -191,94 +195,96 @@ export function ContactCompanyAssociationsPanel({
     : 'No additional company associations. Add this contact as a contractor or consultant for other companies.';
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            {panelTitle}
-          </CardTitle>
-          <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Link Company</span>
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : associations.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {emptyMessage}
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {associations.map((assoc) => (
-              <div 
-                key={assoc.id} 
-                className="flex items-start justify-between gap-2 p-3 rounded-lg border border-border bg-muted/30"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Link 
-                      to={`/crm/companies/${assoc.company_id}`}
-                      className="font-medium text-sm hover:text-primary truncate"
-                    >
-                      {assoc.company?.business_name || 'Unknown Company'}
-                    </Link>
-                    {assoc.is_primary && (
-                      <Badge variant="default" className="text-xs shrink-0">
-                        <Star className="h-3 w-3 mr-1" />
-                        Primary
+    <>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              {panelTitle}
+            </CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Link Company
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : associations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {emptyMessage}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {associations.map((assoc) => (
+                <div 
+                  key={assoc.id} 
+                  className="flex items-start justify-between gap-2 p-3 rounded-lg border border-border bg-muted/30"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Link 
+                        to={`/crm/companies/${assoc.company_id}`}
+                        className="font-medium text-sm hover:text-primary truncate"
+                      >
+                        {assoc.company?.business_name || 'Unknown Company'}
+                      </Link>
+                      {assoc.is_primary && (
+                        <Badge variant="default" className="text-xs shrink-0">
+                          <Star className="h-3 w-3 mr-1" />
+                          Primary
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {RELATIONSHIP_TYPES.find(t => t.value === assoc.relationship_type)?.label || assoc.relationship_type}
                       </Badge>
+                      {(assoc.job_title?.name || assoc.custom_title) && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Briefcase className="h-3 w-3" />
+                          {assoc.job_title?.name || assoc.custom_title}
+                        </span>
+                      )}
+                      {!assoc.is_active && (
+                        <Badge variant="outline" className="text-xs">Inactive</Badge>
+                      )}
+                    </div>
+                    {assoc.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{assoc.notes}</p>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <Badge variant="secondary" className="text-xs">
-                      {RELATIONSHIP_TYPES.find(t => t.value === assoc.relationship_type)?.label || assoc.relationship_type}
-                    </Badge>
-                    {(assoc.job_title?.name || assoc.custom_title) && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Briefcase className="h-3 w-3" />
-                        {assoc.job_title?.name || assoc.custom_title}
-                      </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!assoc.is_primary && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        title="Set as primary company"
+                        onClick={() => handleSetPrimary(assoc)}
+                      >
+                        <Star className="h-4 w-4" />
+                      </Button>
                     )}
-                    {!assoc.is_active && (
-                      <Badge variant="outline" className="text-xs">Inactive</Badge>
-                    )}
-                  </div>
-                  {assoc.notes && (
-                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{assoc.notes}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {!assoc.is_primary && (
                     <Button
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7"
-                      title="Set as primary company"
-                      onClick={() => handleSetPrimary(assoc)}
+                      onClick={() => handleRemove(assoc)}
                     >
-                      <Star className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    onClick={() => handleRemove(assoc)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Add Association Dialog */}
+      {/* Add Association Dialog - moved outside Card for proper portal behavior */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -392,6 +398,6 @@ export function ContactCompanyAssociationsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   );
 }
