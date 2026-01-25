@@ -53,7 +53,7 @@ import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 import { DeliveryManager } from '@/components/DeliveryManager';
 import { EventEquipmentPanel } from '@/components/EventEquipmentPanel';
 import { SessionsDisplay } from '@/components/SessionsDisplay';
-import { useEventContacts } from '@/hooks/useEventContacts';
+import { useEventContacts, CONTACT_TYPES } from '@/hooks/useEventContacts';
 import { VenueAddressLink } from '@/components/VenueAddressLink';
 import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
@@ -61,6 +61,8 @@ import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
+import { Badge } from '@/components/ui/badge';
+import { EventContactsCard } from '@/components/EventContactsCard';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -291,6 +293,81 @@ export default function EventDetail() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Event Type - Inline Editable for Admin */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Calendar className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Event Type</p>
+                      {isAdmin ? (
+                        <Select
+                          value={event.event_type_id || ''}
+                          onValueChange={async (value) => {
+                            setIsUpdatingStatus(true);
+                            await updateEvent.mutateAsync({
+                              id: event.id,
+                              event_type_id: value,
+                            });
+                            setIsUpdatingStatus(false);
+                          }}
+                          disabled={isUpdatingStatus}
+                        >
+                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {eventTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="font-medium capitalize">{getEventTypeName()}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Delivery Method - Inline Editable for Admin */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Package className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Delivery Method</p>
+                      {isAdmin ? (
+                        <Select
+                          value={event.delivery_method_id || ''}
+                          onValueChange={async (value) => {
+                            setIsUpdatingStatus(true);
+                            await updateEvent.mutateAsync({
+                              id: event.id,
+                              delivery_method_id: value,
+                            });
+                            setIsUpdatingStatus(false);
+                          }}
+                          disabled={isUpdatingStatus}
+                        >
+                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deliveryMethods.map((method) => (
+                              <SelectItem key={method.id} value={method.id}>
+                                {method.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="font-medium capitalize">{getDeliveryMethodName() || 'Not set'}</p>
+                      )}
+                    </div>
+                  </div>
+
                   {event.venue_name && (
                     <div className="flex items-start gap-3 sm:col-span-2">
                       <div className="p-2 bg-primary/10 rounded-lg">
@@ -326,52 +403,39 @@ export default function EventDetail() {
                 )}
               </div>
 
-              {/* Contact Info */}
-              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-                <h2 className="text-lg font-display font-semibold mb-4">Contact Information</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-muted rounded-lg">
-                      <User className="h-4 w-4 text-muted-foreground" />
+
+              {/* Sessions / Multiple Dates */}
+              {id && (
+                <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                  <h2 className="text-lg font-display font-semibold mb-4">Sessions / Time Blocks</h2>
+                  <SessionsDisplay eventId={id} />
+                </div>
+              )}
+
+              {/* Event Contacts from CRM */}
+              <EventContactsCard eventId={id!} clientName={event.client_name} onsiteContact={{
+                name: event.onsite_contact_name,
+                phone: event.onsite_contact_phone,
+              }} />
+
+              {/* Coverage & Notes */}
+              {(event.coverage_details || event.notes) && (
+                <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                  <h2 className="text-lg font-display font-semibold mb-4">Additional Details</h2>
+                  {event.coverage_details && (
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
+                      <p className="text-sm">{event.coverage_details}</p>
                     </div>
+                  )}
+                  {event.notes && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Client</p>
-                      <p className="font-medium">{event.client_name}</p>
-                    </div>
-                  </div>
-                  {event.onsite_contact_name && (
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-muted rounded-lg">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">On-site Contact</p>
-                        <p className="font-medium">{event.onsite_contact_name}</p>
-                        {event.onsite_contact_phone && (
-                          <a
-                            href={`tel:${event.onsite_contact_phone}`}
-                            className="text-sm text-primary hover:underline"
-                          >
-                            {event.onsite_contact_phone}
-                          </a>
-                        )}
-                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                      <p className="text-sm whitespace-pre-wrap">{event.notes}</p>
                     </div>
                   )}
                 </div>
-                {event.coverage_details && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
-                    <p className="text-sm">{event.coverage_details}</p>
-                  </div>
-                )}
-                {event.notes && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-1">Notes</p>
-                    <p className="text-sm">{event.notes}</p>
-                  </div>
-                )}
-              </div>
+              )}
             </motion.div>
 
             {/* Sidebar */}

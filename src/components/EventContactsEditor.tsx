@@ -33,6 +33,7 @@ interface EventContactsEditorProps {
   eventId: string;
   clientId?: string | null;
   disabled?: boolean;
+  maxContacts?: number;
 }
 
 interface ContactFormData {
@@ -53,7 +54,7 @@ const emptyForm: ContactFormData = {
   notes: '',
 };
 
-export function EventContactsEditor({ eventId, clientId, disabled }: EventContactsEditorProps) {
+export function EventContactsEditor({ eventId, clientId, disabled, maxContacts = 3 }: EventContactsEditorProps) {
   const { data: contacts = [] } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
@@ -61,6 +62,8 @@ export function EventContactsEditor({ eventId, clientId, disabled }: EventContac
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>(emptyForm);
   const [useClientContact, setUseClientContact] = useState(true);
+  
+  const canAddMore = contacts.length < maxContacts;
 
   // Fetch client contacts if client is set
   const { data: clientContacts = [] } = useQuery({
@@ -133,8 +136,11 @@ export function EventContactsEditor({ eventId, clientId, disabled }: EventContac
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Label className="text-base font-semibold">Event Contacts</Label>
-        {!disabled && (
+        <div className="flex items-center gap-2">
+          <Label className="text-base font-semibold">Event Contacts</Label>
+          <span className="text-xs text-muted-foreground">({contacts.length}/{maxContacts})</span>
+        </div>
+        {!disabled && canAddMore && (
           <Button variant="outline" size="sm" onClick={handleOpenCreate}>
             <Plus className="h-4 w-4 mr-1" />
             Add Contact
