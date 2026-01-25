@@ -250,17 +250,6 @@ export default function LeadDetail(): JSX.Element {
           {/* Proposed Dates Panel */}
           <LeadProposedDatesPanel leadId={id!} />
 
-          {/* Invoices Panel */}
-          <LeadCollapsiblePanel
-            icon={Receipt}
-            title="Invoices"
-            onAdd={() => {}}
-            isEmpty={true}
-            emptyMessage="No invoices yet"
-          >
-            <div />
-          </LeadCollapsiblePanel>
-
           {/* Quotes Panel */}
           <LeadCollapsiblePanel
             icon={FileText}
@@ -300,6 +289,17 @@ export default function LeadDetail(): JSX.Element {
             quoteId={quotes[0]?.id}
             defaultOpen={false}
           />
+
+          {/* Invoices Panel */}
+          <LeadCollapsiblePanel
+            icon={Receipt}
+            title="Invoices"
+            onAdd={() => {}}
+            isEmpty={true}
+            emptyMessage="No invoices yet"
+          >
+            <div />
+          </LeadCollapsiblePanel>
 
           {/* Questionnaires Panel */}
           <LeadCollapsiblePanel
