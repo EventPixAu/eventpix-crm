@@ -531,6 +531,26 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
+        {/* Photography Section - Brief, Camera Settings, Delivery */}
+        {((displayEvent as any).photography_brief || 
+          (displayEvent as any).camera_settings || 
+          displayEvent.delivery_method) && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="mx-4 mb-4"
+          >
+            <PhotographySection
+              photographyBrief={(displayEvent as any).photography_brief}
+              cameraSettings={(displayEvent as any).camera_settings}
+              deliveryMethod={displayEvent.delivery_method}
+              deliveryDeadline={displayEvent.delivery_deadline}
+              dressCode={(displayEvent as any).dress_code}
+            />
+          </motion.section>
+        )}
+
         {/* Assignments Snapshot */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}

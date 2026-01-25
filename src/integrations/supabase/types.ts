@@ -3285,6 +3285,7 @@ export type Database = {
           onboarding_status: string
           phone: string | null
           photography_equipment: string | null
+          photography_equipment_json: Json | null
           pli_details: string | null
           pli_expiry: string | null
           preferred_end_time: string | null
@@ -3327,6 +3328,7 @@ export type Database = {
           onboarding_status?: string
           phone?: string | null
           photography_equipment?: string | null
+          photography_equipment_json?: Json | null
           pli_details?: string | null
           pli_expiry?: string | null
           preferred_end_time?: string | null
@@ -3369,6 +3371,7 @@ export type Database = {
           onboarding_status?: string
           phone?: string | null
           photography_equipment?: string | null
+          photography_equipment_json?: Json | null
           pli_details?: string | null
           pli_expiry?: string | null
           preferred_end_time?: string | null
@@ -3942,6 +3945,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           photography_equipment: string | null
+          photography_equipment_json: Json | null
           pli_details: string | null
           pli_expiry: string | null
           role: Database["public"]["Enums"]["staff_role"]
@@ -3969,6 +3973,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           photography_equipment?: string | null
+          photography_equipment_json?: Json | null
           pli_details?: string | null
           pli_expiry?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
@@ -3996,6 +4001,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           photography_equipment?: string | null
+          photography_equipment_json?: Json | null
           pli_details?: string | null
           pli_expiry?: string | null
           role?: Database["public"]["Enums"]["staff_role"]

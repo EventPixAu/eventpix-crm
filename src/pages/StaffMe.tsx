@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { SkillNominationPanel } from '@/components/SkillNominationPanel';
 import { NotificationPreferencesPanel } from '@/components/NotificationPreferencesPanel';
+import { PhotographyEquipmentEditor, PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -68,6 +69,7 @@ interface ProfileData {
     email_on_changes: boolean;
     in_app_notifications: boolean;
   } | null;
+  photography_equipment_json: PhotographyEquipment | null;
 }
 
 interface UpcomingEvent {
@@ -92,7 +94,7 @@ function useMyProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, photography_equipment_json')
         .eq('id', user.id)
         .single();
       
@@ -100,6 +102,31 @@ function useMyProfile() {
       return data as unknown as ProfileData;
     },
     enabled: !!user?.id,
+  });
+}
+
+function useUpdateMyEquipment() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (equipment: PhotographyEquipment) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ photography_equipment_json: equipment as any })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      toast.success('Equipment updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update equipment: ' + error.message);
+    },
   });
 }
 
@@ -152,12 +179,12 @@ function useUpdateMyProfile() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (updates: Partial<ProfileData>) => {
+    mutationFn: async (updates: Omit<Partial<ProfileData>, 'photography_equipment_json'>) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(updates as any)
         .eq('id', user.id);
       
       if (error) throw error;
@@ -177,8 +204,9 @@ export default function StaffMe() {
   const { data: profile, isLoading: profileLoading } = useMyProfile();
   const { data: upcomingEvents = [], isLoading: eventsLoading } = useUpcomingAssignments();
   const updateProfile = useUpdateMyProfile();
+  const updateEquipment = useUpdateMyEquipment();
   
-  const [formData, setFormData] = useState<Partial<ProfileData>>({});
+  const [formData, setFormData] = useState<Omit<Partial<ProfileData>, 'photography_equipment_json'>>({});
   const [hasChanges, setHasChanges] = useState(false);
   
   // Initialize form data when profile loads
@@ -251,6 +279,10 @@ export default function StaffMe() {
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
             Profile
+          </TabsTrigger>
+          <TabsTrigger value="equipment" className="gap-2">
+            <Camera className="h-4 w-4" />
+            Equipment
           </TabsTrigger>
           <TabsTrigger value="skills" className="gap-2">
             <Sparkles className="h-4 w-4" />
@@ -540,6 +572,18 @@ export default function StaffMe() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="equipment">
+          <div className="max-w-2xl">
+            <PhotographyEquipmentEditor
+              initialData={profile.photography_equipment_json}
+              onSave={async (data) => {
+                await updateEquipment.mutateAsync(data);
+              }}
+              isSaving={updateEquipment.isPending}
+            />
           </div>
         </TabsContent>
         
