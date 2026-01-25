@@ -12,9 +12,24 @@ interface SessionsDisplayProps {
 }
 
 export function SessionsDisplay({ eventId, compact = false, className }: SessionsDisplayProps) {
-  const { data: sessions = [] } = useEventSessions(eventId);
+  const { data: sessions = [], isLoading } = useEventSessions(eventId);
 
-  if (sessions.length === 0) return null;
+  if (isLoading) {
+    return (
+      <div className={cn("space-y-2", className)}>
+        <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+        <div className="h-16 bg-muted rounded animate-pulse" />
+      </div>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <div className={cn("text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg", className)}>
+        No sessions scheduled. Add sessions via the Edit page.
+      </div>
+    );
+  }
 
   const openInMaps = (address: string) => {
     const query = encodeURIComponent(address);
@@ -69,7 +84,7 @@ export function SessionsDisplay({ eventId, compact = false, className }: Session
                   
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     {(session as any).arrival_time && (
-                      <span className="flex items-center gap-1 text-orange-600">
+                      <span className="flex items-center gap-1 text-warning">
                         <Clock className="h-3.5 w-3.5" />
                         Call: {format(new Date(`2000-01-01T${(session as any).arrival_time}`), 'h:mm a')}
                       </span>
