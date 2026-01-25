@@ -7,7 +7,7 @@
  * - Right: Client card + Files + Notes
  * - Bottom: Mail history
  */
-import { useState, forwardRef } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -70,7 +70,7 @@ import {
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
 
-const LeadDetail = forwardRef<HTMLDivElement, object>(function LeadDetail(_props, ref) {
+export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
@@ -485,6 +485,4 @@ const LeadDetail = forwardRef<HTMLDivElement, object>(function LeadDetail(_props
       />
     </AppLayout>
   );
-});
-
-export default LeadDetail;
+}
