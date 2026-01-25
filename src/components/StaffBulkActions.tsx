@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, UserCog, Users } from 'lucide-react';
+import { Download, MapPin, UserCog, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -38,8 +39,10 @@ interface StaffBulkActionsProps {
 export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkActionsProps) {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<'active' | 'inactive'>('active');
   const [newRole, setNewRole] = useState<'photographer' | 'videographer' | 'assistant'>('photographer');
+  const [newLocation, setNewLocation] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   
   const queryClient = useQueryClient();
@@ -82,6 +85,28 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
       onClearSelection();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Failed to update role', description: error.message });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleBulkLocationChange = async () => {
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({ location: newLocation || null })
+        .in('id', selectedStaff.map(s => s.id));
+
+      if (error) throw error;
+
+      toast({ title: `Updated location for ${selectedStaff.length} team members` });
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      setLocationDialogOpen(false);
+      setNewLocation('');
+      onClearSelection();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Failed to update location', description: error.message });
     } finally {
       setIsUpdating(false);
     }
@@ -142,6 +167,10 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRoleDialogOpen(true)}>
               Change Role
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLocationDialogOpen(true)}>
+              <MapPin className="h-4 w-4 mr-2" />
+              Change Location
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleExportCSV}>
@@ -223,6 +252,40 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
             </Button>
             <Button onClick={handleBulkRoleChange} disabled={isUpdating}>
               {isUpdating ? 'Updating...' : 'Update Role'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Location Change Dialog */}
+      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Location</DialogTitle>
+            <DialogDescription>
+              Update the location for {selectedStaff.length} selected team member{selectedStaff.length > 1 ? 's' : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>New Location</Label>
+              <Input
+                placeholder="e.g. Sydney, Melbourne, Brisbane"
+                value={newLocation}
+                onChange={(e) => setNewLocation(e.target.value)}
+                className="bg-secondary"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to clear the location for selected members.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLocationDialogOpen(false); setNewLocation(''); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkLocationChange} disabled={isUpdating}>
+              {isUpdating ? 'Updating...' : 'Update Location'}
             </Button>
           </DialogFooter>
         </DialogContent>
