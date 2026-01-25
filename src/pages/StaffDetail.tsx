@@ -14,7 +14,10 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Clock
+  Clock,
+  Car,
+  Utensils,
+  Package
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -33,6 +36,7 @@ import { StaffRateEditor } from '@/components/StaffRateEditor';
 import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
+import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
 
 interface StaffProfile {
@@ -51,6 +55,8 @@ interface StaffProfile {
   preferred_end_time: string | null;
   notes_internal: string | null;
   default_role_id: string | null;
+  vehicle_registration: string | null;
+  dietary_requirements: string | null;
   default_role: {
     name: string;
   } | null;
@@ -88,6 +94,7 @@ export default function StaffDetail() {
           onboarding_status, travel_ready, 
           preferred_start_time, preferred_end_time,
           notes_internal, default_role_id,
+          vehicle_registration, dietary_requirements,
           default_role:staff_roles(name)
         `)
         .eq('id', id)
@@ -114,6 +121,7 @@ export default function StaffDetail() {
             onboarding_status, travel_ready, 
             preferred_start_time, preferred_end_time,
             notes_internal, default_role_id,
+            vehicle_registration, dietary_requirements,
             default_role:staff_roles(name)
           `)
           .eq('id', staffData.user_id)
@@ -142,6 +150,8 @@ export default function StaffDetail() {
           preferred_end_time: null,
           notes_internal: null,
           default_role_id: null,
+          vehicle_registration: null,
+          dietary_requirements: null,
           default_role: { name: staffData.role },
         } as StaffProfile;
       }
@@ -186,6 +196,9 @@ export default function StaffDetail() {
   // Feedback
   const { data: feedbackHistory, isLoading: feedbackLoading } = useStaffFeedbackHistory(actualUserId);
   const { data: performanceSummary } = useStaffPerformanceSummary(actualUserId);
+
+  // Equipment allocations
+  const { data: allocations, isLoading: allocationsLoading } = useUserAllocations(actualUserId);
 
   if (!id) {
     return (
@@ -347,21 +360,39 @@ export default function StaffDetail() {
             </div>
           </div>
 
-          {/* Preferred times & Internal notes */}
-          {(profile.preferred_start_time || profile.preferred_end_time || profile.notes_internal) && isAdmin && (
-            <div className="mt-4 pt-4 border-t space-y-2">
+          {/* Operational details - admin only */}
+          {isAdmin && (
+            <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               {(profile.preferred_start_time || profile.preferred_end_time) && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  Preferred hours: {profile.preferred_start_time || '—'} - {profile.preferred_end_time || '—'}
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span>Hours: {profile.preferred_start_time || '—'} - {profile.preferred_end_time || '—'}</span>
                 </div>
               )}
-              {profile.notes_internal && (
-                <div className="text-sm">
-                  <span className="font-medium">Internal Notes: </span>
-                  <span className="text-muted-foreground">{profile.notes_internal}</span>
+              {profile.vehicle_registration && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Car className="h-4 w-4 shrink-0" />
+                  <span>Vehicle: {profile.vehicle_registration}</span>
                 </div>
               )}
+              {profile.dietary_requirements && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Utensils className="h-4 w-4 shrink-0" />
+                  <span>Diet: {profile.dietary_requirements}</span>
+                </div>
+              )}
+              {allocations && allocations.length > 0 && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Package className="h-4 w-4 shrink-0" />
+                  <span>{allocations.filter((a: any) => a.status !== 'returned').length} equipment assigned</span>
+                </div>
+              )}
+            </div>
+          )}
+          {isAdmin && profile.notes_internal && (
+            <div className="mt-3 text-sm">
+              <span className="font-medium">Internal Notes: </span>
+              <span className="text-muted-foreground">{profile.notes_internal}</span>
             </div>
           )}
         </CardContent>
@@ -382,6 +413,12 @@ export default function StaffDetail() {
             <TabsTrigger value="rates" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Rates
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="equipment" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Equipment
             </TabsTrigger>
           )}
           {isAdmin && (
@@ -517,6 +554,64 @@ export default function StaffDetail() {
         {isAdmin && (
           <TabsContent value="rates">
             <StaffRateEditor userId={id} userName={profile.full_name || profile.email} />
+          </TabsContent>
+        )}
+
+        {/* Equipment Tab (Admin only) */}
+        {isAdmin && (
+          <TabsContent value="equipment">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Assigned Equipment</CardTitle>
+                <CardDescription>
+                  Equipment currently allocated to this staff member
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {allocationsLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                  </div>
+                ) : !allocations || allocations.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No equipment currently assigned</p>
+                ) : (
+                  <div className="space-y-2">
+                    {allocations.map((allocation: any) => (
+                      <div 
+                        key={allocation.id} 
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{allocation.equipment_item?.name || 'Unknown'}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {allocation.equipment_item?.brand} {allocation.equipment_item?.model}
+                              {allocation.event && (
+                                <> • <Link to={`/events/${allocation.event.id}`} className="text-primary hover:underline">{allocation.event.event_name}</Link></>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-xs",
+                            allocation.status === 'allocated' && "border-blue-500 text-blue-600",
+                            allocation.status === 'picked_up' && "border-green-500 text-green-600",
+                            allocation.status === 'returned' && "border-muted-foreground text-muted-foreground",
+                            allocation.status === 'missing' && "border-destructive text-destructive",
+                            allocation.status === 'damaged' && "border-orange-500 text-orange-600"
+                          )}
+                        >
+                          {ALLOCATION_STATUS_CONFIG[allocation.status as AllocationStatus]?.label || allocation.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         )}
 
