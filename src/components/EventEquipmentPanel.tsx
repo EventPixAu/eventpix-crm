@@ -15,7 +15,8 @@ import {
   ArrowLeftRight, 
   AlertTriangle,
   Trash2,
-  User
+  User,
+  Users
 } from 'lucide-react';
 import { 
   useEventAllocations, 
@@ -29,6 +30,7 @@ import {
 import { useAvailableEquipment } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useAuth } from '@/lib/auth';
+import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 
 interface EventEquipmentPanelProps {
   eventId: string;
@@ -46,6 +48,7 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
   const removeAllocation = useRemoveAllocation();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedKitId, setSelectedKitId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -148,13 +151,18 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
           Equipment
         </CardTitle>
         {isAdmin && (
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Allocate
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setBulkDialogOpen(true)}>
+              <Users className="h-4 w-4 mr-1" />
+              Bulk Assign
+            </Button>
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Allocate
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Allocate Equipment</DialogTitle>
@@ -223,7 +231,15 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
+        
+        <BulkEquipmentAssignmentDialog
+          open={bulkDialogOpen}
+          onOpenChange={setBulkDialogOpen}
+          eventId={eventId}
+          preselectedStaffIds={assignedStaff.map(s => s.userId)}
+        />
       </CardHeader>
       <CardContent>
         {activeAllocations.length > 0 ? (
