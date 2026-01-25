@@ -639,7 +639,7 @@ export default function EventDetail() {
         {/* Equipment Tab (Admin Only) */}
         {isAdmin && id && (
           <TabsContent value="equipment">
-            <EventEquipmentPanel eventId={id} />
+            <EventEquipmentPanel eventId={id} assignments={assignments} />
           </TabsContent>
         )}
 
