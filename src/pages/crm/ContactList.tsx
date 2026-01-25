@@ -1,9 +1,9 @@
 /**
  * CONTACT LIST PAGE
  * 
- * CRM Contacts list with search and job title display
+ * CRM Contacts list with search, filters, and job title display
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   User,
   Plus,
   Search,
@@ -31,9 +38,12 @@ import {
   ExternalLink,
   Briefcase,
   Upload,
+  Filter,
+  X,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
+import { useJobTitles } from '@/hooks/useJobTitles';
 
 interface CompanyAssociation {
   company_id: string;
@@ -54,11 +64,31 @@ interface Contact {
   role_title: string | null;
   is_primary: boolean | null;
   client_id: string | null;
+  is_freelance: boolean | null;
   companies: CompanyAssociation[];
 }
 
 export default function ContactList() {
   const [search, setSearch] = useState('');
+  const [companyFilter, setCompanyFilter] = useState<string>('all');
+  const [jobTitleFilter, setJobTitleFilter] = useState<string>('all');
+  const [standaloneFilter, setStandaloneFilter] = useState<string>('all');
+
+  const { data: jobTitles = [] } = useJobTitles();
+
+  // Fetch companies for the filter dropdown
+  const { data: companies = [] } = useQuery({
+    queryKey: ['crm-companies-filter'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, business_name')
+        .eq('is_training', false)
+        .order('business_name');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['crm-contacts', search],
@@ -167,11 +197,45 @@ export default function ContactList() {
           role_title: contact.role_title,
           is_primary: contact.is_primary,
           client_id: contact.client_id,
+          is_freelance: contact.is_freelance,
           companies,
         };
       }) as Contact[];
     },
   });
+
+  // Apply client-side filters
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((contact) => {
+      // Company filter
+      if (companyFilter !== 'all') {
+        const hasCompany = contact.companies.some(c => c.company_id === companyFilter);
+        if (!hasCompany) return false;
+      }
+
+      // Job title filter
+      if (jobTitleFilter !== 'all') {
+        if (contact.job_title_id !== jobTitleFilter) return false;
+      }
+
+      // Standalone filter
+      if (standaloneFilter !== 'all') {
+        const isStandalone = contact.companies.length === 0;
+        if (standaloneFilter === 'standalone' && !isStandalone) return false;
+        if (standaloneFilter === 'linked' && isStandalone) return false;
+      }
+
+      return true;
+    });
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter]);
+
+  const hasActiveFilters = companyFilter !== 'all' || jobTitleFilter !== 'all' || standaloneFilter !== 'all';
+
+  const clearFilters = () => {
+    setCompanyFilter('all');
+    setJobTitleFilter('all');
+    setStandaloneFilter('all');
+  };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -208,18 +272,89 @@ export default function ContactList() {
 
       <Card>
         <CardContent className="p-3 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="relative flex-1 sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search contacts..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
+          {/* Search and Filters */}
+          <div className="space-y-4 mb-4 sm:mb-6">
+            {/* Search Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <div className="relative flex-1 sm:max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search contacts..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'}
+                {hasActiveFilters && ` (filtered)`}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {contacts.length} {contacts.length === 1 ? 'contact' : 'contacts'}
+
+            {/* Filter Row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                <span className="hidden sm:inline">Filters:</span>
+              </div>
+
+              {/* Company Filter */}
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="w-[160px] h-8 text-xs">
+                  <Building2 className="h-3 w-3 mr-1.5 shrink-0" />
+                  <SelectValue placeholder="All Companies" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Companies</SelectItem>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.business_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Job Title Filter */}
+              <Select value={jobTitleFilter} onValueChange={setJobTitleFilter}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <Briefcase className="h-3 w-3 mr-1.5 shrink-0" />
+                  <SelectValue placeholder="All Job Titles" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Job Titles</SelectItem>
+                  {jobTitles.map((jt) => (
+                    <SelectItem key={jt.id} value={jt.id}>
+                      {jt.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Standalone Filter */}
+              <Select value={standaloneFilter} onValueChange={setStandaloneFilter}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <User className="h-3 w-3 mr-1.5 shrink-0" />
+                  <SelectValue placeholder="All Contacts" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Contacts</SelectItem>
+                  <SelectItem value="linked">Linked to Company</SelectItem>
+                  <SelectItem value="standalone">Standalone</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
 
@@ -227,18 +362,23 @@ export default function ContactList() {
             <div className="text-center py-12 text-muted-foreground">
               Loading contacts...
             </div>
-          ) : contacts.length === 0 ? (
+          ) : filteredContacts.length === 0 ? (
             <div className="text-center py-12">
               <User className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">
-                {search ? 'No contacts match your search' : 'No contacts yet'}
+                {search || hasActiveFilters ? 'No contacts match your filters' : 'No contacts yet'}
               </p>
+              {hasActiveFilters && (
+                <Button variant="link" onClick={clearFilters} className="mt-2">
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <>
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
-                {contacts.map((contact) => (
+                {filteredContacts.map((contact) => (
                   <Link
                     key={contact.id}
                     to={`/crm/contacts/${contact.id}`}
@@ -276,7 +416,7 @@ export default function ContactList() {
                       ) : (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Building2 className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate italic">No company</span>
+                          <Badge variant="secondary" className="text-xs">Standalone</Badge>
                         </div>
                       )}
                       {contact.job_title?.name && (
@@ -316,7 +456,7 @@ export default function ContactList() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {contacts.map((contact) => (
+                    {filteredContacts.map((contact) => (
                       <TableRow key={contact.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -355,10 +495,10 @@ export default function ContactList() {
                               ))}
                             </div>
                           ) : (
-                            <span className="flex items-center gap-2 text-sm text-muted-foreground italic">
-                              <Building2 className="h-4 w-4 shrink-0" />
-                              No company
-                            </span>
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              <User className="h-3 w-3 mr-1" />
+                              Standalone
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell>
