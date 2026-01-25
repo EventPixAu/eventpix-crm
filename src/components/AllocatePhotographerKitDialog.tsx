@@ -30,11 +30,20 @@ interface AssignedPhotographer {
   kits: PhotographerKit[];
 }
 
+interface EventAssignment {
+  id: string;
+  user_id: string | null;
+  staff_id: string | null;
+  profile?: { id: string; full_name: string | null; email: string } | null;
+  staff?: { id: string; name: string; email: string | null } | null;
+  staff_role?: { id: string; name: string } | null;
+}
+
 interface AllocatePhotographerKitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId: string;
-  assignedStaff: { userId: string; name: string }[];
+  assignments: EventAssignment[];
 }
 
 const KIT_CONFIG: { key: 'camera' | 'lighting' | 'backdrop' | 'other'; label: string; icon: typeof Camera }[] = [
@@ -48,32 +57,60 @@ export function AllocatePhotographerKitDialog({
   open,
   onOpenChange,
   eventId,
-  assignedStaff,
+  assignments,
 }: AllocatePhotographerKitDialogProps) {
   const [selectedKits, setSelectedKits] = useState<Set<string>>(new Set());
   const [isAllocating, setIsAllocating] = useState(false);
 
-  // Fetch photographer equipment for assigned staff
+  // Extract all assigned staff (both profile-linked and legacy)
+  const allAssignedStaff = useMemo(() => {
+    return assignments.map(a => {
+      if (a.user_id && a.profile) {
+        return {
+          oderId: a.user_id,
+          name: a.profile.full_name || a.profile.email,
+          hasProfile: true,
+          roleName: a.staff_role?.name || 'Staff',
+        };
+      } else if (a.staff_id && a.staff) {
+        return {
+          oderId: a.staff_id,
+          name: a.staff.name,
+          hasProfile: false,
+          roleName: a.staff_role?.name || 'Staff',
+        };
+      }
+      return null;
+    }).filter((s): s is { oderId: string; name: string; hasProfile: boolean; roleName: string } => s !== null);
+  }, [assignments]);
+
+  // Only fetch equipment for staff who have profiles (user_id)
+  const profileLinkedUserIds = allAssignedStaff.filter(s => s.hasProfile).map(s => s.oderId);
+
+  // Fetch photographer equipment for profile-linked staff
   const { data: photographerData = [], isLoading } = useQuery({
-    queryKey: ['photographer-equipment', assignedStaff.map(s => s.userId)],
+    queryKey: ['photographer-equipment', profileLinkedUserIds],
     queryFn: async () => {
-      if (assignedStaff.length === 0) return [];
+      if (profileLinkedUserIds.length === 0) return [];
 
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, photography_equipment_json')
-        .in('id', assignedStaff.map(s => s.userId));
+        .in('id', profileLinkedUserIds);
 
       if (error) throw error;
       return data || [];
     },
-    enabled: open && assignedStaff.length > 0,
+    enabled: open && profileLinkedUserIds.length > 0,
   });
 
   // Transform data into photographers with kits
   const photographers: AssignedPhotographer[] = useMemo(() => {
-    return assignedStaff.map(staff => {
-      const profile = photographerData.find(p => p.id === staff.userId);
+    return allAssignedStaff.map(staff => {
+      // Only profile-linked staff can have equipment in the profiles table
+      const profile = staff.hasProfile 
+        ? photographerData.find(p => p.id === staff.oderId) 
+        : null;
       const equipment = (profile?.photography_equipment_json as Record<string, any>) || {};
 
       // Map old keys to new keys for compatibility
@@ -92,12 +129,12 @@ export function AllocatePhotographerKitDialog({
       })).filter(kit => kit.items.length > 0);
 
       return {
-        userId: staff.userId,
+        userId: staff.oderId,
         name: staff.name,
         kits,
       };
     });
-  }, [assignedStaff, photographerData]);
+  }, [allAssignedStaff, photographerData]);
 
   const toggleKit = (photographerId: string, category: string) => {
     const key = `${photographerId}:${category}`;
@@ -171,7 +208,7 @@ export function AllocatePhotographerKitDialog({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : assignedStaff.length === 0 ? (
+          ) : allAssignedStaff.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>No photographers assigned to this event</p>

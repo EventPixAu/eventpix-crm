@@ -34,12 +34,41 @@ import { useAuth } from '@/lib/auth';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
 
-interface EventEquipmentPanelProps {
-  eventId: string;
-  assignedStaff?: { userId: string; name: string }[];
+interface EventAssignment {
+  id: string;
+  user_id: string | null;
+  staff_id: string | null;
+  profile?: { id: string; full_name: string | null; email: string } | null;
+  staff?: { id: string; name: string; email: string | null } | null;
+  staff_role?: { id: string; name: string } | null;
 }
 
-export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipmentPanelProps) {
+interface EventEquipmentPanelProps {
+  eventId: string;
+  assignments?: EventAssignment[];
+}
+
+export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmentPanelProps) {
+  // Build assignedStaff from assignments - includes both profile-linked and legacy staff
+  const assignedStaff = assignments.map(a => {
+    if (a.user_id && a.profile) {
+      return { 
+        oderId: a.user_id, 
+        name: a.profile.full_name || a.profile.email,
+        hasProfile: true 
+      };
+    } else if (a.staff_id && a.staff) {
+      return { 
+        oderId: a.staff_id, 
+        name: a.staff.name,
+        hasProfile: false 
+      };
+    }
+    return null;
+  }).filter((s): s is { oderId: string; name: string; hasProfile: boolean } => s !== null);
+  
+  // Staff with user profiles (for assigning equipment to specific people)
+  const profileLinkedStaff = assignedStaff.filter(s => s.hasProfile);
   const { isAdmin } = useAuth();
   const { data: allocations, isLoading } = useEventAllocations(eventId);
   const { data: availableItems } = useAvailableEquipment();
@@ -183,8 +212,8 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {assignedStaff.map((s) => (
-                        <SelectItem key={s.userId} value={s.userId}>{s.name}</SelectItem>
+                      {profileLinkedStaff.map((s) => (
+                        <SelectItem key={s.oderId} value={s.oderId}>{s.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -245,14 +274,14 @@ export function EventEquipmentPanel({ eventId, assignedStaff = [] }: EventEquipm
           open={bulkDialogOpen}
           onOpenChange={setBulkDialogOpen}
           eventId={eventId}
-          preselectedStaffIds={assignedStaff.map(s => s.userId)}
+          preselectedStaffIds={profileLinkedStaff.map(s => s.oderId)}
         />
         
         <AllocatePhotographerKitDialog
           open={photographerKitDialogOpen}
           onOpenChange={setPhotographerKitDialogOpen}
           eventId={eventId}
-          assignedStaff={assignedStaff}
+          assignments={assignments}
         />
       </CardHeader>
       <CardContent>
