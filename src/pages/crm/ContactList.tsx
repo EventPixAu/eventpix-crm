@@ -33,6 +33,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
+import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 
 interface Contact {
   id: string;
@@ -160,6 +161,7 @@ export default function ContactList() {
   });
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   return (
     <AppLayout>
@@ -173,11 +175,9 @@ export default function ContactList() {
               <Upload className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Import</span>
             </Button>
-            <Button size="sm" asChild>
-              <Link to="/crm/contacts/new">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Add Contact</span>
-              </Link>
+            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Contact</span>
             </Button>
           </div>
         }
@@ -186,6 +186,11 @@ export default function ContactList() {
       <ContactImportDialog 
         open={importDialogOpen} 
         onOpenChange={setImportDialogOpen} 
+      />
+
+      <CreateStandaloneContactDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
       />
 
       <Card>
