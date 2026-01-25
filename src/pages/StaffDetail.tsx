@@ -60,6 +60,7 @@ interface StaffProfile {
   default_role_id: string | null;
   vehicle_registration: string | null;
   dietary_requirements: string | null;
+  certificates?: string | null;
   location?: string | null;
   // New fields
   business_name?: string | null;
@@ -110,7 +111,7 @@ export default function StaffDetail() {
           onboarding_status, travel_ready, 
           preferred_start_time, preferred_end_time,
           notes_internal, default_role_id,
-          vehicle_registration, dietary_requirements, location,
+            vehicle_registration, dietary_requirements, certificates, location,
           business_name, abn, address_line1, address_line2,
           address_city, address_state, address_postcode,
           vehicle_make_model, pli_details, pli_expiry, photography_equipment,
@@ -126,7 +127,15 @@ export default function StaffDetail() {
       // If not found, check if this is a staff table ID and get the linked user_id
       const { data: staffData, error: staffErr } = await supabase
         .from('staff')
-        .select('user_id, name, email, phone, role, status, notes, location')
+          .select(`
+            user_id, name, email, phone, role, status, notes, location,
+            business_name, abn,
+            address_line1, address_line2, address_city, address_state, address_postcode,
+            vehicle_make_model, vehicle_registration,
+            pli_details, pli_expiry,
+            photography_equipment,
+            dietary_requirements, certificates
+          `)
         .eq('id', id)
         .maybeSingle();
       
@@ -140,7 +149,7 @@ export default function StaffDetail() {
             onboarding_status, travel_ready, 
             preferred_start_time, preferred_end_time,
             notes_internal, default_role_id,
-            vehicle_registration, dietary_requirements, location,
+            vehicle_registration, dietary_requirements, certificates, location,
             business_name, abn, address_line1, address_line2,
             address_city, address_state, address_postcode,
             vehicle_make_model, pli_details, pli_expiry, photography_equipment,
@@ -173,10 +182,23 @@ export default function StaffDetail() {
             preferred_end_time: null,
             notes_internal: staffData.notes,
             default_role_id: null,
-            vehicle_registration: null,
-            dietary_requirements: null,
+            vehicle_registration: staffData.vehicle_registration || null,
+            dietary_requirements: staffData.dietary_requirements || null,
+            certificates: staffData.certificates || null,
             default_role: { name: staffData.role },
             location: staffData.location,
+
+            business_name: staffData.business_name || null,
+            abn: staffData.abn || null,
+            address_line1: staffData.address_line1 || null,
+            address_line2: staffData.address_line2 || null,
+            address_city: staffData.address_city || null,
+            address_state: staffData.address_state || null,
+            address_postcode: staffData.address_postcode || null,
+            vehicle_make_model: staffData.vehicle_make_model || null,
+            pli_details: staffData.pli_details || null,
+            pli_expiry: staffData.pli_expiry || null,
+            photography_equipment: staffData.photography_equipment || null,
           } as StaffProfile,
           sourceTable: 'staff' as const,
           staffId: id,
