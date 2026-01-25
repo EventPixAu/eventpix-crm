@@ -18,6 +18,7 @@ import {
   XCircle,
   Heart,
   Package,
+  MapPin,
   FileCheck,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -39,6 +40,9 @@ import {
   useAllEquipmentCategories,
   useCreateEquipmentCategory,
   useUpdateEquipmentCategory,
+  useAllLocations,
+  useCreateLocation,
+  useUpdateLocation,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
 import {
@@ -372,6 +376,11 @@ export default function AdminLookups() {
   const createComplianceDocType = useCreateComplianceDocumentType();
   const updateComplianceDocType = useUpdateComplianceDocumentType();
 
+  // Locations
+  const { data: locations = [], isLoading: locationsLoading } = useAllLocations();
+  const createLocation = useCreateLocation();
+  const updateLocation = useUpdateLocation();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -456,6 +465,13 @@ export default function AdminLookups() {
               >
                 <FileCheck className="h-4 w-4 mr-2" />
                 Compliance
+              </TabsTrigger>
+              <TabsTrigger 
+                value="locations"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Locations
               </TabsTrigger>
               <TabsTrigger 
                 value="training-tools"
@@ -605,6 +621,18 @@ export default function AdminLookups() {
                 createPending={createComplianceDocType.isPending}
                 updatePending={updateComplianceDocType.isPending}
                 itemLabel="Compliance Document Type"
+              />
+            </TabsContent>
+
+            <TabsContent value="locations" className="m-0">
+              <LookupTable
+                items={locations}
+                isLoading={locationsLoading}
+                onCreate={async (name) => { await createLocation.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateLocation.mutateAsync({ id, ...updates }); }}
+                createPending={createLocation.isPending}
+                updatePending={updateLocation.isPending}
+                itemLabel="Location"
               />
             </TabsContent>
 
