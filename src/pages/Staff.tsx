@@ -183,12 +183,21 @@ export default function Staff() {
                   </div>
                   <div className="space-y-2">
                     <Label>Location</Label>
-                    <Input
+                    <Select
                       value={newStaff.location}
-                      onChange={(e) => setNewStaff({ ...newStaff, location: e.target.value })}
-                      placeholder="e.g. Sydney, Melbourne"
-                      className="bg-secondary"
-                    />
+                      onValueChange={(value) => setNewStaff({ ...newStaff, location: value })}
+                    >
+                      <SelectTrigger className="bg-secondary">
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortedLocations.map((loc) => (
+                          <SelectItem key={loc.id} value={loc.name}>
+                            {loc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Role</Label>
