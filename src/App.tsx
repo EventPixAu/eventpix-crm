@@ -8,6 +8,7 @@ import { RoleGuard, AdminGuard, SalesGuard, OpsGuard, CrewGuard } from "@/compon
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import PhotographerDashboard from "./pages/PhotographerDashboard";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import EventForm from "./pages/EventForm";
@@ -87,6 +88,29 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Role-based dashboard routing
+ * - Admin/Operations: Full operations dashboard
+ * - Sales: Sales dashboard
+ * - Crew: Photographer-focused mobile dashboard
+ */
+function RoleBasedDashboard() {
+  const { role, isAdmin } = useAuth();
+  
+  // Admin and Operations get the full dashboard
+  if (isAdmin || role === 'operations') {
+    return <Dashboard />;
+  }
+  
+  // Sales users get sales dashboard
+  if (role === 'sales') {
+    return <Navigate to="/sales/dashboard" replace />;
+  }
+  
+  // Crew (photographers) get the mobile-first photographer dashboard
+  return <PhotographerDashboard />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -98,8 +122,8 @@ function AppRoutes() {
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
       
       
-      {/* Dashboard - all authenticated users */}
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
+      <Route path="/" element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>} />
       
       {/* Admin-only routes */}
       <Route path="/events" element={<ProtectedRoute><AdminGuard><Events /></AdminGuard></ProtectedRoute>} />
@@ -107,8 +131,9 @@ function AppRoutes() {
       <Route path="/events/:id" element={<ProtectedRoute><AdminGuard><EventDetail /></AdminGuard></ProtectedRoute>} />
       <Route path="/events/:id/edit" element={<ProtectedRoute><AdminGuard><EventForm /></AdminGuard></ProtectedRoute>} />
       <Route path="/events/:id/worksheets" element={<ProtectedRoute><AdminGuard><EventWorksheets /></AdminGuard></ProtectedRoute>} />
-      <Route path="/events/:id/day-of" element={<ProtectedRoute><AdminGuard><EventDayOf /></AdminGuard></ProtectedRoute>} />
-      <Route path="/events/:id/run-sheet" element={<ProtectedRoute><AdminGuard><EventRunSheet /></AdminGuard></ProtectedRoute>} />
+      {/* Day-of view accessible to assigned crew */}
+      <Route path="/events/:id/day-of" element={<ProtectedRoute><CrewGuard><EventDayOf /></CrewGuard></ProtectedRoute>} />
+      <Route path="/events/:id/run-sheet" element={<ProtectedRoute><CrewGuard><EventRunSheet /></CrewGuard></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><AdminGuard><Staff /></AdminGuard></ProtectedRoute>} />
       <Route path="/staff/:id" element={<ProtectedRoute><AdminGuard><StaffDetail /></AdminGuard></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><AdminGuard><CalendarView /></AdminGuard></ProtectedRoute>} />

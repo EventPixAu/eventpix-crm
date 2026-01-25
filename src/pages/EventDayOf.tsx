@@ -50,6 +50,9 @@ import { PhotographySection } from '@/components/crew/PhotographySection';
 import { CrewEventContacts } from '@/components/crew/CrewEventContacts';
 import { CrewTeamList } from '@/components/crew/CrewTeamList';
 import { DeliveryInfo } from '@/components/crew/DeliveryInfo';
+import { AllEventContacts } from '@/components/crew/AllEventContacts';
+import { EventEquipmentByRole } from '@/components/crew/EventEquipmentByRole';
+import { PhotographerChecklist } from '@/components/crew/PhotographerChecklist';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -464,33 +467,41 @@ export default function EventDayOf() {
           </div>
         </motion.section>
 
-        {/* Contact Card */}
-        {(displayEvent.onsite_contact_name || displayEvent.onsite_contact_phone) && (
+        {/* Dress Code Card */}
+        {(displayEvent as any).dress_code && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
+            transition={{ delay: 0.03 }}
             className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
           >
             <div className="flex items-start gap-3">
               <div className="p-2 bg-muted rounded-lg shrink-0">
-                <Phone className="h-5 w-5 text-muted-foreground" />
+                <span className="text-lg">👔</span>
               </div>
               <div className="min-w-0">
-                <h3 className="font-semibold mb-1">On-Site Contact</h3>
-                {displayEvent.onsite_contact_name && (
-                  <p className="font-medium">{displayEvent.onsite_contact_name}</p>
-                )}
-                {displayEvent.onsite_contact_phone && (
-                  <a
-                    href={`tel:${displayEvent.onsite_contact_phone}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {displayEvent.onsite_contact_phone}
-                  </a>
-                )}
+                <h3 className="font-semibold mb-1">Dress Code</h3>
+                <p className="text-sm">{(displayEvent as any).dress_code}</p>
               </div>
             </div>
+          </motion.section>
+        )}
+
+        {/* All Event Contacts - replaces simple on-site contact */}
+        {id && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mx-4 mb-4"
+          >
+            <AllEventContacts 
+              eventId={id} 
+              onsiteContact={{
+                name: displayEvent.onsite_contact_name,
+                phone: displayEvent.onsite_contact_phone,
+              }}
+            />
           </motion.section>
         )}
 
@@ -651,12 +662,24 @@ export default function EventDayOf() {
           )}
         </motion.section>
 
-        {/* Equipment Section */}
+        {/* Equipment Section - Split by Role */}
         {id && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            className="mx-4 mb-4"
+          >
+            <EventEquipmentByRole eventId={id} />
+          </motion.section>
+        )}
+
+        {/* Personal Equipment Checklist */}
+        {id && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.21 }}
             className="mx-4 mb-4"
           >
             <JobSheetEquipmentSection eventId={id} />
