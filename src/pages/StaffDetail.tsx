@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { 
   ArrowLeft, 
@@ -18,7 +18,8 @@ import {
   Car,
   Utensils,
   Package,
-  UserPlus
+  UserPlus,
+  Camera
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -38,9 +39,11 @@ import { StaffRateEditor } from '@/components/StaffRateEditor';
 import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
+import { PhotographyEquipmentEditor, type PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface StaffProfile {
   id: string;
@@ -252,6 +255,61 @@ export default function StaffDetail() {
 
   // Equipment allocations
   const { data: allocations, isLoading: allocationsLoading } = useUserAllocations(actualUserId);
+
+  // Photography equipment (structured JSON)
+  const queryClient = useQueryClient();
+  
+  const { data: photographyEquipment, isLoading: equipmentLoading } = useQuery({
+    queryKey: ['photography-equipment', id, sourceTable],
+    queryFn: async () => {
+      if (!id) return null;
+      
+      if (sourceTable === 'staff' && staffId) {
+        const { data, error } = await supabase
+          .from('staff')
+          .select('photography_equipment_json')
+          .eq('id', staffId)
+          .maybeSingle();
+        if (error) throw error;
+        return (data?.photography_equipment_json as unknown) as PhotographyEquipment | null;
+      } else {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('photography_equipment_json')
+          .eq('id', actualUserId)
+          .maybeSingle();
+        if (error) throw error;
+        return (data?.photography_equipment_json as unknown) as PhotographyEquipment | null;
+      }
+    },
+    enabled: !!id && !!profile,
+  });
+
+  const updateEquipmentMutation = useMutation({
+    mutationFn: async (equipment: PhotographyEquipment) => {
+      if (sourceTable === 'staff' && staffId) {
+        const { error } = await supabase
+          .from('staff')
+          .update({ photography_equipment_json: equipment as any })
+          .eq('id', staffId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ photography_equipment_json: equipment as any })
+          .eq('id', actualUserId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('Equipment updated');
+      queryClient.invalidateQueries({ queryKey: ['photography-equipment', id, sourceTable] });
+      queryClient.invalidateQueries({ queryKey: ['staff-profile', id] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update equipment');
+    },
+  });
 
   if (!id) {
     return (
@@ -638,12 +696,42 @@ export default function StaffDetail() {
 
         {/* Equipment Tab (Admin only) */}
         {isAdmin && (
-          <TabsContent value="equipment">
+          <TabsContent value="equipment" className="space-y-6">
+            {/* Photography Equipment (Owned Gear) */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Assigned Equipment</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Photography Equipment
+                </CardTitle>
                 <CardDescription>
-                  Equipment currently allocated to this staff member
+                  Personal photography gear owned by this team member
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {equipmentLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                  </div>
+                ) : (
+                  <PhotographyEquipmentEditor
+                    initialData={photographyEquipment || undefined}
+                    onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
+                    isSaving={updateEquipmentMutation.isPending}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Assigned Equipment (Company Allocations) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Assigned Equipment
+                </CardTitle>
+                <CardDescription>
+                  Company equipment currently allocated to this team member
                 </CardDescription>
               </CardHeader>
               <CardContent>
