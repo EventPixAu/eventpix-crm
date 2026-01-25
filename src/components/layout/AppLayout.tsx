@@ -1,10 +1,11 @@
 /**
  * EVENTPIX PLATFORM - Main Layout
  * 
- * THREE SECTION NAVIGATION:
- * - CRM: Clients, Contacts, Knowledge Base
+ * THREE SECTION NAVIGATION + CROSS-FUNCTIONAL:
+ * - CRM: Promotions, Companies, Contacts, Emails
  * - Sales: Leads, Pipeline, Quotes, Contracts, Products, Templates
  * - Operations: Events, Calendar, Staff, Equipment, Delivery, Admin Tools
+ * - Knowledge Base: Cross-functional, available to all roles
  * 
  * ROLE SEPARATION:
  * - Admin: Full access to all sections
@@ -65,8 +66,10 @@ const crmItems: NavItem[] = [
   { href: '/crm/companies', label: 'Companies', icon: Building2 },
   { href: '/crm/contacts', label: 'Contacts', icon: User },
   { href: '/crm/emails', label: 'Emails', icon: Mail },
-  { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen },
 ];
+
+// ===== KNOWLEDGE BASE (Cross-functional) =====
+const knowledgeBaseItem: NavItem = { href: '/knowledge-base', label: 'Knowledge Base', icon: BookOpen };
 
 // ===== SALES SECTION =====
 const salesItems: NavItem[] = [
@@ -148,6 +151,11 @@ function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
         onItemClick={onItemClick}
         collapsed={collapsed}
       />
+
+      {!collapsed && <div className="h-px bg-sidebar-border my-3" />}
+      
+      {/* Knowledge Base - Cross-functional */}
+      <SidebarNavItem item={knowledgeBaseItem} onItemClick={onItemClick} collapsed={collapsed} />
     </>
   );
 }
@@ -187,6 +195,9 @@ function SalesSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
       />
       
       {!collapsed && <div className="h-px bg-sidebar-border my-3" />}
+      
+      {/* Knowledge Base - Cross-functional */}
+      <SidebarNavItem item={knowledgeBaseItem} onItemClick={onItemClick} collapsed={collapsed} />
       
       {/* Profile */}
       <SidebarNavItem item={{ href: '/staff/me', label: 'My Profile', icon: User }} onItemClick={onItemClick} collapsed={collapsed} />
