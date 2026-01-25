@@ -38,6 +38,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStaff, useCreateStaff, Staff as StaffType } from '@/hooks/useStaff';
+import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
@@ -46,6 +47,7 @@ import { StaffBulkActions } from '@/components/StaffBulkActions';
 export default function Staff() {
   const { isAdmin } = useAuth();
   const { data: staff = [], isLoading } = useStaff();
+  const { data: locations = [] } = useActiveLocations();
   const createStaff = useCreateStaff();
   const { toast } = useToast();
   
@@ -64,13 +66,10 @@ export default function Staff() {
     status: 'active' as const,
   });
 
-  // Get unique locations for filter dropdown
-  const uniqueLocations = useMemo(() => {
-    const locations = staff
-      .map(m => m.location)
-      .filter((loc): loc is string => !!loc && loc.trim() !== '');
-    return [...new Set(locations)].sort();
-  }, [staff]);
+  // Get sorted locations from lookup table
+  const sortedLocations = useMemo(() => {
+    return [...locations].sort((a, b) => a.name.localeCompare(b.name));
+  }, [locations]);
 
   const filteredStaff = staff.filter((member) => {
     const searchLower = search.toLowerCase();
@@ -313,16 +312,16 @@ export default function Staff() {
                       >
                         All Locations
                       </CommandItem>
-                      {uniqueLocations.map((loc) => (
+                      {sortedLocations.map((loc) => (
                         <CommandItem
-                          key={loc}
-                          value={loc}
+                          key={loc.id}
+                          value={loc.name}
                           onSelect={() => {
-                            setLocationFilter(loc);
+                            setLocationFilter(loc.name);
                             setLocationPopoverOpen(false);
                           }}
                         >
-                          {loc}
+                          {loc.name}
                         </CommandItem>
                       ))}
                     </CommandGroup>
