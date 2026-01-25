@@ -232,9 +232,19 @@ export default function ContactDetail() {
 
   const handleOpenEdit = () => {
     if (contact) {
+      // Parse first/last name from contact_name if individual fields are empty
+      let firstName = contact.first_name || '';
+      let lastName = contact.last_name || '';
+      
+      if (!firstName && !lastName && contact.contact_name) {
+        const nameParts = contact.contact_name.trim().split(' ');
+        firstName = nameParts[0] || '';
+        lastName = nameParts.slice(1).join(' ') || '';
+      }
+      
       setFormData({
-        first_name: contact.first_name || '',
-        last_name: contact.last_name || '',
+        first_name: firstName,
+        last_name: lastName,
         email: contact.email || '',
         phone_mobile: contact.phone_mobile || '',
         job_title_id: contact.job_title_id || '',
