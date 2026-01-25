@@ -158,12 +158,30 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const executeAssignment = async () => {
     if (!selectedUser) return;
 
-    const result = await createAssignment.mutateAsync({
+    // Find the selected profile to determine if it's from profiles or staff table
+    const selectedProfile = profiles.find(p => p.id === selectedUser);
+    const isStaffTableEntry = selectedProfile?.source === 'staff';
+
+    const assignmentData: {
+      event_id: string;
+      user_id?: string;
+      staff_id?: string;
+      staff_role_id?: string;
+      assignment_notes?: string;
+    } = {
       event_id: eventId,
-      user_id: selectedUser,
       staff_role_id: selectedRole || undefined,
       assignment_notes: assignmentNotes || undefined,
-    });
+    };
+
+    // Use staff_id for legacy staff table entries, user_id for profiles
+    if (isStaffTableEntry) {
+      assignmentData.staff_id = selectedUser;
+    } else {
+      assignmentData.user_id = selectedUser;
+    }
+
+    const result = await createAssignment.mutateAsync(assignmentData);
 
     // Send notification after successful assignment
     if (result) {
