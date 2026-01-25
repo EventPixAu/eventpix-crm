@@ -17,6 +17,14 @@ export interface EquipmentItem {
   status: EquipmentStatus;
   notes: string | null;
   created_at: string;
+  owner_user_id: string | null; // null = EventPix company equipment, UUID = photographer-owned
+}
+
+export interface EquipmentItemWithOwner extends EquipmentItem {
+  owner?: {
+    id: string;
+    full_name: string | null;
+  } | null;
 }
 
 export function useEquipmentItems() {
@@ -25,11 +33,30 @@ export function useEquipmentItems() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('equipment_items')
-        .select('*')
+        .select(`
+          *,
+          owner:profiles!equipment_items_owner_user_id_fkey (
+            id,
+            full_name
+          )
+        `)
         .order('name');
 
       if (error) throw error;
-      return data as EquipmentItem[];
+      
+      // Transform the result - owner might come back as array for some FK configs
+      return (data || []).map(item => {
+        const ownerData = item.owner;
+        // Handle both array and object forms from Supabase
+        const owner = Array.isArray(ownerData) 
+          ? (ownerData[0] as { id: string; full_name: string | null } | undefined) || null
+          : (ownerData as { id: string; full_name: string | null } | null);
+        
+        return {
+          ...item,
+          owner,
+        };
+      }) as EquipmentItemWithOwner[];
     },
   });
 }

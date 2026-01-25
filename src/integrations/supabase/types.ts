@@ -1700,6 +1700,7 @@ export type Database = {
           model: string | null
           name: string
           notes: string | null
+          owner_user_id: string | null
           serial_number: string | null
           status: string
         }
@@ -1713,6 +1714,7 @@ export type Database = {
           model?: string | null
           name: string
           notes?: string | null
+          owner_user_id?: string | null
           serial_number?: string | null
           status?: string
         }
@@ -1726,6 +1728,7 @@ export type Database = {
           model?: string | null
           name?: string
           notes?: string | null
+          owner_user_id?: string | null
           serial_number?: string | null
           status?: string
         }
