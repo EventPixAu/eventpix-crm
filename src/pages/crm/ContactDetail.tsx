@@ -537,8 +537,8 @@ export default function ContactDetail() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {/* Company Link */}
-              {contact.client && (
+              {/* Company Link - show link or "No company" message */}
+              {contact.client ? (
                 <Link 
                   to={`/crm/companies/${contact.client.id}`}
                   className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -546,6 +546,11 @@ export default function ContactDetail() {
                   <Building2 className="h-5 w-5 text-muted-foreground" />
                   <span className="font-medium">{contact.client.business_name}</span>
                 </Link>
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed text-muted-foreground">
+                  <Building2 className="h-5 w-5" />
+                  <span className="text-sm">Standalone contact - not linked to a company</span>
+                </div>
               )}
 
               {/* Contact Details */}
@@ -599,7 +604,8 @@ export default function ContactDetail() {
           {/* Company Associations */}
           <ContactCompanyAssociationsPanel 
             contactId={id!} 
-            primaryCompanyId={contact.client_id} 
+            primaryCompanyId={contact.client_id}
+            isStandalone={!contact.client_id}
           />
         </div>
 
