@@ -48,19 +48,41 @@ export default function PromotionsDashboard() {
     }
   });
 
-  // Fetch recent contacts without company association (orphan prospects)
+  // Fetch truly unassigned contacts:
+  // - No direct client_id assignment, AND
+  // - No links in contact_company_associations table
+  // This matches the Contact detail page's source of truth
   const { data: orphanContacts = [] } = useQuery({
     queryKey: ['orphan-contacts'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, get contacts with null client_id
+      const { data: contactsWithoutClient, error: contactsError } = await supabase
         .from('client_contacts')
-        .select('*')
+        .select('id, contact_name, email, created_at')
         .is('client_id', null)
-        .order('created_at', { ascending: false })
-        .limit(10);
+        .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data || [];
+      if (contactsError) throw contactsError;
+      if (!contactsWithoutClient || contactsWithoutClient.length === 0) return [];
+      
+      // Then filter out those that have associations in contact_company_associations
+      const contactIds = contactsWithoutClient.map(c => c.id);
+      
+      const { data: associations, error: assocError } = await supabase
+        .from('contact_company_associations')
+        .select('contact_id')
+        .in('contact_id', contactIds)
+        .eq('is_active', true);
+      
+      if (assocError) throw assocError;
+      
+      // Get set of contact IDs that have active associations
+      const assignedContactIds = new Set(associations?.map(a => a.contact_id) || []);
+      
+      // Return only contacts with NO associations (truly unassigned)
+      const trulyOrphan = contactsWithoutClient.filter(c => !assignedContactIds.has(c.id));
+      
+      return trulyOrphan.slice(0, 10);
     }
   });
 
