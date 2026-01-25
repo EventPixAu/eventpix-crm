@@ -119,6 +119,18 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             status: data.status === 'active' ? 'active' : 'inactive',
             notes: data.notes_internal || null,
             location: data.location || null,
+            business_name: data.business_name || null,
+            abn: data.abn || null,
+            address_line1: data.address_line1 || null,
+            address_line2: data.address_line2 || null,
+            address_city: data.address_city || null,
+            address_state: data.address_state || null,
+            address_postcode: data.address_postcode || null,
+            vehicle_make_model: data.vehicle_make_model || null,
+            vehicle_registration: data.vehicle_registration || null,
+            pli_details: data.pli_details || null,
+            pli_expiry: data.pli_expiry || null,
+            photography_equipment: data.photography_equipment || null,
           })
           .eq('id', staffId);
 
@@ -145,7 +157,6 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             location: data.location || null,
             location_state: data.location_state || null,
             location_postcode: data.location_postcode || null,
-            // New fields
             business_name: data.business_name || null,
             abn: data.abn || null,
             address_line1: data.address_line1 || null,
@@ -240,7 +251,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         <form onSubmit={handleSubmit} className="space-y-6">
           {sourceTable === 'staff' && (
             <div className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
-              This team member does not have a linked user account. Some fields are not available until they create an account.
+              This team member does not have a linked user account.
             </div>
           )}
 
@@ -258,17 +269,15 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 />
               </div>
 
-              {sourceTable !== 'staff' && (
-                <div className="col-span-2">
-                  <Label htmlFor="business_name">Business Name</Label>
-                  <Input
-                    id="business_name"
-                    value={formData.business_name}
-                    onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
-                    placeholder="Trading or business name"
-                  />
-                </div>
-              )}
+              <div className="col-span-2">
+                <Label htmlFor="business_name">Business Name</Label>
+                <Input
+                  id="business_name"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  placeholder="Trading or business name"
+                />
+              </div>
 
               <div>
                 <Label htmlFor="phone">Phone</Label>
@@ -280,17 +289,15 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 />
               </div>
 
-              {sourceTable !== 'staff' && (
-                <div>
-                  <Label htmlFor="abn">ABN</Label>
-                  <Input
-                    id="abn"
-                    value={formData.abn}
-                    onChange={(e) => setFormData({ ...formData, abn: e.target.value })}
-                    placeholder="Australian Business Number"
-                  />
-                </div>
-              )}
+              <div>
+                <Label htmlFor="abn">ABN</Label>
+                <Input
+                  id="abn"
+                  value={formData.abn}
+                  onChange={(e) => setFormData({ ...formData, abn: e.target.value })}
+                  placeholder="Australian Business Number"
+                />
+              </div>
             </div>
           </div>
 
@@ -308,70 +315,68 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             </div>
           </div>
 
-          {/* Address Section - profiles only */}
-          {sourceTable !== 'staff' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Address</h3>
-              <div className="grid grid-cols-1 gap-4">
+          {/* Address Section */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Address</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <Label htmlFor="address_line1">Address Line 1</Label>
+                <Input
+                  id="address_line1"
+                  value={formData.address_line1}
+                  onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
+                  placeholder="Street address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="address_line2">Address Line 2</Label>
+                <Input
+                  id="address_line2"
+                  value={formData.address_line2}
+                  onChange={(e) => setFormData({ ...formData, address_line2: e.target.value })}
+                  placeholder="Unit, apartment, etc."
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="address_line1">Address Line 1</Label>
+                  <Label htmlFor="address_city">City/Suburb</Label>
                   <Input
-                    id="address_line1"
-                    value={formData.address_line1}
-                    onChange={(e) => setFormData({ ...formData, address_line1: e.target.value })}
-                    placeholder="Street address"
+                    id="address_city"
+                    value={formData.address_city}
+                    onChange={(e) => setFormData({ ...formData, address_city: e.target.value })}
+                    placeholder="City"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="address_line2">Address Line 2</Label>
-                  <Input
-                    id="address_line2"
-                    value={formData.address_line2}
-                    onChange={(e) => setFormData({ ...formData, address_line2: e.target.value })}
-                    placeholder="Unit, apartment, etc."
-                  />
+                  <Label htmlFor="address_state">State</Label>
+                  <Select
+                    value={formData.address_state}
+                    onValueChange={(value) => setFormData({ ...formData, address_state: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="State" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATES.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="address_city">City/Suburb</Label>
-                    <Input
-                      id="address_city"
-                      value={formData.address_city}
-                      onChange={(e) => setFormData({ ...formData, address_city: e.target.value })}
-                      placeholder="City"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="address_state">State</Label>
-                    <Select
-                      value={formData.address_state}
-                      onValueChange={(value) => setFormData({ ...formData, address_state: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="State" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATES.map((state) => (
-                          <SelectItem key={state} value={state}>
-                            {state}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="address_postcode">Postcode</Label>
-                    <Input
-                      id="address_postcode"
-                      value={formData.address_postcode}
-                      onChange={(e) => setFormData({ ...formData, address_postcode: e.target.value })}
-                      placeholder="0000"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="address_postcode">Postcode</Label>
+                  <Input
+                    id="address_postcode"
+                    value={formData.address_postcode}
+                    onChange={(e) => setFormData({ ...formData, address_postcode: e.target.value })}
+                    placeholder="0000"
+                  />
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Role & Status */}
           <div className="space-y-4">
@@ -452,76 +457,70 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             )}
           </div>
 
-          {/* Vehicle Details - profiles only */}
-          {sourceTable !== 'staff' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Vehicle Details</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="vehicle_make_model">Make & Model</Label>
-                  <Input
-                    id="vehicle_make_model"
-                    value={formData.vehicle_make_model}
-                    onChange={(e) => setFormData({ ...formData, vehicle_make_model: e.target.value })}
-                    placeholder="e.g. Toyota Camry"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vehicle_registration">Registration</Label>
-                  <Input
-                    id="vehicle_registration"
-                    value={formData.vehicle_registration}
-                    onChange={(e) => setFormData({ ...formData, vehicle_registration: e.target.value })}
-                    placeholder="e.g. ABC123"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Insurance & Compliance - profiles only */}
-          {sourceTable !== 'staff' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Insurance & Compliance</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="pli_details">PLI Details</Label>
-                  <Input
-                    id="pli_details"
-                    value={formData.pli_details}
-                    onChange={(e) => setFormData({ ...formData, pli_details: e.target.value })}
-                    placeholder="Insurance provider / policy"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pli_expiry">PLI Expiry Date</Label>
-                  <Input
-                    id="pli_expiry"
-                    type="date"
-                    value={formData.pli_expiry}
-                    onChange={(e) => setFormData({ ...formData, pli_expiry: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Equipment - profiles only */}
-          {sourceTable !== 'staff' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Equipment</h3>
+          {/* Vehicle Details */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Vehicle Details</h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="photography_equipment">Photography Equipment</Label>
-                <Textarea
-                  id="photography_equipment"
-                  value={formData.photography_equipment}
-                  onChange={(e) => setFormData({ ...formData, photography_equipment: e.target.value })}
-                  placeholder="List cameras, lenses, lighting, etc."
-                  rows={3}
+                <Label htmlFor="vehicle_make_model">Make & Model</Label>
+                <Input
+                  id="vehicle_make_model"
+                  value={formData.vehicle_make_model}
+                  onChange={(e) => setFormData({ ...formData, vehicle_make_model: e.target.value })}
+                  placeholder="e.g. Toyota Camry"
+                />
+              </div>
+              <div>
+                <Label htmlFor="vehicle_registration">Registration</Label>
+                <Input
+                  id="vehicle_registration"
+                  value={formData.vehicle_registration}
+                  onChange={(e) => setFormData({ ...formData, vehicle_registration: e.target.value })}
+                  placeholder="e.g. ABC123"
                 />
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Insurance & Compliance */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Insurance & Compliance</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pli_details">PLI Details</Label>
+                <Input
+                  id="pli_details"
+                  value={formData.pli_details}
+                  onChange={(e) => setFormData({ ...formData, pli_details: e.target.value })}
+                  placeholder="Insurance provider / policy"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pli_expiry">PLI Expiry Date</Label>
+                <Input
+                  id="pli_expiry"
+                  type="date"
+                  value={formData.pli_expiry}
+                  onChange={(e) => setFormData({ ...formData, pli_expiry: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Equipment */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Equipment</h3>
+            <div>
+              <Label htmlFor="photography_equipment">Photography Equipment</Label>
+              <Textarea
+                id="photography_equipment"
+                value={formData.photography_equipment}
+                onChange={(e) => setFormData({ ...formData, photography_equipment: e.target.value })}
+                placeholder="List cameras, lenses, lighting, etc."
+                rows={3}
+              />
+            </div>
+          </div>
 
           {/* Internal Notes */}
           <div className="space-y-4">
