@@ -404,14 +404,14 @@ export default function ClientDetail() {
 
         {/* Right Column */}
         <div className="space-y-6">
-          {/* Events Panel - Current & Previous */}
-          <ClientEventsPanel clientId={id} />
-
-          {/* Leads List */}
+          {/* Leads List - Top priority for Sales visibility */}
           <ClientLeadsList
             clientId={id}
             onAddLead={() => navigate(`/sales/leads/new?client_id=${id}`)}
           />
+
+          {/* Events Panel - Current & Previous */}
+          <ClientEventsPanel clientId={id} />
 
           {/* Invoices Summary */}
           <ClientInvoicesSummary clientId={id} />

@@ -5,20 +5,22 @@
  * - Table of linked contacts (name, email, phone, role)
  * - Link existing contact button
  * - Create new contact and auto-link
+ * - Set primary contact
  * - Unlink contacts (removes link, not the contact)
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   User, 
-  Plus, 
   UserPlus, 
   Unlink, 
   Mail, 
   Phone, 
   ExternalLink,
   Search,
-  Loader2
+  Loader2,
+  Star,
+  StarOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,8 +44,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   useCompanyAssociations,
   useDeleteContactAssociation,
+  useUpdateContactAssociation,
   RELATIONSHIP_TYPES,
 } from '@/hooks/useContactCompanyAssociations';
 import { LinkContactToCompanyDialog } from './LinkContactToCompanyDialog';
@@ -57,6 +66,7 @@ interface CompanyContactsPanelProps {
 export function CompanyContactsPanel({ companyId, companyName }: CompanyContactsPanelProps) {
   const { data: associations = [], isLoading } = useCompanyAssociations(companyId);
   const deleteAssociation = useDeleteContactAssociation();
+  const updateAssociation = useUpdateContactAssociation();
   
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -77,9 +87,25 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
     setUnlinkTarget(null);
   };
 
+  const handleSetPrimary = async (assocId: string, contactId: string, isPrimary: boolean) => {
+    await updateAssociation.mutateAsync({
+      id: assocId,
+      contact_id: contactId,
+      company_id: companyId,
+      is_primary: isPrimary,
+    });
+  };
+
   const getRelationshipLabel = (type: string) => {
     return RELATIONSHIP_TYPES.find(t => t.value === type)?.label || type;
   };
+
+  // Sort to show primary first
+  const sortedAssociations = [...associations].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1;
+    if (!a.is_primary && b.is_primary) return 1;
+    return 0;
+  });
 
   return (
     <>
@@ -132,6 +158,7 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[40px]"></TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
@@ -140,16 +167,47 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {associations.map((assoc) => (
-                    <TableRow key={assoc.id}>
+                  {sortedAssociations.map((assoc) => (
+                    <TableRow key={assoc.id} className={assoc.is_primary ? 'bg-primary/5' : ''}>
                       <TableCell>
-                        <Link 
-                          to={`/crm/contacts/${assoc.contact_id}`}
-                          className="font-medium text-primary hover:underline flex items-center gap-1"
-                        >
-                          {assoc.contact?.contact_name || 'Unknown'}
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={`h-8 w-8 p-0 ${assoc.is_primary ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'}`}
+                                onClick={() => handleSetPrimary(assoc.id, assoc.contact_id, !assoc.is_primary)}
+                                disabled={updateAssociation.isPending}
+                              >
+                                {assoc.is_primary ? (
+                                  <Star className="h-4 w-4 fill-current" />
+                                ) : (
+                                  <StarOff className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {assoc.is_primary ? 'Primary Contact' : 'Set as Primary'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Link 
+                            to={`/crm/contacts/${assoc.contact_id}`}
+                            className="font-medium text-primary hover:underline flex items-center gap-1"
+                          >
+                            {assoc.contact?.contact_name || 'Unknown'}
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                          {assoc.is_primary && (
+                            <Badge variant="default" className="text-xs">
+                              Primary
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {assoc.contact?.email ? (
