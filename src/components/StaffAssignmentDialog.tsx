@@ -34,9 +34,12 @@ import { useAuth } from '@/lib/auth';
 interface StaffAssignmentDialogProps {
   eventId: string;
   assignments: EventAssignment[];
+  maxStaff?: number;
 }
 
-export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentDialogProps) {
+const MAX_STAFF_DEFAULT = 8;
+
+export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STAFF_DEFAULT }: StaffAssignmentDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
@@ -121,6 +124,10 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
   const availableProfiles = profiles.filter(
     (profile) => !assignedUserIds.includes(profile.id)
   );
+  
+  // Check if we've hit the max staff limit
+  const isAtMaxCapacity = assignments.length >= maxStaff;
+  const remainingSlots = maxStaff - assignments.length;
 
   // Check guardrail status
   const hasHardBlocks = guardrailChecks?.hardBlocks && guardrailChecks.hardBlocks.length > 0;
@@ -212,7 +219,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
         <DialogHeader>
           <DialogTitle>Manage Staff Assignments</DialogTitle>
           <DialogDescription>
-            Assign photographers and other staff to this event.
+            Assign photographers and other staff to this event. ({assignments.length}/{maxStaff} slots used)
           </DialogDescription>
         </DialogHeader>
 
@@ -256,8 +263,17 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
         </div>
 
         {/* Add New Assignment */}
+        {isAtMaxCapacity ? (
+          <Alert className="mt-4">
+            <Users className="h-4 w-4" />
+            <AlertTitle>Maximum Staff Reached</AlertTitle>
+            <AlertDescription>
+              This event has reached the maximum of {maxStaff} staff assignments. Remove an existing assignment to add another.
+            </AlertDescription>
+          </Alert>
+        ) : (
         <div className="space-y-3 pt-4 border-t">
-          <Label>Add Staff Member</Label>
+          <Label>Add Staff Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
           <Select value={selectedUser} onValueChange={setSelectedUser}>
             <SelectTrigger>
               <SelectValue placeholder="Select staff member" />
@@ -401,6 +417,7 @@ export function StaffAssignmentDialog({ eventId, assignments }: StaffAssignmentD
             }
           </Button>
         </div>
+        )}
         
         {/* Guardrail Override Dialog */}
         <GuardrailOverrideDialog
