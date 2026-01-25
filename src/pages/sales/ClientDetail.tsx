@@ -46,6 +46,7 @@ import {
   ClientWorkflowDashboard,
 } from '@/components/client';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
+import { CreateLeadDialog } from '@/components/CreateLeadDialog';
 import { CompanyContactsPanel } from '@/components/crm/CompanyContactsPanel';
 import { CompanyStatusBadgeDropdown } from '@/components/lead/CompanyStatusBadgeDropdown';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
@@ -334,10 +335,15 @@ export default function ClientDetail() {
           </span>
         }
         actions={
-          <Button onClick={() => navigate('/sales/leads/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Lead
-          </Button>
+          <CreateLeadDialog 
+            defaultClientId={id}
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Lead
+              </Button>
+            }
+          />
         }
       />
 
