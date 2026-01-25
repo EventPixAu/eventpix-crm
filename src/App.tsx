@@ -145,8 +145,7 @@ function AppRoutes() {
       
       {/* Sales routes - admin + sales */}
       <Route path="/sales/dashboard" element={<ProtectedRoute><SalesGuard><SalesDashboard /></SalesGuard></ProtectedRoute>} />
-      <Route path="/sales/clients" element={<ProtectedRoute><SalesGuard><ClientList /></SalesGuard></ProtectedRoute>} />
-      <Route path="/sales/clients/:id" element={<ProtectedRoute><SalesGuard><ClientDetail /></SalesGuard></ProtectedRoute>} />
+      {/* Clients moved to CRM > Companies */}
       <Route path="/sales/leads" element={<ProtectedRoute><SalesGuard><LeadList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/leads/:id" element={<ProtectedRoute><SalesGuard><LeadDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/quotes" element={<ProtectedRoute><SalesGuard><QuoteList /></SalesGuard></ProtectedRoute>} />
