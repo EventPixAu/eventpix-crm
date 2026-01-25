@@ -26,6 +26,7 @@ interface ClientProfileCardProps {
     category?: { id: string; name: string } | null;
     manual_status?: string | null;
     status_override_at?: string | null;
+    status_override_reason?: string | null;
   };
   computedStatus?: string;
   onEdit: () => void;
@@ -94,6 +95,7 @@ export function ClientProfileCard({
           manualStatus={client.manual_status || null}
           computedStatus={computedStatus}
           statusOverrideAt={client.status_override_at}
+          statusOverrideReason={client.status_override_reason}
           onUpdate={onStatusUpdate}
         />
       </div>

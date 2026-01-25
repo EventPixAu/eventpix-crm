@@ -1,13 +1,15 @@
 /**
  * COMPANY STATUS EDITOR
  * 
- * Allows Admin/Sales to manually override company status.
+ * Allows Admin only to manually override company status.
+ * Requires a reason when setting override (min 10 characters).
  * Shows badge when status is manually set vs auto-derived.
- * Logs all status changes to company_status_audit table.
+ * Logs all status changes to company_status_audit table with reason.
  */
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -20,10 +22,29 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Edit2, Info, X, Check } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Edit2, Info, X, Check, Trash2 } from 'lucide-react';
 import { useUpdateClient } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const STATUS_OPTIONS = [
   { value: 'prospect', label: 'Prospect', color: 'bg-slate-100 text-slate-700 border-slate-200' },
@@ -37,6 +58,7 @@ interface ClientStatusEditorProps {
   manualStatus: string | null;
   computedStatus: string;
   statusOverrideAt?: string | null;
+  statusOverrideReason?: string | null;
   onUpdate?: () => void;
 }
 
@@ -45,14 +67,18 @@ export function ClientStatusEditor({
   manualStatus,
   computedStatus,
   statusOverrideAt,
+  statusOverrideReason,
   onUpdate,
 }: ClientStatusEditorProps) {
-  const { isAdmin, isSales } = useAuth();
+  const { isAdmin } = useAuth();
   const updateClient = useUpdateClient();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(manualStatus || '');
+  const [reason, setReason] = useState('');
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const canEdit = isAdmin || isSales;
+  const canEdit = isAdmin; // Only Admin can edit
   const isOverridden = !!manualStatus;
   const displayStatus = manualStatus || computedStatus;
   
@@ -60,17 +86,23 @@ export function ClientStatusEditor({
 
   const handleSave = async () => {
     if (!selectedStatus) return;
+    if (reason.trim().length < 10) {
+      toast.error('Please provide a reason (minimum 10 characters)');
+      return;
+    }
     
+    setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Log to audit
+      // Log to audit with reason
       await supabase.from('company_status_audit').insert({
         company_id: clientId,
         action: 'status_override_set',
         old_status: displayStatus,
         new_status: selectedStatus,
         changed_by: user?.id,
+        override_reason: reason.trim(),
       });
       
       await updateClient.mutateAsync({
@@ -78,16 +110,23 @@ export function ClientStatusEditor({
         manual_status: selectedStatus,
         status_override_at: new Date().toISOString(),
         status_override_by: user?.id,
+        status_override_reason: reason.trim(),
       } as any);
       
+      toast.success('Status updated');
       setIsEditing(false);
+      setReason('');
       onUpdate?.();
     } catch (error) {
       console.error('Error saving status:', error);
+      toast.error('Failed to update status');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleClearOverride = async () => {
+    setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -98,6 +137,7 @@ export function ClientStatusEditor({
         old_status: manualStatus,
         new_status: computedStatus,
         changed_by: user?.id,
+        override_reason: null,
       });
       
       await updateClient.mutateAsync({
@@ -105,63 +145,116 @@ export function ClientStatusEditor({
         manual_status: null,
         status_override_at: null,
         status_override_by: null,
+        status_override_reason: null,
       } as any);
       
+      toast.success('Override cleared - status will be auto-computed from events');
+      setClearConfirmOpen(false);
       setIsEditing(false);
       onUpdate?.();
     } catch (error) {
       console.error('Error clearing override:', error);
+      toast.error('Failed to clear override');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
     setSelectedStatus(manualStatus || '');
+    setReason('');
     setIsEditing(false);
+  };
+
+  const handleStartEditing = () => {
+    setSelectedStatus(manualStatus || computedStatus);
+    setReason('');
+    setIsEditing(true);
   };
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2">
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-[160px] h-8">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={handleSave}
-          disabled={!selectedStatus || updateClient.isPending}
-        >
-          <Check className="h-4 w-4 text-green-600" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={handleCancel}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-        {isOverridden && (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-[160px] h-8">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground"
-            onClick={handleClearOverride}
-            disabled={updateClient.isPending}
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleSave}
+            disabled={!selectedStatus || isSaving || reason.trim().length < 10}
           >
+            <Check className="h-4 w-4 text-green-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleCancel}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Override Reason <span className="text-destructive">*</span>
+          </label>
+          <Textarea
+            placeholder="Enter the reason for this override (minimum 10 characters)..."
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="min-h-[60px] text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            {reason.trim().length}/10 minimum characters
+          </p>
+        </div>
+
+        {isOverridden && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs text-destructive hover:text-destructive"
+            onClick={() => setClearConfirmOpen(true)}
+            disabled={isSaving}
+          >
+            <Trash2 className="h-3 w-3 mr-1" />
             Clear Override
           </Button>
         )}
+
+        {/* Clear Override Confirmation */}
+        <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear Status Override?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove the manual status override and the company status will be 
+                automatically computed from its events. The status will change to: <strong>
+                {STATUS_OPTIONS.find(s => s.value === computedStatus)?.label}
+                </strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearOverride} disabled={isSaving}>
+                {isSaving ? 'Clearing...' : 'Clear Override'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -175,16 +268,19 @@ export function ClientStatusEditor({
       {isOverridden && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600 border-purple-200">
+            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600 border-purple-200 cursor-help">
               <Info className="h-3 w-3 mr-1" />
-              Manual
+              Manual override
             </Badge>
           </TooltipTrigger>
-          <TooltipContent>
-            <p>Status was manually set</p>
+          <TooltipContent className="max-w-[250px]">
+            <p className="font-medium mb-1">Manual override</p>
+            {statusOverrideReason && (
+              <p className="text-xs text-muted-foreground">{statusOverrideReason}</p>
+            )}
             {statusOverrideAt && (
-              <p className="text-xs text-muted-foreground">
-                on {new Date(statusOverrideAt).toLocaleDateString()}
+              <p className="text-xs text-muted-foreground mt-1">
+                Set on {new Date(statusOverrideAt).toLocaleDateString()}
               </p>
             )}
           </TooltipContent>
@@ -196,10 +292,7 @@ export function ClientStatusEditor({
           variant="ghost"
           size="icon"
           className="h-6 w-6"
-          onClick={() => {
-            setSelectedStatus(manualStatus || computedStatus);
-            setIsEditing(true);
-          }}
+          onClick={handleStartEditing}
         >
           <Edit2 className="h-3 w-3" />
         </Button>
