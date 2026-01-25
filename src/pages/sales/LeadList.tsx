@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLeads } from '@/hooks/useSales';
+import { CreateLeadDialog } from '@/components/CreateLeadDialog';
 
 // Studio Ninja-style pipeline stages
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
@@ -66,7 +67,8 @@ export default function LeadList() {
     <AppLayout>
       <PageHeader
         title="Leads"
-        description="Leads are created automatically from website enquiries"
+        description="Manage your sales pipeline"
+        actions={<CreateLeadDialog />}
       />
 
       {/* Pipeline Summary */}

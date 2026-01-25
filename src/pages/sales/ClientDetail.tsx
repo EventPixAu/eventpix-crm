@@ -409,10 +409,7 @@ export default function ClientDetail() {
           <ClientWorkflowDashboard clientId={id!} />
 
           {/* Leads List - Top priority for Sales visibility */}
-          <ClientLeadsList
-            clientId={id}
-            onAddLead={() => navigate(`/sales/leads/new?client_id=${id}`)}
-          />
+          <ClientLeadsList clientId={id!} />
 
           {/* Events Panel - Current & Previous */}
           <ClientEventsPanel clientId={id!} />

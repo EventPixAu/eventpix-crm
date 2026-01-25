@@ -24,9 +24,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/stat-card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CreateLeadDialog } from '@/components/CreateLeadDialog';
 
 export default function SalesDashboard() {
   // Fetch leads
@@ -153,14 +153,7 @@ export default function SalesDashboard() {
       <PageHeader
         title="Sales Dashboard"
         description="Track leads, quotes, and conversions"
-        actions={
-          <Link to="/sales/leads">
-            <Button className="bg-gradient-primary hover:opacity-90">
-              <Target className="h-4 w-4 mr-2" />
-              New Lead
-            </Button>
-          </Link>
-        }
+        actions={<CreateLeadDialog />}
       />
 
       {/* Stats Grid */}
