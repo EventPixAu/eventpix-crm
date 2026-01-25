@@ -205,6 +205,21 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         status: 'new',
       });
       
+      // Create enquiry contact from primary contact
+      const { error: contactError } = await supabase
+        .from('enquiry_contacts')
+        .insert({
+          lead_id: newLead.id,
+          contact_name: contactName.trim(),
+          contact_email: contactEmail.trim(),
+          contact_phone: contactPhone.trim() || null,
+          role: 'primary',
+        });
+      
+      if (contactError) {
+        console.error('Failed to create enquiry contact:', contactError);
+      }
+      
       // Create event sessions for proposed dates
       const sessionsToCreate = proposedSessions
         .filter(s => s.date) // Only sessions with dates
