@@ -18,6 +18,7 @@ import {
   Briefcase,
   Pencil,
   Trash2,
+  Eye,
   Plus,
   MessageSquare,
   PhoneCall,
@@ -88,6 +89,7 @@ export default function ContactDetail() {
   const isCreateMode = !id;
   
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [activityDate, setActivityDate] = useState<Date>(new Date());
   const [formData, setFormData] = useState({
@@ -549,15 +551,21 @@ export default function ContactDetail() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {/* Company Link - show link from direct client or primary association */}
+              {/* Company Link - show link from direct client or any active association */}
               {(() => {
-                const primaryAssociation = associations.find(a => a.is_primary && a.is_active);
-                const displayCompany = contact.client || (primaryAssociation?.company ? {
-                  id: primaryAssociation.company.id,
-                  business_name: primaryAssociation.company.business_name,
+                const activeAssociations = associations.filter(a => a.is_active);
+                const primaryAssociation = activeAssociations.find(a => a.is_primary);
+                const firstActiveAssociation = primaryAssociation || activeAssociations[0];
+                
+                // Contact is linked if they have a direct client_id OR any active associations
+                const hasCompanyLink = !!contact.client || activeAssociations.length > 0;
+                
+                const displayCompany = contact.client || (firstActiveAssociation?.company ? {
+                  id: firstActiveAssociation.company.id,
+                  business_name: firstActiveAssociation.company.business_name,
                 } : null);
                 
-                if (displayCompany) {
+                if (hasCompanyLink && displayCompany) {
                   return (
                     <Link 
                       to={`/crm/companies/${displayCompany.id}`}
@@ -565,9 +573,9 @@ export default function ContactDetail() {
                     >
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                       <span className="font-medium">{displayCompany.business_name}</span>
-                      {!contact.client && primaryAssociation && (
+                      {!contact.client && firstActiveAssociation && (
                         <Badge variant="outline" className="ml-auto text-xs">
-                          {primaryAssociation.relationship_type}
+                          {firstActiveAssociation.relationship_type}
                         </Badge>
                       )}
                     </Link>
@@ -618,6 +626,10 @@ export default function ContactDetail() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t">
+                <Button variant="outline" size="sm" onClick={() => setIsViewOpen(true)}>
+                  <Eye className="h-4 w-4 mr-1.5" />
+                  View
+                </Button>
                 <Button variant="outline" size="sm" onClick={handleOpenEdit}>
                   <Pencil className="h-4 w-4 mr-1.5" />
                   Edit
@@ -634,7 +646,7 @@ export default function ContactDetail() {
           <ContactCompanyAssociationsPanel 
             contactId={id!} 
             primaryCompanyId={contact.client_id}
-            isStandalone={!contact.client_id}
+            isStandalone={!contact.client_id && associations.filter(a => a.is_active).length === 0}
           />
         </div>
 
@@ -898,6 +910,127 @@ export default function ContactDetail() {
             </Button>
             <Button onClick={handleLogActivity} disabled={createActivity.isPending}>
               {createActivity.isPending ? 'Logging...' : 'Log Activity'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Contact Details Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {contact.contact_name}
+            </DialogTitle>
+            <DialogDescription>Full contact details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Name */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">First Name</Label>
+                <p className="font-medium">{contact.first_name || '-'}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Last Name</Label>
+                <p className="font-medium">{contact.last_name || '-'}</p>
+              </div>
+            </div>
+
+            {/* Company */}
+            <div>
+              <Label className="text-xs text-muted-foreground">Company</Label>
+              {(() => {
+                const activeAssociations = associations.filter(a => a.is_active);
+                if (contact.client) {
+                  return (
+                    <Link 
+                      to={`/crm/companies/${contact.client.id}`}
+                      className="text-primary hover:underline font-medium block"
+                    >
+                      {contact.client.business_name}
+                    </Link>
+                  );
+                } else if (activeAssociations.length > 0) {
+                  return (
+                    <div className="space-y-1">
+                      {activeAssociations.map(assoc => (
+                        <div key={assoc.id} className="flex items-center gap-2">
+                          <Link 
+                            to={`/crm/companies/${assoc.company_id}`}
+                            className="text-primary hover:underline font-medium"
+                          >
+                            {assoc.company?.business_name}
+                          </Link>
+                          <Badge variant="outline" className="text-xs">{assoc.relationship_type}</Badge>
+                          {assoc.is_primary && <Badge variant="secondary" className="text-xs">Primary</Badge>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                return <p className="text-muted-foreground">Standalone contact</p>;
+              })()}
+            </div>
+
+            {/* Job Title */}
+            <div>
+              <Label className="text-xs text-muted-foreground">Job Title</Label>
+              <p className="font-medium">{contact.job_title?.name || contact.role_title || '-'}</p>
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                {contact.email ? (
+                  <a href={`mailto:${contact.email}`} className="text-primary hover:underline font-medium block">
+                    {contact.email}
+                  </a>
+                ) : <p className="text-muted-foreground">-</p>}
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Mobile</Label>
+                {contact.phone_mobile ? (
+                  <a href={`tel:${contact.phone_mobile}`} className="text-primary hover:underline font-medium block">
+                    {contact.phone_mobile}
+                  </a>
+                ) : <p className="text-muted-foreground">-</p>}
+              </div>
+            </div>
+
+            {contact.phone && contact.phone !== contact.phone_mobile && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Other Phone</Label>
+                <a href={`tel:${contact.phone}`} className="text-primary hover:underline font-medium block">
+                  {contact.phone}
+                </a>
+              </div>
+            )}
+
+            {/* Primary Contact */}
+            {contact.is_primary && (
+              <div>
+                <Badge variant="default">Primary Contact</Badge>
+              </div>
+            )}
+
+            {/* Notes */}
+            {contact.notes && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Notes</Label>
+                <p className="text-sm mt-1 p-3 bg-muted/50 rounded-lg">{contact.notes}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => { setIsViewOpen(false); handleOpenEdit(); }}>
+              <Pencil className="h-4 w-4 mr-1.5" />
+              Edit
             </Button>
           </DialogFooter>
         </DialogContent>
