@@ -18,7 +18,7 @@ import {
   User,
   Loader2,
   AlertTriangle,
-  Sparkles,
+  
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -32,7 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarUpload } from '@/components/AvatarUpload';
-import { SkillNominationPanel } from '@/components/SkillNominationPanel';
+
 import { NotificationPreferencesPanel } from '@/components/NotificationPreferencesPanel';
 import { PhotographyEquipmentEditor, PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
 import { useAuth } from '@/lib/auth';
@@ -299,10 +299,6 @@ export default function StaffMe() {
           <TabsTrigger value="equipment" className="gap-2">
             <Camera className="h-4 w-4" />
             Equipment
-          </TabsTrigger>
-          <TabsTrigger value="skills" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            Skills
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Settings className="h-4 w-4" />
@@ -705,9 +701,6 @@ export default function StaffMe() {
           </div>
         </TabsContent>
         
-        <TabsContent value="skills">
-          <SkillNominationPanel userId={user?.id} />
-        </TabsContent>
         
         <TabsContent value="notifications">
           <NotificationPreferencesPanel 
