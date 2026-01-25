@@ -21,10 +21,10 @@ export interface EquipmentItem {
 }
 
 export interface PhotographyEquipment {
-  cameras: EquipmentItem[];
-  lenses: EquipmentItem[];
-  lights: EquipmentItem[];
-  backdrops: EquipmentItem[];
+  camera: EquipmentItem[];
+  lighting: EquipmentItem[];
+  backdrop: EquipmentItem[];
+  other: EquipmentItem[];
 }
 
 interface PhotographyEquipmentEditorProps {
@@ -36,17 +36,17 @@ interface PhotographyEquipmentEditorProps {
 }
 
 const DEFAULT_EQUIPMENT: PhotographyEquipment = {
-  cameras: [],
-  lenses: [],
-  lights: [],
-  backdrops: [],
+  camera: [],
+  lighting: [],
+  backdrop: [],
+  other: [],
 };
 
 const CATEGORIES = [
-  { key: 'cameras' as const, label: 'Cameras', icon: Camera, placeholder: 'e.g., Canon EOS R5' },
-  { key: 'lenses' as const, label: 'Lenses', icon: Aperture, placeholder: 'e.g., RF 24-70mm f/2.8L' },
-  { key: 'lights' as const, label: 'Lights', icon: Lightbulb, placeholder: 'e.g., Godox AD600 Pro' },
-  { key: 'backdrops' as const, label: 'Backdrops', icon: Image, placeholder: 'e.g., Grey Muslin 3x6m' },
+  { key: 'camera' as const, label: 'Camera Kit', icon: Camera, placeholder: 'e.g., Canon EOS R5, RF 24-70mm f/2.8L' },
+  { key: 'lighting' as const, label: 'Lighting Kit', icon: Lightbulb, placeholder: 'e.g., Godox AD600 Pro, Softbox' },
+  { key: 'backdrop' as const, label: 'Backdrop Kit', icon: Image, placeholder: 'e.g., Grey Muslin 3x6m, C-Stand' },
+  { key: 'other' as const, label: 'Other', icon: Aperture, placeholder: 'e.g., Memory cards, Batteries' },
 ] as const;
 
 function generateId(): string {
@@ -65,14 +65,14 @@ export function PhotographyEquipmentEditor({
   );
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Sync with initial data changes
+  // Sync with initial data changes - handle both old and new key formats
   useEffect(() => {
     if (initialData) {
       setEquipment({
-        cameras: initialData.cameras || [],
-        lenses: initialData.lenses || [],
-        lights: initialData.lights || [],
-        backdrops: initialData.backdrops || [],
+        camera: initialData.camera || (initialData as any).cameras || [],
+        lighting: initialData.lighting || (initialData as any).lights || [],
+        backdrop: initialData.backdrop || (initialData as any).backdrops || [],
+        other: initialData.other || (initialData as any).lenses || [],
       });
     }
   }, [initialData]);
@@ -152,7 +152,7 @@ export function PhotographyEquipmentEditor({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Accordion type="multiple" defaultValue={['cameras', 'lenses']} className="space-y-2">
+        <Accordion type="multiple" defaultValue={['camera', 'lighting']} className="space-y-2">
           {CATEGORIES.map(({ key, label, icon: Icon, placeholder }) => (
             <AccordionItem key={key} value={key} className="border rounded-lg px-4">
               <AccordionTrigger className="hover:no-underline">
@@ -233,7 +233,7 @@ export function PhotographyEquipmentEditor({
                     onClick={() => addItem(key)}
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Add {label.slice(0, -1)}
+                    Add Item
                   </Button>
                 )}
               </AccordionContent>
