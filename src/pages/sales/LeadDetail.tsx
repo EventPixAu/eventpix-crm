@@ -64,6 +64,7 @@ import {
   LeadContactsPanel,
   InitializeLeadWorkflowDialog,
   LeadProposedDatesPanel,
+  MarkAsClientButton,
 } from '@/components/lead';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
@@ -167,6 +168,11 @@ export default function LeadDetail() {
               <Eye className="h-4 w-4 mr-2" />
               View Client Portal
             </Button>
+            <MarkAsClientButton
+              clientId={client?.id}
+              clientStatus={client?.manual_status || client?.status}
+              leadStatus={lead.status}
+            />
             <Button 
               className="bg-emerald-500 hover:bg-emerald-600"
               onClick={() => setIsConvertDialogOpen(true)}
