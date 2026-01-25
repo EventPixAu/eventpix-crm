@@ -74,6 +74,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: profile.full_name || '',
+    email: profile.email || '',
     phone: profile.phone || '',
     home_city: profile.home_city || '',
     home_state: profile.home_state || '',
@@ -115,6 +116,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
           .from('staff')
           .update({
             name: data.full_name || null,
+            email: data.email || null,
             phone: data.phone || null,
             status: data.status === 'active' ? 'active' : 'inactive',
             notes: data.notes_internal || null,
@@ -202,6 +204,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
       // Reset form data when opening
       setFormData({
         full_name: profile.full_name || '',
+        email: profile.email || '',
         phone: profile.phone || '',
         home_city: profile.home_city || '',
         home_state: profile.home_state || '',
@@ -270,6 +273,23 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                   placeholder="Enter full name"
                 />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter email address"
+                  disabled={sourceTable !== 'staff'}
+                />
+                {sourceTable !== 'staff' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email is managed through the user account
+                  </p>
+                )}
               </div>
 
               <div className="col-span-2">
