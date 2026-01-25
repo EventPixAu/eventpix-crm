@@ -101,7 +101,6 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     category_id: '',
-    notes: '',
   });
 
   const handleOpenEdit = () => {
@@ -112,7 +111,6 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
-        notes: client.notes || '',
       });
       setIsEditOpen(true);
     }
@@ -139,7 +137,6 @@ export default function ClientDetail() {
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
       category_id: formData.category_id || null,
-      notes: formData.notes || null,
     });
     navigate(`/crm/companies/${result.id}`);
   };
@@ -245,17 +242,6 @@ export default function ClientDetail() {
                 onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })}
                 rows={2}
                 placeholder="123 Main St, Sydney NSW 2000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="create_notes">Notes</Label>
-              <Textarea
-                id="create_notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-                placeholder="Additional notes..."
               />
             </div>
 
@@ -445,16 +431,6 @@ export default function ClientDetail() {
                 onChange={(e) => setFormData({ ...formData, billing_address: e.target.value })}
                 rows={3}
                 placeholder="Street Address&#10;Suburb, State, Postcode&#10;Country"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={2}
               />
             </div>
           </div>
