@@ -830,6 +830,8 @@ export type Database = {
       }
       contract_templates: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           body_html: string
           body_text: string | null
           created_at: string
@@ -840,6 +842,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           body_html: string
           body_text?: string | null
           created_at?: string
@@ -850,6 +854,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           body_html?: string
           body_text?: string | null
           created_at?: string
@@ -859,7 +865,22 @@ export type Database = {
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contract_views: {
         Row: {
@@ -1463,6 +1484,8 @@ export type Database = {
       }
       email_templates: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           body_html: string
           body_text: string | null
           created_at: string | null
@@ -1475,6 +1498,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           body_html: string
           body_text?: string | null
           created_at?: string | null
@@ -1489,6 +1514,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           body_html?: string
           body_text?: string | null
           created_at?: string | null
@@ -1502,7 +1529,22 @@ export type Database = {
             | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enquiry_contacts: {
         Row: {
@@ -3375,6 +3417,8 @@ export type Database = {
       }
       quote_templates: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -3386,6 +3430,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -3397,6 +3443,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -3407,7 +3455,22 @@ export type Database = {
           terms_text?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quote_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quotes: {
         Row: {
@@ -3602,6 +3665,8 @@ export type Database = {
       }
       sales_workflow_templates: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -3613,6 +3678,8 @@ export type Database = {
           workflow_domain: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -3624,6 +3691,8 @@ export type Database = {
           workflow_domain?: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -3634,7 +3703,22 @@ export type Database = {
           updated_at?: string | null
           workflow_domain?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_workflow_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_workflow_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_emails: {
         Row: {
@@ -4553,6 +4637,8 @@ export type Database = {
       workflow_templates: {
         Row: {
           applies_to: string | null
+          archived_at: string | null
+          archived_by: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -4564,6 +4650,8 @@ export type Database = {
         }
         Insert: {
           applies_to?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -4575,6 +4663,8 @@ export type Database = {
         }
         Update: {
           applies_to?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -4584,7 +4674,22 @@ export type Database = {
           updated_at?: string | null
           workflow_domain?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workflow_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       worksheet_items: {
         Row: {
