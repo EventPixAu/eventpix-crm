@@ -407,7 +407,19 @@ export default function EventDetail() {
               {/* Sessions / Multiple Dates */}
               {id && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-                  <h2 className="text-lg font-display font-semibold mb-4">Sessions / Time Blocks</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-display font-semibold">Sessions / Time Blocks</h2>
+                    {isAdmin && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/events/${id}/edit?tab=sessions`)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
                   <SessionsDisplay eventId={id} />
                 </div>
               )}
