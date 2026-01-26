@@ -1,8 +1,8 @@
 /**
- * Dialog to create a standalone contact without requiring a company link
+ * Dialog to create a standalone contact with optional company creation
  */
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Building2, User } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,15 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useJobTitles } from '@/hooks/useJobTitles';
+import { cn } from '@/lib/utils';
 
 interface CreateStandaloneContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+type ContactType = 'individual' | 'company';
 
 interface ContactFormData {
   first_name: string;
@@ -41,6 +45,8 @@ interface ContactFormData {
   job_title_id: string;
   role_title: string;
   notes: string;
+  contact_type: ContactType;
+  company_name: string;
 }
 
 const initialFormData: ContactFormData = {
@@ -52,6 +58,8 @@ const initialFormData: ContactFormData = {
   job_title_id: '',
   role_title: '',
   notes: '',
+  contact_type: 'individual',
+  company_name: '',
 };
 
 export function CreateStandaloneContactDialog({
@@ -62,7 +70,7 @@ export function CreateStandaloneContactDialog({
   const queryClient = useQueryClient();
   const { data: jobTitles = [] } = useJobTitles();
 
-  // Create contact mutation
+  // Create contact (and optionally company) mutation
   const createContact = useMutation({
     mutationFn: async (data: ContactFormData) => {
       const contactName = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
@@ -71,7 +79,31 @@ export function CreateStandaloneContactDialog({
         throw new Error('Please enter a first or last name');
       }
 
-      const { data: contact, error } = await supabase
+      let companyId: string | null = null;
+
+      // If company type, create the company first
+      if (data.contact_type === 'company') {
+        if (!data.company_name.trim()) {
+          throw new Error('Please enter a company name');
+        }
+
+        const { data: company, error: companyError } = await supabase
+          .from('clients')
+          .insert({
+            business_name: data.company_name.trim(),
+            primary_contact_name: contactName,
+            primary_contact_email: data.email || null,
+            primary_contact_phone: data.phone_mobile || data.phone_office || null,
+          })
+          .select()
+          .single();
+
+        if (companyError) throw companyError;
+        companyId = company.id;
+      }
+
+      // Create the contact
+      const { data: contact, error: contactError } = await supabase
         .from('client_contacts')
         .insert({
           contact_name: contactName,
@@ -83,19 +115,43 @@ export function CreateStandaloneContactDialog({
           job_title_id: data.job_title_id || null,
           role_title: data.role_title || null,
           notes: data.notes || null,
-          // No client_id - this is an independent contact
-          is_freelance: true,
+          client_id: companyId, // Link directly if company was created
+          is_freelance: data.contact_type === 'individual',
         })
         .select()
         .single();
 
-      if (error) throw error;
-      return contact;
+      if (contactError) throw contactError;
+
+      // If company was created, also create the association record
+      if (companyId) {
+        const { error: assocError } = await supabase
+          .from('contact_company_associations')
+          .insert({
+            contact_id: contact.id,
+            company_id: companyId,
+            is_primary: true,
+            is_active: true,
+          });
+
+        if (assocError) {
+          console.error('Failed to create association:', assocError);
+          // Don't throw - contact and company were created successfully
+        }
+      }
+
+      return { contact, companyId };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       queryClient.invalidateQueries({ queryKey: ['all-contacts-for-linking'] });
-      toast.success('Contact created successfully');
+      if (result.companyId) {
+        queryClient.invalidateQueries({ queryKey: ['clients'] });
+        queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
+        toast.success('Contact and company created successfully');
+      } else {
+        toast.success('Contact created successfully');
+      }
       setFormData(initialFormData);
       onOpenChange(false);
     },
@@ -107,6 +163,10 @@ export function CreateStandaloneContactDialog({
   const handleSubmit = () => {
     if (!formData.first_name.trim() && !formData.last_name.trim()) {
       toast.error('Please enter at least a first or last name');
+      return;
+    }
+    if (formData.contact_type === 'company' && !formData.company_name.trim()) {
+      toast.error('Please enter a company name');
       return;
     }
     createContact.mutate(formData);
@@ -128,6 +188,50 @@ export function CreateStandaloneContactDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Contact Type Selection */}
+          <div className="space-y-3">
+            <Label>Contact Type</Label>
+            <RadioGroup
+              value={formData.contact_type}
+              onValueChange={(value: ContactType) => 
+                setFormData({ ...formData, contact_type: value, company_name: value === 'individual' ? '' : formData.company_name })
+              }
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="individual" id="individual" />
+                <Label htmlFor="individual" className="flex items-center gap-1.5 cursor-pointer font-normal">
+                  <User className="h-4 w-4" />
+                  Individual
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="company" id="company" />
+                <Label htmlFor="company" className="flex items-center gap-1.5 cursor-pointer font-normal">
+                  <Building2 className="h-4 w-4" />
+                  Company
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Company Name (shown when company type selected) */}
+          {formData.contact_type === 'company' && (
+            <div className="space-y-2 p-3 rounded-lg bg-muted/50 border">
+              <Label htmlFor="company_name">Company Name *</Label>
+              <Input
+                id="company_name"
+                value={formData.company_name}
+                onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                placeholder="Acme Corporation"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                A new company will be created with this contact as the primary contact.
+              </p>
+            </div>
+          )}
+
           {/* First & Last Name */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
