@@ -127,7 +127,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
       <div className="flex items-center justify-between">
         <Label className="text-base font-semibold">Sessions</Label>
         {!disabled && (
-          <Button variant="outline" size="sm" onClick={handleOpenCreate}>
+          <Button type="button" variant="outline" size="sm" onClick={handleOpenCreate}>
             <Plus className="h-4 w-4 mr-1" />
             Add Session
           </Button>
@@ -198,6 +198,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
                   {!disabled && (
                     <div className="flex items-center gap-1">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(session)}
@@ -205,6 +206,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
                         Edit
                       </Button>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive"
@@ -303,10 +305,11 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
+              type="button"
               onClick={handleSave} 
               disabled={!formData.session_date || createSession.isPending || updateSession.isPending}
             >
