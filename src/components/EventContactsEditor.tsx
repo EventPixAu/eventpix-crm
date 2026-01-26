@@ -118,7 +118,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
           <span className="text-xs text-muted-foreground">({contacts.length}/{maxContacts})</span>
         </div>
         {!disabled && canAddMore && (
-          <Button variant="outline" size="sm" onClick={handleOpenCreate}>
+          <Button type="button" variant="outline" size="sm" onClick={handleOpenCreate}>
             <Plus className="h-4 w-4 mr-1" />
             Add Contact
           </Button>
@@ -131,7 +131,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
             No contacts assigned. Add contacts for on-site coordination.
           </p>
           {!disabled && (
-            <Button variant="ghost" size="sm" onClick={handleOpenCreate}>
+            <Button type="button" variant="ghost" size="sm" onClick={handleOpenCreate}>
               <Plus className="h-4 w-4 mr-1" />
               Add First Contact
             </Button>
@@ -202,6 +202,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
 
                     {!disabled && (
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
@@ -269,10 +270,11 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
+              type="button"
               onClick={handleSave} 
               disabled={!selectedContactId || createContact.isPending}
             >
