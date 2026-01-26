@@ -218,6 +218,7 @@ export default function ContractTemplates() {
     await updateTemplate.mutateAsync({
       id: selectedTemplate.id,
       body_text: convertedText,
+      format: 'text', // Change format to text
       // Keep original HTML for rollback
     });
 
