@@ -931,6 +931,7 @@ export default function EventSeriesDetail() {
           event_name: e.event_name,
           client_name: e.client_name,
           event_date: e.event_date,
+          arrival_time: null, // Series events don't have session-level arrival_time
           start_time: e.start_time,
           end_time: e.end_time,
           start_at: e.start_at,
