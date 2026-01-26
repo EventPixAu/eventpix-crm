@@ -223,16 +223,16 @@ export function PlainTextTemplateEditor({
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
           <div className="flex items-center justify-between">
             <Label>{label}</Label>
-            <TabsList className="h-8">
-              <TabsTrigger value="edit" className="text-xs px-3">Edit</TabsTrigger>
-              <TabsTrigger value="preview" className="text-xs px-3">
+            <TabsList className="h-8 bg-muted">
+              <TabsTrigger value="edit" className="text-xs px-3 data-[state=active]:bg-background data-[state=active]:text-foreground">Edit</TabsTrigger>
+              <TabsTrigger value="preview" className="text-xs px-3 data-[state=active]:bg-background data-[state=active]:text-foreground">
                 <Eye className="h-3 w-3 mr-1" />
                 Preview
               </TabsTrigger>
             </TabsList>
           </div>
           
-          <TabsContent value="edit" className="mt-2 space-y-0">
+          <TabsContent value="edit" className="mt-2 space-y-0" forceMount={activeTab === 'edit' ? true : undefined}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Template textarea */}
               <div className="lg:col-span-2">
@@ -241,7 +241,7 @@ export function PlainTextTemplateEditor({
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
                   placeholder={placeholder}
-                  className="resize-none text-sm"
+                  className="resize-none text-sm border-2 border-input focus:border-primary"
                   style={{ minHeight }}
                 />
               </div>
