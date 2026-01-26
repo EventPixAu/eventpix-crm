@@ -77,16 +77,36 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch events assigned to this user (next 6 months + past 1 month)
+    // Determine if this user should see ALL events (admin/operations/executive)
+    // Note: this feed is protected by the user's token, not JWT.
+    const { data: roles, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+      return new Response("Error fetching user roles", {
+        status: 500,
+        headers: corsHeaders,
+      });
+    }
+
+    const roleNames = new Set((roles || []).map((r: any) => r.role));
+    const isPrivilegedUser =
+      roleNames.has('admin') || roleNames.has('operations') || roleNames.has('executive');
+
+    // Fetch events (next 6 months + past 1 month)
     const now = new Date();
     const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const futureDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
 
-    const { data: assignments, error: assignmentError } = await supabase
-      .from('event_assignments')
-      .select(`
-        event_id,
-        events!inner (
+    // For privileged users, show all events. Otherwise, only events assigned to them.
+    let assignedEvents: any[] = [];
+    if (isPrivilegedUser) {
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select(`
           id,
           event_name,
           client_name,
@@ -105,16 +125,57 @@ Deno.serve(async (req) => {
             venue_name,
             venue_address
           )
-        )
-      `)
-      .eq('user_id', userId);
+        `)
+        .gte('event_date', format(pastDate, 'yyyy-MM-dd'))
+        .lte('event_date', format(futureDate, 'yyyy-MM-dd'));
 
-    if (assignmentError) {
-      console.error('Error fetching events:', assignmentError);
-      return new Response("Error fetching events", { 
-        status: 500, 
-        headers: corsHeaders 
-      });
+      if (eventsError) {
+        console.error('Error fetching events:', eventsError);
+        return new Response("Error fetching events", {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
+
+      // Normalize to match the existing loop's shape (assignment.events)
+      assignedEvents = (events || []).map((e) => ({ events: e }));
+    } else {
+      const { data: assignments, error: assignmentError } = await supabase
+        .from('event_assignments')
+        .select(`
+          event_id,
+          events!inner (
+            id,
+            event_name,
+            client_name,
+            event_date,
+            start_time,
+            end_time,
+            venue_name,
+            venue_address,
+            special_instructions,
+            event_sessions (
+              id,
+              session_date,
+              start_time,
+              end_time,
+              label,
+              venue_name,
+              venue_address
+            )
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (assignmentError) {
+        console.error('Error fetching events:', assignmentError);
+        return new Response("Error fetching events", {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
+
+      assignedEvents = assignments || [];
     }
 
     // Build ICS content
@@ -128,7 +189,7 @@ Deno.serve(async (req) => {
       'X-WR-TIMEZONE:Australia/Sydney',
     ];
 
-    for (const assignment of assignments || []) {
+    for (const assignment of assignedEvents || []) {
       const event = assignment.events as any;
       if (!event) continue;
 
