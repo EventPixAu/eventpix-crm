@@ -302,9 +302,10 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Mobile</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Job Title</TableHead>
+                  <TableHead>Lead Source</TableHead>
+                  <TableHead>Industry</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -318,14 +319,6 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                         <span className="flex items-center gap-1 text-sm">
                           <Mail className="h-3 w-3" />
                           {contact.email}
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                    <TableCell>
-                      {contact.mobile ? (
-                        <span className="flex items-center gap-1 text-sm">
-                          <Phone className="h-3 w-3" />
-                          {contact.mobile}
                         </span>
                       ) : '—'}
                     </TableCell>
@@ -348,6 +341,12 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                           {contact.jobTitle}
                         </Badge>
                       ) : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {contact.leadSource || '—'}
+                    </TableCell>
+                    <TableCell>
+                      {contact.industry || '—'}
                     </TableCell>
                   </TableRow>
                 ))}
