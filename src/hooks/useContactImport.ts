@@ -19,6 +19,8 @@ export interface ImportedContact {
   companyEmail?: string;
   companyPhone?: string;
   companyAddress?: string;
+  leadSource?: string;
+  industry?: string;
 }
 
 export interface ImportResult {
@@ -76,6 +78,16 @@ export function parseCSV(csvContent: string): ImportedContact[] {
     'company_address': 'companyAddress',
     'billingaddress': 'companyAddress',
     'billing_address': 'companyAddress',
+    // Lead Source mappings
+    'leadsource': 'leadSource',
+    'lead_source': 'leadSource',
+    'lead source': 'leadSource',
+    'source': 'leadSource',
+    // Industry mappings
+    'industry': 'industry',
+    'industrytype': 'industry',
+    'industry_type': 'industry',
+    'sector': 'industry',
   };
 
   const contacts: ImportedContact[] = [];
@@ -245,6 +257,8 @@ export function useContactImport() {
                   company_email: contact.companyEmail || null,
                   company_phone: contact.companyPhone || null,
                   billing_address: contact.companyAddress || null,
+                  lead_source: contact.leadSource || null,
+                  industry: contact.industry || null,
                 })
                 .select('id')
                 .single();

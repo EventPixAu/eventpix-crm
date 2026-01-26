@@ -468,6 +468,7 @@ export type Database = {
           id: string
           industry: string | null
           is_training: boolean | null
+          lead_source: string | null
           legal_name: string | null
           manual_status: string | null
           notes: string | null
@@ -494,6 +495,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_training?: boolean | null
+          lead_source?: string | null
           legal_name?: string | null
           manual_status?: string | null
           notes?: string | null
@@ -520,6 +522,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_training?: boolean | null
+          lead_source?: string | null
           legal_name?: string | null
           manual_status?: string | null
           notes?: string | null
