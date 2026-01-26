@@ -363,6 +363,23 @@ export default function ContractDetail() {
                   </div>
                 </>
               )}
+
+              {/* Digital Signature */}
+              {(contract as any).signature_data && (
+                <>
+                  <Separator />
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-2">Digital Signature</div>
+                    <div className="border rounded-lg p-2 bg-white">
+                      <img 
+                        src={(contract as any).signature_data} 
+                        alt="Client Signature" 
+                        className="max-h-20 w-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
