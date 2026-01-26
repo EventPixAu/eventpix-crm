@@ -3267,6 +3267,7 @@ export type Database = {
           assigned_equipment_notes: string | null
           avatar_url: string | null
           business_name: string | null
+          calendar_feed_token: string | null
           certificates: string | null
           created_at: string | null
           default_role_id: string | null
@@ -3310,6 +3311,7 @@ export type Database = {
           assigned_equipment_notes?: string | null
           avatar_url?: string | null
           business_name?: string | null
+          calendar_feed_token?: string | null
           certificates?: string | null
           created_at?: string | null
           default_role_id?: string | null
@@ -3353,6 +3355,7 @@ export type Database = {
           assigned_equipment_notes?: string | null
           avatar_url?: string | null
           business_name?: string | null
+          calendar_feed_token?: string | null
           certificates?: string | null
           created_at?: string | null
           default_role_id?: string | null
@@ -5185,6 +5188,10 @@ export type Database = {
       provision_user_invitation: {
         Args: { p_email: string; p_role: string }
         Returns: Json
+      }
+      regenerate_calendar_feed_token: {
+        Args: { p_user_id: string }
+        Returns: string
       }
       regenerate_contract_token: {
         Args: { p_contract_id: string }
