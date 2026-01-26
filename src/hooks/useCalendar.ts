@@ -60,6 +60,15 @@ export function useAdminCalendarEvents(
       const rangeStart = format(subMonths(startOfMonth(currentMonth), 1), 'yyyy-MM-dd');
       const rangeEnd = format(addMonths(endOfMonth(currentMonth), 1), 'yyyy-MM-dd');
 
+      // First, get events that have sessions in the date range
+      const { data: sessionsInRange } = await supabase
+        .from('event_sessions')
+        .select('event_id, session_date, start_time, end_time, label, venue_name, venue_address')
+        .gte('session_date', rangeStart)
+        .lte('session_date', rangeEnd);
+
+      const eventIdsWithSessions = new Set((sessionsInRange || []).map(s => s.event_id));
+
       let query = supabase
         .from('events')
         .select(`
@@ -81,11 +90,22 @@ export function useAdminCalendarEvents(
           delivery_method_id,
           delivery_deadline,
           event_assignments!left(id, user_id),
-          delivery_records!left(id, delivered_at)
+          delivery_records!left(id, delivered_at),
+          event_sessions!left(id, session_date, start_time, end_time, label, venue_name, venue_address)
         `)
-        .gte('event_date', rangeStart)
-        .lte('event_date', rangeEnd)
         .order('event_date', { ascending: true });
+
+      // We need events where either:
+      // 1. The event_date is in range (no sessions case)
+      // 2. The event has sessions in range
+      // For now, fetch events in date range OR events that have sessions in range
+      const eventIdsArray = Array.from(eventIdsWithSessions);
+      if (eventIdsArray.length > 0) {
+        query = query.or(`event_date.gte.${rangeStart},id.in.(${eventIdsArray.join(',')})`);
+        query = query.or(`event_date.lte.${rangeEnd},id.in.(${eventIdsArray.join(',')})`);
+      } else {
+        query = query.gte('event_date', rangeStart).lte('event_date', rangeEnd);
+      }
 
       // If filtering by staff, we need to check assignments
       if (filters?.staffId) {
@@ -138,9 +158,13 @@ export function useAdminCalendarEvents(
 
       const today = new Date();
 
-      return (data || []).map(event => {
+      // Build calendar entries - one per session date, or fall back to event_date
+      const calendarEntries: CalendarEvent[] = [];
+
+      (data || []).forEach(event => {
         const assignments = (event.event_assignments as any[]) || [];
         const deliveryRecord = (event.delivery_records as any[])?.[0];
+        const sessions = (event.event_sessions as any[]) || [];
         
         // Check if delivery is needed soon
         const needsAttention = event.delivery_deadline && 
@@ -148,31 +172,68 @@ export function useAdminCalendarEvents(
           differenceInDays(new Date(event.delivery_deadline), today) <= 7;
 
         const seriesData = event.event_series as any;
-        
-        return {
-          id: event.id,
-          event_name: event.event_name,
-          client_name: event.client_name,
-          event_date: event.event_date,
-          start_time: event.start_time,
-          end_time: event.end_time,
-          start_at: event.start_at,
-          end_at: event.end_at,
-          venue_name: event.venue_name,
-          venue_address: event.venue_address,
-          onsite_contact_name: event.onsite_contact_name,
-          onsite_contact_phone: event.onsite_contact_phone,
-          event_type_id: event.event_type_id,
-          event_series_id: event.event_series_id,
-          event_series_name: seriesData?.name || null,
-          delivery_method_id: event.delivery_method_id,
-          delivery_deadline: event.delivery_deadline,
-          assignment_count: assignments.length,
-          has_conflict: conflictEventIds.has(event.id),
-          needs_attention: needsAttention,
-          is_delivered: !!deliveryRecord?.delivered_at,
-        } as CalendarEvent;
+
+        // If event has sessions, create an entry for each session date
+        if (sessions.length > 0) {
+          sessions.forEach(session => {
+            // Only include sessions within the date range
+            if (session.session_date >= rangeStart && session.session_date <= rangeEnd) {
+              calendarEntries.push({
+                id: event.id,
+                event_name: session.label ? `${event.event_name} - ${session.label}` : event.event_name,
+                client_name: event.client_name,
+                event_date: session.session_date, // Use session date for calendar placement
+                start_time: session.start_time || event.start_time,
+                end_time: session.end_time || event.end_time,
+                start_at: event.start_at,
+                end_at: event.end_at,
+                venue_name: session.venue_name || event.venue_name,
+                venue_address: session.venue_address || event.venue_address,
+                onsite_contact_name: event.onsite_contact_name,
+                onsite_contact_phone: event.onsite_contact_phone,
+                event_type_id: event.event_type_id,
+                event_series_id: event.event_series_id,
+                event_series_name: seriesData?.name || null,
+                delivery_method_id: event.delivery_method_id,
+                delivery_deadline: event.delivery_deadline,
+                assignment_count: assignments.length,
+                has_conflict: conflictEventIds.has(event.id),
+                needs_attention: needsAttention,
+                is_delivered: !!deliveryRecord?.delivered_at,
+              });
+            }
+          });
+        } else {
+          // No sessions - use the main event_date
+          if (event.event_date >= rangeStart && event.event_date <= rangeEnd) {
+            calendarEntries.push({
+              id: event.id,
+              event_name: event.event_name,
+              client_name: event.client_name,
+              event_date: event.event_date,
+              start_time: event.start_time,
+              end_time: event.end_time,
+              start_at: event.start_at,
+              end_at: event.end_at,
+              venue_name: event.venue_name,
+              venue_address: event.venue_address,
+              onsite_contact_name: event.onsite_contact_name,
+              onsite_contact_phone: event.onsite_contact_phone,
+              event_type_id: event.event_type_id,
+              event_series_id: event.event_series_id,
+              event_series_name: seriesData?.name || null,
+              delivery_method_id: event.delivery_method_id,
+              delivery_deadline: event.delivery_deadline,
+              assignment_count: assignments.length,
+              has_conflict: conflictEventIds.has(event.id),
+              needs_attention: needsAttention,
+              is_delivered: !!deliveryRecord?.delivered_at,
+            });
+          }
+        }
       });
+
+      return calendarEntries;
     },
   });
 }
