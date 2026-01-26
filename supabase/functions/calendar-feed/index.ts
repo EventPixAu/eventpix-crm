@@ -95,12 +95,19 @@ Deno.serve(async (req) => {
           end_time,
           venue_name,
           venue_address,
-          special_instructions
+          special_instructions,
+          event_sessions (
+            id,
+            session_date,
+            start_time,
+            end_time,
+            label,
+            venue_name,
+            venue_address
+          )
         )
       `)
-      .eq('user_id', userId)
-      .gte('events.event_date', format(pastDate, 'yyyy-MM-dd'))
-      .lte('events.event_date', format(futureDate, 'yyyy-MM-dd'));
+      .eq('user_id', userId);
 
     if (assignmentError) {
       console.error('Error fetching events:', assignmentError);
@@ -125,44 +132,101 @@ Deno.serve(async (req) => {
       const event = assignment.events as any;
       if (!event) continue;
 
-      const dtstart = formatICSDate(event.event_date, event.start_time);
-      const dtend = event.end_time 
-        ? formatICSDate(event.event_date, event.end_time)
-        : formatICSDate(event.event_date, event.start_time || '11:00:00');
+      const sessions = (event.event_sessions as any[]) || [];
 
-      const location = [event.venue_name, event.venue_address]
-        .filter(Boolean)
-        .join(', ');
+      // If event has sessions, create one VEVENT per session
+      if (sessions.length > 0) {
+        for (const session of sessions) {
+          const sessionDate = session.session_date;
+          // Filter by date range
+          if (sessionDate < format(pastDate, 'yyyy-MM-dd') || sessionDate > format(futureDate, 'yyyy-MM-dd')) {
+            continue;
+          }
 
-      const description = [
-        `Client: ${event.client_name || 'TBC'}`,
-        event.special_instructions ? `Notes: ${event.special_instructions}` : ''
-      ].filter(Boolean).join('\\n');
+          const dtstart = formatICSDate(sessionDate, session.start_time || event.start_time);
+          const dtend = (session.end_time || event.end_time)
+            ? formatICSDate(sessionDate, session.end_time || event.end_time)
+            : formatICSDate(sessionDate, session.start_time || event.start_time || '11:00:00');
 
-      icsLines.push('BEGIN:VEVENT');
-      icsLines.push(`UID:${event.id}@eventpix.app`);
-      icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
-      
-      if (event.start_time) {
-        icsLines.push(`DTSTART:${dtstart}`);
-        icsLines.push(`DTEND:${dtend}`);
+          const location = [session.venue_name || event.venue_name, session.venue_address || event.venue_address]
+            .filter(Boolean)
+            .join(', ');
+
+          const eventTitle = session.label ? `${event.event_name} - ${session.label}` : event.event_name;
+
+          const description = [
+            `Client: ${event.client_name || 'TBC'}`,
+            event.special_instructions ? `Notes: ${event.special_instructions}` : ''
+          ].filter(Boolean).join('\\n');
+
+          icsLines.push('BEGIN:VEVENT');
+          icsLines.push(`UID:${session.id}@eventpix.app`);
+          icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
+          
+          if (session.start_time || event.start_time) {
+            icsLines.push(`DTSTART:${dtstart}`);
+            icsLines.push(`DTEND:${dtend}`);
+          } else {
+            icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(sessionDate)}`);
+            icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(sessionDate)}`);
+          }
+          
+          icsLines.push(foldLine(`SUMMARY:${escapeICS(eventTitle)}`));
+          
+          if (description) {
+            icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));
+          }
+          
+          if (location) {
+            icsLines.push(foldLine(`LOCATION:${escapeICS(location)}`));
+          }
+          
+          icsLines.push('END:VEVENT');
+        }
       } else {
-        // All-day event
-        icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(event.event_date)}`);
-        icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(event.event_date)}`);
+        // No sessions - use main event date (if in range)
+        if (event.event_date < format(pastDate, 'yyyy-MM-dd') || event.event_date > format(futureDate, 'yyyy-MM-dd')) {
+          continue;
+        }
+
+        const dtstart = formatICSDate(event.event_date, event.start_time);
+        const dtend = event.end_time 
+          ? formatICSDate(event.event_date, event.end_time)
+          : formatICSDate(event.event_date, event.start_time || '11:00:00');
+
+        const location = [event.venue_name, event.venue_address]
+          .filter(Boolean)
+          .join(', ');
+
+        const description = [
+          `Client: ${event.client_name || 'TBC'}`,
+          event.special_instructions ? `Notes: ${event.special_instructions}` : ''
+        ].filter(Boolean).join('\\n');
+
+        icsLines.push('BEGIN:VEVENT');
+        icsLines.push(`UID:${event.id}@eventpix.app`);
+        icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
+        
+        if (event.start_time) {
+          icsLines.push(`DTSTART:${dtstart}`);
+          icsLines.push(`DTEND:${dtend}`);
+        } else {
+          icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(event.event_date)}`);
+          icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(event.event_date)}`);
+        }
+        
+        icsLines.push(foldLine(`SUMMARY:${escapeICS(event.event_name)}`));
+        
+        if (description) {
+          icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));
+        }
+        
+        if (location) {
+          icsLines.push(foldLine(`LOCATION:${escapeICS(location)}`));
+        }
+        
+        icsLines.push('END:VEVENT');
       }
-      
-      icsLines.push(foldLine(`SUMMARY:${escapeICS(event.event_name)}`));
-      
-      if (description) {
-        icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));
-      }
-      
-      if (location) {
-        icsLines.push(foldLine(`LOCATION:${escapeICS(location)}`));
-      }
-      
-      icsLines.push('END:VEVENT');
     }
 
     icsLines.push('END:VCALENDAR');
