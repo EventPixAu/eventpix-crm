@@ -26,8 +26,9 @@ import {
   List,
   LayoutGrid,
   Layers,
-  Eye
+  Eye,
 } from 'lucide-react';
+import { CalendarSubscribeDialog } from '@/components/CalendarSubscribeDialog';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -367,6 +368,7 @@ export default function CalendarView() {
           <Button variant="outline" onClick={handleToday}>
             Today
           </Button>
+          <CalendarSubscribeDialog />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
