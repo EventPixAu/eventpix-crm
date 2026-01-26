@@ -60,15 +60,18 @@ export function useAdminCalendarEvents(
       const rangeStart = format(subMonths(startOfMonth(currentMonth), 1), 'yyyy-MM-dd');
       const rangeEnd = format(addMonths(endOfMonth(currentMonth), 1), 'yyyy-MM-dd');
 
-      // First, get events that have sessions in the date range
+      // First, get event IDs that have sessions in the date range
       const { data: sessionsInRange } = await supabase
         .from('event_sessions')
-        .select('event_id, session_date, start_time, end_time, label, venue_name, venue_address')
+        .select('event_id')
         .gte('session_date', rangeStart)
         .lte('session_date', rangeEnd);
 
-      const eventIdsWithSessions = new Set((sessionsInRange || []).map(s => s.event_id));
+      const eventIdsWithSessions = [...new Set((sessionsInRange || []).map(s => s.event_id))];
 
+      // Build the query - fetch events that either:
+      // 1. Have event_date in range, OR
+      // 2. Have sessions in range (by ID)
       let query = supabase
         .from('events')
         .select(`
@@ -95,15 +98,14 @@ export function useAdminCalendarEvents(
         `)
         .order('event_date', { ascending: true });
 
-      // We need events where either:
-      // 1. The event_date is in range (no sessions case)
-      // 2. The event has sessions in range
-      // For now, fetch events in date range OR events that have sessions in range
-      const eventIdsArray = Array.from(eventIdsWithSessions);
-      if (eventIdsArray.length > 0) {
-        query = query.or(`event_date.gte.${rangeStart},id.in.(${eventIdsArray.join(',')})`);
-        query = query.or(`event_date.lte.${rangeEnd},id.in.(${eventIdsArray.join(',')})`);
+      // Use proper OR filter: events in date range OR events with sessions in range
+      if (eventIdsWithSessions.length > 0) {
+        // Combine both conditions with OR
+        query = query.or(
+          `and(event_date.gte.${rangeStart},event_date.lte.${rangeEnd}),id.in.(${eventIdsWithSessions.join(',')})`
+        );
       } else {
+        // No sessions in range, just filter by event_date
         query = query.gte('event_date', rangeStart).lte('event_date', rangeEnd);
       }
 
