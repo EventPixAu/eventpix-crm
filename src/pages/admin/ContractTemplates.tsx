@@ -236,7 +236,7 @@ export default function ContractTemplates() {
     if (templateFormat === 'text') {
       const content = template.body_text || template.body_html || '';
       return (
-        <div className="whitespace-pre-wrap text-sm leading-relaxed">
+        <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">
           {content}
         </div>
       );
@@ -244,7 +244,7 @@ export default function ContractTemplates() {
     
     return (
       <div 
-        className="prose prose-sm max-w-none"
+        className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800 prose-li:text-gray-800 prose-strong:text-gray-900 text-gray-800"
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(template.body_html || '') }}
       />
     );
