@@ -231,15 +231,44 @@ export default function ContractTemplates() {
     return (template as any).format || 'html';
   };
 
+  // Convert basic markdown to HTML for preview
+  const convertMarkdownToHtml = (text: string): string => {
+    let html = text;
+    
+    // Escape HTML entities first
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    
+    // Italic: *text* or _text_
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+    
+    // Underline: ~~text~~
+    html = html.replace(/~~(.+?)~~/g, '<u>$1</u>');
+    
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+  };
+
   const renderPreviewContent = (template: ContractTemplate) => {
     const templateFormat = getTemplateFormat(template);
     
     if (templateFormat === 'text') {
       const content = template.body_text || template.body_html || '';
+      const htmlContent = convertMarkdownToHtml(content);
       return (
-        <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">
-          {content}
-        </div>
+        <div 
+          className="prose prose-sm max-w-none text-sm leading-relaxed text-gray-900 prose-strong:text-gray-900"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
+        />
       );
     }
     
