@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
             session_date,
             start_time,
             end_time,
+            arrival_time,
             label,
             venue_name,
             venue_address
@@ -159,6 +160,7 @@ Deno.serve(async (req) => {
               session_date,
               start_time,
               end_time,
+              arrival_time,
               label,
               venue_name,
               venue_address
