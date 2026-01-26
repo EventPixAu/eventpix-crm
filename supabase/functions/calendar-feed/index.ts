@@ -204,10 +204,12 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          const dtstart = formatICSDate(sessionDate, session.start_time || event.start_time);
+          // Use arrival_time (Crew Call Time) as calendar start if available, otherwise fall back to start_time
+          const calendarStartTime = session.arrival_time || session.start_time || event.start_time;
+          const dtstart = formatICSDate(sessionDate, calendarStartTime);
           const dtend = (session.end_time || event.end_time)
             ? formatICSDate(sessionDate, session.end_time || event.end_time)
-            : formatICSDate(sessionDate, session.start_time || event.start_time || '11:00:00');
+            : formatICSDate(sessionDate, calendarStartTime || '11:00:00');
 
           const location = [session.venue_name || event.venue_name, session.venue_address || event.venue_address]
             .filter(Boolean)
@@ -215,16 +217,31 @@ Deno.serve(async (req) => {
 
           const eventTitle = session.label ? `${event.event_name} - ${session.label}` : event.event_name;
 
-          const description = [
+          // Build description with event start/end times included
+          const eventStartTime = session.start_time || event.start_time;
+          const eventEndTime = session.end_time || event.end_time;
+          const descriptionParts = [
             `Client: ${event.client_name || 'TBC'}`,
-            event.special_instructions ? `Notes: ${event.special_instructions}` : ''
-          ].filter(Boolean).join('\\n');
+          ];
+          
+          // Add event timing info
+          if (eventStartTime) {
+            const startFormatted = eventStartTime.substring(0, 5); // HH:mm
+            const endFormatted = eventEndTime ? eventEndTime.substring(0, 5) : null;
+            descriptionParts.push(`Event: ${startFormatted}${endFormatted ? ' - ' + endFormatted : ''}`);
+          }
+          
+          if (event.special_instructions) {
+            descriptionParts.push(`Notes: ${event.special_instructions}`);
+          }
+          
+          const description = descriptionParts.join('\\n');
 
           icsLines.push('BEGIN:VEVENT');
           icsLines.push(`UID:${session.id}@eventpix.app`);
           icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
           
-          if (session.start_time || event.start_time) {
+          if (calendarStartTime) {
             icsLines.push(`DTSTART:${dtstart}`);
             icsLines.push(`DTEND:${dtend}`);
           } else {
