@@ -8,7 +8,8 @@ export interface CalendarEvent {
   event_name: string;
   client_name: string;
   event_date: string;
-  start_time: string | null;
+  arrival_time: string | null; // Crew call time - use this for calendar display
+  start_time: string | null; // Event start time
   end_time: string | null;
   start_at: string | null;
   end_at: string | null;
@@ -94,7 +95,7 @@ export function useAdminCalendarEvents(
           delivery_deadline,
           event_assignments!left(id, user_id),
           delivery_records!left(id, delivered_at),
-          event_sessions!left(id, session_date, start_time, end_time, label, venue_name, venue_address)
+          event_sessions!left(id, session_date, arrival_time, start_time, end_time, label, venue_name, venue_address)
         `)
         .order('event_date', { ascending: true });
 
@@ -186,7 +187,8 @@ export function useAdminCalendarEvents(
                 event_name: session.label ? `${event.event_name} - ${session.label}` : event.event_name,
                 client_name: event.client_name,
                 event_date: session.session_date, // Use session date for calendar placement
-                start_time: session.start_time || event.start_time,
+                arrival_time: session.arrival_time || null, // Crew call time
+                start_time: session.start_time || event.start_time, // Event start time
                 end_time: session.end_time || event.end_time,
                 start_at: event.start_at,
                 end_at: event.end_at,
@@ -214,6 +216,7 @@ export function useAdminCalendarEvents(
               event_name: event.event_name,
               client_name: event.client_name,
               event_date: event.event_date,
+              arrival_time: null, // No session, no crew call time
               start_time: event.start_time,
               end_time: event.end_time,
               start_at: event.start_at,
@@ -306,6 +309,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
           event_name: event.event_name,
           client_name: event.client_name,
           event_date: event.event_date,
+          arrival_time: null, // Staff calendar doesn't have session-level data
           start_time: event.start_time,
           end_time: event.end_time,
           start_at: event.start_at,

@@ -285,6 +285,7 @@ export default function DayLoadView() {
         event_date: e.event_date,
         start_at: e.start_at,
         end_at: e.end_at,
+        arrival_time: null, // DayLoad events don't have session-level arrival_time
         start_time: e.start_time,
         end_time: e.end_time,
         client_name: e.client_name,

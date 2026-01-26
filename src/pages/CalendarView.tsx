@@ -89,12 +89,12 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
       )}
     >
       <div className="flex items-center gap-1">
-        {event.start_time && (
+        {(event.arrival_time || event.start_time) && (
           <span className={cn(
             "font-medium shrink-0",
             seriesColor ? seriesColor.text : "text-primary"
           )}>
-            {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
+            {format(new Date(`2000-01-01T${event.arrival_time || event.start_time}`), 'h:mm a')}
           </span>
         )}
         {event.has_conflict && (
@@ -174,10 +174,11 @@ function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesC
         </div>
         <p className="text-sm text-muted-foreground">{event.client_name}</p>
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-          {event.start_time && (
+          {(event.arrival_time || event.start_time) && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
+              {event.arrival_time ? `Call: ${format(new Date(`2000-01-01T${event.arrival_time}`), 'h:mm a')}` : ''}
+              {event.start_time && ` Event: ${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}`}
               {event.end_time && ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`}
             </span>
           )}

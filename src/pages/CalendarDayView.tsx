@@ -178,10 +178,11 @@ function TimelineEvent({ event, style, isSelected, isSelectionMode, onToggleSele
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-2">
-        {event.start_time && (
+        {(event.arrival_time || event.start_time) && (
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
+            {event.arrival_time ? `Call: ${format(new Date(`2000-01-01T${event.arrival_time}`), 'h:mm a')}` : ''}
+            {event.start_time && ` Event: ${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}`}
             {event.end_time && ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`}
           </span>
         )}
@@ -271,10 +272,11 @@ function DayEventCard({ event, isSelected, isSelectionMode, onToggleSelect }: Da
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {event.start_time && (
+          {(event.arrival_time || event.start_time) && (
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
+              {event.arrival_time ? `Call: ${format(new Date(`2000-01-01T${event.arrival_time}`), 'h:mm a')}` : ''}
+              {event.start_time && ` Event: ${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}`}
               {event.end_time && ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`}
             </span>
           )}
@@ -424,7 +426,8 @@ export default function CalendarDayView() {
 
   // Calculate position for timeline events
   const getEventStyle = (event: CalendarEvent): React.CSSProperties => {
-    const startHour = parseTimeToHour(event.start_time) ?? 9;
+    // Use arrival_time (crew call) for timeline positioning if available
+    const startHour = parseTimeToHour(event.arrival_time || event.start_time) ?? 9;
     const endHour = parseTimeToHour(event.end_time) ?? startHour + 2;
     const duration = Math.max(endHour - startHour, 1);
     
