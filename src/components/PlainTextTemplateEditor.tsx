@@ -166,6 +166,33 @@ export function PlainTextTemplateEditor({
     );
   };
 
+  // Convert basic markdown to HTML for preview
+  const convertMarkdownToHtml = (text: string): string => {
+    let html = text;
+    
+    // Escape HTML entities first
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    
+    // Italic: *text* or _text_
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+    
+    // Underline: ~~text~~
+    html = html.replace(/~~(.+?)~~/g, '<u>$1</u>');
+    
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+  };
+
   // Render preview content
   const renderPreview = () => {
     const context = previewContext || SAMPLE_CONTEXT;
@@ -180,11 +207,13 @@ export function PlainTextTemplateEditor({
       );
     }
     
-    // For text format, convert newlines to line breaks for display
+    // For text format, convert markdown and newlines for display
+    const htmlContent = convertMarkdownToHtml(rendered);
     return (
-      <div className="whitespace-pre-wrap text-sm leading-relaxed">
-        {rendered}
-      </div>
+      <div 
+        className="prose prose-sm max-w-none text-sm leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
+      />
     );
   };
 
@@ -221,6 +250,12 @@ export function PlainTextTemplateEditor({
               <div className="border border-border rounded-lg bg-muted/30 h-fit max-h-[400px] overflow-hidden flex flex-col">
                 <div className="p-3 border-b border-border shrink-0">
                   <h4 className="text-sm font-medium mb-2">Merge Fields</h4>
+                  {format === 'text' && (
+                    <div className="text-xs text-muted-foreground mb-2 p-2 bg-muted rounded border">
+                      <p className="font-medium mb-1">Formatting:</p>
+                      <p><code className="bg-background px-1 rounded">**bold**</code> <code className="bg-background px-1 rounded">*italic*</code> <code className="bg-background px-1 rounded">~~underline~~</code></p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground mb-2">
                     Click to insert at cursor
                   </p>
