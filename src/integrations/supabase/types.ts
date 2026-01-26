@@ -930,6 +930,9 @@ export type Database = {
           quote_id: string | null
           rendered_html: string | null
           sent_at: string | null
+          signature_data: string | null
+          signature_ip: string | null
+          signature_user_agent: string | null
           signed_at: string | null
           signed_by_email: string | null
           signed_by_name: string | null
@@ -950,6 +953,9 @@ export type Database = {
           quote_id?: string | null
           rendered_html?: string | null
           sent_at?: string | null
+          signature_data?: string | null
+          signature_ip?: string | null
+          signature_user_agent?: string | null
           signed_at?: string | null
           signed_by_email?: string | null
           signed_by_name?: string | null
@@ -970,6 +976,9 @@ export type Database = {
           quote_id?: string | null
           rendered_html?: string | null
           sent_at?: string | null
+          signature_data?: string | null
+          signature_ip?: string | null
+          signature_user_agent?: string | null
           signed_at?: string | null
           signed_by_email?: string | null
           signed_by_name?: string | null
@@ -5045,10 +5054,20 @@ export type Database = {
       }
     }
     Functions: {
-      accept_contract_public: {
-        Args: { p_email: string; p_name: string; p_token: string }
-        Returns: Json
-      }
+      accept_contract_public:
+        | {
+            Args: { p_email: string; p_name: string; p_token: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_email: string
+              p_name: string
+              p_signature_data?: string
+              p_token: string
+            }
+            Returns: Json
+          }
       accept_quote: {
         Args: {
           p_accepted_by_email?: string

@@ -2,18 +2,20 @@
  * PUBLIC CONTRACT ACCEPTANCE PAGE
  * 
  * Allows clients to sign contracts via public link (no login required).
+ * Includes digital signature pad for handwritten signatures.
  * Security: Only exposes minimal contract info, no internal data.
  */
 import { useState, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CheckCircle, FileText, ExternalLink, Shield } from 'lucide-react';
+import { CheckCircle, FileText, ExternalLink, Shield, PenLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SignaturePad } from '@/components/ui/signature-pad';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/eventpix-logo.png';
@@ -26,6 +28,7 @@ interface PublicContractData {
   rendered_html: string | null;
   signed_at: string | null;
   signed_by_name: string | null;
+  signature_data: string | null;
 }
 
 export default function PublicAcceptContract() {
@@ -37,6 +40,7 @@ export default function PublicAcceptContract() {
   const [signing, setSigning] = useState(false);
   const [signed, setSigned] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [signatureData, setSignatureData] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -65,7 +69,8 @@ export default function PublicAcceptContract() {
           file_url,
           rendered_html,
           signed_at,
-          signed_by_name
+          signed_by_name,
+          signature_data
         `)
         .eq('public_token', token)
         .maybeSingle();
@@ -103,6 +108,15 @@ export default function PublicAcceptContract() {
       return;
     }
 
+    if (!signatureData) {
+      toast({ 
+        title: 'Please sign the contract', 
+        description: 'Draw your signature in the signature pad above',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     setSigning(true);
 
     try {
@@ -110,6 +124,7 @@ export default function PublicAcceptContract() {
         p_token: token,
         p_name: formData.name,
         p_email: formData.email,
+        p_signature_data: signatureData,
       });
 
       if (error) throw error;
@@ -159,7 +174,7 @@ export default function PublicAcceptContract() {
 
   if (signed || contract.status === 'signed') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="pt-6 text-center">
             <div className="text-green-500 mx-auto mb-4">
@@ -181,6 +196,16 @@ export default function PublicAcceptContract() {
               <p className="text-sm text-muted-foreground">
                 By: {contract.signed_by_name}
               </p>
+            )}
+            {/* Display signature if available */}
+            {contract.signature_data && (
+              <div className="mt-4 border rounded-lg p-2 bg-white inline-block">
+                <img 
+                  src={contract.signature_data} 
+                  alt="Signature" 
+                  className="max-h-20 max-w-full"
+                />
+              </div>
             )}
           </CardContent>
         </Card>
@@ -269,29 +294,46 @@ export default function PublicAcceptContract() {
               Sign Contract
             </CardTitle>
             <CardDescription>
-              Enter your details and agree to the terms to sign this contract
+              Enter your details and sign below to complete the agreement
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Your Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="John Smith"
-                />
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Your Full Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="John Smith"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Your Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="john@example.com"
+                  />
+                </div>
               </div>
+
+              {/* Signature Pad */}
               <div className="space-y-2">
-                <Label htmlFor="email">Your Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="john@example.com"
+                <Label className="flex items-center gap-2">
+                  <PenLine className="h-4 w-4" />
+                  Your Signature *
+                </Label>
+                <SignaturePad 
+                  onChange={setSignatureData}
+                  height={150}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Use your mouse or finger to draw your signature above
+                </p>
               </div>
               
               <div className="flex items-start space-x-3 p-4 bg-muted rounded-lg">
@@ -305,10 +347,10 @@ export default function PublicAcceptContract() {
                     htmlFor="agree"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    I agree to the terms of this contract
+                    I confirm that I have read and understood this contract, and I agree to enter into this contract with EventPix
                   </label>
                   <p className="text-xs text-muted-foreground">
-                    By checking this box, you acknowledge that you have read and agree to all terms and conditions outlined in the contract document.
+                    By checking this box and signing above, you acknowledge that you have read and agree to all terms and conditions outlined in the contract document.
                   </p>
                 </div>
               </div>
@@ -324,7 +366,7 @@ export default function PublicAcceptContract() {
                 className="w-full" 
                 size="lg"
                 onClick={handleSign}
-                disabled={!formData.name.trim() || !formData.email.trim() || !agreedToTerms || signing}
+                disabled={!formData.name.trim() || !formData.email.trim() || !agreedToTerms || !signatureData || signing}
               >
                 {signing ? 'Processing...' : 'Sign Contract'}
               </Button>
