@@ -98,11 +98,12 @@ export function useAdminCalendarEvents(
         `)
         .order('event_date', { ascending: true });
 
-      // Use proper OR filter: events in date range OR events with sessions in range
+      // Filter: events with event_date in range OR events with sessions in range
       if (eventIdsWithSessions.length > 0) {
-        // Combine both conditions with OR
+        // Filter out nulls and combine conditions
+        const validEventIds = eventIdsWithSessions.filter(id => id !== null);
         query = query.or(
-          `and(event_date.gte.${rangeStart},event_date.lte.${rangeEnd}),id.in.(${eventIdsWithSessions.join(',')})`
+          `and(event_date.gte.${rangeStart},event_date.lte.${rangeEnd}),id.in.(${validEventIds.join(',')})`
         );
       } else {
         // No sessions in range, just filter by event_date
