@@ -142,7 +142,9 @@ export function SendOpsEmailDialog({
       
       // Send emails to each recipient via edge function
       const sendPromises = selectedRecipientData.map(async (recipient) => {
-        const personalizedBody = replaceMergeFields(body, recipient.name);
+        // Convert newlines to <br> tags for HTML email
+        const bodyWithLineBreaks = body.replace(/\n/g, '<br>');
+        const personalizedBody = replaceMergeFields(bodyWithLineBreaks, recipient.name);
         
         const { data, error } = await supabase.functions.invoke('send-crm-email', {
           body: {
