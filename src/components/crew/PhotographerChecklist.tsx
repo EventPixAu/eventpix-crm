@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 
 interface PhotographerChecklistProps {
   eventId: string;
+  staffRoleId?: string; // Role ID from event_assignments to select correct template
 }
 
 // Phase configuration
@@ -58,7 +59,7 @@ const PHASES = [
   },
 ] as const;
 
-export function PhotographerChecklist({ eventId }: PhotographerChecklistProps) {
+export function PhotographerChecklist({ eventId, staffRoleId }: PhotographerChecklistProps) {
   const { data: checklist, isLoading } = useMyCrewChecklist(eventId);
   const initializeChecklist = useInitializeCrewChecklist();
   const toggleItem = useToggleCrewChecklistItem();
@@ -115,7 +116,7 @@ export function PhotographerChecklist({ eventId }: PhotographerChecklistProps) {
   }, [checklist?.items]);
 
   const handleInitialize = () => {
-    initializeChecklist.mutate({ eventId });
+    initializeChecklist.mutate({ eventId, staffRoleId });
   };
 
   const handleToggle = (itemId: string, currentValue: boolean) => {

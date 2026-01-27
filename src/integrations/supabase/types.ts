@@ -1110,6 +1110,7 @@ export type Database = {
           is_active: boolean
           items: Json
           name: string
+          staff_role_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1119,6 +1120,7 @@ export type Database = {
           is_active?: boolean
           items?: Json
           name: string
+          staff_role_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1128,9 +1130,18 @@ export type Database = {
           is_active?: boolean
           items?: Json
           name?: string
+          staff_role_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "crew_checklist_templates_staff_role_id_fkey"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crew_checklists: {
         Row: {

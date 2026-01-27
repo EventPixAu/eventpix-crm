@@ -30,9 +30,10 @@ import { cn } from '@/lib/utils';
 
 interface CrewChecklistProps {
   eventId: string;
+  staffRoleId?: string; // Role ID from event_assignments to select correct template
 }
 
-export function CrewChecklist({ eventId }: CrewChecklistProps) {
+export function CrewChecklist({ eventId, staffRoleId }: CrewChecklistProps) {
   const { data: checklist, isLoading } = useMyCrewChecklist(eventId);
   const initializeChecklist = useInitializeCrewChecklist();
   const toggleItem = useToggleCrewChecklistItem();
@@ -42,7 +43,7 @@ export function CrewChecklist({ eventId }: CrewChecklistProps) {
   const [noteValue, setNoteValue] = useState('');
 
   const handleInitialize = () => {
-    initializeChecklist.mutate({ eventId });
+    initializeChecklist.mutate({ eventId, staffRoleId });
   };
 
   const handleToggle = (itemId: string, currentValue: boolean) => {
