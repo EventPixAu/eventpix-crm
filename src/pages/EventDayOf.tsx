@@ -746,18 +746,30 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
-        {/* Checklist */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22 }}
-          className="mx-4 mb-4"
-        >
-          <h3 className="font-semibold mb-3">Checklist</h3>
-          
-          {displayWorksheets.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No worksheets added</p>
-          ) : (
+        {/* Personal Crew Checklist - Role-specific tasks for this team member */}
+        {id && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+            className="mx-4 mb-4"
+          >
+            <PhotographerChecklist 
+              eventId={id} 
+              staffRoleId={myAssignment?.staff_role_id || undefined} 
+            />
+          </motion.section>
+        )}
+
+        {/* Admin Worksheets (only show if worksheets exist) */}
+        {displayWorksheets.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.24 }}
+            className="mx-4 mb-4"
+          >
+            <h3 className="font-semibold mb-3">Workflow Checklist</h3>
             <div className="space-y-3">
               {phases.map((phase) => {
                 const phaseWorksheets = getWorksheetsForPhase(phase.key);
@@ -831,8 +843,8 @@ export default function EventDayOf() {
                 );
               })}
             </div>
-          )}
-        </motion.section>
+          </motion.section>
+        )}
       </div>
     </div>
   );
