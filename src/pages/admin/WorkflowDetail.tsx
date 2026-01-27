@@ -11,6 +11,7 @@ import {
   EyeOff,
   Rocket,
   Calendar,
+  ExternalLink,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -68,6 +69,7 @@ import {
   useWorkflowTemplate,
   useAllTemplateItems,
   useTemplateUsageCount,
+  useTemplateEvents,
   useUpdateTemplate,
   useCreateTemplateItem,
   useUpdateTemplateItem,
@@ -225,6 +227,7 @@ export default function WorkflowDetail() {
   const { data: template, isLoading: templateLoading } = useWorkflowTemplate(id);
   const { data: items = [], isLoading: itemsLoading } = useAllTemplateItems(id);
   const { data: usageCount = 0 } = useTemplateUsageCount(id);
+  const { data: templateEvents = [] } = useTemplateEvents(id);
   const { data: eventTypes = [] } = useEventTypes();
   
   const updateTemplate = useUpdateTemplate();
@@ -421,9 +424,33 @@ export default function WorkflowDetail() {
               <span className="font-semibold text-foreground">{usageCount}</span> events.
             </p>
             {usageCount > 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Items cannot be deleted while the template is in use. Deactivate items instead.
-              </p>
+              <>
+                <p className="text-xs text-muted-foreground mt-2 mb-3">
+                  Items cannot be deleted while the template is in use. Deactivate items instead.
+                </p>
+                <div className="border-t border-border pt-3 mt-3 space-y-2 max-h-48 overflow-y-auto">
+                  {templateEvents.map((event) => (
+                    <div
+                      key={event.eventId}
+                      className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{event.event_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {event.client_name} • {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'No date'}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/events/${event.eventId}`)}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
