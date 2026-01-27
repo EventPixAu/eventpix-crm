@@ -83,9 +83,19 @@ serve(async (req) => {
     
     console.log("Creating user with email:", inv.email, "redirectTo:", redirectTo);
 
-    // First, check if user already exists in auth
-    const { data: existingUsers } = await admin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find((u: { email?: string }) => u.email === inv.email);
+    // First, check if user already exists in auth using listUsers with filter
+    let existingUser = null;
+    try {
+      const { data: usersData } = await admin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000, // Increase to catch more users
+      });
+      existingUser = usersData?.users?.find((u: { email?: string }) => 
+        u.email?.toLowerCase() === inv.email.toLowerCase()
+      );
+    } catch (e) {
+      console.log("Error checking for existing user:", e);
+    }
 
     let userId: string;
 
