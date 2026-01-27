@@ -94,6 +94,38 @@ export function useTemplateUsageCount(templateId: string | undefined) {
   });
 }
 
+// Get events using this template (via worksheets)
+export function useTemplateEvents(templateId: string | undefined) {
+  return useQuery({
+    queryKey: ['template-events', templateId],
+    queryFn: async () => {
+      if (!templateId) return [];
+      
+      const { data, error } = await supabase
+        .from('worksheets')
+        .select(`
+          id,
+          event_id,
+          events:event_id (
+            id,
+            event_name,
+            event_date,
+            client_name
+          )
+        `)
+        .eq('template_id', templateId);
+      
+      if (error) throw error;
+      return data?.map(w => ({
+        worksheetId: w.id,
+        eventId: w.event_id,
+        ...(w.events as { id: string; event_name: string; event_date: string; client_name: string })
+      })) || [];
+    },
+    enabled: !!templateId,
+  });
+}
+
 // Create template
 export function useCreateTemplate() {
   const queryClient = useQueryClient();
