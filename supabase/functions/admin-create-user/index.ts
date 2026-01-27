@@ -130,7 +130,7 @@ serve(async (req) => {
               "Authorization": `Bearer ${resendApiKey}`,
             },
             body: JSON.stringify({
-              from: "EventPix <pix@eventpix.com.au>",
+              from: "EventPix <pix@rs.eventpix.com.au>",
               to: [inv.email],
               subject: "You've been invited to join EventPix",
               html: `
