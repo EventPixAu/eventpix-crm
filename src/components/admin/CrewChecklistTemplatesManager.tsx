@@ -396,12 +396,12 @@ export function CrewChecklistTemplatesManager() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Assigned Role</Label>
-                <Select value={formRoleId} onValueChange={setFormRoleId}>
+                <Select value={formRoleId || 'none'} onValueChange={(val) => setFormRoleId(val === 'none' ? '' : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="All roles (default)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All roles (default)</SelectItem>
+                    <SelectItem value="none">All roles (default)</SelectItem>
                     {staffRoles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
                         {role.name}
