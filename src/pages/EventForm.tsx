@@ -47,6 +47,7 @@ const eventSchema = z.object({
   onsite_contact_name: z.string().optional(),
   onsite_contact_phone: z.string().optional(),
   coverage_details: z.string().optional(),
+  photography_instructions: z.string().optional(),
   delivery_method_id: z.string().optional().nullable(),
   delivery_deadline: z.string().optional(),
   notes: z.string().optional(),
@@ -105,6 +106,7 @@ export default function EventForm() {
       onsite_contact_name: '',
       onsite_contact_phone: '',
       coverage_details: '',
+      photography_instructions: '',
       delivery_method_id: null,
       delivery_deadline: '',
       notes: '',
@@ -139,6 +141,7 @@ export default function EventForm() {
         onsite_contact_name: event.onsite_contact_name || '',
         onsite_contact_phone: event.onsite_contact_phone || '',
         coverage_details: event.coverage_details || '',
+        photography_instructions: (event as any).photography_brief || '',
         delivery_method_id: deliveryMethodId,
         delivery_deadline: event.delivery_deadline || '',
         notes: event.notes || '',
@@ -169,6 +172,7 @@ export default function EventForm() {
       onsite_contact_name: values.onsite_contact_name || null,
       onsite_contact_phone: values.onsite_contact_phone || null,
       coverage_details: values.coverage_details || null,
+      photography_brief: values.photography_instructions || null,
       delivery_method_id: values.delivery_method_id || null,
       delivery_deadline: values.delivery_deadline || null,
       notes: values.notes || null,
@@ -496,6 +500,24 @@ export default function EventForm() {
                       <Textarea
                         {...field}
                         placeholder="Shot list, special requests, etc."
+                        className="bg-secondary min-h-24"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="photography_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Photography Instructions</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Camera settings, lighting setup, specific techniques..."
                         className="bg-secondary min-h-24"
                       />
                     </FormControl>
