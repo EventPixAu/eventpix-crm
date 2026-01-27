@@ -936,6 +936,7 @@ export default function EventSeriesDetail() {
           end_time: e.end_time,
           start_at: e.start_at,
           end_at: e.end_at,
+          timezone: null, // Series events don't expose timezone yet
           venue_name: e.venue_name,
           venue_address: e.venue_address,
           onsite_contact_name: null,

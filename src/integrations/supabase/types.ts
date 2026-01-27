@@ -2099,6 +2099,7 @@ export type Database = {
           session_date: string
           sort_order: number | null
           start_time: string | null
+          timezone: string | null
           updated_at: string | null
           venue_address: string | null
           venue_name: string | null
@@ -2115,6 +2116,7 @@ export type Database = {
           session_date: string
           sort_order?: number | null
           start_time?: string | null
+          timezone?: string | null
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
@@ -2131,6 +2133,7 @@ export type Database = {
           session_date?: string
           sort_order?: number | null
           start_time?: string | null
+          timezone?: string | null
           updated_at?: string | null
           venue_address?: string | null
           venue_name?: string | null
@@ -2341,6 +2344,7 @@ export type Database = {
           start_at: string | null
           start_time: string | null
           state: string | null
+          timezone: string | null
           updated_at: string | null
           venue_access_notes: string | null
           venue_address: string | null
@@ -2397,6 +2401,7 @@ export type Database = {
           start_at?: string | null
           start_time?: string | null
           state?: string | null
+          timezone?: string | null
           updated_at?: string | null
           venue_access_notes?: string | null
           venue_address?: string | null
@@ -2453,6 +2458,7 @@ export type Database = {
           start_at?: string | null
           start_time?: string | null
           state?: string | null
+          timezone?: string | null
           updated_at?: string | null
           venue_access_notes?: string | null
           venue_address?: string | null

@@ -13,6 +13,7 @@ export interface CalendarEvent {
   end_time: string | null;
   start_at: string | null;
   end_at: string | null;
+  timezone: string | null; // IANA timezone identifier
   venue_name: string | null;
   venue_address: string | null;
   onsite_contact_name: string | null;
@@ -84,6 +85,7 @@ export function useAdminCalendarEvents(
           end_time,
           start_at,
           end_at,
+          timezone,
           venue_name,
           venue_address,
           onsite_contact_name,
@@ -95,7 +97,7 @@ export function useAdminCalendarEvents(
           delivery_deadline,
           event_assignments!left(id, user_id),
           delivery_records!left(id, delivered_at),
-          event_sessions!left(id, session_date, arrival_time, start_time, end_time, label, venue_name, venue_address)
+          event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, venue_name, venue_address)
         `)
         .order('event_date', { ascending: true });
 
@@ -192,6 +194,7 @@ export function useAdminCalendarEvents(
                 end_time: session.end_time || event.end_time,
                 start_at: event.start_at,
                 end_at: event.end_at,
+                timezone: session.timezone || event.timezone || null,
                 venue_name: session.venue_name || event.venue_name,
                 venue_address: session.venue_address || event.venue_address,
                 onsite_contact_name: event.onsite_contact_name,
@@ -221,6 +224,7 @@ export function useAdminCalendarEvents(
               end_time: event.end_time,
               start_at: event.start_at,
               end_at: event.end_at,
+              timezone: event.timezone || null,
               venue_name: event.venue_name,
               venue_address: event.venue_address,
               onsite_contact_name: event.onsite_contact_name,
