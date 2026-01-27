@@ -83,12 +83,28 @@ function JobCard({ job, showFullDate = false }: { job: MyJobSheet; showFullDate?
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold truncate">{job.event_name}</h3>
 
-                {job.start_time && (
+                {(job.arrival_time || job.start_time) && (
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                     <Clock className="h-3.5 w-3.5 shrink-0" />
                     <span>
-                      {format(new Date(`2000-01-01T${job.start_time}`), 'h:mm a')}
-                      {job.end_time && ` – ${format(new Date(`2000-01-01T${job.end_time}`), 'h:mm a')}`}
+                      {job.arrival_time ? (
+                        <>
+                          <span className="text-primary font-medium">
+                            Call: {format(new Date(`2000-01-01T${job.arrival_time}`), 'h:mm a')}
+                          </span>
+                          {job.start_time && job.start_time !== job.arrival_time && (
+                            <span className="text-muted-foreground ml-1">
+                              (Event: {format(new Date(`2000-01-01T${job.start_time}`), 'h:mm a')}
+                              {job.end_time && ` – ${format(new Date(`2000-01-01T${job.end_time}`), 'h:mm a')}`})
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {format(new Date(`2000-01-01T${job.start_time}`), 'h:mm a')}
+                          {job.end_time && ` – ${format(new Date(`2000-01-01T${job.end_time}`), 'h:mm a')}`}
+                        </>
+                      )}
                     </span>
                   </div>
                 )}
