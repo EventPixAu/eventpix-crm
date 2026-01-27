@@ -108,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from: "Eventpix <pix@eventpix.com.au>",
+        from: "Eventpix <pix@rs.eventpix.com.au>",
         to: [recipientEmail],
         subject: subject,
         html: fullBodyHtml,
