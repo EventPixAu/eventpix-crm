@@ -157,14 +157,14 @@ export default function ProposalView() {
 
             {/* Client Info */}
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              <h2 className="text-sm font-semibold text-muted-foreground print:text-gray-600 uppercase tracking-wide mb-2">
                 Prepared For
               </h2>
-              <div className="text-lg font-medium">{clientName || 'Client'}</div>
-              {clientEmail && <p className="text-muted-foreground">{clientEmail}</p>}
-              {clientPhone && <p className="text-muted-foreground">{clientPhone}</p>}
+              <div className="text-lg font-medium print:text-black">{clientName || 'Client'}</div>
+              {clientEmail && <p className="text-muted-foreground print:text-gray-700">{clientEmail}</p>}
+              {clientPhone && <p className="text-muted-foreground print:text-gray-700">{clientPhone}</p>}
               {leadData && (
-                <p className="text-muted-foreground mt-1">
+                <p className="text-muted-foreground print:text-gray-700 mt-1">
                   Re: {leadData.lead_name}
                 </p>
               )}
@@ -192,7 +192,7 @@ export default function ProposalView() {
 
             {/* Line Items - Grouped or Flat */}
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+              <h2 className="text-sm font-semibold text-muted-foreground print:text-gray-600 uppercase tracking-wide mb-4">
                 Services & Pricing
               </h2>
               
@@ -201,23 +201,23 @@ export default function ProposalView() {
                 <div className="space-y-6">
                   {sortedGroupKeys.map((groupKey) => (
                     <div key={groupKey}>
-                      <h3 className="text-sm font-semibold mb-2 text-foreground">{groupKey}</h3>
+                      <h3 className="text-sm font-semibold mb-2 text-foreground print:text-black">{groupKey}</h3>
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-muted/50">
-                            <TableHead className="font-semibold">Description</TableHead>
-                            <TableHead className="text-right font-semibold w-20">Qty</TableHead>
-                            <TableHead className="text-right font-semibold w-28">Unit Price</TableHead>
-                            <TableHead className="text-right font-semibold w-28">Amount</TableHead>
+                          <TableRow className="bg-primary print:bg-primary">
+                            <TableHead className="font-semibold text-primary-foreground print:text-white">Description</TableHead>
+                            <TableHead className="text-right font-semibold w-20 text-primary-foreground print:text-white">Qty</TableHead>
+                            <TableHead className="text-right font-semibold w-28 text-primary-foreground print:text-white">Unit Price</TableHead>
+                            <TableHead className="text-right font-semibold w-28 text-primary-foreground print:text-white">Amount</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {groupedItems[groupKey].map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell>{item.description}</TableCell>
-                              <TableCell className="text-right">{item.quantity}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                            <TableRow key={item.id} className="print:border-b print:border-gray-300">
+                              <TableCell className="print:text-black">{item.description}</TableCell>
+                              <TableCell className="text-right print:text-black">{item.quantity}</TableCell>
+                              <TableCell className="text-right print:text-black">{formatCurrency(item.unit_price)}</TableCell>
+                              <TableCell className="text-right print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -229,20 +229,20 @@ export default function ProposalView() {
                 // Flat display (no grouping or only "Other")
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="font-semibold">Description</TableHead>
-                      <TableHead className="text-right font-semibold w-20">Qty</TableHead>
-                      <TableHead className="text-right font-semibold w-28">Unit Price</TableHead>
-                      <TableHead className="text-right font-semibold w-28">Amount</TableHead>
+                    <TableRow className="bg-primary print:bg-primary">
+                      <TableHead className="font-semibold text-primary-foreground print:text-white">Description</TableHead>
+                      <TableHead className="text-right font-semibold w-20 text-primary-foreground print:text-white">Qty</TableHead>
+                      <TableHead className="text-right font-semibold w-28 text-primary-foreground print:text-white">Unit Price</TableHead>
+                      <TableHead className="text-right font-semibold w-28 text-primary-foreground print:text-white">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {items?.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                      <TableRow key={item.id} className="print:border-b print:border-gray-300">
+                        <TableCell className="print:text-black">{item.description}</TableCell>
+                        <TableCell className="text-right print:text-black">{item.quantity}</TableCell>
+                        <TableCell className="text-right print:text-black">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell className="text-right print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
                       </TableRow>
                     ))}
                     {(!items || items.length === 0) && (
@@ -259,18 +259,18 @@ export default function ProposalView() {
               {/* Totals */}
               <div className="mt-4 border-t pt-4">
                 <Table>
-                  <TableFooter>
+                  <TableFooter className="print:bg-gray-100">
                     <TableRow>
-                      <TableCell colSpan={3} className="text-right">Subtotal</TableCell>
-                      <TableCell className="text-right w-28">{formatCurrency(quote.subtotal || 0)}</TableCell>
+                      <TableCell colSpan={3} className="text-right print:text-black">Subtotal</TableCell>
+                      <TableCell className="text-right w-28 print:text-black">{formatCurrency(quote.subtotal || 0)}</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={3} className="text-right">GST (10%)</TableCell>
-                      <TableCell className="text-right w-28">{formatCurrency(quote.tax_total || 0)}</TableCell>
+                      <TableCell colSpan={3} className="text-right print:text-black">GST (10%)</TableCell>
+                      <TableCell className="text-right w-28 print:text-black">{formatCurrency(quote.tax_total || 0)}</TableCell>
                     </TableRow>
-                    <TableRow className="bg-primary/5">
-                      <TableCell colSpan={3} className="text-right text-lg font-bold">Total</TableCell>
-                      <TableCell className="text-right text-lg font-bold w-28">
+                    <TableRow className="bg-primary/10 print:bg-blue-50">
+                      <TableCell colSpan={3} className="text-right text-lg font-bold print:text-black">Total</TableCell>
+                      <TableCell className="text-right text-lg font-bold w-28 print:text-black">
                         {formatCurrency(quote.total_estimate || 0)}
                       </TableCell>
                     </TableRow>

@@ -116,3 +116,57 @@
     border: 1px solid hsl(218 40% 22% / 0.5);
   }
 }
+
+/* Print styles for PDF generation */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force background colors to print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure primary blue prints correctly */
+  .bg-primary {
+    background-color: hsl(195 82% 51%) !important;
+  }
+
+  .text-primary-foreground {
+    color: white !important;
+  }
+
+  /* Override dark theme colors for print */
+  .print\\:text-black {
+    color: black !important;
+  }
+
+  .print\\:text-white {
+    color: white !important;
+  }
+
+  .print\\:text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  .print\\:text-gray-700 {
+    color: #374151 !important;
+  }
+
+  .print\\:bg-gray-100 {
+    background-color: #f3f4f6 !important;
+  }
+
+  .print\\:bg-blue-50 {
+    background-color: #eff6ff !important;
+  }
+
+  .print\\:border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+}
