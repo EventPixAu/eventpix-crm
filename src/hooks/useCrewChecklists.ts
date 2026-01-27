@@ -105,8 +105,7 @@ export function useEventCrewChecklists(eventId: string | undefined) {
         .from('crew_checklists')
         .select(`
           *,
-          items:crew_checklist_items(*),
-          profile:profiles!crew_checklists_user_id_fkey(full_name, email)
+          items:crew_checklist_items(*)
         `)
         .eq('event_id', eventId);
 
@@ -117,8 +116,7 @@ export function useEventCrewChecklists(eventId: string | undefined) {
         items: ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
           a.sort_order - b.sort_order
         ),
-        profile: (checklist as any).profile,
-      }));
+      })) as CrewChecklist[];
     },
     enabled: !!eventId,
   });
