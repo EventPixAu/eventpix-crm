@@ -5,7 +5,7 @@
  * Access: Admin, Sales roles only (enforced via RLS)
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Plus, Search, FileText, Building2, DollarSign } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -23,23 +23,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useQuotes, useCreateQuote, useLeads, useClients } from '@/hooks/useSales';
+import { useQuotes, useCreateQuote } from '@/hooks/useSales';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -49,22 +39,12 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
 };
 
 export default function QuoteList() {
+  const navigate = useNavigate();
   const { data: quotes, isLoading } = useQuotes();
-  const { data: leads } = useLeads();
-  const { data: clients } = useClients();
   const createQuote = useCreateQuote();
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    lead_id: '',
-    client_id: '',
-    quote_number: '',
-    total_estimate: '',
-    valid_until: '',
-    notes: '',
-  });
 
   const filteredQuotes = quotes?.filter(quote => {
     const clientName = (quote.client as any)?.business_name || (quote.lead as any)?.client?.business_name;
@@ -76,29 +56,13 @@ export default function QuoteList() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCreate = async () => {
-    await createQuote.mutateAsync({
-      lead_id: formData.lead_id || null,
-      client_id: formData.client_id || null,
-      quote_number: formData.quote_number || null,
-      total_estimate: formData.total_estimate ? parseFloat(formData.total_estimate) : null,
-      valid_until: formData.valid_until || null,
-      notes: formData.notes || null,
+  const handleNewQuote = async () => {
+    // Create a draft quote and navigate directly to the detail page
+    const newQuote = await createQuote.mutateAsync({
+      status: 'draft',
     });
-    setIsCreateOpen(false);
-    setFormData({
-      lead_id: '',
-      client_id: '',
-      quote_number: '',
-      total_estimate: '',
-      valid_until: '',
-      notes: '',
-    });
+    navigate(`/sales/quotes/${newQuote.id}`);
   };
-
-  // Calculate totals
-  const totalValue = quotes?.reduce((sum, q) => sum + (q.total_estimate || 0), 0) || 0;
-  const acceptedValue = quotes?.filter(q => q.status === 'accepted').reduce((sum, q) => sum + (q.total_estimate || 0), 0) || 0;
 
   return (
     <AppLayout>
@@ -106,9 +70,9 @@ export default function QuoteList() {
         title="Quotes"
         description="Manage pricing proposals"
         actions={
-          <Button onClick={() => setIsCreateOpen(true)}>
+          <Button onClick={handleNewQuote} disabled={createQuote.isPending}>
             <Plus className="mr-2 h-4 w-4" />
-            New Quote
+            {createQuote.isPending ? 'Creating...' : 'New Quote'}
           </Button>
         }
       />
@@ -242,106 +206,6 @@ export default function QuoteList() {
           )}
         </CardContent>
       </Card>
-
-      {/* Create Quote Dialog */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Quote</DialogTitle>
-            <DialogDescription>
-              Create a new pricing proposal.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="lead_id">Lead</Label>
-              <Select 
-                value={formData.lead_id} 
-                onValueChange={(value) => setFormData({ ...formData, lead_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a lead (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leads?.filter(l => l.status !== 'accepted' && l.status !== 'lost').map((lead) => (
-                    <SelectItem key={lead.id} value={lead.id}>
-                      {lead.lead_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="client_id">Client</Label>
-              <Select 
-                value={formData.client_id} 
-                onValueChange={(value) => setFormData({ ...formData, client_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a client (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.business_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quote_number">Quote Number</Label>
-              <Input
-                id="quote_number"
-                value={formData.quote_number}
-                onChange={(e) => setFormData({ ...formData, quote_number: e.target.value })}
-                placeholder="Q-2026-001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="total_estimate">Total Estimate ($)</Label>
-              <Input
-                id="total_estimate"
-                type="number"
-                step="0.01"
-                value={formData.total_estimate}
-                onChange={(e) => setFormData({ ...formData, total_estimate: e.target.value })}
-                placeholder="5000.00"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="valid_until">Valid Until</Label>
-              <Input
-                id="valid_until"
-                type="date"
-                value={formData.valid_until}
-                onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes..."
-                rows={2}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreate} 
-              disabled={createQuote.isPending}
-            >
-              {createQuote.isPending ? 'Creating...' : 'Create Quote'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   );
 }
