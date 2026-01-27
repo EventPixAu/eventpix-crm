@@ -3,14 +3,21 @@
  * 
  * Displays quote details with line items, totals, and actions.
  * Access: Admin, Sales roles only (enforced via RLS)
+ * 
+ * Layout inspired by Studio Ninja:
+ * - Top row: Quote ID, Issue Date, PO Number
+ * - Introduction textarea
+ * - Products & Packages section with empty state
+ * - Right panels: Job info, Client info
+ * - Bottom: Subtotal / Discount row
  */
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
-  Plus, Trash2, ExternalLink, Copy, Mail, FileSignature, RefreshCw, Link as LinkIcon,
-  Save, FolderOpen, Edit2
+  Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon,
+  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -25,7 +32,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from '@/components/ui/table';
 import {
   Dialog,
@@ -54,7 +60,6 @@ import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ApplyQuoteTemplateDialog } from '@/components/ApplyQuoteTemplateDialog';
 import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
-import { QuoteContextPanel } from '@/components/quote/QuoteContextPanel';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
@@ -96,7 +101,6 @@ export default function QuoteDetail() {
   const [isApplyTemplateOpen, setIsApplyTemplateOpen] = useState(false);
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
-  const [isEditSectionsOpen, setIsEditSectionsOpen] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -116,17 +120,26 @@ export default function QuoteDetail() {
     venue_address: '',
     notes: '',
   });
-  const [sectionEdits, setSectionEdits] = useState({
-    intro_text: '',
-    scope_text: '',
-    terms_text: '',
-    notes_internal: '',
-  });
+
+  // Editable intro text state
+  const [introText, setIntroText] = useState('');
+  const [introLoaded, setIntroLoaded] = useState(false);
+
+  // Load intro text when quote loads
+  useMemo(() => {
+    if (quote && !introLoaded) {
+      setIntroText((quote as any)?.intro_text || '');
+      setIntroLoaded(true);
+    }
+  }, [quote, introLoaded]);
 
   const isLocked = quote?.status === 'accepted' || quote?.status === 'rejected';
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
   const clientName = clientData?.business_name || leadData?.client?.business_name;
+  const primaryContactName = clientData?.primary_contact_name || leadData?.client?.primary_contact_name;
+  const primaryContactEmail = clientData?.primary_contact_email || leadData?.client?.primary_contact_email;
+  const primaryContactPhone = clientData?.primary_contact_phone || leadData?.client?.primary_contact_phone;
   
   // Group items by group_label
   const groupedItems = useMemo(() => {
@@ -141,7 +154,6 @@ export default function QuoteDetail() {
 
   const sortedGroupKeys = useMemo(() => {
     const keys = Object.keys(groupedItems);
-    // Sort by predefined order, then alphabetically for custom groups
     return keys.sort((a, b) => {
       const indexA = GROUP_LABELS.indexOf(a);
       const indexB = GROUP_LABELS.indexOf(b);
@@ -180,7 +192,7 @@ export default function QuoteDetail() {
     });
   };
 
-  const handleAddProductsPackages = async (items: Array<{
+  const handleAddProductsPackages = async (addedItems: Array<{
     type: 'product' | 'package';
     id: string;
     name: string;
@@ -191,7 +203,7 @@ export default function QuoteDetail() {
   }>) => {
     if (!id) return;
     
-    for (const item of items) {
+    for (const item of addedItems) {
       if (item.type === 'package') {
         await addPackageToQuote.mutateAsync({
           quote_id: id,
@@ -317,26 +329,15 @@ export default function QuoteDetail() {
     toast({ title: 'Link copied to clipboard' });
   };
 
-  const openEditSections = () => {
-    setSectionEdits({
-      intro_text: (quote as any)?.intro_text || '',
-      scope_text: (quote as any)?.scope_text || '',
-      terms_text: quote?.terms_text || '',
-      notes_internal: (quote as any)?.notes_internal || '',
-    });
-    setIsEditSectionsOpen(true);
-  };
-
-  const handleSaveSections = async () => {
-    if (!id) return;
-    await updateQuote.mutateAsync({
-      id,
-      intro_text: sectionEdits.intro_text || null,
-      scope_text: sectionEdits.scope_text || null,
-      terms_text: sectionEdits.terms_text || null,
-      notes_internal: sectionEdits.notes_internal || null,
-    } as any);
-    setIsEditSectionsOpen(false);
+  const handleIntroBlur = async () => {
+    if (!id || isLocked) return;
+    const currentIntro = (quote as any)?.intro_text || '';
+    if (introText !== currentIntro) {
+      await updateQuote.mutateAsync({
+        id,
+        intro_text: introText || null,
+      } as any);
+    }
   };
 
   if (isLoading) {
@@ -365,9 +366,15 @@ export default function QuoteDetail() {
   const statusConfig = STATUS_CONFIG[quote.status] || STATUS_CONFIG.draft;
   const quoteVersion = (quote as any).quote_version || 1;
 
+  // Lead/job info for right panel
+  const jobName = leadData?.lead_name || quote.quote_number || 'Quote';
+  const eventDate = leadData?.tentative_date;
+  const eventTime = leadData?.tentative_time;
+  const venueAddress = leadData?.venue_address;
+
   return (
     <AppLayout>
-      {/* Header */}
+      {/* Header with Back + Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/sales/quotes')}>
@@ -380,9 +387,6 @@ export default function QuoteDetail() {
                 {statusConfig.label}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
               </Badge>
             </div>
-            <p className="text-muted-foreground">
-              Created {quote.created_at ? format(new Date(quote.created_at), 'PPP') : '—'}
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -434,174 +438,192 @@ export default function QuoteDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+        {/* Left Column - Main Form */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Quote Sections */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Quote Content</CardTitle>
-                <CardDescription>Intro, scope, and terms displayed on the proposal</CardDescription>
-              </div>
-              {!isLocked && (
-                <Button size="sm" variant="outline" onClick={openEditSections}>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Edit Sections
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(quote as any).intro_text && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Introduction</h4>
-                  <p className="text-sm whitespace-pre-wrap">{(quote as any).intro_text}</p>
-                </div>
-              )}
-              {(quote as any).scope_text && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Scope of Work</h4>
-                  <p className="text-sm whitespace-pre-wrap">{(quote as any).scope_text}</p>
-                </div>
-              )}
-              {quote.terms_text && (
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Terms & Conditions</h4>
-                  <p className="text-sm whitespace-pre-wrap">{quote.terms_text}</p>
-                </div>
-              )}
-              {!(quote as any).intro_text && !(quote as any).scope_text && !quote.terms_text && (
-                <p className="text-muted-foreground text-sm">No content sections added yet. Click "Edit Sections" to add intro, scope, or terms.</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Quote Header Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Quote ID *</Label>
+              <Input 
+                value={quote.quote_number || `Q-${quote.id.slice(0, 8)}`}
+                readOnly
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Issue Date *</Label>
+              <Input 
+                type="date"
+                value={quote.created_at ? format(new Date(quote.created_at), 'yyyy-MM-dd') : ''}
+                readOnly
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>PO Number</Label>
+              <Input 
+                value={(quote as any).po_number || '-'}
+                readOnly={isLocked}
+                placeholder="-"
+                className={isLocked ? 'bg-muted' : ''}
+              />
+            </div>
+          </div>
 
-          {/* Line Items */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Line Items</CardTitle>
-                <CardDescription>Products and services included in this quote</CardDescription>
+          {/* Introduction */}
+          <div className="space-y-2">
+            <Label>Introduction</Label>
+            <Textarea
+              value={introText}
+              onChange={(e) => setIntroText(e.target.value)}
+              onBlur={handleIntroBlur}
+              placeholder="E.g. Thank you for considering me as your photographer! Please choose from the list of packages and products and click Accept. Don't hesitate to contact me if you have any questions."
+              rows={4}
+              disabled={isLocked}
+              className="resize-none"
+              maxLength={1000}
+            />
+            <p className="text-xs text-muted-foreground text-right">{introText.length}/1000</p>
+          </div>
+
+          {/* Products & Packages Section */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold">Products & Packages</h2>
+              <p className="text-sm text-muted-foreground">Add products and packages to this quote.</p>
+            </div>
+
+            {!items?.length ? (
+              /* Empty State */
+              <div className="bg-muted/50 rounded-lg py-16 px-8 text-center">
+                <h3 className="text-lg font-semibold mb-2">Start Adding Items to your Quote</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  You currently don't have any product or package added to your Quote. Click the button below to start adding them.
+                </p>
+                <Button 
+                  size="lg" 
+                  onClick={() => setIsProductsDialogOpen(true)}
+                  disabled={isLocked}
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add Products & Packages
+                </Button>
               </div>
-              {!isLocked && (
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setIsApplyTemplateOpen(true)}>
-                    <FolderOpen className="h-4 w-4 mr-2" />
-                    Apply Template
-                  </Button>
-                  {items && items.length > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => setIsSaveTemplateOpen(true)}>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save as Template
-                    </Button>
+            ) : (
+              /* Items Table */
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between py-4">
+                  <div />
+                  {!isLocked && (
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setIsApplyTemplateOpen(true)}>
+                        <FolderOpen className="h-4 w-4 mr-2" />
+                        Apply Template
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setIsSaveTemplateOpen(true)}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save as Template
+                      </Button>
+                      <Button size="sm" onClick={() => setIsProductsDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Products & Packages
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setIsAddItemOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Custom Item
+                      </Button>
+                    </div>
                   )}
-                  <Button size="sm" onClick={() => setIsProductsDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Products & Packages
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setIsAddItemOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Custom Item
-                  </Button>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent>
-              {!items?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No items yet. Add products or services to this quote.
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {sortedGroupKeys.map((groupKey) => (
-                    <div key={groupKey}>
-                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                        {groupKey}
-                      </h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Description</TableHead>
-                            <TableHead className="text-right">Qty</TableHead>
-                            <TableHead className="text-right">Unit Price</TableHead>
-                            <TableHead className="text-right">Tax</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            {!isLocked && <TableHead className="w-[120px]">Group</TableHead>}
-                            {!isLocked && <TableHead className="w-[50px]"></TableHead>}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {groupedItems[groupKey].map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell>
-                                <div>
-                                  <div className="font-medium">{item.description}</div>
-                                  {item.product && (
-                                    <div className="text-xs text-muted-foreground">
-                                      Product: {item.product.name}
-                                    </div>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">{item.quantity}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                              <TableCell className="text-right">{(item.tax_rate * 100).toFixed(0)}%</TableCell>
-                              <TableCell className="text-right font-medium">
-                                {formatCurrency(item.line_total)}
-                              </TableCell>
-                              {!isLocked && (
-                                <TableCell>
-                                  <Select
-                                    value={item.group_label || ''}
-                                    onValueChange={(val) => handleItemGroupChange(item.id, val)}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="Group" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {GROUP_LABELS.map((label) => (
-                                        <SelectItem key={label} value={label}>{label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                              )}
-                              {!isLocked && (
-                                <TableCell>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => handleDeleteItem(item.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TableCell>
-                              )}
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-6">
+                    {sortedGroupKeys.map((groupKey) => (
+                      <div key={groupKey}>
+                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                          {groupKey}
+                        </h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Description</TableHead>
+                              <TableHead className="text-right">Qty</TableHead>
+                              <TableHead className="text-right">Unit Price</TableHead>
+                              <TableHead className="text-right">Tax</TableHead>
+                              <TableHead className="text-right">Total</TableHead>
+                              {!isLocked && <TableHead className="w-[120px]">Group</TableHead>}
+                              {!isLocked && <TableHead className="w-[50px]"></TableHead>}
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ))}
-                  
-                  {/* Totals */}
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-end gap-8">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium w-24 text-right">{formatCurrency(quote.subtotal || 0)}</span>
-                    </div>
-                    <div className="flex justify-end gap-8">
-                      <span className="text-muted-foreground">GST (10%)</span>
-                      <span className="font-medium w-24 text-right">{formatCurrency(quote.tax_total || 0)}</span>
-                    </div>
-                    <div className="flex justify-end gap-8 text-lg">
-                      <span className="font-bold">Total</span>
-                      <span className="font-bold w-24 text-right">{formatCurrency(quote.total_estimate || 0)}</span>
-                    </div>
+                          </TableHeader>
+                          <TableBody>
+                            {groupedItems[groupKey].map((item) => (
+                              <TableRow key={item.id}>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{item.description}</div>
+                                    {item.product && (
+                                      <div className="text-xs text-muted-foreground">
+                                        Product: {item.product.name}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">{item.quantity}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                                <TableCell className="text-right">{(item.tax_rate * 100).toFixed(0)}%</TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {formatCurrency(item.line_total)}
+                                </TableCell>
+                                {!isLocked && (
+                                  <TableCell>
+                                    <Select
+                                      value={item.group_label || ''}
+                                      onValueChange={(val) => handleItemGroupChange(item.id, val)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue placeholder="Group" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {GROUP_LABELS.map((label) => (
+                                          <SelectItem key={label} value={label}>{label}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                )}
+                                {!isLocked && (
+                                  <TableCell>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      onClick={() => handleDeleteItem(item.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Totals Footer */}
+            <div className="flex justify-end items-center gap-8 pt-4 border-t">
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Subtotal</div>
+                <div className="text-lg font-semibold">{formatCurrency(quote.subtotal || 0)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-primary cursor-pointer hover:underline">Discount</div>
+                <div className="text-muted-foreground">None</div>
+              </div>
+            </div>
+          </div>
 
           {/* Internal Notes (Admin/Sales only) */}
           {(quote as any).notes_internal && (
@@ -615,86 +637,109 @@ export default function QuoteDetail() {
               </CardContent>
             </Card>
           )}
-
-          {/* Public Notes */}
-          {quote.notes && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap">{quote.notes}</p>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* Sidebar */}
+        {/* Right Column - Info Panels */}
         <div className="space-y-6">
-          {/* Quote Info */}
+          {/* Job Panel */}
           <Card>
-            <CardHeader>
-              <CardTitle>Quote Details</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Job
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="text-sm text-muted-foreground">Client</div>
-                <div className="flex items-center gap-2 font-medium">
-                  <Building2 className="h-4 w-4" />
-                  {clientName || 'No client'}
+              <div className="flex items-start gap-3">
+                <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium">{jobName}</div>
                 </div>
               </div>
-              {leadData && (
-                <div>
-                  <div className="text-sm text-muted-foreground">Lead</div>
-                  <div className="font-medium">{leadData.lead_name}</div>
-                </div>
-              )}
-              <Separator />
-              <div>
-                <div className="text-sm text-muted-foreground">Valid Until</div>
-                <div className="font-medium">
-                  {quote.valid_until 
-                    ? format(new Date(quote.valid_until), 'PPP') 
-                    : 'Not set'}
-                </div>
-              </div>
-              {quoteVersion > 1 && (
-                <div>
-                  <div className="text-sm text-muted-foreground">Version</div>
-                  <div className="font-medium">v{quoteVersion}</div>
-                </div>
-              )}
-              {quote.accepted_at && (
-                <>
-                  <Separator />
+              
+              {eventDate && (
+                <div className="flex items-start gap-3">
+                  <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
                   <div>
-                    <div className="text-sm text-muted-foreground">Accepted</div>
+                    <div className="text-sm text-muted-foreground">Date & Time</div>
                     <div className="font-medium">
-                      {format(new Date(quote.accepted_at), 'PPP')}
+                      {format(new Date(eventDate), 'EEE, dd MMM yyyy')}
                     </div>
-                    {quote.accepted_by_name && (
-                      <div className="text-sm text-muted-foreground">
-                        by {quote.accepted_by_name}
-                      </div>
+                    {eventTime && (
+                      <div className="text-sm text-muted-foreground">{eventTime}</div>
                     )}
                   </div>
-                </>
+                </div>
               )}
-              {(quote as any).linked_event_id && (
-                <>
-                  <Separator />
+
+              {venueAddress && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
                   <div>
-                    <div className="text-sm text-muted-foreground">Converted to Event</div>
-                    <Link 
-                      to={`/events/${(quote as any).linked_event_id}`}
-                      className="font-medium text-primary hover:underline flex items-center gap-1"
-                    >
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      View Event
-                    </Link>
+                    <div className="text-sm text-muted-foreground">Location</div>
+                    <div className="text-sm">{venueAddress}</div>
                   </div>
-                </>
+                </div>
+              )}
+
+              {!eventDate && !venueAddress && (
+                <p className="text-sm text-muted-foreground">No event details available</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Client Panel */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Client
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {primaryContactName && (
+                <div className="flex items-start gap-3">
+                  <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div className="font-medium">{primaryContactName}</div>
+                </div>
+              )}
+              
+              {clientName && (
+                <div className="flex items-start gap-3">
+                  <Building2 className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Company</div>
+                    <div className="font-medium">{clientName}</div>
+                  </div>
+                </div>
+              )}
+
+              {primaryContactEmail && (
+                <div className="flex items-start gap-3">
+                  <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Email</div>
+                    <a href={`mailto:${primaryContactEmail}`} className="text-primary hover:underline text-sm">
+                      {primaryContactEmail}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {primaryContactPhone && (
+                <div className="flex items-start gap-3">
+                  <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <div className="text-sm text-muted-foreground">Phone</div>
+                    <a href={`tel:${primaryContactPhone}`} className="text-primary hover:underline text-sm">
+                      {primaryContactPhone}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {!clientName && !primaryContactName && (
+                <p className="text-sm text-muted-foreground">No client assigned</p>
               )}
             </CardContent>
           </Card>
@@ -809,75 +854,6 @@ export default function QuoteDetail() {
               disabled={!newItem.description.trim() || createItem.isPending}
             >
               {createItem.isPending ? 'Adding...' : 'Add Item'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Sections Dialog */}
-      <Dialog open={isEditSectionsOpen} onOpenChange={setIsEditSectionsOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Quote Content</DialogTitle>
-            <DialogDescription>
-              Customize the intro, scope, terms, and internal notes for this quote.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="intro_text">Introduction</Label>
-              <Textarea
-                id="intro_text"
-                value={sectionEdits.intro_text}
-                onChange={(e) => setSectionEdits({ ...sectionEdits, intro_text: e.target.value })}
-                placeholder="Thank you for considering Eventpix for your upcoming event..."
-                rows={3}
-              />
-              <p className="text-xs text-muted-foreground">Displayed at the top of the proposal</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="scope_text">Scope of Work</Label>
-              <Textarea
-                id="scope_text"
-                value={sectionEdits.scope_text}
-                onChange={(e) => setSectionEdits({ ...sectionEdits, scope_text: e.target.value })}
-                placeholder="We will provide professional photography coverage including..."
-                rows={4}
-              />
-              <p className="text-xs text-muted-foreground">Describes what's included in the quote</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="terms_text">Terms & Conditions</Label>
-              <Textarea
-                id="terms_text"
-                value={sectionEdits.terms_text}
-                onChange={(e) => setSectionEdits({ ...sectionEdits, terms_text: e.target.value })}
-                placeholder="• A 30% deposit is required to secure your booking.&#10;• Balance is due 7 days before the event date."
-                rows={5}
-              />
-              <p className="text-xs text-muted-foreground">Legal terms displayed at the bottom of the proposal</p>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label htmlFor="notes_internal" className="text-amber-700">Internal Notes (Not visible to clients)</Label>
-              <Textarea
-                id="notes_internal"
-                value={sectionEdits.notes_internal}
-                onChange={(e) => setSectionEdits({ ...sectionEdits, notes_internal: e.target.value })}
-                placeholder="Negotiation notes, special considerations, etc."
-                rows={3}
-                className="border-amber-200 focus:border-amber-400"
-              />
-              <p className="text-xs text-amber-600">⚠️ These notes are for internal use only and will never be shown to clients</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditSectionsOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleSaveSections} 
-              disabled={updateQuote.isPending}
-            >
-              {updateQuote.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
