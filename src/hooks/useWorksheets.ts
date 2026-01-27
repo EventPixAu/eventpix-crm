@@ -221,6 +221,8 @@ export function useDeleteWorksheet() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['worksheets'] });
+      queryClient.invalidateQueries({ queryKey: ['template-events'] });
+      queryClient.invalidateQueries({ queryKey: ['template-usage-count'] });
     },
   });
 }

@@ -77,6 +77,8 @@ import {
   useReorderTemplateItems,
   useBulkApplyTemplate,
 } from '@/hooks/useWorkflowTemplates';
+import { useDeleteWorksheet } from '@/hooks/useWorksheets';
+import { toast } from '@/hooks/use-toast';
 import { useEventTypes } from '@/hooks/useLookups';
 import { Database } from '@/integrations/supabase/types';
 
@@ -236,6 +238,23 @@ export default function WorkflowDetail() {
   const deleteItem = useDeleteTemplateItem();
   const reorderItems = useReorderTemplateItems();
   const bulkApply = useBulkApplyTemplate();
+  const deleteWorksheet = useDeleteWorksheet();
+
+  const handleUnassignWorkflow = async (worksheetId: string, eventName: string) => {
+    try {
+      await deleteWorksheet.mutateAsync(worksheetId);
+      toast({
+        title: "Workflow unassigned",
+        description: `Removed from "${eventName}"`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to unassign workflow",
+        variant: "destructive",
+      });
+    }
+  };
   
   const [sortedItems, setSortedItems] = useState<WorkflowTemplateItem[]>([]);
   const [editName, setEditName] = useState('');
@@ -431,22 +450,33 @@ export default function WorkflowDetail() {
                 <div className="border-t border-border pt-3 mt-3 space-y-2 max-h-48 overflow-y-auto">
                   {templateEvents.map((event) => (
                     <div
-                      key={event.eventId}
+                      key={event.worksheetId}
                       className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="font-medium truncate">{event.event_name}</p>
                         <p className="text-xs text-muted-foreground">
                           {event.client_name} • {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'No date'}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/events/${event.eventId}`)}
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleUnassignWorkflow(event.worksheetId, event.event_name)}
+                          disabled={deleteWorksheet.isPending}
+                        >
+                          Unassign
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/events/${event.eventId}`)}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
