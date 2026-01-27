@@ -74,6 +74,9 @@ export function EventEquipmentByRole({ eventId, showActions = true }: EventEquip
     const groups: Record<string, GroupedEquipment> = {};
 
     allocations.forEach((alloc) => {
+      // Defensive: allocation rows can exist with a missing equipment_item (deleted item or restricted join)
+      if (!alloc.equipment_item) return;
+
       // Determine if this is company-owned equipment
       const isCompanyOwned = !alloc.equipment_item.owner_user_id;
       
@@ -124,7 +127,7 @@ export function EventEquipmentByRole({ eventId, showActions = true }: EventEquip
         id: alloc.id,
         name: alloc.equipment_item.name,
         brand: alloc.equipment_item.brand,
-        category: alloc.equipment_item.category,
+        category: (alloc.equipment_item.category || 'other').trim() || 'other',
         status: alloc.status,
         isCompanyOwned,
       });
