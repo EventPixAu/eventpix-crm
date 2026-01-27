@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems } from '@/hooks/useWorksheets';
+import { useMyCrewChecklist } from '@/hooks/useCrewChecklists';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 
 const phases = [
@@ -24,11 +25,16 @@ export default function EventRunSheet() {
   
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
-  const { data: worksheets = [] } = useEventWorksheets(id);
+  // Crew should NOT see admin workflow worksheets; they have their own role-based checklist.
+  // Disable worksheet queries for crew to avoid mixing old/general checklist items into their printout.
+  const worksheetsEventId = isAdmin ? id : undefined;
+  const { data: worksheets = [] } = useEventWorksheets(worksheetsEventId);
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
+  const crewChecklistEventId = isAdmin ? undefined : id;
+  const { data: myCrewChecklist } = useMyCrewChecklist(crewChecklistEventId);
   
   const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
@@ -229,7 +235,20 @@ export default function EventRunSheet() {
         {/* Checklist */}
         <section className="mb-6 print-section">
           <h2 className="text-lg font-semibold mb-3 border-b pb-1">Checklist</h2>
-          {worksheets.length === 0 ? (
+          {!isAdmin ? (
+            myCrewChecklist?.items?.length ? (
+              <div className="space-y-2">
+                {myCrewChecklist.items.map((item) => (
+                  <div key={item.id} className="checklist-item flex items-start gap-2 py-1">
+                    <span className="inline-block w-4 h-4 border border-black mt-0.5 shrink-0" />
+                    <span className="text-sm">{item.item_text}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No crew checklist</p>
+            )
+          ) : worksheets.length === 0 ? (
             <p className="text-muted-foreground">No worksheets</p>
           ) : (
             <div className="space-y-4">
