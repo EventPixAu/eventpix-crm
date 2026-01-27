@@ -76,12 +76,7 @@ serve(async (req) => {
       );
     }
 
-    if (inv.status === "emailed") {
-      return new Response(
-        JSON.stringify({ success: false, error: "User has already been invited via email" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Allow resending for invitations already marked as 'emailed' (generate a fresh invite link).
 
     // 3) Create Auth user and send invitation email
     const redirectTo = Deno.env.get("INVITE_REDIRECT_URL") || `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/`;
