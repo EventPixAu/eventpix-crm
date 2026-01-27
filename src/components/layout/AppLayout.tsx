@@ -61,7 +61,7 @@ interface AppLayoutProps {
 
 // ===== CRM SECTION =====
 const crmItems: NavItem[] = [
-  { href: '/crm/promotions', label: 'Promotions', icon: Home },
+  { href: '/crm/promotions', label: 'Dashboard', icon: Home },
   { href: '/crm/companies', label: 'Companies', icon: Building2 },
   { href: '/crm/contacts', label: 'Contacts', icon: User },
   { href: '/crm/emails', label: 'Emails', icon: Mail },
