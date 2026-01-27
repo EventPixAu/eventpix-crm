@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -246,24 +247,26 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit Team Member Profile</DialogTitle>
           <DialogDescription>
             Update profile information for {profile.full_name || profile.email}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {sourceTable === 'staff' && (
-            <div className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
-              This team member does not have a linked user account.
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <ScrollArea className="flex-1 px-6">
+            <div className="space-y-6 pb-4">
+              {sourceTable === 'staff' && (
+                <div className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
+                  This team member does not have a linked user account.
+                </div>
+              )}
 
-          {/* Personal Info Section */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Personal Information</h3>
+              {/* Personal Info Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Personal Information</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <Label htmlFor="full_name">Full Name</Label>
@@ -582,9 +585,10 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 rows={3}
               />
             </div>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
+            </div>
+            </div>
+          </ScrollArea>
+          <DialogFooter className="gap-2 sm:gap-0 px-6 py-4 border-t bg-background">
             <Button
               type="button"
               variant="outline"
