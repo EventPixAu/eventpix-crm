@@ -8,7 +8,23 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Plus,
   Pencil,
@@ -56,6 +72,66 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+// Sortable item component for drag-and-drop
+interface SortableItemProps {
+  id: string;
+  index: number;
+  itemText: string;
+  onUpdate: (index: number, text: string) => void;
+  onRemove: (index: number) => void;
+  canRemove: boolean;
+}
+
+function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRemove }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2"
+    >
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <span className="text-sm text-muted-foreground w-6">{index + 1}.</span>
+      <Input
+        value={itemText}
+        onChange={(e) => onUpdate(index, e.target.value)}
+        placeholder="Checklist item text"
+        className="flex-1"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(index)}
+        disabled={!canRemove}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 interface ChecklistItem {
   item_text: string;
@@ -261,6 +337,23 @@ export function CrewChecklistTemplatesManager() {
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
     });
+  };
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = formItems.findIndex((_, i) => `item-${i}` === active.id);
+      const newIndex = formItems.findIndex((_, i) => `item-${i}` === over.id);
+      setFormItems(arrayMove(formItems, oldIndex, newIndex));
+    }
   };
 
   const addItem = () => {
@@ -475,37 +568,30 @@ export function CrewChecklistTemplatesManager() {
                   Add Item
                 </Button>
               </div>
-              <div className="space-y-2">
-                <AnimatePresence>
-                  {formItems.map((item, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center gap-2"
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm text-muted-foreground w-6">{index + 1}.</span>
-                      <Input
-                        value={item.item_text}
-                        onChange={(e) => updateItem(index, e.target.value)}
-                        placeholder="Checklist item text"
-                        className="flex-1"
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={formItems.map((_, i) => `item-${i}`)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {formItems.map((item, index) => (
+                      <SortableChecklistItem
+                        key={`item-${index}`}
+                        id={`item-${index}`}
+                        index={index}
+                        itemText={item.item_text}
+                        onUpdate={updateItem}
+                        onRemove={removeItem}
+                        canRemove={formItems.length > 1}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeItem(index)}
-                        disabled={formItems.length === 1}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
           </div>
 
