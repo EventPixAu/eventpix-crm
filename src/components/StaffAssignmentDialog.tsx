@@ -30,6 +30,7 @@ import { EligibilityBadge } from '@/components/AssignmentEligibilityWarning';
 import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGuardrails';
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useAuth } from '@/lib/auth';
+import { useCreateCrewChecklistForUser } from '@/hooks/useCrewChecklists';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -61,6 +62,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const checkConflicts = useCheckAssignmentConflicts();
   const checkGuardrails = useCheckAssignmentGuardrails();
   const logAuditEntry = useLogAuditEntry();
+  const createCrewChecklist = useCreateCrewChecklistForUser();
   
   // Fetch availability for the event date
   const { data: dateAvailability = [] } = useStaffAvailabilityByDate(event?.event_date);
@@ -191,6 +193,15 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
         user_id: selectedUser,
         assignment_id: result.id,
       });
+      
+      // Auto-create crew checklist for this assignment (only for profile users, not legacy staff)
+      if (!isStaffTableEntry) {
+        createCrewChecklist.mutate({
+          eventId,
+          userId: selectedUser,
+          staffRoleId: selectedRole || undefined,
+        });
+      }
     }
 
     setSelectedUser('');
