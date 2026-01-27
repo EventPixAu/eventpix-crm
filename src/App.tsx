@@ -34,6 +34,7 @@ import GalleryPublic from "./pages/GalleryPublic";
 import JobIntakeList from "./pages/JobIntakeList";
 import JobIntakeDetail from "./pages/JobIntakeDetail";
 import KnowledgeBase from "./pages/KnowledgeBase";
+import CrewOnboardingGuide from "./pages/CrewOnboardingGuide";
 import MyAvailability from "./pages/MyAvailability";
 import MyDocuments from "./pages/MyDocuments";
 import Equipment from "./pages/Equipment";
@@ -205,6 +206,9 @@ function AppRoutes() {
       {/* Common routes - all authenticated users */}
       <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
       <Route path="/staff/me" element={<ProtectedRoute><StaffMe /></ProtectedRoute>} />
+      
+      {/* Public onboarding guide - no auth required */}
+      <Route path="/onboarding" element={<CrewOnboardingGuide />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
