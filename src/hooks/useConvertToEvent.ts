@@ -54,6 +54,7 @@ export interface ConvertToEventResult {
     tasks: number;
     event_contacts: number;
     sessions: number;
+    workflow_steps: number;
   };
   warnings?: string[];
 }
@@ -88,8 +89,10 @@ export function useConvertToEvent() {
       const tasksCreated = result.created?.tasks || 0;
       const worksheetsCreated = result.created?.worksheets || 0;
       const sessionsTransferred = result.created?.sessions || 0;
+      const workflowSteps = result.created?.workflow_steps || 0;
       
       const details = [
+        workflowSteps > 0 ? `${workflowSteps} workflow steps` : null,
         tasksCreated > 0 ? `${tasksCreated} tasks` : null,
         worksheetsCreated > 0 ? `${worksheetsCreated} worksheets` : null,
         sessionsTransferred > 0 ? `${sessionsTransferred} sessions` : null,
