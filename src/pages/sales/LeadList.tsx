@@ -115,9 +115,11 @@ export default function LeadList() {
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-                  <SelectItem key={status} value={status}>{config.label}</SelectItem>
-                ))}
+                {Object.entries(STATUS_CONFIG)
+                  .filter(([status]) => status !== 'accepted') // Exclude legacy status
+                  .map(([status, config]) => (
+                    <SelectItem key={status} value={status}>{config.label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
