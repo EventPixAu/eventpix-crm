@@ -208,7 +208,9 @@ export default function PhotographerDashboard() {
     return 'Good evening';
   }, []);
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there';
+  // Extract first name from full_name, falling back to email prefix
+  const fullName = user?.user_metadata?.full_name as string | undefined;
+  const firstName = fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -216,7 +218,7 @@ export default function PhotographerDashboard() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-lg mx-auto px-4 py-4">
           <h1 className="text-2xl font-display font-bold">
-            {greeting}, {userName}!
+            {greeting}, {firstName}!
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             {counts.upcoming} upcoming {counts.upcoming === 1 ? 'job' : 'jobs'}
