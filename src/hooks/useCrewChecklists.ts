@@ -158,15 +158,21 @@ export function useCreateCrewChecklistForUser() {
       
       if (staffRoleId) {
         // Try to find role-specific template first
-        const { data: roleTemplate } = await supabase
+        const { data: roleTemplate, error: roleError } = await supabase
           .from('crew_checklist_templates')
           .select('id, items')
           .eq('staff_role_id', staffRoleId)
           .eq('is_active', true)
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
         
+        if (roleError) {
+          console.error('Error fetching role-specific template:', roleError);
+        }
+        
         if (roleTemplate) {
+          console.log('Using role-specific template:', roleTemplate.id);
           templateItems = roleTemplate.items as any[] || [];
           usedTemplateId = roleTemplate.id;
         }
@@ -174,13 +180,19 @@ export function useCreateCrewChecklistForUser() {
       
       // Fallback to default template if no role-specific one
       if (!usedTemplateId) {
-        const { data: defaultTemplate } = await supabase
+        console.log('No role-specific template found, falling back to default');
+        const { data: defaultTemplate, error: defaultError } = await supabase
           .from('crew_checklist_templates')
           .select('id, items')
           .is('staff_role_id', null)
           .eq('is_active', true)
+          .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+        
+        if (defaultError) {
+          console.error('Error fetching default template:', defaultError);
+        }
         
         if (defaultTemplate) {
           templateItems = defaultTemplate.items as any[] || [];

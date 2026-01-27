@@ -40,6 +40,13 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
   const handleCreateChecklist = async () => {
     if (!userId) return;
     
+    console.log('Creating checklist for assignment:', {
+      eventId,
+      userId,
+      staffRoleId: assignment.staff_role_id,
+      assignmentId: assignment.id,
+    });
+    
     await createChecklist.mutateAsync({
       eventId,
       userId,
