@@ -288,39 +288,9 @@ export default function EventForm() {
                   name="event_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Date</FormLabel>
+                      <FormLabel>Start Date</FormLabel>
                       <FormControl>
                         <Input {...field} type="date" className="bg-secondary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="start_time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Time</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="time" className="bg-secondary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="end_time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Time</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="time" className="bg-secondary" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
