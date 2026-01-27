@@ -49,9 +49,10 @@ const AUTO_TRIGGER_OPTIONS = [
 ];
 
 const DATE_REFERENCE_OPTIONS = [
-  { value: 'event_date', label: 'Main Shoot Date' },
-  { value: 'booking_date', label: 'Booking Date' },
-  { value: 'delivery_deadline', label: 'Delivery Deadline' },
+  { value: 'job_accepted', label: 'Job Accepted', description: 'When the lead converts to a job' },
+  { value: 'event_date', label: 'Event Date', description: 'The main shoot/event date' },
+  { value: 'booking_date', label: 'Booking Date', description: 'When the job was booked' },
+  { value: 'delivery_deadline', label: 'Delivery Deadline', description: 'Client delivery due date' },
 ];
 
 export function WorkflowTemplateEditor({ 
@@ -264,53 +265,99 @@ export function WorkflowTemplateEditor({
                     </div>
                   )}
                   
-                  {/* Date Offset Settings */}
-                  <div className="border-t border-border pt-4 mt-4">
-                    <Label className="mb-2 block">Due Date (Optional)</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
-                          Days Offset
-                        </Label>
-                        <Input
-                          type="number"
-                          value={item.date_offset_days ?? ''}
-                          onChange={(e) => handleUpdateItem(item.id, { 
-                            date_offset_days: e.target.value 
-                              ? parseInt(e.target.value) 
-                              : null 
-                          })}
-                          placeholder="e.g., -7 (before) or 3 (after)"
-                          disabled={!isEditable}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">
-                          Relative To
-                        </Label>
-                        <Select
-                          value={item.date_offset_reference || 'event_date'}
-                          onValueChange={(value) => handleUpdateItem(item.id, { 
-                            date_offset_reference: value 
-                          })}
-                          disabled={!isEditable}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {DATE_REFERENCE_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  {/* Due Date Settings - Studio Ninja Style */}
+                  <div className="border-t border-border pt-4 mt-4 space-y-4">
+                    <div>
+                      <Label className="mb-1 block font-medium">Due Date Schedule</Label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Set when this step should be completed relative to a key date
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Use negative numbers for days before (e.g., -7 = 7 days before)
-                    </p>
+                    
+                    {/* Reference Date Selection */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">
+                        Calculate from
+                      </Label>
+                      <Select
+                        value={item.date_offset_reference || 'event_date'}
+                        onValueChange={(value) => handleUpdateItem(item.id, { 
+                          date_offset_reference: value 
+                        })}
+                        disabled={!isEditable}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DATE_REFERENCE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              <div className="flex flex-col">
+                                <span>{opt.label}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {opt.description}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Days Offset with Before/After */}
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={item.date_offset_days !== null ? Math.abs(item.date_offset_days) : ''}
+                        onChange={(e) => {
+                          const absValue = e.target.value ? parseInt(e.target.value) : null;
+                          const currentSign = (item.date_offset_days ?? 0) < 0 ? -1 : 1;
+                          handleUpdateItem(item.id, { 
+                            date_offset_days: absValue !== null ? absValue * currentSign : null 
+                          });
+                        }}
+                        placeholder="0"
+                        className="w-20"
+                        disabled={!isEditable}
+                      />
+                      <span className="text-sm text-muted-foreground">days</span>
+                      <Select
+                        value={(item.date_offset_days ?? 0) < 0 ? 'before' : 'after'}
+                        onValueChange={(value) => {
+                          const absValue = Math.abs(item.date_offset_days ?? 0);
+                          handleUpdateItem(item.id, { 
+                            date_offset_days: value === 'before' ? -absValue : absValue 
+                          });
+                        }}
+                        disabled={!isEditable}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="before">before</SelectItem>
+                          <SelectItem value="after">after</SelectItem>
+                          <SelectItem value="on">on the day</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-sm text-muted-foreground">
+                        {DATE_REFERENCE_OPTIONS.find(o => o.value === (item.date_offset_reference || 'event_date'))?.label}
+                      </span>
+                    </div>
+                    
+                    {/* Preview of calculated due */}
+                    {item.date_offset_days !== null && (
+                      <div className="bg-muted/50 rounded-md p-3 text-sm">
+                        <span className="text-muted-foreground">Due: </span>
+                        <span className="font-medium">
+                          {item.date_offset_days === 0 
+                            ? `On ${DATE_REFERENCE_OPTIONS.find(o => o.value === (item.date_offset_reference || 'event_date'))?.label}`
+                            : `${Math.abs(item.date_offset_days)} days ${item.date_offset_days < 0 ? 'before' : 'after'} ${DATE_REFERENCE_OPTIONS.find(o => o.value === (item.date_offset_reference || 'event_date'))?.label}`
+                          }
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Required Toggle */}
