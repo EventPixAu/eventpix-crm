@@ -66,6 +66,8 @@ import { CompanyList, ContactList, CrmEmails, PromotionsDashboard } from "./page
 import ContactDetail from "./pages/crm/ContactDetail";
 import ResetPassword from "./pages/ResetPassword";
 import SalesDashboard from "./pages/sales/SalesDashboard";
+import PublicEnquiry from "./pages/PublicEnquiry";
+import EnquiryEmbed from "./pages/EnquiryEmbed";
 
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -122,6 +124,8 @@ function AppRoutes() {
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
+      <Route path="/enquiry" element={<PublicEnquiry />} />
+      <Route path="/enquiry/embed" element={<EnquiryEmbed />} />
       
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
