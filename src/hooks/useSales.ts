@@ -321,7 +321,11 @@ export function useQuote(id: string | undefined) {
         .from('quotes')
         .select(`
           *,
-          lead:leads(*),
+          lead:leads(
+            *,
+            client:clients(*),
+            event_sessions:event_sessions(*)
+          ),
           client:clients(*)
         `)
         .eq('id', id)
