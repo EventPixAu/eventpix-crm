@@ -60,6 +60,7 @@ import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ApplyQuoteTemplateDialog } from '@/components/ApplyQuoteTemplateDialog';
 import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
+import { EditQuoteItemDialog } from '@/components/quote/EditQuoteItemDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
@@ -113,6 +114,7 @@ export default function QuoteDetail() {
   const [isApplyTemplateOpen, setIsApplyTemplateOpen] = useState(false);
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
@@ -296,6 +298,21 @@ export default function QuoteDetail() {
       id: itemId,
       quote_id: id,
       group_label: groupLabel || null,
+    });
+  };
+
+  const handleEditItem = async (itemId: string, updates: {
+    description?: string;
+    quantity?: number;
+    unit_price?: number;
+    tax_rate?: number;
+    group_label?: string | null;
+  }) => {
+    if (!id) return;
+    await updateItem.mutateAsync({
+      id: itemId,
+      quote_id: id,
+      ...updates,
     });
   };
 
@@ -601,7 +618,11 @@ export default function QuoteDetail() {
                           </TableHeader>
                           <TableBody>
                             {groupedItems[groupKey].map((item) => (
-                              <TableRow key={item.id}>
+                              <TableRow 
+                                key={item.id}
+                                className={!isLocked ? 'cursor-pointer hover:bg-muted/50' : ''}
+                                onClick={() => !isLocked && setEditingItem(item)}
+                              >
                                 <TableCell>
                                   <div>
                                     <div className="font-medium">{item.description}</div>
@@ -619,7 +640,7 @@ export default function QuoteDetail() {
                                   {formatCurrency(item.line_total)}
                                 </TableCell>
                                 {!isLocked && (
-                                  <TableCell>
+                                  <TableCell onClick={(e) => e.stopPropagation()}>
                                     <Select
                                       value={item.group_label || ''}
                                       onValueChange={(val) => handleItemGroupChange(item.id, val)}
@@ -636,7 +657,7 @@ export default function QuoteDetail() {
                                   </TableCell>
                                 )}
                                 {!isLocked && (
-                                  <TableCell>
+                                  <TableCell onClick={(e) => e.stopPropagation()}>
                                     <Button 
                                       variant="ghost" 
                                       size="icon"
@@ -1068,6 +1089,15 @@ export default function QuoteDetail() {
         open={isProductsDialogOpen}
         onOpenChange={setIsProductsDialogOpen}
         onAdd={handleAddProductsPackages}
+      />
+
+      {/* Edit Quote Item Dialog */}
+      <EditQuoteItemDialog
+        item={editingItem}
+        open={!!editingItem}
+        onOpenChange={(open) => !open && setEditingItem(null)}
+        onSave={handleEditItem}
+        isSaving={updateItem.isPending}
       />
     </AppLayout>
   );
