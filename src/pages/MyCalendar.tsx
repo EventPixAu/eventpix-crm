@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { CalendarSubscribeDialog } from '@/components/CalendarSubscribeDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -211,6 +212,7 @@ export default function MyCalendar() {
       <PageHeader
         title="My Calendar"
         description="Your assigned events and schedule"
+        actions={<CalendarSubscribeDialog />}
       />
 
       {/* Calendar Header */}
