@@ -67,10 +67,10 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   );
 }
 
-/** Admin + Sales routes */
+/** Admin + Sales + Operations routes */
 export function SalesGuard({ children }: { children: ReactNode }) {
   return (
-    <RoleGuard allowedRoles={['admin', 'sales']}>
+    <RoleGuard allowedRoles={['admin', 'sales', 'operations']}>
       {children}
     </RoleGuard>
   );
