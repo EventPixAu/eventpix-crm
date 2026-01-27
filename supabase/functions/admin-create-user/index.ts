@@ -88,28 +88,101 @@ serve(async (req) => {
     
     console.log("Creating user with email:", inv.email, "redirectTo:", redirectTo);
 
-    const { data: created, error: createErr } = await admin.auth.admin.inviteUserByEmail(inv.email, {
-      redirectTo,
-      data: { role: inv.role },
-    });
+    // First, check if user already exists in auth
+    const { data: existingUsers } = await admin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find((u: { email?: string }) => u.email === inv.email);
 
-    console.log("User creation result:", { created, createErr });
+    let userId: string;
 
-    if (createErr || !created?.user) {
-      // Mark invitation as failed
-      await admin.from("user_invitations").update({
-        status: "failed",
-        error: createErr?.message ?? "Unknown error creating user",
-        updated_at: new Date().toISOString(),
-      }).eq("id", invitation_id);
+    if (existingUser) {
+      // User already exists - generate a new invite link instead
+      console.log("User already exists, generating new invite link for:", inv.email);
+      
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'invite',
+        email: inv.email,
+        options: {
+          redirectTo,
+          data: { role: inv.role },
+        },
+      });
 
-      return new Response(
-        JSON.stringify({ success: false, error: createErr?.message ?? "Failed to create user" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log("Generate link result:", { linkData, linkErr });
+
+      if (linkErr || !linkData?.properties?.action_link) {
+        await admin.from("user_invitations").update({
+          status: "failed",
+          error: linkErr?.message ?? "Failed to generate invite link",
+          updated_at: new Date().toISOString(),
+        }).eq("id", invitation_id);
+
+        return new Response(
+          JSON.stringify({ success: false, error: linkErr?.message ?? "Failed to generate invite link" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = existingUser.id;
+
+      // Send email manually via Resend if available, or just update status
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (resendApiKey) {
+        try {
+          const emailRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${resendApiKey}`,
+            },
+            body: JSON.stringify({
+              from: "EventPix <pix@eventpix.com.au>",
+              to: [inv.email],
+              subject: "You've been invited to join EventPix",
+              html: `
+                <h2>You've been invited to join EventPix</h2>
+                <p>Click the link below to set up your account:</p>
+                <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
+                <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
+                <hr>
+                <p>Looking forward to working with you,<br>
+                <strong>Trevor Connell</strong><br>
+                EventPix Operations</p>
+              `,
+            }),
+          });
+          const emailResult = await emailRes.json();
+          console.log("Resend email result:", emailResult);
+        } catch (emailErr) {
+          console.error("Failed to send email via Resend:", emailErr);
+        }
+      }
+    } else {
+      // New user - use inviteUserByEmail
+      const { data: created, error: createErr } = await admin.auth.admin.inviteUserByEmail(inv.email, {
+        redirectTo,
+        data: { role: inv.role },
+      });
+
+      console.log("User creation result:", { created, createErr });
+
+      if (createErr || !created?.user) {
+        // Mark invitation as failed
+        await admin.from("user_invitations").update({
+          status: "failed",
+          error: createErr?.message ?? "Unknown error creating user",
+          updated_at: new Date().toISOString(),
+        }).eq("id", invitation_id);
+
+        return new Response(
+          JSON.stringify({ success: false, error: createErr?.message ?? "Failed to create user" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      userId = created.user.id;
     }
 
-    const userId = created.user.id;
+    
 
     // 4) If this invitation has a linked staff record, fetch that data for the profile
     let staffData: { name?: string; phone?: string; notes?: string; location?: string } | null = null;
