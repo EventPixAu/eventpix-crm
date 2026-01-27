@@ -97,10 +97,20 @@ interface SortableItemProps {
   canDelete: boolean;
 }
 
+const dateReferenceOptions = [
+  { value: '', label: 'No due date' },
+  { value: 'event_date', label: 'Event Date' },
+  { value: 'booking_date', label: 'Booking Date' },
+  { value: 'job_accepted', label: 'Job Accepted' },
+  { value: 'delivery_deadline', label: 'Delivery Deadline' },
+];
+
 function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(item.label);
   const [editHelpText, setEditHelpText] = useState(item.help_text || '');
+  const [editDateReference, setEditDateReference] = useState(item.date_offset_reference || '');
+  const [editDateOffset, setEditDateOffset] = useState<number>(item.date_offset_days ?? 0);
   
   const {
     attributes,
@@ -118,14 +128,27 @@ function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps
   };
 
   const handleSave = () => {
+    const finalDateRef = editDateReference === 'none' ? null : editDateReference || null;
     onUpdate(item.id, {
       label: editLabel,
       help_text: editHelpText || null,
+      date_offset_reference: finalDateRef,
+      date_offset_days: finalDateRef ? editDateOffset : null,
     });
     setIsEditing(false);
   };
 
   const isActive = item.is_active ?? true;
+  
+  const getScheduleLabel = () => {
+    if (!item.date_offset_reference) return null;
+    const ref = dateReferenceOptions.find(o => o.value === item.date_offset_reference);
+    const refLabel = ref?.label || item.date_offset_reference;
+    const days = item.date_offset_days ?? 0;
+    if (days === 0) return `On ${refLabel}`;
+    if (days > 0) return `${days}d after ${refLabel}`;
+    return `${Math.abs(days)}d before ${refLabel}`;
+  };
 
   return (
     <div
@@ -146,6 +169,45 @@ function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps
             placeholder="Help text (optional)"
             rows={2}
           />
+          
+          {/* Due Date Scheduling */}
+          <div className="grid grid-cols-2 gap-3 p-3 bg-muted/50 rounded-lg">
+            <div className="space-y-1">
+              <Label className="text-xs">Due Date Reference</Label>
+              <Select 
+                value={editDateReference} 
+                onValueChange={setEditDateReference}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="No due date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dateReferenceOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value || 'none'}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {editDateReference && editDateReference !== 'none' && (
+              <div className="space-y-1">
+                <Label className="text-xs">Days Offset</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={editDateOffset}
+                    onChange={(e) => setEditDateOffset(parseInt(e.target.value) || 0)}
+                    className="h-9"
+                  />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {editDateOffset === 0 ? 'same day' : editDateOffset > 0 ? 'after' : 'before'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="flex gap-2">
             <Button size="sm" onClick={handleSave}>
               <Save className="h-4 w-4 mr-1" />
@@ -167,7 +229,15 @@ function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps
           </button>
           
           <div className="flex-1 min-w-0">
-            <p className="font-medium">{item.label}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{item.label}</p>
+              {getScheduleLabel() && (
+                <Badge variant="outline" className="text-xs font-normal">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {getScheduleLabel()}
+                </Badge>
+              )}
+            </div>
             {item.help_text && (
               <p className="text-sm text-muted-foreground mt-1">{item.help_text}</p>
             )}
