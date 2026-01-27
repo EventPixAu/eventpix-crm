@@ -89,8 +89,12 @@ export default function EventDayOf() {
   
   // Check if any allocated equipment hasn't been picked up (for day-of warning)
   const unpickedEquipment = useMemo(() => {
-    if (!isToday(parseISO(event?.event_date || ''))) return [];
-    return equipmentAllocations.filter(a => a.status === 'allocated');
+    // IMPORTANT: don't call parseISO until we have a valid date.
+    // parseISO('') throws and can crash the page (blank screen) during initial load.
+    if (!event?.event_date) return [];
+    const eventDate = parseISO(event.event_date);
+    if (!isToday(eventDate)) return [];
+    return equipmentAllocations.filter((a) => a.status === 'allocated');
   }, [equipmentAllocations, event?.event_date]);
   
   const updateItem = useUpdateWorksheetItem();
