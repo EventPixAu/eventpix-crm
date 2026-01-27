@@ -5157,6 +5157,8 @@ export type Database = {
       }
       current_user_role: { Args: never; Returns: string }
       expire_compliance_documents: { Args: never; Returns: number }
+      gen_random_bytes: { Args: { len: number }; Returns: string }
+      gen_random_uuid: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
