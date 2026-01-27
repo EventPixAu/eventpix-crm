@@ -232,7 +232,7 @@ export function PlainTextTemplateEditor({
             </TabsList>
           </div>
           
-          <TabsContent value="edit" className="mt-2 space-y-0">
+          <TabsContent value="edit" className="mt-2 space-y-0" forceMount style={{ display: activeTab === 'edit' ? 'block' : 'none' }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Template textarea */}
               <div className="lg:col-span-2">
@@ -243,6 +243,7 @@ export function PlainTextTemplateEditor({
                   placeholder={placeholder}
                   className="resize-none text-sm border-2 border-input focus:border-primary"
                   style={{ minHeight }}
+                  autoFocus={activeTab === 'edit'}
                 />
               </div>
               
@@ -343,7 +344,7 @@ export function PlainTextTemplateEditor({
             </div>
           </TabsContent>
           
-          <TabsContent value="preview" className="mt-2">
+          <TabsContent value="preview" className="mt-2" forceMount style={{ display: activeTab === 'preview' ? 'block' : 'none' }}>
             <div className="border rounded-lg p-6 bg-white min-h-[300px]">
               {value ? (
                 renderPreview()
