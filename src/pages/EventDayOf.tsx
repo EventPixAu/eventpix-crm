@@ -9,7 +9,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Clock,
   Copy,
   HelpCircle,
   MapPin,
@@ -389,17 +388,6 @@ export default function EventDayOf() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               {eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}
-              {safeFormatTime(displayEvent.start_time) && (
-                <>
-                  <Clock className="h-4 w-4 ml-2" />
-                  {safeFormatTime(displayEvent.start_time)}
-                  {safeFormatTime(displayEvent.end_time) && (
-                    <span>
-                      – {safeFormatTime(displayEvent.end_time)}
-                    </span>
-                  )}
-                </>
-              )}
             </div>
             {statusBadges.length > 0 && (
               <div className="flex gap-2 mt-2">
