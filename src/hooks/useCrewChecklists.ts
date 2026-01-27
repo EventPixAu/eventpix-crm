@@ -93,38 +93,81 @@ export function useMyCrewChecklist(eventId: string | undefined) {
   });
 }
 
-// Initialize checklist from template
+// Initialize checklist from template - now supports role-based template selection
 export function useInitializeCrewChecklist() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ eventId, templateId }: { eventId: string; templateId?: string }) => {
+    mutationFn: async ({ 
+      eventId, 
+      templateId,
+      staffRoleId 
+    }: { 
+      eventId: string; 
+      templateId?: string;
+      staffRoleId?: string; // Role ID from event_assignments to find matching template
+    }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Fetch template if provided
+      // Fetch template - priority: explicit templateId > role-based > default
       let templateItems: { item_text: string; sort_order: number }[] = [];
+      let usedTemplateId: string | null = templateId || null;
       
       if (templateId) {
+        // Explicit template provided
         const { data: template, error: templateError } = await supabase
           .from('crew_checklist_templates')
-          .select('items')
+          .select('id, items')
           .eq('id', templateId)
           .single();
         
         if (templateError) throw templateError;
         templateItems = template?.items as any[] || [];
+        usedTemplateId = template?.id || null;
+      } else if (staffRoleId) {
+        // Try to find role-specific template first
+        const { data: roleTemplate } = await supabase
+          .from('crew_checklist_templates')
+          .select('id, items')
+          .eq('staff_role_id', staffRoleId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        
+        if (roleTemplate) {
+          templateItems = roleTemplate.items as any[] || [];
+          usedTemplateId = roleTemplate.id;
+        } else {
+          // Fallback to default (no role assigned) template
+          const { data: defaultTemplate } = await supabase
+            .from('crew_checklist_templates')
+            .select('id, items')
+            .is('staff_role_id', null)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+          
+          if (defaultTemplate) {
+            templateItems = defaultTemplate.items as any[] || [];
+            usedTemplateId = defaultTemplate.id;
+          }
+        }
       } else {
-        // Use default template
+        // No role specified - use default template
         const { data: templates, error: templatesError } = await supabase
           .from('crew_checklist_templates')
-          .select('items')
+          .select('id, items')
+          .is('staff_role_id', null)
           .eq('is_active', true)
           .limit(1);
         
         if (templatesError) throw templatesError;
-        templateItems = (templates?.[0]?.items as any[]) || [];
+        if (templates && templates.length > 0) {
+          templateItems = (templates[0]?.items as any[]) || [];
+          usedTemplateId = templates[0]?.id || null;
+        }
       }
 
       // Create checklist
@@ -133,7 +176,7 @@ export function useInitializeCrewChecklist() {
         .insert({
           event_id: eventId,
           user_id: user.id,
-          template_id: templateId || null,
+          template_id: usedTemplateId,
         })
         .select()
         .single();
