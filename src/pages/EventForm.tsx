@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,6 +32,9 @@ import { useEventLocking } from '@/hooks/useGuardrails';
 import { useAuth } from '@/lib/auth';
 import { EventSessionsEditor } from '@/components/EventSessionsEditor';
 import { EventContactsEditor } from '@/components/EventContactsEditor';
+import { useLead } from '@/hooks/useSales';
+import { useLeadSessions } from '@/hooks/useEventSessions';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -57,13 +60,23 @@ type EventFormValues = z.infer<typeof eventSchema>;
 
 export default function EventForm() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isEditing = !!id;
+  
+  // Check if converting from a lead
+  const leadIdFromQuery = searchParams.get('fromLead');
+  const isConvertingFromLead = !!leadIdFromQuery && !isEditing;
 
   const { data: event, isLoading } = useEvent(id);
   const { data: eventTypes = [], isLoading: typesLoading } = useEventTypes();
   const { data: deliveryMethods = [], isLoading: methodsLoading } = useDeliveryMethods();
+  
+  // Fetch lead data if converting
+  const { data: sourceLead, isLoading: leadLoading } = useLead(leadIdFromQuery || undefined);
+  const { data: leadSessions = [] } = useLeadSessions(leadIdFromQuery || undefined);
+  
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
   
@@ -113,6 +126,7 @@ export default function EventForm() {
     },
   });
 
+  // Pre-populate from existing event (editing mode)
   useEffect(() => {
     if (event && eventTypes.length > 0) {
       // Get event_type_id - either from new FK or find from legacy enum
@@ -149,6 +163,43 @@ export default function EventForm() {
     }
   }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId]);
 
+  // Pre-populate from lead (conversion mode)
+  useEffect(() => {
+    if (isConvertingFromLead && sourceLead && eventTypes.length > 0 && !isEditing) {
+      const client = (sourceLead as any).client;
+      const firstSession = leadSessions[0];
+      
+      // Calculate delivery deadline (5 days after event)
+      let deliveryDeadline = '';
+      const eventDate = firstSession?.session_date || sourceLead.estimated_event_date;
+      if (eventDate) {
+        const deadline = new Date(eventDate);
+        deadline.setDate(deadline.getDate() + 5);
+        deliveryDeadline = deadline.toISOString().split('T')[0];
+      }
+      
+      form.reset({
+        event_name: sourceLead.lead_name || '',
+        event_type_id: (sourceLead as any).event_type_id || '',
+        event_date: eventDate || '',
+        start_time: firstSession?.start_time || '',
+        end_time: firstSession?.end_time || '',
+        venue_name: (sourceLead as any).venue_text || '',
+        venue_address: '',
+        venue_access_notes: '',
+        venue_parking_notes: '',
+        client_name: client?.business_name || '',
+        onsite_contact_name: '',
+        onsite_contact_phone: '',
+        coverage_details: (sourceLead as any).requirements_summary || '',
+        photography_instructions: '',
+        delivery_method_id: null,
+        delivery_deadline: deliveryDeadline,
+        notes: sourceLead.notes || '',
+      });
+    }
+  }, [isConvertingFromLead, sourceLead, leadSessions, eventTypes, form, isEditing]);
+
   const handleRequestUnlock = () => {
     setShowOverrideDialog(true);
   };
@@ -158,7 +209,7 @@ export default function EventForm() {
   };
 
   const onSubmit = async (values: EventFormValues) => {
-    const cleanValues = {
+    const cleanValues: any = {
       event_name: values.event_name,
       event_type_id: values.event_type_id,
       event_date: values.event_date,
@@ -177,6 +228,12 @@ export default function EventForm() {
       delivery_deadline: values.delivery_deadline || null,
       notes: values.notes || null,
     };
+    
+    // If converting from lead, add lead_id and client_id
+    if (isConvertingFromLead && sourceLead) {
+      cleanValues.lead_id = leadIdFromQuery;
+      cleanValues.client_id = (sourceLead as any).client_id;
+    }
 
     if (isEditing && id) {
       await updateEvent.mutateAsync({ id, ...cleanValues });
@@ -187,7 +244,9 @@ export default function EventForm() {
     }
   };
 
-  if (isEditing && (isLoading || typesLoading || methodsLoading)) {
+  // Loading state for editing or lead conversion
+  if ((isEditing && (isLoading || typesLoading || methodsLoading)) || 
+      (isConvertingFromLead && (leadLoading || typesLoading))) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
@@ -197,11 +256,24 @@ export default function EventForm() {
     );
   }
 
+  // Determine back link and page title
+  const backLink = isConvertingFromLead 
+    ? `/sales/leads/${leadIdFromQuery}` 
+    : isEditing 
+      ? `/events/${id}` 
+      : '/events';
+  
+  const pageTitle = isConvertingFromLead 
+    ? 'Convert Lead to Job' 
+    : isEditing 
+      ? 'Edit Event' 
+      : 'New Event';
+
   return (
     <AppLayout>
       <div className="max-w-2xl">
         <Link
-          to={isEditing ? `/events/${id}` : '/events'}
+          to={backLink}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -209,10 +281,25 @@ export default function EventForm() {
         </Link>
 
         <PageHeader
-          title={isEditing ? 'Edit Event' : 'New Event'}
-          description={isEditing ? 'Update event details' : 'Create a new event'}
+          title={pageTitle}
+          description={isConvertingFromLead 
+            ? `Creating job from lead: ${sourceLead?.lead_name}` 
+            : isEditing 
+              ? 'Update event details' 
+              : 'Create a new event'}
         />
 
+        {/* Lead conversion info banner */}
+        {isConvertingFromLead && sourceLead && (
+          <Alert className="mb-6">
+            <AlertDescription>
+              This job will be linked to the lead <strong>"{sourceLead.lead_name}"</strong>
+              {(sourceLead as any).client?.business_name && (
+                <> for client <strong>{(sourceLead as any).client.business_name}</strong></>
+              )}. Sessions and contacts from the lead will be transferred after creation.
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Event Lock Banner */}
         {isEditing && isLocked && !isUnlocked && (
           <div className="mb-6">

@@ -24,6 +24,7 @@ import {
   History,
   Eye,
   ExternalLink,
+  ArrowRightCircle,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -182,7 +183,7 @@ export default function LeadDetail(): JSX.Element {
         }
         description={`Dashboard > Leads > ${lead.lead_name}`}
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate('/sales/leads')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
@@ -199,13 +200,26 @@ export default function LeadDetail(): JSX.Element {
               leadName={lead.lead_name}
               leadStatus={lead.status}
             />
-            <Button 
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => setIsConvertDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add New
-            </Button>
+            {/* Convert to Job - Primary action */}
+            {lead.status !== 'won' && lead.status !== 'lost' && (
+              <Button 
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => navigate(`/events/new?fromLead=${id}`)}
+              >
+                <ArrowRightCircle className="h-4 w-4 mr-2" />
+                Convert to Job
+              </Button>
+            )}
+            {/* Show link to converted job if already converted */}
+            {lead.status === 'won' && (lead as any).converted_job_id && (
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/events/${(lead as any).converted_job_id}`)}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Job
+              </Button>
+            )}
           </div>
         }
       />

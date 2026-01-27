@@ -116,11 +116,78 @@ export function useCreateEvent() {
         .single();
       
       if (error) throw error;
+      
+      // If created from a lead, update the lead status to 'won' and store converted_job_id
+      if (event.lead_id && data) {
+        const { error: leadError } = await supabase
+          .from('leads')
+          .update({ 
+            status: 'won',
+            converted_job_id: data.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', event.lead_id);
+        
+        if (leadError) {
+          console.error('Failed to update lead status:', leadError);
+          // Don't throw - the event was created successfully
+        }
+        
+        // Transfer sessions from lead to event
+        const { error: sessionError } = await supabase
+          .from('event_sessions')
+          .update({ 
+            event_id: data.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('lead_id', event.lead_id);
+        
+        if (sessionError) {
+          console.error('Failed to transfer sessions:', sessionError);
+        }
+        
+        // Copy enquiry contacts to event contacts
+        const { data: enquiryContacts } = await supabase
+          .from('enquiry_contacts')
+          .select('*, contact:client_contacts(*)')
+          .eq('lead_id', event.lead_id);
+        
+        if (enquiryContacts && enquiryContacts.length > 0) {
+          const eventContacts = enquiryContacts.map((ec: any) => ({
+            event_id: data.id,
+            client_contact_id: ec.contact_id,
+            contact_type: ec.role || 'primary',
+            contact_name: ec.contact?.contact_name || ec.contact_name,
+            contact_email: ec.contact?.email || ec.contact_email,
+            contact_phone: ec.contact?.phone_mobile || ec.contact?.phone || ec.contact_phone,
+            notes: ec.notes,
+          }));
+          
+          const { error: contactError } = await supabase
+            .from('event_contacts')
+            .insert(eventContacts);
+          
+          if (contactError) {
+            console.error('Failed to copy contacts:', contactError);
+          }
+        }
+      }
+      
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast({ title: 'Event created successfully' });
+      
+      // Also invalidate lead queries if this was a conversion
+      if (variables.lead_id) {
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        queryClient.invalidateQueries({ queryKey: ['lead', variables.lead_id] });
+        queryClient.invalidateQueries({ queryKey: ['lead-sessions', variables.lead_id] });
+        queryClient.invalidateQueries({ queryKey: ['enquiry-contacts', variables.lead_id] });
+        toast({ title: 'Lead converted to Job successfully' });
+      } else {
+        toast({ title: 'Event created successfully' });
+      }
     },
     onError: (error: Error) => {
       toast({ variant: 'destructive', title: 'Failed to create event', description: error.message });
