@@ -9,10 +9,10 @@
  * 
  * Access: Admin, Sales roles only
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Target, Plus, Building2, CalendarIcon, User, Clock, Trash2, MapPin } from 'lucide-react';
+import { Target, Plus, Building2, CalendarIcon, User, Clock, Trash2, MapPin, Check, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +38,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useClients, useCreateClient, useCreateLead } from '@/hooks/useSales';
@@ -82,7 +90,13 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   // Form state - Company Tab
   const [companyTab, setCompanyTab] = useState<'existing' | 'new'>(defaultClientId ? 'existing' : 'existing');
   const [selectedClientId, setSelectedClientId] = useState<string>(defaultClientId || '');
+  const [companySearchOpen, setCompanySearchOpen] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  
+  // Get selected company name for display
+  const selectedCompanyName = useMemo(() => {
+    return clients.find(c => c.id === selectedClientId)?.business_name || '';
+  }, [clients, selectedClientId]);
   
   // Form state - Primary Contact (now uses CRM contact_id)
   const [primaryContactId, setPrimaryContactId] = useState<string | null>(null);
@@ -303,18 +317,47 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                 <TabsTrigger value="new" className="flex-1">New Prospect</TabsTrigger>
               </TabsList>
               <TabsContent value="existing" className="mt-3">
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a company..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.business_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={companySearchOpen} onOpenChange={setCompanySearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={companySearchOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {selectedClientId ? selectedCompanyName : "Select a company..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search companies..." />
+                      <CommandList>
+                        <CommandEmpty>No company found.</CommandEmpty>
+                        <CommandGroup>
+                          {clients.map((client) => (
+                            <CommandItem
+                              key={client.id}
+                              value={client.business_name}
+                              onSelect={() => {
+                                setSelectedClientId(client.id);
+                                setCompanySearchOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedClientId === client.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {client.business_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </TabsContent>
               <TabsContent value="new" className="mt-3">
                 <Input
