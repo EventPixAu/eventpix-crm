@@ -15,9 +15,16 @@ export function JobSheetEquipmentSection({ eventId }: JobSheetEquipmentSectionPr
   const updateStatus = useUpdateAllocationStatus();
 
   // Filter to items assigned to current user or unassigned
-  const myAllocations = allocations?.filter(
-    (a) => a.user_id === user?.id || a.user_id === null
-  ).filter(a => a.status !== 'returned') || [];
+  const relevantAllocations = (allocations ?? [])
+    .filter((a) => a.user_id === user?.id || a.user_id === null)
+    .filter((a) => a.status !== 'returned');
+
+  // Defensive: some allocations may have a missing equipment_item (e.g. deleted item or restricted join)
+  const myAllocations = relevantAllocations.filter(
+    (a) => !!a.equipment_item && typeof a.equipment_item.category === 'string'
+  );
+
+  const missingItemCount = relevantAllocations.length - myAllocations.length;
 
   const handleMarkPickedUp = async (id: string) => {
     await updateStatus.mutateAsync({
@@ -36,7 +43,7 @@ export function JobSheetEquipmentSection({ eventId }: JobSheetEquipmentSectionPr
   }
 
   const groupedByCategory = myAllocations.reduce((acc, alloc) => {
-    const cat = alloc.equipment_item.category;
+    const cat = (alloc.equipment_item.category || 'other').trim() || 'other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(alloc);
     return acc;
@@ -59,6 +66,11 @@ export function JobSheetEquipmentSection({ eventId }: JobSheetEquipmentSectionPr
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {missingItemCount > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {missingItemCount} allocated item{missingItemCount === 1 ? '' : 's'} can’t be shown right now.
+          </p>
+        )}
         {Object.entries(groupedByCategory).map(([category, items]) => (
           <div key={category} className="space-y-2">
             <h4 className="text-sm font-medium capitalize text-muted-foreground">{category}</h4>
