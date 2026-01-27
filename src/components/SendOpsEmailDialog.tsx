@@ -31,7 +31,6 @@ import {
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/lib/auth';
 import { format } from 'date-fns';
 
 interface Recipient {
@@ -66,7 +65,6 @@ export function SendOpsEmailDialog({
   recipients,
 }: SendOpsEmailDialogProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const { data: templates } = useActiveEmailTemplates();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -130,35 +128,44 @@ export function SendOpsEmailDialog({
     try {
       const selectedRecipientData = recipients.filter(r => selectedRecipients.includes(r.id));
       
-      // PLACEHOLDER: Simulate email sending
-      console.log('[EMAIL PLACEHOLDER] Would send ops email:', {
-        to: selectedRecipientData.map(r => r.email),
-        subject,
-        body,
-        eventId,
-      });
-
-      // Log the communication for each client recipient
-      if (eventData.client_id) {
-        const { error } = await supabase
-          .from('client_communications')
-          .insert({
-            client_id: eventData.client_id,
-            communication_type: 'email',
+      // Send emails to each recipient via edge function
+      const sendPromises = selectedRecipientData.map(async (recipient) => {
+        const personalizedBody = replaceMergeFields(body, recipient.name);
+        
+        const { data, error } = await supabase.functions.invoke('send-crm-email', {
+          body: {
+            recipientEmail: recipient.email,
+            recipientName: recipient.name,
             subject,
-            summary: `Ops email sent to ${selectedRecipientData.map(r => r.email).join(', ')}. [SIMULATED]`,
-            email_template_id: selectedTemplateId || null,
-            logged_by: user?.id,
-            status: 'sent_simulated',
-          });
-
-        if (error) console.error('Failed to log communication:', error);
-      }
-
-      toast({ 
-        title: 'Email logged (simulated)', 
-        description: `Would send to ${selectedRecipientData.length} recipient(s). Email provider not configured.` 
+            bodyHtml: personalizedBody,
+            clientId: eventData.client_id,
+            eventId,
+            templateId: selectedTemplateId || undefined,
+          },
+        });
+        
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || 'Failed to send email');
+        
+        return { recipient, success: true };
       });
+
+      const results = await Promise.allSettled(sendPromises);
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (failed > 0) {
+        toast({ 
+          title: 'Partial success', 
+          description: `${successful} sent, ${failed} failed.`,
+          variant: 'destructive' 
+        });
+      } else {
+        toast({ 
+          title: 'Emails sent successfully', 
+          description: `Sent to ${successful} recipient(s).` 
+        });
+      }
       
       // Reset form and close
       setSelectedTemplateId('');
@@ -274,9 +281,9 @@ export function SendOpsEmailDialog({
               </p>
             </div>
 
-            {/* Placeholder Notice */}
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-              <strong>Note:</strong> Email sending is not configured. This will log the communication for tracking purposes.
+            {/* Email info notice */}
+            <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-muted-foreground">
+              Emails will be sent from <strong>pix@eventpix.com.au</strong> with your standard footer.
             </div>
           </div>
         ) : (
