@@ -99,9 +99,9 @@ interface SortableItemProps {
 
 const dateReferenceOptions = [
   { value: '', label: 'No due date' },
-  { value: 'event_date', label: 'Event Date' },
-  { value: 'booking_date', label: 'Booking Date' },
+  { value: 'lead_created', label: 'Lead Created' },
   { value: 'job_accepted', label: 'Job Accepted' },
+  { value: 'event_date', label: 'Event Date' },
   { value: 'delivery_deadline', label: 'Delivery Deadline' },
 ];
 
