@@ -263,6 +263,136 @@ export function useInitializeWorkflowStepsSelective() {
   });
 }
 
+// Initialize workflow steps from multiple templates with selective items
+export function useInitializeWorkflowStepsMultiTemplate() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      eventId, 
+      selectedItemIds,
+    }: { 
+      eventId: string; 
+      selectedItemIds: string[];
+    }) => {
+      // Get event details for date calculations
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .eq('id', eventId)
+        .single();
+      
+      if (eventError) throw eventError;
+      
+      // Get job accepted date from lead if exists
+      let jobAcceptedDate = event.booking_date || event.created_at;
+      if (event.lead_id) {
+        const { data: lead } = await supabase
+          .from('leads')
+          .select('updated_at')
+          .eq('id', event.lead_id)
+          .eq('status', 'won')
+          .maybeSingle();
+        if (lead) {
+          jobAcceptedDate = lead.updated_at;
+        }
+      }
+      
+      // Get selected template items with their template info
+      const { data: items, error: itemsError } = await supabase
+        .from('workflow_template_items')
+        .select(`
+          *,
+          workflow_templates!inner(template_name, phase, sort_order)
+        `)
+        .in('id', selectedItemIds)
+        .eq('is_active', true);
+      
+      if (itemsError) throw itemsError;
+      if (!items || items.length === 0) throw new Error('No valid items selected');
+      
+      // Sort items by template phase, template sort order, then item sort order
+      const phaseOrder = { pre_event: 0, day_of: 1, post_event: 2 };
+      const sortedItems = items.sort((a, b) => {
+        const aTemplate = a.workflow_templates as any;
+        const bTemplate = b.workflow_templates as any;
+        const aPhase = phaseOrder[aTemplate.phase as keyof typeof phaseOrder] ?? 1;
+        const bPhase = phaseOrder[bTemplate.phase as keyof typeof phaseOrder] ?? 1;
+        if (aPhase !== bPhase) return aPhase - bPhase;
+        if (aTemplate.sort_order !== bTemplate.sort_order) {
+          return (aTemplate.sort_order || 0) - (bTemplate.sort_order || 0);
+        }
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+      
+      // Delete existing workflow steps for this event
+      const { error: deleteError } = await supabase
+        .from('event_workflow_steps')
+        .delete()
+        .eq('event_id', eventId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Calculate due dates and create steps
+      const eventDate = new Date(event.main_shoot_date || event.event_date);
+      const bookingDate = new Date(jobAcceptedDate || event.created_at);
+      const deliveryDeadline = event.delivery_deadline ? new Date(event.delivery_deadline) : null;
+      
+      const steps = sortedItems.map((item, index) => {
+        let dueDate: string | null = null;
+        
+        if (item.date_offset_days !== null && item.date_offset_reference) {
+          let referenceDate: Date;
+          switch (item.date_offset_reference) {
+            case 'job_accepted':
+              referenceDate = bookingDate;
+              break;
+            case 'event_date':
+              referenceDate = eventDate;
+              break;
+            case 'delivery_deadline':
+              referenceDate = deliveryDeadline || eventDate;
+              break;
+            default:
+              referenceDate = eventDate;
+          }
+          const calculated = new Date(referenceDate);
+          calculated.setDate(calculated.getDate() + item.date_offset_days);
+          dueDate = calculated.toISOString().split('T')[0];
+        }
+        
+        return {
+          event_id: eventId,
+          template_item_id: item.id,
+          step_label: item.label,
+          step_order: index + 1, // Use sequential order based on sorted position
+          completion_type: item.completion_type || 'manual',
+          auto_trigger_event: item.auto_trigger_event,
+          due_date: dueDate,
+          is_completed: false,
+          notes: item.help_text,
+        };
+      });
+      
+      const { error: insertError } = await supabase
+        .from('event_workflow_steps')
+        .insert(steps);
+      
+      if (insertError) throw insertError;
+      
+      return steps.length;
+    },
+    onSuccess: (count, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
+      toast.success(`Added ${count} workflow steps`);
+    },
+    onError: (error) => {
+      toast.error('Failed to add workflow steps: ' + error.message);
+    },
+  });
+}
+
 // Update step notes
 export function useUpdateWorkflowStepNotes() {
   const queryClient = useQueryClient();
