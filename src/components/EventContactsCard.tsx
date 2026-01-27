@@ -5,13 +5,19 @@ import { Badge } from '@/components/ui/badge';
 interface EventContactsCardProps {
   eventId: string;
   clientName?: string;
+  clientDetails?: {
+    business_name?: string | null;
+    primary_contact_name?: string | null;
+    primary_contact_email?: string | null;
+    primary_contact_phone?: string | null;
+  } | null;
   onsiteContact?: {
     name?: string | null;
     phone?: string | null;
   };
 }
 
-export function EventContactsCard({ eventId, clientName, onsiteContact }: EventContactsCardProps) {
+export function EventContactsCard({ eventId, clientName, clientDetails, onsiteContact }: EventContactsCardProps) {
   const { data: contacts = [], isLoading } = useEventContacts(eventId);
 
   const getContactTypeLabel = (type: string) => {
@@ -43,14 +49,42 @@ export function EventContactsCard({ eventId, clientName, onsiteContact }: EventC
       <h2 className="text-lg font-display font-semibold mb-4">Contacts</h2>
       
       {/* Client Info */}
-      {clientName && (
+      {(clientName || clientDetails?.business_name) && (
         <div className="flex items-start gap-3 mb-4 pb-4 border-b border-border">
           <div className="p-2 bg-muted rounded-lg">
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Client</p>
-            <p className="font-medium">{clientName}</p>
+            <p className="font-medium">{clientDetails?.business_name || clientName}</p>
+
+            {(clientDetails?.primary_contact_name || clientDetails?.primary_contact_email || clientDetails?.primary_contact_phone) && (
+              <div className="mt-1 space-y-1">
+                {clientDetails?.primary_contact_name && (
+                  <p className="text-sm text-muted-foreground">{clientDetails.primary_contact_name}</p>
+                )}
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {clientDetails?.primary_contact_phone && (
+                    <a
+                      href={`tel:${clientDetails.primary_contact_phone}`}
+                      className="flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      {clientDetails.primary_contact_phone}
+                    </a>
+                  )}
+                  {clientDetails?.primary_contact_email && (
+                    <a
+                      href={`mailto:${clientDetails.primary_contact_email}`}
+                      className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      {clientDetails.primary_contact_email}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

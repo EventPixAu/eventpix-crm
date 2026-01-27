@@ -49,6 +49,7 @@ import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
+import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
 import { DeliveryManager } from '@/components/DeliveryManager';
 import { EventEquipmentPanel } from '@/components/EventEquipmentPanel';
@@ -81,6 +82,9 @@ export default function EventDetail() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
+
+  // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
+  const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
   
   // Fetch event contacts for email recipients
   const { data: eventContacts = [] } = useEventContacts(id);
@@ -89,18 +93,18 @@ export default function EventDetail() {
   const emailRecipients = useMemo(() => {
     const recipients: { id: string; name: string; email: string; type: 'client' | 'photographer' | 'assistant' }[] = [];
     
-    // Add client contact from linked client record
-    if (event?.client_id) {
-      const clientEmail = (event as any).clients?.primary_contact_email;
-      const clientContactName = (event as any).clients?.primary_contact_name;
-      if (clientEmail) {
-        recipients.push({
-          id: `client-${event.client_id}`,
-          name: clientContactName || event.client_name,
-          email: clientEmail,
-          type: 'client',
-        });
-      }
+    // Add client primary contact (linked client record OR fallback match by business name)
+    const client = (event?.client_id ? (event as any).clients : clientByName) as any;
+    const clientEmail = client?.primary_contact_email;
+    const clientContactName = client?.primary_contact_name;
+    const clientId = client?.id;
+    if (clientEmail && !recipients.find(r => r.email === clientEmail)) {
+      recipients.push({
+        id: clientId ? `client-${clientId}` : `client-name-${event?.client_name || 'unknown'}`,
+        name: clientContactName || event?.client_name || clientEmail,
+        email: clientEmail,
+        type: 'client',
+      });
     }
     
     // Add event contacts with emails (these are client-side contacts)
@@ -142,7 +146,7 @@ export default function EventDetail() {
     });
     
     return recipients;
-  }, [event, assignments, eventContacts]);
+  }, [event, assignments, eventContacts, clientByName]);
   
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
@@ -449,10 +453,15 @@ export default function EventDetail() {
               )}
 
               {/* Event Contacts from CRM */}
-              <EventContactsCard eventId={id!} clientName={event.client_name} onsiteContact={{
+              <EventContactsCard
+                eventId={id!}
+                clientName={event.client_name}
+                clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
+                onsiteContact={{
                 name: event.onsite_contact_name,
                 phone: event.onsite_contact_phone,
-              }} />
+                }}
+              />
 
               {/* Coverage, Photography Instructions & Notes */}
               {(event.coverage_details || (event as any).photography_brief || event.notes) && (
