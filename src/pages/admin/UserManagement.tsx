@@ -286,7 +286,8 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
   const resendInvitation = useResendInvitation();
   const revokeInvitation = useRevokeInvitation();
 
-  const canResend = (status: string) => status === 'pending' || status === 'failed';
+  const canResend = (status: string) =>
+    status === 'pending' || status === 'provisioned' || status === 'failed' || status === 'emailed';
   const canRevoke = (status: string) => status === 'pending' || status === 'emailed';
 
   return (
@@ -348,7 +349,11 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
                         disabled={resendInvitation.isPending}
                       >
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        {invite.status === 'failed' ? 'Retry' : 'Send Email'}
+                         {invite.status === 'failed'
+                           ? 'Retry'
+                           : invite.status === 'emailed'
+                           ? 'Resend Email'
+                           : 'Send Email'}
                       </DropdownMenuItem>
                     )}
                     {canRevoke(invite.status) && (
@@ -359,12 +364,6 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
                       >
                         <XCircle className="h-4 w-4 mr-2" />
                         Revoke
-                      </DropdownMenuItem>
-                    )}
-                    {invite.status === 'emailed' && (
-                      <DropdownMenuItem disabled className="text-muted-foreground">
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Email sent - awaiting user
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
