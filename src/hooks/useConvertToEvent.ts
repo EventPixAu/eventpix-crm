@@ -55,6 +55,8 @@ export interface ConvertToEventResult {
     event_contacts: number;
     sessions: number;
     workflow_steps: number;
+    quotes_linked: number;
+    contracts_linked: number;
   };
   warnings?: string[];
 }
@@ -90,17 +92,21 @@ export function useConvertToEvent() {
       const worksheetsCreated = result.created?.worksheets || 0;
       const sessionsTransferred = result.created?.sessions || 0;
       const workflowSteps = result.created?.workflow_steps || 0;
+      const quotesLinked = result.created?.quotes_linked || 0;
+      const contractsLinked = result.created?.contracts_linked || 0;
       
       const details = [
         workflowSteps > 0 ? `${workflowSteps} workflow steps` : null,
         tasksCreated > 0 ? `${tasksCreated} tasks` : null,
         worksheetsCreated > 0 ? `${worksheetsCreated} worksheets` : null,
         sessionsTransferred > 0 ? `${sessionsTransferred} sessions` : null,
+        quotesLinked > 0 ? `${quotesLinked} quotes` : null,
+        contractsLinked > 0 ? `${contractsLinked} contracts` : null,
       ].filter(Boolean).join(', ');
       
       toast({
-        title: 'Event created successfully',
-        description: `${details || 'Event ready'}${warnings.length > 0 ? `. Warnings: ${warnings.join(', ')}` : ''}`,
+        title: 'Job created successfully',
+        description: `All Sales data transferred. ${details || 'Event ready'}${warnings.length > 0 ? `. Warnings: ${warnings.join(', ')}` : ''}`,
       });
       
       if (result.event_id) {
