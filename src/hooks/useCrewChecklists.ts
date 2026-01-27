@@ -37,6 +37,7 @@ export interface CrewChecklistTemplate {
   description: string | null;
   items: { item_text: string; sort_order: number }[];
   is_active: boolean;
+  staff_role_id?: string | null;
 }
 
 // Fetch crew checklist templates
@@ -90,6 +91,140 @@ export function useMyCrewChecklist(eventId: string | undefined) {
       } as CrewChecklist;
     },
     enabled: !!eventId && !!user?.id,
+  });
+}
+
+// Fetch all crew checklists for an event (admin view)
+export function useEventCrewChecklists(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ['event-crew-checklists', eventId],
+    queryFn: async (): Promise<(CrewChecklist & { profile?: { full_name: string | null; email: string } })[]> => {
+      if (!eventId) return [];
+
+      const { data, error } = await supabase
+        .from('crew_checklists')
+        .select(`
+          *,
+          items:crew_checklist_items(*),
+          profile:profiles!crew_checklists_user_id_fkey(full_name, email)
+        `)
+        .eq('event_id', eventId);
+
+      if (error) throw error;
+      
+      return (data || []).map(checklist => ({
+        ...checklist,
+        items: ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+          a.sort_order - b.sort_order
+        ),
+        profile: (checklist as any).profile,
+      }));
+    },
+    enabled: !!eventId,
+  });
+}
+
+// Create checklist for a specific user (admin use when assigning staff)
+export function useCreateCrewChecklistForUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ 
+      eventId, 
+      userId,
+      staffRoleId 
+    }: { 
+      eventId: string; 
+      userId: string;
+      staffRoleId?: string;
+    }) => {
+      // Check if checklist already exists for this user/event
+      const { data: existing } = await supabase
+        .from('crew_checklists')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (existing) {
+        // Already has a checklist, skip creation
+        return existing;
+      }
+
+      // Fetch template - priority: role-based > default
+      let templateItems: { item_text: string; sort_order: number }[] = [];
+      let usedTemplateId: string | null = null;
+      
+      if (staffRoleId) {
+        // Try to find role-specific template first
+        const { data: roleTemplate } = await supabase
+          .from('crew_checklist_templates')
+          .select('id, items')
+          .eq('staff_role_id', staffRoleId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        
+        if (roleTemplate) {
+          templateItems = roleTemplate.items as any[] || [];
+          usedTemplateId = roleTemplate.id;
+        }
+      }
+      
+      // Fallback to default template if no role-specific one
+      if (!usedTemplateId) {
+        const { data: defaultTemplate } = await supabase
+          .from('crew_checklist_templates')
+          .select('id, items')
+          .is('staff_role_id', null)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        
+        if (defaultTemplate) {
+          templateItems = defaultTemplate.items as any[] || [];
+          usedTemplateId = defaultTemplate.id;
+        }
+      }
+
+      // Create checklist
+      const { data: checklist, error: checklistError } = await supabase
+        .from('crew_checklists')
+        .insert({
+          event_id: eventId,
+          user_id: userId,
+          template_id: usedTemplateId,
+        })
+        .select()
+        .single();
+
+      if (checklistError) throw checklistError;
+
+      // Create checklist items from template
+      if (templateItems.length > 0) {
+        const items = templateItems.map((item) => ({
+          checklist_id: checklist.id,
+          item_text: item.item_text,
+          sort_order: item.sort_order,
+          is_done: false,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('crew_checklist_items')
+          .insert(items);
+
+        if (itemsError) throw itemsError;
+      }
+
+      return checklist;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['event-crew-checklists', variables.eventId] });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to create crew checklist:', error);
+    },
   });
 }
 
@@ -215,7 +350,7 @@ export function useInitializeCrewChecklist() {
   });
 }
 
-// Toggle checklist item
+// Toggle checklist item (admin can update any item)
 export function useToggleCrewChecklistItem() {
   const queryClient = useQueryClient();
 
@@ -244,6 +379,7 @@ export function useToggleCrewChecklistItem() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-crew-checklist', data.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['event-crew-checklists', data.eventId] });
     },
   });
 }
@@ -274,6 +410,47 @@ export function useUpdateCrewChecklistItemNote() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-crew-checklist', data.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['event-crew-checklists', data.eventId] });
+    },
+  });
+}
+
+// Delete a crew checklist (when removing an assignment)
+export function useDeleteCrewChecklist() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      eventId, 
+      userId 
+    }: { 
+      eventId: string; 
+      userId: string;
+    }) => {
+      // First delete checklist items (cascade should handle this, but be explicit)
+      const { data: checklist } = await supabase
+        .from('crew_checklists')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (checklist) {
+        await supabase
+          .from('crew_checklist_items')
+          .delete()
+          .eq('checklist_id', checklist.id);
+        
+        await supabase
+          .from('crew_checklists')
+          .delete()
+          .eq('id', checklist.id);
+      }
+
+      return { eventId, userId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['event-crew-checklists', data.eventId] });
     },
   });
 }

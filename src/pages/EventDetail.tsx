@@ -63,6 +63,7 @@ import { ContractsPanel } from '@/components/ContractsPanel';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
+import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -619,24 +620,34 @@ export default function EventDetail() {
                   return (
                     <div
                       key={assignment.id}
-                      className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg"
+                      className="flex flex-col p-4 bg-muted/50 rounded-lg"
                     >
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-lg font-medium text-primary">
-                          {initial}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{name}</p>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          {role}
-                        </p>
-                        {assignment.assignment_notes && (
-                          <p className="text-xs text-muted-foreground mt-1 truncate">
-                            {assignment.assignment_notes}
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                          <span className="text-lg font-medium text-primary">
+                            {initial}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{name}</p>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {role}
                           </p>
-                        )}
+                          {assignment.assignment_notes && (
+                            <p className="text-xs text-muted-foreground mt-1 truncate">
+                              {assignment.assignment_notes}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* Checklist panel for this assignment */}
+                      {isAdmin && id && (
+                        <AssignmentChecklistPanel 
+                          eventId={id} 
+                          assignment={assignment} 
+                        />
+                      )}
                     </div>
                   );
                 })}
