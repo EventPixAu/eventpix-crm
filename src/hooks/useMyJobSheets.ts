@@ -22,6 +22,7 @@ export interface MyJobSheet {
   id: string;
   event_name: string;
   event_date: string;
+  arrival_time: string | null; // Crew call time - prioritize for display
   start_time: string | null;
   end_time: string | null;
   venue_name: string | null;
@@ -72,7 +73,8 @@ export function useMyJobSheets() {
             worksheets!left(
               id,
               worksheet_items!left(id, is_done)
-            )
+            ),
+            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address)
           )
         `)
         .eq('user_id', user.id);
@@ -110,14 +112,26 @@ export function useMyJobSheets() {
           isBefore(new Date(deliveryDeadline), sevenDaysFromNow) && 
           !delivered;
 
+        // Get session data - find matching session for event date or first session
+        const sessions = (event.event_sessions || []) as any[];
+        const matchingSession = sessions.find((s: any) => s.session_date === event.event_date) || sessions[0];
+        
+        // Prioritize session-level data over event-level
+        const arrivalTime = matchingSession?.arrival_time || null;
+        const startTime = matchingSession?.start_time || event.start_time;
+        const endTime = matchingSession?.end_time || event.end_time;
+        const venueName = matchingSession?.venue_name || event.venue_name;
+        const venueAddress = matchingSession?.venue_address || event.venue_address;
+
         return {
           id: event.id,
           event_name: event.event_name,
           event_date: event.event_date,
-          start_time: event.start_time,
-          end_time: event.end_time,
-          venue_name: event.venue_name,
-          venue_address: event.venue_address,
+          arrival_time: arrivalTime,
+          start_time: startTime,
+          end_time: endTime,
+          venue_name: venueName,
+          venue_address: venueAddress,
           onsite_contact_name: event.onsite_contact_name,
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
