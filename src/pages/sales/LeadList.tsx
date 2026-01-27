@@ -43,17 +43,26 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   lost: { label: 'Lost', variant: 'destructive' },
 };
 
+// Active statuses (in pipeline, not yet converted)
+const ACTIVE_STATUSES = ['new', 'qualified', 'quoted', 'contract_sent'];
+
 export default function LeadList() {
   const { data: leads, isLoading } = useLeads();
   
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to active leads only
 
   const filteredLeads = leads?.filter(lead => {
     const matchesSearch = 
       lead.lead_name?.toLowerCase().includes(search.toLowerCase()) ||
       (lead.client as any)?.business_name?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+    
+    // Handle 'active' filter - excludes won/lost (converted or closed)
+    const matchesStatus = 
+      statusFilter === 'all' ? true :
+      statusFilter === 'active' ? ACTIVE_STATUSES.includes(lead.status) :
+      lead.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
   });
 
@@ -101,9 +110,10 @@ export default function LeadList() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder="Active" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="all">All Statuses</SelectItem>
                 {Object.entries(STATUS_CONFIG).map(([status, config]) => (
                   <SelectItem key={status} value={status}>{config.label}</SelectItem>
