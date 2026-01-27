@@ -41,6 +41,8 @@ type ViewMode = 'month' | 'week' | 'list';
 
 function EventTile({ event }: { event: CalendarEvent }) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
+  // Use arrival_time (crew call) if available, otherwise fall back to start_time
+  const displayTime = event.arrival_time || event.start_time;
   
   return (
     <Link
@@ -55,10 +57,13 @@ function EventTile({ event }: { event: CalendarEvent }) {
       )}
     >
       <div className="flex items-center gap-1">
-        {event.start_time && (
+        {displayTime && (
           <span className="font-medium text-primary shrink-0">
-            {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
+            {format(new Date(`2000-01-01T${displayTime}`), 'h:mm a')}
           </span>
+        )}
+        {event.arrival_time && (
+          <span className="text-muted-foreground shrink-0">Call</span>
         )}
         {event.has_conflict && (
           <AlertTriangle className="h-3 w-3 text-orange-600 shrink-0" />
@@ -112,9 +117,18 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
         </div>
         <p className="text-sm text-muted-foreground">{event.client_name}</p>
         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+          {/* Show crew call time prominently if available */}
+          {event.arrival_time && (
+            <span className="flex items-center gap-1 font-medium text-primary">
+              <Clock className="h-3 w-3" />
+              Call: {format(new Date(`2000-01-01T${event.arrival_time}`), 'h:mm a')}
+            </span>
+          )}
+          {/* Show event time range */}
           {event.start_time && (
             <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+              {!event.arrival_time && <Clock className="h-3 w-3" />}
+              {event.arrival_time ? 'Event: ' : ''}
               {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
               {event.end_time && ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`}
             </span>
