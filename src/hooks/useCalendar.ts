@@ -248,7 +248,7 @@ export function useAdminCalendarEvents(
   });
 }
 
-// Staff calendar - only assigned events
+// Staff calendar - only assigned events (includes session-level call times)
 export function useStaffCalendarEvents(currentMonth: Date) {
   const { user } = useAuth();
 
@@ -260,7 +260,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
       const rangeStart = format(subMonths(startOfMonth(currentMonth), 1), 'yyyy-MM-dd');
       const rangeEnd = format(addMonths(endOfMonth(currentMonth), 1), 'yyyy-MM-dd');
 
-      // Get events assigned to the current user
+      // Get events assigned to the current user - include sessions for call times
       const { data: assignedEvents, error } = await supabase
         .from('event_assignments')
         .select(`
@@ -274,6 +274,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
             end_time,
             start_at,
             end_at,
+            timezone,
             venue_name,
             venue_address,
             onsite_contact_name,
@@ -281,12 +282,11 @@ export function useStaffCalendarEvents(currentMonth: Date) {
             event_type_id,
             delivery_method_id,
             delivery_deadline,
-            delivery_records!left(id, delivered_at)
+            delivery_records!left(id, delivered_at),
+            event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, venue_name, venue_address)
           )
         `)
-        .eq('user_id', user.id)
-        .gte('events.event_date', rangeStart)
-        .lte('events.event_date', rangeEnd);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -299,40 +299,81 @@ export function useStaffCalendarEvents(currentMonth: Date) {
       const conflictEventIds = new Set((conflicts || []).map((c: any) => c.event_id));
 
       const today = new Date();
+      const calendarEntries: CalendarEvent[] = [];
 
-      return (assignedEvents || []).map(a => {
+      (assignedEvents || []).forEach(a => {
         const event = a.events as any;
         const deliveryRecord = (event.delivery_records as any[])?.[0];
+        const sessions = (event.event_sessions as any[]) || [];
         
         const needsAttention = event.delivery_deadline && 
           !deliveryRecord?.delivered_at &&
           differenceInDays(new Date(event.delivery_deadline), today) <= 7;
 
-        return {
-          id: event.id,
-          event_name: event.event_name,
-          client_name: event.client_name,
-          event_date: event.event_date,
-          arrival_time: null, // Staff calendar doesn't have session-level data
-          start_time: event.start_time,
-          end_time: event.end_time,
-          start_at: event.start_at,
-          end_at: event.end_at,
-          venue_name: event.venue_name,
-          venue_address: event.venue_address,
-          onsite_contact_name: event.onsite_contact_name,
-          onsite_contact_phone: event.onsite_contact_phone,
-          event_type_id: event.event_type_id,
-          event_series_id: null,
-          event_series_name: null,
-          delivery_method_id: event.delivery_method_id,
-          delivery_deadline: event.delivery_deadline,
-          assignment_count: 0, // Not shown for staff
-          has_conflict: conflictEventIds.has(event.id),
-          needs_attention: needsAttention,
-          is_delivered: !!deliveryRecord?.delivered_at,
-        } as CalendarEvent;
+        // If event has sessions, create an entry for each session date in range
+        if (sessions.length > 0) {
+          sessions.forEach(session => {
+            if (session.session_date >= rangeStart && session.session_date <= rangeEnd) {
+              calendarEntries.push({
+                id: event.id,
+                event_name: session.label ? `${event.event_name} - ${session.label}` : event.event_name,
+                client_name: event.client_name,
+                event_date: session.session_date,
+                arrival_time: session.arrival_time || null, // Crew call time
+                start_time: session.start_time || event.start_time,
+                end_time: session.end_time || event.end_time,
+                start_at: event.start_at,
+                end_at: event.end_at,
+                timezone: session.timezone || event.timezone || null,
+                venue_name: session.venue_name || event.venue_name,
+                venue_address: session.venue_address || event.venue_address,
+                onsite_contact_name: event.onsite_contact_name,
+                onsite_contact_phone: event.onsite_contact_phone,
+                event_type_id: event.event_type_id,
+                event_series_id: null,
+                event_series_name: null,
+                delivery_method_id: event.delivery_method_id,
+                delivery_deadline: event.delivery_deadline,
+                assignment_count: 0,
+                has_conflict: conflictEventIds.has(event.id),
+                needs_attention: needsAttention,
+                is_delivered: !!deliveryRecord?.delivered_at,
+              });
+            }
+          });
+        } else {
+          // No sessions - use the main event_date
+          if (event.event_date >= rangeStart && event.event_date <= rangeEnd) {
+            calendarEntries.push({
+              id: event.id,
+              event_name: event.event_name,
+              client_name: event.client_name,
+              event_date: event.event_date,
+              arrival_time: null,
+              start_time: event.start_time,
+              end_time: event.end_time,
+              start_at: event.start_at,
+              end_at: event.end_at,
+              timezone: event.timezone || null,
+              venue_name: event.venue_name,
+              venue_address: event.venue_address,
+              onsite_contact_name: event.onsite_contact_name,
+              onsite_contact_phone: event.onsite_contact_phone,
+              event_type_id: event.event_type_id,
+              event_series_id: null,
+              event_series_name: null,
+              delivery_method_id: event.delivery_method_id,
+              delivery_deadline: event.delivery_deadline,
+              assignment_count: 0,
+              has_conflict: conflictEventIds.has(event.id),
+              needs_attention: needsAttention,
+              is_delivered: !!deliveryRecord?.delivered_at,
+            });
+          }
+        }
       });
+
+      return calendarEntries;
     },
     enabled: !!user?.id,
   });
