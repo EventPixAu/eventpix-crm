@@ -414,14 +414,20 @@ export default function EventDetail() {
                 phone: event.onsite_contact_phone,
               }} />
 
-              {/* Coverage & Notes */}
-              {(event.coverage_details || event.notes) && (
+              {/* Coverage, Photography Instructions & Notes */}
+              {(event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <h2 className="text-lg font-display font-semibold mb-4">Additional Details</h2>
                   {event.coverage_details && (
                     <div className="mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
                       <p className="text-sm">{event.coverage_details}</p>
+                    </div>
+                  )}
+                  {(event as any).photography_brief && (
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground mb-1">Photography Instructions</p>
+                      <p className="text-sm whitespace-pre-wrap">{(event as any).photography_brief}</p>
                     </div>
                   )}
                   {event.notes && (
