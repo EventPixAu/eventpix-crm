@@ -13,11 +13,12 @@ serve(async (req) => {
   }
 
   try {
-    const { invitation_id } = await req.json();
+    const body = await req.json();
+    const { invitation_id, resend_access_for_user_id, email } = body;
 
-    if (!invitation_id) {
+    if (!invitation_id && !resend_access_for_user_id) {
       return new Response(
-        JSON.stringify({ success: false, error: 'invitation_id is required' }),
+        JSON.stringify({ success: false, error: 'invitation_id or resend_access_for_user_id is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -46,7 +47,75 @@ serve(async (req) => {
       );
     }
 
-    // 2) Read invitation (including staff_id for linking)
+    const redirectTo = Deno.env.get("INVITE_REDIRECT_URL") || `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/`;
+
+    // Handle resend access email for existing user (no invitation record needed)
+    if (resend_access_for_user_id && email) {
+      console.log("Sending access email for existing user:", email);
+      
+      // Generate an invite link for the existing user
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: { redirectTo },
+      });
+
+      if (linkErr || !linkData?.properties?.action_link) {
+        console.error("Generate link error:", linkErr);
+        return new Response(
+          JSON.stringify({ success: false, error: linkErr?.message ?? "Failed to generate access link" }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Send email via Resend
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (resendApiKey) {
+        const emailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${resendApiKey}`,
+          },
+          body: JSON.stringify({
+            from: "EventPix <pix@rs.eventpix.com.au>",
+            to: [email],
+            subject: "Your EventPix Access Link",
+            html: `
+              <h2>Welcome to EventPix</h2>
+              <p>Click the link below to set up your password and access your account:</p>
+              <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set Up My Account</a></p>
+              <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
+              <hr>
+              <p>Looking forward to working with you,<br>
+              <strong>Trevor Connell</strong><br>
+              EventPix Operations</p>
+            `,
+          }),
+        });
+        const emailResult = await emailRes.json();
+        console.log("Resend email result:", emailResult);
+
+        if (!emailRes.ok) {
+          return new Response(
+            JSON.stringify({ success: false, error: emailResult.message || "Failed to send email" }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } else {
+        return new Response(
+          JSON.stringify({ success: false, error: "Email service not configured" }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, user_id: resend_access_for_user_id }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Original invitation flow - Read invitation (including staff_id for linking)
     const { data: inv, error: invErr } = await admin
       .from("user_invitations")
       .select("id, email, role, status, staff_id")
@@ -79,8 +148,6 @@ serve(async (req) => {
     // Allow resending for invitations already marked as 'emailed' (generate a fresh invite link).
 
     // 3) Create Auth user and send invitation email
-    const redirectTo = Deno.env.get("INVITE_REDIRECT_URL") || `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/`;
-    
     console.log("Creating user with email:", inv.email, "redirectTo:", redirectTo);
 
     // First, check if user already exists in auth using listUsers with filter

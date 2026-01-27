@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   useUsers,
   useInvitations,
@@ -184,8 +185,45 @@ function InviteUserDialog() {
 }
 
 function UsersTable({ users }: { users: UserProfile[] }) {
+  const { toast } = useToast();
   const setUserActive = useSetUserActive();
   const setUserRole = useSetUserRole();
+  const [sendingAccessEmail, setSendingAccessEmail] = useState<string | null>(null);
+
+  const handleSendAccessEmail = async (user: UserProfile) => {
+    if (!user.email) {
+      toast({
+        title: 'No email address',
+        description: 'This user does not have an email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSendingAccessEmail(user.id);
+    try {
+      // Call edge function to generate and send access link
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { resend_access_for_user_id: user.id, email: user.email },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to send access email');
+
+      toast({
+        title: 'Access email sent',
+        description: `An access email has been sent to ${user.email}.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Failed to send access email',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingAccessEmail(null);
+    }
+  };
 
   return (
     <Table>
@@ -265,6 +303,13 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      onClick={() => handleSendAccessEmail(user)}
+                      disabled={sendingAccessEmail === user.id}
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      {sendingAccessEmail === user.id ? 'Sending...' : 'Send Access Email'}
+                    </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => setUserActive.mutate({ userId: user.id, isActive: !user.is_active })}
                     >
