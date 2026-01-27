@@ -131,12 +131,12 @@ function AppRoutes() {
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
       <Route path="/" element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>} />
       
-      {/* Admin-only routes */}
-      <Route path="/events" element={<ProtectedRoute><AdminGuard><Events /></AdminGuard></ProtectedRoute>} />
-      <Route path="/events/new" element={<ProtectedRoute><AdminGuard><EventForm /></AdminGuard></ProtectedRoute>} />
-      <Route path="/events/:id" element={<ProtectedRoute><AdminGuard><EventDetail /></AdminGuard></ProtectedRoute>} />
-      <Route path="/events/:id/edit" element={<ProtectedRoute><AdminGuard><EventForm /></AdminGuard></ProtectedRoute>} />
-      <Route path="/events/:id/worksheets" element={<ProtectedRoute><AdminGuard><EventWorksheets /></AdminGuard></ProtectedRoute>} />
+      {/* Operations routes - Admin + Operations */}
+      <Route path="/events" element={<ProtectedRoute><OpsGuard><Events /></OpsGuard></ProtectedRoute>} />
+      <Route path="/events/new" element={<ProtectedRoute><OpsGuard><EventForm /></OpsGuard></ProtectedRoute>} />
+      <Route path="/events/:id" element={<ProtectedRoute><OpsGuard><EventDetail /></OpsGuard></ProtectedRoute>} />
+      <Route path="/events/:id/edit" element={<ProtectedRoute><OpsGuard><EventForm /></OpsGuard></ProtectedRoute>} />
+      <Route path="/events/:id/worksheets" element={<ProtectedRoute><OpsGuard><EventWorksheets /></OpsGuard></ProtectedRoute>} />
       {/* Day-of view accessible to assigned crew */}
        <Route
          path="/events/:id/day-of"
@@ -151,26 +151,26 @@ function AppRoutes() {
          }
        />
       <Route path="/events/:id/run-sheet" element={<ProtectedRoute><CrewGuard><EventRunSheet /></CrewGuard></ProtectedRoute>} />
-      <Route path="/staff" element={<ProtectedRoute><AdminGuard><Staff /></AdminGuard></ProtectedRoute>} />
-      <Route path="/staff/:id" element={<ProtectedRoute><AdminGuard><StaffDetail /></AdminGuard></ProtectedRoute>} />
-      <Route path="/calendar" element={<ProtectedRoute><AdminGuard><CalendarView /></AdminGuard></ProtectedRoute>} />
-      <Route path="/calendar/day" element={<ProtectedRoute><AdminGuard><CalendarDayView /></AdminGuard></ProtectedRoute>} />
+      <Route path="/staff" element={<ProtectedRoute><OpsGuard><Staff /></OpsGuard></ProtectedRoute>} />
+      <Route path="/staff/:id" element={<ProtectedRoute><OpsGuard><StaffDetail /></OpsGuard></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><OpsGuard><CalendarView /></OpsGuard></ProtectedRoute>} />
+      <Route path="/calendar/day" element={<ProtectedRoute><OpsGuard><CalendarDayView /></OpsGuard></ProtectedRoute>} />
       <Route path="/workflows" element={<ProtectedRoute><AdminGuard><Workflows /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/workflows" element={<ProtectedRoute><AdminGuard><WorkflowsList /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/workflows/:id" element={<ProtectedRoute><AdminGuard><WorkflowDetail /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/event-types" element={<ProtectedRoute><AdminGuard><EventTypeDefaults /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/series" element={<ProtectedRoute><AdminGuard><EventSeriesList /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/series/:id" element={<ProtectedRoute><AdminGuard><EventSeriesDetail /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/series" element={<ProtectedRoute><OpsGuard><EventSeriesList /></OpsGuard></ProtectedRoute>} />
+      <Route path="/admin/series/:id" element={<ProtectedRoute><OpsGuard><EventSeriesDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/invoices" element={<ProtectedRoute><AdminGuard><InvoiceSync /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/margins" element={<ProtectedRoute><AdminGuard><MarginReport /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/lookups" element={<ProtectedRoute><AdminGuard><AdminLookups /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/day-load" element={<ProtectedRoute><AdminGuard><DayLoadView /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/delivery-metrics" element={<ProtectedRoute><AdminGuard><DeliveryMetrics /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/day-load" element={<ProtectedRoute><OpsGuard><DayLoadView /></OpsGuard></ProtectedRoute>} />
+      <Route path="/admin/delivery-metrics" element={<ProtectedRoute><OpsGuard><DeliveryMetrics /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/photographer-trends" element={<ProtectedRoute><AdminGuard><PhotographerTrends /></AdminGuard></ProtectedRoute>} />
-      <Route path="/delivery" element={<ProtectedRoute><AdminGuard><Delivery /></AdminGuard></ProtectedRoute>} />
-      <Route path="/job-intake" element={<ProtectedRoute><AdminGuard><JobIntakeList /></AdminGuard></ProtectedRoute>} />
-      <Route path="/job-intake/:id" element={<ProtectedRoute><AdminGuard><JobIntakeDetail /></AdminGuard></ProtectedRoute>} />
-      <Route path="/equipment" element={<ProtectedRoute><AdminGuard><Equipment /></AdminGuard></ProtectedRoute>} />
+      <Route path="/delivery" element={<ProtectedRoute><OpsGuard><Delivery /></OpsGuard></ProtectedRoute>} />
+      <Route path="/job-intake" element={<ProtectedRoute><OpsGuard><JobIntakeList /></OpsGuard></ProtectedRoute>} />
+      <Route path="/job-intake/:id" element={<ProtectedRoute><OpsGuard><JobIntakeDetail /></OpsGuard></ProtectedRoute>} />
+      <Route path="/equipment" element={<ProtectedRoute><OpsGuard><Equipment /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
