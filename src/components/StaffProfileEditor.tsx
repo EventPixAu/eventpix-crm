@@ -247,8 +247,8 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
           <DialogTitle>Edit Team Member Profile</DialogTitle>
           <DialogDescription>
             Update profile information for {profile.full_name || profile.email}
@@ -256,7 +256,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <ScrollArea className="flex-1 px-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-6 pb-4">
               {sourceTable === 'staff' && (
                 <div className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
@@ -585,10 +585,10 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 rows={3}
               />
             </div>
+          </div>
             </div>
-            </div>
-          </ScrollArea>
-          <DialogFooter className="gap-2 sm:gap-0 px-6 py-4 border-t bg-background">
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0 px-6 py-4 border-t bg-background flex-shrink-0">
             <Button
               type="button"
               variant="outline"
