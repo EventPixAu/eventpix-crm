@@ -11,14 +11,16 @@ import {
   Edit,
   ChevronRight,
   Briefcase,
-  Settings2
+  Settings2,
+  Users
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 import {
   Dialog,
   DialogContent,
@@ -53,10 +55,11 @@ const phases = [
   { key: 'post_event', label: 'Post-Event', color: 'bg-success/10 text-success' },
 ] as const;
 
-const domains: { key: WorkflowDomain | 'all'; label: string; icon: React.ReactNode }[] = [
+const domains: { key: WorkflowDomain | 'all' | 'crew'; label: string; icon: React.ReactNode }[] = [
   { key: 'all', label: 'All Templates', icon: <ClipboardList className="h-4 w-4" /> },
   { key: 'sales', label: 'Sales', icon: <Briefcase className="h-4 w-4" /> },
   { key: 'operations', label: 'Operations', icon: <Settings2 className="h-4 w-4" /> },
+  { key: 'crew', label: 'Crew Checklists', icon: <Users className="h-4 w-4" /> },
 ];
 
 export default function WorkflowsList() {
@@ -65,10 +68,10 @@ export default function WorkflowsList() {
   const [newName, setNewName] = useState('');
   const [newPhase, setNewPhase] = useState<'pre_event' | 'day_of' | 'post_event'>('pre_event');
   const [newDomain, setNewDomain] = useState<WorkflowDomain>('operations');
-  const [domainFilter, setDomainFilter] = useState<WorkflowDomain | 'all'>('all');
+  const [domainFilter, setDomainFilter] = useState<WorkflowDomain | 'all' | 'crew'>('all');
   
   const { data: templates = [], isLoading } = useAllWorkflowTemplates(
-    domainFilter === 'all' ? undefined : domainFilter
+    domainFilter === 'all' || domainFilter === 'crew' ? undefined : domainFilter
   );
   const createTemplate = useCreateTemplate();
   const updateTemplate = useUpdateTemplate();
@@ -218,125 +221,134 @@ export default function WorkflowsList() {
             </TabsTrigger>
           ))}
         </TabsList>
-      </Tabs>
 
-      {isLoading ? (
-        <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
-          Loading templates...
-        </div>
-      ) : templates.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
-          {domainFilter === 'all' 
-            ? 'No templates yet. Create your first workflow template.'
-            : `No ${domainFilter} templates found.`
-          }
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {phases.map((phase) => {
-            const phaseTemplates = templates.filter((t) => t.phase === phase.key);
-            if (phaseTemplates.length === 0) return null;
+        {/* Crew Checklists Tab Content */}
+        {domainFilter === 'crew' ? (
+          <div className="mt-6">
+            <CrewChecklistTemplatesManager />
+          </div>
+        ) : (
+          <>
+            {isLoading ? (
+              <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground mt-6">
+                Loading templates...
+              </div>
+            ) : templates.length === 0 ? (
+              <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground mt-6">
+                {domainFilter === 'all' 
+                  ? 'No templates yet. Create your first workflow template.'
+                  : `No ${domainFilter} templates found.`
+                }
+              </div>
+            ) : (
+              <div className="space-y-8 mt-6">
+                {phases.map((phase) => {
+                  const phaseTemplates = templates.filter((t) => t.phase === phase.key);
+                  if (phaseTemplates.length === 0) return null;
 
-            return (
-              <motion.div
-                key={phase.key}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h2 className="text-lg font-display font-semibold mb-4 flex items-center gap-2">
-                  <span className={phase.color.split(' ')[1]}>{phase.label}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {phaseTemplates.length}
-                  </Badge>
-                </h2>
-                
-                <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <table className="w-full">
-                     <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Template</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Domain</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Items</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Updated</th>
-                        <th className="text-center p-4 text-sm font-medium text-muted-foreground">Active</th>
-                        <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {phaseTemplates.map((template) => {
-                        const phaseInfo = getPhaseInfo(template.phase);
-                        return (
-                          <tr 
-                            key={template.id} 
-                            className="hover:bg-muted/30 transition-colors cursor-pointer"
-                            onClick={() => navigate(`/admin/workflows/${template.id}`)}
-                          >
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${phaseInfo.color}`}>
-                                  <ClipboardList className="h-4 w-4" />
-                                </div>
-                                <div>
-                                  <p className="font-medium">{template.template_name}</p>
-                                  {!template.is_active && (
-                                    <Badge variant="outline" className="text-xs mt-1">
-                                      <EyeOff className="h-3 w-3 mr-1" />
-                                      Inactive
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              {getDomainBadge((template as any).workflow_domain || 'operations')}
-                            </td>
-                            <td className="p-4 text-muted-foreground">
-                              {itemCounts[template.id] || 0} items
-                            </td>
-                            <td className="p-4 text-muted-foreground text-sm">
-                              {template.updated_at 
-                                ? format(new Date(template.updated_at), 'MMM d, yyyy')
-                                : '-'
-                              }
-                            </td>
-                            <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                              <Switch
-                                checked={template.is_active ?? true}
-                                onCheckedChange={() => handleToggleActive(template.id, template.is_active ?? true)}
-                              />
-                            </td>
-                            <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDuplicate(template.id)}
-                                  title="Duplicate"
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
+                  return (
+                    <motion.div
+                      key={phase.key}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <h2 className="text-lg font-display font-semibold mb-4 flex items-center gap-2">
+                        <span className={phase.color.split(' ')[1]}>{phase.label}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {phaseTemplates.length}
+                        </Badge>
+                      </h2>
+                      
+                      <div className="bg-card border border-border rounded-xl overflow-hidden">
+                        <table className="w-full">
+                           <thead className="bg-muted/50">
+                            <tr>
+                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Template</th>
+                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Domain</th>
+                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Items</th>
+                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Updated</th>
+                              <th className="text-center p-4 text-sm font-medium text-muted-foreground">Active</th>
+                              <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {phaseTemplates.map((template) => {
+                              const phaseInfo = getPhaseInfo(template.phase);
+                              return (
+                                <tr 
+                                  key={template.id} 
+                                  className="hover:bg-muted/30 transition-colors cursor-pointer"
                                   onClick={() => navigate(`/admin/workflows/${template.id}`)}
                                 >
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Edit
-                                  <ChevronRight className="h-4 w-4 ml-1" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+                                  <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className={`p-2 rounded-lg ${phaseInfo.color}`}>
+                                        <ClipboardList className="h-4 w-4" />
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">{template.template_name}</p>
+                                        {!template.is_active && (
+                                          <Badge variant="outline" className="text-xs mt-1">
+                                            <EyeOff className="h-3 w-3 mr-1" />
+                                            Inactive
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="p-4">
+                                    {getDomainBadge((template as any).workflow_domain || 'operations')}
+                                  </td>
+                                  <td className="p-4 text-muted-foreground">
+                                    {itemCounts[template.id] || 0} items
+                                  </td>
+                                  <td className="p-4 text-muted-foreground text-sm">
+                                    {template.updated_at 
+                                      ? format(new Date(template.updated_at), 'MMM d, yyyy')
+                                      : '-'
+                                    }
+                                  </td>
+                                  <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                                    <Switch
+                                      checked={template.is_active ?? true}
+                                      onCheckedChange={() => handleToggleActive(template.id, template.is_active ?? true)}
+                                    />
+                                  </td>
+                                  <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDuplicate(template.id)}
+                                        title="Duplicate"
+                                      >
+                                        <Copy className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => navigate(`/admin/workflows/${template.id}`)}
+                                      >
+                                        <Edit className="h-4 w-4 mr-1" />
+                                        Edit
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </Tabs>
     </AppLayout>
   );
 }
