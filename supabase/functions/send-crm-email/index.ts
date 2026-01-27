@@ -86,6 +86,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending CRM email to: ${recipientEmail}, subject: ${subject}`);
 
+    // Standard email footer
+    const emailFooter = `
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">
+        <p style="margin: 0 0 4px 0; font-weight: 600;">Trevor Connell</p>
+        <p style="margin: 0 0 8px 0; color: #6b7280;">Operations Manager</p>
+        <p style="margin: 0 0 4px 0;">Phone: <a href="tel:0290563775" style="color: #0891b2; text-decoration: none;">02 9056 3775</a></p>
+        <p style="margin: 12px 0 0 0; font-weight: 600; color: #0891b2;">EventPix</p>
+        <p style="margin: 0; font-size: 12px; color: #6b7280;">Corporate and event photography Australia-wide</p>
+      </div>
+    `;
+
+    // Append footer to email body
+    const fullBodyHtml = bodyHtml + emailFooter;
+
     // Send via Resend
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -97,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Eventpix <pix@eventpix.com.au>",
         to: [recipientEmail],
         subject: subject,
-        html: bodyHtml,
+        html: fullBodyHtml,
       }),
     });
 
