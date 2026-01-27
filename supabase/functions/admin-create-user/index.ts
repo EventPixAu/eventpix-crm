@@ -47,17 +47,27 @@ serve(async (req) => {
       );
     }
 
-    const redirectTo = Deno.env.get("INVITE_REDIRECT_URL") || `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/`;
+    // Base URL for auth redirects (no trailing slash)
+    const appBaseUrl = (Deno.env.get("INVITE_REDIRECT_URL") || supabaseUrl.replace('.supabase.co', '.lovable.app'))
+      .replace(/\/+$/, "");
+
+    // Keep existing behavior for brand-new invites (lands user in-app after accepting)
+    const inviteRedirectTo = `${appBaseUrl}/`;
+
+    // For already-registered users, send a password-set (recovery) link to our reset page
+    const passwordRedirectTo = `${appBaseUrl}/reset-password`;
 
     // Handle resend access email for existing user (no invitation record needed)
     if (resend_access_for_user_id && email) {
       console.log("Sending access email for existing user:", email);
       
-      // Generate an invite link for the existing user
+      // IMPORTANT: `type: 'invite'` fails for existing users with
+      // "A user with this email address has already been registered".
+      // Use a recovery link so they can set/reset their password.
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-        type: 'invite',
+        type: 'recovery',
         email: email,
-        options: { redirectTo },
+        options: { redirectTo: passwordRedirectTo },
       });
 
       if (linkErr || !linkData?.properties?.action_link) {
@@ -80,11 +90,11 @@ serve(async (req) => {
           body: JSON.stringify({
             from: "EventPix <pix@rs.eventpix.com.au>",
             to: [email],
-            subject: "Your EventPix Access Link",
+            subject: "Set your EventPix password",
             html: `
               <h2>Welcome to EventPix</h2>
-              <p>Click the link below to set up your password and access your account:</p>
-              <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set Up My Account</a></p>
+              <p>Click the link below to set your password and access your account:</p>
+              <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set My Password</a></p>
               <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
               <hr>
               <p>Looking forward to working with you,<br>
@@ -148,7 +158,7 @@ serve(async (req) => {
     // Allow resending for invitations already marked as 'emailed' (generate a fresh invite link).
 
     // 3) Create Auth user and send invitation email
-    console.log("Creating user with email:", inv.email, "redirectTo:", redirectTo);
+    console.log("Creating user with email:", inv.email, "redirectTo:", inviteRedirectTo);
 
     // First, check if user already exists in auth using listUsers with filter
     let existingUser = null;
@@ -170,12 +180,12 @@ serve(async (req) => {
       // User already exists - generate a new invite link instead
       console.log("User already exists, generating new invite link for:", inv.email);
       
+      // Existing user: send a recovery link (invite links cannot be generated for existing users)
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-        type: 'invite',
+        type: 'recovery',
         email: inv.email,
         options: {
-          redirectTo,
-          data: { role: inv.role },
+          redirectTo: passwordRedirectTo,
         },
       });
 
@@ -209,11 +219,11 @@ serve(async (req) => {
             body: JSON.stringify({
               from: "EventPix <pix@rs.eventpix.com.au>",
               to: [inv.email],
-              subject: "You've been invited to join EventPix",
+                subject: "Set your EventPix password",
               html: `
-                <h2>You've been invited to join EventPix</h2>
-                <p>Click the link below to set up your account:</p>
-                <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
+                  <h2>Welcome to EventPix</h2>
+                  <p>Click the link below to set your password and access your account:</p>
+                  <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set My Password</a></p>
                 <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
                 <hr>
                 <p>Looking forward to working with you,<br>
@@ -231,7 +241,7 @@ serve(async (req) => {
     } else {
       // New user - use inviteUserByEmail
       const { data: created, error: createErr } = await admin.auth.admin.inviteUserByEmail(inv.email, {
-        redirectTo,
+        redirectTo: inviteRedirectTo,
         data: { role: inv.role },
       });
 
