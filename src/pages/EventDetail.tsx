@@ -273,25 +273,8 @@ export default function EventDetail() {
                       <Calendar className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Date</p>
+                      <p className="text-sm text-muted-foreground">Start Date</p>
                       <p className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Clock className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Time</p>
-                      <p className="font-medium">
-                        {event.start_time
-                          ? `${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}${
-                              event.end_time
-                                ? ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`
-                                : ''
-                            }`
-                          : 'TBD'}
-                      </p>
                     </div>
                   </div>
 
