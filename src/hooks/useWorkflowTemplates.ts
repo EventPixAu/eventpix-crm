@@ -303,9 +303,11 @@ export function useUpdateTemplateItem() {
       id: string;
       template_id: string;
       label?: string; 
-      help_text?: string;
+      help_text?: string | null;
       sort_order?: number;
       is_active?: boolean;
+      date_offset_reference?: string | null;
+      date_offset_days?: number | null;
     }) => {
       const { error } = await supabase
         .from('workflow_template_items')
