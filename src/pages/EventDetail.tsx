@@ -82,11 +82,14 @@ export default function EventDetail() {
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
   
+  // Fetch event contacts for email recipients
+  const { data: eventContacts = [] } = useEventContacts(id);
+  
   // Build recipients for email dialog
   const emailRecipients = useMemo(() => {
     const recipients: { id: string; name: string; email: string; type: 'client' | 'photographer' | 'assistant' }[] = [];
     
-    // Add client contact first (from linked client record)
+    // Add client contact from linked client record
     if (event?.client_id) {
       const clientEmail = (event as any).clients?.primary_contact_email;
       const clientContactName = (event as any).clients?.primary_contact_name;
@@ -100,23 +103,46 @@ export default function EventDetail() {
       }
     }
     
-    // Add assigned staff
+    // Add event contacts with emails (these are client-side contacts)
+    eventContacts.forEach((contact: any) => {
+      const email = contact.contact_email || contact.client_contact?.email;
+      const name = contact.contact_name || contact.client_contact?.contact_name;
+      if (email && !recipients.find(r => r.email === email)) {
+        recipients.push({
+          id: `event-contact-${contact.id}`,
+          name: name || email,
+          email,
+          type: 'client',
+        });
+      }
+    });
+    
+    // Add assigned staff (support both new user-based and legacy staff-based)
     assignments.forEach((assignment: any) => {
-      const profile = assignment.user || assignment.profile;
-      if (profile?.email) {
-        const roleOnEvent = assignment.role_on_event?.toLowerCase() || '';
-        const type = roleOnEvent.includes('assistant') ? 'assistant' : 'photographer';
+      // Try new user profile first, then legacy staff
+      const profile = assignment.profile;
+      const legacyStaff = assignment.staff;
+      
+      const email = profile?.email || legacyStaff?.email;
+      const name = profile?.full_name || legacyStaff?.name;
+      
+      if (email && !recipients.find(r => r.email === email)) {
+        // Determine type from staff_role or legacy role field
+        const roleName = assignment.staff_role?.name?.toLowerCase() || 
+                        assignment.role_on_event?.toLowerCase() || 
+                        legacyStaff?.role?.toLowerCase() || '';
+        const type = roleName.includes('assistant') ? 'assistant' : 'photographer';
         recipients.push({
           id: assignment.id,
-          name: profile.full_name || profile.email,
-          email: profile.email,
+          name: name || email,
+          email,
           type,
         });
       }
     });
     
     return recipients;
-  }, [event, assignments]);
+  }, [event, assignments, eventContacts]);
   
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
