@@ -22,6 +22,7 @@ export function useAllWorkflowTemplates(domain?: WorkflowDomain) {
         .from('workflow_templates')
         .select('*')
         .order('phase')
+        .order('sort_order')
         .order('template_name');
       
       if (domain) {
@@ -173,6 +174,7 @@ export function useUpdateTemplate() {
       phase?: 'pre_event' | 'day_of' | 'post_event';
       is_active?: boolean;
       workflow_domain?: WorkflowDomain;
+      sort_order?: number;
     }) => {
       const { error } = await supabase
         .from('workflow_templates')
@@ -193,7 +195,30 @@ export function useUpdateTemplate() {
   });
 }
 
-// Duplicate template
+// Reorder templates within a phase
+export function useReorderTemplates() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (templates: { id: string; sort_order: number }[]) => {
+      for (const template of templates) {
+        const { error } = await supabase
+          .from('workflow_templates')
+          .update({ sort_order: template.sort_order })
+          .eq('id', template.id);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflow-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-templates-all'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to reorder templates: ' + error.message);
+    },
+  });
+}
 export function useDuplicateTemplate() {
   const queryClient = useQueryClient();
   

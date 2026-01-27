@@ -4812,6 +4812,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           phase: Database["public"]["Enums"]["workflow_phase"]
+          sort_order: number | null
           template_name: string
           updated_at: string | null
           workflow_domain: string
@@ -4825,6 +4826,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           phase: Database["public"]["Enums"]["workflow_phase"]
+          sort_order?: number | null
           template_name: string
           updated_at?: string | null
           workflow_domain?: string
@@ -4838,6 +4840,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           phase?: Database["public"]["Enums"]["workflow_phase"]
+          sort_order?: number | null
           template_name?: string
           updated_at?: string | null
           workflow_domain?: string
