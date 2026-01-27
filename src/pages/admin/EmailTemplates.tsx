@@ -63,6 +63,7 @@ import DOMPurify from 'dompurify';
 
 const TRIGGER_OPTIONS: { value: EmailTriggerType; label: string }[] = [
   { value: 'manual', label: 'Manual' },
+  { value: 'enquiry_received', label: 'Enquiry Received' },
   { value: 'quote_sent', label: 'Quote Sent' },
   { value: 'quote_followup', label: 'Quote Follow-up' },
   { value: 'booking_confirmed', label: 'Booking Confirmed' },

@@ -5333,6 +5333,7 @@ export type Database = {
         | "event_reminder"
         | "photographer_assignment"
         | "event_update"
+        | "enquiry_received"
       entity_type: "lead" | "job"
       event_type:
         | "wedding"
@@ -5552,6 +5553,7 @@ export const Constants = {
         "event_reminder",
         "photographer_assignment",
         "event_update",
+        "enquiry_received",
       ],
       entity_type: ["lead", "job"],
       event_type: [

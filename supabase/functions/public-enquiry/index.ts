@@ -200,9 +200,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Send notification email
+    // Send notification email to sales team + auto-response to enquirer
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (resendApiKey) {
+      // 1. Send internal notification to sales team
       const notificationHtml = `
         <h2>New Website Enquiry</h2>
         <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
@@ -281,10 +282,96 @@ Deno.serve(async (req) => {
         }
       } catch (emailError) {
         console.error("Error sending notification email:", emailError);
-        // Don't fail the request if email fails
+      }
+
+      // 2. Send auto-response to enquirer using template with trigger_type = 'enquiry_received'
+      try {
+        const { data: autoReplyTemplate } = await supabase
+          .from("email_templates")
+          .select("*")
+          .eq("trigger_type", "enquiry_received")
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
+
+        if (autoReplyTemplate) {
+          // Replace merge fields in template
+          const firstName = payload.name.trim().split(" ")[0] || payload.name;
+          const mergeContext: Record<string, string> = {
+            "{{contact.first_name}}": firstName,
+            "{{contact.name}}": payload.name,
+            "{{client.primary_contact_name}}": payload.name,
+            "{{lead_or_job_name}}": payload.company ? `${payload.company} - Web Enquiry` : `${payload.name} - Web Enquiry`,
+            "{{company_name}}": payload.company || "",
+            "{{event_date}}": payload.event_date || "TBC",
+          };
+
+          let subject = autoReplyTemplate.subject;
+          let body = autoReplyTemplate.body_text || autoReplyTemplate.body_html;
+
+          // Apply merge fields
+          for (const [key, value] of Object.entries(mergeContext)) {
+            subject = subject.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+            body = body.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
+          }
+
+          // Convert text format to HTML (preserve line breaks)
+          const bodyHtml = autoReplyTemplate.format === "text" 
+            ? `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">${body.replace(/\n/g, "<br>")}</div>`
+            : body;
+
+          // Add standard footer
+          const footer = `
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+            <p style="color: #666; font-size: 12px;">
+              Trevor Connell, Operations Manager<br>
+              Phone: 02 9056 3775<br>
+              EventPix corporate and event photography Australia-wide
+            </p>
+          `;
+
+          const autoReplyResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${resendApiKey}`,
+            },
+            body: JSON.stringify({
+              from: "EventPix <pix@rs.eventpix.com.au>",
+              to: [payload.email],
+              subject: subject,
+              html: bodyHtml + footer,
+            }),
+          });
+
+          const autoReplyResult = await autoReplyResponse.json();
+          if (!autoReplyResponse.ok) {
+            console.error("Auto-response email failed:", autoReplyResult);
+          } else {
+            console.log("Auto-response sent to:", payload.email, "id:", autoReplyResult.id);
+            
+            // Log the auto-response email
+            await supabase.from("email_logs").insert({
+              email_type: "enquiry_auto_response",
+              recipient_email: payload.email,
+              recipient_name: payload.name,
+              subject: subject,
+              body_html: bodyHtml,
+              lead_id: lead.id,
+              client_id: clientId,
+              template_id: autoReplyTemplate.id,
+              status: "sent",
+              sent_at: new Date().toISOString(),
+            });
+          }
+        } else {
+          console.log("No active enquiry_received template found, skipping auto-response");
+        }
+      } catch (autoReplyError) {
+        console.error("Error sending auto-response email:", autoReplyError);
       }
     } else {
-      console.warn("RESEND_API_KEY not configured, skipping notification email");
+      console.warn("RESEND_API_KEY not configured, skipping emails");
     }
 
     return new Response(
