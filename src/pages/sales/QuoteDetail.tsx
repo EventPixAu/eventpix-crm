@@ -52,6 +52,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
+import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
 import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
@@ -106,6 +107,7 @@ export default function QuoteDetail() {
   const deleteItem = useDeleteQuoteItem();
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
+  const acceptQuote = useAcceptQuote();
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -480,6 +482,16 @@ export default function QuoteDetail() {
             <Button variant="outline" onClick={handleRegenerateToken} disabled={regeneratingToken}>
               <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingToken ? 'animate-spin' : ''}`} />
               Regenerate Link
+            </Button>
+          )}
+          {!isLocked && isAdmin && (
+            <Button 
+              variant="outline" 
+              onClick={() => acceptQuote.mutate({ quoteId: id! })}
+              disabled={acceptQuote.isPending}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {acceptQuote.isPending ? 'Accepting...' : 'Mark as Accepted'}
             </Button>
           )}
           {quote.status === 'accepted' && !(quote as any).linked_event_id && (
