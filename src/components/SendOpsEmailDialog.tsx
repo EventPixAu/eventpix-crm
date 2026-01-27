@@ -74,6 +74,18 @@ export function SendOpsEmailDialog({
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
 
+  // Default-select the client recipient when opening.
+  useEffect(() => {
+    if (!open) return;
+    setShowPreview(false);
+
+    setSelectedRecipients((prev) => {
+      if (prev.length > 0) return prev;
+      const preferredClient = recipients.find((r) => r.type === 'client');
+      return preferredClient ? [preferredClient.id] : prev;
+    });
+  }, [open, recipients]);
+
   // Group recipients by type
   const groupedRecipients = useMemo(() => {
     return {
