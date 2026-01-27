@@ -58,7 +58,16 @@ export function useEvent(id: string | undefined) {
       if (!id) return null;
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          clients:client_id (
+            id,
+            business_name,
+            primary_contact_name,
+            primary_contact_email,
+            primary_contact_phone
+          )
+        `)
         .eq('id', id)
         .maybeSingle();
       

@@ -86,6 +86,20 @@ export default function EventDetail() {
   const emailRecipients = useMemo(() => {
     const recipients: { id: string; name: string; email: string; type: 'client' | 'photographer' | 'assistant' }[] = [];
     
+    // Add client contact first (from linked client record)
+    if (event?.client_id) {
+      const clientEmail = (event as any).clients?.primary_contact_email;
+      const clientContactName = (event as any).clients?.primary_contact_name;
+      if (clientEmail) {
+        recipients.push({
+          id: `client-${event.client_id}`,
+          name: clientContactName || event.client_name,
+          email: clientEmail,
+          type: 'client',
+        });
+      }
+    }
+    
     // Add assigned staff
     assignments.forEach((assignment: any) => {
       const profile = assignment.user || assignment.profile;
@@ -102,7 +116,7 @@ export default function EventDetail() {
     });
     
     return recipients;
-  }, [assignments]);
+  }, [event, assignments]);
   
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
