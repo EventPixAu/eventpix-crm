@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, Calendar, RefreshCw, ExternalLink, Check } from 'lucide-react';
+import { Copy, Calendar, RefreshCw, ExternalLink, Check, Apple, Mail } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -110,9 +110,19 @@ export function CalendarSubscribeDialog() {
   };
 
   const openGoogleCalendar = () => {
-    // Google Calendar subscription URL
     const googleUrl = `https://calendar.google.com/calendar/r/settings/addbyurl?url=${encodeURIComponent(feedUrl)}`;
     window.open(googleUrl, '_blank');
+  };
+
+  const openAppleCalendar = () => {
+    // webcal:// protocol triggers native calendar apps (Apple Calendar, etc.)
+    const webcalUrl = feedUrl.replace(/^https?:\/\//, 'webcal://');
+    window.location.href = webcalUrl;
+  };
+
+  const openOutlookCalendar = () => {
+    const outlookUrl = `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl)}&name=Eventpix%20Schedule`;
+    window.open(outlookUrl, '_blank');
   };
 
   return (
@@ -162,14 +172,24 @@ export function CalendarSubscribeDialog() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Button onClick={openGoogleCalendar} className="gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Add to Google Calendar
-                </Button>
-                
-                <p className="text-xs text-muted-foreground text-center">
-                  Or paste the URL into any calendar app (Apple Calendar, Outlook, etc.)
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Add to your calendar</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button onClick={openGoogleCalendar} variant="outline" className="gap-2 justify-start">
+                    <ExternalLink className="h-4 w-4" />
+                    Google Calendar
+                  </Button>
+                  <Button onClick={openAppleCalendar} variant="outline" className="gap-2 justify-start">
+                    <Apple className="h-4 w-4" />
+                    Apple Calendar / iCal
+                  </Button>
+                  <Button onClick={openOutlookCalendar} variant="outline" className="gap-2 justify-start">
+                    <Mail className="h-4 w-4" />
+                    Outlook Calendar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  Or copy the URL above to paste into any calendar app
                 </p>
               </div>
 
