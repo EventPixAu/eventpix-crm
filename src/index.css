@@ -142,11 +142,15 @@
   }
 
   /* Override dark theme colors for print */
-  .print\\:text-black {
+  .print\\:text-black,
+  td.print\\:text-black,
+  th.print\\:text-black {
     color: black !important;
   }
 
-  .print\\:text-white {
+  .print\\:text-white,
+  td.print\\:text-white,
+  th.print\\:text-white {
     color: white !important;
   }
 
@@ -168,5 +172,20 @@
 
   .print\\:border-gray-300 {
     border-color: #d1d5db !important;
+  }
+
+  /* Force table body text to be readable in print */
+  table tbody tr td {
+    color: #000000 !important;
+  }
+
+  table tfoot tr td {
+    color: #000000 !important;
+  }
+
+  /* Ensure table header maintains contrast */
+  table thead tr.bg-primary th {
+    background-color: hsl(195 82% 51%) !important;
+    color: white !important;
   }
 }
