@@ -273,13 +273,27 @@ export default function EventDayOf() {
     );
   }
 
+  // Error state - show specific error message
+  if (eventError && !cachedData) {
+    console.error('EventDayOf error:', eventError);
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <p className="text-muted-foreground mb-4">Unable to load event</p>
+        <p className="text-xs text-muted-foreground/60 mb-4">{(eventError as Error)?.message}</p>
+        <Link to="/">
+          <Button variant="outline">Back to Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
+
   // Not found
   if (!displayEvent) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <p className="text-muted-foreground mb-4">Event not found</p>
-        <Link to="/events">
-          <Button variant="outline">Back to Events</Button>
+        <Link to="/">
+          <Button variant="outline">Back to Dashboard</Button>
         </Link>
       </div>
     );
