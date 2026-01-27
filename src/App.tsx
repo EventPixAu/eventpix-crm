@@ -218,9 +218,11 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
+          <ErrorBoundary title="App error" backTo="/auth">
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
