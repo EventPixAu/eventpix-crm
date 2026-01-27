@@ -20,6 +20,7 @@ import {
   Save,
   X,
   Users,
+  Copy,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -188,6 +189,30 @@ export function CrewChecklistTemplatesManager() {
     },
   });
 
+  // Duplicate mutation
+  const duplicateMutation = useMutation({
+    mutationFn: async (template: CrewChecklistTemplate) => {
+      const { error } = await supabase
+        .from('crew_checklist_templates')
+        .insert({
+          name: `${template.name} (Copy)`,
+          description: template.description,
+          items: template.items as any,
+          is_active: false, // Start as inactive
+          staff_role_id: template.staff_role_id,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates'] });
+      toast({ title: 'Template duplicated' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error duplicating template', description: error.message, variant: 'destructive' });
+    },
+  });
+
   const openCreate = () => {
     setIsCreateMode(true);
     setFormName('');
@@ -329,6 +354,19 @@ export function CrewChecklistTemplatesManager() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          title="Duplicate"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            duplicateMutation.mutate(template);
+                          }}
+                          disabled={duplicateMutation.isPending}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Edit"
                           onClick={(e) => {
                             e.stopPropagation();
                             openEdit(template);
@@ -339,6 +377,7 @@ export function CrewChecklistTemplatesManager() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          title="Delete"
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteConfirmId(template.id);
