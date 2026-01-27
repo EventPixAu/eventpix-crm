@@ -98,7 +98,7 @@ interface SortableItemProps {
 }
 
 const dateReferenceOptions = [
-  { value: '', label: 'No due date' },
+  { value: 'none', label: 'No due date' },
   { value: 'lead_created', label: 'Lead Created' },
   { value: 'job_accepted', label: 'Job Accepted' },
   { value: 'event_date', label: 'Event Date' },
@@ -109,7 +109,7 @@ function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(item.label);
   const [editHelpText, setEditHelpText] = useState(item.help_text || '');
-  const [editDateReference, setEditDateReference] = useState(item.date_offset_reference || '');
+  const [editDateReference, setEditDateReference] = useState(item.date_offset_reference || 'none');
   const [editDateOffset, setEditDateOffset] = useState<number>(item.date_offset_days ?? 0);
   
   const {
@@ -183,7 +183,7 @@ function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps
                 </SelectTrigger>
                 <SelectContent>
                   {dateReferenceOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value || 'none'}>
+                    <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>
                   ))}
