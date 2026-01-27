@@ -289,6 +289,7 @@ export default function DayLoadView() {
         start_time: e.start_time,
         end_time: e.end_time,
         client_name: e.client_name,
+        timezone: null, // DayLoad doesn't expose timezone yet
         venue_name: e.venue_name,
         venue_address: e.venue_address,
         event_type_id: e.event_type_id,

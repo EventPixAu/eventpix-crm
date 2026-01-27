@@ -6,7 +6,146 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Format date for ICS (YYYYMMDD or YYYYMMDDTHHMMSS)
+// VTIMEZONE definitions for AU/NZ timezones
+const VTIMEZONE_DEFS: Record<string, string> = {
+  'Australia/Sydney': `BEGIN:VTIMEZONE
+TZID:Australia/Sydney
+X-LIC-LOCATION:Australia/Sydney
+BEGIN:STANDARD
+DTSTART:19700405T030000
+RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU
+TZOFFSETFROM:+1100
+TZOFFSETTO:+1000
+TZNAME:AEST
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19701004T020000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU
+TZOFFSETFROM:+1000
+TZOFFSETTO:+1100
+TZNAME:AEDT
+END:DAYLIGHT
+END:VTIMEZONE`,
+  'Australia/Melbourne': `BEGIN:VTIMEZONE
+TZID:Australia/Melbourne
+X-LIC-LOCATION:Australia/Melbourne
+BEGIN:STANDARD
+DTSTART:19700405T030000
+RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU
+TZOFFSETFROM:+1100
+TZOFFSETTO:+1000
+TZNAME:AEST
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19701004T020000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU
+TZOFFSETFROM:+1000
+TZOFFSETTO:+1100
+TZNAME:AEDT
+END:DAYLIGHT
+END:VTIMEZONE`,
+  'Australia/Brisbane': `BEGIN:VTIMEZONE
+TZID:Australia/Brisbane
+X-LIC-LOCATION:Australia/Brisbane
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+1000
+TZOFFSETTO:+1000
+TZNAME:AEST
+END:STANDARD
+END:VTIMEZONE`,
+  'Australia/Adelaide': `BEGIN:VTIMEZONE
+TZID:Australia/Adelaide
+X-LIC-LOCATION:Australia/Adelaide
+BEGIN:STANDARD
+DTSTART:19700405T030000
+RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU
+TZOFFSETFROM:+1030
+TZOFFSETTO:+0930
+TZNAME:ACST
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19701004T020000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU
+TZOFFSETFROM:+0930
+TZOFFSETTO:+1030
+TZNAME:ACDT
+END:DAYLIGHT
+END:VTIMEZONE`,
+  'Australia/Darwin': `BEGIN:VTIMEZONE
+TZID:Australia/Darwin
+X-LIC-LOCATION:Australia/Darwin
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+0930
+TZOFFSETTO:+0930
+TZNAME:ACST
+END:STANDARD
+END:VTIMEZONE`,
+  'Australia/Perth': `BEGIN:VTIMEZONE
+TZID:Australia/Perth
+X-LIC-LOCATION:Australia/Perth
+BEGIN:STANDARD
+DTSTART:19700101T000000
+TZOFFSETFROM:+0800
+TZOFFSETTO:+0800
+TZNAME:AWST
+END:STANDARD
+END:VTIMEZONE`,
+  'Australia/Hobart': `BEGIN:VTIMEZONE
+TZID:Australia/Hobart
+X-LIC-LOCATION:Australia/Hobart
+BEGIN:STANDARD
+DTSTART:19700405T030000
+RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU
+TZOFFSETFROM:+1100
+TZOFFSETTO:+1000
+TZNAME:AEST
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19701004T020000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU
+TZOFFSETFROM:+1000
+TZOFFSETTO:+1100
+TZNAME:AEDT
+END:DAYLIGHT
+END:VTIMEZONE`,
+  'Pacific/Auckland': `BEGIN:VTIMEZONE
+TZID:Pacific/Auckland
+X-LIC-LOCATION:Pacific/Auckland
+BEGIN:STANDARD
+DTSTART:19700405T030000
+RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU
+TZOFFSETFROM:+1300
+TZOFFSETTO:+1200
+TZNAME:NZST
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:19700927T020000
+RRULE:FREQ=YEARLY;BYMONTH=9;BYDAY=-1SU
+TZOFFSETFROM:+1200
+TZOFFSETTO:+1300
+TZNAME:NZDT
+END:DAYLIGHT
+END:VTIMEZONE`,
+};
+
+// Get timezone abbreviation for display
+function getTzAbbr(tz: string): string {
+  const abbrs: Record<string, string> = {
+    'Australia/Sydney': 'SYD',
+    'Australia/Melbourne': 'MEL',
+    'Australia/Brisbane': 'BNE',
+    'Australia/Adelaide': 'ADL',
+    'Australia/Darwin': 'DRW',
+    'Australia/Perth': 'PER',
+    'Australia/Hobart': 'HBA',
+    'Pacific/Auckland': 'AKL',
+  };
+  return abbrs[tz] || 'SYD';
+}
+
+// Format date for ICS with timezone (YYYYMMDD or YYYYMMDDTHHMMSS)
 function formatICSDate(dateStr: string, timeStr?: string | null): string {
   const date = parseISO(dateStr);
   if (timeStr) {
@@ -113,6 +252,7 @@ Deno.serve(async (req) => {
           event_date,
           start_time,
           end_time,
+          timezone,
           venue_name,
           venue_address,
           special_instructions,
@@ -122,6 +262,7 @@ Deno.serve(async (req) => {
             start_time,
             end_time,
             arrival_time,
+            timezone,
             label,
             venue_name,
             venue_address
@@ -152,6 +293,7 @@ Deno.serve(async (req) => {
             event_date,
             start_time,
             end_time,
+            timezone,
             venue_name,
             venue_address,
             special_instructions,
@@ -161,6 +303,7 @@ Deno.serve(async (req) => {
               start_time,
               end_time,
               arrival_time,
+              timezone,
               label,
               venue_name,
               venue_address
@@ -180,6 +323,10 @@ Deno.serve(async (req) => {
       assignedEvents = assignments || [];
     }
 
+    // Collect all unique timezones used
+    const usedTimezones = new Set<string>();
+    usedTimezones.add('Australia/Sydney'); // Always include default
+
     // Build ICS content
     const icsLines: string[] = [
       'BEGIN:VCALENDAR',
@@ -191,11 +338,35 @@ Deno.serve(async (req) => {
       'X-WR-TIMEZONE:Australia/Sydney',
     ];
 
+    // First pass: collect all timezones
+    for (const assignment of assignedEvents || []) {
+      const event = assignment.events as any;
+      if (!event) continue;
+      
+      const eventTz = event.timezone || 'Australia/Sydney';
+      usedTimezones.add(eventTz);
+      
+      const sessions = (event.event_sessions as any[]) || [];
+      for (const session of sessions) {
+        const sessionTz = session.timezone || eventTz;
+        usedTimezones.add(sessionTz);
+      }
+    }
+
+    // Add VTIMEZONE definitions for all used timezones
+    for (const tz of usedTimezones) {
+      if (VTIMEZONE_DEFS[tz]) {
+        icsLines.push(VTIMEZONE_DEFS[tz]);
+      }
+    }
+
+    // Second pass: generate events
     for (const assignment of assignedEvents || []) {
       const event = assignment.events as any;
       if (!event) continue;
 
       const sessions = (event.event_sessions as any[]) || [];
+      const eventTz = event.timezone || 'Australia/Sydney';
 
       // If event has sessions, create one VEVENT per session
       if (sessions.length > 0) {
@@ -205,6 +376,9 @@ Deno.serve(async (req) => {
           if (sessionDate < format(pastDate, 'yyyy-MM-dd') || sessionDate > format(futureDate, 'yyyy-MM-dd')) {
             continue;
           }
+
+          const sessionTz = session.timezone || eventTz;
+          const tzAbbr = getTzAbbr(sessionTz);
 
           // Use arrival_time (Crew Call Time) as calendar start if available, otherwise fall back to start_time
           const calendarStartTime = session.arrival_time || session.start_time || event.start_time;
@@ -217,14 +391,22 @@ Deno.serve(async (req) => {
             .filter(Boolean)
             .join(', ');
 
-          const eventTitle = session.label ? `${event.event_name} - ${session.label}` : event.event_name;
+          // Include timezone abbreviation in title if not Sydney
+          const eventTitle = sessionTz !== 'Australia/Sydney'
+            ? (session.label ? `[${tzAbbr}] ${event.event_name} - ${session.label}` : `[${tzAbbr}] ${event.event_name}`)
+            : (session.label ? `${event.event_name} - ${session.label}` : event.event_name);
 
-          // Build description with event start/end times included
+          // Build description with event start/end times and timezone info
           const eventStartTime = session.start_time || event.start_time;
           const eventEndTime = session.end_time || event.end_time;
           const descriptionParts = [
             `Client: ${event.client_name || 'TBC'}`,
           ];
+          
+          // Add timezone info if not Sydney
+          if (sessionTz !== 'Australia/Sydney') {
+            descriptionParts.push(`Timezone: ${sessionTz}`);
+          }
           
           // Add event timing info
           if (eventStartTime) {
@@ -244,8 +426,9 @@ Deno.serve(async (req) => {
           icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
           
           if (calendarStartTime) {
-            icsLines.push(`DTSTART:${dtstart}`);
-            icsLines.push(`DTEND:${dtend}`);
+            // Use TZID parameter for timezone-aware times
+            icsLines.push(`DTSTART;TZID=${sessionTz}:${dtstart}`);
+            icsLines.push(`DTEND;TZID=${sessionTz}:${dtend}`);
           } else {
             icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(sessionDate)}`);
             icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(sessionDate)}`);
@@ -269,6 +452,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const tzAbbr = getTzAbbr(eventTz);
         const dtstart = formatICSDate(event.event_date, event.start_time);
         const dtend = event.end_time 
           ? formatICSDate(event.event_date, event.end_time)
@@ -278,24 +462,38 @@ Deno.serve(async (req) => {
           .filter(Boolean)
           .join(', ');
 
-        const description = [
+        // Include timezone abbreviation in title if not Sydney
+        const eventTitle = eventTz !== 'Australia/Sydney'
+          ? `[${tzAbbr}] ${event.event_name}`
+          : event.event_name;
+
+        const descriptionParts = [
           `Client: ${event.client_name || 'TBC'}`,
-          event.special_instructions ? `Notes: ${event.special_instructions}` : ''
-        ].filter(Boolean).join('\\n');
+        ];
+        
+        if (eventTz !== 'Australia/Sydney') {
+          descriptionParts.push(`Timezone: ${eventTz}`);
+        }
+        
+        if (event.special_instructions) {
+          descriptionParts.push(`Notes: ${event.special_instructions}`);
+        }
+        
+        const description = descriptionParts.join('\\n');
 
         icsLines.push('BEGIN:VEVENT');
         icsLines.push(`UID:${event.id}@eventpix.app`);
         icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
         
         if (event.start_time) {
-          icsLines.push(`DTSTART:${dtstart}`);
-          icsLines.push(`DTEND:${dtend}`);
+          icsLines.push(`DTSTART;TZID=${eventTz}:${dtstart}`);
+          icsLines.push(`DTEND;TZID=${eventTz}:${dtend}`);
         } else {
           icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(event.event_date)}`);
           icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(event.event_date)}`);
         }
         
-        icsLines.push(foldLine(`SUMMARY:${escapeICS(event.event_name)}`));
+        icsLines.push(foldLine(`SUMMARY:${escapeICS(eventTitle)}`));
         
         if (description) {
           icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));

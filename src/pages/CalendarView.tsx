@@ -27,6 +27,7 @@ import {
   LayoutGrid,
   Layers,
   Eye,
+  Globe,
 } from 'lucide-react';
 import { CalendarSubscribeDialog } from '@/components/CalendarSubscribeDialog';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -48,6 +49,7 @@ import { useStaffDirectory } from '@/hooks/useStaff';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useActiveEventSeries } from '@/hooks/useEventSeries';
 import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
+import { getTimezoneAbbr } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'month' | 'week' | 'list';
@@ -73,6 +75,9 @@ function getSeriesColor(seriesId: string | null, seriesColorMap: Map<string, num
 function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColorMap: Map<string, number> }) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
   const seriesColor = getSeriesColor(event.event_series_id, seriesColorMap);
+  const tzAbbr = event.timezone && event.timezone !== 'Australia/Sydney' 
+    ? getTimezoneAbbr(event.timezone) 
+    : null;
   
   return (
     <Link
@@ -96,6 +101,9 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
           )}>
             {format(new Date(`2000-01-01T${event.arrival_time || event.start_time}`), 'h:mm a')}
           </span>
+        )}
+        {tzAbbr && (
+          <span className="text-[10px] text-muted-foreground shrink-0">({tzAbbr})</span>
         )}
         {event.has_conflict && (
           <AlertTriangle className="h-3 w-3 text-orange-600 shrink-0" />
@@ -123,6 +131,9 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
 function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesColorMap: Map<string, number> }) {
   const suburb = getVenueSuburb(event.venue_address) || event.venue_name;
   const seriesColor = getSeriesColor(event.event_series_id, seriesColorMap);
+  const tzAbbr = event.timezone && event.timezone !== 'Australia/Sydney' 
+    ? getTimezoneAbbr(event.timezone) 
+    : null;
   
   return (
     <Link
@@ -150,6 +161,12 @@ function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesC
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="font-medium truncate">{event.event_name}</h3>
+          {tzAbbr && (
+            <Badge variant="outline" className="text-muted-foreground shrink-0">
+              <Globe className="h-3 w-3 mr-1" />
+              {tzAbbr}
+            </Badge>
+          )}
           {event.event_series_name && (
             <Badge variant="outline" className={cn(
               "shrink-0",
@@ -180,6 +197,7 @@ function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesC
               {event.arrival_time ? `Call: ${format(new Date(`2000-01-01T${event.arrival_time}`), 'h:mm a')}` : ''}
               {event.start_time && ` Event: ${format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}`}
               {event.end_time && ` - ${format(new Date(`2000-01-01T${event.end_time}`), 'h:mm a')}`}
+              {tzAbbr && ` (${tzAbbr})`}
             </span>
           )}
           {suburb && (

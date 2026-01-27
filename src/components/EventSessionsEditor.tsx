@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +13,20 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   useEventSessions,
   useLeadSessions,
   useCreateEventSession,
   useUpdateEventSession,
   useDeleteEventSession,
 } from '@/hooks/useEventSessions';
+import { SUPPORTED_TIMEZONES, getTimezoneAbbr } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
 interface SessionFormData {
@@ -30,6 +38,7 @@ interface SessionFormData {
   venue_name: string;
   venue_address: string;
   notes: string;
+  timezone: string;
 }
 
 const emptySession: SessionFormData = {
@@ -41,6 +50,7 @@ const emptySession: SessionFormData = {
   venue_name: '',
   venue_address: '',
   notes: '',
+  timezone: 'Australia/Sydney',
 };
 
 interface EventSessionsEditorProps {
@@ -79,6 +89,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
       venue_name: session.venue_name || '',
       venue_address: session.venue_address || '',
       notes: session.notes || '',
+      timezone: (session as any).timezone || 'Australia/Sydney',
     });
     setIsDialogOpen(true);
   };
@@ -95,6 +106,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
       venue_name: formData.venue_name || null,
       venue_address: formData.venue_address || null,
       notes: formData.notes || null,
+      timezone: formData.timezone || 'Australia/Sydney',
     };
 
     if (editingSession) {
@@ -174,6 +186,14 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
                           {session.end_time && (
                             <> – {format(new Date(`2000-01-01T${session.end_time}`), 'h:mm a')}</>
                           )}
+                        </span>
+                      )}
+                      
+                      {/* Show timezone if not Sydney */}
+                      {(session as any).timezone && (session as any).timezone !== 'Australia/Sydney' && (
+                        <span className="flex items-center gap-1 text-blue-600">
+                          <Globe className="h-3.5 w-3.5" />
+                          {getTimezoneAbbr((session as any).timezone)}
                         </span>
                       )}
                       
@@ -283,14 +303,35 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="venue_name">Venue Name</Label>
-              <Input
-                id="venue_name"
-                value={formData.venue_name}
-                onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
-                placeholder="Optional: different venue for this session"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="venue_name">Venue Name</Label>
+                <Input
+                  id="venue_name"
+                  value={formData.venue_name}
+                  onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
+                  placeholder="Optional: different venue"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Select 
+                  value={formData.timezone} 
+                  onValueChange={(v) => setFormData({ ...formData, timezone: v })}
+                >
+                  <SelectTrigger id="timezone">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_TIMEZONES.map(tz => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="space-y-2">
