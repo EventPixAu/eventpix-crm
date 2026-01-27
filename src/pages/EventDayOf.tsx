@@ -60,6 +60,23 @@ const phases = [
   { key: 'post_event', label: 'Post-Event' },
 ] as const;
 
+function safeParseISO(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  try {
+    const d = parseISO(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+}
+
+function safeFormatTime(time: string | null | undefined): string | null {
+  if (!time) return null;
+  const d = new Date(`2000-01-01T${time}`);
+  if (Number.isNaN(d.getTime())) return time;
+  return format(d, 'h:mm a');
+}
+
 export default function EventDayOf() {
   const { id } = useParams<{ id: string }>();
   const { user, isAdmin } = useAuth();
@@ -89,11 +106,8 @@ export default function EventDayOf() {
   
   // Check if any allocated equipment hasn't been picked up (for day-of warning)
   const unpickedEquipment = useMemo(() => {
-    // IMPORTANT: don't call parseISO until we have a valid date.
-    // parseISO('') throws and can crash the page (blank screen) during initial load.
-    if (!event?.event_date) return [];
-    const eventDate = parseISO(event.event_date);
-    if (!isToday(eventDate)) return [];
+    const eventDate = safeParseISO(event?.event_date);
+    if (!eventDate || !isToday(eventDate)) return [];
     return equipmentAllocations.filter((a) => a.status === 'allocated');
   }, [equipmentAllocations, event?.event_date]);
   
@@ -163,17 +177,19 @@ export default function EventDayOf() {
     if (!displayEvent) return [];
     const badges: { label: string; variant: 'default' | 'destructive' | 'secondary' | 'outline' }[] = [];
     
-    const eventDate = parseISO(displayEvent.event_date);
+    const eventDate = safeParseISO(displayEvent.event_date);
     
-    if (isToday(eventDate)) {
+    if (eventDate && isToday(eventDate)) {
       badges.push({ label: 'Today', variant: 'default' });
     }
     
     if (displayEvent.delivery_deadline) {
-      const deadline = parseISO(displayEvent.delivery_deadline);
-      const inSevenDays = addDays(new Date(), 7);
-      if (isBefore(deadline, inSevenDays) && !deliveryRecord?.delivered_at) {
-        badges.push({ label: 'Delivery Due', variant: 'destructive' });
+      const deadline = safeParseISO(displayEvent.delivery_deadline);
+      if (deadline) {
+        const inSevenDays = addDays(new Date(), 7);
+        if (isBefore(deadline, inSevenDays) && !deliveryRecord?.delivered_at) {
+          badges.push({ label: 'Delivery Due', variant: 'destructive' });
+        }
       }
     }
     
@@ -303,7 +319,7 @@ export default function EventDayOf() {
     );
   }
 
-  const eventDate = parseISO(displayEvent.event_date);
+  const eventDate = safeParseISO(displayEvent.event_date);
   const statusBadges = getStatusBadges();
 
   return (
@@ -372,14 +388,14 @@ export default function EventDayOf() {
             <h1 className="text-xl font-display font-bold mb-1">{displayEvent.event_name}</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              {format(eventDate, 'EEE, MMM d, yyyy')}
-              {displayEvent.start_time && (
+              {eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}
+              {safeFormatTime(displayEvent.start_time) && (
                 <>
                   <Clock className="h-4 w-4 ml-2" />
-                  {format(new Date(`2000-01-01T${displayEvent.start_time}`), 'h:mm a')}
-                  {displayEvent.end_time && (
+                  {safeFormatTime(displayEvent.start_time)}
+                  {safeFormatTime(displayEvent.end_time) && (
                     <span>
-                      – {format(new Date(`2000-01-01T${displayEvent.end_time}`), 'h:mm a')}
+                      – {safeFormatTime(displayEvent.end_time)}
                     </span>
                   )}
                 </>
@@ -691,7 +707,13 @@ export default function EventDayOf() {
                     <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                       <span>{authorName}</span>
                       <span>•</span>
-                      <span>{formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}</span>
+                      <span>
+                        {(() => {
+                          const d = note.created_at ? new Date(note.created_at) : null;
+                          if (!d || Number.isNaN(d.getTime())) return '';
+                          return formatDistanceToNow(d, { addSuffix: true });
+                        })()}
+                      </span>
                     </div>
                   </div>
                 );

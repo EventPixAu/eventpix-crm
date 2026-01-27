@@ -67,6 +67,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SalesDashboard from "./pages/sales/SalesDashboard";
 
 import NotFound from "./pages/NotFound";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -132,7 +133,18 @@ function AppRoutes() {
       <Route path="/events/:id/edit" element={<ProtectedRoute><AdminGuard><EventForm /></AdminGuard></ProtectedRoute>} />
       <Route path="/events/:id/worksheets" element={<ProtectedRoute><AdminGuard><EventWorksheets /></AdminGuard></ProtectedRoute>} />
       {/* Day-of view accessible to assigned crew */}
-      <Route path="/events/:id/day-of" element={<ProtectedRoute><CrewGuard><EventDayOf /></CrewGuard></ProtectedRoute>} />
+       <Route
+         path="/events/:id/day-of"
+         element={
+           <ProtectedRoute>
+             <CrewGuard>
+               <ErrorBoundary title="Unable to open Day-Of view" backTo="/">
+                 <EventDayOf />
+               </ErrorBoundary>
+             </CrewGuard>
+           </ProtectedRoute>
+         }
+       />
       <Route path="/events/:id/run-sheet" element={<ProtectedRoute><CrewGuard><EventRunSheet /></CrewGuard></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><AdminGuard><Staff /></AdminGuard></ProtectedRoute>} />
       <Route path="/staff/:id" element={<ProtectedRoute><AdminGuard><StaffDetail /></AdminGuard></ProtectedRoute>} />
