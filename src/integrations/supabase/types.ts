@@ -2939,6 +2939,10 @@ export type Database = {
           is_training: boolean | null
           lead_name: string
           lead_source_id: string | null
+          lead_type: Database["public"]["Enums"]["lead_type"] | null
+          lead_type_auto: boolean | null
+          lead_type_override_at: string | null
+          lead_type_override_by: string | null
           lost_reason_id: string | null
           main_shoot_end_at: string | null
           main_shoot_start_at: string | null
@@ -2965,6 +2969,10 @@ export type Database = {
           is_training?: boolean | null
           lead_name: string
           lead_source_id?: string | null
+          lead_type?: Database["public"]["Enums"]["lead_type"] | null
+          lead_type_auto?: boolean | null
+          lead_type_override_at?: string | null
+          lead_type_override_by?: string | null
           lost_reason_id?: string | null
           main_shoot_end_at?: string | null
           main_shoot_start_at?: string | null
@@ -2991,6 +2999,10 @@ export type Database = {
           is_training?: boolean | null
           lead_name?: string
           lead_source_id?: string | null
+          lead_type?: Database["public"]["Enums"]["lead_type"] | null
+          lead_type_auto?: boolean | null
+          lead_type_override_at?: string | null
+          lead_type_override_by?: string | null
           lost_reason_id?: string | null
           main_shoot_end_at?: string | null
           main_shoot_start_at?: string | null
@@ -5159,6 +5171,10 @@ export type Database = {
         Returns: string
       }
       current_user_role: { Args: never; Returns: string }
+      detect_lead_type: {
+        Args: { p_client_id: string }
+        Returns: Database["public"]["Enums"]["lead_type"]
+      }
       expire_compliance_documents: { Args: never; Returns: number }
       gen_random_bytes: { Args: { len: number }; Returns: string }
       gen_random_uuid: { Args: never; Returns: string }
@@ -5168,6 +5184,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_all_operations_workflows: {
+        Args: { p_event_id: string }
+        Returns: Json
       }
       initialize_event_workflow_steps: {
         Args: { p_event_id: string; p_template_id: string }
@@ -5333,6 +5353,7 @@ export type Database = {
         | "accepted"
         | "lost"
         | "won"
+      lead_type: "new" | "existing" | "repeat"
       quote_status: "draft" | "sent" | "accepted" | "rejected"
       quote_status_enum: "draft" | "sent" | "accepted" | "declined" | "expired"
       schedule_anchor_type:
@@ -5554,6 +5575,7 @@ export const Constants = {
         "lost",
         "won",
       ],
+      lead_type: ["new", "existing", "repeat"],
       quote_status: ["draft", "sent", "accepted", "rejected"],
       quote_status_enum: ["draft", "sent", "accepted", "declined", "expired"],
       schedule_anchor_type: [
