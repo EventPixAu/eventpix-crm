@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Briefcase,
   Settings2,
-  Users
+  Users,
+  GripVertical,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -44,10 +45,28 @@ import {
   useCreateTemplate, 
   useUpdateTemplate,
   useDuplicateTemplate,
+  useReorderTemplates,
   WorkflowDomain,
 } from '@/hooks/useWorkflowTemplates';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event', color: 'bg-info/10 text-info' },
@@ -61,6 +80,114 @@ const domains: { key: WorkflowDomain | 'all' | 'crew'; label: string; icon: Reac
   { key: 'operations', label: 'Operations', icon: <Settings2 className="h-4 w-4" /> },
   { key: 'crew', label: 'Crew Checklists', icon: <Users className="h-4 w-4" /> },
 ];
+
+interface SortableRowProps {
+  template: any;
+  phaseInfo: { color: string };
+  itemCounts: Record<string, number>;
+  getDomainBadge: (domain: string) => React.ReactNode;
+  onToggleActive: (id: string, currentActive: boolean) => void;
+  onDuplicate: (id: string) => void;
+  onNavigate: (id: string) => void;
+}
+
+function SortableTemplateRow({ 
+  template, 
+  phaseInfo, 
+  itemCounts, 
+  getDomainBadge,
+  onToggleActive, 
+  onDuplicate, 
+  onNavigate 
+}: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: template.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <tr 
+      ref={setNodeRef}
+      style={style}
+      className="hover:bg-muted/30 transition-colors cursor-pointer"
+      onClick={() => onNavigate(template.id)}
+    >
+      <td className="p-4">
+        <div className="flex items-center gap-3">
+          <button
+            className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground"
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className={`p-2 rounded-lg ${phaseInfo.color}`}>
+            <ClipboardList className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="font-medium">{template.template_name}</p>
+            {!template.is_active && (
+              <Badge variant="outline" className="text-xs mt-1">
+                <EyeOff className="h-3 w-3 mr-1" />
+                Inactive
+              </Badge>
+            )}
+          </div>
+        </div>
+      </td>
+      <td className="p-4">
+        {getDomainBadge(template.workflow_domain || 'operations')}
+      </td>
+      <td className="p-4 text-muted-foreground">
+        {itemCounts[template.id] || 0} items
+      </td>
+      <td className="p-4 text-muted-foreground text-sm">
+        {template.updated_at 
+          ? format(new Date(template.updated_at), 'MMM d, yyyy')
+          : '-'
+        }
+      </td>
+      <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+        <Switch
+          checked={template.is_active ?? true}
+          onCheckedChange={() => onToggleActive(template.id, template.is_active ?? true)}
+        />
+      </td>
+      <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDuplicate(template.id)}
+            title="Duplicate"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onNavigate(template.id)}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Edit
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
 
 export default function WorkflowsList() {
   const navigate = useNavigate();
@@ -76,6 +203,18 @@ export default function WorkflowsList() {
   const createTemplate = useCreateTemplate();
   const updateTemplate = useUpdateTemplate();
   const duplicateTemplate = useDuplicateTemplate();
+  const reorderTemplates = useReorderTemplates();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   
   // Get item counts for each template
   const { data: itemCounts = {} } = useQuery({
@@ -116,6 +255,26 @@ export default function WorkflowsList() {
 
   const handleDuplicate = async (id: string) => {
     await duplicateTemplate.mutateAsync(id);
+  };
+
+  const handleDragEnd = async (phase: string, event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const phaseTemplates = templates.filter((t) => t.phase === phase);
+    const oldIndex = phaseTemplates.findIndex((t) => t.id === active.id);
+    const newIndex = phaseTemplates.findIndex((t) => t.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    const reordered = arrayMove(phaseTemplates, oldIndex, newIndex);
+    const updates = reordered.map((template, index) => ({
+      id: template.id,
+      sort_order: index + 1,
+    }));
+    
+    await reorderTemplates.mutateAsync(updates);
   };
 
   const getPhaseInfo = (phase: string) => {
@@ -259,88 +418,45 @@ export default function WorkflowsList() {
                         </Badge>
                       </h2>
                       
-                      <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <table className="w-full">
-                           <thead className="bg-muted/50">
-                            <tr>
-                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Template</th>
-                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Domain</th>
-                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Items</th>
-                              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Updated</th>
-                              <th className="text-center p-4 text-sm font-medium text-muted-foreground">Active</th>
-                              <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border">
-                            {phaseTemplates.map((template) => {
-                              const phaseInfo = getPhaseInfo(template.phase);
-                              return (
-                                <tr 
-                                  key={template.id} 
-                                  className="hover:bg-muted/30 transition-colors cursor-pointer"
-                                  onClick={() => navigate(`/admin/workflows/${template.id}`)}
-                                >
-                                  <td className="p-4">
-                                    <div className="flex items-center gap-3">
-                                      <div className={`p-2 rounded-lg ${phaseInfo.color}`}>
-                                        <ClipboardList className="h-4 w-4" />
-                                      </div>
-                                      <div>
-                                        <p className="font-medium">{template.template_name}</p>
-                                        {!template.is_active && (
-                                          <Badge variant="outline" className="text-xs mt-1">
-                                            <EyeOff className="h-3 w-3 mr-1" />
-                                            Inactive
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="p-4">
-                                    {getDomainBadge((template as any).workflow_domain || 'operations')}
-                                  </td>
-                                  <td className="p-4 text-muted-foreground">
-                                    {itemCounts[template.id] || 0} items
-                                  </td>
-                                  <td className="p-4 text-muted-foreground text-sm">
-                                    {template.updated_at 
-                                      ? format(new Date(template.updated_at), 'MMM d, yyyy')
-                                      : '-'
-                                    }
-                                  </td>
-                                  <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                    <Switch
-                                      checked={template.is_active ?? true}
-                                      onCheckedChange={() => handleToggleActive(template.id, template.is_active ?? true)}
-                                    />
-                                  </td>
-                                  <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-end gap-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDuplicate(template.id)}
-                                        title="Duplicate"
-                                      >
-                                        <Copy className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => navigate(`/admin/workflows/${template.id}`)}
-                                      >
-                                        <Edit className="h-4 w-4 mr-1" />
-                                        Edit
-                                        <ChevronRight className="h-4 w-4 ml-1" />
-                                      </Button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event) => handleDragEnd(phase.key, event)}
+                      >
+                        <div className="bg-card border border-border rounded-xl overflow-hidden">
+                          <table className="w-full">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Template</th>
+                                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Domain</th>
+                                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Items</th>
+                                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Updated</th>
+                                <th className="text-center p-4 text-sm font-medium text-muted-foreground">Active</th>
+                                <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                              <SortableContext
+                                items={phaseTemplates.map(t => t.id)}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                {phaseTemplates.map((template) => (
+                                  <SortableTemplateRow
+                                    key={template.id}
+                                    template={template}
+                                    phaseInfo={getPhaseInfo(template.phase)}
+                                    itemCounts={itemCounts}
+                                    getDomainBadge={getDomainBadge}
+                                    onToggleActive={handleToggleActive}
+                                    onDuplicate={handleDuplicate}
+                                    onNavigate={(id) => navigate(`/admin/workflows/${id}`)}
+                                  />
+                                ))}
+                              </SortableContext>
+                            </tbody>
+                          </table>
+                        </div>
+                      </DndContext>
                     </motion.div>
                   );
                 })}
