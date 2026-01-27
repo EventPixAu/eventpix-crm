@@ -11,8 +11,8 @@
  * - Right panels: Job info, Client info
  * - Bottom: Subtotal / Discount row
  */
-import { useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
@@ -51,7 +51,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useQuote, useUpdateQuote, useConvertQuoteToEvent } from '@/hooks/useSales';
+import { useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
 import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
@@ -81,12 +81,24 @@ const GROUP_LABELS = [
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { isAdmin } = useAuth();
   
-  const { data: quote, isLoading } = useQuote(id);
-  const { data: items } = useQuoteItems(id);
+  const isNewQuote = id === 'new';
+  
+  // Get URL params for pre-filling (when coming from lead)
+  const leadIdParam = searchParams.get('lead_id');
+  const clientIdParam = searchParams.get('client_id');
+  const companyParam = searchParams.get('company');
+  const eventNameParam = searchParams.get('event_name');
+  const eventDateParam = searchParams.get('event_date');
+  const venueParam = searchParams.get('venue');
+  
+  const { data: quote, isLoading } = useQuote(isNewQuote ? undefined : id);
+  const { data: items } = useQuoteItems(isNewQuote ? undefined : id);
   const { data: products } = useActiveProducts();
+  const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
   const createItem = useCreateQuoteItem();
   const updateItem = useUpdateQuoteItem();
@@ -103,6 +115,7 @@ export default function QuoteDetail() {
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
+  const [creatingQuote, setCreatingQuote] = useState(false);
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -124,6 +137,32 @@ export default function QuoteDetail() {
   // Editable intro text state
   const [introText, setIntroText] = useState('');
   const [introLoaded, setIntroLoaded] = useState(false);
+
+  // Handle new quote creation with pre-filled data from URL params
+  useEffect(() => {
+    if (isNewQuote && !creatingQuote) {
+      setCreatingQuote(true);
+      const createNewQuote = async () => {
+        try {
+          const newQuote = await createQuote.mutateAsync({
+            status: 'draft',
+            lead_id: leadIdParam || undefined,
+            client_id: clientIdParam || undefined,
+          });
+          // Navigate to the created quote (keeping any useful display params)
+          navigate(`/sales/quotes/${newQuote.id}`, { replace: true });
+        } catch (error: any) {
+          toast({ 
+            title: 'Failed to create quote', 
+            description: error.message, 
+            variant: 'destructive' 
+          });
+          navigate('/sales/quotes');
+        }
+      };
+      createNewQuote();
+    }
+  }, [isNewQuote, creatingQuote, leadIdParam, clientIdParam]);
 
   // Load intro text when quote loads
   useMemo(() => {
@@ -340,11 +379,15 @@ export default function QuoteDetail() {
     }
   };
 
-  if (isLoading) {
+  // Show loading when creating new quote or loading existing
+  if (isLoading || isNewQuote) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center py-16">
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <p className="text-muted-foreground">
+            {isNewQuote ? 'Creating quote...' : 'Loading...'}
+          </p>
         </div>
       </AppLayout>
     );
@@ -366,11 +409,13 @@ export default function QuoteDetail() {
   const statusConfig = STATUS_CONFIG[quote.status] || STATUS_CONFIG.draft;
   const quoteVersion = (quote as any).quote_version || 1;
 
-  // Lead/job info for right panel
+  // Lead/job info for right panel - use lead data with sessions
+  const leadSessions = leadData?.event_sessions || [];
+  const firstSession = leadSessions[0];
   const jobName = leadData?.lead_name || quote.quote_number || 'Quote';
-  const eventDate = leadData?.tentative_date;
-  const eventTime = leadData?.tentative_time;
-  const venueAddress = leadData?.venue_address;
+  const eventDate = firstSession?.session_date || leadData?.tentative_date || leadData?.estimated_event_date;
+  const eventTime = firstSession?.start_time || leadData?.tentative_time;
+  const venueAddress = leadData?.venue_text || leadData?.venue_address;
 
   return (
     <AppLayout>
