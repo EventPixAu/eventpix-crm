@@ -108,7 +108,7 @@ export function useUncompleteWorkflowStep() {
   });
 }
 
-// Initialize workflow steps from a template
+// Initialize workflow steps from a template (all items)
 export function useInitializeWorkflowSteps() {
   const queryClient = useQueryClient();
   
@@ -127,6 +127,130 @@ export function useInitializeWorkflowSteps() {
       
       if (error) throw error;
       return data as number;
+    },
+    onSuccess: (count, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
+      toast.success(`Initialized ${count} workflow steps`);
+    },
+    onError: (error) => {
+      toast.error('Failed to initialize workflow: ' + error.message);
+    },
+  });
+}
+
+// Initialize workflow steps from a template with selective items
+export function useInitializeWorkflowStepsSelective() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      eventId, 
+      templateId,
+      selectedItemIds,
+    }: { 
+      eventId: string; 
+      templateId: string;
+      selectedItemIds: string[];
+    }) => {
+      // Get event details for date calculations
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .eq('id', eventId)
+        .single();
+      
+      if (eventError) throw eventError;
+      
+      // Get job accepted date from lead if exists
+      let jobAcceptedDate = event.booking_date || event.created_at;
+      if (event.lead_id) {
+        const { data: lead } = await supabase
+          .from('leads')
+          .select('updated_at')
+          .eq('id', event.lead_id)
+          .eq('status', 'won')
+          .maybeSingle();
+        if (lead) {
+          jobAcceptedDate = lead.updated_at;
+        }
+      }
+      
+      // Get selected template items
+      const { data: items, error: itemsError } = await supabase
+        .from('workflow_template_items')
+        .select('*')
+        .in('id', selectedItemIds)
+        .eq('is_active', true)
+        .order('sort_order');
+      
+      if (itemsError) throw itemsError;
+      if (!items || items.length === 0) throw new Error('No valid items selected');
+      
+      // Delete existing workflow steps for this event
+      const { error: deleteError } = await supabase
+        .from('event_workflow_steps')
+        .delete()
+        .eq('event_id', eventId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Calculate due dates and create steps
+      const eventDate = new Date(event.main_shoot_date || event.event_date);
+      const bookingDate = new Date(jobAcceptedDate || event.created_at);
+      const deliveryDeadline = event.delivery_deadline ? new Date(event.delivery_deadline) : null;
+      
+      const steps = items.map((item, index) => {
+        let dueDate: string | null = null;
+        
+        if (item.date_offset_days !== null && item.date_offset_reference) {
+          let referenceDate: Date;
+          switch (item.date_offset_reference) {
+            case 'job_accepted':
+              referenceDate = bookingDate;
+              break;
+            case 'event_date':
+              referenceDate = eventDate;
+              break;
+            case 'delivery_deadline':
+              referenceDate = deliveryDeadline || eventDate;
+              break;
+            default:
+              referenceDate = eventDate;
+          }
+          const calculated = new Date(referenceDate);
+          calculated.setDate(calculated.getDate() + item.date_offset_days);
+          dueDate = calculated.toISOString().split('T')[0];
+        }
+        
+        return {
+          event_id: eventId,
+          template_item_id: item.id,
+          step_label: item.label,
+          step_order: item.sort_order,
+          completion_type: item.completion_type || 'manual',
+          auto_trigger_event: item.auto_trigger_event,
+          due_date: dueDate,
+          is_completed: false,
+          notes: item.help_text,
+        };
+      });
+      
+      const { error: insertError } = await supabase
+        .from('event_workflow_steps')
+        .insert(steps);
+      
+      if (insertError) throw insertError;
+      
+      // Update event with workflow template reference
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({ workflow_template_id: templateId })
+        .eq('id', eventId);
+      
+      if (updateError) throw updateError;
+      
+      return steps.length;
     },
     onSuccess: (count, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
