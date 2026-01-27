@@ -11,6 +11,7 @@ import {
   ChevronUp,
   Zap,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import {
   useEventWorkflowSteps,
   useCompleteWorkflowStep,
   useUncompleteWorkflowStep,
+  useDeleteWorkflowStep,
   useWorkflowProgress,
   EventWorkflowStepWithProfile,
 } from '@/hooks/useEventWorkflowSteps';
@@ -107,6 +109,7 @@ function StepItem({
   const [notes, setNotes] = useState(step.notes || '');
   const completeStep = useCompleteWorkflowStep();
   const uncompleteStep = useUncompleteWorkflowStep();
+  const deleteStep = useDeleteWorkflowStep();
   
   const isAuto = step.completion_type === 'auto';
   const isOverdue = step.due_date && !step.is_completed && isPast(parseISO(step.due_date)) && !isToday(parseISO(step.due_date));
@@ -119,6 +122,13 @@ function StepItem({
       uncompleteStep.mutate({ stepId: step.id, eventId });
     } else {
       completeStep.mutate({ stepId: step.id, eventId, notes });
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Remove this workflow step?')) {
+      deleteStep.mutate({ stepId: step.id, eventId });
     }
   };
   
@@ -189,6 +199,15 @@ function StepItem({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  {isAdmin && (
+                    <button
+                      onClick={handleDelete}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                      title="Remove step"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                   {isExpanded ? (
                     <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   ) : (

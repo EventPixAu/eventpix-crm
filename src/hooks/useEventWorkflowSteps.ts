@@ -423,6 +423,36 @@ export function useUpdateWorkflowStepNotes() {
   });
 }
 
+// Delete a workflow step
+export function useDeleteWorkflowStep() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      stepId, 
+      eventId 
+    }: { 
+      stepId: string; 
+      eventId: string;
+    }) => {
+      const { error } = await supabase
+        .from('event_workflow_steps')
+        .delete()
+        .eq('id', stepId);
+      
+      if (error) throw error;
+      return { eventId };
+    },
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      toast.success('Step removed');
+    },
+    onError: (error) => {
+      toast.error('Failed to remove step: ' + error.message);
+    },
+  });
+}
+
 // Get workflow progress summary
 export function useWorkflowProgress(eventId: string | undefined) {
   const { data: steps = [] } = useEventWorkflowSteps(eventId);
