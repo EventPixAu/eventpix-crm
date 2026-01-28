@@ -38,6 +38,8 @@ interface MergeFieldContext {
   eventDate?: string;
   venueName?: string;
   leadName?: string;
+  quoteAcceptUrl?: string;
+  contractSignUrl?: string;
 }
 
 interface SendEmailDialogProps {
@@ -170,6 +172,14 @@ export function SendEmailDialog({
         })
       : '';
     
+    // Generate button HTML for quote/contract links
+    const quoteButtonHtml = mergeContext?.quoteAcceptUrl 
+      ? `<a href="${mergeContext.quoteAcceptUrl}" style="display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0;">View Your Budget</a>`
+      : '';
+    const contractButtonHtml = mergeContext?.contractSignUrl
+      ? `<a href="${mergeContext.contractSignUrl}" style="display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0;">Sign Contract</a>`
+      : '';
+
     return text
       // Client merge fields
       .replace(/\{\{client_name\}\}/gi, recipientName || clientName || '')
@@ -188,7 +198,18 @@ export function SendEmailDialog({
       .replace(/\{\{event\.venue_name\}\}/gi, mergeContext?.venueName || '')
       // Lead merge fields
       .replace(/\{\{lead\.name\}\}/gi, mergeContext?.leadName || '')
-      .replace(/\{\{lead_or_job_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '');
+      .replace(/\{\{lead_or_job_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
+      // Quote/Contract link buttons
+      .replace(/\{\{quote\.link\}\}/gi, quoteButtonHtml)
+      .replace(/\{\{quote\.button\}\}/gi, quoteButtonHtml)
+      .replace(/\{\{budget\.link\}\}/gi, quoteButtonHtml)
+      .replace(/\{\{budget\.button\}\}/gi, quoteButtonHtml)
+      .replace(/\{\{contract\.link\}\}/gi, contractButtonHtml)
+      .replace(/\{\{contract\.button\}\}/gi, contractButtonHtml)
+      // Plain URLs (if user prefers text links)
+      .replace(/\{\{quote\.url\}\}/gi, mergeContext?.quoteAcceptUrl || '')
+      .replace(/\{\{budget\.url\}\}/gi, mergeContext?.quoteAcceptUrl || '')
+      .replace(/\{\{contract\.url\}\}/gi, mergeContext?.contractSignUrl || '');
   };
 
   // Apply template when selected
