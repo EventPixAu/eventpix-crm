@@ -417,6 +417,9 @@ export default function ContractDetail() {
           eventDate: leadData?.estimated_event_date,
           venueName: leadData?.venue_text,
           leadName: leadData?.lead_name,
+          contractSignUrl: contract.public_token
+            ? `${window.location.origin}/contract/sign/${contract.public_token}`
+            : undefined,
         }}
       />
     </AppLayout>

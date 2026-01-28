@@ -993,6 +993,9 @@ export default function QuoteDetail() {
           eventDate: leadData?.estimated_event_date,
           venueName: leadData?.venue_text,
           leadName: leadData?.lead_name,
+          quoteAcceptUrl: quote.public_token 
+            ? `${window.location.origin}/accept/${quote.public_token}` 
+            : undefined,
         }}
       />
 
