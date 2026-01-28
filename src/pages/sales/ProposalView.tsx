@@ -46,9 +46,22 @@ export default function ProposalView() {
 
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
-  const clientName = clientData?.business_name || leadData?.client?.business_name;
-  const clientEmail = clientData?.primary_contact_email;
-  const clientPhone = clientData?.primary_contact_phone;
+  
+  // Resolve client details: prioritize direct client, fallback to lead's client
+  const resolvedClient = clientData || leadData?.client;
+  const clientName = resolvedClient?.business_name;
+  const clientContactName = resolvedClient?.primary_contact_name || leadData?.contact_name;
+  const clientEmail = resolvedClient?.primary_contact_email || leadData?.contact_email;
+  
+  // Helper to get item display text (product name or description)
+  const getItemDisplayText = (item: QuoteItem) => {
+    // If there's a linked product, show "ProductName - Description" or just product name
+    if (item.product?.name) {
+      return item.product.name;
+    }
+    // Fallback to description (which might be a code like EPX2)
+    return item.description;
+  };
   
   // Group items by group_label
   const groupedItems = useMemo(() => {
@@ -131,7 +144,9 @@ export default function ProposalView() {
             {/* Header */}
             <div className="flex items-start justify-between mb-8">
               <div>
-                <img src={logo} alt="Eventpix" className="h-12 mb-4 max-w-[200px] object-contain" />
+                <div className="bg-gray-800 rounded p-2 inline-block mb-4">
+                  <img src={logo} alt="Eventpix" className="h-10 max-w-[180px] object-contain" />
+                </div>
                 <div className="text-sm text-muted-foreground">
                   <p>{settings.business_name || 'Eventpix Photography'}</p>
                   <p>ABN: {settings.business_abn || 'XX XXX XXX XXX'}</p>
@@ -170,7 +185,7 @@ export default function ProposalView() {
                 <div className="flex">
                   <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Contact:</span>
                   <span className="text-foreground print:text-black">
-                    {clientData?.primary_contact_name || leadData?.client?.primary_contact_name || '—'}
+                    {clientContactName || '—'}
                     {clientEmail && <span className="ml-2 text-muted-foreground">({clientEmail})</span>}
                   </span>
                 </div>
@@ -231,7 +246,7 @@ export default function ProposalView() {
                         <TableBody>
                           {groupedItems[groupKey].map((item) => (
                             <TableRow key={item.id} className="print:border-b print:border-gray-300">
-                              <TableCell className="text-gray-900 print:text-black">{item.description}</TableCell>
+                              <TableCell className="text-gray-900 print:text-black">{getItemDisplayText(item)}</TableCell>
                               <TableCell className="text-right text-gray-900 print:text-black">{item.quantity}</TableCell>
                               <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.unit_price)}</TableCell>
                               <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
@@ -256,7 +271,7 @@ export default function ProposalView() {
                   <TableBody>
                     {items?.map((item) => (
                       <TableRow key={item.id} className="print:border-b print:border-gray-300">
-                        <TableCell className="text-gray-900 print:text-black">{item.description}</TableCell>
+                        <TableCell className="text-gray-900 print:text-black">{getItemDisplayText(item)}</TableCell>
                         <TableCell className="text-right text-gray-900 print:text-black">{item.quantity}</TableCell>
                         <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.unit_price)}</TableCell>
                         <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
