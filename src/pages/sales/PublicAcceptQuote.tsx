@@ -21,6 +21,8 @@ interface PublicQuoteData {
   id: string;
   quote_number: string | null;
   status: string;
+  subtotal: number | null;
+  tax_total: number | null;
   total_estimate: number | null;
   valid_until: string | null;
   terms_text: string | null;
@@ -257,11 +259,21 @@ export default function PublicAcceptQuote() {
               
               <Separator />
               
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total (inc. GST)</span>
-                <span className="text-primary">
-                  {formatCurrency(quote.total_estimate || 0)}
-                </span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Subtotal (ex GST)</span>
+                  <span>{formatCurrency(quote.subtotal || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">GST (10%)</span>
+                  <span>{formatCurrency(quote.tax_total || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total (incl. GST)</span>
+                  <span className="text-primary">
+                    {formatCurrency(quote.total_estimate || 0)}
+                  </span>
+                </div>
               </div>
             </div>
           </CardContent>
