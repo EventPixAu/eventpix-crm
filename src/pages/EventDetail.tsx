@@ -65,6 +65,7 @@ import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel';
+import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -486,6 +487,11 @@ export default function EventDetail() {
                     </div>
                   )}
                 </div>
+              )}
+              
+              {/* Event Documents */}
+              {id && (
+                <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
               )}
             </motion.div>
 
