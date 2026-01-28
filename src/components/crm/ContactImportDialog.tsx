@@ -117,17 +117,8 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
 
   const handleGoogleImport = useCallback(async () => {
     try {
-      // Google OAuth flow
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      
-      if (!clientId) {
-        toast({
-          title: 'Google Import Not Configured',
-          description: 'Google Contacts integration requires configuration. Please use CSV import instead.',
-          variant: 'destructive',
-        });
-        return;
-      }
+      // Google OAuth flow - Client ID is a publishable key (visible in OAuth URLs)
+      const clientId = '867552644248-61qi8ljo0konlqp864q5idrtbs7i6cg1.apps.googleusercontent.com';
 
       const scope = 'https://www.googleapis.com/auth/contacts.readonly';
       const redirectUri = window.location.origin + '/crm/contacts';
