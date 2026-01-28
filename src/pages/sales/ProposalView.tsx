@@ -364,8 +364,6 @@ export default function ProposalView() {
                   <>
                     <p>• A 30% deposit is required to secure your booking.</p>
                     <p>• Balance is due 7 days before the event date.</p>
-                    <p>• Photos will be delivered within 14 business days.</p>
-                    <p>• This quote is valid for 30 days from the date of issue.</p>
                   </>
                 )}
               </div>
