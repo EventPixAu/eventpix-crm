@@ -17,6 +17,7 @@ import {
   Briefcase,
   XCircle,
   Heart,
+  ShoppingBag,
   Package,
   MapPin,
   FileCheck,
@@ -80,6 +81,11 @@ import {
   useCreateComplianceDocumentType,
   useUpdateComplianceDocumentType,
 } from '@/hooks/useCompliance';
+import {
+  useAllProductCategories,
+  useCreateProductCategory,
+  useUpdateProductCategory,
+} from '@/hooks/useAdminProductCategories';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
@@ -381,6 +387,11 @@ export default function AdminLookups() {
   const createLocation = useCreateLocation();
   const updateLocation = useUpdateLocation();
 
+  // Product Categories
+  const { data: productCategories = [], isLoading: productCategoriesLoading } = useAllProductCategories();
+  const createProductCategory = useCreateProductCategory();
+  const updateProductCategory = useUpdateProductCategory();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -472,6 +483,13 @@ export default function AdminLookups() {
               >
                 <MapPin className="h-4 w-4 mr-2" />
                 Locations
+              </TabsTrigger>
+              <TabsTrigger 
+                value="product-categories"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                Product Categories
               </TabsTrigger>
               <TabsTrigger 
                 value="training-tools"
@@ -633,6 +651,18 @@ export default function AdminLookups() {
                 createPending={createLocation.isPending}
                 updatePending={updateLocation.isPending}
                 itemLabel="Location"
+              />
+            </TabsContent>
+
+            <TabsContent value="product-categories" className="m-0">
+              <LookupTable
+                items={productCategories}
+                isLoading={productCategoriesLoading}
+                onCreate={async (name) => { await createProductCategory.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateProductCategory.mutateAsync({ id, ...updates }); }}
+                createPending={createProductCategory.isPending}
+                updatePending={updateProductCategory.isPending}
+                itemLabel="Product Category"
               />
             </TabsContent>
 
