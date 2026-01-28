@@ -988,6 +988,12 @@ export default function QuoteDetail() {
         relatedQuoteId={quote.id}
         defaultSubject={`Quote: ${quote.quote_number || quote.id.slice(0, 8)}`}
         context="quote"
+        mergeContext={{
+          eventName: leadData?.lead_name || quote.quote_number,
+          eventDate: leadData?.estimated_event_date,
+          venueName: leadData?.venue_text,
+          leadName: leadData?.lead_name,
+        }}
       />
 
       {/* Apply Template Dialog */}

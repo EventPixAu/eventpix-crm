@@ -52,6 +52,7 @@ export default function ContractDetail() {
 
   const isLocked = contract?.status === 'signed' || contract?.status === 'cancelled';
   const clientData = contract?.client as any;
+  const leadData = contract?.lead as any;
   
   // Generate the public signing URL
   const getPublicSigningUrl = () => {
@@ -407,10 +408,16 @@ export default function ContractDetail() {
         onOpenChange={setIsEmailDialogOpen}
         clientId={contract.client_id}
         clientEmail={clientData?.primary_contact_email}
-        clientName={clientData?.business_name}
+        clientName={clientData?.primary_contact_name || clientData?.business_name}
         relatedContractId={contract.id}
         defaultSubject={`Contract: ${contract.title}`}
         context="contract"
+        mergeContext={{
+          eventName: leadData?.lead_name || contract.title,
+          eventDate: leadData?.estimated_event_date,
+          venueName: leadData?.venue_text,
+          leadName: leadData?.lead_name,
+        }}
       />
     </AppLayout>
   );
