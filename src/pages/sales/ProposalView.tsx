@@ -68,14 +68,14 @@ export default function ProposalView() {
   const eventSessions = leadData?.event_sessions;
   const eventDate = eventSessions?.[0]?.session_date || leadData?.estimated_event_date;
   
-  // Helper to get item display text (product name or description)
+  // Helper to get item display text (product name + description)
   const getItemDisplayText = (item: QuoteItem) => {
-    // If there's a linked product, show "ProductName - Description" or just product name
-    if (item.product?.name) {
-      return item.product.name;
+    const name = item.product?.name || item.description;
+    const description = item.product?.description;
+    if (description && description !== name) {
+      return `${name} – ${description}`;
     }
-    // Fallback to description (which might be a code like EPX2)
-    return item.description;
+    return name;
   };
   
   // Group items by group_label
