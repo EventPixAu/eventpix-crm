@@ -3,7 +3,7 @@
  * 
  * Import contacts from CSV or Google Contacts with field mapping preview
  */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
   const [step, setStep] = useState<ImportStep>('select');
   const [contacts, setContacts] = useState<ImportedContact[]>([]);
   const [importSource, setImportSource] = useState<'csv' | 'google' | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
@@ -62,6 +63,76 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
     isImporting, 
     importResult 
   } = useContactImport();
+
+  // Handle OAuth callback from URL hash (for when popup redirects back)
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const hash = window.location.hash;
+      if (!hash.includes('access_token')) return;
+      
+      // Parse the access token from URL hash
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const state = params.get('state');
+      
+      if (accessToken && state === 'google_contacts_import') {
+        // Clear the hash from URL
+        window.history.replaceState(null, '', window.location.pathname);
+        
+        // If we're in a popup, send message to opener and close
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'google_oauth_callback',
+            accessToken,
+          }, window.location.origin);
+          window.close();
+          return;
+        }
+        
+        // Otherwise, we're the main window - fetch contacts directly
+        setIsGoogleLoading(true);
+        try {
+          const response = await fetch(
+            'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations,addresses&pageSize=1000',
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch Google Contacts');
+          }
+
+          const data = await response.json();
+          const parsed = parseGoogleContacts(data.connections || []);
+          
+          if (parsed.length === 0) {
+            toast({
+              title: 'No Contacts Found',
+              description: 'No importable contacts found in your Google account',
+              variant: 'destructive',
+            });
+            return;
+          }
+
+          setContacts(parsed);
+          setImportSource('google');
+          setStep('preview');
+          onOpenChange(true); // Open dialog if it was closed
+        } catch (error: any) {
+          toast({
+            title: 'Google Import Failed',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } finally {
+          setIsGoogleLoading(false);
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, [toast, onOpenChange]);
 
   const handleClose = useCallback(() => {
     if (!isImporting) {
@@ -129,31 +200,46 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
       authUrl.searchParams.set('response_type', 'token');
       authUrl.searchParams.set('scope', scope);
       authUrl.searchParams.set('state', 'google_contacts_import');
+      authUrl.searchParams.set('prompt', 'consent');
 
-      // Open Google auth in popup
+      // Try popup first, fall back to redirect if popup is blocked
       const popup = window.open(
         authUrl.toString(),
         'google_auth',
-        'width=500,height=600,menubar=no,toolbar=no'
+        'width=500,height=600,menubar=no,toolbar=no,popup=yes'
       );
 
-      // Listen for OAuth callback
+      // Check if popup was blocked
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // Popup was blocked - use redirect flow instead
+        toast({
+          title: 'Redirecting to Google',
+          description: 'You will be redirected to sign in with Google',
+        });
+        window.location.href = authUrl.toString();
+        return;
+      }
+
+      // Listen for OAuth callback via postMessage
       const handleMessage = async (event: MessageEvent) => {
-        if (event.data?.type === 'google_oauth_callback') {
-          window.removeEventListener('message', handleMessage);
-          popup?.close();
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.type !== 'google_oauth_callback') return;
+        
+        window.removeEventListener('message', handleMessage);
+        popup?.close();
 
-          const accessToken = event.data.accessToken;
-          if (!accessToken) {
-            toast({
-              title: 'Authentication Failed',
-              description: 'Could not get access token from Google',
-              variant: 'destructive',
-            });
-            return;
-          }
+        const accessToken = event.data.accessToken;
+        if (!accessToken) {
+          toast({
+            title: 'Authentication Failed',
+            description: 'Could not get access token from Google',
+            variant: 'destructive',
+          });
+          return;
+        }
 
-          // Fetch contacts from Google People API
+        // Fetch contacts from Google People API
+        try {
           const response = await fetch(
             'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations,addresses&pageSize=1000',
             {
@@ -180,13 +266,28 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           setContacts(parsed);
           setImportSource('google');
           setStep('preview');
+        } catch (err: any) {
+          toast({
+            title: 'Failed to Fetch Contacts',
+            description: err.message,
+            variant: 'destructive',
+          });
         }
       };
 
       window.addEventListener('message', handleMessage);
 
-      // Cleanup listener after 5 minutes
+      // Also poll for popup close (in case user closes it or flow completes via redirect)
+      const pollTimer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(pollTimer);
+          window.removeEventListener('message', handleMessage);
+        }
+      }, 500);
+
+      // Cleanup after 5 minutes
       setTimeout(() => {
+        clearInterval(pollTimer);
         window.removeEventListener('message', handleMessage);
       }, 300000);
     } catch (error: any) {
