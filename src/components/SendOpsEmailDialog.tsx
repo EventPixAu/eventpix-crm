@@ -38,6 +38,7 @@ interface Recipient {
   name: string;
   email: string;
   type: 'client' | 'photographer' | 'assistant';
+  contactId?: string; // CRM contact ID if available
 }
 
 interface SendOpsEmailDialogProps {
@@ -146,12 +147,25 @@ export function SendOpsEmailDialog({
         const bodyWithLineBreaks = body.replace(/\n/g, '<br>');
         const personalizedBody = replaceMergeFields(bodyWithLineBreaks, recipient.name);
         
+        // Resolve contactId if not provided - lookup by email
+        let contactId = recipient.contactId;
+        if (!contactId && recipient.email) {
+          const { data: contactData } = await supabase
+            .from('client_contacts')
+            .select('id')
+            .ilike('email', recipient.email)
+            .limit(1)
+            .single();
+          if (contactData) contactId = contactData.id;
+        }
+        
         const { data, error } = await supabase.functions.invoke('send-crm-email', {
           body: {
             recipientEmail: recipient.email,
             recipientName: recipient.name,
             subject,
             bodyHtml: personalizedBody,
+            contactId,
             clientId: eventData.client_id,
             eventId,
             templateId: selectedTemplateId || undefined,
