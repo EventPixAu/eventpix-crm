@@ -244,14 +244,14 @@ export default function PublicAcceptQuote() {
           <CardContent>
             <div className="space-y-4">
               {quote.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-start">
-                  <div>
+                <div key={index} className="flex justify-between items-start gap-8">
+                  <div className="flex-1">
                     <div className="font-medium">{item.description}</div>
                     <div className="text-sm text-muted-foreground">
                       {item.quantity} × {formatCurrency(item.unit_price)}
                     </div>
                   </div>
-                  <div className="font-medium">
+                  <div className="font-medium text-right shrink-0">
                     {formatCurrency(item.quantity * item.unit_price)}
                   </div>
                 </div>
