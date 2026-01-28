@@ -5,7 +5,7 @@
  * A lead can exist before a client is assigned.
  */
 import { useState, useEffect } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,7 @@ interface Lead {
   notes?: string | null;
   status: string;
   source?: string | null;
+  venue_text?: string | null;
 }
 
 interface EditLeadDialogProps {
@@ -60,6 +61,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
     event_type_id: '',
     lead_source_id: '',
     estimated_event_date: '',
+    venue_text: '',
     notes: '',
   });
 
@@ -72,6 +74,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
         event_type_id: lead.event_type_id || '',
         lead_source_id: lead.lead_source_id || '',
         estimated_event_date: lead.estimated_event_date || '',
+        venue_text: lead.venue_text || '',
         notes: lead.notes || '',
       });
     }
@@ -87,6 +90,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
       event_type_id: formData.event_type_id || null,
       lead_source_id: formData.lead_source_id || null,
       estimated_event_date: formData.estimated_event_date || null,
+      venue_text: formData.venue_text || null,
       notes: formData.notes || null,
     });
     
@@ -193,6 +197,19 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
               type="date"
               value={formData.estimated_event_date}
               onChange={(e) => setFormData({ ...formData, estimated_event_date: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit_venue_text" className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              Venue
+            </Label>
+            <Input
+              id="edit_venue_text"
+              value={formData.venue_text}
+              onChange={(e) => setFormData({ ...formData, venue_text: e.target.value })}
+              placeholder="Venue name or address"
             />
           </div>
 

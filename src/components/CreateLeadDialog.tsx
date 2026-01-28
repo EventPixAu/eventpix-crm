@@ -106,6 +106,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   const [eventName, setEventName] = useState('');
   const [eventTypeId, setEventTypeId] = useState('');
   const [leadSourceId, setLeadSourceId] = useState('');
+  const [venueText, setVenueText] = useState('');
   const [notes, setNotes] = useState('');
   
   // Form state - Proposed Sessions (multiple dates/times)
@@ -122,6 +123,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       setEventName('');
       setEventTypeId('');
       setLeadSourceId('');
+      setVenueText('');
       setNotes('');
       setProposedSessions([]);
     }
@@ -221,6 +223,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         event_type_id: eventTypeId || null,
         lead_source_id: leadSourceId || null,
         estimated_event_date: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : null,
+        venue_text: venueText.trim() || null,
         notes: notes.trim() || null,
         status: 'new',
       });
@@ -425,6 +428,15 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Venue name or address"
+                value={venueText}
+                onChange={(e) => setVenueText(e.target.value)}
+                className="flex-1"
+              />
             </div>
           </div>
           

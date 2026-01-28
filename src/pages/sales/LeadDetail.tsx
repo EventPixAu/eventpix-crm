@@ -254,6 +254,7 @@ export default function LeadDetail(): JSX.Element {
               estimated_event_date: lead.estimated_event_date,
               notes: lead.notes,
               source: lead.source,
+              venue_text: (lead as any).venue_text,
             }}
             eventType={eventType}
             leadSource={leadSource}
