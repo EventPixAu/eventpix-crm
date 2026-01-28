@@ -77,6 +77,7 @@ interface Contact {
   role_title: string | null;
   is_primary: boolean | null;
   notes: string | null;
+  tags: string[] | null;
   client_id: string;
   client: { id: string; business_name: string } | null;
 }
@@ -669,6 +670,19 @@ export default function ContactDetail() {
                   <div className="pt-2 border-t">
                     <div className="text-muted-foreground text-xs mb-1">Notes</div>
                     <p className="text-sm">{contact.notes}</p>
+                  </div>
+                )}
+
+                {contact.tags && contact.tags.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <div className="text-muted-foreground text-xs mb-1.5">Tags</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {contact.tags.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
