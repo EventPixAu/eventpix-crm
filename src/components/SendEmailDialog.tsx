@@ -163,9 +163,13 @@ export function SendEmailDialog({
     }
   };
 
-  // Process merge fields in text
+  // Process merge fields in text and convert line breaks to HTML
   const processMergeFields = (text: string): string => {
-    const contactFirstName = recipientName?.split(' ')[0] || clientName?.split(' ')[0] || '';
+    // Prioritize selected contact's first_name, then parse from recipientName
+    const contactFirstName = selectedContact?.first_name 
+      || recipientName?.split(' ')[0] 
+      || clientName?.split(' ')[0] 
+      || '';
     const eventDate = mergeContext?.eventDate 
       ? new Date(mergeContext.eventDate).toLocaleDateString('en-AU', { 
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
@@ -180,7 +184,11 @@ export function SendEmailDialog({
       ? `<a href="${mergeContext.contractSignUrl}" style="display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0;">Sign Contract</a>`
       : '';
 
-    return text
+    // First convert line breaks to <br> for plain text templates
+    let processed = text.replace(/\n/g, '<br>');
+    
+    // Then apply merge field replacements
+    return processed
       // Client merge fields
       .replace(/\{\{client_name\}\}/gi, recipientName || clientName || '')
       .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || clientName || '')
