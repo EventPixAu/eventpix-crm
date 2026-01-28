@@ -9,6 +9,7 @@ export interface EmailLog {
   event_id: string | null;
   quote_id: string | null;
   contract_id: string | null;
+  contact_id: string | null;
   email_type: string;
   template_id: string | null;
   recipient_email: string;
@@ -16,7 +17,7 @@ export interface EmailLog {
   subject: string;
   body_html: string | null;
   body_preview: string | null;
-  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed' | 'received';
   sent_at: string | null;
   delivered_at: string | null;
   opened_at: string | null;
@@ -27,6 +28,11 @@ export interface EmailLog {
   sent_by: string | null;
   created_at: string;
   updated_at: string;
+  // New fields for inbound emails
+  direction: 'inbound' | 'outbound';
+  from_email: string | null;
+  from_name: string | null;
+  in_reply_to: string | null;
   // Joined data
   sent_by_profile?: {
     full_name: string | null;
@@ -172,6 +178,8 @@ export function getEmailStatusInfo(status: EmailLog['status']) {
       return { label: 'Bounced', color: 'text-warning', bgColor: 'bg-warning/10' };
     case 'failed':
       return { label: 'Failed', color: 'text-destructive', bgColor: 'bg-destructive/10' };
+    case 'received':
+      return { label: 'Received', color: 'text-primary', bgColor: 'bg-primary/10' };
     default:
       return { label: status, color: 'text-muted-foreground', bgColor: 'bg-muted' };
   }
