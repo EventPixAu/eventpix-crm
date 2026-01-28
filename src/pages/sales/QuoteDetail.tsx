@@ -257,7 +257,7 @@ export default function QuoteDetail() {
         await createItem.mutateAsync({
           quote_id: id,
           product_id: item.id,
-          description: item.name,
+          description: item.description || item.name,
           quantity: item.quantity,
           unit_price: item.unit_price,
           tax_rate: item.tax_rate,
@@ -282,7 +282,7 @@ export default function QuoteDetail() {
       setNewItem({
         ...newItem,
         product_id: productId,
-        description: product.name,
+        description: product.description || product.name,
         unit_price: product.unit_price,
         tax_rate: product.tax_rate,
       });

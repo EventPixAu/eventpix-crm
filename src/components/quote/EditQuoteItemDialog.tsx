@@ -100,19 +100,21 @@ export function EditQuoteItemDialog({
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          {item?.product && (
+            <div className="pb-3 border-b">
+              <Label className="text-muted-foreground text-xs">Product</Label>
+              <p className="font-medium text-lg">{item.product.name}</p>
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Item description"
-              rows={2}
+              placeholder="Item description - this appears on the quote"
+              rows={3}
             />
-            {item?.product && (
-              <p className="text-xs text-muted-foreground">
-                Product: {item.product.name}
-              </p>
-            )}
           </div>
           
           <div className="grid grid-cols-3 gap-4">
