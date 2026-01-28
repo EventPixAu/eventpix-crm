@@ -520,6 +520,11 @@ export default function EventDetail() {
                 </div>
               </div>
 
+              {/* Mail History */}
+              {isAdmin && id && (
+                <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
+
               {/* Workflow Rail - Admin/Ops Only */}
               {isAdmin && id && (
                 <div className="space-y-2">
@@ -544,11 +549,6 @@ export default function EventDetail() {
                   quoteId={(event as any).quote_id}
                   defaultOpen={false}
                 />
-              )}
-
-              {/* Mail History */}
-              {isAdmin && id && (
-                <MailHistoryPanel eventId={id} maxItems={5} />
               )}
 
               {isAdmin && (
