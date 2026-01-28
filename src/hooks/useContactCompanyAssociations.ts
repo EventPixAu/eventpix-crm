@@ -62,13 +62,15 @@ export function useContactAssociations(contactId: string | undefined) {
 }
 
 // Fetch associations for a specific company (all contacts working with this company)
+// This combines contacts from contact_company_associations AND direct client_id links
 export function useCompanyAssociations(companyId: string | undefined) {
   return useQuery({
     queryKey: ['company-associations', companyId],
     queryFn: async () => {
       if (!companyId) return [];
       
-      const { data, error } = await supabase
+      // 1. Get contacts via contact_company_associations
+      const { data: associations, error: assocError } = await supabase
         .from('contact_company_associations')
         .select(`
           *,
@@ -79,8 +81,52 @@ export function useCompanyAssociations(companyId: string | undefined) {
         .order('is_active', { ascending: false })
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data as ContactCompanyAssociation[];
+      if (assocError) throw assocError;
+      
+      // 2. Get contacts with direct client_id link (not in associations)
+      const associatedContactIds = (associations || []).map(a => a.contact_id);
+      
+      const { data: directContacts, error: directError } = await supabase
+        .from('client_contacts')
+        .select(`
+          id,
+          contact_name,
+          email,
+          phone_mobile,
+          job_title:job_titles(id, name)
+        `)
+        .eq('client_id', companyId);
+      
+      if (directError) throw directError;
+      
+      // Filter out contacts already in associations and create synthetic association records
+      const directOnlyContacts = (directContacts || [])
+        .filter(c => !associatedContactIds.includes(c.id))
+        .map(c => ({
+          id: `direct-${c.id}`, // Synthetic ID for direct links
+          contact_id: c.id,
+          company_id: companyId,
+          relationship_type: 'employee', // Default for direct links
+          job_title_id: null,
+          custom_title: null,
+          is_active: true,
+          is_primary: true, // Direct client_id links are considered primary
+          notes: null,
+          started_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          contact: {
+            id: c.id,
+            contact_name: c.contact_name,
+            email: c.email,
+            phone_mobile: c.phone_mobile,
+          },
+          job_title: c.job_title,
+          _isDirect: true, // Flag to identify direct links
+        } as ContactCompanyAssociation & { _isDirect?: boolean }));
+      
+      // Combine: direct links first (as primary), then associations
+      return [...directOnlyContacts, ...(associations || [])] as ContactCompanyAssociation[];
     },
     enabled: !!companyId,
   });
