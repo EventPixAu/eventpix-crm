@@ -425,6 +425,33 @@ export function useUpdateCrewChecklistItemNote() {
   });
 }
 
+// Delete a single checklist item (admin only)
+export function useDeleteCrewChecklistItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      itemId, 
+      eventId 
+    }: { 
+      itemId: string; 
+      eventId: string;
+    }) => {
+      const { error } = await supabase
+        .from('crew_checklist_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+      return { eventId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['my-crew-checklist', data.eventId] });
+      queryClient.invalidateQueries({ queryKey: ['event-crew-checklists', data.eventId] });
+    },
+  });
+}
+
 // Delete a crew checklist (when removing an assignment)
 export function useDeleteCrewChecklist() {
   const queryClient = useQueryClient();
