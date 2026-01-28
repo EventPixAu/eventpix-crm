@@ -147,7 +147,7 @@ export default function ProposalView() {
                 <div className="bg-gray-800 rounded p-2 inline-block mb-4">
                   <img src={logo} alt="Eventpix" className="h-10 max-w-[180px] object-contain" />
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-black">
                   <p>{settings.business_name || 'Eventpix Photography'}</p>
                   <p>ABN: {settings.business_abn || 'XX XXX XXX XXX'}</p>
                   <p>{settings.business_email || 'hello@eventpix.com.au'}</p>
@@ -155,15 +155,15 @@ export default function ProposalView() {
               </div>
               <div className="text-right">
                 <h1 className="text-3xl font-bold text-primary">PROPOSAL</h1>
-                <p className="text-lg font-medium mt-2">
+                <p className="text-lg font-medium mt-2 text-black">
                   {quote.quote_number || `#${quote.id.slice(0, 8)}`}
-                  {quoteVersion > 1 && <span className="text-muted-foreground ml-2">v{quoteVersion}</span>}
+                  {quoteVersion > 1 && <span className="text-gray-600 ml-2">v{quoteVersion}</span>}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-black mt-1">
                   Date: {quote.created_at ? format(new Date(quote.created_at), 'dd MMMM yyyy') : '—'}
                 </p>
                 {quote.valid_until && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-black">
                     Valid Until: {format(new Date(quote.valid_until), 'dd MMMM yyyy')}
                   </p>
                 )}
@@ -174,28 +174,28 @@ export default function ProposalView() {
 
             {/* Event Details */}
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-muted-foreground print:text-gray-600 uppercase tracking-wide mb-3">
+              <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-3">
                 Event Details
               </h2>
               <div className="grid grid-cols-1 gap-2 text-sm">
                 <div className="flex">
-                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Company:</span>
-                  <span className="text-foreground print:text-black">{clientName || '—'}</span>
+                  <span className="font-medium w-28 text-black">Company:</span>
+                  <span className="text-black">{clientName || '—'}</span>
                 </div>
                 <div className="flex">
-                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Contact:</span>
-                  <span className="text-foreground print:text-black">
+                  <span className="font-medium w-28 text-black">Contact:</span>
+                  <span className="text-black">
                     {clientContactName || '—'}
-                    {clientEmail && <span className="ml-2 text-muted-foreground">({clientEmail})</span>}
+                    {clientEmail && <span className="ml-2">({clientEmail})</span>}
                   </span>
                 </div>
                 <div className="flex">
-                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Event Name:</span>
-                  <span className="text-foreground print:text-black">{leadData?.lead_name || '—'}</span>
+                  <span className="font-medium w-28 text-black">Event Name:</span>
+                  <span className="text-black">{leadData?.lead_name || '—'}</span>
                 </div>
                 <div className="flex">
-                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Event Date:</span>
-                  <span className="text-foreground print:text-black">
+                  <span className="font-medium w-28 text-black">Event Date:</span>
+                  <span className="text-black">
                     {leadData?.event_date ? format(new Date(leadData.event_date), 'dd MMMM yyyy') : '—'}
                   </span>
                 </div>
@@ -205,26 +205,26 @@ export default function ProposalView() {
             {/* Introduction */}
             {(quote as any).intro_text && (
               <div className="mb-8">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-2">
                   Introduction
                 </h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">{(quote as any).intro_text}</p>
+                <p className="text-black whitespace-pre-wrap">{(quote as any).intro_text}</p>
               </div>
             )}
 
             {/* Scope of Work */}
             {(quote as any).scope_text && (
               <div className="mb-8">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-2">
                   Scope of Work
                 </h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">{(quote as any).scope_text}</p>
+                <p className="text-black whitespace-pre-wrap">{(quote as any).scope_text}</p>
               </div>
             )}
 
             {/* Line Items - Grouped or Flat */}
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-muted-foreground print:text-gray-600 uppercase tracking-wide mb-4">
+              <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-4">
                 Services & Pricing
               </h2>
               
@@ -233,7 +233,7 @@ export default function ProposalView() {
                 <div className="space-y-6">
                   {sortedGroupKeys.map((groupKey) => (
                     <div key={groupKey}>
-                      <h3 className="text-sm font-semibold mb-2 text-foreground print:text-black">{groupKey}</h3>
+                      <h3 className="text-sm font-semibold mb-2 text-black">{groupKey}</h3>
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-primary print:bg-primary">
@@ -313,10 +313,10 @@ export default function ProposalView() {
 
             {/* Terms */}
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-2">
                 Terms & Conditions
               </h2>
-              <div className="text-sm text-muted-foreground space-y-2">
+              <div className="text-sm text-black space-y-2">
                 {quote.terms_text ? (
                   <p className="whitespace-pre-wrap">{quote.terms_text}</p>
                 ) : settings.default_terms ? (
@@ -335,10 +335,10 @@ export default function ProposalView() {
             {/* Notes (public notes only - notes_internal is NEVER shown here) */}
             {quote.notes && (
               <div className="mb-8">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-2">
                   Notes
                 </h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">{quote.notes}</p>
+                <p className="text-black whitespace-pre-wrap">{quote.notes}</p>
               </div>
             )}
 
@@ -346,30 +346,30 @@ export default function ProposalView() {
 
             {/* Acceptance Section */}
             <div className="text-center">
-              <p className="text-muted-foreground mb-4">
+              <p className="text-black mb-4">
                 To accept this proposal, please sign below or click the acceptance link sent to your email.
               </p>
               <div className="grid grid-cols-2 gap-8 mt-8 print:mt-16">
                 <div className="text-left">
                   <div className="border-b border-gray-300 pb-2 mb-2">
-                    <span className="text-sm text-muted-foreground">Client Signature</span>
+                    <span className="text-sm text-black">Client Signature</span>
                   </div>
                   <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-muted-foreground">Print Name</span>
+                    <span className="text-sm text-black">Print Name</span>
                   </div>
                   <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-muted-foreground">Date</span>
+                    <span className="text-sm text-black">Date</span>
                   </div>
                 </div>
                 <div className="text-left">
                   <div className="border-b border-gray-300 pb-2 mb-2">
-                    <span className="text-sm text-muted-foreground">Eventpix Representative</span>
+                    <span className="text-sm text-black">Eventpix Representative</span>
                   </div>
                   <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-muted-foreground">Print Name</span>
+                    <span className="text-sm text-black">Print Name</span>
                   </div>
                   <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-muted-foreground">Date</span>
+                    <span className="text-sm text-black">Date</span>
                   </div>
                 </div>
               </div>
