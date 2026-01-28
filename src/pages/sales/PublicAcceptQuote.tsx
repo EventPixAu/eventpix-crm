@@ -252,7 +252,7 @@ export default function PublicAcceptQuote() {
                     </div>
                   </div>
                   <div className="font-medium">
-                    {formatCurrency(item.line_total)}
+                    {formatCurrency(item.quantity * item.unit_price)}
                   </div>
                 </div>
               ))}
