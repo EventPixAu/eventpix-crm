@@ -40,6 +40,7 @@ import {
   Upload,
   Filter,
   X,
+  Tag,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
@@ -82,6 +83,7 @@ interface Contact {
   client_id: string | null;
   is_freelance: boolean | null;
   companies: CompanyAssociation[];
+  tags: string[] | null;
 }
 
 export default function ContactList() {
@@ -89,6 +91,7 @@ export default function ContactList() {
   const [companyFilter, setCompanyFilter] = useState<string>('all');
   const [jobTitleFilter, setJobTitleFilter] = useState<string>('all');
   const [standaloneFilter, setStandaloneFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState<string>('all');
 
   const { data: jobTitles = [] } = useJobTitles();
 
@@ -103,6 +106,25 @@ export default function ContactList() {
         .order('business_name');
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch distinct tags for the filter dropdown
+  const { data: allTags = [] } = useQuery({
+    queryKey: ['crm-contact-tags'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .select('tags')
+        .not('tags', 'is', null);
+      if (error) throw error;
+      
+      // Flatten and deduplicate tags
+      const tagSet = new Set<string>();
+      (data || []).forEach((contact: { tags: string[] | null }) => {
+        (contact.tags || []).forEach((tag: string) => tagSet.add(tag));
+      });
+      return Array.from(tagSet).sort();
     },
   });
 
@@ -277,6 +299,7 @@ export default function ContactList() {
           client_id: contact.client_id,
           is_freelance: contact.is_freelance,
           companies,
+          tags: contact.tags,
         };
       }) as Contact[];
     },
@@ -303,16 +326,23 @@ export default function ContactList() {
         if (standaloneFilter === 'linked' && isStandalone) return false;
       }
 
+      // Tag filter
+      if (tagFilter !== 'all') {
+        const hasTags = contact.tags && contact.tags.includes(tagFilter);
+        if (!hasTags) return false;
+      }
+
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter]);
 
-  const hasActiveFilters = companyFilter !== 'all' || jobTitleFilter !== 'all' || standaloneFilter !== 'all';
+  const hasActiveFilters = companyFilter !== 'all' || jobTitleFilter !== 'all' || standaloneFilter !== 'all' || tagFilter !== 'all';
 
   const clearFilters = () => {
     setCompanyFilter('all');
     setJobTitleFilter('all');
     setStandaloneFilter('all');
+    setTagFilter('all');
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -421,7 +451,22 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
-              {/* Clear Filters */}
+              {/* Tag Filter */}
+              <Select value={tagFilter} onValueChange={setTagFilter}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <Tag className="h-3 w-3 mr-1.5 shrink-0" />
+                  <SelectValue placeholder="All Tags" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-[300px]">
+                  <SelectItem value="all">All Tags</SelectItem>
+                  {allTags.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
