@@ -5360,6 +5360,12 @@ export type Database = {
       }
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: Json }
+      search_contacts_by_tag: {
+        Args: { search_term: string }
+        Returns: {
+          contact_id: string
+        }[]
+      }
       set_user_active: {
         Args: { p_is_active: boolean; p_user_id: string }
         Returns: Json

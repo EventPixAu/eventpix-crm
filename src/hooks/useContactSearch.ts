@@ -53,7 +53,7 @@ export interface CreateContactData {
   notes?: string;
 }
 
-// Search for contacts in CRM
+// Search for contacts in CRM (includes name, email, phone, and tags)
 export function useContactSearch(searchTerm: string) {
   return useQuery({
     queryKey: ['contact-search', searchTerm],
@@ -62,7 +62,8 @@ export function useContactSearch(searchTerm: string) {
 
       const term = `%${searchTerm}%`;
 
-      const { data, error } = await supabase
+      // Search by name, email, phone
+      const { data: textMatches, error: textError } = await supabase
         .from('client_contacts')
         .select(`
           id,
@@ -77,6 +78,7 @@ export function useContactSearch(searchTerm: string) {
           role_title,
           is_freelance,
           client_id,
+          tags,
           job_title:job_titles(id, name),
           client:clients(id, business_name)
         `)
@@ -84,10 +86,54 @@ export function useContactSearch(searchTerm: string) {
         .order('contact_name', { ascending: true })
         .limit(20);
 
-      if (error) throw error;
+      if (textError) throw textError;
+
+      // Search by tags using the database function
+      const { data: tagMatchIds, error: tagError } = await supabase
+        .rpc('search_contacts_by_tag', { search_term: searchTerm });
+
+      if (tagError) {
+        console.warn('Tag search failed:', tagError);
+      }
+
+      // Get full contact data for tag matches not already in textMatches
+      const textMatchIds = new Set(textMatches?.map(c => c.id) || []);
+      const additionalTagIds = (tagMatchIds || [])
+        .filter((r: { contact_id: string }) => !textMatchIds.has(r.contact_id))
+        .map((r: { contact_id: string }) => r.contact_id);
+
+      let tagContacts: typeof textMatches = [];
+      if (additionalTagIds.length > 0) {
+        const { data: tagData } = await supabase
+          .from('client_contacts')
+          .select(`
+            id,
+            contact_name,
+            first_name,
+            last_name,
+            email,
+            phone_mobile,
+            phone_office,
+            phone,
+            job_title_id,
+            role_title,
+            is_freelance,
+            client_id,
+            tags,
+            job_title:job_titles(id, name),
+            client:clients(id, business_name)
+          `)
+          .in('id', additionalTagIds)
+          .order('contact_name', { ascending: true });
+
+        tagContacts = tagData || [];
+      }
+
+      // Combine and deduplicate results
+      const allContacts = [...(textMatches || []), ...tagContacts];
 
       // Fetch company associations for these contacts
-      const contactIds = data?.map(c => c.id) || [];
+      const contactIds = allContacts.map(c => c.id);
       if (contactIds.length > 0) {
         const { data: associations } = await supabase
           .from('contact_company_associations')
@@ -101,13 +147,13 @@ export function useContactSearch(searchTerm: string) {
           .eq('is_active', true);
 
         // Merge associations into contacts
-        return data?.map(contact => ({
+        return allContacts.map(contact => ({
           ...contact,
           companies: associations?.filter(a => a.contact_id === contact.id) || [],
         })) as CrmContact[];
       }
 
-      return data as CrmContact[];
+      return allContacts as CrmContact[];
     },
     enabled: searchTerm.length >= 2,
     staleTime: 30000,
