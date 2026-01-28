@@ -2,7 +2,7 @@
  * AssignmentChecklistPanel - Admin UI to view/edit crew checklist for a specific assignment
  */
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle2, Circle, ListChecks } from 'lucide-react';
+import { ChevronDown, ChevronRight, ListChecks, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import {
   useEventCrewChecklists, 
   useToggleCrewChecklistItem,
   useCreateCrewChecklistForUser,
-  type CrewChecklist,
+  useDeleteCrewChecklistItem,
 } from '@/hooks/useCrewChecklists';
 import type { EventAssignment } from '@/hooks/useEvents';
 
@@ -29,6 +29,7 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
   const { data: checklists = [] } = useEventCrewChecklists(eventId);
   const toggleItem = useToggleCrewChecklistItem();
   const createChecklist = useCreateCrewChecklistForUser();
+  const deleteItem = useDeleteCrewChecklistItem();
   
   // Find checklist for this assignment's user
   const userId = assignment.user_id || (assignment.staff as any)?.user_id;
@@ -58,6 +59,13 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
     await toggleItem.mutateAsync({
       itemId,
       isDone: !currentState,
+      eventId,
+    });
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    await deleteItem.mutateAsync({
+      itemId,
       eventId,
     });
   };
@@ -113,7 +121,7 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
               checklist.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start gap-2 py-1"
+                  className="flex items-start gap-2 py-1 group"
                 >
                   <Checkbox
                     id={item.id}
@@ -130,6 +138,14 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
                   >
                     {item.item_text}
                   </label>
+                  <button
+                    onClick={() => handleDeleteItem(item.id)}
+                    disabled={deleteItem.isPending}
+                    className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-destructive transition-opacity"
+                    title="Remove item"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
                 </div>
               ))
             )}
