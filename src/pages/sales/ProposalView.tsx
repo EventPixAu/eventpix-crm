@@ -131,7 +131,7 @@ export default function ProposalView() {
             {/* Header */}
             <div className="flex items-start justify-between mb-8">
               <div>
-                <img src={logo} alt="Eventpix" className="h-12 mb-4" />
+                <img src={logo} alt="Eventpix" className="h-12 mb-4 max-w-[200px] object-contain" />
                 <div className="text-sm text-muted-foreground">
                   <p>{settings.business_name || 'Eventpix Photography'}</p>
                   <p>ABN: {settings.business_abn || 'XX XXX XXX XXX'}</p>
@@ -157,19 +157,34 @@ export default function ProposalView() {
 
             <Separator className="my-6" />
 
-            {/* Client Info */}
+            {/* Event Details */}
             <div className="mb-8">
-              <h2 className="text-sm font-semibold text-muted-foreground print:text-gray-600 uppercase tracking-wide mb-2">
-                Prepared For
+              <h2 className="text-sm font-semibold text-muted-foreground print:text-gray-600 uppercase tracking-wide mb-3">
+                Event Details
               </h2>
-              <div className="text-lg font-medium print:text-black">{clientName || 'Client'}</div>
-              {clientEmail && <p className="text-muted-foreground print:text-gray-700">{clientEmail}</p>}
-              {clientPhone && <p className="text-muted-foreground print:text-gray-700">{clientPhone}</p>}
-              {leadData && (
-                <p className="text-muted-foreground print:text-gray-700 mt-1">
-                  Re: {leadData.lead_name}
-                </p>
-              )}
+              <div className="grid grid-cols-1 gap-2 text-sm">
+                <div className="flex">
+                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Company:</span>
+                  <span className="text-foreground print:text-black">{clientName || '—'}</span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Contact:</span>
+                  <span className="text-foreground print:text-black">
+                    {clientData?.primary_contact_name || leadData?.client?.primary_contact_name || '—'}
+                    {clientEmail && <span className="ml-2 text-muted-foreground">({clientEmail})</span>}
+                  </span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Event Name:</span>
+                  <span className="text-foreground print:text-black">{leadData?.lead_name || '—'}</span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-28 text-muted-foreground print:text-gray-600">Event Date:</span>
+                  <span className="text-foreground print:text-black">
+                    {leadData?.event_date ? format(new Date(leadData.event_date), 'dd MMMM yyyy') : '—'}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Introduction */}
