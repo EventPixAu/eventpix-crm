@@ -178,35 +178,36 @@ export default function ProposalView() {
       {/* Proposal Content */}
       <div className="max-w-4xl mx-auto p-8 print:p-0 print:max-w-none">
         <Card className="bg-white shadow-lg print:shadow-none print:border-0">
-          <CardContent className="p-8 print:p-12">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-8">
-              <div>
-                <div className="bg-gray-800 rounded p-2 inline-block mb-4">
-                  <img src={logo} alt="Eventpix" className="h-10 max-w-[180px] object-contain" />
-                </div>
+          <CardContent className="p-0 print:p-0">
+            {/* Logo Header Block */}
+            <div className="bg-gray-900 rounded-t-lg p-6 flex items-center justify-center print:bg-gray-900">
+              <img src={logo} alt="Eventpix" className="h-12 max-w-[200px] object-contain" />
+            </div>
+            
+            <div className="p-8 print:p-12">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-8">
                 <div className="text-sm text-black">
                   <p>{settings.business_name || 'Eventpix Photography'}</p>
                   <p>ABN: {settings.business_abn || 'XX XXX XXX XXX'}</p>
                   <p>{settings.business_email || 'hello@eventpix.com.au'}</p>
                 </div>
-              </div>
-              <div className="text-right">
-                <h1 className="text-3xl font-bold text-primary">PROPOSAL</h1>
-                <p className="text-lg font-medium mt-2 text-black">
-                  {quote.quote_number || `#${quote.id.slice(0, 8)}`}
-                  {quoteVersion > 1 && <span className="text-gray-600 ml-2">v{quoteVersion}</span>}
-                </p>
-                <p className="text-sm text-black mt-1">
-                  Date: {quote.created_at ? format(new Date(quote.created_at), 'dd MMMM yyyy') : '—'}
-                </p>
-                {quote.valid_until && (
-                  <p className="text-sm text-black">
-                    Valid Until: {format(new Date(quote.valid_until), 'dd MMMM yyyy')}
+                <div className="text-right">
+                  <h1 className="text-3xl font-bold text-primary">PROPOSAL</h1>
+                  <p className="text-lg font-medium mt-2 text-black">
+                    {quote.quote_number || `#${quote.id.slice(0, 8)}`}
+                    {quoteVersion > 1 && <span className="text-gray-600 ml-2">v{quoteVersion}</span>}
                   </p>
-                )}
+                  <p className="text-sm text-black mt-1">
+                    Date: {quote.created_at ? format(new Date(quote.created_at), 'dd MMMM yyyy') : '—'}
+                  </p>
+                  {quote.valid_until && (
+                    <p className="text-sm text-black">
+                      Valid Until: {format(new Date(quote.valid_until), 'dd MMMM yyyy')}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
 
             <Separator className="my-6" />
 
@@ -331,7 +332,7 @@ export default function ProposalView() {
                 <Table>
                   <TableFooter className="print:bg-gray-100">
                     <TableRow>
-                      <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">Subtotal</TableCell>
+                      <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">Subtotal (ex GST)</TableCell>
                       <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.subtotal || 0)}</TableCell>
                     </TableRow>
                     <TableRow>
@@ -339,7 +340,7 @@ export default function ProposalView() {
                       <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.tax_total || 0)}</TableCell>
                     </TableRow>
                     <TableRow className="bg-primary/10 print:bg-blue-50">
-                      <TableCell colSpan={3} className="text-right text-lg font-bold text-gray-900 print:text-black">Total</TableCell>
+                      <TableCell colSpan={3} className="text-right text-lg font-bold text-gray-900 print:text-black">Total (incl. GST)</TableCell>
                       <TableCell className="text-right text-lg font-bold w-28 text-gray-900 print:text-black">
                         {formatCurrency(quote.total_estimate || 0)}
                       </TableCell>
@@ -407,6 +408,7 @@ export default function ProposalView() {
                   </Button>
                 </div>
               )}
+            </div>
             </div>
           </CardContent>
         </Card>
