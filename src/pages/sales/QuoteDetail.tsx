@@ -26,14 +26,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -53,7 +45,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
 import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
-import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, QuoteItem } from '@/hooks/useQuoteItems';
+import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, useReorderQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,6 +54,7 @@ import { ApplyQuoteTemplateDialog } from '@/components/ApplyQuoteTemplateDialog'
 import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
 import { EditQuoteItemDialog } from '@/components/quote/EditQuoteItemDialog';
+import { SortableQuoteItems } from '@/components/quote/SortableQuoteItems';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
@@ -105,6 +98,7 @@ export default function QuoteDetail() {
   const createItem = useCreateQuoteItem();
   const updateItem = useUpdateQuoteItem();
   const deleteItem = useDeleteQuoteItem();
+  const reorderItems = useReorderQuoteItems();
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
@@ -183,29 +177,6 @@ export default function QuoteDetail() {
   const primaryContactName = clientData?.primary_contact_name || leadData?.client?.primary_contact_name;
   const primaryContactEmail = clientData?.primary_contact_email || leadData?.client?.primary_contact_email;
   const primaryContactPhone = clientData?.primary_contact_phone || leadData?.client?.primary_contact_phone;
-  
-  // Group items by group_label
-  const groupedItems = useMemo(() => {
-    if (!items) return {};
-    return items.reduce((acc, item) => {
-      const group = item.group_label || 'Other';
-      if (!acc[group]) acc[group] = [];
-      acc[group].push(item);
-      return acc;
-    }, {} as Record<string, QuoteItem[]>);
-  }, [items]);
-
-  const sortedGroupKeys = useMemo(() => {
-    const keys = Object.keys(groupedItems);
-    return keys.sort((a, b) => {
-      const indexA = GROUP_LABELS.indexOf(a);
-      const indexB = GROUP_LABELS.indexOf(b);
-      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-      if (indexA === -1) return 1;
-      if (indexB === -1) return -1;
-      return indexA - indexB;
-    });
-  }, [groupedItems]);
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
@@ -301,6 +272,11 @@ export default function QuoteDetail() {
       quote_id: id,
       group_label: groupLabel || null,
     });
+  };
+
+  const handleReorderItems = async (reorderedItems: { id: string; sort_order: number }[]) => {
+    if (!id) return;
+    await reorderItems.mutateAsync({ items: reorderedItems, quote_id: id });
   };
 
   const handleEditItem = async (itemId: string, updates: {
@@ -610,82 +586,15 @@ export default function QuoteDetail() {
                   )}
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="space-y-6">
-                    {sortedGroupKeys.map((groupKey) => (
-                      <div key={groupKey}>
-                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                          {groupKey}
-                        </h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Description</TableHead>
-                              <TableHead className="text-right">Qty</TableHead>
-                              <TableHead className="text-right">Unit Price</TableHead>
-                              <TableHead className="text-right">Tax</TableHead>
-                              <TableHead className="text-right">Total</TableHead>
-                              {!isLocked && <TableHead className="w-[120px]">Group</TableHead>}
-                              {!isLocked && <TableHead className="w-[50px]"></TableHead>}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {groupedItems[groupKey].map((item) => (
-                              <TableRow 
-                                key={item.id}
-                                className={!isLocked ? 'cursor-pointer hover:bg-muted/50' : ''}
-                                onClick={() => !isLocked && setEditingItem(item)}
-                              >
-                                <TableCell>
-                                  <div>
-                                    <div className="font-medium">{item.description}</div>
-                                    {item.product && (
-                                      <div className="text-xs text-muted-foreground">
-                                        Product: {item.product.name}
-                                      </div>
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">{item.quantity}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                                <TableCell className="text-right">{(item.tax_rate * 100).toFixed(0)}%</TableCell>
-                                <TableCell className="text-right font-medium">
-                                  {formatCurrency(item.line_total)}
-                                </TableCell>
-                                {!isLocked && (
-                                  <TableCell onClick={(e) => e.stopPropagation()}>
-                                    <Select
-                                      value={item.group_label || ''}
-                                      onValueChange={(val) => handleItemGroupChange(item.id, val)}
-                                    >
-                                      <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue placeholder="Group" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {GROUP_LABELS.map((label) => (
-                                          <SelectItem key={label} value={label}>{label}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </TableCell>
-                                )}
-                                {!isLocked && (
-                                  <TableCell onClick={(e) => e.stopPropagation()}>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon"
-                                      onClick={() => handleDeleteItem(item.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TableCell>
-                                )}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ))}
-                  </div>
+                  <SortableQuoteItems
+                    items={items || []}
+                    isLocked={isLocked}
+                    formatCurrency={formatCurrency}
+                    onEdit={(item) => setEditingItem(item)}
+                    onDelete={handleDeleteItem}
+                    onGroupChange={handleItemGroupChange}
+                    onReorder={handleReorderItems}
+                  />
                 </CardContent>
               </Card>
             )}
