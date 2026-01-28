@@ -3,7 +3,7 @@
  * 
  * CRM Contacts list with search, filters, and job title display
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +44,22 @@ import {
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
+
+// Handle Google OAuth callback immediately if we're in a popup
+if (typeof window !== 'undefined') {
+  const hash = window.location.hash;
+  if (hash.includes('access_token') && hash.includes('google_contacts_import')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get('access_token');
+    if (accessToken && window.opener) {
+      window.opener.postMessage({
+        type: 'google_oauth_callback',
+        accessToken,
+      }, window.location.origin);
+      window.close();
+    }
+  }
+}
 
 interface CompanyAssociation {
   company_id: string;
