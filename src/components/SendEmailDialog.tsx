@@ -33,6 +33,13 @@ import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
+interface MergeFieldContext {
+  eventName?: string;
+  eventDate?: string;
+  venueName?: string;
+  leadName?: string;
+}
+
 interface SendEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +50,7 @@ interface SendEmailDialogProps {
   relatedContractId?: string;
   defaultSubject?: string;
   context: 'quote' | 'contract';
+  mergeContext?: MergeFieldContext;
 }
 
 export function SendEmailDialog({
@@ -55,6 +63,7 @@ export function SendEmailDialog({
   relatedContractId,
   defaultSubject = '',
   context,
+  mergeContext,
 }: SendEmailDialogProps) {
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
@@ -152,19 +161,43 @@ export function SendEmailDialog({
     }
   };
 
+  // Process merge fields in text
+  const processMergeFields = (text: string): string => {
+    const contactFirstName = recipientName?.split(' ')[0] || clientName?.split(' ')[0] || '';
+    const eventDate = mergeContext?.eventDate 
+      ? new Date(mergeContext.eventDate).toLocaleDateString('en-AU', { 
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+        })
+      : '';
+    
+    return text
+      // Client merge fields
+      .replace(/\{\{client_name\}\}/gi, recipientName || clientName || '')
+      .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || clientName || '')
+      .replace(/\{\{client\.business_name\}\}/gi, clientName || '')
+      // Contact merge fields  
+      .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
+      .replace(/\{\{contact\.name\}\}/gi, recipientName || clientName || '')
+      .replace(/\{\{contact\.email\}\}/gi, recipientEmail || clientEmail || '')
+      // Event merge fields
+      .replace(/\{\{event\.event_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
+      .replace(/\{\{event\.name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
+      .replace(/\{\{event\.event_date\}\}/gi, eventDate)
+      .replace(/\{\{event\.date\}\}/gi, eventDate)
+      .replace(/\{\{event\.venue\}\}/gi, mergeContext?.venueName || '')
+      .replace(/\{\{event\.venue_name\}\}/gi, mergeContext?.venueName || '')
+      // Lead merge fields
+      .replace(/\{\{lead\.name\}\}/gi, mergeContext?.leadName || '')
+      .replace(/\{\{lead_or_job_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '');
+  };
+
   // Apply template when selected
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
     if (template) {
-      // Replace basic placeholders
-      let processedSubject = template.subject
-        .replace(/\{\{client_name\}\}/g, recipientName || clientName || 'Client');
-      let processedBody = template.body_html
-        .replace(/\{\{client_name\}\}/g, recipientName || clientName || 'Client');
-      
-      setSubject(processedSubject);
-      setBody(processedBody);
+      setSubject(processMergeFields(template.subject));
+      setBody(processMergeFields(template.body_html));
     }
   };
 
