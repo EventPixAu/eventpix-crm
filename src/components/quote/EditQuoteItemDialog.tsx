@@ -4,7 +4,8 @@
  * Allows inline editing of quote line item details:
  * description, quantity, unit price, tax rate, group
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { RotateCcw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -108,7 +109,21 @@ export function EditQuoteItemDialog({
           )}
           
           <div className="space-y-2">
-            <Label>Description</Label>
+            <div className="flex items-center justify-between">
+              <Label>Description</Label>
+              {item?.product?.description && item.product.description !== description && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setDescription(item.product!.description || '')}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Reset to Product Description
+                </Button>
+              )}
+            </div>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
