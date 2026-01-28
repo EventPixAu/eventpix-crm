@@ -110,34 +110,32 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
   return (
     <>
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Contacts
-              {associations.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {associations.length}
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setLinkDialogOpen(true)}
-              >
-                <Search className="h-4 w-4 mr-1.5" />
-                Link Existing
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setCreateDialogOpen(true)}
-              >
-                <UserPlus className="h-4 w-4 mr-1.5" />
-                Create New
-              </Button>
-            </div>
+        <CardHeader className="pb-3 space-y-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Contacts
+            {associations.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {associations.length}
+              </Badge>
+            )}
+          </CardTitle>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLinkDialogOpen(true)}
+            >
+              <Search className="h-4 w-4 mr-1.5" />
+              Link Existing
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <UserPlus className="h-4 w-4 mr-1.5" />
+              Create New
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
