@@ -6,11 +6,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface EmailAttachment {
+  filename: string;
+  content: string; // base64 encoded
+  contentType?: string;
+}
+
 interface SendEmailRequest {
   recipientEmail: string;
   recipientName?: string;
   subject: string;
   bodyHtml: string;
+  attachments?: EmailAttachment[];
   // Optional: for logging
   contactId?: string;
   clientId?: string;
@@ -100,6 +107,24 @@ const handler = async (req: Request): Promise<Response> => {
     // Append footer to email body
     const fullBodyHtml = bodyHtml + emailFooter;
 
+    // Build email payload
+    const emailPayload: Record<string, unknown> = {
+      from: "Eventpix <pix@rs.eventpix.com.au>",
+      to: [recipientEmail],
+      subject: subject,
+      html: fullBodyHtml,
+    };
+
+    // Add attachments if provided
+    if (body.attachments && body.attachments.length > 0) {
+      emailPayload.attachments = body.attachments.map((att: EmailAttachment) => ({
+        filename: att.filename,
+        content: att.content,
+        content_type: att.contentType,
+      }));
+      console.log(`Adding ${body.attachments.length} attachment(s) to email`);
+    }
+
     // Send via Resend
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -107,12 +132,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${resendKey}`,
       },
-      body: JSON.stringify({
-        from: "Eventpix <pix@rs.eventpix.com.au>",
-        to: [recipientEmail],
-        subject: subject,
-        html: fullBodyHtml,
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
     const resendResult = await resendResponse.json();

@@ -6,9 +6,9 @@
  * Logs communication to email_logs and contact_activities tables.
  * Uses ContactSelector for CRM-linked recipient selection.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
-import { Mail, Send, Eye } from 'lucide-react';
+import { Mail, Send, Eye, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
-import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
+import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
@@ -67,6 +67,8 @@ export function SendEmailDialog({
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update recipient when clientEmail changes (for legacy/fallback)
   useEffect(() => {
@@ -87,11 +89,54 @@ export function SendEmailDialog({
       setSubject(defaultSubject);
       setBody('');
       setShowPreview(false);
+      setAttachments([]);
       // Restore default recipient
       setRecipientEmail(clientEmail || '');
       setRecipientName(clientName || '');
     }
   }, [open, defaultSubject, clientEmail, clientName]);
+
+  // Handle file selection
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments: EmailAttachment[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // Limit file size to 10MB
+      if (file.size > 10 * 1024 * 1024) {
+        continue; // Skip files over 10MB
+      }
+      
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          // Remove the data URL prefix to get just the base64 content
+          resolve(result.split(',')[1]);
+        };
+        reader.readAsDataURL(file);
+      });
+      
+      newAttachments.push({
+        filename: file.name,
+        content: base64,
+        contentType: file.type,
+      });
+    }
+    
+    setAttachments((prev) => [...prev, ...newAttachments]);
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Handle contact selection
   const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
@@ -133,6 +178,7 @@ export function SendEmailDialog({
       recipientName: recipientName || undefined,
       subject,
       bodyHtml: body,
+      attachments: attachments.length > 0 ? attachments : undefined,
       contactId: selectedContactId || undefined,
       clientId: clientId || undefined,
       templateId: selectedTemplateId || undefined,
@@ -241,6 +287,48 @@ export function SendEmailDialog({
               </p>
             </div>
 
+            {/* Attachments */}
+            <div className="space-y-2">
+              <Label>Attachments</Label>
+              <div className="flex flex-wrap gap-2">
+                {attachments.map((att, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-sm"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    <span className="max-w-[150px] truncate">{att.filename}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(index)}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="h-4 w-4 mr-2" />
+                Add Attachment
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Max 10MB per file
+              </p>
+            </div>
+
           </div>
         ) : (
           <div className="py-4">
@@ -252,6 +340,14 @@ export function SendEmailDialog({
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
+                {attachments.length > 0 && (
+                  <div className="text-sm flex items-center gap-2">
+                    <span className="font-medium">Attachments:</span>
+                    <span className="text-muted-foreground">
+                      {attachments.map(a => a.filename).join(', ')}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="border-t pt-4">
                 <div 
