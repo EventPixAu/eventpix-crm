@@ -6,7 +6,7 @@
  * - Company link
  * - Activity timeline (emails, calls, meetings)
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
@@ -59,6 +59,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
+import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { useToast } from '@/hooks/use-toast';
 import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
@@ -148,7 +149,55 @@ export default function ContactDetail() {
     enabled: !!id,
   });
 
-  // Create contact mutation
+  // Fetch email logs after contact is loaded (needs email address for matching)
+  const { data: emailLogs = [], isLoading: emailsLoading } = useContactEmailLogs(id, contact?.email);
+
+  // Combine activities and email logs into unified timeline
+  const combinedTimeline = useMemo(() => {
+    const items: Array<{
+      id: string;
+      type: 'activity' | 'email_log';
+      activity_type: string;
+      date: string;
+      subject: string | null;
+      notes: string | null;
+      source?: 'manual' | 'sent';
+      event_id?: string | null;
+    }> = [];
+
+    // Add manual activities
+    activities.forEach(a => {
+      items.push({
+        id: a.id,
+        type: 'activity',
+        activity_type: a.activity_type,
+        date: a.activity_date,
+        subject: a.subject,
+        notes: a.notes,
+        source: 'manual',
+      });
+    });
+
+    // Add email logs (sent emails)
+    emailLogs.forEach(e => {
+      items.push({
+        id: e.id,
+        type: 'email_log',
+        activity_type: 'email',
+        date: e.sent_at || e.created_at,
+        subject: e.subject,
+        notes: e.body_preview,
+        source: 'sent',
+        event_id: e.event_id,
+      });
+    });
+
+    // Sort by date descending
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return items;
+  }, [activities, emailLogs]);
+
   const createContact = useMutation({
     mutationFn: async (data: {
       first_name: string;
@@ -655,17 +704,17 @@ export default function ContactDetail() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Activity Timeline</CardTitle>
-              <Badge variant="secondary">{activities.length}</Badge>
+              <Badge variant="secondary">{combinedTimeline.length}</Badge>
             </div>
           </CardHeader>
           <CardContent>
-            {activitiesLoading ? (
+            {activitiesLoading || emailsLoading ? (
               <div className="space-y-4">
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
               </div>
-            ) : activities.length === 0 ? (
+            ) : combinedTimeline.length === 0 ? (
               <div className="text-center py-12">
                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">No activities logged yet</p>
@@ -685,39 +734,52 @@ export default function ContactDetail() {
                 <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
                 
                 <div className="space-y-4">
-                  {activities.map((activity) => (
-                    <div key={activity.id} className="relative pl-10">
+                  {combinedTimeline.map((item) => (
+                    <div key={item.id} className="relative pl-10">
                       {/* Timeline dot */}
-                      <div className="absolute left-2 top-2 w-5 h-5 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                        {getActivityIcon(activity.activity_type)}
+                      <div className={cn(
+                        "absolute left-2 top-2 w-5 h-5 rounded-full bg-background border-2 flex items-center justify-center",
+                        item.source === 'sent' ? "border-success" : "border-primary"
+                      )}>
+                        {getActivityIcon(item.activity_type)}
                       </div>
                       
                       <div className="p-3 rounded-lg border hover:bg-muted/50 transition-colors group">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="text-xs">
-                                {getActivityLabel(activity.activity_type)}
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <Badge variant={item.source === 'sent' ? 'default' : 'outline'} className="text-xs">
+                                {item.source === 'sent' ? 'Email Sent' : getActivityLabel(item.activity_type)}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {format(parseISO(activity.activity_date), 'MMM d, yyyy · h:mm a')}
+                                {format(parseISO(item.date), 'MMM d, yyyy · h:mm a')}
                               </span>
+                              {item.event_id && (
+                                <Link 
+                                  to={`/events/${item.event_id}`}
+                                  className="text-xs text-primary hover:underline"
+                                >
+                                  View Event
+                                </Link>
+                              )}
                             </div>
-                            {activity.subject && (
-                              <p className="font-medium text-sm">{activity.subject}</p>
+                            {item.subject && (
+                              <p className="font-medium text-sm">{item.subject}</p>
                             )}
-                            {activity.notes && (
-                              <p className="text-sm text-muted-foreground mt-1">{activity.notes}</p>
+                            {item.notes && (
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.notes}</p>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => deleteActivity.mutate({ id: activity.id, contactId: id! })}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {item.type === 'activity' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => deleteActivity.mutate({ id: item.id, contactId: id! })}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
