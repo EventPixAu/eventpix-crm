@@ -1368,10 +1368,14 @@ export type Database = {
           contract_id: string | null
           created_at: string
           delivered_at: string | null
+          direction: string
           email_type: string
           error_message: string | null
           event_id: string | null
+          from_email: string | null
+          from_name: string | null
           id: string
+          in_reply_to: string | null
           lead_id: string | null
           open_count: number | null
           opened_at: string | null
@@ -1395,10 +1399,14 @@ export type Database = {
           contract_id?: string | null
           created_at?: string
           delivered_at?: string | null
+          direction?: string
           email_type: string
           error_message?: string | null
           event_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
           id?: string
+          in_reply_to?: string | null
           lead_id?: string | null
           open_count?: number | null
           opened_at?: string | null
@@ -1422,10 +1430,14 @@ export type Database = {
           contract_id?: string | null
           created_at?: string
           delivered_at?: string | null
+          direction?: string
           email_type?: string
           error_message?: string | null
           event_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
           id?: string
+          in_reply_to?: string | null
           lead_id?: string | null
           open_count?: number | null
           opened_at?: string | null
@@ -1466,6 +1478,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_in_reply_to_fkey"
+            columns: ["in_reply_to"]
+            isOneToOne: false
+            referencedRelation: "email_logs"
             referencedColumns: ["id"]
           },
           {

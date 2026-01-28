@@ -12,6 +12,8 @@ import {
   CheckCircle,
   Clock,
   ExternalLink,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -75,25 +77,47 @@ function EmailLogItem({ log }: { log: EmailLog }) {
   const TypeIcon = getEmailTypeIcon(log.email_type);
   const StatusIcon = getStatusIcon(log.status);
   const statusInfo = getEmailStatusInfo(log.status);
+  const isInbound = log.direction === 'inbound';
+  const DirectionIcon = isInbound ? ArrowDownLeft : ArrowUpRight;
   
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+      className={cn(
+        "flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors",
+        isInbound && "bg-primary/5"
+      )}
     >
-      {/* Type Icon */}
-      <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+      {/* Type Icon with Direction Indicator */}
+      <div className={cn(
+        "p-2 rounded-lg shrink-0 relative",
+        isInbound ? "bg-primary/20" : "bg-primary/10"
+      )}>
         <TypeIcon className="h-4 w-4 text-primary" />
+        <DirectionIcon className={cn(
+          "h-3 w-3 absolute -bottom-1 -right-1 rounded-full p-0.5",
+          isInbound ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+        )} />
       </div>
       
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{log.subject}</p>
+            <div className="flex items-center gap-1.5">
+              {isInbound && (
+                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-primary/10 text-primary border-primary/30">
+                  Reply
+                </Badge>
+              )}
+              <p className="text-sm font-medium truncate">{log.subject}</p>
+            </div>
             <p className="text-xs text-muted-foreground truncate">
-              To: {log.recipient_name ? `${log.recipient_name} <${log.recipient_email}>` : log.recipient_email}
+              {isInbound 
+                ? `From: ${log.from_name ? `${log.from_name} <${log.from_email}>` : log.from_email}`
+                : `To: ${log.recipient_name ? `${log.recipient_name} <${log.recipient_email}>` : log.recipient_email}`
+              }
             </p>
           </div>
           
