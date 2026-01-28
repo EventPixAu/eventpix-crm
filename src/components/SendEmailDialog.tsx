@@ -2,8 +2,8 @@
  * SEND EMAIL DIALOG
  * 
  * Reusable dialog for sending emails from quotes or contracts.
- * Uses placeholder/simulated sending - no actual email provider.
- * Logs communication to client_communications table.
+ * Sends real emails via Resend through the send-crm-email edge function.
+ * Logs communication to email_logs and contact_activities tables.
  * Uses ContactSelector for CRM-linked recipient selection.
  */
 import { useState, useEffect } from 'react';
@@ -28,10 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useActiveEmailTemplates, EmailTemplate } from '@/hooks/useEmailTemplates';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/lib/auth';
+import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
+import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
@@ -58,9 +56,8 @@ export function SendEmailDialog({
   defaultSubject = '',
   context,
 }: SendEmailDialogProps) {
-  const { toast } = useToast();
-  const { user } = useAuth();
   const { data: templates } = useActiveEmailTemplates();
+  const sendEmail = useSendCrmEmail();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -70,7 +67,6 @@ export function SendEmailDialog({
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
-  const [sending, setSending] = useState(false);
 
   // Update recipient when clientEmail changes (for legacy/fallback)
   useEffect(() => {
@@ -129,59 +125,22 @@ export function SendEmailDialog({
 
   const handleSend = async () => {
     if (!recipientEmail || !subject) {
-      toast({ 
-        title: 'Missing required fields', 
-        description: 'Please enter recipient email and subject.',
-        variant: 'destructive' 
-      });
       return;
     }
 
-    setSending(true);
-    try {
-      // PLACEHOLDER: Simulate email sending
-      // In production, this would call an edge function with Resend
-      console.log('[EMAIL PLACEHOLDER] Would send email:', {
-        to: recipientEmail,
-        subject,
-        body,
-        relatedQuoteId,
-        relatedContractId,
-        contactId: selectedContactId,
-      });
-
-      // Log the communication
-      const { error } = await supabase
-        .from('client_communications')
-        .insert({
-          client_id: clientId,
-          communication_type: 'email',
-          subject,
-          summary: `Email sent to ${recipientEmail}. [SIMULATED - Email provider not configured]`,
-          related_quote_id: relatedQuoteId || null,
-          related_contract_id: relatedContractId || null,
-          email_template_id: selectedTemplateId || null,
-          logged_by: user?.id,
-          status: 'sent_simulated',
-        });
-
-      if (error) throw error;
-
-      toast({ 
-        title: 'Email logged (simulated)', 
-        description: 'Email sending is not configured. Communication has been logged for tracking.' 
-      });
-      
-      onOpenChange(false);
-    } catch (err: any) {
-      toast({ 
-        title: 'Failed to log email', 
-        description: err.message, 
-        variant: 'destructive' 
-      });
-    } finally {
-      setSending(false);
-    }
+    sendEmail.mutate({
+      recipientEmail,
+      recipientName: recipientName || undefined,
+      subject,
+      bodyHtml: body,
+      contactId: selectedContactId || undefined,
+      clientId: clientId || undefined,
+      templateId: selectedTemplateId || undefined,
+    }, {
+      onSuccess: () => {
+        onOpenChange(false);
+      }
+    });
   };
 
   return (
@@ -282,11 +241,6 @@ export function SendEmailDialog({
               </p>
             </div>
 
-            {/* Placeholder Notice */}
-            <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg text-warning-foreground text-sm">
-              <strong>Note:</strong> Email sending is not configured. This will log the communication 
-              for tracking purposes but won't actually send an email.
-            </div>
           </div>
         ) : (
           <div className="py-4">
@@ -315,8 +269,8 @@ export function SendEmailDialog({
               <Button variant="outline" onClick={() => setShowPreview(false)}>
                 Edit
               </Button>
-              <Button onClick={handleSend} disabled={sending}>
-                {sending ? 'Sending...' : 'Send Email'}
+              <Button onClick={handleSend} disabled={sendEmail.isPending}>
+                {sendEmail.isPending ? 'Sending...' : 'Send Email'}
               </Button>
             </>
           ) : (
@@ -328,9 +282,9 @@ export function SendEmailDialog({
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              <Button onClick={handleSend} disabled={sending || !recipientEmail || !subject}>
+              <Button onClick={handleSend} disabled={sendEmail.isPending || !recipientEmail || !subject}>
                 <Send className="h-4 w-4 mr-2" />
-                {sending ? 'Sending...' : 'Send'}
+                {sendEmail.isPending ? 'Sending...' : 'Send'}
               </Button>
             </>
           )}
