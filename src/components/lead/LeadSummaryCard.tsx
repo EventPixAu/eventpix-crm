@@ -5,16 +5,16 @@
  * - Lead name with status indicator
  * - Type, Workflow, Main Shoot dates
  * - Lead source
- * - Archive, Delete actions (read-only after creation)
+ * - Edit, Archive, Delete actions
  */
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Lock } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUpdateLead } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
+import { EditLeadDialog } from '@/components/EditLeadDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -162,12 +162,17 @@ export function LeadSummaryCard({
           </div>
         </div>
 
-        {/* Actions - Lead details are read-only after creation */}
+        {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
-          <Badge variant="outline" className="text-muted-foreground gap-1">
-            <Lock className="h-3 w-3" />
-            Read-only
-          </Badge>
+          <EditLeadDialog
+            lead={lead}
+            trigger={
+              <Button variant="outline" size="sm">
+                <Pencil className="h-4 w-4 mr-1.5" />
+                Edit
+              </Button>
+            }
+          />
           
           <div className="flex-1" />
           
