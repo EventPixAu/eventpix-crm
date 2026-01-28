@@ -1074,8 +1074,8 @@ export default function QuoteDetail() {
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
         clientId={quote.client_id}
-        clientEmail={clientData?.email}
-        clientName={clientName}
+        clientEmail={primaryContactEmail}
+        clientName={primaryContactName || clientName}
         relatedQuoteId={quote.id}
         defaultSubject={`Quote: ${quote.quote_number || quote.id.slice(0, 8)}`}
         context="quote"
