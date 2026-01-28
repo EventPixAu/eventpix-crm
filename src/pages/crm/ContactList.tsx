@@ -126,47 +126,109 @@ export default function ContactList() {
           is_primary,
           client_id,
           is_freelance,
+          tags,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
 
+      // Text-based search (name, email)
       if (search) {
         query = query.or(
           `contact_name.ilike.%${search}%,email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`
         );
       }
 
-      const { data, error } = await query;
+      const { data: textMatches, error } = await query;
       if (error) throw error;
 
+      // Also search by tags using the database function
+      let tagMatchIds: string[] = [];
+      if (search && search.length >= 2) {
+        const { data: tagResults, error: tagError } = await supabase
+          .rpc('search_contacts_by_tag', { search_term: search });
+        
+        if (!tagError && tagResults) {
+          tagMatchIds = tagResults.map((r: { contact_id: string }) => r.contact_id);
+        }
+      }
+
+      // Combine: get any tag matches not already in text results
+      const textMatchIds = new Set((textMatches || []).map((c: any) => c.id));
+      const additionalTagIds = tagMatchIds.filter(id => !textMatchIds.has(id));
+
+      let allContacts = textMatches || [];
+
+      // Fetch additional contacts that matched by tag but not by text
+      if (additionalTagIds.length > 0) {
+        const { data: tagContacts } = await supabase
+          .from('client_contacts')
+          .select(`
+            id,
+            contact_name,
+            first_name,
+            last_name,
+            email,
+            phone,
+            phone_mobile,
+            job_title_id,
+            job_title:job_titles(id, name),
+            role_title,
+            is_primary,
+            client_id,
+            is_freelance,
+            tags,
+            clients(id, business_name, is_training)
+          `)
+          .in('id', additionalTagIds)
+          .order('contact_name');
+
+        if (tagContacts) {
+          allContacts = [...allContacts, ...tagContacts];
+        }
+      }
+
       // Filter out training company contacts
-      const filteredData = (data || []).filter((contact: any) => {
+      const filteredData = allContacts.filter((contact: any) => {
         if (contact.client_id && contact.clients?.is_training) {
           return false;
         }
         return true;
       });
 
-      // Fetch ALL company associations for all contacts
+      // Fetch company associations in batches to avoid URL length issues
       const contactIds = filteredData.map((c: any) => c.id);
       
       let associationsMap: Record<string, CompanyAssociation[]> = {};
 
       if (contactIds.length > 0) {
-        const { data: associations } = await supabase
-          .from('contact_company_associations')
-          .select(`
-            contact_id,
-            company_id,
-            is_primary,
-            company:clients(id, business_name)
-          `)
-          .in('contact_id', contactIds)
-          .eq('is_active', true)
-          .order('is_primary', { ascending: false });
+        // Batch the request to avoid URL length limits (max ~100 IDs per batch)
+        const batchSize = 100;
+        const batches = [];
+        for (let i = 0; i < contactIds.length; i += batchSize) {
+          batches.push(contactIds.slice(i, i + batchSize));
+        }
+
+        const allAssociations: any[] = [];
+        for (const batch of batches) {
+          const { data: associations } = await supabase
+            .from('contact_company_associations')
+            .select(`
+              contact_id,
+              company_id,
+              is_primary,
+              company:clients(id, business_name)
+            `)
+            .in('contact_id', batch)
+            .eq('is_active', true)
+            .order('is_primary', { ascending: false });
+
+          if (associations) {
+            allAssociations.push(...associations);
+          }
+        }
 
         // Build a map of contact_id -> all companies
-        (associations || []).forEach((assoc: any) => {
+        allAssociations.forEach((assoc: any) => {
           if (!associationsMap[assoc.contact_id]) {
             associationsMap[assoc.contact_id] = [];
           }
