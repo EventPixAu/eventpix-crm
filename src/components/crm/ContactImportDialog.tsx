@@ -39,7 +39,7 @@ import {
   Phone,
   Briefcase,
 } from 'lucide-react';
-import { useContactImport, parseCSV, parseGoogleContacts, ImportedContact } from '@/hooks/useContactImport';
+import { useContactImport, parseCSV, parseGoogleContactsWithGroups, fetchGoogleContactGroups, ImportedContact } from '@/hooks/useContactImport';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContactImportDialogProps {
@@ -92,8 +92,11 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
         // Otherwise, we're the main window - fetch contacts directly
         setIsGoogleLoading(true);
         try {
+          // Fetch contact groups first to resolve label names
+          const groupMap = await fetchGoogleContactGroups(accessToken);
+          
           const response = await fetch(
-            'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations,addresses&pageSize=1000',
+            'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations,addresses,memberships,biographies&pageSize=1000',
             {
               headers: { Authorization: `Bearer ${accessToken}` },
             }
@@ -104,7 +107,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           }
 
           const data = await response.json();
-          const parsed = parseGoogleContacts(data.connections || []);
+          const parsed = parseGoogleContactsWithGroups(data.connections || [], groupMap);
           
           if (parsed.length === 0) {
             toast({
@@ -238,10 +241,13 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           return;
         }
 
-        // Fetch contacts from Google People API
+        // Fetch contacts from Google People API with labels
         try {
+          // Fetch contact groups first to resolve label names
+          const groupMap = await fetchGoogleContactGroups(accessToken);
+          
           const response = await fetch(
-            'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations,addresses&pageSize=1000',
+            'https://people.googleapis.com/v1/people/me/connections?personFields=names,emailAddresses,phoneNumbers,organizations,addresses,memberships,biographies&pageSize=1000',
             {
               headers: { Authorization: `Bearer ${accessToken}` },
             }
@@ -252,7 +258,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           }
 
           const data = await response.json();
-          const parsed = parseGoogleContacts(data.connections || []);
+          const parsed = parseGoogleContactsWithGroups(data.connections || [], groupMap);
           
           if (parsed.length === 0) {
             toast({
@@ -351,10 +357,11 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
     const companiesSet = new Set(contacts.filter(c => c.companyName).map(c => c.companyName!.toLowerCase()));
     const withEmail = contacts.filter(c => c.email).length;
     const withCompany = contacts.filter(c => c.companyName).length;
+    const withTags = contacts.filter(c => c.tags && c.tags.length > 0).length;
 
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-4 text-center">
               <User className="h-8 w-8 mx-auto text-primary mb-2" />
@@ -374,6 +381,13 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
               <Mail className="h-8 w-8 mx-auto text-primary mb-2" />
               <div className="text-2xl font-bold">{withEmail}</div>
               <div className="text-sm text-muted-foreground">With Email</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4 text-center">
+              <div className="h-8 w-8 mx-auto text-primary mb-2 flex items-center justify-center text-lg font-bold">#</div>
+              <div className="text-2xl font-bold">{withTags}</div>
+              <div className="text-sm text-muted-foreground">With Tags</div>
             </CardContent>
           </Card>
         </div>
@@ -396,8 +410,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                   <TableHead>Email</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Job Title</TableHead>
-                  <TableHead>Lead Source</TableHead>
-                  <TableHead>Industry</TableHead>
+                  <TableHead>Tags</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -435,10 +448,20 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                       ) : '—'}
                     </TableCell>
                     <TableCell>
-                      {contact.leadSource || '—'}
-                    </TableCell>
-                    <TableCell>
-                      {contact.industry || '—'}
+                      {contact.tags && contact.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {contact.tags.slice(0, 3).map((tag, tagIdx) => (
+                            <Badge key={tagIdx} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {contact.tags.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{contact.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : '—'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -513,6 +536,11 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Contacts Created</span>
                 <Badge>{importResult.contactsCreated}</Badge>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Contacts Updated</span>
+                <Badge variant="secondary">{importResult.contactsUpdated}</Badge>
               </div>
               <Separator className="my-2" />
               <div className="flex items-center justify-between">

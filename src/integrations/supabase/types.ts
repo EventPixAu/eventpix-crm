@@ -354,6 +354,7 @@ export type Database = {
           relationship_type_id: string | null
           role: string | null
           role_title: string | null
+          tags: string[] | null
         }
         Insert: {
           client_id?: string | null
@@ -376,6 +377,7 @@ export type Database = {
           relationship_type_id?: string | null
           role?: string | null
           role_title?: string | null
+          tags?: string[] | null
         }
         Update: {
           client_id?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           relationship_type_id?: string | null
           role?: string | null
           role_title?: string | null
+          tags?: string[] | null
         }
         Relationships: [
           {
