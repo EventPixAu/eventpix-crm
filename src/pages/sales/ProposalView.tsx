@@ -25,6 +25,7 @@ import {
 import { useQuote } from '@/hooks/useSales';
 import { useQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import { useSiteSettingsMap } from '@/hooks/useSiteSettings';
+import { useLeadContacts } from '@/hooks/useLeadContacts';
 import logo from '@/assets/eventpix-logo.png';
 
 const GROUP_LABELS = [
@@ -47,11 +48,25 @@ export default function ProposalView() {
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
   
+  // Fetch lead contacts for primary contact info
+  const { data: leadContacts } = useLeadContacts(leadData?.id);
+  
   // Resolve client details: prioritize direct client, fallback to lead's client
   const resolvedClient = clientData || leadData?.client;
   const clientName = resolvedClient?.business_name;
-  const clientContactName = resolvedClient?.primary_contact_name || leadData?.contact_name;
-  const clientEmail = resolvedClient?.primary_contact_email || leadData?.contact_email;
+  
+  // Get primary contact from lead contacts first, then fallback to client data
+  const primaryLeadContact = leadContacts?.find(c => c.role === 'primary') || leadContacts?.[0];
+  const clientContactName = primaryLeadContact?.client_contact?.contact_name 
+    || primaryLeadContact?.contact_name 
+    || resolvedClient?.primary_contact_name;
+  const clientEmail = primaryLeadContact?.client_contact?.email 
+    || primaryLeadContact?.contact_email 
+    || resolvedClient?.primary_contact_email;
+  
+  // Get event date from sessions or estimated_event_date
+  const eventSessions = leadData?.event_sessions;
+  const eventDate = eventSessions?.[0]?.session_date || leadData?.estimated_event_date;
   
   // Helper to get item display text (product name or description)
   const getItemDisplayText = (item: QuoteItem) => {
@@ -196,7 +211,7 @@ export default function ProposalView() {
                 <div className="flex">
                   <span className="font-medium w-28 text-black">Event Date:</span>
                   <span className="text-black">
-                    {leadData?.event_date ? format(new Date(leadData.event_date), 'dd MMMM yyyy') : '—'}
+                    {eventDate ? format(new Date(eventDate), 'dd MMMM yyyy') : '—'}
                   </span>
                 </div>
               </div>
