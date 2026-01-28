@@ -9,7 +9,7 @@
  */
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Pencil } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUpdateLead } from '@/hooks/useSales';
@@ -38,6 +38,7 @@ interface LeadSummaryCardProps {
     estimated_event_date?: string | null;
     notes?: string | null;
     source?: string | null;
+    venue_text?: string | null;
   };
   eventType?: { id: string; name: string } | null;
   leadSource?: { id: string; name: string } | null;
@@ -149,6 +150,17 @@ export function LeadSummaryCard({
                 <span className="text-muted-foreground">Not set</span>
               )}
             </div>
+          </div>
+          
+          {/* Venue */}
+          <div className="flex justify-between items-start">
+            <span className="text-muted-foreground flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              Venue
+            </span>
+            <span className="font-medium text-right max-w-[60%]">
+              {(lead as any).venue_text || '—'}
+            </span>
           </div>
           
           <div className="flex justify-between items-center">
