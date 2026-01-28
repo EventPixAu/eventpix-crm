@@ -37,13 +37,15 @@ export interface ContactCompanyAssociation {
 }
 
 // Fetch associations for a specific contact
+// This combines associations from contact_company_associations AND the direct client_id link
 export function useContactAssociations(contactId: string | undefined) {
   return useQuery({
     queryKey: ['contact-associations', contactId],
     queryFn: async () => {
       if (!contactId) return [];
       
-      const { data, error } = await supabase
+      // 1. Get associations from the junction table
+      const { data: associations, error: assocError } = await supabase
         .from('contact_company_associations')
         .select(`
           *,
@@ -54,8 +56,53 @@ export function useContactAssociations(contactId: string | undefined) {
         .order('is_active', { ascending: false })
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data as ContactCompanyAssociation[];
+      if (assocError) throw assocError;
+      
+      // 2. Get the contact's direct client_id link (primary company)
+      const { data: contact, error: contactError } = await supabase
+        .from('client_contacts')
+        .select(`
+          client_id,
+          job_title:job_titles(id, name),
+          client:clients(id, business_name)
+        `)
+        .eq('id', contactId)
+        .single();
+      
+      if (contactError && contactError.code !== 'PGRST116') throw contactError;
+      
+      // If contact has a direct client_id, add it as a primary association
+      const allAssociations: ContactCompanyAssociation[] = [];
+      
+      if (contact?.client_id && contact?.client) {
+        // Check if this company is already in associations
+        const alreadyLinked = (associations || []).some(a => a.company_id === contact.client_id);
+        
+        if (!alreadyLinked) {
+          // Add as a synthetic "primary" association
+          allAssociations.push({
+            id: `direct-${contact.client_id}`,
+            contact_id: contactId,
+            company_id: contact.client_id,
+            relationship_type: 'employee',
+            job_title_id: null,
+            custom_title: null,
+            is_active: true,
+            is_primary: true,
+            notes: null,
+            started_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            company: contact.client,
+            job_title: contact.job_title,
+          } as ContactCompanyAssociation);
+        }
+      }
+      
+      // Add remaining associations
+      allAssociations.push(...(associations || []));
+      
+      return allAssociations;
     },
     enabled: !!contactId,
   });
