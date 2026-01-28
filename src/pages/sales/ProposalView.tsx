@@ -231,10 +231,10 @@ export default function ProposalView() {
                         <TableBody>
                           {groupedItems[groupKey].map((item) => (
                             <TableRow key={item.id} className="print:border-b print:border-gray-300">
-                              <TableCell className="text-foreground print:!text-black" style={{ color: 'inherit' }}>{item.description}</TableCell>
-                              <TableCell className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>{item.quantity}</TableCell>
-                              <TableCell className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>{formatCurrency(item.unit_price)}</TableCell>
-                              <TableCell className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                              <TableCell className="text-gray-900 print:text-black">{item.description}</TableCell>
+                              <TableCell className="text-right text-gray-900 print:text-black">{item.quantity}</TableCell>
+                              <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.unit_price)}</TableCell>
+                              <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -256,10 +256,10 @@ export default function ProposalView() {
                   <TableBody>
                     {items?.map((item) => (
                       <TableRow key={item.id} className="print:border-b print:border-gray-300">
-                        <TableCell className="text-foreground print:!text-black" style={{ color: 'inherit' }}>{item.description}</TableCell>
-                        <TableCell className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>{item.quantity}</TableCell>
-                        <TableCell className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>{formatCurrency(item.unit_price)}</TableCell>
-                        <TableCell className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>{formatCurrency(item.quantity * item.unit_price)}</TableCell>
+                        <TableCell className="text-gray-900 print:text-black">{item.description}</TableCell>
+                        <TableCell className="text-right text-gray-900 print:text-black">{item.quantity}</TableCell>
+                        <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
                       </TableRow>
                     ))}
                     {(!items || items.length === 0) && (
@@ -278,16 +278,16 @@ export default function ProposalView() {
                 <Table>
                   <TableFooter className="print:bg-gray-100">
                     <TableRow>
-                      <TableCell colSpan={3} className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>Subtotal</TableCell>
-                      <TableCell className="text-right w-28 text-foreground print:!text-black" style={{ color: 'inherit' }}>{formatCurrency(quote.subtotal || 0)}</TableCell>
+                      <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">Subtotal</TableCell>
+                      <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.subtotal || 0)}</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={3} className="text-right text-foreground print:!text-black" style={{ color: 'inherit' }}>GST (10%)</TableCell>
-                      <TableCell className="text-right w-28 text-foreground print:!text-black" style={{ color: 'inherit' }}>{formatCurrency(quote.tax_total || 0)}</TableCell>
+                      <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">GST (10%)</TableCell>
+                      <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.tax_total || 0)}</TableCell>
                     </TableRow>
                     <TableRow className="bg-primary/10 print:bg-blue-50">
-                      <TableCell colSpan={3} className="text-right text-lg font-bold text-foreground print:!text-black" style={{ color: 'inherit' }}>Total</TableCell>
-                      <TableCell className="text-right text-lg font-bold w-28 text-foreground print:!text-black" style={{ color: 'inherit' }}>
+                      <TableCell colSpan={3} className="text-right text-lg font-bold text-gray-900 print:text-black">Total</TableCell>
+                      <TableCell className="text-right text-lg font-bold w-28 text-gray-900 print:text-black">
                         {formatCurrency(quote.total_estimate || 0)}
                       </TableCell>
                     </TableRow>
