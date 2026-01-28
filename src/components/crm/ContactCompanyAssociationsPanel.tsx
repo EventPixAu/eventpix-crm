@@ -28,6 +28,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableCompanySelector } from './SearchableCompanySelector';
+import { QuickCreateCompanyDialog } from './QuickCreateCompanyDialog';
 import {
   useContactAssociations,
   useCreateContactAssociation,
@@ -53,6 +55,7 @@ export function ContactCompanyAssociationsPanel({
   isStandalone = false,
 }: ContactCompanyAssociationsPanelProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [relationshipType, setRelationshipType] = useState('contractor');
   const [jobTitleId, setJobTitleId] = useState<string>('');
@@ -78,7 +81,7 @@ export function ContactCompanyAssociationsPanel({
   // Create a stable string for query key to prevent unnecessary refetches
   const excludeIdsKey = [...associatedCompanyIds, primaryCompanyId].filter(Boolean).sort().join(',');
   
-  const { data: availableCompanies = [] } = useQuery({
+  const { data: availableCompanies = [], isLoading: companiesLoading } = useQuery({
     queryKey: ['available-companies', contactId, excludeIdsKey],
     queryFn: async () => {
       const excludeIds = [...associatedCompanyIds];
@@ -100,6 +103,12 @@ export function ContactCompanyAssociationsPanel({
     },
     enabled: dialogOpen, // Only fetch when dialog is open
   });
+
+  const handleCompanyCreated = (companyId: string, _companyName: string) => {
+    setSelectedCompanyId(companyId);
+    // Refetch available companies to include the new one
+    queryClient.invalidateQueries({ queryKey: ['available-companies'] });
+  };
 
   const handleAdd = async () => {
     if (!selectedCompanyId) return;
@@ -296,24 +305,14 @@ export function ContactCompanyAssociationsPanel({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Company *</Label>
-              <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  {availableCompanies.length === 0 ? (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      No companies available
-                    </div>
-                  ) : (
-                    availableCompanies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.business_name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <SearchableCompanySelector
+                companies={availableCompanies}
+                selectedCompanyId={selectedCompanyId}
+                onSelect={setSelectedCompanyId}
+                onCreateNew={() => setCreateCompanyOpen(true)}
+                isLoading={companiesLoading}
+                placeholder="Search for a company..."
+              />
             </div>
 
             <div className="space-y-2">
@@ -401,6 +400,13 @@ export function ContactCompanyAssociationsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Create Company Dialog */}
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        onCompanyCreated={handleCompanyCreated}
+      />
     </>
   );
 }
