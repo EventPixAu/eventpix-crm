@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import { useQuote } from '@/hooks/useSales';
 import { useQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
+import { useSiteSettingsMap } from '@/hooks/useSiteSettings';
 import logo from '@/assets/eventpix-logo.png';
 
 const GROUP_LABELS = [
@@ -41,6 +42,7 @@ export default function ProposalView() {
   
   const { data: quote, isLoading } = useQuote(id);
   const { data: items } = useQuoteItems(id);
+  const { settings } = useSiteSettingsMap();
 
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
@@ -131,9 +133,9 @@ export default function ProposalView() {
               <div>
                 <img src={logo} alt="Eventpix" className="h-12 mb-4" />
                 <div className="text-sm text-muted-foreground">
-                  <p>Eventpix Photography</p>
-                  <p>ABN: XX XXX XXX XXX</p>
-                  <p>hello@eventpix.com.au</p>
+                  <p>{settings.business_name || 'Eventpix Photography'}</p>
+                  <p>ABN: {settings.business_abn || 'XX XXX XXX XXX'}</p>
+                  <p>{settings.business_email || 'hello@eventpix.com.au'}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -287,6 +289,8 @@ export default function ProposalView() {
               <div className="text-sm text-muted-foreground space-y-2">
                 {quote.terms_text ? (
                   <p className="whitespace-pre-wrap">{quote.terms_text}</p>
+                ) : settings.default_terms ? (
+                  <p className="whitespace-pre-wrap">{settings.default_terms}</p>
                 ) : (
                   <>
                     <p>• A 30% deposit is required to secure your booking.</p>
