@@ -21,8 +21,10 @@ import {
   Package,
   MapPin,
   FileCheck,
+  Building2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -498,6 +500,13 @@ export default function AdminLookups() {
                 <Beaker className="h-4 w-4 mr-2" />
                 Training
               </TabsTrigger>
+              <TabsTrigger 
+                value="site-settings"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Business
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -668,6 +677,10 @@ export default function AdminLookups() {
 
             <TabsContent value="training-tools" className="m-0">
               <AdminTrainingTools />
+            </TabsContent>
+
+            <TabsContent value="site-settings" className="m-0">
+              <SiteSettingsPanel />
             </TabsContent>
           </div>
         </Tabs>
