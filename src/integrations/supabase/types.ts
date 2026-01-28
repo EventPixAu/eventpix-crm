@@ -1988,6 +1988,56 @@ export type Database = {
           },
         ]
       }
+      event_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_id: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          is_visible_to_crew: boolean
+          mime_type: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_visible_to_crew?: boolean
+          mime_type?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_visible_to_crew?: boolean
+          mime_type?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_notes: {
         Row: {
           content: string
