@@ -5185,6 +5185,7 @@ export type Database = {
         Args: { p_package_id: string; p_quantity?: number; p_quote_id: string }
         Returns: Json
       }
+      admin_sync_staff_assignments: { Args: never; Returns: number }
       auto_complete_workflow_step: {
         Args: {
           p_entity_id: string
