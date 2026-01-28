@@ -6,10 +6,10 @@
  * 
  * NOTE: This view must NOT display notes_internal - it is for internal use only.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -26,6 +26,8 @@ import { useQuote } from '@/hooks/useSales';
 import { useQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import { useSiteSettingsMap } from '@/hooks/useSiteSettings';
 import { useLeadContacts } from '@/hooks/useLeadContacts';
+import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
+import { toast } from 'sonner';
 import logo from '@/assets/eventpix-logo.png';
 
 const GROUP_LABELS = [
@@ -44,6 +46,8 @@ export default function ProposalView() {
   const { data: quote, isLoading } = useQuote(id);
   const { data: items } = useQuoteItems(id);
   const { settings } = useSiteSettingsMap();
+  const acceptQuote = useAcceptQuote();
+  const [isAccepting, setIsAccepting] = useState(false);
 
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
@@ -110,6 +114,25 @@ export default function ProposalView() {
   const handlePrint = () => {
     window.print();
   };
+
+  const handleAccept = async () => {
+    if (!id) return;
+    setIsAccepting(true);
+    try {
+      await acceptQuote.mutateAsync({
+        quoteId: id,
+        acceptedByName: clientContactName || undefined,
+        acceptedByEmail: clientEmail || undefined,
+      });
+      toast.success('Proposal accepted successfully!');
+    } catch (error) {
+      toast.error('Failed to accept proposal');
+    } finally {
+      setIsAccepting(false);
+    }
+  };
+
+  const isAccepted = quote?.status === 'accepted';
 
   if (isLoading) {
     return (
@@ -360,34 +383,30 @@ export default function ProposalView() {
             <Separator className="my-6" />
 
             {/* Acceptance Section */}
-            <div className="text-center">
-              <p className="text-black mb-4">
-                To accept this proposal, please sign below or click the acceptance link sent to your email.
-              </p>
-              <div className="grid grid-cols-2 gap-8 mt-8 print:mt-16">
-                <div className="text-left">
-                  <div className="border-b border-gray-300 pb-2 mb-2">
-                    <span className="text-sm text-black">Client Signature</span>
-                  </div>
-                  <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-black">Print Name</span>
-                  </div>
-                  <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-black">Date</span>
-                  </div>
+            <div className="text-center print:hidden">
+              {isAccepted ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                  <Check className="h-12 w-12 text-green-600 mx-auto mb-3" />
+                  <p className="text-green-800 font-semibold text-lg">Proposal Accepted</p>
+                  <p className="text-green-700 text-sm mt-1">
+                    Accepted on {quote.accepted_at ? format(new Date(quote.accepted_at), 'dd MMMM yyyy') : '—'}
+                  </p>
                 </div>
-                <div className="text-left">
-                  <div className="border-b border-gray-300 pb-2 mb-2">
-                    <span className="text-sm text-black">Eventpix Representative</span>
-                  </div>
-                  <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-black">Print Name</span>
-                  </div>
-                  <div className="border-b border-gray-300 pb-2 mb-2 mt-8">
-                    <span className="text-sm text-black">Date</span>
-                  </div>
+              ) : (
+                <div>
+                  <p className="text-black mb-4">
+                    Ready to proceed? Click below to accept this proposal.
+                  </p>
+                  <Button 
+                    size="lg" 
+                    onClick={handleAccept}
+                    disabled={isAccepting}
+                    className="px-8"
+                  >
+                    {isAccepting ? 'Accepting...' : 'Accept Proposal'}
+                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
