@@ -217,7 +217,9 @@ export default function PublicAcceptQuote() {
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <img src={logo} alt="Eventpix" className="h-12 mx-auto mb-4" />
+          <div className="bg-black rounded-lg p-4 inline-block mb-4">
+            <img src={logo} alt="Eventpix" className="h-12" />
+          </div>
           <h1 className="text-2xl font-bold">Quote Proposal</h1>
           <p className="text-muted-foreground">
             {quote.quote_number || `#${quote.id.slice(0, 8)}`}
