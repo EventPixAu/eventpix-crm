@@ -654,6 +654,54 @@ export default function WorkflowsAdmin() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Due Date Offset Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Days Offset</Label>
+                <Input
+                  type="number"
+                  value={newStep.date_offset_days ?? ''}
+                  onChange={e => setNewStep({ 
+                    ...newStep, 
+                    date_offset_days: e.target.value ? parseInt(e.target.value, 10) : null 
+                  })}
+                  placeholder="e.g. -5 or 3"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Negative = before, Positive = after
+                </p>
+              </div>
+              <div>
+                <Label>Reference</Label>
+                <Select
+                  value={newStep.date_offset_reference || ''}
+                  onValueChange={v => setNewStep({ 
+                    ...newStep, 
+                    date_offset_reference: v as 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | null 
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select reference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="event_date">Event Date</SelectItem>
+                    <SelectItem value="lead_created">Lead Created</SelectItem>
+                    <SelectItem value="job_accepted">Job Accepted</SelectItem>
+                    <SelectItem value="delivery_deadline">Delivery Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Help Text</Label>
+              <Input
+                value={newStep.help_text ?? ''}
+                onChange={e => setNewStep({ ...newStep, help_text: e.target.value || null })}
+                placeholder="Optional guidance for staff..."
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewStepDialog(false)}>Cancel</Button>
