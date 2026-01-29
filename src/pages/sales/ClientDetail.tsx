@@ -116,6 +116,7 @@ export default function ClientDetail() {
     billing_address: '',
     category_id: '',
     website: '',
+    lead_source: '',
   });
 
   const handleAddCategory = async () => {
@@ -139,6 +140,7 @@ export default function ClientDetail() {
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
         website: (client as any).website || '',
+        lead_source: (client as any).lead_source || '',
       });
       setIsEditOpen(true);
     }
@@ -150,6 +152,7 @@ export default function ClientDetail() {
       id, 
       ...formData,
       category_id: formData.category_id || null,
+      lead_source: formData.lead_source || null,
     });
     setIsEditOpen(false);
   };
@@ -568,6 +571,16 @@ export default function ClientDetail() {
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://www.example.com"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="lead_source">Source</Label>
+              <Input
+                id="lead_source"
+                value={formData.lead_source}
+                onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
+                placeholder="e.g. Associations Forum, Australian Event Awards"
               />
             </div>
             
