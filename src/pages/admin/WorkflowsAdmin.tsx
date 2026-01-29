@@ -10,6 +10,23 @@ import {
   GripVertical,
   Pencil,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -41,6 +58,7 @@ import {
   useCreateMasterStep,
   useUpdateMasterStep,
   useDeleteMasterStep,
+  useReorderMasterSteps,
   PHASE_CONFIG,
   type WorkflowMasterStep,
   type WorkflowPhase,
@@ -52,6 +70,73 @@ import {
   type SalesWorkflowItem,
 } from '@/hooks/useSalesWorkflowTemplates';
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
+
+// Sortable Step Item Component
+function SortableStepItem({ 
+  step, 
+  onEdit, 
+  onDelete 
+}: { 
+  step: WorkflowMasterStep; 
+  onEdit: (step: WorkflowMasterStep) => void;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border ${
+        step.is_active ? 'border-border bg-background' : 'border-border/50 bg-muted/30 opacity-60'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <ClipboardList className="h-4 w-4 text-muted-foreground" />
+      <span className="flex-1">{step.label}</span>
+      {step.completion_type === 'auto' && (
+        <Badge variant="outline" className="text-xs">Auto</Badge>
+      )}
+      {!step.is_active && (
+        <Badge variant="secondary" className="text-xs">Inactive</Badge>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onEdit({ ...step })}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onDelete(step.id)}
+      >
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+}
 
 const phases: { key: WorkflowPhase; label: string; color: string }[] = [
   { key: 'pre_event', label: 'Pre-Event', color: 'text-info' },
@@ -69,7 +154,16 @@ export default function WorkflowsAdmin() {
   const createStep = useCreateMasterStep();
   const updateStep = useUpdateMasterStep();
   const deleteStep = useDeleteMasterStep();
+  const reorderSteps = useReorderMasterSteps();
   const updateSalesWorkflow = useUpdateSalesWorkflowTemplate();
+  
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
   
   // Event Type Defaults State
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
@@ -181,7 +275,24 @@ export default function WorkflowsAdmin() {
     await deleteStep.mutateAsync(stepId);
   };
 
-  // Sales Workflow handlers
+  const handleDragEnd = (event: DragEndEvent, phase: WorkflowPhase) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    
+    const phaseSteps = masterSteps.filter(s => s.phase === phase);
+    const oldIndex = phaseSteps.findIndex(s => s.id === active.id);
+    const newIndex = phaseSteps.findIndex(s => s.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    const reordered = arrayMove(phaseSteps, oldIndex, newIndex);
+    const updates = reordered.map((step, index) => ({
+      id: step.id,
+      sort_order: index,
+    }));
+    
+    reorderSteps.mutate(updates);
+  };
   const handleEditSalesWorkflow = (workflow: SalesWorkflowTemplate) => {
     setEditingSalesWorkflow(workflow);
     setSalesWorkflowItems([...workflow.items]);
@@ -258,40 +369,27 @@ export default function WorkflowsAdmin() {
                     {phaseSteps.length === 0 ? (
                       <p className="text-sm text-muted-foreground py-2">No steps defined</p>
                     ) : (
-                      <div className="space-y-2">
-                        {phaseSteps.map(step => (
-                          <div
-                            key={step.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg border ${
-                              step.is_active ? 'border-border bg-background' : 'border-border/50 bg-muted/30 opacity-60'
-                            }`}
-                          >
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                            <span className="flex-1">{step.label}</span>
-                            {step.completion_type === 'auto' && (
-                              <Badge variant="outline" className="text-xs">Auto</Badge>
-                            )}
-                            {!step.is_active && (
-                              <Badge variant="secondary" className="text-xs">Inactive</Badge>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditingStep({ ...step })}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteStep(step.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event) => handleDragEnd(event, phase.key)}
+                      >
+                        <SortableContext
+                          items={phaseSteps.map(s => s.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2">
+                            {phaseSteps.map(step => (
+                              <SortableStepItem
+                                key={step.id}
+                                step={step}
+                                onEdit={setEditingStep}
+                                onDelete={handleDeleteStep}
+                              />
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </SortableContext>
+                      </DndContext>
                     )}
                   </div>
                 );
