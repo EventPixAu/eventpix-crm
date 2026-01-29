@@ -176,31 +176,7 @@ export function useEscalations() {
         });
       }
       
-      // 6. Delivery deadline risk - within 24h without link
-      const deliveryRiskEvents = events?.filter(e => {
-        if (!e.delivery_deadline) return false;
-        const deadline = parseISO(e.delivery_deadline);
-        const hoursUntilDeadline = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
-        
-        if (hoursUntilDeadline > 24 || hoursUntilDeadline < 0) return false;
-        
-        // Check if delivered
-        const hasDeliveryLink = e.delivery_records?.some(
-          (dr: { delivery_link?: string | null }) => dr.delivery_link
-        );
-        return !hasDeliveryLink;
-      }) || [];
-      
-      if (deliveryRiskEvents.length > 0) {
-        escalations.push({
-          type: 'delivery',
-          severity: 'critical',
-          title: `${deliveryRiskEvents.length} event${deliveryRiskEvents.length > 1 ? 's' : ''} within 24h of delivery deadline without link`,
-          count: deliveryRiskEvents.length,
-          filterUrl: '/delivery',
-          eventIds: deliveryRiskEvents.map(e => e.id),
-        });
-      }
+      // Note: Delivery deadline escalations removed - delivery is now managed through event workflows
       
       // Sort by severity (critical first)
       escalations.sort((a, b) => {
