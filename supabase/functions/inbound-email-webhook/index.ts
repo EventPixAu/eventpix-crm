@@ -6,14 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface ResendInboundEmail {
-  from: string;
-  to: string;
-  subject: string;
-  text?: string;
-  html?: string;
-  headers?: Record<string, string>;
-  created_at?: string;
+interface ResendWebhookPayload {
+  type: string;
+  created_at: string;
+  data: {
+    from: string;
+    to: string[];
+    subject: string;
+    text?: string;
+    html?: string;
+    email_id?: string;
+    message_id?: string;
+    attachments?: unknown[];
+  };
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,19 +32,31 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const body: ResendInboundEmail = await req.json();
-    console.log("Received inbound email webhook:", JSON.stringify(body, null, 2));
+    const payload: ResendWebhookPayload = await req.json();
+    console.log("Received inbound email webhook:", JSON.stringify(payload, null, 2));
 
-    const { from, to, subject, text, html, headers } = body;
+    // Extract the data from Resend's webhook structure
+    const { data } = payload;
+    if (!data) {
+      console.error("No data in webhook payload");
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid payload - no data" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { from, to, subject, text, html } = data;
 
     // Parse sender email and name
-    const fromMatch = from.match(/^(?:(.+?)\s*<)?([^<>]+)>?$/);
+    const fromStr = from || "";
+    const fromMatch = fromStr.match(/^(?:(.+?)\s*<)?([^<>]+)>?$/);
     const fromName = fromMatch?.[1]?.trim() || null;
-    const fromEmail = fromMatch?.[2]?.trim().toLowerCase() || from.toLowerCase();
+    const fromEmail = fromMatch?.[2]?.trim().toLowerCase() || fromStr.toLowerCase();
 
-    // Parse recipient email
-    const toMatch = to.match(/^(?:(.+?)\s*<)?([^<>]+)>?$/);
-    const toEmail = toMatch?.[2]?.trim().toLowerCase() || to.toLowerCase();
+    // Parse recipient email - 'to' is an array in Resend webhooks
+    const toStr = Array.isArray(to) ? to[0] : (to || "");
+    const toMatch = toStr.match(/^(?:(.+?)\s*<)?([^<>]+)>?$/);
+    const toEmail = toMatch?.[2]?.trim().toLowerCase() || toStr.toLowerCase();
 
     console.log(`Inbound email from: ${fromEmail} (${fromName}) to: ${toEmail}`);
 
