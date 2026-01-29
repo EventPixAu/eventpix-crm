@@ -111,6 +111,7 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     category_id: '',
+    website: '',
   });
 
   const handleOpenEdit = () => {
@@ -121,6 +122,7 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
+        website: (client as any).website || '',
       });
       setIsEditOpen(true);
     }
@@ -147,6 +149,7 @@ export default function ClientDetail() {
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
       category_id: formData.category_id || null,
+      website: formData.website || null,
     });
     navigate(`/crm/companies/${result.id}`);
   };
@@ -450,6 +453,17 @@ export default function ClientDetail() {
                   onChange={(e) => setFormData({ ...formData, company_email: e.target.value })}
                 />
               </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                type="url"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                placeholder="https://www.example.com"
+              />
             </div>
             
             <div className="space-y-2">
