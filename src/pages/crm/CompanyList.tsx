@@ -11,10 +11,11 @@
  * Features:
  * - Inline status editing for Admin/Sales
  * - Bulk status update for selected companies
+ * - Bulk delete for selected companies
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -32,6 +33,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Building2,
   Plus,
   Search,
@@ -42,11 +53,13 @@ import {
   Tag,
   Upload,
   CheckSquare,
+  Trash2,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
 import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog';
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/hooks/use-toast';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
@@ -106,11 +119,40 @@ export default function CompanyList() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const canBulkEdit = isAdmin; // Only Admin can bulk edit
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      // Delete in batches to avoid URL length limits
+      const batchSize = 50;
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const { error } = await supabase
+          .from('clients')
+          .delete()
+          .in('id', batch);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({ title: `${selectedIds.size} ${selectedIds.size === 1 ? 'company' : 'companies'} deleted` });
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Failed to delete companies', 
+        description: error.message 
+      });
+    },
+  });
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['crm-companies', search],
@@ -241,10 +283,19 @@ export default function CompanyList() {
         actions={
           <div className="flex items-center gap-2">
             {canBulkEdit && selectedIds.size > 0 && (
-              <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
-                <CheckSquare className="h-4 w-4 mr-2" />
-                Set Status ({selectedIds.size})
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setBulkDialogOpen(true)}>
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Set Status ({selectedIds.size})
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete ({selectedIds.size})
+                </Button>
+              </>
             )}
             <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
@@ -264,6 +315,28 @@ export default function CompanyList() {
         open={importDialogOpen} 
         onOpenChange={setImportDialogOpen} 
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} {selectedIds.size === 1 ? 'company' : 'companies'}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All associated contacts, events, quotes, and contracts 
+              linked to these companies will lose their company reference or may be deleted depending 
+              on database constraints.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(Array.from(selectedIds))}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete All'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <BulkStatusUpdateDialog
         open={bulkDialogOpen}
