@@ -282,16 +282,30 @@ export function useDeleteContactAssociation() {
   
   return useMutation({
     mutationFn: async (data: { id: string; contact_id: string; company_id: string }) => {
-      const { error } = await supabase
-        .from('contact_company_associations')
-        .delete()
-        .eq('id', data.id);
-      
-      if (error) throw error;
+      // Check if this is a "direct" association (from client_id link, not junction table)
+      if (data.id.startsWith('direct-')) {
+        // Clear the contact's direct client_id link
+        const { error } = await supabase
+          .from('client_contacts')
+          .update({ client_id: null })
+          .eq('id', data.contact_id);
+        
+        if (error) throw error;
+      } else {
+        // Delete from the junction table
+        const { error } = await supabase
+          .from('contact_company_associations')
+          .delete()
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contact-associations', variables.contact_id] });
       queryClient.invalidateQueries({ queryKey: ['company-associations', variables.company_id] });
+      queryClient.invalidateQueries({ queryKey: ['contact', variables.contact_id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       toast.success('Association removed');
     },
     onError: () => {
