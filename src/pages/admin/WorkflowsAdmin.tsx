@@ -710,6 +710,55 @@ export default function WorkflowsAdmin() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Due Date Offset Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Days Offset</Label>
+                  <Input
+                    type="number"
+                    value={editingStep.date_offset_days ?? ''}
+                    onChange={e => setEditingStep({ 
+                      ...editingStep, 
+                      date_offset_days: e.target.value ? parseInt(e.target.value, 10) : null 
+                    })}
+                    placeholder="e.g. -5 or 3"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Negative = before, Positive = after
+                  </p>
+                </div>
+                <div>
+                  <Label>Reference</Label>
+                  <Select
+                    value={editingStep.date_offset_reference || ''}
+                    onValueChange={v => setEditingStep({ 
+                      ...editingStep, 
+                      date_offset_reference: v as 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | null 
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="event_date">Event Date</SelectItem>
+                      <SelectItem value="lead_created">Lead Created</SelectItem>
+                      <SelectItem value="job_accepted">Job Accepted</SelectItem>
+                      <SelectItem value="delivery_deadline">Delivery Deadline</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label>Help Text</Label>
+                <Input
+                  value={editingStep.help_text ?? ''}
+                  onChange={e => setEditingStep({ ...editingStep, help_text: e.target.value || null })}
+                  placeholder="Optional guidance for staff..."
+                />
+              </div>
+              
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={editingStep.is_active}
