@@ -17,13 +17,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronDown, Check, RotateCcw } from 'lucide-react';
+import { ChevronDown, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 
-const STATUS_OPTIONS = [
+// Fallback options if database query fails
+const FALLBACK_STATUS_OPTIONS = [
   { value: 'prospect', label: 'Prospect', variant: 'secondary' as const },
   { value: 'current_client', label: 'Current Client', variant: 'default' as const },
   { value: 'previous_client', label: 'Previous Client', variant: 'outline' as const },
@@ -47,11 +49,19 @@ export function CompanyStatusBadgeDropdown({
 }: CompanyStatusBadgeDropdownProps) {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const { data: dbStatuses, isLoading: statusesLoading } = useCompanyStatuses();
   
   const [isReasonDialogOpen, setIsReasonDialogOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Map database statuses to dropdown format, with fallback
+  const STATUS_OPTIONS = dbStatuses?.map(s => ({
+    value: s.name,
+    label: s.label,
+    variant: (s.badge_variant || 'secondary') as 'default' | 'secondary' | 'destructive' | 'outline',
+  })) || FALLBACK_STATUS_OPTIONS;
 
   // Derive display status
   const displayStatus = manualStatus || currentStatus || 'prospect';
@@ -167,7 +177,7 @@ export function CompanyStatusBadgeDropdown({
   if (!isAdmin) {
     return (
       <Badge variant={statusConfig.variant} className="text-xs">
-        {statusConfig.label}
+        {statusesLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : statusConfig.label}
       </Badge>
     );
   }

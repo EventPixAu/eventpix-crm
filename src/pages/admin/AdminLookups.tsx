@@ -22,6 +22,7 @@ import {
   MapPin,
   FileCheck,
   Building2,
+  CircleDot,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
@@ -88,6 +89,11 @@ import {
   useCreateProductCategory,
   useUpdateProductCategory,
 } from '@/hooks/useAdminProductCategories';
+import {
+  useAllCompanyStatuses,
+  useCreateCompanyStatus,
+  useUpdateCompanyStatus,
+} from '@/hooks/useCompanyStatuses';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
@@ -394,6 +400,11 @@ export default function AdminLookups() {
   const createProductCategory = useCreateProductCategory();
   const updateProductCategory = useUpdateProductCategory();
 
+  // Company Statuses
+  const { data: companyStatuses = [], isLoading: companyStatusesLoading } = useAllCompanyStatuses();
+  const createCompanyStatus = useCreateCompanyStatus();
+  const updateCompanyStatus = useUpdateCompanyStatus();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -492,6 +503,13 @@ export default function AdminLookups() {
               >
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 Product Categories
+              </TabsTrigger>
+              <TabsTrigger 
+                value="company-statuses"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <CircleDot className="h-4 w-4 mr-2" />
+                Company Status
               </TabsTrigger>
               <TabsTrigger 
                 value="training-tools"
@@ -672,6 +690,23 @@ export default function AdminLookups() {
                 createPending={createProductCategory.isPending}
                 updatePending={updateProductCategory.isPending}
                 itemLabel="Product Category"
+              />
+            </TabsContent>
+
+            <TabsContent value="company-statuses" className="m-0">
+              <LookupTable
+                items={companyStatuses.map(s => ({ 
+                  id: s.id, 
+                  name: s.label, 
+                  is_active: s.is_active, 
+                  sort_order: s.sort_order 
+                }))}
+                isLoading={companyStatusesLoading}
+                onCreate={async (name) => { await createCompanyStatus.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateCompanyStatus.mutateAsync({ id, ...updates }); }}
+                createPending={createCompanyStatus.isPending}
+                updatePending={updateCompanyStatus.isPending}
+                itemLabel="Company Status"
               />
             </TabsContent>
 

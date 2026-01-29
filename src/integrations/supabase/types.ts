@@ -615,6 +615,39 @@ export type Database = {
           },
         ]
       }
+      company_statuses: {
+        Row: {
+          badge_variant: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          label: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          badge_variant?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          label: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          badge_variant?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          label?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       compliance_document_types: {
         Row: {
           applies_to_roles: string[] | null
