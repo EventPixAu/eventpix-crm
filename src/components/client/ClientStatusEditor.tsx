@@ -2,14 +2,13 @@
  * COMPANY STATUS EDITOR
  * 
  * Allows Admin only to manually override company status.
- * Requires a reason when setting override (min 10 characters).
+ * Saves immediately on selection without requiring a reason.
  * Shows badge when status is manually set vs auto-derived.
- * Logs all status changes to company_status_audit table with reason.
+ * Logs all status changes to company_status_audit table.
  */
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -22,14 +21,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,7 +65,6 @@ export function ClientStatusEditor({
   const updateClient = useUpdateClient();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(manualStatus || '');
-  const [reason, setReason] = useState('');
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -86,23 +76,19 @@ export function ClientStatusEditor({
 
   const handleSave = async () => {
     if (!selectedStatus) return;
-    if (reason.trim().length < 10) {
-      toast.error('Please provide a reason (minimum 10 characters)');
-      return;
-    }
     
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Log to audit with reason
+      // Log to audit
       await supabase.from('company_status_audit').insert({
         company_id: clientId,
         action: 'status_override_set',
         old_status: displayStatus,
         new_status: selectedStatus,
         changed_by: user?.id,
-        override_reason: reason.trim(),
+        override_reason: null,
       });
       
       await updateClient.mutateAsync({
@@ -110,12 +96,11 @@ export function ClientStatusEditor({
         manual_status: selectedStatus,
         status_override_at: new Date().toISOString(),
         status_override_by: user?.id,
-        status_override_reason: reason.trim(),
+        status_override_reason: null,
       } as any);
       
       toast.success('Status updated');
       setIsEditing(false);
-      setReason('');
       onUpdate?.();
     } catch (error) {
       console.error('Error saving status:', error);
@@ -162,13 +147,11 @@ export function ClientStatusEditor({
 
   const handleCancel = () => {
     setSelectedStatus(manualStatus || '');
-    setReason('');
     setIsEditing(false);
   };
 
   const handleStartEditing = () => {
     setSelectedStatus(manualStatus || computedStatus);
-    setReason('');
     setIsEditing(true);
   };
 
@@ -193,7 +176,7 @@ export function ClientStatusEditor({
             size="icon"
             className="h-8 w-8"
             onClick={handleSave}
-            disabled={!selectedStatus || isSaving || reason.trim().length < 10}
+            disabled={!selectedStatus || isSaving}
           >
             <Check className="h-4 w-4 text-green-600" />
           </Button>
@@ -205,21 +188,6 @@ export function ClientStatusEditor({
           >
             <X className="h-4 w-4" />
           </Button>
-        </div>
-        
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">
-            Override Reason <span className="text-destructive">*</span>
-          </label>
-          <Textarea
-            placeholder="Enter the reason for this override (minimum 10 characters)..."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="min-h-[60px] text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            {reason.trim().length}/10 minimum characters
-          </p>
         </div>
 
         {isOverridden && (
