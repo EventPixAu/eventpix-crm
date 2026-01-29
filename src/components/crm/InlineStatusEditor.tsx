@@ -2,27 +2,16 @@
  * INLINE STATUS EDITOR
  * 
  * Clickable status badge that opens a dropdown for Admin users only.
- * Requires a reason when setting override (min 10 characters).
- * Saves immediately and logs to audit with reason.
+ * Saves immediately on selection without requiring a reason.
  */
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -61,52 +50,36 @@ export function InlineStatusEditor({
 }: InlineStatusEditorProps) {
   const { isAdmin } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState<ComputedStatus | null>(null);
-  const [reason, setReason] = useState('');
   
   const canEdit = isAdmin; // Only Admin can edit status
   const statusConfig = STATUS_OPTIONS.find(s => s.value === currentStatus) || STATUS_OPTIONS[0];
 
-  const handleStatusClick = (newStatus: ComputedStatus) => {
+  const handleStatusClick = async (newStatus: ComputedStatus) => {
     if (newStatus === currentStatus) return;
-    setPendingStatus(newStatus);
-    setReason('');
-    setReasonDialogOpen(true);
-  };
-
-  const handleConfirmStatusChange = async () => {
-    if (!pendingStatus || reason.trim().length < 10) {
-      toast.error('Please provide a reason (minimum 10 characters)');
-      return;
-    }
     
     setIsUpdating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Log to audit with reason
+      // Log to audit
       await supabase.from('company_status_audit').insert({
         company_id: companyId,
         action: 'status_override_set',
         old_status: currentStatus,
-        new_status: pendingStatus,
+        new_status: newStatus,
         changed_by: user?.id,
-        override_reason: reason.trim(),
+        override_reason: null,
       });
       
-      // Update client status with reason
+      // Update client status
       await supabase.from('clients').update({
-        manual_status: pendingStatus,
+        manual_status: newStatus,
         status_override_at: new Date().toISOString(),
         status_override_by: user?.id,
-        status_override_reason: reason.trim(),
+        status_override_reason: null,
       }).eq('id', companyId);
       
       toast.success('Status updated');
-      setReasonDialogOpen(false);
-      setPendingStatus(null);
-      setReason('');
       onStatusChange?.();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -229,44 +202,6 @@ export function InlineStatusEditor({
           </Tooltip>
         )}
       </div>
-
-      {/* Reason Dialog */}
-      <Dialog open={reasonDialogOpen} onOpenChange={setReasonDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Override Status</DialogTitle>
-            <DialogDescription>
-              Changing status from <strong>{STATUS_OPTIONS.find(s => s.value === currentStatus)?.label}</strong> to{' '}
-              <strong>{STATUS_OPTIONS.find(s => s.value === pendingStatus)?.label}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Override Reason <span className="text-destructive">*</span>
-            </label>
-            <Textarea
-              placeholder="Enter the reason for this override (minimum 10 characters)..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="min-h-[80px]"
-            />
-            <p className="text-xs text-muted-foreground">
-              {reason.trim().length}/10 minimum characters
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReasonDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmStatusChange} 
-              disabled={isUpdating || reason.trim().length < 10}
-            >
-              {isUpdating ? 'Saving...' : 'Confirm Override'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
