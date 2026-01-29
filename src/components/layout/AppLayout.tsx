@@ -97,10 +97,8 @@ const administrationItems: NavItem[] = [
   { href: '/sales/templates', label: 'Quote Templates', icon: FileText },
   { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
   { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
-  
-  { href: '/admin/event-types', label: 'Event Types', icon: Layers },
-  { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
+  { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/admin/invoices', label: 'Invoice Sync', icon: DollarSign },
   { href: '/admin/margins', label: 'Margin Report', icon: TrendingUp },
 ];

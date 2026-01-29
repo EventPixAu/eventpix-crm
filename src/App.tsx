@@ -20,10 +20,7 @@ import StaffDetail from "./pages/StaffDetail";
 import CalendarView from "./pages/CalendarView";
 import CalendarDayView from "./pages/CalendarDayView";
 import MyCalendar from "./pages/MyCalendar";
-import Workflows from "./pages/Workflows";
-import WorkflowsList from "./pages/admin/WorkflowsList";
-import WorkflowDetail from "./pages/admin/WorkflowDetail";
-import EventTypeDefaults from "./pages/admin/EventTypeDefaults";
+import WorkflowsAdmin from "./pages/admin/WorkflowsAdmin";
 import EventSeriesList from "./pages/admin/EventSeriesList";
 import EventSeriesDetail from "./pages/admin/EventSeriesDetail";
 import InvoiceSync from "./pages/admin/InvoiceSync";
@@ -155,10 +152,9 @@ function AppRoutes() {
       <Route path="/staff/:id" element={<ProtectedRoute><OpsGuard><StaffDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><OpsGuard><CalendarView /></OpsGuard></ProtectedRoute>} />
       <Route path="/calendar/day" element={<ProtectedRoute><OpsGuard><CalendarDayView /></OpsGuard></ProtectedRoute>} />
-      <Route path="/workflows" element={<ProtectedRoute><AdminGuard><Workflows /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/workflows" element={<ProtectedRoute><AdminGuard><WorkflowsList /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/workflows/:id" element={<ProtectedRoute><AdminGuard><WorkflowDetail /></AdminGuard></ProtectedRoute>} />
-      <Route path="/admin/event-types" element={<ProtectedRoute><AdminGuard><EventTypeDefaults /></AdminGuard></ProtectedRoute>} />
+      <Route path="/workflows" element={<ProtectedRoute><AdminGuard><WorkflowsAdmin /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/workflows" element={<ProtectedRoute><AdminGuard><WorkflowsAdmin /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/event-types" element={<ProtectedRoute><AdminGuard><WorkflowsAdmin /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/series" element={<ProtectedRoute><OpsGuard><EventSeriesList /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/series/:id" element={<ProtectedRoute><OpsGuard><EventSeriesDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/invoices" element={<ProtectedRoute><AdminGuard><InvoiceSync /></AdminGuard></ProtectedRoute>} />
