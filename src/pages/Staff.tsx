@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, FileCheck, Mail, MapPin, Phone, Plus, Search, UserCircle, Users, X } from 'lucide-react';
+import { Check, ChevronRight, FileCheck, Mail, MapPin, Phone, Plus, Search, UserCircle, Users, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -394,9 +394,19 @@ export default function Staff() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-medium truncate">{member.name}</h3>
                               <StatusBadge status={member.status} />
+                              {member.user_id ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
+                                  <Check className="h-3 w-3" />
+                                  Account
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">
+                                  Pending
+                                </span>
+                              )}
                             </div>
                             <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           </div>
