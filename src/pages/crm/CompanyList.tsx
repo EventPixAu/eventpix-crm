@@ -82,6 +82,8 @@ interface Company {
   // Primary contact from linked contacts
   primary_contact_name: string | null;
   primary_contact_email: string | null;
+  // Aggregated tags from all linked contacts
+  tags: string[];
 }
 
 function computeClientStatus(events: Array<{ event_date: string; ops_status: string | null }>): ComputedStatus {
@@ -185,18 +187,19 @@ export default function CompanyList() {
 
       const clientIds = clientsData?.map(c => c.id) || [];
 
-      // Get contact counts, primary contacts, and events in parallel
-      const [contactCountsResult, primaryContactsResult, eventsResult] = await Promise.all([
+      // Get contact counts, primary contacts, tags, and events in parallel
+      const [contactsResult, primaryContactsResult, eventsResult] = await Promise.all([
+        // Get contacts with their tags
         supabase
           .from('client_contacts')
-          .select('client_id')
+          .select('client_id, tags')
           .in('client_id', clientIds),
         // Get primary contacts from contact_company_associations
         supabase
           .from('contact_company_associations')
           .select(`
             company_id,
-            contact:client_contacts(contact_name, email)
+            contact:client_contacts(contact_name, email, tags)
           `)
           .in('company_id', clientIds)
           .eq('is_primary', true),
@@ -206,19 +209,31 @@ export default function CompanyList() {
           .in('client_id', clientIds)
       ]);
 
-      const countMap = (contactCountsResult.data || []).reduce((acc, c) => {
-        acc[c.client_id] = (acc[c.client_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      // Build count map and tags map from contacts
+      const countMap: Record<string, number> = {};
+      const tagsMap: Record<string, Set<string>> = {};
+      
+      (contactsResult.data || []).forEach(c => {
+        countMap[c.client_id] = (countMap[c.client_id] || 0) + 1;
+        if (c.tags && Array.isArray(c.tags)) {
+          if (!tagsMap[c.client_id]) tagsMap[c.client_id] = new Set();
+          c.tags.forEach((tag: string) => tagsMap[c.client_id].add(tag));
+        }
+      });
 
-      // Map primary contacts by company_id
+      // Map primary contacts by company_id and collect their tags too
       const primaryContactMap = (primaryContactsResult.data || []).reduce((acc, pc) => {
-        const contact = pc.contact as { contact_name: string; email: string | null } | null;
+        const contact = pc.contact as { contact_name: string; email: string | null; tags: string[] | null } | null;
         if (contact) {
           acc[pc.company_id] = {
             name: contact.contact_name,
             email: contact.email,
           };
+          // Also collect tags from primary contacts linked via associations
+          if (contact.tags && Array.isArray(contact.tags)) {
+            if (!tagsMap[pc.company_id]) tagsMap[pc.company_id] = new Set();
+            contact.tags.forEach((tag: string) => tagsMap[pc.company_id].add(tag));
+          }
         }
         return acc;
       }, {} as Record<string, { name: string; email: string | null }>);
@@ -233,6 +248,7 @@ export default function CompanyList() {
         const computed = computeClientStatus(eventsMap[company.id] || []);
         const manualStatus = company.manual_status as ComputedStatus | null;
         const primaryContact = primaryContactMap[company.id];
+        const companyTags = tagsMap[company.id] ? Array.from(tagsMap[company.id]).sort() : [];
         return {
           ...company,
           contact_count: countMap[company.id] || 0,
@@ -242,6 +258,7 @@ export default function CompanyList() {
           status_override_reason: company.status_override_reason,
           primary_contact_name: primaryContact?.name || null,
           primary_contact_email: primaryContact?.email || null,
+          tags: companyTags,
         };
       }) as Company[];
     },
@@ -388,6 +405,7 @@ export default function CompanyList() {
                   )}
                   <TableHead>Company</TableHead>
                   <TableHead>Contact Info</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
                   <TableHead>Status</TableHead>
@@ -444,6 +462,24 @@ export default function CompanyList() {
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {company.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {company.tags.slice(0, 3).map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {company.tags.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{company.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {company.category?.name ? (
