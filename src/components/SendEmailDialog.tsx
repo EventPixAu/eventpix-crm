@@ -5,14 +5,16 @@
  * Sends real emails via Resend through the send-crm-email edge function.
  * Logs communication to email_logs and contact_activities tables.
  * Uses ContactSelector for CRM-linked recipient selection.
+ * Supports auto-attaching proposal PDFs for quote emails.
  */
 import { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
-import { Mail, Send, Eye, Paperclip, X } from 'lucide-react';
+import { Mail, Send, Eye, Paperclip, X, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +32,7 @@ import {
 } from '@/components/ui/select';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
+import { useGenerateProposalPdf, htmlToPdfBlob, blobToBase64 } from '@/hooks/useGenerateProposalPdf';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
@@ -69,6 +72,7 @@ export function SendEmailDialog({
 }: SendEmailDialogProps) {
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
+  const generatePdf = useGenerateProposalPdf();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -79,6 +83,8 @@ export function SendEmailDialog({
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
+  const [attachProposalPdf, setAttachProposalPdf] = useState(context === 'quote');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update recipient when clientEmail changes (for legacy/fallback)
@@ -101,11 +107,13 @@ export function SendEmailDialog({
       setBody('');
       setShowPreview(false);
       setAttachments([]);
+      setAttachProposalPdf(context === 'quote');
+      setIsGeneratingPdf(false);
       // Restore default recipient
       setRecipientEmail(clientEmail || '');
       setRecipientName(clientName || '');
     }
-  }, [open, defaultSubject, clientEmail, clientName]);
+  }, [open, defaultSubject, clientEmail, clientName, context]);
 
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,12 +243,38 @@ export function SendEmailDialog({
       return;
     }
 
+    let finalAttachments = [...attachments];
+
+    // Generate and attach PDF if checkbox is checked and we have a quote
+    if (attachProposalPdf && relatedQuoteId && context === 'quote') {
+      setIsGeneratingPdf(true);
+      try {
+        const result = await generatePdf.mutateAsync(relatedQuoteId);
+        if (result.success && result.html) {
+          const filename = `Proposal-${result.quote?.quote_number || relatedQuoteId.slice(0, 8)}.pdf`;
+          const pdfBlob = await htmlToPdfBlob(result.html, filename);
+          const base64Content = await blobToBase64(pdfBlob);
+          
+          finalAttachments.push({
+            filename,
+            content: base64Content,
+            contentType: 'application/pdf',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to generate PDF:', error);
+        // Continue without PDF attachment
+      } finally {
+        setIsGeneratingPdf(false);
+      }
+    }
+
     sendEmail.mutate({
       recipientEmail,
       recipientName: recipientName || undefined,
       subject,
       bodyHtml: body,
-      attachments: attachments.length > 0 ? attachments : undefined,
+      attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
       contactId: selectedContactId || undefined,
       clientId: clientId || undefined,
       templateId: selectedTemplateId || undefined,
@@ -391,6 +425,26 @@ export function SendEmailDialog({
               </p>
             </div>
 
+            {/* Auto-attach Proposal PDF option for quotes */}
+            {context === 'quote' && relatedQuoteId && (
+              <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
+                <Checkbox
+                  id="attachProposalPdf"
+                  checked={attachProposalPdf}
+                  onCheckedChange={(checked) => setAttachProposalPdf(checked === true)}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="attachProposalPdf" className="text-sm font-medium cursor-pointer">
+                    <FileText className="h-4 w-4 inline mr-2" />
+                    Attach Proposal PDF
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Automatically generate and attach the proposal as a PDF with QR code for acceptance
+                  </p>
+                </div>
+              </div>
+            )}
+
           </div>
         ) : (
           <div className="py-4">
@@ -402,11 +456,14 @@ export function SendEmailDialog({
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
-                {attachments.length > 0 && (
+                {(attachments.length > 0 || attachProposalPdf) && (
                   <div className="text-sm flex items-center gap-2">
                     <span className="font-medium">Attachments:</span>
                     <span className="text-muted-foreground">
-                      {attachments.map(a => a.filename).join(', ')}
+                      {[
+                        ...attachments.map(a => a.filename),
+                        ...(attachProposalPdf && relatedQuoteId ? ['Proposal PDF (auto-generated)'] : [])
+                      ].join(', ')}
                     </span>
                   </div>
                 )}
@@ -424,11 +481,16 @@ export function SendEmailDialog({
         <DialogFooter className="gap-2">
           {showPreview ? (
             <>
-              <Button variant="outline" onClick={() => setShowPreview(false)}>
+              <Button variant="outline" onClick={() => setShowPreview(false)} disabled={isGeneratingPdf || sendEmail.isPending}>
                 Edit
               </Button>
-              <Button onClick={handleSend} disabled={sendEmail.isPending}>
-                {sendEmail.isPending ? 'Sending...' : 'Send Email'}
+              <Button onClick={handleSend} disabled={sendEmail.isPending || isGeneratingPdf}>
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : sendEmail.isPending ? 'Sending...' : 'Send Email'}
               </Button>
             </>
           ) : (
@@ -440,9 +502,18 @@ export function SendEmailDialog({
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              <Button onClick={handleSend} disabled={sendEmail.isPending || !recipientEmail || !subject}>
-                <Send className="h-4 w-4 mr-2" />
-                {sendEmail.isPending ? 'Sending...' : 'Send'}
+              <Button onClick={handleSend} disabled={sendEmail.isPending || isGeneratingPdf || !recipientEmail || !subject}>
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    {sendEmail.isPending ? 'Sending...' : 'Send'}
+                  </>
+                )}
               </Button>
             </>
           )}

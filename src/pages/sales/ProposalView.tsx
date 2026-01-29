@@ -10,6 +10,7 @@ import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowLeft, Printer, Check } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -380,6 +381,29 @@ export default function ProposalView() {
             )}
 
             <Separator className="my-6" />
+
+            {/* QR Code for Acceptance - Visible in print */}
+            {quote.public_token && !isAccepted && (
+              <div className="mb-8 flex items-center justify-center gap-6 p-6 border rounded-lg bg-gray-50 print:bg-white print:border-gray-300">
+                <div className="flex-shrink-0">
+                  <QRCodeSVG 
+                    value={`${window.location.origin}/accept/${quote.public_token}`}
+                    size={100}
+                    level="M"
+                    includeMargin={false}
+                  />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-black mb-1">Accept this proposal online</p>
+                  <p className="text-xs text-gray-600">
+                    Scan this QR code with your phone camera to view and accept this proposal online.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2 print:block hidden">
+                    Or visit: {window.location.origin}/accept/{quote.public_token}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Acceptance Section */}
             <div className="text-center print:hidden">
