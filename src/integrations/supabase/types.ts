@@ -354,6 +354,7 @@ export type Database = {
           relationship_type_id: string | null
           role: string | null
           role_title: string | null
+          source: string | null
           tags: string[] | null
         }
         Insert: {
@@ -377,6 +378,7 @@ export type Database = {
           relationship_type_id?: string | null
           role?: string | null
           role_title?: string | null
+          source?: string | null
           tags?: string[] | null
         }
         Update: {
@@ -400,6 +402,7 @@ export type Database = {
           relationship_type_id?: string | null
           role?: string | null
           role_title?: string | null
+          source?: string | null
           tags?: string[] | null
         }
         Relationships: [
