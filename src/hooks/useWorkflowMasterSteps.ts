@@ -118,6 +118,33 @@ export function useUpdateMasterStep() {
   });
 }
 
+// Reorder master steps within a phase
+export function useReorderMasterSteps() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (steps: { id: string; sort_order: number }[]) => {
+      // Update each step's sort_order
+      const updates = steps.map(({ id, sort_order }) =>
+        supabase
+          .from('workflow_master_steps')
+          .update({ sort_order, updated_at: new Date().toISOString() })
+          .eq('id', id)
+      );
+      
+      const results = await Promise.all(updates);
+      const error = results.find(r => r.error)?.error;
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflow-master-steps'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to reorder steps: ' + error.message);
+    },
+  });
+}
+
 // Delete a master step
 export function useDeleteMasterStep() {
   const queryClient = useQueryClient();
