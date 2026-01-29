@@ -27,6 +27,7 @@ import {
   useEventEmailLogs,
   useLeadEmailLogs,
   useClientEmailLogs,
+  useRecipientEmailLogs,
   EmailLog,
   getEmailStatusInfo,
 } from '@/hooks/useEmailLogs';
@@ -35,6 +36,7 @@ interface MailHistoryPanelProps {
   eventId?: string;
   leadId?: string;
   clientId?: string;
+  contactEmail?: string | null;
   maxItems?: number;
   showViewAll?: boolean;
 }
@@ -175,6 +177,7 @@ export function MailHistoryPanel({
   eventId,
   leadId,
   clientId,
+  contactEmail,
   maxItems = 10,
   showViewAll = false,
 }: MailHistoryPanelProps) {
@@ -182,9 +185,10 @@ export function MailHistoryPanel({
   const { data: eventLogs = [] } = useEventEmailLogs(eventId);
   const { data: leadLogs = [] } = useLeadEmailLogs(leadId);
   const { data: clientLogs = [] } = useClientEmailLogs(clientId);
+  const { data: recipientLogs = [] } = useRecipientEmailLogs(contactEmail);
   
   // Combine and dedupe logs if multiple contexts provided
-  const allLogs = [...eventLogs, ...leadLogs, ...clientLogs];
+  const allLogs = [...eventLogs, ...leadLogs, ...clientLogs, ...recipientLogs];
   const uniqueLogs = allLogs.filter((log, index, self) => 
     index === self.findIndex(l => l.id === log.id)
   ).sort((a, b) => {
