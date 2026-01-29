@@ -12,6 +12,7 @@ import {
   Zap,
   Calendar,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ import {
   useWorkflowProgress,
   EventWorkflowStepWithProfile,
 } from '@/hooks/useEventWorkflowSteps';
+import { EditWorkflowStepDialog } from '@/components/EditWorkflowStepDialog';
 
 interface JobWorkflowRailProps {
   eventId: string;
@@ -99,12 +101,14 @@ function StepItem({
   isAdmin,
   isExpanded,
   onToggle,
+  onEdit,
 }: {
   step: EventWorkflowStepWithProfile;
   eventId: string;
   isAdmin: boolean;
   isExpanded: boolean;
   onToggle: () => void;
+  onEdit: (step: EventWorkflowStepWithProfile) => void;
 }) {
   const [notes, setNotes] = useState(step.notes || '');
   const completeStep = useCompleteWorkflowStep();
@@ -164,12 +168,28 @@ function StepItem({
             <button className="w-full text-left">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className={cn(
-                    "text-sm font-medium",
-                    step.is_completed && "line-through text-muted-foreground"
-                  )}>
-                    {step.step_label}
-                  </p>
+                  {isAdmin ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(step);
+                      }}
+                      className={cn(
+                        "text-sm font-medium text-left hover:text-primary hover:underline transition-colors",
+                        step.is_completed && "line-through text-muted-foreground hover:text-muted-foreground"
+                      )}
+                      title="Click to edit"
+                    >
+                      {step.step_label}
+                    </button>
+                  ) : (
+                    <p className={cn(
+                      "text-sm font-medium",
+                      step.is_completed && "line-through text-muted-foreground"
+                    )}>
+                      {step.step_label}
+                    </p>
+                  )}
                   
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {isAuto && (
@@ -199,6 +219,18 @@ function StepItem({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(step);
+                      }}
+                      className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                      title="Edit step"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
                   {isAdmin && (
                     <button
                       onClick={handleDelete}
@@ -291,6 +323,7 @@ function StepItem({
 
 export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
+  const [editingStep, setEditingStep] = useState<EventWorkflowStepWithProfile | null>(null);
   const { total, completed, percentage, overdue, steps } = useWorkflowProgress(eventId);
   
   if (steps.length === 0) {
@@ -305,65 +338,76 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   }
   
   return (
-    <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-      {/* Header with Progress */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-display font-semibold">Workflow</h2>
-          <span className="text-sm text-muted-foreground">
-            {completed}/{total}
-          </span>
+    <>
+      <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+        {/* Header with Progress */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-display font-semibold">Workflow</h2>
+            <span className="text-sm text-muted-foreground">
+              {completed}/{total}
+            </span>
+          </div>
+          
+          <Progress value={percentage} className="h-2" />
+          
+          {overdue > 0 && (
+            <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              {overdue} overdue step{overdue !== 1 ? 's' : ''}
+            </p>
+          )}
         </div>
         
-        <Progress value={percentage} className="h-2" />
-        
-        {overdue > 0 && (
-          <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            {overdue} overdue step{overdue !== 1 ? 's' : ''}
-          </p>
-        )}
-      </div>
-      
-      {/* Steps List */}
-      <div className="relative">
-        {steps.map((step) => (
-          <StepItem
-            key={step.id}
-            step={step}
-            eventId={eventId}
-            isAdmin={isAdmin}
-            isExpanded={expandedStep === step.id}
-            onToggle={() => setExpandedStep(
-              expandedStep === step.id ? null : step.id
-            )}
-          />
-        ))}
-      </div>
-      
-      {/* Legend */}
-      <TooltipProvider>
-        <div className="flex items-center gap-4 pt-4 mt-4 border-t border-border text-xs text-muted-foreground">
-          <Tooltip>
-            <TooltipTrigger className="flex items-center gap-1">
-              <Circle className="h-3 w-3" /> Manual
-            </TooltipTrigger>
-            <TooltipContent>Complete manually</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger className="flex items-center gap-1">
-              <Zap className="h-3 w-3 text-info" /> Auto
-            </TooltipTrigger>
-            <TooltipContent>Auto-completes on system events</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger className="flex items-center gap-1">
-              <Lock className="h-3 w-3 text-info" /> Locked
-            </TooltipTrigger>
-            <TooltipContent>Cannot be manually changed</TooltipContent>
-          </Tooltip>
+        {/* Steps List */}
+        <div className="relative">
+          {steps.map((step) => (
+            <StepItem
+              key={step.id}
+              step={step}
+              eventId={eventId}
+              isAdmin={isAdmin}
+              isExpanded={expandedStep === step.id}
+              onToggle={() => setExpandedStep(
+                expandedStep === step.id ? null : step.id
+              )}
+              onEdit={(step) => setEditingStep(step)}
+            />
+          ))}
         </div>
-      </TooltipProvider>
-    </div>
+        
+        {/* Legend */}
+        <TooltipProvider>
+          <div className="flex items-center gap-4 pt-4 mt-4 border-t border-border text-xs text-muted-foreground">
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-1">
+                <Circle className="h-3 w-3" /> Manual
+              </TooltipTrigger>
+              <TooltipContent>Complete manually</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-1">
+                <Zap className="h-3 w-3 text-info" /> Auto
+              </TooltipTrigger>
+              <TooltipContent>Auto-completes on system events</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger className="flex items-center gap-1">
+                <Lock className="h-3 w-3 text-info" /> Locked
+              </TooltipTrigger>
+              <TooltipContent>Cannot be manually changed</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
+      </div>
+      
+      {/* Edit Dialog - Outside card to avoid z-index issues */}
+      <EditWorkflowStepDialog
+        step={editingStep}
+        eventId={eventId}
+        open={!!editingStep}
+        onOpenChange={(open) => !open && setEditingStep(null)}
+      />
+    </>
   );
 }

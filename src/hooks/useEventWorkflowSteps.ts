@@ -423,6 +423,46 @@ export function useUpdateWorkflowStepNotes() {
   });
 }
 
+// Update a workflow step (label, due date)
+export function useUpdateWorkflowStep() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      stepId, 
+      eventId,
+      stepLabel,
+      dueDate,
+      notes,
+    }: { 
+      stepId: string; 
+      eventId: string;
+      stepLabel?: string;
+      dueDate?: string | null;
+      notes?: string | null;
+    }) => {
+      const updates: Record<string, unknown> = {};
+      if (stepLabel !== undefined) updates.step_label = stepLabel;
+      if (dueDate !== undefined) updates.due_date = dueDate;
+      if (notes !== undefined) updates.notes = notes;
+      
+      const { error } = await supabase
+        .from('event_workflow_steps')
+        .update(updates)
+        .eq('id', stepId);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      toast.success('Step updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update step: ' + error.message);
+    },
+  });
+}
+
 // Delete a workflow step
 export function useDeleteWorkflowStep() {
   const queryClient = useQueryClient();
