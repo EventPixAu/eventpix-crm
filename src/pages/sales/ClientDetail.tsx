@@ -388,7 +388,11 @@ export default function ClientDetail() {
           <ClientInvoicesSummary clientId={id!} />
 
           {/* Mail History */}
-          <MailHistoryPanel clientId={id!} maxItems={10} />
+          <MailHistoryPanel 
+            clientId={id!} 
+            contactEmail={client?.primary_contact_email}
+            maxItems={10} 
+          />
         </div>
       </div>
 
