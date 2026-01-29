@@ -1,0 +1,95 @@
+/**
+ * GENERATE PROPOSAL PDF HOOK
+ * 
+ * Generates a PDF of a quote/proposal for email attachment.
+ * Uses the generate-proposal-pdf edge function to create HTML,
+ * then converts to PDF using html2pdf.js in the browser.
+ */
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+interface GeneratePdfResult {
+  success: boolean;
+  html?: string;
+  htmlBase64?: string;
+  quote?: {
+    quote_number: string;
+    client_name: string;
+    total: number;
+  };
+  error?: string;
+}
+
+export function useGenerateProposalPdf() {
+  return useMutation({
+    mutationFn: async (quoteId: string): Promise<GeneratePdfResult> => {
+      const { data, error } = await supabase.functions.invoke('generate-proposal-pdf', {
+        body: { quoteId },
+      });
+      
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to generate PDF');
+      
+      return data;
+    },
+  });
+}
+
+/**
+ * Convert HTML to a PDF blob using html2canvas and jsPDF
+ * This runs in the browser since Edge Functions can't render HTML to PDF directly
+ */
+export async function htmlToPdfBlob(html: string, filename: string): Promise<Blob> {
+  // Dynamic import of html2pdf.js
+  const html2pdf = (await import('html2pdf.js')).default;
+  
+  // Create a container for the HTML
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '210mm'; // A4 width
+  document.body.appendChild(container);
+  
+  try {
+    const pdfBlob = await html2pdf()
+      .set({
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait' 
+        },
+      })
+      .from(container)
+      .outputPdf('blob');
+    
+    return pdfBlob;
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
+/**
+ * Convert a Blob to base64 string
+ */
+export function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      // Remove the data URL prefix to get just the base64 content
+      resolve(result.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
