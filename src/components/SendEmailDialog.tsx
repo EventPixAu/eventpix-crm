@@ -228,14 +228,22 @@ export function SendEmailDialog({
       .replace(/\{\{contract\.url\}\}/gi, mergeContext?.contractSignUrl || '');
   };
 
-  // Apply template when selected
+  // Apply template when selected - keep raw text for editing
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
     if (template) {
+      // Process subject merge fields but keep body as raw template for editing
       setSubject(processMergeFields(template.subject));
-      setBody(processMergeFields(template.body_html));
+      // Use body_text if available (plain text), otherwise strip HTML tags for editing
+      const rawBody = template.body_text || template.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+      setBody(rawBody);
     }
+  };
+
+  // Process body for preview/send - converts plain text to HTML with merge fields
+  const getProcessedBody = () => {
+    return processMergeFields(body);
   };
 
   const handleSend = async () => {
@@ -269,11 +277,14 @@ export function SendEmailDialog({
       }
     }
 
+    // Get processed HTML body for sending
+    const processedBody = getProcessedBody();
+
     sendEmail.mutate({
       recipientEmail,
       recipientName: recipientName || undefined,
       subject,
-      bodyHtml: body,
+      bodyHtml: processedBody,
       attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
       contactId: selectedContactId || undefined,
       clientId: clientId || undefined,
@@ -471,7 +482,7 @@ export function SendEmailDialog({
               <div className="border-t pt-4">
                 <div 
                   className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body || '<p class="text-muted-foreground">No message content</p>') }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getProcessedBody() || '<p class="text-muted-foreground">No message content</p>') }}
                 />
               </div>
             </div>
