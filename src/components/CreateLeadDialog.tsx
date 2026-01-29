@@ -284,6 +284,32 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         }
       }
       
+      // Auto-initialize the default sales workflow for leads
+      // Find the default "Lead - standard" workflow template
+      const { data: defaultTemplate } = await supabase
+        .from('workflow_templates')
+        .select('id')
+        .eq('workflow_domain', 'sales')
+        .eq('applies_to', 'lead')
+        .eq('is_active', true)
+        .order('template_name')
+        .limit(1)
+        .single();
+      
+      if (defaultTemplate?.id) {
+        const { error: workflowError } = await supabase.rpc('create_workflow_instance', {
+          p_template_id: defaultTemplate.id,
+          p_entity_type: 'lead',
+          p_entity_id: newLead.id,
+          p_main_shoot_at: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : null,
+        });
+        
+        if (workflowError) {
+          console.error('Failed to initialize workflow:', workflowError);
+          // Don't fail lead creation if workflow init fails
+        }
+      }
+      
       // Close dialog and navigate to lead detail
       setOpen(false);
       navigate(`/sales/leads/${newLead.id}`);
