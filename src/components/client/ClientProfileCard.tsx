@@ -6,7 +6,7 @@
  * - Editable Company Status
  * - Edit/Delete buttons
  */
-import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag } from 'lucide-react';
+import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ interface ClientProfileCardProps {
     billing_address?: string | null;
     category_id?: string | null;
     category?: { id: string; name: string } | null;
+    lead_source?: string | null;
     manual_status?: string | null;
     status_override_at?: string | null;
     status_override_reason?: string | null;
@@ -77,12 +78,20 @@ export function ClientProfileCard({
           </div>
           <div className="flex-1 min-w-0">
             <CardTitle className="text-xl truncate">{client.business_name}</CardTitle>
-            {client.category?.name && (
-              <Badge variant="secondary" className="mt-1.5">
-                <Tag className="h-3 w-3 mr-1" />
-                {client.category.name}
-              </Badge>
-            )}
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {client.category?.name && (
+                <Badge variant="secondary">
+                  <Tag className="h-3 w-3 mr-1" />
+                  {client.category.name}
+                </Badge>
+              )}
+              {client.lead_source && (
+                <Badge variant="outline" className="text-muted-foreground">
+                  <Database className="h-3 w-3 mr-1" />
+                  {client.lead_source}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
