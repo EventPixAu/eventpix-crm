@@ -27,6 +27,17 @@ export interface CalendarEvent {
   has_conflict: boolean;
   needs_attention: boolean;
   is_delivered: boolean;
+  is_lead?: boolean; // Flag for leads shown on calendar
+}
+
+export interface CalendarLead {
+  id: string;
+  lead_name: string;
+  client_name: string;
+  estimated_date: string;
+  venue_text: string | null;
+  event_type_id: string | null;
+  status: string;
 }
 
 export interface ConflictInfo {
@@ -34,6 +45,46 @@ export interface ConflictInfo {
   event_name: string;
   start_at: string;
   end_at: string;
+}
+
+// Fetch leads for calendar display (active leads with estimated dates)
+export function useCalendarLeads(currentMonth: Date) {
+  return useQuery({
+    queryKey: ['calendar-leads', format(currentMonth, 'yyyy-MM')],
+    queryFn: async () => {
+      const rangeStart = format(subMonths(startOfMonth(currentMonth), 1), 'yyyy-MM-dd');
+      const rangeEnd = format(addMonths(endOfMonth(currentMonth), 1), 'yyyy-MM-dd');
+
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          lead_name,
+          estimated_event_date,
+          venue_text,
+          event_type_id,
+          status,
+          client:clients(id, business_name)
+        `)
+        .in('status', ['new', 'qualified', 'quoted', 'contract_sent'])
+        .not('estimated_event_date', 'is', null)
+        .gte('estimated_event_date', rangeStart)
+        .lte('estimated_event_date', rangeEnd)
+        .order('estimated_event_date', { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map(lead => ({
+        id: lead.id,
+        lead_name: lead.lead_name,
+        client_name: (lead.client as any)?.business_name || 'Unknown',
+        estimated_date: lead.estimated_event_date!,
+        venue_text: lead.venue_text,
+        event_type_id: lead.event_type_id,
+        status: lead.status,
+      })) as CalendarLead[];
+    },
+  });
 }
 
 // Get suburb from address (last part before state/postcode)

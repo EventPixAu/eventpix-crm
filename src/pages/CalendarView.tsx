@@ -48,7 +48,7 @@ import {
 import { useStaffDirectory } from '@/hooks/useStaff';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useActiveEventSeries } from '@/hooks/useEventSeries';
-import { useAdminCalendarEvents, getVenueSuburb, type CalendarEvent } from '@/hooks/useCalendar';
+import { useAdminCalendarEvents, useCalendarLeads, getVenueSuburb, type CalendarEvent, type CalendarLead } from '@/hooks/useCalendar';
 import { getTimezoneAbbr } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
@@ -90,20 +90,20 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
           ? "bg-amber-100 dark:bg-amber-900/30 border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50"
           : seriesColor
           ? `${seriesColor.bg} ${seriesColor.border} hover:opacity-80`
-          : "bg-primary/10 border-primary hover:bg-primary/20"
+          : "bg-amber-50 dark:bg-amber-100 border-primary hover:bg-amber-100 dark:hover:bg-amber-200"
       )}
     >
       <div className="flex items-center gap-1">
         {(event.arrival_time || event.start_time) && (
           <span className={cn(
             "font-medium shrink-0",
-            seriesColor ? seriesColor.text : "text-primary"
+            seriesColor ? seriesColor.text : "text-amber-700"
           )}>
             {format(new Date(`2000-01-01T${event.arrival_time || event.start_time}`), 'h:mm a')}
           </span>
         )}
         {tzAbbr && (
-          <span className="text-[10px] text-muted-foreground shrink-0">({tzAbbr})</span>
+          <span className="text-[10px] text-gray-600 shrink-0">({tzAbbr})</span>
         )}
         {event.has_conflict && (
           <AlertTriangle className="h-3 w-3 text-orange-600 shrink-0" />
@@ -112,8 +112,8 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
           <Clock className="h-3 w-3 text-amber-600 shrink-0" />
         )}
       </div>
-      <span className="text-foreground block truncate">{event.event_name}</span>
-      <div className="flex items-center gap-1 text-muted-foreground">
+      <span className="text-gray-900 block truncate font-medium">{event.event_name}</span>
+      <div className="flex items-center gap-1 text-gray-600">
         {suburb && (
           <span className="truncate">{suburb}</span>
         )}
@@ -123,6 +123,23 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
             {event.assignment_count}
           </span>
         )}
+      </div>
+    </Link>
+  );
+}
+
+function LeadTile({ lead }: { lead: CalendarLead }) {
+  return (
+    <Link
+      to={`/sales/leads/${lead.id}`}
+      className="block text-xs p-1.5 rounded transition-colors truncate border-l-2 bg-violet-100 dark:bg-violet-200 border-violet-500 hover:bg-violet-200 dark:hover:bg-violet-300"
+    >
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] font-medium text-violet-700 uppercase shrink-0">Lead</span>
+      </div>
+      <span className="text-gray-900 block truncate font-medium">{lead.lead_name}</span>
+      <div className="text-gray-600 truncate">
+        {lead.client_name}
       </div>
     </Link>
   );
@@ -263,6 +280,8 @@ export default function CalendarView() {
     deliveryMethodId: selectedDeliveryMethod !== 'all' ? selectedDeliveryMethod : undefined,
     seriesId: selectedSeries !== 'all' ? selectedSeries : undefined,
   });
+  
+  const { data: leads = [] } = useCalendarLeads(currentMonth);
 
   // Create consistent color mapping for series
   const seriesColorMap = useMemo(() => {
@@ -306,9 +325,26 @@ export default function CalendarView() {
     return map;
   }, [events]);
 
+  const leadsByDate = useMemo(() => {
+    const map = new Map<string, CalendarLead[]>();
+    leads.forEach((lead) => {
+      const dateKey = lead.estimated_date;
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey)!.push(lead);
+    });
+    return map;
+  }, [leads]);
+
   const getEventsForDay = (day: Date) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     return eventsByDate.get(dateKey) || [];
+  };
+
+  const getLeadsForDay = (day: Date) => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    return leadsByDate.get(dateKey) || [];
   };
 
   const sortedListEvents = useMemo(() => {
@@ -542,6 +578,7 @@ export default function CalendarView() {
           <div className="grid grid-cols-7 min-h-[400px]">
             {weekDays.map((day) => {
               const dayEvents = getEventsForDay(day);
+              const dayLeads = getLeadsForDay(day);
               return (
                 <div
                   key={day.toISOString()}
@@ -550,6 +587,9 @@ export default function CalendarView() {
                     isToday(day) && "bg-primary/5"
                   )}
                 >
+                  {dayLeads.map((lead) => (
+                    <LeadTile key={`lead-${lead.id}`} lead={lead} />
+                  ))}
                   {dayEvents.map((event) => (
                     <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
                   ))}
@@ -586,8 +626,10 @@ export default function CalendarView() {
 
               {monthDays.map((day) => {
                 const dayEvents = getEventsForDay(day);
+                const dayLeads = getLeadsForDay(day);
                 const isCurrentDay = isToday(day);
-                const isBusyDay = dayEvents.length >= 5;
+                const totalItems = dayEvents.length + dayLeads.length;
+                const isBusyDay = totalItems >= 5;
                 const dateStr = format(day, 'yyyy-MM-dd');
 
                 return (
@@ -615,21 +657,26 @@ export default function CalendarView() {
                           className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded hover:bg-primary/20 transition-colors"
                         >
                           <Eye className="h-3 w-3" />
-                          {dayEvents.length}
+                          {totalItems}
                         </button>
                       )}
                     </div>
                     <div className="space-y-1">
-                      {dayEvents.slice(0, 3).map((event) => (
+                      {/* Show leads first */}
+                      {dayLeads.slice(0, 2).map((lead) => (
+                        <LeadTile key={`lead-${lead.id}`} lead={lead} />
+                      ))}
+                      {/* Then events */}
+                      {dayEvents.slice(0, 3 - Math.min(dayLeads.length, 2)).map((event) => (
                         <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
                       ))}
-                      {dayEvents.length > 3 && (
+                      {totalItems > 3 && (
                         <>
                           <button
                             onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
                             className="text-xs text-muted-foreground pl-1.5 hover:text-primary transition-colors"
                           >
-                            +{dayEvents.length - 3} more
+                            +{totalItems - 3} more
                           </button>
                           <DaySummaryBadge events={dayEvents} />
                         </>
