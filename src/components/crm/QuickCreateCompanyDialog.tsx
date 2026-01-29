@@ -33,6 +33,7 @@ export function QuickCreateCompanyDialog({
   const [businessName, setBusinessName] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [companyPhone, setCompanyPhone] = useState('');
+  const [website, setWebsite] = useState('');
   
   const queryClient = useQueryClient();
 
@@ -44,6 +45,7 @@ export function QuickCreateCompanyDialog({
           business_name: businessName.trim(),
           company_email: companyEmail.trim() || null,
           company_phone: companyPhone.trim() || null,
+          website: website.trim() || null,
         }])
         .select('id, business_name')
         .single();
@@ -72,6 +74,7 @@ export function QuickCreateCompanyDialog({
     setBusinessName('');
     setCompanyEmail('');
     setCompanyPhone('');
+    setWebsite('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -121,6 +124,17 @@ export function QuickCreateCompanyDialog({
                 value={companyPhone}
                 onChange={(e) => setCompanyPhone(e.target.value)}
                 placeholder="+61 2 1234 5678"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                type="url"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://www.example.com"
               />
             </div>
           </div>
