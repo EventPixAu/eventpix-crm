@@ -21,7 +21,6 @@ import {
   FolderOpen,
   StickyNote,
   Mail,
-  History,
   Eye,
   ExternalLink,
   ArrowRightCircle,
@@ -226,22 +225,34 @@ export default function LeadDetail(): JSX.Element {
         }
       />
 
-      {/* Main Content - Studio Ninja 3-Column Layout */}
+      {/* Main Content - 3 Equal Column Layout */}
       <div className="grid gap-6 lg:grid-cols-12 mt-6">
         
-        {/* LEFT COLUMN: Workflow Rail */}
-        <div className="lg:col-span-5 xl:col-span-5">
-          <div className="bg-card border rounded-lg p-4">
-            <LeadWorkflowRailV2
-              leadId={id!}
-              mainShootDate={mainShootStart}
-              onInitializeWorkflow={() => setIsInitWorkflowOpen(true)}
-            />
-          </div>
+        {/* LEFT COLUMN: Client + Contacts + Mail History */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Client Card */}
+          <LeadClientCard
+            client={client}
+            onSendEmail={() => {}}
+          />
+
+          {/* Contacts Panel */}
+          <LeadContactsPanel
+            leadId={id!}
+            clientId={(lead as any).client_id}
+            defaultOpen={true}
+          />
+
+          {/* Mail History Panel */}
+          <MailHistoryPanel 
+            leadId={id} 
+            contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
+            maxItems={10} 
+          />
         </div>
 
         {/* CENTER COLUMN: Lead Summary + Stacked Panels */}
-        <div className="lg:col-span-4 xl:col-span-4 space-y-4">
+        <div className="lg:col-span-4 space-y-4">
           {/* Lead Summary Card */}
           <LeadSummaryCard
             lead={{
@@ -351,20 +362,16 @@ export default function LeadDetail(): JSX.Element {
           </LeadCollapsiblePanel>
         </div>
 
-        {/* RIGHT COLUMN: Client Card + Contacts + Files + Notes */}
-        <div className="lg:col-span-3 xl:col-span-3 space-y-4">
-          {/* Client Card */}
-          <LeadClientCard
-            client={client}
-            onSendEmail={() => {}}
-          />
-
-          {/* Contacts Panel */}
-          <LeadContactsPanel
-            leadId={id!}
-            clientId={(lead as any).client_id}
-            defaultOpen={true}
-          />
+        {/* RIGHT COLUMN: Workflow + Files + Notes */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Workflow Rail */}
+          <div className="bg-card border rounded-lg p-4">
+            <LeadWorkflowRailV2
+              leadId={id!}
+              mainShootDate={mainShootStart}
+              onInitializeWorkflow={() => setIsInitWorkflowOpen(true)}
+            />
+          </div>
 
           {/* Files Panel */}
           <LeadCollapsiblePanel
@@ -389,22 +396,6 @@ export default function LeadDetail(): JSX.Element {
             <div />
           </LeadCollapsiblePanel>
         </div>
-      </div>
-
-      {/* BOTTOM SECTION: History Log + Mail */}
-      <div className="mt-6 space-y-4">
-        {/* History Log Button */}
-        <Button variant="outline" size="sm">
-          <History className="h-4 w-4 mr-2" />
-          History Log
-        </Button>
-
-        {/* Mail History Panel */}
-        <MailHistoryPanel 
-          leadId={id} 
-          contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
-          maxItems={10} 
-        />
       </div>
 
       {/* Apply Template Dialog */}
