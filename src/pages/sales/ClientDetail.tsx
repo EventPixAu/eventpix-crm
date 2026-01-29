@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus } from 'lucide-react';
+import { RecordNavigator } from '@/components/RecordNavigator';
 import { useQueryClient } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -338,15 +339,18 @@ export default function ClientDetail() {
           </span>
         }
         actions={
-          <CreateLeadDialog 
-            defaultClientId={id}
-            trigger={
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Lead
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-3">
+            <RecordNavigator currentId={id!} recordType="company" />
+            <CreateLeadDialog 
+              defaultClientId={id}
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Lead
+                </Button>
+              }
+            />
+          </div>
         }
       />
 

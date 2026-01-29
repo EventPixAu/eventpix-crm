@@ -7,6 +7,7 @@
  * - Activity timeline (emails, calls, meetings)
  */
 import { useState, useMemo } from 'react';
+import { RecordNavigator } from '@/components/RecordNavigator';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
@@ -566,10 +567,13 @@ export default function ContactDetail() {
       <PageHeader
         title={contact.contact_name}
         actions={
-          <Button onClick={() => setIsActivityOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Log Activity
-          </Button>
+          <div className="flex items-center gap-3">
+            <RecordNavigator currentId={id!} recordType="contact" />
+            <Button onClick={() => setIsActivityOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Log Activity
+            </Button>
+          </div>
         }
       />
 
