@@ -3094,6 +3094,7 @@ export type Database = {
           owner_priority: string | null
           received_at: string | null
           requirements_summary: string | null
+          sales_workflow_id: string | null
           source: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string | null
@@ -3124,6 +3125,7 @@ export type Database = {
           owner_priority?: string | null
           received_at?: string | null
           requirements_summary?: string | null
+          sales_workflow_id?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string | null
@@ -3154,6 +3156,7 @@ export type Database = {
           owner_priority?: string | null
           received_at?: string | null
           requirements_summary?: string | null
+          sales_workflow_id?: string | null
           source?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string | null
@@ -3194,6 +3197,13 @@ export type Database = {
             columns: ["lost_reason_id"]
             isOneToOne: false
             referencedRelation: "lost_reasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_sales_workflow_id_fkey"
+            columns: ["sales_workflow_id"]
+            isOneToOne: false
+            referencedRelation: "sales_workflow_templates"
             referencedColumns: ["id"]
           },
           {
