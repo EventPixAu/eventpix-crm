@@ -3904,8 +3904,10 @@ export type Database = {
           items: Json
           name: string
           phase: string | null
+          sort_order: number | null
           updated_at: string | null
           workflow_domain: string
+          workflow_key: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -3917,8 +3919,10 @@ export type Database = {
           items?: Json
           name: string
           phase?: string | null
+          sort_order?: number | null
           updated_at?: string | null
           workflow_domain?: string
+          workflow_key?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -3930,8 +3934,10 @@ export type Database = {
           items?: Json
           name?: string
           phase?: string | null
+          sort_order?: number | null
           updated_at?: string | null
           workflow_domain?: string
+          workflow_key?: string | null
         }
         Relationships: [
           {
