@@ -266,7 +266,7 @@ export default function WorkflowsAdmin() {
       .filter(s => s.phase === newStep.phase)
       .reduce((max, s) => Math.max(max, s.sort_order), -1);
     
-    await createStep.mutateAsync({
+    const createdStep = await createStep.mutateAsync({
       label: newStep.label.trim(),
       phase: newStep.phase || 'pre_event',
       sort_order: maxOrder + 1,
@@ -277,6 +277,12 @@ export default function WorkflowsAdmin() {
       help_text: newStep.help_text || null,
       is_active: true,
     });
+    
+    // If we're in Event Types tab with a selected event type, add this step to selection
+    if (selectedEventType && createdStep?.id) {
+      setSelectedSteps(prev => [...prev, createdStep.id]);
+      setHasChanges(true);
+    }
     
     setNewStepDialog(false);
     setNewStep({
@@ -503,12 +509,22 @@ export default function WorkflowsAdmin() {
                           }
                         </p>
                       </div>
-                      {hasChanges && (
-                        <Button onClick={handleSaveDefaults} disabled={setDefaults.isPending}>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save Changes
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setNewStepDialog(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Step
                         </Button>
-                      )}
+                        {hasChanges && (
+                          <Button onClick={handleSaveDefaults} disabled={setDefaults.isPending}>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
