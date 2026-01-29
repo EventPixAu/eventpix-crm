@@ -359,8 +359,20 @@ export default function WorkflowsAdmin() {
             
             <div className="p-4 space-y-6">
               {phases.map(phase => {
-                const phaseSteps = masterSteps.filter(s => s.phase === phase.key);
-                
+                const phaseSteps = masterSteps
+                  .filter(s => s.phase === phase.key)
+                  .sort((a, b) => {
+                    // Sort by date_offset_days (nulls first), then by sort_order
+                    if (a.date_offset_days === null && b.date_offset_days === null) {
+                      return a.sort_order - b.sort_order;
+                    }
+                    if (a.date_offset_days === null) return -1;
+                    if (b.date_offset_days === null) return 1;
+                    if (a.date_offset_days !== b.date_offset_days) {
+                      return a.date_offset_days - b.date_offset_days;
+                    }
+                    return a.sort_order - b.sort_order;
+                  });
                 return (
                   <div key={phase.key}>
                     <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
@@ -477,7 +489,20 @@ export default function WorkflowsAdmin() {
 
                     <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
                       {phases.map(phase => {
-                        const phaseSteps = activeSteps.filter(s => s.phase === phase.key);
+                        const phaseSteps = activeSteps
+                          .filter(s => s.phase === phase.key)
+                          .sort((a, b) => {
+                            // Sort by date_offset_days (nulls first), then by sort_order
+                            if (a.date_offset_days === null && b.date_offset_days === null) {
+                              return a.sort_order - b.sort_order;
+                            }
+                            if (a.date_offset_days === null) return -1;
+                            if (b.date_offset_days === null) return 1;
+                            if (a.date_offset_days !== b.date_offset_days) {
+                              return a.date_offset_days - b.date_offset_days;
+                            }
+                            return a.sort_order - b.sort_order;
+                          });
                         if (phaseSteps.length === 0) return null;
                         
                         return (
