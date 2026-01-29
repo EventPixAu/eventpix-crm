@@ -362,17 +362,8 @@ export default function LeadDetail(): JSX.Element {
           </LeadCollapsiblePanel>
         </div>
 
-        {/* RIGHT COLUMN: Workflow + Files + Notes */}
+        {/* RIGHT COLUMN: Files + Notes + Workflow */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Workflow Rail */}
-          <div className="bg-card border rounded-lg p-4">
-            <LeadWorkflowRailV2
-              leadId={id!}
-              mainShootDate={mainShootStart}
-              onInitializeWorkflow={() => setIsInitWorkflowOpen(true)}
-            />
-          </div>
-
           {/* Files Panel */}
           <LeadCollapsiblePanel
             icon={FolderOpen}
@@ -395,6 +386,15 @@ export default function LeadDetail(): JSX.Element {
           >
             <div />
           </LeadCollapsiblePanel>
+
+          {/* Workflow Rail */}
+          <div className="bg-card border rounded-lg p-4">
+            <LeadWorkflowRailV2
+              leadId={id!}
+              mainShootDate={mainShootStart}
+              onInitializeWorkflow={() => setIsInitWorkflowOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
