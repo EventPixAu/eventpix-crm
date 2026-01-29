@@ -41,6 +41,7 @@ export function useWorkflowMasterSteps() {
         .from('workflow_master_steps')
         .select('*')
         .order('phase')
+        .order('date_offset_days', { ascending: true, nullsFirst: true })
         .order('sort_order');
       
       if (error) throw error;
@@ -59,6 +60,7 @@ export function useActiveWorkflowMasterSteps() {
         .select('*')
         .eq('is_active', true)
         .order('phase')
+        .order('date_offset_days', { ascending: true, nullsFirst: true })
         .order('sort_order');
       
       if (error) throw error;
