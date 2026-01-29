@@ -655,6 +655,29 @@ export default function WorkflowsAdmin() {
               </Select>
             </div>
             
+            {/* Auto Trigger Event - only show when completion type is auto */}
+            {newStep.completion_type === 'auto' && (
+              <div>
+                <Label>Trigger Event</Label>
+                <Select
+                  value={newStep.auto_trigger_event || ''}
+                  onValueChange={v => setNewStep({ ...newStep, auto_trigger_event: v || null })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select trigger event" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contract_signed">Contract Signed</SelectItem>
+                    <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
+                    <SelectItem value="invoice_paid">Invoice Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Step auto-completes when this event occurs
+                </p>
+              </div>
+            )}
+            
             {/* Due Date Offset Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -758,6 +781,29 @@ export default function WorkflowsAdmin() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Auto Trigger Event - only show when completion type is auto */}
+              {editingStep.completion_type === 'auto' && (
+                <div>
+                  <Label>Trigger Event</Label>
+                  <Select
+                    value={editingStep.auto_trigger_event || ''}
+                    onValueChange={v => setEditingStep({ ...editingStep, auto_trigger_event: v || null })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select trigger event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="contract_signed">Contract Signed</SelectItem>
+                      <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
+                      <SelectItem value="invoice_paid">Invoice Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Step auto-completes when this event occurs
+                  </p>
+                </div>
+              )}
               
               {/* Due Date Offset Fields */}
               <div className="grid grid-cols-2 gap-4">
