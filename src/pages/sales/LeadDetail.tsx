@@ -399,36 +399,12 @@ export default function LeadDetail(): JSX.Element {
           History Log
         </Button>
 
-        {/* Mail Panel */}
-        <div className="bg-card border rounded-lg">
-          <div 
-            className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <span className="font-semibold">Mail</span>
-              {emailLogs.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {emailLogs.length}
-                </Badge>
-              )}
-            </div>
-            
-            <Button 
-              variant="default" 
-              size="icon" 
-              className="h-8 w-8 rounded-full"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {emailLogs.length > 0 && (
-            <div className="px-4 pb-4 border-t">
-              <MailHistoryPanel leadId={id} maxItems={5} />
-            </div>
-          )}
-        </div>
+        {/* Mail History Panel */}
+        <MailHistoryPanel 
+          leadId={id} 
+          contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
+          maxItems={10} 
+        />
       </div>
 
       {/* Apply Template Dialog */}

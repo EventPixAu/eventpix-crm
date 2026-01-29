@@ -109,6 +109,30 @@ export function useClientEmailLogs(clientId: string | undefined) {
   });
 }
 
+// Fetch email logs by recipient email address (for contact-based lookups)
+export function useRecipientEmailLogs(recipientEmail: string | undefined | null) {
+  return useQuery({
+    queryKey: ['email-logs', 'recipient', recipientEmail],
+    queryFn: async () => {
+      if (!recipientEmail) return [];
+      
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select(`
+          *,
+          sent_by_profile:profiles!email_logs_sent_by_fkey(full_name, email)
+        `)
+        .or(`recipient_email.ilike.${recipientEmail},from_email.ilike.${recipientEmail}`)
+        .order('sent_at', { ascending: false, nullsFirst: false })
+        .limit(50);
+      
+      if (error) throw error;
+      return data as EmailLog[];
+    },
+    enabled: !!recipientEmail,
+  });
+}
+
 // Log an email send
 export function useLogEmailSend() {
   const queryClient = useQueryClient();
