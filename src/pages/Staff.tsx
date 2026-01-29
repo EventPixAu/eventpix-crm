@@ -37,16 +37,18 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStaff, useCreateStaff, Staff as StaffType } from '@/hooks/useStaff';
+import { useStaff, useCreateStaff, useProfiles, Staff as StaffType } from '@/hooks/useStaff';
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
+import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 
 export default function Staff() {
   const { isAdmin } = useAuth();
   const { data: staff = [], isLoading } = useStaff();
+  const { data: profiles = [] } = useProfiles();
   const { data: locations = [] } = useActiveLocations();
   const createStaff = useCreateStaff();
   const { toast } = useToast();
@@ -65,6 +67,17 @@ export default function Staff() {
     role: 'photographer' as const,
     status: 'active' as const,
   });
+
+  // Create a map of user_id to profile onboarding_status for quick lookup
+  const profileStatusMap = useMemo(() => {
+    const map = new Map<string, string>();
+    profiles.forEach(profile => {
+      if (profile.id && profile.onboarding_status) {
+        map.set(profile.id, profile.onboarding_status);
+      }
+    });
+    return map;
+  }, [profiles]);
 
   // Get sorted locations from lookup table
   const sortedLocations = useMemo(() => {
@@ -397,16 +410,40 @@ export default function Staff() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-medium truncate">{member.name}</h3>
                               <StatusBadge status={member.status} />
-                              {member.user_id ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
-                                  <Check className="h-3 w-3" />
-                                  Account
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">
-                                  Pending
-                                </span>
-                              )}
+                              {(() => {
+                                if (!member.user_id) {
+                                  // No account linked yet
+                                  return (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">
+                                      Pending
+                                    </span>
+                                  );
+                                }
+                                // Has user_id - check their profile onboarding status
+                                const onboardingStatus = profileStatusMap.get(member.user_id) as OnboardingStatus | undefined;
+                                const config = ONBOARDING_STATUS_CONFIG[onboardingStatus || 'incomplete'] || ONBOARDING_STATUS_CONFIG.incomplete;
+                                
+                                if (onboardingStatus === 'active') {
+                                  return (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
+                                      <Check className="h-3 w-3" />
+                                      Account
+                                    </span>
+                                  );
+                                }
+                                // Show their actual onboarding status with variant-based styling
+                                const variantStyles = {
+                                  default: 'bg-primary/10 text-primary',
+                                  secondary: 'bg-muted text-muted-foreground',
+                                  destructive: 'bg-destructive/10 text-destructive',
+                                  outline: 'bg-background border border-border text-muted-foreground',
+                                };
+                                return (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${variantStyles[config.variant]}`}>
+                                    {config.label}
+                                  </span>
+                                );
+                              })()}
                             </div>
                             <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           </div>
