@@ -51,7 +51,6 @@ import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { StaffAssignmentDialog } from '@/components/StaffAssignmentDialog';
-import { DeliveryManager } from '@/components/DeliveryManager';
 import { EventEquipmentPanel } from '@/components/EventEquipmentPanel';
 import { SessionsDisplay } from '@/components/SessionsDisplay';
 import { useEventContacts, CONTACT_TYPES } from '@/hooks/useEventContacts';
@@ -297,7 +296,6 @@ export default function EventDetail() {
               Equipment
             </TabsTrigger>
           )}
-          <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -700,9 +698,6 @@ export default function EventDetail() {
           </div>
         </TabsContent>
 
-        <TabsContent value="delivery">
-          {id && <DeliveryManager eventId={id} isAdmin={isAdmin} />}
-        </TabsContent>
         {/* Equipment Tab (Admin Only) */}
         {isAdmin && id && (
           <TabsContent value="equipment">
