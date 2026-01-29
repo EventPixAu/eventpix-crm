@@ -56,6 +56,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSelector } from '@/components/shared/ContactSelector';
+import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface CreateLeadDialogProps {
@@ -429,15 +430,12 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Venue name or address"
-                value={venueText}
-                onChange={(e) => setVenueText(e.target.value)}
-                className="flex-1"
-              />
-            </div>
+            <VenueSuggestInput
+              value={venueText}
+              onChange={setVenueText}
+              showIcon
+              placeholder="Venue name or address"
+            />
           </div>
           
           {/* Proposed Dates/Times */}
@@ -544,13 +542,12 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                       </div>
                       
                       {/* Venue */}
-                      <div className="col-span-2 flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <Input
-                          placeholder="Venue (optional)"
+                      <div className="col-span-2">
+                        <VenueSuggestInput
                           value={session.venueName}
-                          onChange={(e) => updateSession(session.id, { venueName: e.target.value })}
-                          className="text-sm"
+                          onChange={(val) => updateSession(session.id, { venueName: val })}
+                          placeholder="Venue (optional)"
+                          showIcon
                         />
                       </div>
                     </div>
