@@ -82,6 +82,10 @@ export function useCreateMasterStep() {
         .single();
       
       if (error) throw error;
+      
+      // Auto-reorder steps by date_offset_days within the phase
+      await reorderStepsByDateOffset(step.phase);
+      
       return data as WorkflowMasterStep;
     },
     onSuccess: () => {
@@ -92,6 +96,28 @@ export function useCreateMasterStep() {
       toast.error('Failed to create step: ' + error.message);
     },
   });
+}
+
+// Helper to reorder steps by date_offset_days within a phase
+async function reorderStepsByDateOffset(phase: WorkflowPhase) {
+  // Fetch all steps in this phase
+  const { data: phaseSteps, error: fetchError } = await supabase
+    .from('workflow_master_steps')
+    .select('id, date_offset_days')
+    .eq('phase', phase)
+    .order('date_offset_days', { ascending: true, nullsFirst: true });
+  
+  if (fetchError || !phaseSteps) return;
+  
+  // Update sort_order based on date_offset_days order
+  const updates = phaseSteps.map((step, index) =>
+    supabase
+      .from('workflow_master_steps')
+      .update({ sort_order: index, updated_at: new Date().toISOString() })
+      .eq('id', step.id)
+  );
+  
+  await Promise.all(updates);
 }
 
 // Update a master step
@@ -108,6 +134,10 @@ export function useUpdateMasterStep() {
         .single();
       
       if (error) throw error;
+      
+      // Auto-reorder steps by date_offset_days within the phase
+      await reorderStepsByDateOffset(data.phase as WorkflowPhase);
+      
       return data as WorkflowMasterStep;
     },
     onSuccess: () => {
