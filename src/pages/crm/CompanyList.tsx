@@ -54,6 +54,7 @@ import {
   Upload,
   CheckSquare,
   Trash2,
+  Database,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
@@ -73,6 +74,7 @@ interface Company {
   billing_address: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
+  lead_source: string | null;
   manual_status: string | null;
   status_override_reason: string | null;
   computed_status: ComputedStatus;
@@ -169,6 +171,7 @@ export default function CompanyList() {
           company_email,
           billing_address,
           category_id,
+          lead_source,
           manual_status,
           status_override_reason,
           category:company_categories(id, name)
@@ -407,6 +410,7 @@ export default function CompanyList() {
                   <TableHead>Contact Info</TableHead>
                   <TableHead>Tags</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -486,6 +490,16 @@ export default function CompanyList() {
                         <Badge variant="outline" className="gap-1">
                           <Tag className="h-3 w-3" />
                           {company.category.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {company.lead_source ? (
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <Database className="h-3 w-3" />
+                          {company.lead_source}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
