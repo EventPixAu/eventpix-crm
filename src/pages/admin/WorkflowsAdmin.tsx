@@ -144,6 +144,41 @@ const phases: { key: WorkflowPhase; label: string; color: string }[] = [
   { key: 'post_event', label: 'Post-Event', color: 'text-success' },
 ];
 
+function getDateOffsetReferenceRank(
+  ref: WorkflowMasterStep['date_offset_reference']
+): number {
+  // Lower rank = higher in list
+  switch (ref) {
+    case 'job_accepted':
+      return 0;
+    case 'lead_created':
+      return 1;
+    case 'event_date':
+      return 2;
+    case 'delivery_deadline':
+      return 3;
+    default:
+      return 4;
+  }
+}
+
+function compareStepsByDue(a: WorkflowMasterStep, b: WorkflowMasterStep) {
+  const rankA = getDateOffsetReferenceRank(a.date_offset_reference);
+  const rankB = getDateOffsetReferenceRank(b.date_offset_reference);
+  if (rankA !== rankB) return rankA - rankB;
+
+  // Sort by date_offset_days (nulls first), then by sort_order
+  if (a.date_offset_days === null && b.date_offset_days === null) {
+    return a.sort_order - b.sort_order;
+  }
+  if (a.date_offset_days === null) return -1;
+  if (b.date_offset_days === null) return 1;
+  if (a.date_offset_days !== b.date_offset_days) {
+    return a.date_offset_days - b.date_offset_days;
+  }
+  return a.sort_order - b.sort_order;
+}
+
 export default function WorkflowsAdmin() {
   const { data: eventTypes = [], isLoading: typesLoading } = useEventTypes();
   const { data: masterSteps = [], isLoading: stepsLoading } = useWorkflowMasterSteps();
@@ -361,18 +396,7 @@ export default function WorkflowsAdmin() {
               {phases.map(phase => {
                 const phaseSteps = masterSteps
                   .filter(s => s.phase === phase.key)
-                  .sort((a, b) => {
-                    // Sort by date_offset_days (nulls first), then by sort_order
-                    if (a.date_offset_days === null && b.date_offset_days === null) {
-                      return a.sort_order - b.sort_order;
-                    }
-                    if (a.date_offset_days === null) return -1;
-                    if (b.date_offset_days === null) return 1;
-                    if (a.date_offset_days !== b.date_offset_days) {
-                      return a.date_offset_days - b.date_offset_days;
-                    }
-                    return a.sort_order - b.sort_order;
-                  });
+                  .sort(compareStepsByDue);
                 return (
                   <div key={phase.key}>
                     <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
@@ -491,18 +515,7 @@ export default function WorkflowsAdmin() {
                       {phases.map(phase => {
                         const phaseSteps = activeSteps
                           .filter(s => s.phase === phase.key)
-                          .sort((a, b) => {
-                            // Sort by date_offset_days (nulls first), then by sort_order
-                            if (a.date_offset_days === null && b.date_offset_days === null) {
-                              return a.sort_order - b.sort_order;
-                            }
-                            if (a.date_offset_days === null) return -1;
-                            if (b.date_offset_days === null) return 1;
-                            if (a.date_offset_days !== b.date_offset_days) {
-                              return a.date_offset_days - b.date_offset_days;
-                            }
-                            return a.sort_order - b.sort_order;
-                          });
+                          .sort(compareStepsByDue);
                         if (phaseSteps.length === 0) return null;
                         
                         return (
