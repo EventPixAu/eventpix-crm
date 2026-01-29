@@ -126,17 +126,35 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Adding ${body.attachments.length} attachment(s) to email`);
     }
 
-    // Send via Resend
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${resendKey}`,
-      },
-      body: JSON.stringify(emailPayload),
-    });
+    // Send via Resend with retry logic for rate limits
+    const maxRetries = 3;
+    let lastResponse: Response | undefined;
+    let lastResult: Record<string, unknown> = {};
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      lastResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${resendKey}`,
+        },
+        body: JSON.stringify(emailPayload),
+      });
 
-    const resendResult = await resendResponse.json();
+      lastResult = await lastResponse.json();
+      
+      // If rate limited, wait and retry
+      if (lastResponse.status === 429 && attempt < maxRetries - 1) {
+        const waitTime = Math.pow(2, attempt) * 500; // 500ms, 1s, 2s
+        console.log(`Rate limited, waiting ${waitTime}ms before retry ${attempt + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      break;
+    }
+    
+    const resendResponse = lastResponse!;
+    const resendResult = lastResult;
 
     if (!resendResponse.ok) {
       console.error("Resend API error:", resendResult);
