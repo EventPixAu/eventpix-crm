@@ -110,6 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Build email payload
     const emailPayload: Record<string, unknown> = {
       from: "Eventpix <pix@rs.eventpix.com.au>",
+      reply_to: "pix@eventpix.com.au",
       to: [recipientEmail],
       subject: subject,
       html: fullBodyHtml,
