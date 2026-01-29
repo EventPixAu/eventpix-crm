@@ -12,7 +12,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Target, Plus, Building2, CalendarIcon, User, Clock, Trash2, MapPin, Check, ChevronsUpDown } from 'lucide-react';
+import { Target, Plus, Building2, CalendarIcon, User, Clock, Trash2, MapPin, Check, ChevronsUpDown, GitBranch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useClients, useCreateClient, useCreateLead } from '@/hooks/useSales';
 import { useEventTypes } from '@/hooks/useLookups';
 import { useLeadSources } from '@/hooks/useLeadSources';
+import { useSalesWorkflowTemplates } from '@/hooks/useSalesWorkflowTemplates';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -85,6 +86,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   const { data: clients = [] } = useClients();
   const { data: eventTypes = [] } = useEventTypes();
   const { data: leadSources = [] } = useLeadSources();
+  const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
   const createClient = useCreateClient();
   const createLead = useCreateLead();
   
@@ -107,6 +109,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   const [eventName, setEventName] = useState('');
   const [eventTypeId, setEventTypeId] = useState('');
   const [leadSourceId, setLeadSourceId] = useState('');
+  const [salesWorkflowId, setSalesWorkflowId] = useState('');
   const [venueText, setVenueText] = useState('');
   const [notes, setNotes] = useState('');
   
@@ -124,6 +127,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       setEventName('');
       setEventTypeId('');
       setLeadSourceId('');
+      setSalesWorkflowId('');
       setVenueText('');
       setNotes('');
       setProposedSessions([]);
@@ -218,7 +222,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       // Create the lead
       const leadName = generateLeadName();
       const estimatedDate = getEstimatedDate();
-      const newLead = await createLead.mutateAsync({
+      const leadData: Record<string, unknown> = {
         lead_name: leadName,
         client_id: clientId || null,
         event_type_id: eventTypeId || null,
@@ -227,7 +231,14 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         venue_text: venueText.trim() || null,
         notes: notes.trim() || null,
         status: 'new',
-      });
+      };
+      
+      // Add sales workflow if selected
+      if (salesWorkflowId) {
+        leadData.sales_workflow_id = salesWorkflowId;
+      }
+      
+      const newLead = await createLead.mutateAsync(leadData as any);
       
       // Create enquiry contact linking to the CRM contact
       const { error: contactError } = await supabase
@@ -430,6 +441,36 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Sales Workflow Selection */}
+            {salesWorkflows.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Sales Workflow</Label>
+                </div>
+                <Select value={salesWorkflowId} onValueChange={setSalesWorkflowId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select workflow..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {salesWorkflows.map((workflow) => (
+                      <SelectItem key={workflow.id} value={workflow.id}>
+                        {workflow.name}
+                        {workflow.workflow_key && (
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            ({workflow.workflow_key === 'new_lead' ? 'New' : 'Repeat'})
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose "New Leads" for first-time clients or "Repeat Clients" for returning customers.
+                </p>
+              </div>
+            )}
             <VenueSuggestInput
               value={venueText}
               onChange={setVenueText}

@@ -1,0 +1,687 @@
+import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Settings2, 
+  ClipboardList,
+  Check,
+  Save,
+  Plus,
+  Trash2,
+  GripVertical,
+  Pencil,
+} from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useEventTypes } from '@/hooks/useLookups';
+import { 
+  useWorkflowMasterSteps, 
+  useAllEventTypeStepDefaults, 
+  useSetEventTypeStepDefaults,
+  useCreateMasterStep,
+  useUpdateMasterStep,
+  useDeleteMasterStep,
+  PHASE_CONFIG,
+  type WorkflowMasterStep,
+  type WorkflowPhase,
+} from '@/hooks/useWorkflowMasterSteps';
+import { 
+  useSalesWorkflowTemplates,
+  useUpdateSalesWorkflowTemplate,
+  type SalesWorkflowTemplate,
+  type SalesWorkflowItem,
+} from '@/hooks/useSalesWorkflowTemplates';
+import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
+
+const phases: { key: WorkflowPhase; label: string; color: string }[] = [
+  { key: 'pre_event', label: 'Pre-Event', color: 'text-info' },
+  { key: 'day_of', label: 'Day Of', color: 'text-warning' },
+  { key: 'post_event', label: 'Post-Event', color: 'text-success' },
+];
+
+export default function WorkflowsAdmin() {
+  const { data: eventTypes = [], isLoading: typesLoading } = useEventTypes();
+  const { data: masterSteps = [], isLoading: stepsLoading } = useWorkflowMasterSteps();
+  const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
+  const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
+  
+  const setDefaults = useSetEventTypeStepDefaults();
+  const createStep = useCreateMasterStep();
+  const updateStep = useUpdateMasterStep();
+  const deleteStep = useDeleteMasterStep();
+  const updateSalesWorkflow = useUpdateSalesWorkflowTemplate();
+  
+  // Event Type Defaults State
+  const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
+  const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  
+  // Master Steps Editor State
+  const [editingStep, setEditingStep] = useState<WorkflowMasterStep | null>(null);
+  const [newStepDialog, setNewStepDialog] = useState(false);
+  const [newStep, setNewStep] = useState<Partial<WorkflowMasterStep>>({
+    label: '',
+    phase: 'pre_event',
+    completion_type: 'manual',
+    is_active: true,
+  });
+
+  // Sales Workflow Editor State
+  const [editingSalesWorkflow, setEditingSalesWorkflow] = useState<SalesWorkflowTemplate | null>(null);
+  const [salesWorkflowItems, setSalesWorkflowItems] = useState<SalesWorkflowItem[]>([]);
+
+  // Active steps only
+  const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
+
+  // Load defaults when event type is selected
+  useEffect(() => {
+    if (selectedEventType && allDefaults) {
+      const typeDefaults = allDefaults
+        .filter(d => d.event_type_id === selectedEventType)
+        .map(d => d.master_step_id);
+      setSelectedSteps(typeDefaults);
+      setHasChanges(false);
+    }
+  }, [selectedEventType, allDefaults]);
+
+  const handleStepToggle = (stepId: string) => {
+    setSelectedSteps(prev => {
+      if (prev.includes(stepId)) {
+        return prev.filter(id => id !== stepId);
+      } else {
+        return [...prev, stepId];
+      }
+    });
+    setHasChanges(true);
+  };
+
+  const handleSaveDefaults = async () => {
+    if (!selectedEventType) return;
+    
+    await setDefaults.mutateAsync({
+      eventTypeId: selectedEventType,
+      stepIds: selectedSteps,
+    });
+    
+    setHasChanges(false);
+  };
+
+  const getDefaultCount = (eventTypeId: string) => {
+    return allDefaults.filter(d => d.event_type_id === eventTypeId).length;
+  };
+
+  const handleCreateStep = async () => {
+    if (!newStep.label?.trim()) return;
+    
+    const maxOrder = masterSteps
+      .filter(s => s.phase === newStep.phase)
+      .reduce((max, s) => Math.max(max, s.sort_order), -1);
+    
+    await createStep.mutateAsync({
+      label: newStep.label.trim(),
+      phase: newStep.phase || 'pre_event',
+      sort_order: maxOrder + 1,
+      completion_type: newStep.completion_type || 'manual',
+      auto_trigger_event: newStep.auto_trigger_event || null,
+      date_offset_days: newStep.date_offset_days || null,
+      date_offset_reference: newStep.date_offset_reference || null,
+      help_text: newStep.help_text || null,
+      is_active: true,
+    });
+    
+    setNewStepDialog(false);
+    setNewStep({
+      label: '',
+      phase: 'pre_event',
+      completion_type: 'manual',
+      is_active: true,
+    });
+  };
+
+  const handleUpdateStep = async () => {
+    if (!editingStep) return;
+    
+    await updateStep.mutateAsync({
+      id: editingStep.id,
+      label: editingStep.label,
+      phase: editingStep.phase,
+      completion_type: editingStep.completion_type,
+      auto_trigger_event: editingStep.auto_trigger_event,
+      date_offset_days: editingStep.date_offset_days,
+      date_offset_reference: editingStep.date_offset_reference,
+      help_text: editingStep.help_text,
+      is_active: editingStep.is_active,
+    });
+    
+    setEditingStep(null);
+  };
+
+  const handleDeleteStep = async (stepId: string) => {
+    if (!confirm('Delete this workflow step? This cannot be undone.')) return;
+    await deleteStep.mutateAsync(stepId);
+  };
+
+  // Sales Workflow handlers
+  const handleEditSalesWorkflow = (workflow: SalesWorkflowTemplate) => {
+    setEditingSalesWorkflow(workflow);
+    setSalesWorkflowItems([...workflow.items]);
+  };
+
+  const handleAddSalesItem = () => {
+    const maxOrder = salesWorkflowItems.reduce((max, i) => Math.max(max, i.sort_order), -1);
+    setSalesWorkflowItems([...salesWorkflowItems, { title: '', sort_order: maxOrder + 1 }]);
+  };
+
+  const handleUpdateSalesItem = (index: number, title: string) => {
+    const updated = [...salesWorkflowItems];
+    updated[index] = { ...updated[index], title };
+    setSalesWorkflowItems(updated);
+  };
+
+  const handleRemoveSalesItem = (index: number) => {
+    setSalesWorkflowItems(salesWorkflowItems.filter((_, i) => i !== index));
+  };
+
+  const handleSaveSalesWorkflow = async () => {
+    if (!editingSalesWorkflow) return;
+    
+    await updateSalesWorkflow.mutateAsync({
+      id: editingSalesWorkflow.id,
+      items: salesWorkflowItems.filter(i => i.title.trim()),
+    });
+    
+    setEditingSalesWorkflow(null);
+  };
+
+  const isLoading = typesLoading || stepsLoading || defaultsLoading;
+
+  return (
+    <AppLayout>
+      <PageHeader
+        title="Workflow Configuration"
+        description="Manage operations workflow steps and sales workflows"
+      />
+
+      <Tabs defaultValue="operations" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="operations">Operations Steps</TabsTrigger>
+          <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
+          <TabsTrigger value="sales">Sales Workflows</TabsTrigger>
+          <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
+        </TabsList>
+
+        {/* Operations Master Steps Tab */}
+        <TabsContent value="operations">
+          <div className="bg-card border border-border rounded-xl">
+            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold">Master Operations Steps</h2>
+                <p className="text-sm text-muted-foreground">
+                  Define all possible workflow steps. Assign to event types in the next tab.
+                </p>
+              </div>
+              <Button onClick={() => setNewStepDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Step
+              </Button>
+            </div>
+            
+            <div className="p-4 space-y-6">
+              {phases.map(phase => {
+                const phaseSteps = masterSteps.filter(s => s.phase === phase.key);
+                
+                return (
+                  <div key={phase.key}>
+                    <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
+                      {phase.label} ({phaseSteps.length} steps)
+                    </h3>
+                    {phaseSteps.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-2">No steps defined</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {phaseSteps.map(step => (
+                          <div
+                            key={step.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border ${
+                              step.is_active ? 'border-border bg-background' : 'border-border/50 bg-muted/30 opacity-60'
+                            }`}
+                          >
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                            <span className="flex-1">{step.label}</span>
+                            {step.completion_type === 'auto' && (
+                              <Badge variant="outline" className="text-xs">Auto</Badge>
+                            )}
+                            {!step.is_active && (
+                              <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingStep({ ...step })}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteStep(step.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Event Type Defaults Tab */}
+        <TabsContent value="event-types">
+          {isLoading ? (
+            <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
+              Loading...
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Event Types List */}
+              <div className="lg:col-span-1">
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-border bg-muted/30">
+                    <h2 className="font-semibold">Event Types</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Select to configure workflow steps
+                    </p>
+                  </div>
+                  
+                  <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
+                    {eventTypes.map(type => {
+                      const defaultCount = getDefaultCount(type.id);
+                      const isSelected = selectedEventType === type.id;
+                      
+                      return (
+                        <button
+                          key={type.id}
+                          onClick={() => setSelectedEventType(type.id)}
+                          className={`w-full p-4 text-left transition-colors flex items-center justify-between ${
+                            isSelected 
+                              ? 'bg-primary/10 border-l-2 border-l-primary' 
+                              : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Settings2 className={`h-4 w-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span className={isSelected ? 'font-medium' : ''}>{type.name}</span>
+                          </div>
+                          {defaultCount > 0 ? (
+                            <Badge variant="secondary" className="text-xs">
+                              {defaultCount} steps
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              All steps
+                            </Badge>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Step Selection */}
+              <div className="lg:col-span-2">
+                {selectedEventType ? (
+                  <div className="bg-card border border-border rounded-xl">
+                    <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
+                      <div>
+                        <h2 className="font-semibold">
+                          Steps for {eventTypes.find(t => t.id === selectedEventType)?.name}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedSteps.length === 0 
+                            ? 'No steps selected - all active steps will be used'
+                            : `${selectedSteps.length} step(s) selected`
+                          }
+                        </p>
+                      </div>
+                      {hasChanges && (
+                        <Button onClick={handleSaveDefaults} disabled={setDefaults.isPending}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
+                      {phases.map(phase => {
+                        const phaseSteps = activeSteps.filter(s => s.phase === phase.key);
+                        if (phaseSteps.length === 0) return null;
+                        
+                        return (
+                          <motion.div
+                            key={phase.key}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                          >
+                            <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
+                              {phase.label}
+                            </h3>
+                            <div className="space-y-2">
+                              {phaseSteps.map(step => {
+                                const isChecked = selectedSteps.includes(step.id);
+                                
+                                return (
+                                  <label
+                                    key={step.id}
+                                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
+                                      isChecked 
+                                        ? 'border-primary bg-primary/5' 
+                                        : 'border-border hover:bg-muted/50'
+                                    }`}
+                                  >
+                                    <Checkbox
+                                      checked={isChecked}
+                                      onCheckedChange={() => handleStepToggle(step.id)}
+                                    />
+                                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                                    <span className="flex-1">{step.label}</span>
+                                    {isChecked && (
+                                      <Check className="h-4 w-4 text-primary" />
+                                    )}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+
+                      {activeSteps.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No active steps available. Create steps in the Operations Steps tab.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
+                    <Settings2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Select an event type to configure its workflow steps</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Sales Workflows Tab */}
+        <TabsContent value="sales">
+          <div className="bg-card border border-border rounded-xl">
+            <div className="p-4 border-b border-border bg-muted/30">
+              <h2 className="font-semibold">Sales Workflows</h2>
+              <p className="text-sm text-muted-foreground">
+                Configure workflows for new leads and repeat clients
+              </p>
+            </div>
+            
+            <div className="p-4 grid md:grid-cols-2 gap-4">
+              {salesWorkflows.map(workflow => (
+                <div
+                  key={workflow.id}
+                  className="border border-border rounded-lg p-4 bg-background"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="font-medium">{workflow.name}</h3>
+                      {workflow.workflow_key && (
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {workflow.workflow_key === 'new_lead' ? 'New Leads' : 'Repeat Clients'}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditSalesWorkflow(workflow)}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Edit Steps
+                    </Button>
+                  </div>
+                  {workflow.description && (
+                    <p className="text-sm text-muted-foreground mb-3">{workflow.description}</p>
+                  )}
+                  <div className="space-y-1">
+                    {workflow.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs">
+                          {index + 1}
+                        </span>
+                        <span className="text-muted-foreground">{item.title}</span>
+                      </div>
+                    ))}
+                    {workflow.items.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No steps defined</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {salesWorkflows.length === 0 && (
+                <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  No sales workflows configured
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Crew Checklists Tab */}
+        <TabsContent value="crew">
+          <CrewChecklistTemplatesManager />
+        </TabsContent>
+      </Tabs>
+
+      {/* New Step Dialog */}
+      <Dialog open={newStepDialog} onOpenChange={setNewStepDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Workflow Step</DialogTitle>
+            <DialogDescription>
+              Create a new step for the master operations workflow
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Step Label *</Label>
+              <Input
+                value={newStep.label || ''}
+                onChange={e => setNewStep({ ...newStep, label: e.target.value })}
+                placeholder="e.g., Client Brief Review"
+              />
+            </div>
+            <div>
+              <Label>Phase</Label>
+              <Select
+                value={newStep.phase}
+                onValueChange={v => setNewStep({ ...newStep, phase: v as WorkflowPhase })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {phases.map(p => (
+                    <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Completion Type</Label>
+              <Select
+                value={newStep.completion_type}
+                onValueChange={v => setNewStep({ ...newStep, completion_type: v as 'manual' | 'auto' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">Manual</SelectItem>
+                  <SelectItem value="auto">Auto-trigger</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewStepDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateStep} disabled={!newStep.label?.trim() || createStep.isPending}>
+              Create Step
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Step Dialog */}
+      <Dialog open={!!editingStep} onOpenChange={() => setEditingStep(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Workflow Step</DialogTitle>
+          </DialogHeader>
+          {editingStep && (
+            <div className="space-y-4">
+              <div>
+                <Label>Step Label *</Label>
+                <Input
+                  value={editingStep.label}
+                  onChange={e => setEditingStep({ ...editingStep, label: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Phase</Label>
+                <Select
+                  value={editingStep.phase}
+                  onValueChange={v => setEditingStep({ ...editingStep, phase: v as WorkflowPhase })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {phases.map(p => (
+                      <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Completion Type</Label>
+                <Select
+                  value={editingStep.completion_type}
+                  onValueChange={v => setEditingStep({ ...editingStep, completion_type: v as 'manual' | 'auto' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="auto">Auto-trigger</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={editingStep.is_active}
+                  onCheckedChange={checked => setEditingStep({ ...editingStep, is_active: !!checked })}
+                />
+                <Label>Active</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingStep(null)}>Cancel</Button>
+            <Button onClick={handleUpdateStep} disabled={updateStep.isPending}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sales Workflow Dialog */}
+      <Dialog open={!!editingSalesWorkflow} onOpenChange={() => setEditingSalesWorkflow(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Sales Workflow</DialogTitle>
+            <DialogDescription>
+              {editingSalesWorkflow?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {salesWorkflowItems.map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <span className="w-6 text-center text-sm text-muted-foreground">{index + 1}.</span>
+                <Input
+                  value={item.title}
+                  onChange={e => handleUpdateSalesItem(index, e.target.value)}
+                  placeholder="Step title..."
+                  className="flex-1"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveSalesItem(index)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+            <Button variant="outline" onClick={handleAddSalesItem} className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Step
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSalesWorkflow(null)}>Cancel</Button>
+            <Button onClick={handleSaveSalesWorkflow} disabled={updateSalesWorkflow.isPending}>
+              Save Workflow
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Info Box */}
+      <div className="mt-6 bg-muted/30 border border-border rounded-xl p-4">
+        <h3 className="font-medium mb-2">How Workflows Work</h3>
+        <ul className="text-sm text-muted-foreground space-y-1">
+          <li>• <strong>Operations Steps:</strong> Master list of all workflow steps. Assign to event types in the Event Type Defaults tab.</li>
+          <li>• <strong>Event Type Defaults:</strong> Select which steps apply to each event type. If none selected, all active steps are used.</li>
+          <li>• <strong>Sales Workflows:</strong> Two workflows (New Leads, Repeat Clients) are selectable when creating a lead.</li>
+          <li>• Changes to defaults only affect new events - existing events keep their current workflows.</li>
+        </ul>
+      </div>
+    </AppLayout>
+  );
+}
