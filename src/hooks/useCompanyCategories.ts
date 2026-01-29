@@ -22,7 +22,7 @@ export function useCompanyCategories() {
         .from('company_categories')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
+        .order('name', { ascending: true });
       
       if (error) throw error;
       return data as CompanyCategory[];
