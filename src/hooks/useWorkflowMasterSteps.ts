@@ -32,6 +32,24 @@ export const PHASE_CONFIG = {
   post_event: { label: 'Post-Event', color: 'text-success' },
 } as const;
 
+function getDateOffsetReferenceRank(
+  ref: WorkflowMasterStep['date_offset_reference']
+): number {
+  // Lower rank = higher in list
+  switch (ref) {
+    case 'job_accepted':
+      return 0;
+    case 'lead_created':
+      return 1;
+    case 'event_date':
+      return 2;
+    case 'delivery_deadline':
+      return 3;
+    default:
+      return 4;
+  }
+}
+
 // Fetch all master steps
 export function useWorkflowMasterSteps() {
   return useQuery({
@@ -41,7 +59,6 @@ export function useWorkflowMasterSteps() {
         .from('workflow_master_steps')
         .select('*')
         .order('phase')
-        .order('date_offset_days', { ascending: true, nullsFirst: true })
         .order('sort_order');
       
       if (error) throw error;
@@ -60,7 +77,6 @@ export function useActiveWorkflowMasterSteps() {
         .select('*')
         .eq('is_active', true)
         .order('phase')
-        .order('date_offset_days', { ascending: true, nullsFirst: true })
         .order('sort_order');
       
       if (error) throw error;
@@ -98,26 +114,49 @@ export function useCreateMasterStep() {
   });
 }
 
-// Helper to reorder steps by date_offset_days within a phase
+// Helper to reorder steps within a phase based on:
+// 1) date_offset_reference (job_accepted first)
+// 2) date_offset_days (nulls first, then ascending)
+// 3) existing sort_order as a stable tiebreaker
 async function reorderStepsByDateOffset(phase: WorkflowPhase) {
-  // Fetch all steps in this phase
   const { data: phaseSteps, error: fetchError } = await supabase
     .from('workflow_master_steps')
-    .select('id, date_offset_days')
-    .eq('phase', phase)
-    .order('date_offset_days', { ascending: true, nullsFirst: true });
-  
-  if (fetchError || !phaseSteps) return;
-  
-  // Update sort_order based on date_offset_days order
-  const updates = phaseSteps.map((step, index) =>
+    .select('id, date_offset_days, date_offset_reference, sort_order')
+    .eq('phase', phase);
+
+  if (fetchError) return;
+  if (!phaseSteps || phaseSteps.length === 0) return;
+
+  const sorted = [...phaseSteps].sort((a, b) => {
+    const rankA = getDateOffsetReferenceRank(
+      (a as any).date_offset_reference ?? null
+    );
+    const rankB = getDateOffsetReferenceRank(
+      (b as any).date_offset_reference ?? null
+    );
+    if (rankA !== rankB) return rankA - rankB;
+
+    const daysA = (a as any).date_offset_days as number | null;
+    const daysB = (b as any).date_offset_days as number | null;
+    if (daysA === null && daysB === null) {
+      return ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0);
+    }
+    if (daysA === null) return -1;
+    if (daysB === null) return 1;
+    if (daysA !== daysB) return daysA - daysB;
+    return ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0);
+  });
+
+  const updates = sorted.map((step, index) =>
     supabase
       .from('workflow_master_steps')
       .update({ sort_order: index, updated_at: new Date().toISOString() })
-      .eq('id', step.id)
+      .eq('id', (step as any).id)
   );
-  
-  await Promise.all(updates);
+
+  const results = await Promise.all(updates);
+  const error = results.find((r) => r.error)?.error;
+  if (error) throw error;
 }
 
 // Update a master step
