@@ -579,7 +579,21 @@ export function ContractsPanel({
         clientEmail={clientEmail}
         clientName={clientName}
         relatedContractId={selectedContract?.id}
-        defaultSubject={`Contract: ${selectedContract?.title || ''}`}
+        contractHtml={selectedContract?.rendered_html || undefined}
+        contractTitle={selectedContract?.title}
+        defaultSubject={`Your Agreement with EventPix - ${eventName || leadName || ''}`}
+        defaultBody={`Hi {{contact.first_name}},
+
+Thank you for accepting the budget for your upcoming event. This agreement will now lock in the event with EventPix.
+
+Please click the link below to review and sign the agreement:
+
+{{contract.link}}
+
+If you have any questions, please don't hesitate to reach out.
+
+Regards,
+The EventPix Team`}
         context="contract"
         mergeContext={{
           eventName: eventName,
