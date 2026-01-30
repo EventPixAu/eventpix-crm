@@ -134,6 +134,19 @@ export default function PublicAcceptQuote() {
 
       setAccepted(true);
       toast({ title: 'Quote accepted successfully!' });
+
+      // Send confirmation emails (fire and forget - don't block UI)
+      if (quote?.id) {
+        supabase.functions.invoke('send-quote-acceptance-email', {
+          body: {
+            quoteId: quote.id,
+            acceptedByName: formData.name,
+            acceptedByEmail: formData.email,
+          },
+        }).catch(err => {
+          console.error('Failed to send confirmation emails:', err);
+        });
+      }
     } catch (err: any) {
       toast({ 
         title: 'Failed to accept quote', 
