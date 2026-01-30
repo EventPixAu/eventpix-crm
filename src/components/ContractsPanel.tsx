@@ -2,7 +2,7 @@
  * CONTRACTS PANEL
  * 
  * Studio Ninja-style contracts panel for Lead and Job detail pages.
- * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate.
+ * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate, Delete.
  */
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -18,9 +18,20 @@ import {
   Link2,
   ChevronDown,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Collapsible,
   CollapsibleContent,
@@ -51,6 +62,7 @@ import {
   useMarkContractAsSent,
   useSignContractInternal,
   useCreateContract,
+  useDeleteContract,
 } from '@/hooks/useContracts';
 import { 
   useActiveContractTemplates,
@@ -98,12 +110,14 @@ export function ContractsPanel({
   const markAsSent = useMarkContractAsSent();
   const signContract = useSignContractInternal();
   const createContract = useCreateContract();
+  const deleteContract = useDeleteContract();
   
   // State
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSignOpen, setIsSignOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
@@ -220,6 +234,23 @@ export function ContractsPanel({
       await navigator.clipboard.writeText(publicUrl);
       toast({ title: 'Signing link copied to clipboard' });
     }
+  };
+  
+  const handleDeleteContract = async () => {
+    if (!selectedContract) return;
+    
+    try {
+      await deleteContract.mutateAsync(selectedContract.id);
+      setIsDeleteOpen(false);
+      setSelectedContract(null);
+    } catch (error) {
+      // Error handled by hook
+    }
+  };
+  
+  const openDeleteDialog = (contract: Contract) => {
+    setSelectedContract(contract);
+    setIsDeleteOpen(true);
   };
 
   return (
@@ -339,6 +370,19 @@ export function ContractsPanel({
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
+                        
+                        {/* Delete (only for draft contracts) */}
+                        {contract.status === 'draft' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openDeleteDialog(contract)}
+                            title="Delete"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         
                         {/* Signed info */}
                         {contract.status === 'signed' && contract.signed_at && (
@@ -474,6 +518,28 @@ export function ContractsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contract</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedContract?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteContract}
+              disabled={deleteContract.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteContract.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
