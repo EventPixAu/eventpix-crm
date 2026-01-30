@@ -40,12 +40,15 @@ export function useGenerateProposalPdf() {
  * This runs in the browser since Edge Functions can't render HTML to PDF directly
  */
 export async function htmlToPdfBlob(html: string, filename: string): Promise<Blob> {
-  // Dynamic import of html2pdf.js
-  const html2pdf = (await import('html2pdf.js')).default;
+  // NOTE: We intentionally do NOT use html2pdf.js here.
+  // html2pdf.js renders via an internal hidden overlay; in this app that path has
+  // repeatedly resulted in blank canvases/PDFs for email attachments.
+  // Instead we render with html2canvas directly and build the PDF with jsPDF.
+  const html2canvas = (await import('html2canvas')).default;
+  const { jsPDF } = await import('jspdf');
 
   // Normalize HTML strings that may contain full documents (<html><head>...) or fragments.
-  // html2canvas/html2pdf behave more reliably when we render only the body content
-  // and explicitly re-inject any <style> rules.
+  // We render only the <body> content and explicitly re-inject any <style> rules.
   const normalizeHtmlForContainer = (raw: string) => {
     try {
       const doc = new DOMParser().parseFromString(raw, 'text/html');
@@ -61,7 +64,8 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
 
   const { bodyHtml, styleText } = normalizeHtmlForContainer(html);
   
-  // Create a container for the HTML - visible but off-screen to ensure proper rendering
+  // Create a container for the HTML - off-screen but fully rendered.
+  // IMPORTANT: Do NOT set opacity to 0, and do NOT use display:none/visibility:hidden.
   const container = document.createElement('div');
   // IMPORTANT: Keep this element rendered (opacity > 0), otherwise html2canvas can produce a blank PDF.
   container.innerHTML = '';
@@ -77,17 +81,15 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   container.appendChild(contentEl);
 
   container.style.position = 'fixed';
-  // Keep it in the viewport so layout/paint definitely happens,
-  // but nearly transparent so the user won't notice.
-  container.style.left = '0';
+  container.style.left = '-10000px';
   container.style.top = '0';
   container.style.width = '210mm'; // A4 width
   container.style.minHeight = '297mm'; // A4 height
   container.style.padding = '20mm';
   container.style.backgroundColor = 'white';
   container.style.color = 'black';
-  container.style.zIndex = '2147483647';
-  container.style.opacity = '0.01';
+  container.style.zIndex = '0';
+  container.style.opacity = '1';
   container.style.pointerEvents = 'none';
   container.style.boxSizing = 'border-box';
   container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -96,34 +98,67 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   document.body.appendChild(container);
   
   // Wait for any images or fonts to load
-  await new Promise(resolve => setTimeout(resolve, 350));
+  await new Promise(resolve => setTimeout(resolve, 200));
   
   try {
-    const pdfBlob = await html2pdf()
-      .set({
-        margin: [15, 15, 15, 15], // Add margins in mm
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2,
-          useCORS: true,
-          letterRendering: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          windowWidth: 794, // A4 width in px at 96 DPI
-          windowHeight: 1123, // A4 height in px at 96 DPI
-        },
-        jsPDF: { 
-          unit: 'mm', 
-          format: 'a4', 
-          orientation: 'portrait' 
-        },
-        
-      })
-      .from(container)
-      .outputPdf('blob');
-    
-    return pdfBlob;
+    const marginsMm: [number, number, number, number] = [15, 15, 15, 15]; // top, right, bottom, left
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    const pdfPageWidth = pdf.internal.pageSize.getWidth();
+    const pdfPageHeight = pdf.internal.pageSize.getHeight();
+    const innerWidth = pdfPageWidth - marginsMm[1] - marginsMm[3];
+    const innerHeight = pdfPageHeight - marginsMm[0] - marginsMm[2];
+
+    // Render DOM to canvas
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+    });
+
+    // Split into A4 pages (similar approach to html2pdf's internal toPdf)
+    const pxFullHeight = canvas.height;
+    const pxPageHeight = Math.floor(canvas.width * (innerHeight / innerWidth));
+    const nPages = Math.max(1, Math.ceil(pxFullHeight / pxPageHeight));
+
+    const pageCanvas = document.createElement('canvas');
+    const pageCtx = pageCanvas.getContext('2d');
+    if (!pageCtx) throw new Error('Failed to create canvas context');
+
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = pxPageHeight;
+
+    for (let page = 0; page < nPages; page++) {
+      // Trim final page
+      const isLast = page === nPages - 1;
+      const remaining = pxFullHeight - page * pxPageHeight;
+      const sliceHeight = isLast ? Math.min(pxPageHeight, remaining) : pxPageHeight;
+
+      if (pageCanvas.height !== sliceHeight) pageCanvas.height = sliceHeight;
+
+      pageCtx.fillStyle = '#ffffff';
+      pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      pageCtx.drawImage(
+        canvas,
+        0,
+        page * pxPageHeight,
+        canvas.width,
+        sliceHeight,
+        0,
+        0,
+        canvas.width,
+        sliceHeight
+      );
+
+      const imgData = pageCanvas.toDataURL('image/jpeg', 0.98);
+      const pageHeightMm = (sliceHeight * innerWidth) / canvas.width;
+
+      if (page > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', marginsMm[3], marginsMm[0], innerWidth, pageHeightMm);
+    }
+
+    return pdf.output('blob');
   } finally {
     document.body.removeChild(container);
   }
