@@ -11,14 +11,13 @@ import {
   FileSignature,
   Plus,
   Eye,
-  Send,
   CheckCircle,
   Copy,
-  ExternalLink,
   Link2,
   ChevronDown,
   ChevronRight,
   Trash2,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,12 +68,18 @@ import {
   useGenerateContractFromTemplate,
 } from '@/hooks/useContractTemplates';
 import { useQueryClient } from '@tanstack/react-query';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 
 interface ContractsPanelProps {
   leadId?: string;
   eventId?: string;
   clientId: string;
+  clientName?: string;
+  clientEmail?: string;
   quoteId?: string;
+  leadName?: string;
+  eventName?: string;
+  eventDate?: string;
   defaultOpen?: boolean;
 }
 
@@ -94,7 +99,12 @@ export function ContractsPanel({
   leadId,
   eventId,
   clientId,
+  clientName,
+  clientEmail,
   quoteId,
+  leadName,
+  eventName,
+  eventDate,
   defaultOpen = false,
 }: ContractsPanelProps) {
   const { toast } = useToast();
@@ -118,6 +128,7 @@ export function ContractsPanel({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSignOpen, setIsSignOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
@@ -159,21 +170,27 @@ export function ContractsPanel({
     }
   };
   
-  const handleSendContract = async (contract: Contract) => {
-    try {
-      const result = await markAsSent.mutateAsync(contract.id);
-      
-      if (result.public_token) {
-        const publicUrl = `${window.location.origin}/public/contract/${result.public_token}`;
-        await navigator.clipboard.writeText(publicUrl);
-        toast({ 
-          title: 'Contract marked as sent',
-          description: 'Public signing link copied to clipboard'
-        });
+  // Open send email dialog for a contract
+  const openSendEmailDialog = async (contract: Contract) => {
+    // First, ensure the contract has a public token by marking as sent if it's a draft
+    if (contract.status === 'draft' && !contract.public_token) {
+      try {
+        const result = await markAsSent.mutateAsync(contract.id);
+        // Update the selected contract with the new token
+        setSelectedContract({ ...contract, public_token: result.public_token, status: 'sent' as const });
+      } catch (error) {
+        return; // Error handled by hook
       }
-    } catch (error) {
-      // Error handled by hook
+    } else {
+      setSelectedContract(contract);
     }
+    setIsSendEmailOpen(true);
+  };
+  
+  // Get the contract signing URL
+  const getContractSignUrl = (contract: Contract | null) => {
+    if (!contract?.public_token) return undefined;
+    return `${window.location.origin}/public/contract/${contract.public_token}`;
   };
   
   const handleSignContract = async () => {
@@ -324,29 +341,39 @@ export function ContractsPanel({
                           <Eye className="h-4 w-4" />
                         </Button>
                         
-                        {/* Send (only for draft) */}
+                        {/* Send Email (for draft contracts) */}
                         {contract.status === 'draft' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleSendContract(contract)}
+                            onClick={() => openSendEmailDialog(contract)}
                             disabled={markAsSent.isPending}
-                            title="Mark as Sent"
+                            title="Send Contract"
                           >
-                            <Send className="h-4 w-4" />
+                            <Mail className="h-4 w-4" />
                           </Button>
                         )}
                         
                         {/* Copy Link (for sent contracts) */}
                         {contract.status === 'sent' && contract.public_token && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyPublicLink(contract)}
-                            title="Copy Signing Link"
-                          >
-                            <Link2 className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openSendEmailDialog(contract)}
+                              title="Resend Contract Email"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyPublicLink(contract)}
+                              title="Copy Signing Link"
+                            >
+                              <Link2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                         
                         {/* Sign (for sent contracts) */}
@@ -540,6 +567,27 @@ export function ContractsPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Send Contract Email Dialog */}
+      <SendEmailDialog
+        open={isSendEmailOpen}
+        onOpenChange={(open) => {
+          setIsSendEmailOpen(open);
+          if (!open) setSelectedContract(null);
+        }}
+        clientId={clientId}
+        clientEmail={clientEmail}
+        clientName={clientName}
+        relatedContractId={selectedContract?.id}
+        defaultSubject={`Contract: ${selectedContract?.title || ''}`}
+        context="contract"
+        mergeContext={{
+          eventName: eventName,
+          leadName: leadName,
+          eventDate: eventDate,
+          contractSignUrl: getContractSignUrl(selectedContract),
+        }}
+      />
     </>
   );
 }

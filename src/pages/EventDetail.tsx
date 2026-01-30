@@ -550,7 +550,10 @@ export default function EventDetail() {
                 <ContractsPanel
                   eventId={id}
                   clientId={event.client_id}
+                  clientName={(event as any).client_name}
                   quoteId={(event as any).quote_id}
+                  eventName={(event as any).event_name}
+                  eventDate={(event as any).event_date}
                   defaultOpen={false}
                 />
               )}
