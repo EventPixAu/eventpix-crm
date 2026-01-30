@@ -224,9 +224,9 @@ export default function ContractDetail() {
             </CardHeader>
             <CardContent>
               {(contract as any).rendered_html ? (
-                <div className="border rounded-lg p-6 bg-white max-h-[500px] overflow-y-auto">
+                <div className="border rounded-lg p-6 bg-white text-gray-900 max-h-[500px] overflow-y-auto">
                   <div 
-                    className="prose prose-sm max-w-none"
+                    className="prose prose-sm max-w-none prose-gray"
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((contract as any).rendered_html) }}
                   />
                 </div>
