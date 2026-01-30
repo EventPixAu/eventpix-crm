@@ -43,31 +43,50 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   // Dynamic import of html2pdf.js
   const html2pdf = (await import('html2pdf.js')).default;
   
-  // Create a container for the HTML
+  // Create a container for the HTML - visible but off-screen to ensure proper rendering
   const container = document.createElement('div');
   container.innerHTML = html;
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
+  container.style.position = 'fixed';
+  container.style.left = '0';
   container.style.top = '0';
   container.style.width = '210mm'; // A4 width
+  container.style.minHeight = '297mm'; // A4 height
+  container.style.padding = '20mm';
+  container.style.backgroundColor = 'white';
+  container.style.color = 'black';
+  container.style.zIndex = '-9999';
+  container.style.opacity = '0';
+  container.style.pointerEvents = 'none';
+  container.style.boxSizing = 'border-box';
+  container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  container.style.fontSize = '14px';
+  container.style.lineHeight = '1.6';
   document.body.appendChild(container);
+  
+  // Wait for any images or fonts to load
+  await new Promise(resolve => setTimeout(resolve, 100));
   
   try {
     const pdfBlob = await html2pdf()
       .set({
-        margin: 0,
+        margin: [15, 15, 15, 15], // Add margins in mm
         filename: filename,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
           scale: 2,
           useCORS: true,
           letterRendering: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          windowWidth: 794, // A4 width in px at 96 DPI
+          windowHeight: 1123, // A4 height in px at 96 DPI
         },
         jsPDF: { 
           unit: 'mm', 
           format: 'a4', 
           orientation: 'portrait' 
         },
+        
       })
       .from(container)
       .outputPdf('blob');
