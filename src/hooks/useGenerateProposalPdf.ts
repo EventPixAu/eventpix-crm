@@ -47,15 +47,18 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   const container = document.createElement('div');
   container.innerHTML = html;
   container.style.position = 'fixed';
-  container.style.left = '0';
+  // Keep it rendered but not visible to the user.
+  // IMPORTANT: Do NOT use opacity: 0 (html2canvas will capture it as fully transparent).
+  // Also avoid negative z-index (can end up behind the page background in some browsers).
+  container.style.left = '-10000px';
   container.style.top = '0';
   container.style.width = '210mm'; // A4 width
   container.style.minHeight = '297mm'; // A4 height
   container.style.padding = '20mm';
   container.style.backgroundColor = 'white';
   container.style.color = 'black';
-  container.style.zIndex = '-9999';
-  container.style.opacity = '0';
+  container.style.zIndex = '0';
+  container.style.opacity = '1';
   container.style.pointerEvents = 'none';
   container.style.boxSizing = 'border-box';
   container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -64,7 +67,7 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   document.body.appendChild(container);
   
   // Wait for any images or fonts to load
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 250));
   
   try {
     const pdfBlob = await html2pdf()
