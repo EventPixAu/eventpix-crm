@@ -1,6 +1,7 @@
 /**
  * Hook for managing event documents (PDFs, run sheets, etc.)
  */
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -176,12 +177,12 @@ export function useDeleteEventDocument() {
 }
 
 export function useGetDocumentUrl() {
-  return async (filePath: string) => {
+  return useCallback(async (filePath: string) => {
     const { data, error } = await supabase.storage
       .from('event-documents')
       .createSignedUrl(filePath, 3600); // 1 hour expiry
-    
+
     if (error) throw error;
     return data.signedUrl;
-  };
+  }, []);
 }
