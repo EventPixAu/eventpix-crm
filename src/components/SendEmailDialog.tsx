@@ -53,7 +53,10 @@ interface SendEmailDialogProps {
   clientName?: string;
   relatedQuoteId?: string;
   relatedContractId?: string;
+  contractHtml?: string;
+  contractTitle?: string;
   defaultSubject?: string;
+  defaultBody?: string;
   context: 'quote' | 'contract';
   mergeContext?: MergeFieldContext;
 }
@@ -66,7 +69,10 @@ export function SendEmailDialog({
   clientName,
   relatedQuoteId,
   relatedContractId,
+  contractHtml,
+  contractTitle,
   defaultSubject = '',
+  defaultBody = '',
   context,
   mergeContext,
 }: SendEmailDialogProps) {
@@ -84,6 +90,7 @@ export function SendEmailDialog({
   const [showPreview, setShowPreview] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
   const [attachProposalPdf, setAttachProposalPdf] = useState(context === 'quote');
+  const [attachContractPdf, setAttachContractPdf] = useState(context === 'contract');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,7 +104,7 @@ export function SendEmailDialog({
     }
   }, [clientEmail, clientName, selectedContactId]);
 
-  // Reset form when dialog closes
+  // Reset form when dialog opens/closes and apply defaults
   useEffect(() => {
     if (!open) {
       setSelectedTemplateId('');
@@ -108,12 +115,17 @@ export function SendEmailDialog({
       setShowPreview(false);
       setAttachments([]);
       setAttachProposalPdf(context === 'quote');
+      setAttachContractPdf(context === 'contract');
       setIsGeneratingPdf(false);
       // Restore default recipient
       setRecipientEmail(clientEmail || '');
       setRecipientName(clientName || '');
+    } else {
+      // Apply defaults when opening
+      if (defaultSubject) setSubject(defaultSubject);
+      if (defaultBody) setBody(defaultBody);
     }
-  }, [open, defaultSubject, clientEmail, clientName, context]);
+  }, [open, defaultSubject, defaultBody, clientEmail, clientName, context]);
 
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -271,6 +283,27 @@ export function SendEmailDialog({
         }
       } catch (error) {
         console.error('Failed to generate PDF:', error);
+        // Continue without PDF attachment
+      } finally {
+        setIsGeneratingPdf(false);
+      }
+    }
+
+    // Generate and attach contract PDF if checkbox is checked and we have contract HTML
+    if (attachContractPdf && contractHtml && context === 'contract') {
+      setIsGeneratingPdf(true);
+      try {
+        const filename = `Agreement-${contractTitle || 'Contract'}.pdf`;
+        const pdfBlob = await htmlToPdfBlob(contractHtml, filename);
+        const base64Content = await blobToBase64(pdfBlob);
+        
+        finalAttachments.push({
+          filename,
+          content: base64Content,
+          contentType: 'application/pdf',
+        });
+      } catch (error) {
+        console.error('Failed to generate contract PDF:', error);
         // Continue without PDF attachment
       } finally {
         setIsGeneratingPdf(false);
@@ -456,6 +489,26 @@ export function SendEmailDialog({
               </div>
             )}
 
+            {/* Auto-attach Contract PDF option for contracts */}
+            {context === 'contract' && contractHtml && (
+              <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
+                <Checkbox
+                  id="attachContractPdf"
+                  checked={attachContractPdf}
+                  onCheckedChange={(checked) => setAttachContractPdf(checked === true)}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="attachContractPdf" className="text-sm font-medium cursor-pointer">
+                    <FileText className="h-4 w-4 inline mr-2" />
+                    Attach Agreement PDF
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Automatically attach the agreement as a PDF document
+                  </p>
+                </div>
+              </div>
+            )}
+
           </div>
         ) : (
           <div className="py-4">
@@ -467,13 +520,14 @@ export function SendEmailDialog({
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
-                {(attachments.length > 0 || attachProposalPdf) && (
+                {(attachments.length > 0 || attachProposalPdf || attachContractPdf) && (
                   <div className="text-sm flex items-center gap-2">
                     <span className="font-medium">Attachments:</span>
                     <span className="text-muted-foreground">
                       {[
                         ...attachments.map(a => a.filename),
-                        ...(attachProposalPdf && relatedQuoteId ? ['Proposal PDF (auto-generated)'] : [])
+                        ...(attachProposalPdf && relatedQuoteId ? ['Proposal PDF (auto-generated)'] : []),
+                        ...(attachContractPdf && contractHtml ? ['Agreement PDF (auto-generated)'] : [])
                       ].join(', ')}
                     </span>
                   </div>
