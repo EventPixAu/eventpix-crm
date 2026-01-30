@@ -190,7 +190,7 @@ export function ContractsPanel({
   // Get the contract signing URL
   const getContractSignUrl = (contract: Contract | null) => {
     if (!contract?.public_token) return undefined;
-    return `${window.location.origin}/public/contract/${contract.public_token}`;
+    return `${window.location.origin}/contract/sign/${contract.public_token}`;
   };
   
   const handleSignContract = async () => {
