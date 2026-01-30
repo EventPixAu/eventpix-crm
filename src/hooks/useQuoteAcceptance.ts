@@ -50,7 +50,7 @@ export function useAcceptQuote() {
       
       return result;
     },
-    onSuccess: (result, variables) => {
+    onSuccess: async (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes', result.quote_id] });
       // Invalidate workflow instances to reflect auto-completed steps
@@ -61,6 +61,20 @@ export function useAcceptQuote() {
         queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', result.event_id] });
         queryClient.invalidateQueries({ queryKey: ['workflow-instance', 'job', result.event_id] });
       }
+      
+      // Send confirmation emails (fire and forget)
+      if (result.quote_id && variables.acceptedByEmail) {
+        supabase.functions.invoke('send-quote-acceptance-email', {
+          body: {
+            quoteId: result.quote_id,
+            acceptedByName: variables.acceptedByName || 'Client',
+            acceptedByEmail: variables.acceptedByEmail,
+          },
+        }).catch(err => {
+          console.error('Failed to send confirmation emails:', err);
+        });
+      }
+      
       toast({ 
         title: 'Quote accepted', 
         description: 'The quote has been locked and the booking confirmed.' 
