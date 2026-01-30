@@ -42,23 +42,52 @@ export function useGenerateProposalPdf() {
 export async function htmlToPdfBlob(html: string, filename: string): Promise<Blob> {
   // Dynamic import of html2pdf.js
   const html2pdf = (await import('html2pdf.js')).default;
+
+  // Normalize HTML strings that may contain full documents (<html><head>...) or fragments.
+  // html2canvas/html2pdf behave more reliably when we render only the body content
+  // and explicitly re-inject any <style> rules.
+  const normalizeHtmlForContainer = (raw: string) => {
+    try {
+      const doc = new DOMParser().parseFromString(raw, 'text/html');
+      const bodyHtml = doc.body?.innerHTML?.trim() || raw;
+      const styleText = Array.from(doc.querySelectorAll('style'))
+        .map((s) => s.textContent || '')
+        .join('\n');
+      return { bodyHtml, styleText };
+    } catch {
+      return { bodyHtml: raw, styleText: '' };
+    }
+  };
+
+  const { bodyHtml, styleText } = normalizeHtmlForContainer(html);
   
   // Create a container for the HTML - visible but off-screen to ensure proper rendering
   const container = document.createElement('div');
-  container.innerHTML = html;
+  // IMPORTANT: Keep this element rendered (opacity > 0), otherwise html2canvas can produce a blank PDF.
+  container.innerHTML = '';
+
+  if (styleText) {
+    const styleEl = document.createElement('style');
+    styleEl.textContent = styleText;
+    container.appendChild(styleEl);
+  }
+
+  const contentEl = document.createElement('div');
+  contentEl.innerHTML = bodyHtml;
+  container.appendChild(contentEl);
+
   container.style.position = 'fixed';
-  // Keep it rendered but not visible to the user.
-  // IMPORTANT: Do NOT use opacity: 0 (html2canvas will capture it as fully transparent).
-  // Also avoid negative z-index (can end up behind the page background in some browsers).
-  container.style.left = '-10000px';
+  // Keep it in the viewport so layout/paint definitely happens,
+  // but nearly transparent so the user won't notice.
+  container.style.left = '0';
   container.style.top = '0';
   container.style.width = '210mm'; // A4 width
   container.style.minHeight = '297mm'; // A4 height
   container.style.padding = '20mm';
   container.style.backgroundColor = 'white';
   container.style.color = 'black';
-  container.style.zIndex = '0';
-  container.style.opacity = '1';
+  container.style.zIndex = '2147483647';
+  container.style.opacity = '0.01';
   container.style.pointerEvents = 'none';
   container.style.boxSizing = 'border-box';
   container.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -67,7 +96,7 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   document.body.appendChild(container);
   
   // Wait for any images or fonts to load
-  await new Promise(resolve => setTimeout(resolve, 250));
+  await new Promise(resolve => setTimeout(resolve, 350));
   
   try {
     const pdfBlob = await html2pdf()
