@@ -78,6 +78,9 @@ export interface MergeFieldContext {
     contact_email?: string | null;
     contact_phone?: string | null;
   };
+  contract?: {
+    created_date?: string | null;
+  };
   // Additional context
   today?: string;
   company_name?: string;
@@ -163,6 +166,8 @@ export const AVAILABLE_MERGE_FIELDS = [
   { field: '{{lead.contact_name}}', label: 'Lead Contact Name', category: 'Lead' },
   { field: '{{lead.contact_email}}', label: 'Lead Contact Email', category: 'Lead' },
   { field: '{{lead.contact_phone}}', label: 'Lead Contact Phone', category: 'Lead' },
+  // Contract fields
+  { field: '{{contract.created_date}}', label: 'Contract Created Date', category: 'Contract' },
   // System fields
   { field: '{{today}}', label: 'Today\'s Date', category: 'System' },
   { field: '{{company_name}}', label: 'Your Company Name', category: 'System' },
@@ -205,11 +210,41 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   rendered = rendered.replace(/\{\{lead\.contact_email\}\}/g, context.lead?.contact_email || '');
   rendered = rendered.replace(/\{\{lead\.contact_phone\}\}/g, context.lead?.contact_phone || '');
   
+  // Contract fields
+  rendered = rendered.replace(/\{\{contract\.created_date\}\}/g, formatDate(context.contract?.created_date) || context.today || format(new Date(), 'd MMMM yyyy'));
+  
   // System fields
   rendered = rendered.replace(/\{\{today\}\}/g, context.today || format(new Date(), 'd MMMM yyyy'));
   rendered = rendered.replace(/\{\{company_name\}\}/g, context.company_name || 'Eventpix');
   
   return rendered;
+}
+
+// Convert basic markdown to HTML (for plain text templates)
+export function convertPlainTextMarkdownToHtml(text: string): string {
+  let html = text;
+  
+  // Escape HTML entities first
+  html = html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // Bold: **text** or __text__
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  
+  // Italic: *text* or _text_
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  
+  // Underline: ~~text~~
+  html = html.replace(/~~(.+?)~~/g, '<u>$1</u>');
+  
+  // Convert newlines to <br>
+  html = html.replace(/\n/g, '<br>');
+  
+  return html;
 }
 
 // =============================================================
@@ -474,13 +509,17 @@ export function useGenerateContractFromTemplate() {
       }
 
       // Build merge field context
+      const todayFormatted = format(new Date(), 'd MMMM yyyy');
       const context: MergeFieldContext = {
         client: client || undefined,
         event: event || undefined,
         sessions: sessions,
         quote: quote || undefined,
         lead: lead || undefined,
-        today: format(new Date(), 'd MMMM yyyy'),
+        contract: {
+          created_date: todayFormatted, // Contract is being created today
+        },
+        today: todayFormatted,
         company_name: 'Eventpix',
       };
 
@@ -492,13 +531,10 @@ export function useGenerateContractFromTemplate() {
       
       let renderedHtml: string;
       if (templateFormat === 'text') {
-        // For text templates, render merge fields and convert to HTML
+        // For text templates, render merge fields first, then convert markdown to HTML
         const renderedText = renderMergeFields(sourceContent, context);
-        const escaped = renderedText
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;');
-        renderedHtml = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${escaped}</div>`;
+        const convertedHtml = convertPlainTextMarkdownToHtml(renderedText);
+        renderedHtml = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">${convertedHtml}</div>`;
       } else {
         renderedHtml = renderMergeFields(template.body_html, context);
       }

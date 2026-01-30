@@ -87,6 +87,9 @@ export const SAMPLE_CONTEXT: MergeFieldContext = {
     contact_email: 'jane@acme.com',
     contact_phone: '0412 345 678',
   },
+  contract: {
+    created_date: new Date().toISOString(),
+  },
   today: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
   company_name: 'Eventpix',
 };
