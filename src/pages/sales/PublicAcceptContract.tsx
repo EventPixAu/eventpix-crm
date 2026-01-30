@@ -363,15 +363,15 @@ export default function PublicAcceptContract() {
               </div>
               
               <Button 
-                className="w-full" 
+                className="w-full bg-primary hover:bg-primary/90" 
                 size="lg"
                 onClick={handleSign}
                 disabled={!formData.name.trim() || !formData.email.trim() || !agreedToTerms || !signatureData || signing}
               >
-                {signing ? 'Processing...' : 'Sign Contract'}
+                {signing ? 'Processing...' : 'Accept Contract'}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Your signature is legally binding. Make sure you have reviewed the contract before signing.
+                By clicking Accept, your signature becomes legally binding. Make sure you have reviewed the contract.
               </p>
             </div>
           </CardContent>
