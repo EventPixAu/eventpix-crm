@@ -63,12 +63,12 @@ import {
   LeadClientCard,
   LeadCollapsiblePanel,
   LeadContactsPanel,
+  LeadMailTabs,
   InitializeLeadWorkflowDialog,
   LeadProposedDatesPanel,
   MarkAsClientButton,
   CompanyStatusBadgeDropdown,
 } from '@/components/lead';
-import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
 
 export default function LeadDetail(): JSX.Element {
@@ -243,11 +243,15 @@ export default function LeadDetail(): JSX.Element {
             defaultOpen={true}
           />
 
-          {/* Mail History Panel */}
-          <MailHistoryPanel 
-            leadId={id} 
+          {/* Mail Tabs: Send Email + History */}
+          <LeadMailTabs
+            leadId={id!}
+            clientId={(lead as any).client_id}
             contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
-            maxItems={10} 
+            defaultRecipientName={leadContacts[0]?.client_contact?.contact_name || leadContacts[0]?.contact_name}
+            defaultRecipientEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
+            leadName={lead.lead_name}
+            maxItems={10}
           />
         </div>
 
