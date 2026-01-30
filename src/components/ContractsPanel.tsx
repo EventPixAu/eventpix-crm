@@ -417,9 +417,9 @@ export function ContractsPanel({
               {selectedContract?.signed_at && ` • Signed: ${format(new Date(selectedContract.signed_at), 'PPp')}`}
             </DialogDescription>
           </DialogHeader>
-          <div className="border rounded-lg p-6 bg-white">
+          <div className="border rounded-lg p-6 bg-white text-gray-900">
             <div 
-              className="prose prose-sm max-w-none"
+              className="prose prose-sm max-w-none prose-gray"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedContract?.rendered_html || '') }}
             />
           </div>

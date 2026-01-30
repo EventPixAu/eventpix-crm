@@ -253,9 +253,9 @@ export default function PublicAcceptContract() {
           </CardHeader>
           <CardContent>
             {contract.rendered_html ? (
-              <div className="border rounded-lg p-6 bg-white max-h-[400px] overflow-y-auto">
+              <div className="border rounded-lg p-6 bg-white text-gray-900 max-h-[400px] overflow-y-auto">
                 <div 
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm max-w-none prose-gray"
                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.rendered_html) }}
                 />
               </div>
