@@ -339,7 +339,11 @@ export default function LeadDetail(): JSX.Element {
           <ContractsPanel
             leadId={id}
             clientId={(lead as any).client_id}
+            clientName={(lead as any).client?.business_name}
+            clientEmail={(lead as any).client?.primary_contact_email}
             quoteId={quotes[0]?.id}
+            leadName={(lead as any).lead_name}
+            eventDate={sessions[0]?.session_date}
             defaultOpen={false}
           />
 
