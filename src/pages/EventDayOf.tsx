@@ -751,7 +751,16 @@ export default function EventDayOf() {
                     onClick={async () => {
                       try {
                         const url = await getDocumentUrl(doc.file_path);
-                        window.open(url, '_blank');
+                        // iOS-compatible: create temporary anchor and click it
+                        // This works better than window.open on mobile Safari
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        // For PDFs on iOS, they'll open inline in browser where user can share/save
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
                       } catch (error) {
                         toast({
                           title: 'Failed to open document',
