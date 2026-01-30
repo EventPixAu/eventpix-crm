@@ -74,9 +74,6 @@ export interface MergeFieldContext {
   };
   lead?: {
     lead_name?: string | null;
-    contact_name?: string | null;
-    contact_email?: string | null;
-    contact_phone?: string | null;
   };
   contract?: {
     created_date?: string | null;
@@ -147,6 +144,7 @@ export const AVAILABLE_MERGE_FIELDS = [
   // Event/Job fields
   { field: '{{event.event_name}}', label: 'Job Name', category: 'Job' },
   { field: '{{event.event_date}}', label: 'Event Date', category: 'Job' },
+  { field: '{{event.first_session_date}}', label: 'First Session Date', category: 'Job' },
   { field: '{{event.main_shoot_date}}', label: 'Main Shoot Date', category: 'Job' },
   { field: '{{event.start_time}}', label: 'Start Time', category: 'Job' },
   { field: '{{event.end_time}}', label: 'End Time', category: 'Job' },
@@ -162,10 +160,7 @@ export const AVAILABLE_MERGE_FIELDS = [
   { field: '{{quote.total_estimate}}', label: 'Total Amount', category: 'Quote' },
   { field: '{{quote.valid_until}}', label: 'Quote Valid Until', category: 'Quote' },
   // Lead fields (for leads not yet converted)
-  { field: '{{lead.lead_name}}', label: 'Lead Name', category: 'Lead' },
-  { field: '{{lead.contact_name}}', label: 'Lead Contact Name', category: 'Lead' },
-  { field: '{{lead.contact_email}}', label: 'Lead Contact Email', category: 'Lead' },
-  { field: '{{lead.contact_phone}}', label: 'Lead Contact Phone', category: 'Lead' },
+  { field: '{{lead.lead_name}}', label: 'Lead/Event Name', category: 'Lead' },
   // Contract fields
   { field: '{{contract.created_date}}', label: 'Contract Created Date', category: 'Contract' },
   // System fields
@@ -186,13 +181,14 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   rendered = rendered.replace(/\{\{client\.abn\}\}/g, context.client?.abn || '');
   
   // Event/Job fields
-  rendered = rendered.replace(/\{\{event\.event_name\}\}/g, context.event?.event_name || '');
-  rendered = rendered.replace(/\{\{event\.event_date\}\}/g, formatDate(context.event?.event_date));
-  rendered = rendered.replace(/\{\{event\.main_shoot_date\}\}/g, formatDate(context.event?.main_shoot_date));
-  rendered = rendered.replace(/\{\{event\.start_time\}\}/g, formatTime(context.event?.start_time));
-  rendered = rendered.replace(/\{\{event\.end_time\}\}/g, formatTime(context.event?.end_time));
-  rendered = rendered.replace(/\{\{event\.venue_name\}\}/g, context.event?.venue_name || '');
-  rendered = rendered.replace(/\{\{event\.venue_address\}\}/g, context.event?.venue_address || '');
+  rendered = rendered.replace(/\{\{event\.event_name\}\}/g, context.event?.event_name || context.lead?.lead_name || '');
+  rendered = rendered.replace(/\{\{event\.event_date\}\}/g, formatDate(context.event?.event_date || context.sessions?.[0]?.session_date));
+  rendered = rendered.replace(/\{\{event\.first_session_date\}\}/g, formatDate(context.sessions?.[0]?.session_date));
+  rendered = rendered.replace(/\{\{event\.main_shoot_date\}\}/g, formatDate(context.event?.main_shoot_date || context.sessions?.[0]?.session_date));
+  rendered = rendered.replace(/\{\{event\.start_time\}\}/g, formatTime(context.event?.start_time || context.sessions?.[0]?.start_time));
+  rendered = rendered.replace(/\{\{event\.end_time\}\}/g, formatTime(context.event?.end_time || context.sessions?.[0]?.end_time));
+  rendered = rendered.replace(/\{\{event\.venue_name\}\}/g, context.event?.venue_name || context.sessions?.[0]?.venue_name || '');
+  rendered = rendered.replace(/\{\{event\.venue_address\}\}/g, context.event?.venue_address || context.sessions?.[0]?.venue_address || '');
   rendered = rendered.replace(/\{\{event\.event_type\}\}/g, context.event?.event_type || '');
   rendered = rendered.replace(/\{\{event\.coverage_details\}\}/g, context.event?.coverage_details || '');
   rendered = rendered.replace(/\{\{event\.sessions\}\}/g, formatSessions(context.sessions));
@@ -204,11 +200,8 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   rendered = rendered.replace(/\{\{quote\.total_estimate\}\}/g, formatCurrency(context.quote?.total_estimate));
   rendered = rendered.replace(/\{\{quote\.valid_until\}\}/g, formatDate(context.quote?.valid_until));
   
-  // Lead fields
+  // Lead fields - use lead_name, contact comes from client
   rendered = rendered.replace(/\{\{lead\.lead_name\}\}/g, context.lead?.lead_name || '');
-  rendered = rendered.replace(/\{\{lead\.contact_name\}\}/g, context.lead?.contact_name || '');
-  rendered = rendered.replace(/\{\{lead\.contact_email\}\}/g, context.lead?.contact_email || '');
-  rendered = rendered.replace(/\{\{lead\.contact_phone\}\}/g, context.lead?.contact_phone || '');
   
   // Contract fields
   rendered = rendered.replace(/\{\{contract\.created_date\}\}/g, formatDate(context.contract?.created_date) || context.today || format(new Date(), 'd MMMM yyyy'));
@@ -469,7 +462,7 @@ export function useGenerateContractFromTemplate() {
       if (params.leadId) {
         const { data: leadData } = await supabase
           .from('leads')
-          .select('lead_name, contact_name, contact_email, contact_phone')
+          .select('lead_name')
           .eq('id', params.leadId)
           .single();
         lead = leadData;
@@ -488,6 +481,7 @@ export function useGenerateContractFromTemplate() {
               event = {
                 venue_name: sessionData[0].venue_name,
                 venue_address: sessionData[0].venue_address,
+                event_name: lead?.lead_name, // Use lead name as event name
               };
             }
           }

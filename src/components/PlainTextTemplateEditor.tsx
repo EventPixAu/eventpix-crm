@@ -83,9 +83,6 @@ export const SAMPLE_CONTEXT: MergeFieldContext = {
   },
   lead: {
     lead_name: 'Corporate Gala Enquiry',
-    contact_name: 'Jane Smith',
-    contact_email: 'jane@acme.com',
-    contact_phone: '0412 345 678',
   },
   contract: {
     created_date: new Date().toISOString(),
