@@ -10,6 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Download,
+  FileText,
   HelpCircle,
   MapPin,
   MessageSquarePlus,
@@ -38,6 +40,7 @@ import { useStaffRoles } from '@/hooks/useLookups';
 import { useDayOfCache } from '@/hooks/useDayOfCache';
 import { useEventNotes, useCreateEventNote, useDeleteEventNote } from '@/hooks/useEventNotes';
 import { useEventAllocations } from '@/hooks/useEquipmentAllocations';
+import { useEventDocuments, useGetDocumentUrl } from '@/hooks/useEventDocuments';
 import { downloadICS } from '@/lib/icsGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -88,6 +91,14 @@ export default function EventDayOf() {
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: staffRoles = [] } = useStaffRoles();
   const { data: eventNotes = [] } = useEventNotes(id);
+  const { data: allDocuments = [] } = useEventDocuments(id);
+  const getDocumentUrl = useGetDocumentUrl();
+  
+  // Filter documents to only show crew-visible ones for non-admin users
+  const crewDocuments = useMemo(() => {
+    if (isAdmin) return allDocuments;
+    return allDocuments.filter(doc => doc.is_visible_to_crew);
+  }, [allDocuments, isAdmin]);
   
   // Fetch same-day events for multi-event routing display
   const { data: sameDayEvents = [] } = useSameDayEvents(user?.id, event?.event_date);
@@ -709,6 +720,54 @@ export default function EventDayOf() {
             </div>
           )}
         </motion.section>
+
+        {/* Documents Section - Files visible to crew */}
+        {crewDocuments.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.19 }}
+            className="mx-4 mb-4"
+          >
+            <h3 className="font-semibold mb-3">Documents</h3>
+            <div className="space-y-2">
+              {crewDocuments.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-card border border-border rounded-lg p-3 flex items-center gap-3"
+                >
+                  <div className="p-2 bg-muted rounded-lg shrink-0">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{doc.file_name}</p>
+                    {doc.description && (
+                      <p className="text-xs text-muted-foreground truncate">{doc.description}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const url = await getDocumentUrl(doc.file_path);
+                        window.open(url, '_blank');
+                      } catch (error) {
+                        toast({
+                          title: 'Failed to open document',
+                          variant: 'destructive',
+                        });
+                      }
+                    }}
+                    className="shrink-0"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         {/* Equipment Section - Split by Role */}
         {id && (
