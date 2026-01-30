@@ -5,6 +5,7 @@ export { LeadSummaryCard } from './LeadSummaryCard';
 export { LeadClientCard } from './LeadClientCard';
 export { LeadCollapsiblePanel } from './LeadCollapsiblePanel';
 export { LeadContactsPanel } from './LeadContactsPanel';
+export { LeadMailTabs } from './LeadMailTabs';
 export { InitializeLeadWorkflowDialog } from './InitializeLeadWorkflowDialog';
 export { LeadProposedDatesPanel } from './LeadProposedDatesPanel';
 export { MarkAsClientButton } from './MarkAsClientButton';
