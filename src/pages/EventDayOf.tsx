@@ -13,6 +13,7 @@ import {
   Download,
   FileText,
   HelpCircle,
+  Loader2,
   MapPin,
   MessageSquarePlus,
   Phone,
@@ -99,6 +100,58 @@ export default function EventDayOf() {
     if (isAdmin) return allDocuments;
     return allDocuments.filter(doc => doc.is_visible_to_crew);
   }, [allDocuments, isAdmin]);
+
+  // Prefetch signed URLs so the tap action is a simple <a href> (more reliable on iOS Safari)
+  const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
+  const [documentUrlLoading, setDocumentUrlLoading] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchUrls = async () => {
+      const docsToFetch = crewDocuments.filter((d) => !documentUrls[d.id]);
+      if (docsToFetch.length === 0) return;
+
+      setDocumentUrlLoading((prev) => {
+        const next = { ...prev };
+        for (const d of docsToFetch) next[d.id] = true;
+        return next;
+      });
+
+      const results = await Promise.all(
+        docsToFetch.map(async (doc) => {
+          try {
+            const url = await getDocumentUrl(doc.file_path);
+            return { id: doc.id, url } as const;
+          } catch (e) {
+            console.warn('Failed to create signed URL for document', doc.id, e);
+            return { id: doc.id, url: null } as const;
+          }
+        })
+      );
+
+      if (cancelled) return;
+
+      setDocumentUrls((prev) => {
+        const next = { ...prev };
+        for (const r of results) {
+          if (r.url) next[r.id] = r.url;
+        }
+        return next;
+      });
+
+      setDocumentUrlLoading((prev) => {
+        const next = { ...prev };
+        for (const r of results) next[r.id] = false;
+        return next;
+      });
+    };
+
+    void fetchUrls();
+    return () => {
+      cancelled = true;
+    };
+  }, [crewDocuments, getDocumentUrl, documentUrls]);
   
   // Fetch same-day events for multi-event routing display
   const { data: sameDayEvents = [] } = useSameDayEvents(user?.id, event?.event_date);
@@ -745,33 +798,28 @@ export default function EventDayOf() {
                       <p className="text-xs text-muted-foreground truncate">{doc.description}</p>
                     )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      try {
-                        const url = await getDocumentUrl(doc.file_path);
-                        // iOS-compatible: create temporary anchor and click it
-                        // This works better than window.open on mobile Safari
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.target = '_blank';
-                        link.rel = 'noopener noreferrer';
-                        // For PDFs on iOS, they'll open inline in browser where user can share/save
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      } catch (error) {
-                        toast({
-                          title: 'Failed to open document',
-                          variant: 'destructive',
-                        });
-                      }
-                    }}
-                    className="shrink-0"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
+                  {documentUrls[doc.id] ? (
+                    <Button variant="ghost" size="sm" asChild className="shrink-0">
+                      <a
+                        href={documentUrls[doc.id]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Open ${doc.file_name}`}
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      disabled
+                      aria-label={`Loading ${doc.file_name}`}
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
