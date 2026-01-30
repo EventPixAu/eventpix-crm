@@ -293,8 +293,35 @@ export function SendEmailDialog({
     if (attachContractPdf && contractHtml && context === 'contract') {
       setIsGeneratingPdf(true);
       try {
-        const filename = `Agreement-${contractTitle || 'Contract'}.pdf`;
-        const pdfBlob = await htmlToPdfBlob(contractHtml, filename);
+        const filename = `Agreement-${(contractTitle || 'Contract').replace(/\s+/g, '_')}.pdf`;
+        // Wrap contract HTML in a full document structure for proper PDF rendering
+        const fullContractHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${contractTitle || 'Agreement'}</title>
+  <style>
+    @page { margin: 0.5in; size: A4; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      font-size: 14px; 
+      line-height: 1.6; 
+      color: #111; 
+      margin: 0; 
+      padding: 32px; 
+      background: white;
+    }
+    strong { font-weight: 600; }
+    br { display: block; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  ${contractHtml}
+</body>
+</html>
+        `;
+        const pdfBlob = await htmlToPdfBlob(fullContractHtml, filename);
         const base64Content = await blobToBase64(pdfBlob);
         
         finalAttachments.push({
