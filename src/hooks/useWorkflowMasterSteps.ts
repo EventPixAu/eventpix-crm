@@ -206,12 +206,38 @@ export function useReorderMasterSteps() {
       const results = await Promise.all(updates);
       const error = results.find(r => r.error)?.error;
       if (error) throw error;
+      return steps;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-master-steps'] });
+    onMutate: async (newOrder) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['workflow-master-steps'] });
+      
+      // Snapshot the previous value
+      const previousSteps = queryClient.getQueryData<WorkflowMasterStep[]>(['workflow-master-steps']);
+      
+      // Optimistically update to the new value
+      if (previousSteps) {
+        const updatedSteps = previousSteps.map(step => {
+          const update = newOrder.find(u => u.id === step.id);
+          if (update) {
+            return { ...step, sort_order: update.sort_order };
+          }
+          return step;
+        });
+        queryClient.setQueryData(['workflow-master-steps'], updatedSteps);
+      }
+      
+      return { previousSteps };
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousSteps) {
+        queryClient.setQueryData(['workflow-master-steps'], context.previousSteps);
+      }
       toast.error('Failed to reorder steps: ' + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflow-master-steps'] });
     },
   });
 }
