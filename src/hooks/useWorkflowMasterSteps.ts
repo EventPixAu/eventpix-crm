@@ -212,10 +212,13 @@ export function useReorderMasterSteps() {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['workflow-master-steps'] });
       
+      // Also cancel the 'active' query variant
+      await queryClient.cancelQueries({ queryKey: ['workflow-master-steps', 'active'] });
+      
       // Snapshot the previous value
       const previousSteps = queryClient.getQueryData<WorkflowMasterStep[]>(['workflow-master-steps']);
       
-      // Optimistically update to the new value
+      // Optimistically update to the new value AND sort by sort_order
       if (previousSteps) {
         const updatedSteps = previousSteps.map(step => {
           const update = newOrder.find(u => u.id === step.id);
@@ -223,6 +226,14 @@ export function useReorderMasterSteps() {
             return { ...step, sort_order: update.sort_order };
           }
           return step;
+        });
+        // Sort by phase first, then by sort_order to maintain correct rendering order
+        updatedSteps.sort((a, b) => {
+          if (a.phase !== b.phase) {
+            const phaseOrder = { pre_event: 0, day_of: 1, post_event: 2 };
+            return (phaseOrder[a.phase] || 0) - (phaseOrder[b.phase] || 0);
+          }
+          return a.sort_order - b.sort_order;
         });
         queryClient.setQueryData(['workflow-master-steps'], updatedSteps);
       }
