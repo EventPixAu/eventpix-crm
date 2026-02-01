@@ -235,6 +235,11 @@ function compareStepsByDue(a: WorkflowMasterStep, b: WorkflowMasterStep) {
   return a.sort_order - b.sort_order;
 }
 
+// Simple sort by sort_order only (used after manual reordering)
+function compareStepsBySortOrder(a: WorkflowMasterStep, b: WorkflowMasterStep) {
+  return a.sort_order - b.sort_order;
+}
+
 export default function WorkflowsAdmin() {
   const { data: eventTypes = [], isLoading: typesLoading } = useEventTypes();
   const { data: masterSteps = [], isLoading: stepsLoading } = useWorkflowMasterSteps();
@@ -398,7 +403,7 @@ export default function WorkflowsAdmin() {
     
     const phaseSteps = activeSteps
       .filter(s => s.phase === phase)
-      .sort(compareStepsByDue);
+      .sort(compareStepsBySortOrder);
     const oldIndex = phaseSteps.findIndex(s => s.id === active.id);
     const newIndex = phaseSteps.findIndex(s => s.id === over.id);
     
@@ -612,7 +617,7 @@ export default function WorkflowsAdmin() {
                       {phases.map(phase => {
                         const phaseSteps = activeSteps
                           .filter(s => s.phase === phase.key)
-                          .sort(compareStepsByDue);
+                          .sort(compareStepsBySortOrder);
                         if (phaseSteps.length === 0) return null;
                         
                         return (
