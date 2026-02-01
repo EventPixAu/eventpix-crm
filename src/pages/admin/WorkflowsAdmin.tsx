@@ -143,10 +143,12 @@ function SortableEventTypeStep({
   step, 
   isChecked,
   onToggle,
+  onEdit,
 }: { 
   step: WorkflowMasterStep; 
   isChecked: boolean;
   onToggle: () => void;
+  onEdit: (step: WorkflowMasterStep) => void;
 }) {
   const {
     attributes,
@@ -187,6 +189,14 @@ function SortableEventTypeStep({
       />
       <ClipboardList className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1">{step.label}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => onEdit({ ...step })}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
       {isChecked && (
         <Check className="h-4 w-4 text-primary" />
       )}
@@ -645,6 +655,7 @@ export default function WorkflowsAdmin() {
                                       step={step}
                                       isChecked={selectedSteps.includes(step.id)}
                                       onToggle={() => handleStepToggle(step.id)}
+                                      onEdit={setEditingStep}
                                     />
                                   ))}
                                 </div>
