@@ -71,7 +71,7 @@ import {
 } from '@/hooks/useSalesWorkflowTemplates';
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 
-// Sortable Step Item Component
+// Sortable Step Item Component for Operations Steps tab
 function SortableStepItem({ 
   step, 
   onEdit, 
@@ -134,6 +134,62 @@ function SortableStepItem({
       >
         <Trash2 className="h-4 w-4 text-destructive" />
       </Button>
+    </div>
+  );
+}
+
+// Sortable Step Item Component for Event Type Defaults tab
+function SortableEventTypeStep({ 
+  step, 
+  isChecked,
+  onToggle,
+}: { 
+  step: WorkflowMasterStep; 
+  isChecked: boolean;
+  onToggle: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+        isChecked 
+          ? 'border-primary bg-primary/5' 
+          : 'border-border hover:bg-muted/50'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <Checkbox
+        checked={isChecked}
+        onCheckedChange={onToggle}
+      />
+      <ClipboardList className="h-4 w-4 text-muted-foreground" />
+      <span className="flex-1">{step.label}</span>
+      {isChecked && (
+        <Check className="h-4 w-4 text-primary" />
+      )}
     </div>
   );
 }
@@ -334,6 +390,31 @@ export default function WorkflowsAdmin() {
     
     reorderSteps.mutate(updates);
   };
+
+  // Handle drag-and-drop reordering in Event Type Defaults tab
+  const handleEventTypeDragEnd = (event: DragEndEvent, phase: WorkflowPhase) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    
+    const phaseSteps = activeSteps
+      .filter(s => s.phase === phase)
+      .sort(compareStepsByDue);
+    const oldIndex = phaseSteps.findIndex(s => s.id === active.id);
+    const newIndex = phaseSteps.findIndex(s => s.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    const reordered = arrayMove(phaseSteps, oldIndex, newIndex);
+    const updates = reordered.map((step, index) => ({
+      id: step.id,
+      sort_order: index,
+    }));
+    
+    // Reorder the master steps and mark changes
+    reorderSteps.mutate(updates);
+    setHasChanges(true);
+  };
+
   const handleEditSalesWorkflow = (workflow: SalesWorkflowTemplate) => {
     setEditingSalesWorkflow(workflow);
     setSalesWorkflowItems([...workflow.items]);
@@ -543,32 +624,27 @@ export default function WorkflowsAdmin() {
                             <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
                               {phase.label}
                             </h3>
-                            <div className="space-y-2">
-                              {phaseSteps.map(step => {
-                                const isChecked = selectedSteps.includes(step.id);
-                                
-                                return (
-                                  <label
-                                    key={step.id}
-                                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-                                      isChecked 
-                                        ? 'border-primary bg-primary/5' 
-                                        : 'border-border hover:bg-muted/50'
-                                    }`}
-                                  >
-                                    <Checkbox
-                                      checked={isChecked}
-                                      onCheckedChange={() => handleStepToggle(step.id)}
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={(event) => handleEventTypeDragEnd(event, phase.key)}
+                            >
+                              <SortableContext
+                                items={phaseSteps.map(s => s.id)}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                <div className="space-y-2">
+                                  {phaseSteps.map(step => (
+                                    <SortableEventTypeStep
+                                      key={step.id}
+                                      step={step}
+                                      isChecked={selectedSteps.includes(step.id)}
+                                      onToggle={() => handleStepToggle(step.id)}
                                     />
-                                    <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                                    <span className="flex-1">{step.label}</span>
-                                    {isChecked && (
-                                      <Check className="h-4 w-4 text-primary" />
-                                    )}
-                                  </label>
-                                );
-                              })}
-                            </div>
+                                  ))}
+                                </div>
+                              </SortableContext>
+                            </DndContext>
                           </motion.div>
                         );
                       })}
