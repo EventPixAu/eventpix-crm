@@ -812,10 +812,11 @@ export default function WorkflowsAdmin() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select trigger event" />
                   </SelectTrigger>
-                  <SelectContent>
+                    <SelectContent>
                     <SelectItem value="contract_signed">Contract Signed</SelectItem>
                     <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
                     <SelectItem value="invoice_paid">Invoice Paid</SelectItem>
+                    <SelectItem value="event_date">Event Date</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -943,6 +944,7 @@ export default function WorkflowsAdmin() {
                       <SelectItem value="contract_signed">Contract Signed</SelectItem>
                       <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
                       <SelectItem value="invoice_paid">Invoice Paid</SelectItem>
+                      <SelectItem value="event_date">Event Date</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
