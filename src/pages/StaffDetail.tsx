@@ -495,8 +495,8 @@ export default function StaffDetail() {
                       <Badge variant={onboardingConfig.variant}>
                         {onboardingConfig.label}
                       </Badge>
-                      {/* Admin can approve profiles that are pending review */}
-                      {isAdmin && onboardingStatus === 'pending_review' && (
+                      {/* Admin can approve profiles that are pending review or incomplete */}
+                      {isAdmin && (onboardingStatus === 'pending_review' || onboardingStatus === 'incomplete') && (
                         <Button
                           size="sm"
                           variant="outline"
