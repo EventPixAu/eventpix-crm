@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useStaffDirectory, useStaffRoles } from '@/hooks/useStaff';
+import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
+import { useLocations } from '@/hooks/useLookups';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
@@ -44,6 +45,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('all');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
@@ -53,8 +55,9 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [guardrailOverridden, setGuardrailOverridden] = useState(false);
   
   const { user } = useAuth();
-  const { data: profiles = [] } = useStaffDirectory();
+  const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
+  const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
@@ -123,9 +126,26 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   }, [selectedUser, dateAvailability]);
   
   const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
-  const availableProfiles = profiles.filter(
-    (profile) => !assignedUserIds.includes(profile.id)
-  );
+  
+  // Filter profiles by location if selected
+  const availableProfiles = useMemo(() => {
+    let filtered = profiles.filter((profile) => !assignedUserIds.includes(profile.id));
+    
+    if (selectedLocation && selectedLocation !== 'all') {
+      filtered = filtered.filter((profile) => profile.location === selectedLocation);
+    }
+    
+    return filtered;
+  }, [profiles, assignedUserIds, selectedLocation]);
+  
+  // Get unique locations from profiles for the filter dropdown
+  const availableLocations = useMemo(() => {
+    const locationSet = new Set<string>();
+    profiles.forEach(p => {
+      if (p.location) locationSet.add(p.location);
+    });
+    return Array.from(locationSet).sort();
+  }, [profiles]);
   
   // Check if we've hit the max staff limit
   const isAtMaxCapacity = assignments.length >= maxStaff;
@@ -303,6 +323,28 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
         ) : (
         <div className="space-y-3 pt-4 border-t">
           <Label>Add Team Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
+          
+          {/* Location Filter */}
+          <Select value={selectedLocation} onValueChange={(value) => {
+            setSelectedLocation(value);
+            setSelectedUser(''); // Reset user selection when location changes
+          }}>
+            <SelectTrigger className="h-9">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue placeholder="All Locations" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locations.map((location) => (
+                <SelectItem key={location.id} value={location.name}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           <Select value={selectedUser} onValueChange={setSelectedUser}>
             <SelectTrigger>
               <SelectValue placeholder="Select team member" />
@@ -310,7 +352,9 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             <SelectContent>
               {availableProfiles.length === 0 ? (
                 <SelectItem value="none" disabled>
-                  No available team members
+                  {selectedLocation !== 'all' 
+                    ? `No team members in ${selectedLocation}` 
+                    : 'No available team members'}
                 </SelectItem>
               ) : (
                 availableProfiles.map((profile) => (

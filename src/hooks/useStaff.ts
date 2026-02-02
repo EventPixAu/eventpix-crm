@@ -73,6 +73,11 @@ export interface StaffDirectoryEntry {
   source?: 'profile' | 'staff';
 }
 
+// Extended directory entry with location for filtering
+export interface StaffDirectoryEntryWithLocation extends StaffDirectoryEntry {
+  location: string | null;
+}
+
 // Fetch staff directory - combines profiles (with accounts) and staff (legacy/unlinked)
 // This ensures all team members appear in assignment dropdowns
 export function useStaffDirectory() {
@@ -116,6 +121,59 @@ export function useStaffDirectory() {
           default_role_id: null,
           status: s.status,
           is_active: s.status === 'active' || s.status === null,
+          source: 'staff' as const,
+        }));
+      
+      return [...profiles, ...unlinkedStaff].sort((a, b) => 
+        (a.full_name || '').localeCompare(b.full_name || '')
+      );
+    },
+  });
+}
+
+// Fetch staff directory with location field for filtering in assignment dialogs
+export function useStaffDirectoryWithLocation() {
+  return useQuery({
+    queryKey: ['staff-directory-with-location'],
+    queryFn: async () => {
+      // Fetch profiles directly with location field
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, default_role_id, status, is_active, location')
+        .or('status.is.null,status.eq.active')
+        .order('full_name');
+      
+      if (profileError) throw profileError;
+      
+      // Fetch from staff table (legacy/unlinked team members)
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('id, name, status, user_id, location')
+        .or('status.is.null,status.eq.active')
+        .order('name');
+      
+      if (staffError) throw staffError;
+      
+      // Combine profiles and unlinked staff
+      const profiles: StaffDirectoryEntryWithLocation[] = (profileData || []).map(p => ({
+        ...p,
+        source: 'profile' as const,
+      }));
+      
+      // Get profile IDs set for quick lookup
+      const profileIds = new Set(profiles.map(p => p.id));
+      
+      // Add unlinked staff members (those without user_id linking to an existing profile)
+      const unlinkedStaff: StaffDirectoryEntryWithLocation[] = (staffData || [])
+        .filter(s => !s.user_id || !profileIds.has(s.user_id))
+        .map(s => ({
+          id: s.id,
+          full_name: s.name,
+          avatar_url: null,
+          default_role_id: null,
+          status: s.status,
+          is_active: s.status === 'active' || s.status === null,
+          location: s.location || null,
           source: 'staff' as const,
         }));
       
