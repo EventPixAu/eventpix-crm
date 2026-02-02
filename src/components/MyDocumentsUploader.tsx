@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,9 @@ import {
   Clock, 
   Calendar,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  FileUp,
+  X
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -26,12 +28,18 @@ import {
   type StaffComplianceDocumentWithType,
 } from '@/hooks/useCompliance';
 
+const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 export function MyDocumentsUploader() {
   const [uploadingType, setUploadingType] = useState<ComplianceDocumentType | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [issuedDate, setIssuedDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const { data: documentTypes, isLoading: typesLoading } = useComplianceDocumentTypes();
   const { data: myDocuments, isLoading: docsLoading } = useMyComplianceDocuments();
@@ -47,10 +55,98 @@ export function MyDocumentsUploader() {
   const requiredTypes = documentTypes?.filter(dt => dt.required && dt.is_active) || [];
   const optionalTypes = documentTypes?.filter(dt => !dt.required && dt.is_active) || [];
 
+  const validateFile = useCallback((file: File): string | null => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      return 'Invalid file type. Please upload PDF, JPG, PNG, or WebP.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return 'File too large. Maximum size is 10MB.';
+    }
+    return null;
+  }, []);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
+      const error = validateFile(file);
+      if (error) {
+        setFileError(error);
+        setSelectedFile(null);
+      } else {
+        setFileError(null);
+        setSelectedFile(file);
+      }
+    }
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const error = validateFile(file);
+      if (error) {
+        setFileError(error);
+        setSelectedFile(null);
+      } else {
+        setFileError(null);
+        setSelectedFile(file);
+      }
+    }
+  }, [validateFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set to false if we're leaving the drop zone entirely
+    if (!dropZoneRef.current?.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  // Handle paste events when dialog is open
+  useEffect(() => {
+    if (!uploadingType) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of items) {
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file) {
+            const error = validateFile(file);
+            if (error) {
+              setFileError(error);
+              setSelectedFile(null);
+            } else {
+              setFileError(null);
+              setSelectedFile(file);
+            }
+            break;
+          }
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [uploadingType, validateFile]);
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setFileError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -182,14 +278,79 @@ export function MyDocumentsUploader() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Drag and Drop Zone */}
             <div className="space-y-2">
               <Label>Document File</Label>
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                onChange={handleFileSelect}
-              />
+              <div
+                ref={dropZoneRef}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => !selectedFile && fileInputRef.current?.click()}
+                className={cn(
+                  "relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
+                  "flex flex-col items-center justify-center gap-2 text-center",
+                  isDragging && "border-primary bg-primary/5",
+                  selectedFile && !fileError && "border-green-500 bg-green-50",
+                  fileError && "border-destructive bg-destructive/5",
+                  !isDragging && !selectedFile && !fileError && "border-muted-foreground/25 hover:border-muted-foreground/50"
+                )}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  onChange={handleFileSelect}
+                  className="sr-only"
+                />
+                
+                {selectedFile ? (
+                  <div className="flex items-center gap-3">
+                    <FileUp className="h-8 w-8 text-green-500" />
+                    <div className="text-left">
+                      <p className="font-medium text-sm">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearSelectedFile();
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className={cn(
+                      "h-10 w-10",
+                      isDragging ? "text-primary" : "text-muted-foreground"
+                    )} />
+                    <div>
+                      <p className="font-medium text-sm">
+                        {isDragging ? 'Drop file here' : 'Drag & drop or click to browse'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        You can also paste (Ctrl+V) a file
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {fileError && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {fileError}
+                </p>
+              )}
+              
               <p className="text-xs text-muted-foreground">
                 Accepted formats: PDF, JPG, PNG, WebP (max 10MB)
               </p>
