@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ListChecks, Loader2, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { ListChecks, Loader2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,7 +22,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useAllWorkflowTemplates } from '@/hooks/useWorkflowTemplates';
+import { useEventTypes } from '@/hooks/useLookups';
+import { useAllEventTypeDefaults } from '@/hooks/useEventTypeDefaults';
 import { useInitializeWorkflowStepsSelective } from '@/hooks/useEventWorkflowSteps';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,7 +43,7 @@ interface InitializeWorkflowDialogProps {
   trigger?: React.ReactNode;
 }
 
-interface TemplateItem {
+interface WorkflowStep {
   id: string;
   template_id: string;
   label: string;
@@ -53,26 +54,107 @@ interface TemplateItem {
   date_offset_reference: string | null;
   completion_type?: string;
   auto_trigger_event?: string | null;
+  phase?: string;
 }
 
-// Hook to fetch all items for a template
-function useTemplateItems(templateId: string | undefined) {
+// Hook to fetch all steps for an event type's configured templates
+function useEventTypeSteps(eventTypeId: string | undefined) {
+  const { data: allDefaults = [] } = useAllEventTypeDefaults();
+  
+  const templateIds = useMemo(() => {
+    if (!eventTypeId) return [];
+    return allDefaults
+      .filter(d => d.event_type_id === eventTypeId)
+      .map(d => d.template_id);
+  }, [eventTypeId, allDefaults]);
+
   return useQuery({
-    queryKey: ['workflow-template-items', templateId],
+    queryKey: ['event-type-steps', eventTypeId, templateIds],
     queryFn: async () => {
-      if (!templateId) return [];
+      if (templateIds.length === 0) {
+        // No specific templates configured - fetch all active steps from all operations templates
+        const { data: templates, error: templatesError } = await supabase
+          .from('workflow_templates')
+          .select('id, phase')
+          .eq('workflow_domain', 'operations')
+          .eq('is_active', true);
+        
+        if (templatesError) throw templatesError;
+        if (!templates?.length) return [];
+
+        const { data: items, error: itemsError } = await supabase
+          .from('workflow_template_items')
+          .select('*')
+          .in('template_id', templates.map(t => t.id))
+          .eq('is_active', true)
+          .order('sort_order');
+        
+        if (itemsError) throw itemsError;
+        
+        // Add phase from template
+        const templatePhaseMap = new Map(templates.map(t => [t.id, t.phase]));
+        return (items || []).map(item => ({
+          ...item,
+          phase: templatePhaseMap.get(item.template_id) || 'pre_event',
+        })) as WorkflowStep[];
+      }
       
-      const { data, error } = await supabase
+      // Fetch templates to get their phases
+      const { data: templates, error: templatesError } = await supabase
+        .from('workflow_templates')
+        .select('id, phase')
+        .in('id', templateIds);
+      
+      if (templatesError) throw templatesError;
+      
+      const { data: items, error: itemsError } = await supabase
         .from('workflow_template_items')
         .select('*')
-        .eq('template_id', templateId)
+        .in('template_id', templateIds)
         .eq('is_active', true)
         .order('sort_order');
       
-      if (error) throw error;
-      return data as TemplateItem[];
+      if (itemsError) throw itemsError;
+      
+      // Add phase from template
+      const templatePhaseMap = new Map(templates?.map(t => [t.id, t.phase]) || []);
+      return (items || []).map(item => ({
+        ...item,
+        phase: templatePhaseMap.get(item.template_id) || 'pre_event',
+      })) as WorkflowStep[];
     },
-    enabled: !!templateId,
+    enabled: !!eventTypeId,
+  });
+}
+
+// Hook to get step count for each event type
+function useEventTypeStepCounts() {
+  const { data: allDefaults = [] } = useAllEventTypeDefaults();
+  
+  return useQuery({
+    queryKey: ['event-type-step-counts', allDefaults],
+    queryFn: async () => {
+      const eventTypeTemplates = new Map<string, string[]>();
+      allDefaults.forEach(d => {
+        const existing = eventTypeTemplates.get(d.event_type_id) || [];
+        existing.push(d.template_id);
+        eventTypeTemplates.set(d.event_type_id, existing);
+      });
+      
+      const counts = new Map<string, number>();
+      
+      for (const [eventTypeId, templateIds] of eventTypeTemplates.entries()) {
+        const { count } = await supabase
+          .from('workflow_template_items')
+          .select('*', { count: 'exact', head: true })
+          .in('template_id', templateIds)
+          .eq('is_active', true);
+        counts.set(eventTypeId, count || 0);
+      }
+      
+      return counts;
+    },
+    enabled: allDefaults.length > 0,
   });
 }
 
@@ -82,54 +164,43 @@ export function InitializeWorkflowDialog({
   trigger,
 }: InitializeWorkflowDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [showItems, setShowItems] = useState(false);
   
-  // Fetch operations workflow templates
-  const { data: templates = [], isLoading: templatesLoading } = useAllWorkflowTemplates('operations');
+  // Fetch event types for dropdown
+  const { data: eventTypes = [], isLoading: eventTypesLoading } = useEventTypes();
   
-  // Fetch items for the selected template
-  const { data: templateItems = [], isLoading: itemsLoading } = useTemplateItems(selectedTemplateId);
+  // Fetch step counts for badges
+  const { data: stepCounts } = useEventTypeStepCounts();
+  
+  // Fetch steps for the selected event type
+  const { data: steps = [], isLoading: stepsLoading } = useEventTypeSteps(selectedEventTypeId);
   
   const initializeSteps = useInitializeWorkflowStepsSelective();
   
-  // Filter to active templates only
-  const activeTemplates = useMemo(() => {
-    return templates.filter(t => t.is_active);
-  }, [templates]);
-  
-  // Group items by phase (from the parent template)
-  const itemsByPhase = useMemo(() => {
-    const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-    if (!selectedTemplate) return new Map<string, TemplateItem[]>();
-    
-    // All items in a template belong to the template's phase
-    const grouped = new Map<string, TemplateItem[]>();
-    grouped.set(selectedTemplate.phase, templateItems);
+  // Group steps by phase
+  const stepsByPhase = useMemo(() => {
+    const grouped = new Map<string, WorkflowStep[]>();
+    steps.forEach(step => {
+      const phase = step.phase || 'pre_event';
+      const existing = grouped.get(phase) || [];
+      existing.push(step);
+      grouped.set(phase, existing);
+    });
     return grouped;
-  }, [selectedTemplateId, templates, templateItems]);
+  }, [steps]);
   
-  // Get item count for each template
-  const getItemCount = async (templateId: string) => {
-    const { count } = await supabase
-      .from('workflow_template_items')
-      .select('*', { count: 'exact', head: true })
-      .eq('template_id', templateId)
-      .eq('is_active', true);
-    return count || 0;
-  };
-  
-  // Reset selections when template changes
+  // Reset selections when event type changes
   useEffect(() => {
-    if (selectedTemplateId && templateItems.length > 0) {
-      setSelectedItemIds(new Set(templateItems.map(item => item.id)));
+    if (selectedEventTypeId && steps.length > 0) {
+      setSelectedItemIds(new Set(steps.map(step => step.id)));
       setShowItems(true);
     } else {
       setSelectedItemIds(new Set());
       setShowItems(false);
     }
-  }, [selectedTemplateId, templateItems]);
+  }, [selectedEventTypeId, steps]);
   
   const handleItemToggle = (itemId: string) => {
     setSelectedItemIds(prev => {
@@ -144,7 +215,7 @@ export function InitializeWorkflowDialog({
   };
   
   const handleSelectAll = () => {
-    setSelectedItemIds(new Set(templateItems.map(item => item.id)));
+    setSelectedItemIds(new Set(steps.map(step => step.id)));
   };
   
   const handleSelectNone = () => {
@@ -152,19 +223,22 @@ export function InitializeWorkflowDialog({
   };
   
   const handleInitialize = async () => {
-    if (selectedItemIds.size === 0 || !selectedTemplateId) return;
+    if (selectedItemIds.size === 0 || steps.length === 0) return;
+    
+    // Get the first template ID from the selected steps
+    const firstStep = steps.find(s => selectedItemIds.has(s.id));
+    if (!firstStep) return;
     
     await initializeSteps.mutateAsync({
       eventId,
-      templateId: selectedTemplateId,
+      templateId: firstStep.template_id,
       selectedItemIds: Array.from(selectedItemIds),
     });
     
     setOpen(false);
   };
   
-  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
-  const isLoading = templatesLoading || itemsLoading;
+  const isLoading = eventTypesLoading || stepsLoading;
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -182,43 +256,47 @@ export function InitializeWorkflowDialog({
             {currentTemplateId ? 'Change Workflow Steps' : 'Assign Workflow Steps'}
           </DialogTitle>
           <DialogDescription>
-            Select a workflow template to apply its steps to this job.
+            Select an event type to apply its configured workflow steps to this job.
           </DialogDescription>
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden flex flex-col gap-4 py-4">
           <div className="space-y-2">
-            <Label>Workflow Template</Label>
+            <Label>Event Type</Label>
             <Select
-              value={selectedTemplateId}
-              onValueChange={setSelectedTemplateId}
-              disabled={templatesLoading}
+              value={selectedEventTypeId}
+              onValueChange={setSelectedEventTypeId}
+              disabled={eventTypesLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a workflow..." />
+                <SelectValue placeholder="Select an event type..." />
               </SelectTrigger>
               <SelectContent>
-                {activeTemplates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>{template.template_name}</span>
-                      <span>
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs"
-                        >
-                          {PHASE_CONFIG[template.phase as keyof typeof PHASE_CONFIG]?.label || template.phase}
-                        </Badge>
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {eventTypes.map((type) => {
+                  const count = stepCounts?.get(type.id);
+                  const hasCustomSteps = count !== undefined && count > 0;
+                  return (
+                    <SelectItem key={type.id} value={type.id}>
+                      <div className="flex items-center gap-2">
+                        <Settings2 className="h-4 w-4 text-muted-foreground" />
+                        <span>{type.name}</span>
+                        <span>
+                          <Badge 
+                            variant={hasCustomSteps ? "default" : "outline"} 
+                            className="text-xs"
+                          >
+                            {hasCustomSteps ? `${count} steps` : 'All steps'}
+                          </Badge>
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
           
-          {selectedTemplateId && (
+          {selectedEventTypeId && (
             <Collapsible open={showItems} onOpenChange={setShowItems} className="flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between">
                 <CollapsibleTrigger asChild>
@@ -229,7 +307,7 @@ export function InitializeWorkflowDialog({
                       <ChevronDown className="h-4 w-4" />
                     )}
                     <span className="font-medium">
-                      Workflow Steps ({selectedItemIds.size}/{templateItems.length} selected)
+                      Workflow Steps ({selectedItemIds.size}/{steps.length} selected)
                     </span>
                   </Button>
                 </CollapsibleTrigger>
@@ -260,61 +338,65 @@ export function InitializeWorkflowDialog({
                   <div className="py-4 text-center text-muted-foreground text-sm">
                     Loading steps...
                   </div>
-                ) : templateItems.length === 0 ? (
+                ) : steps.length === 0 ? (
                   <div className="py-4 text-center text-muted-foreground text-sm">
-                    No active steps in this template
+                    No steps configured for this event type
                   </div>
                 ) : (
                   <ScrollArea className="h-[350px] mt-2 border rounded-lg">
-                    <div className="p-3 space-y-1">
-                      {selectedTemplate && (
-                        <div className="flex items-center gap-2 pb-2 mb-2 border-b">
-                          <span className={cn(
-                            'text-sm font-medium',
-                            PHASE_CONFIG[selectedTemplate.phase as keyof typeof PHASE_CONFIG]?.color || ''
-                          )}>
-                            {PHASE_CONFIG[selectedTemplate.phase as keyof typeof PHASE_CONFIG]?.label || selectedTemplate.phase}
-                          </span>
-                          <span className="text-muted-foreground text-sm">
-                            ({selectedItemIds.size}/{templateItems.length})
-                          </span>
-                        </div>
-                      )}
-                      
-                      {templateItems.map((item) => (
-                        <label
-                          key={item.id}
-                          className={cn(
-                            'flex items-start gap-3 p-2 rounded-md cursor-pointer transition-colors',
-                            selectedItemIds.has(item.id)
-                              ? 'bg-primary/5 hover:bg-primary/10'
-                              : 'hover:bg-muted/50'
-                          )}
-                        >
-                          <Checkbox
-                            checked={selectedItemIds.has(item.id)}
-                            onCheckedChange={() => handleItemToggle(item.id)}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className={cn(
+                    <div className="p-3 space-y-4">
+                      {Array.from(stepsByPhase.entries()).map(([phase, phaseSteps]) => (
+                        <div key={phase}>
+                          <div className="flex items-center gap-2 pb-2 mb-2 border-b">
+                            <span className={cn(
                               'text-sm font-medium',
-                              !selectedItemIds.has(item.id) && 'text-muted-foreground'
+                              PHASE_CONFIG[phase as keyof typeof PHASE_CONFIG]?.color || ''
                             )}>
-                              {item.label}
-                            </p>
-                            {item.help_text && (
-                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                {item.help_text}
-                              </p>
-                            )}
-                            {item.date_offset_days !== null && item.date_offset_reference && (
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {item.date_offset_days > 0 ? '+' : ''}{item.date_offset_days}d from {item.date_offset_reference.replace('_', ' ')}
-                              </Badge>
-                            )}
+                              {PHASE_CONFIG[phase as keyof typeof PHASE_CONFIG]?.label || phase}
+                            </span>
+                            <span className="text-muted-foreground text-sm">
+                              ({phaseSteps.filter(s => selectedItemIds.has(s.id)).length}/{phaseSteps.length})
+                            </span>
                           </div>
-                        </label>
+                          
+                          <div className="space-y-1">
+                            {phaseSteps.map((step) => (
+                              <label
+                                key={step.id}
+                                className={cn(
+                                  'flex items-start gap-3 p-2 rounded-md cursor-pointer transition-colors',
+                                  selectedItemIds.has(step.id)
+                                    ? 'bg-primary/5 hover:bg-primary/10'
+                                    : 'hover:bg-muted/50'
+                                )}
+                              >
+                                <Checkbox
+                                  checked={selectedItemIds.has(step.id)}
+                                  onCheckedChange={() => handleItemToggle(step.id)}
+                                  className="mt-0.5"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className={cn(
+                                    'text-sm font-medium',
+                                    !selectedItemIds.has(step.id) && 'text-muted-foreground'
+                                  )}>
+                                    {step.label}
+                                  </p>
+                                  {step.help_text && (
+                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                      {step.help_text}
+                                    </p>
+                                  )}
+                                  {step.date_offset_days !== null && step.date_offset_reference && (
+                                    <Badge variant="outline" className="text-xs mt-1">
+                                      {step.date_offset_days > 0 ? '+' : ''}{step.date_offset_days}d from {step.date_offset_reference.replace('_', ' ')}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </ScrollArea>
@@ -336,7 +418,7 @@ export function InitializeWorkflowDialog({
           </Button>
           <Button 
             onClick={handleInitialize}
-            disabled={selectedItemIds.size === 0 || !selectedTemplateId || initializeSteps.isPending}
+            disabled={selectedItemIds.size === 0 || !selectedEventTypeId || initializeSteps.isPending}
           >
             {initializeSteps.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
