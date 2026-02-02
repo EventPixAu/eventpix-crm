@@ -19,7 +19,10 @@ import {
   Utensils,
   Package,
   UserPlus,
-  Camera
+  Camera,
+  User,
+  Building2,
+  Shield
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -402,13 +405,7 @@ export default function StaffDetail() {
       )}
 
       {/* Profile Summary Card */}
-      <Card className="mb-6 relative">
-        {/* Edit Button for Admins */}
-        {isAdmin && (
-          <div className="absolute top-4 right-4 z-10">
-            <StaffProfileEditor profile={profile} sourceTable={sourceTable} staffId={staffId} />
-          </div>
-        )}
+      <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Avatar & Basic Info */}
@@ -536,8 +533,12 @@ export default function StaffDetail() {
       </Card>
 
       {/* Tabs for detailed info */}
-      <Tabs defaultValue="assignments" className="space-y-4">
+      <Tabs defaultValue="profile" className="space-y-4">
         <TabsList className="bg-secondary/50">
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
             Assignments
@@ -565,6 +566,113 @@ export default function StaffDetail() {
             </TabsTrigger>
           )}
         </TabsList>
+
+        {/* Profile Tab */}
+        <TabsContent value="profile" className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Personal & Business Details */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Business Details
+                </CardTitle>
+                {isAdmin && (
+                  <StaffProfileEditor profile={profile} sourceTable={sourceTable} staffId={staffId} />
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {profile.business_name ? (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Business Name</span>
+                    <p className="text-sm font-medium">{profile.business_name}</p>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">No business name set</div>
+                )}
+                
+                {profile.abn && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">ABN</span>
+                    <p className="text-sm font-medium">{profile.abn}</p>
+                  </div>
+                )}
+                
+                <div className="pt-2 border-t">
+                  <span className="text-xs text-muted-foreground">Address</span>
+                  {(profile.address_line1 || profile.address_city || profile.address_state) ? (
+                    <div className="text-sm font-medium mt-1">
+                      {profile.address_line1 && <p>{profile.address_line1}</p>}
+                      {profile.address_line2 && <p>{profile.address_line2}</p>}
+                      {(profile.address_city || profile.address_state || profile.address_postcode) && (
+                        <p>
+                          {[profile.address_city, profile.address_state].filter(Boolean).join(' ')} {profile.address_postcode}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic mt-1">No address set</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Vehicle & Insurance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Vehicle & Insurance
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Vehicle</span>
+                  {(profile.vehicle_make_model || profile.vehicle_registration) ? (
+                    <div className="text-sm font-medium">
+                      {profile.vehicle_make_model && <p>{profile.vehicle_make_model}</p>}
+                      {profile.vehicle_registration && (
+                        <p className="text-muted-foreground">Rego: {profile.vehicle_registration}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No vehicle details</p>
+                  )}
+                </div>
+                
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Public Liability Insurance</span>
+                  {profile.pli_details ? (
+                    <div className="text-sm font-medium">
+                      <p>{profile.pli_details}</p>
+                      {profile.pli_expiry && (
+                        <p className="text-muted-foreground">
+                          Expires: {format(parseISO(profile.pli_expiry), 'dd MMM yyyy')}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No PLI details</p>
+                  )}
+                </div>
+
+                {profile.dietary_requirements && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Dietary Requirements</span>
+                    <p className="text-sm font-medium">{profile.dietary_requirements}</p>
+                  </div>
+                )}
+
+                {profile.certificates && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Certificates</span>
+                    <p className="text-sm font-medium">{profile.certificates}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* Assignments Tab */}
         <TabsContent value="assignments" className="space-y-4">
