@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Circle, CircleDot, CircleSlash, Loader2, AlertTriangle } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, parseISO, isBefore, isAfter, isSameDay } from 'date-fns';
+import { ChevronLeft, ChevronRight, Circle, CircleDot, CircleSlash, Loader2, AlertTriangle, CalendarRange } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -23,15 +23,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { 
   useMyAvailability, 
   useSetAvailability,
+  useBulkSetAvailability,
   useSameDayEvents,
   AvailabilityStatus,
   StaffAvailability,
 } from '@/hooks/useStaffAvailability';
+import { Badge } from '@/components/ui/badge';
 
 interface AvailabilityCalendarProps {
   userId?: string;
@@ -48,6 +58,14 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const [pendingStatus, setPendingStatus] = useState<AvailabilityStatus | null>(null);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   
+  // Range selection state
+  const [rangeStart, setRangeStart] = useState<Date | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<Date | null>(null);
+  const [isSelectingRange, setIsSelectingRange] = useState(false);
+  const [showRangeDialog, setShowRangeDialog] = useState(false);
+  const [rangeStatus, setRangeStatus] = useState<AvailabilityStatus>('unavailable');
+  const [rangeNotes, setRangeNotes] = useState('');
+  
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   
@@ -60,6 +78,7 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const { data: sameDayEvents = [] } = useSameDayEvents(effectiveUserId, selectedDate || undefined);
   
   const setAvailability = useSetAvailability();
+  const bulkSetAvailability = useBulkSetAvailability();
   
   // Create a map of date -> availability for quick lookup
   const availabilityMap = useMemo(() => {
@@ -74,6 +93,49 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   
   // Get the day of week for the first day (0 = Sunday)
   const startDayOfWeek = monthStart.getDay();
+  
+  // Calculate selected range days
+  const rangeDays = useMemo(() => {
+    if (!rangeStart || !rangeEnd) return [];
+    const start = isBefore(rangeStart, rangeEnd) ? rangeStart : rangeEnd;
+    const end = isAfter(rangeStart, rangeEnd) ? rangeStart : rangeEnd;
+    return eachDayOfInterval({ start, end }).filter(day => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return !isBefore(day, today);
+    });
+  }, [rangeStart, rangeEnd]);
+  
+  const isInRange = (day: Date) => {
+    if (!rangeStart) return false;
+    if (!rangeEnd) return isSameDay(day, rangeStart);
+    
+    const start = isBefore(rangeStart, rangeEnd) ? rangeStart : rangeEnd;
+    const end = isAfter(rangeStart, rangeEnd) ? rangeStart : rangeEnd;
+    
+    return (isAfter(day, start) || isSameDay(day, start)) && 
+           (isBefore(day, end) || isSameDay(day, end));
+  };
+  
+  const handleDayClick = (day: Date, dateStr: string) => {
+    const dayAvailability = availabilityMap.get(dateStr);
+    
+    if (isSelectingRange) {
+      if (!rangeStart) {
+        setRangeStart(day);
+      } else if (!rangeEnd) {
+        setRangeEnd(day);
+        setShowRangeDialog(true);
+      } else {
+        // Reset and start new selection
+        setRangeStart(day);
+        setRangeEnd(null);
+      }
+    } else {
+      setSelectedDate(dateStr);
+      setEditNotes(dayAvailability?.notes || '');
+    }
+  };
   
   const handleSetAvailability = async (status: AvailabilityStatus) => {
     if (!effectiveUserId || !selectedDate) return;
@@ -108,6 +170,34 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
       await executeAvailabilityChange(pendingStatus);
     }
     setShowWarningDialog(false);
+  };
+  
+  const handleBulkApply = async () => {
+    if (!effectiveUserId || rangeDays.length === 0) return;
+    
+    const dates = rangeDays.map(day => format(day, 'yyyy-MM-dd'));
+    
+    await bulkSetAvailability.mutateAsync({
+      userId: effectiveUserId,
+      dates,
+      status: rangeStatus,
+      notes: rangeNotes || undefined,
+    });
+    
+    // Reset range selection
+    setRangeStart(null);
+    setRangeEnd(null);
+    setShowRangeDialog(false);
+    setIsSelectingRange(false);
+    setRangeNotes('');
+  };
+  
+  const cancelRangeSelection = () => {
+    setRangeStart(null);
+    setRangeEnd(null);
+    setIsSelectingRange(false);
+    setShowRangeDialog(false);
+    setRangeNotes('');
   };
   
   const getStatusIcon = (status: AvailabilityStatus | undefined) => {
@@ -163,6 +253,41 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
         </Button>
       </div>
       
+      {/* Range Selection Toggle */}
+      <div className="flex items-center justify-between">
+        <Button
+          variant={isSelectingRange ? "default" : "outline"}
+          size="sm"
+          onClick={() => {
+            if (isSelectingRange) {
+              cancelRangeSelection();
+            } else {
+              setIsSelectingRange(true);
+              setSelectedDate(null);
+            }
+          }}
+          className="gap-2"
+        >
+          <CalendarRange className="h-4 w-4" />
+          {isSelectingRange ? 'Cancel Range Selection' : 'Select Date Range'}
+        </Button>
+        
+        {isSelectingRange && rangeStart && (
+          <Badge variant="secondary" className="text-xs">
+            {rangeEnd 
+              ? `${format(isBefore(rangeStart, rangeEnd) ? rangeStart : rangeEnd, 'MMM d')} - ${format(isAfter(rangeStart, rangeEnd) ? rangeStart : rangeEnd, 'MMM d')}`
+              : `From ${format(rangeStart, 'MMM d')} - Click end date`
+            }
+          </Badge>
+        )}
+      </div>
+      
+      {isSelectingRange && (
+        <p className="text-sm text-muted-foreground text-center">
+          Click the start date, then click the end date to select a range
+        </p>
+      )}
+      
       {/* Legend */}
       <div className="flex items-center gap-4 text-sm text-muted-foreground justify-center">
         <div className="flex items-center gap-1">
@@ -199,6 +324,34 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
           const dayAvailability = availabilityMap.get(dateStr);
           const status = dayAvailability?.availability_status;
           const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+          const inRange = isSelectingRange && isInRange(day) && !isPast;
+          
+          if (isSelectingRange) {
+            return (
+              <button
+                key={dateStr}
+                disabled={readOnly || isPast}
+                onClick={() => handleDayClick(day, dateStr)}
+                className={cn(
+                  'aspect-square p-1 rounded-lg border text-sm flex flex-col items-center justify-center gap-0.5',
+                  'transition-colors hover:bg-muted/50',
+                  'disabled:opacity-50 disabled:cursor-not-allowed',
+                  isToday(day) && 'ring-2 ring-primary',
+                  inRange && 'bg-primary/20 border-primary',
+                  !inRange && getStatusColor(status),
+                  !status && !inRange && 'border-border'
+                )}
+              >
+                <span className={cn(
+                  'font-medium',
+                  !isSameMonth(day, currentMonth) && 'text-muted-foreground'
+                )}>
+                  {format(day, 'd')}
+                </span>
+                {getStatusIcon(status)}
+              </button>
+            );
+          }
           
           return (
             <Popover 
@@ -214,10 +367,7 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
               <PopoverTrigger asChild>
                 <button
                   disabled={readOnly || isPast}
-                  onClick={() => {
-                    setSelectedDate(dateStr);
-                    setEditNotes(dayAvailability?.notes || '');
-                  }}
+                  onClick={() => handleDayClick(day, dateStr)}
                   className={cn(
                     'aspect-square p-1 rounded-lg border text-sm flex flex-col items-center justify-center gap-0.5',
                     'transition-colors hover:bg-muted/50',
@@ -236,7 +386,7 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
                   {getStatusIcon(status)}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-64" align="center">
+              <PopoverContent className="w-64 pointer-events-auto" align="center">
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-medium">{format(parseISO(dateStr), 'EEEE, MMMM d')}</h4>
@@ -294,6 +444,84 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
           );
         })}
       </div>
+      
+      {/* Range Selection Dialog */}
+      <Dialog open={showRangeDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowRangeDialog(false);
+          // Keep the range selection active so user can adjust
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarRange className="h-5 w-5" />
+              Set Availability for {rangeDays.length} Day{rangeDays.length !== 1 ? 's' : ''}
+            </DialogTitle>
+            <DialogDescription>
+              {rangeStart && rangeEnd && (
+                <>
+                  {format(isBefore(rangeStart, rangeEnd) ? rangeStart : rangeEnd, 'MMMM d, yyyy')} 
+                  {' '}to{' '}
+                  {format(isAfter(rangeStart, rangeEnd) ? rangeStart : rangeEnd, 'MMMM d, yyyy')}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <ToggleGroup 
+                type="single" 
+                value={rangeStatus}
+                onValueChange={(value) => {
+                  if (value) setRangeStatus(value as AvailabilityStatus);
+                }}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="available" className="text-xs">
+                  <Circle className="h-3 w-3 mr-1" />
+                  Available
+                </ToggleGroupItem>
+                <ToggleGroupItem value="limited" className="text-xs">
+                  <CircleDot className="h-3 w-3 mr-1 text-amber-500" />
+                  Limited
+                </ToggleGroupItem>
+                <ToggleGroupItem value="unavailable" className="text-xs">
+                  <CircleSlash className="h-3 w-3 mr-1 text-destructive" />
+                  Unavailable
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Notes (optional)</Label>
+              <Textarea
+                value={rangeNotes}
+                onChange={(e) => setRangeNotes(e.target.value)}
+                placeholder="e.g., Annual leave, On holiday..."
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelRangeSelection}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkApply}
+              disabled={bulkSetAvailability.isPending}
+            >
+              {bulkSetAvailability.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Apply to {rangeDays.length} Day{rangeDays.length !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Warning Dialog for Existing Assignments */}
       <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
