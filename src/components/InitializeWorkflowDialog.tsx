@@ -23,139 +23,20 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useEventTypes } from '@/hooks/useLookups';
-import { useAllEventTypeDefaults } from '@/hooks/useEventTypeDefaults';
-import { useInitializeWorkflowStepsSelective } from '@/hooks/useEventWorkflowSteps';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  useActiveWorkflowMasterSteps, 
+  useAllEventTypeStepDefaults,
+  PHASE_CONFIG,
+  type WorkflowMasterStep,
+} from '@/hooks/useWorkflowMasterSteps';
+import { useInitializeWorkflowFromEventType } from '@/hooks/useEventWorkflowSteps';
 import { cn } from '@/lib/utils';
-
-// Phase configuration for display
-const PHASE_CONFIG = {
-  pre_event: { label: 'Pre-Event', color: 'text-info' },
-  day_of: { label: 'Day Of', color: 'text-warning' },
-  post_event: { label: 'Post-Event', color: 'text-success' },
-} as const;
 
 interface InitializeWorkflowDialogProps {
   eventId: string;
   currentTemplateId?: string | null;
   currentEventTypeId?: string | null;
   trigger?: React.ReactNode;
-}
-
-interface WorkflowStep {
-  id: string;
-  template_id: string;
-  label: string;
-  help_text: string | null;
-  sort_order: number;
-  is_active: boolean;
-  date_offset_days: number | null;
-  date_offset_reference: string | null;
-  completion_type?: string;
-  auto_trigger_event?: string | null;
-  phase?: string;
-}
-
-// Hook to fetch all steps for an event type's configured templates
-function useEventTypeSteps(eventTypeId: string | undefined) {
-  const { data: allDefaults = [] } = useAllEventTypeDefaults();
-  
-  const templateIds = useMemo(() => {
-    if (!eventTypeId) return [];
-    return allDefaults
-      .filter(d => d.event_type_id === eventTypeId)
-      .map(d => d.template_id);
-  }, [eventTypeId, allDefaults]);
-
-  return useQuery({
-    queryKey: ['event-type-steps', eventTypeId, templateIds],
-    queryFn: async () => {
-      if (templateIds.length === 0) {
-        // No specific templates configured - fetch all active steps from all operations templates
-        const { data: templates, error: templatesError } = await supabase
-          .from('workflow_templates')
-          .select('id, phase')
-          .eq('workflow_domain', 'operations')
-          .eq('is_active', true);
-        
-        if (templatesError) throw templatesError;
-        if (!templates?.length) return [];
-
-        const { data: items, error: itemsError } = await supabase
-          .from('workflow_template_items')
-          .select('*')
-          .in('template_id', templates.map(t => t.id))
-          .eq('is_active', true)
-          .order('sort_order');
-        
-        if (itemsError) throw itemsError;
-        
-        // Add phase from template
-        const templatePhaseMap = new Map(templates.map(t => [t.id, t.phase]));
-        return (items || []).map(item => ({
-          ...item,
-          phase: templatePhaseMap.get(item.template_id) || 'pre_event',
-        })) as WorkflowStep[];
-      }
-      
-      // Fetch templates to get their phases
-      const { data: templates, error: templatesError } = await supabase
-        .from('workflow_templates')
-        .select('id, phase')
-        .in('id', templateIds);
-      
-      if (templatesError) throw templatesError;
-      
-      const { data: items, error: itemsError } = await supabase
-        .from('workflow_template_items')
-        .select('*')
-        .in('template_id', templateIds)
-        .eq('is_active', true)
-        .order('sort_order');
-      
-      if (itemsError) throw itemsError;
-      
-      // Add phase from template
-      const templatePhaseMap = new Map(templates?.map(t => [t.id, t.phase]) || []);
-      return (items || []).map(item => ({
-        ...item,
-        phase: templatePhaseMap.get(item.template_id) || 'pre_event',
-      })) as WorkflowStep[];
-    },
-    enabled: !!eventTypeId,
-  });
-}
-
-// Hook to get step count for each event type
-function useEventTypeStepCounts() {
-  const { data: allDefaults = [] } = useAllEventTypeDefaults();
-  
-  return useQuery({
-    queryKey: ['event-type-step-counts', allDefaults],
-    queryFn: async () => {
-      const eventTypeTemplates = new Map<string, string[]>();
-      allDefaults.forEach(d => {
-        const existing = eventTypeTemplates.get(d.event_type_id) || [];
-        existing.push(d.template_id);
-        eventTypeTemplates.set(d.event_type_id, existing);
-      });
-      
-      const counts = new Map<string, number>();
-      
-      for (const [eventTypeId, templateIds] of eventTypeTemplates.entries()) {
-        const { count } = await supabase
-          .from('workflow_template_items')
-          .select('*', { count: 'exact', head: true })
-          .in('template_id', templateIds)
-          .eq('is_active', true);
-        counts.set(eventTypeId, count || 0);
-      }
-      
-      return counts;
-    },
-    enabled: allDefaults.length > 0,
-  });
 }
 
 export function InitializeWorkflowDialog({
@@ -165,74 +46,102 @@ export function InitializeWorkflowDialog({
 }: InitializeWorkflowDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
-  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
   const [showItems, setShowItems] = useState(false);
   
   // Fetch event types for dropdown
   const { data: eventTypes = [], isLoading: eventTypesLoading } = useEventTypes();
   
-  // Fetch step counts for badges
-  const { data: stepCounts } = useEventTypeStepCounts();
+  // Fetch all active master steps
+  const { data: allMasterSteps = [], isLoading: stepsLoading } = useActiveWorkflowMasterSteps();
   
-  // Fetch steps for the selected event type
-  const { data: steps = [], isLoading: stepsLoading } = useEventTypeSteps(selectedEventTypeId);
+  // Fetch step defaults for all event types
+  const { data: allStepDefaults = [] } = useAllEventTypeStepDefaults();
   
-  const initializeSteps = useInitializeWorkflowStepsSelective();
+  const initializeSteps = useInitializeWorkflowFromEventType();
+  
+  // Calculate step counts for each event type (for badge display)
+  const eventTypeStepCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    eventTypes.forEach(et => {
+      const defaults = allStepDefaults.filter(d => d.event_type_id === et.id);
+      counts.set(et.id, defaults.length);
+    });
+    return counts;
+  }, [eventTypes, allStepDefaults]);
+  
+  // Get the steps to show for the selected event type
+  const stepsForSelectedType = useMemo(() => {
+    if (!selectedEventTypeId) return [];
+    
+    // Get the configured defaults for this event type
+    const defaults = allStepDefaults.filter(d => d.event_type_id === selectedEventTypeId);
+    
+    if (defaults.length === 0) {
+      // No custom configuration - show ALL active master steps
+      return allMasterSteps;
+    }
+    
+    // Show only the configured steps for this event type
+    const configuredStepIds = new Set(defaults.map(d => d.master_step_id));
+    return allMasterSteps.filter(step => configuredStepIds.has(step.id));
+  }, [selectedEventTypeId, allStepDefaults, allMasterSteps]);
   
   // Group steps by phase
   const stepsByPhase = useMemo(() => {
-    const grouped = new Map<string, WorkflowStep[]>();
-    steps.forEach(step => {
+    const grouped = new Map<string, WorkflowMasterStep[]>();
+    stepsForSelectedType.forEach(step => {
       const phase = step.phase || 'pre_event';
       const existing = grouped.get(phase) || [];
       existing.push(step);
       grouped.set(phase, existing);
     });
     return grouped;
-  }, [steps]);
+  }, [stepsForSelectedType]);
+  
+  // Check if event type has custom configuration
+  const hasCustomConfig = useMemo(() => {
+    if (!selectedEventTypeId) return false;
+    return allStepDefaults.some(d => d.event_type_id === selectedEventTypeId);
+  }, [selectedEventTypeId, allStepDefaults]);
   
   // Reset selections when event type changes
   useEffect(() => {
-    if (selectedEventTypeId && steps.length > 0) {
-      setSelectedItemIds(new Set(steps.map(step => step.id)));
+    if (selectedEventTypeId && stepsForSelectedType.length > 0) {
+      setSelectedStepIds(new Set(stepsForSelectedType.map(step => step.id)));
       setShowItems(true);
     } else {
-      setSelectedItemIds(new Set());
+      setSelectedStepIds(new Set());
       setShowItems(false);
     }
-  }, [selectedEventTypeId, steps]);
+  }, [selectedEventTypeId, stepsForSelectedType]);
   
-  const handleItemToggle = (itemId: string) => {
-    setSelectedItemIds(prev => {
+  const handleItemToggle = (stepId: string) => {
+    setSelectedStepIds(prev => {
       const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
+      if (next.has(stepId)) {
+        next.delete(stepId);
       } else {
-        next.add(itemId);
+        next.add(stepId);
       }
       return next;
     });
   };
   
   const handleSelectAll = () => {
-    setSelectedItemIds(new Set(steps.map(step => step.id)));
+    setSelectedStepIds(new Set(stepsForSelectedType.map(step => step.id)));
   };
   
   const handleSelectNone = () => {
-    setSelectedItemIds(new Set());
+    setSelectedStepIds(new Set());
   };
   
   const handleInitialize = async () => {
-    if (selectedItemIds.size === 0 || steps.length === 0) return;
-    
-    // Get the first template ID from the selected steps
-    const firstStep = steps.find(s => selectedItemIds.has(s.id));
-    if (!firstStep) return;
+    if (selectedStepIds.size === 0) return;
     
     await initializeSteps.mutateAsync({
       eventId,
-      templateId: firstStep.template_id,
-      selectedItemIds: Array.from(selectedItemIds),
+      selectedStepIds: Array.from(selectedStepIds),
     });
     
     setOpen(false);
@@ -273,8 +182,8 @@ export function InitializeWorkflowDialog({
               </SelectTrigger>
               <SelectContent>
                 {eventTypes.map((type) => {
-                  const count = stepCounts?.get(type.id);
-                  const hasCustomSteps = count !== undefined && count > 0;
+                  const count = eventTypeStepCounts.get(type.id) || 0;
+                  const hasCustomSteps = count > 0;
                   return (
                     <SelectItem key={type.id} value={type.id}>
                       <div className="flex items-center gap-2">
@@ -307,7 +216,7 @@ export function InitializeWorkflowDialog({
                       <ChevronDown className="h-4 w-4" />
                     )}
                     <span className="font-medium">
-                      Workflow Steps ({selectedItemIds.size}/{steps.length} selected)
+                      Workflow Steps ({selectedStepIds.size}/{stepsForSelectedType.length} selected)
                     </span>
                   </Button>
                 </CollapsibleTrigger>
@@ -338,7 +247,7 @@ export function InitializeWorkflowDialog({
                   <div className="py-4 text-center text-muted-foreground text-sm">
                     Loading steps...
                   </div>
-                ) : steps.length === 0 ? (
+                ) : stepsForSelectedType.length === 0 ? (
                   <div className="py-4 text-center text-muted-foreground text-sm">
                     No steps configured for this event type
                   </div>
@@ -355,7 +264,7 @@ export function InitializeWorkflowDialog({
                               {PHASE_CONFIG[phase as keyof typeof PHASE_CONFIG]?.label || phase}
                             </span>
                             <span className="text-muted-foreground text-sm">
-                              ({phaseSteps.filter(s => selectedItemIds.has(s.id)).length}/{phaseSteps.length})
+                              ({phaseSteps.filter(s => selectedStepIds.has(s.id)).length}/{phaseSteps.length})
                             </span>
                           </div>
                           
@@ -365,20 +274,20 @@ export function InitializeWorkflowDialog({
                                 key={step.id}
                                 className={cn(
                                   'flex items-start gap-3 p-2 rounded-md cursor-pointer transition-colors',
-                                  selectedItemIds.has(step.id)
+                                  selectedStepIds.has(step.id)
                                     ? 'bg-primary/5 hover:bg-primary/10'
                                     : 'hover:bg-muted/50'
                                 )}
                               >
                                 <Checkbox
-                                  checked={selectedItemIds.has(step.id)}
+                                  checked={selectedStepIds.has(step.id)}
                                   onCheckedChange={() => handleItemToggle(step.id)}
                                   className="mt-0.5"
                                 />
                                 <div className="flex-1 min-w-0">
                                   <p className={cn(
                                     'text-sm font-medium',
-                                    !selectedItemIds.has(step.id) && 'text-muted-foreground'
+                                    !selectedStepIds.has(step.id) && 'text-muted-foreground'
                                   )}>
                                     {step.label}
                                   </p>
@@ -418,13 +327,13 @@ export function InitializeWorkflowDialog({
           </Button>
           <Button 
             onClick={handleInitialize}
-            disabled={selectedItemIds.size === 0 || !selectedEventTypeId || initializeSteps.isPending}
+            disabled={selectedStepIds.size === 0 || !selectedEventTypeId || initializeSteps.isPending}
           >
             {initializeSteps.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             )}
             {currentTemplateId ? 'Replace Steps' : 'Add Steps'}
-            {selectedItemIds.size > 0 && ` (${selectedItemIds.size})`}
+            {selectedStepIds.size > 0 && ` (${selectedStepIds.size})`}
           </Button>
         </DialogFooter>
       </DialogContent>
