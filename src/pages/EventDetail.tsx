@@ -12,6 +12,7 @@ import {
   Package,
   Phone,
   Play,
+  Send,
   Trash2,
   User,
   History,
@@ -65,6 +66,7 @@ import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
+import { useSendNotification } from '@/hooks/useNotifications';
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +79,7 @@ export default function EventDetail() {
   const { data: auditLog = [] } = useAuditLog(id);
   const deleteEvent = useDeleteEvent();
   const updateEvent = useUpdateEvent();
+  const sendNotification = useSendNotification();
   
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -667,7 +670,7 @@ export default function EventDetail() {
                       key={assignment.id}
                       className="flex flex-col p-4 bg-muted/50 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3">
                         <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                           <span className="text-lg font-medium text-primary">
                             {initial}
@@ -684,6 +687,27 @@ export default function EventDetail() {
                             </p>
                           )}
                         </div>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="shrink-0 h-8 w-8"
+                            onClick={() => {
+                              const userId = assignment.user_id || assignment.staff?.id;
+                              if (!userId || !id) return;
+                              sendNotification.mutate({
+                                type: 'assignment',
+                                event_id: id,
+                                user_id: userId,
+                                assignment_id: assignment.id,
+                              });
+                            }}
+                            disabled={sendNotification.isPending}
+                            title="Resend notification email"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                       
                       {/* Checklist panel for this assignment */}
