@@ -161,7 +161,7 @@ export function useLeads() {
           lead_source:lead_sources(id, name),
           lost_reason:lost_reasons(id, name)
         `)
-        .order('created_at', { ascending: false });
+        .order('estimated_event_date', { ascending: true, nullsFirst: false });
       
       if (error) throw error;
       return data;
