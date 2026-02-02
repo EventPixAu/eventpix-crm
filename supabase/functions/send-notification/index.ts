@@ -340,7 +340,8 @@ async function sendEmail(
         Authorization: `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from: "Eventpix <notifications@eventpix.com.au>",
+        from: "Eventpix <pix@rs.eventpix.com.au>",
+        reply_to: "pix@eventpix.com.au",
         to: [recipientEmail],
         subject: subject,
         html: emailHtml,
