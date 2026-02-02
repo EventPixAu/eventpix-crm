@@ -596,14 +596,20 @@ export default function StaffDetail() {
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
+          <TabsTrigger value="equipment" className="flex items-center gap-2">
+            <Camera className="h-4 w-4" />
+            Equipment
+          </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
             Assignments
           </TabsTrigger>
-          <TabsTrigger value="feedback" className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            Feedback
-          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="feedback" className="flex items-center gap-2">
+              <Star className="h-4 w-4" />
+              Feedback
+            </TabsTrigger>
+          )}
           {isAdmin && (
             <TabsTrigger value="rates" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
@@ -611,9 +617,9 @@ export default function StaffDetail() {
             </TabsTrigger>
           )}
           {isAdmin && (
-            <TabsTrigger value="equipment" className="flex items-center gap-2">
+            <TabsTrigger value="allocations" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Equipment
+              Allocations
             </TabsTrigger>
           )}
           {isAdmin && (
@@ -713,18 +719,28 @@ export default function StaffDetail() {
                   )}
                 </div>
 
-                {profile.dietary_requirements && (
-                  <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">Dietary Requirements</span>
-                    <p className="text-sm font-medium">{profile.dietary_requirements}</p>
-                  </div>
-                )}
-
                 {profile.certificates && (
                   <div className="space-y-1">
                     <span className="text-xs text-muted-foreground">Certificates</span>
                     <p className="text-sm font-medium">{profile.certificates}</p>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Dietary Requirements */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Utensils className="h-4 w-4" />
+                  Dietary Requirements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {profile.dietary_requirements ? (
+                  <p className="text-sm">{profile.dietary_requirements}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No dietary requirements specified</p>
                 )}
               </CardContent>
             </Card>
@@ -775,82 +791,84 @@ export default function StaffDetail() {
           </Card>
         </TabsContent>
 
-        {/* Feedback Tab */}
-        <TabsContent value="feedback" className="space-y-4">
-          {performanceSummary && (
+        {/* Feedback Tab (Admin only) */}
+        {isAdmin && (
+          <TabsContent value="feedback" className="space-y-4">
+            {performanceSummary && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Performance Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "px-3 py-1 rounded-full text-sm font-medium",
+                      performanceSummary.performanceLabel === 'Consistently strong performance' && "bg-green-100 text-green-800",
+                      performanceSummary.performanceLabel === 'Recent quality issues' && "bg-red-100 text-red-800",
+                      performanceSummary.performanceLabel === 'New / limited history' && "bg-gray-100 text-gray-800"
+                    )}>
+                      {performanceSummary.performanceLabel}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      Based on {performanceSummary.totalEvents} events
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Performance Summary</CardTitle>
+                <CardTitle className="text-base">Feedback History</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "px-3 py-1 rounded-full text-sm font-medium",
-                    performanceSummary.performanceLabel === 'Consistently strong performance' && "bg-green-100 text-green-800",
-                    performanceSummary.performanceLabel === 'Recent quality issues' && "bg-red-100 text-red-800",
-                    performanceSummary.performanceLabel === 'New / limited history' && "bg-gray-100 text-gray-800"
-                  )}>
-                    {performanceSummary.performanceLabel}
+                {feedbackLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    Based on {performanceSummary.totalEvents} events
-                  </span>
-                </div>
+                ) : !feedbackHistory || feedbackHistory.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No feedback recorded yet</p>
+                ) : (
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {feedbackHistory.map((feedback: any) => (
+                        <div key={feedback.id} className="p-3 border rounded-lg bg-card">
+                          <div className="flex items-center justify-between mb-2">
+                            <Link 
+                              to={`/events/${feedback.event_id}`}
+                              className="font-medium hover:text-primary"
+                            >
+                              {feedback.events?.event_name || 'Unknown Event'}
+                            </Link>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={cn(
+                                    "h-4 w-4",
+                                    star <= feedback.rating 
+                                      ? "fill-yellow-400 text-yellow-400" 
+                                      : "text-muted-foreground"
+                                  )}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-1">
+                            {feedback.events?.event_date && format(parseISO(feedback.events.event_date), 'PP')}
+                          </div>
+                          {feedback.notes && (
+                            <p className="text-sm text-muted-foreground">{feedback.notes}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
               </CardContent>
             </Card>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Feedback History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {feedbackLoading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-                </div>
-              ) : !feedbackHistory || feedbackHistory.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No feedback recorded yet</p>
-              ) : (
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3">
-                    {feedbackHistory.map((feedback: any) => (
-                      <div key={feedback.id} className="p-3 border rounded-lg bg-card">
-                        <div className="flex items-center justify-between mb-2">
-                          <Link 
-                            to={`/events/${feedback.event_id}`}
-                            className="font-medium hover:text-primary"
-                          >
-                            {feedback.events?.event_name || 'Unknown Event'}
-                          </Link>
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={cn(
-                                  "h-4 w-4",
-                                  star <= feedback.rating 
-                                    ? "fill-yellow-400 text-yellow-400" 
-                                    : "text-muted-foreground"
-                                )}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground mb-1">
-                          {feedback.events?.event_date && format(parseISO(feedback.events.event_date), 'PP')}
-                        </div>
-                        {feedback.notes && (
-                          <p className="text-sm text-muted-foreground">{feedback.notes}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+          </TabsContent>
+        )}
 
         {/* Rates Tab (Admin only) */}
         {isAdmin && (
@@ -859,33 +877,35 @@ export default function StaffDetail() {
           </TabsContent>
         )}
 
-        {/* Equipment Tab (Admin only) */}
-        {isAdmin && (
-          <TabsContent value="equipment" className="space-y-6">
-            {/* Photography Equipment (Owned Gear) */}
-            {equipmentLoading ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Camera className="h-4 w-4" />
-                    Photography Equipment
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <PhotographyEquipmentEditor
-                initialData={photographyEquipment || undefined}
-                onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
-                isSaving={updateEquipmentMutation.isPending}
-              />
-            )}
+        {/* Equipment Tab - Photography Equipment (Team member's own gear) */}
+        <TabsContent value="equipment" className="space-y-6">
+          {/* Photography Equipment (Owned Gear) */}
+          {equipmentLoading ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  Photography Equipment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <PhotographyEquipmentEditor
+              initialData={photographyEquipment || undefined}
+              onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
+              isSaving={updateEquipmentMutation.isPending}
+            />
+          )}
+        </TabsContent>
 
-            {/* Assigned Equipment (Company Allocations) */}
+        {/* Allocations Tab (Admin only) - Company equipment assigned to team member */}
+        {isAdmin && (
+          <TabsContent value="allocations" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
