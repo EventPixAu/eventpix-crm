@@ -81,16 +81,18 @@ export default function LeadList() {
       />
 
       {/* Pipeline Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
-        {Object.entries(STATUS_CONFIG).map(([status, config]) => (
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-6">
+        {Object.entries(STATUS_CONFIG)
+          .filter(([status]) => status !== 'accepted') // Exclude legacy status from display
+          .map(([status, config]) => (
           <Card 
             key={status} 
             className={`cursor-pointer transition-colors ${statusFilter === status ? 'ring-2 ring-primary' : ''}`}
             onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
           >
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{statusCounts[status] || 0}</div>
-              <div className="text-sm text-muted-foreground">{config.label}</div>
+            <CardContent className="p-3">
+              <div className="text-xl font-bold">{statusCounts[status] || 0}</div>
+              <div className="text-xs text-muted-foreground">{config.label}</div>
             </CardContent>
           </Card>
         ))}
