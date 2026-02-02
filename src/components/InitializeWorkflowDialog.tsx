@@ -254,59 +254,63 @@ export function InitializeWorkflowDialog({
                 ) : (
                   <ScrollArea className="h-[350px] mt-2 border rounded-lg">
                     <div className="p-3 space-y-4">
-                      {Array.from(stepsByPhase.entries()).map(([phase, phaseSteps]) => (
-                        <div key={phase}>
-                          <div className="flex items-center gap-2 pb-2 mb-2 border-b">
-                            <span className={cn(
-                              'text-sm font-medium',
-                              PHASE_CONFIG[phase as keyof typeof PHASE_CONFIG]?.color || ''
-                            )}>
-                              {PHASE_CONFIG[phase as keyof typeof PHASE_CONFIG]?.label || phase}
-                            </span>
-                            <span className="text-muted-foreground text-sm">
-                              ({phaseSteps.filter(s => selectedStepIds.has(s.id)).length}/{phaseSteps.length})
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            {phaseSteps.map((step) => (
-                              <label
-                                key={step.id}
-                                className={cn(
-                                  'flex items-start gap-3 p-2 rounded-md cursor-pointer transition-colors',
-                                  selectedStepIds.has(step.id)
-                                    ? 'bg-primary/5 hover:bg-primary/10'
-                                    : 'hover:bg-muted/50'
-                                )}
-                              >
-                                <Checkbox
-                                  checked={selectedStepIds.has(step.id)}
-                                  onCheckedChange={() => handleItemToggle(step.id)}
-                                  className="mt-0.5"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className={cn(
-                                    'text-sm font-medium',
-                                    !selectedStepIds.has(step.id) && 'text-muted-foreground'
-                                  )}>
-                                    {step.label}
-                                  </p>
-                                  {step.help_text && (
-                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                      {step.help_text}
+                      {(['pre_event', 'day_of', 'post_event'] as const).map(phase => {
+                        const phaseSteps = stepsByPhase.get(phase);
+                        if (!phaseSteps || phaseSteps.length === 0) return null;
+                        return (
+                          <div key={phase}>
+                            <div className="flex items-center gap-2 pb-2 mb-2 border-b">
+                              <span className={cn(
+                                'text-sm font-medium',
+                                PHASE_CONFIG[phase]?.color || ''
+                              )}>
+                                {PHASE_CONFIG[phase]?.label || phase}
+                              </span>
+                              <span className="text-muted-foreground text-sm">
+                                ({phaseSteps.filter(s => selectedStepIds.has(s.id)).length}/{phaseSteps.length})
+                              </span>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              {phaseSteps.map((step) => (
+                                <label
+                                  key={step.id}
+                                  className={cn(
+                                    'flex items-start gap-3 p-2 rounded-md cursor-pointer transition-colors',
+                                    selectedStepIds.has(step.id)
+                                      ? 'bg-primary/5 hover:bg-primary/10'
+                                      : 'hover:bg-muted/50'
+                                  )}
+                                >
+                                  <Checkbox
+                                    checked={selectedStepIds.has(step.id)}
+                                    onCheckedChange={() => handleItemToggle(step.id)}
+                                    className="mt-0.5"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className={cn(
+                                      'text-sm font-medium',
+                                      !selectedStepIds.has(step.id) && 'text-muted-foreground'
+                                    )}>
+                                      {step.label}
                                     </p>
-                                  )}
-                                  {step.date_offset_days !== null && step.date_offset_reference && (
-                                    <Badge variant="outline" className="text-xs mt-1">
-                                      {step.date_offset_days > 0 ? '+' : ''}{step.date_offset_days}d from {step.date_offset_reference.replace('_', ' ')}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </label>
-                            ))}
+                                    {step.help_text && (
+                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                        {step.help_text}
+                                      </p>
+                                    )}
+                                    {step.date_offset_days !== null && step.date_offset_reference && (
+                                      <Badge variant="outline" className="text-xs mt-1">
+                                        {step.date_offset_days > 0 ? '+' : ''}{step.date_offset_days}d from {step.date_offset_reference.replace('_', ' ')}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 )}
