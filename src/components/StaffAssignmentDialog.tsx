@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin } from 'lucide-react';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -235,6 +235,18 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     await deleteAssignment.mutateAsync({ id: assignmentId, eventId });
   };
 
+  const handleResendNotification = (assignment: EventAssignment) => {
+    const userId = assignment.user_id || assignment.staff?.id;
+    if (!userId) return;
+    
+    sendNotification.mutate({
+      type: 'assignment',
+      event_id: eventId,
+      user_id: userId,
+      assignment_id: assignment.id,
+    });
+  };
+
   // Helper to get display name from assignment
   const getAssignmentName = (assignment: EventAssignment): string => {
     if (assignment.profile?.full_name) return assignment.profile.full_name;
@@ -297,14 +309,26 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemove(assignment.id)}
-                    disabled={deleteAssignment.isPending}
-                  >
-                    <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResendNotification(assignment)}
+                      disabled={sendNotification.isPending}
+                      title="Resend notification email"
+                    >
+                      <Send className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemove(assignment.id)}
+                      disabled={deleteAssignment.isPending}
+                      title="Remove assignment"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
