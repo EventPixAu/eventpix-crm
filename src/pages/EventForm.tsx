@@ -35,6 +35,8 @@ import { EventContactsEditor } from '@/components/EventContactsEditor';
 import { useLead } from '@/hooks/useSales';
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
+import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -125,6 +127,31 @@ export default function EventForm() {
       notes: '',
     },
   });
+
+  // Watch client_name to lookup client and fetch contacts
+  const clientNameValue = form.watch('client_name');
+  
+  // Resolve client ID from business name
+  const { data: resolvedClient } = useClientByBusinessName(clientNameValue);
+  
+  // Determine effective client ID (from event or resolved from name)
+  const effectiveClientId = event?.client_id || resolvedClient?.id || null;
+  
+  // Fetch contacts for the client
+  const { data: clientContacts = [] } = useClientContacts(effectiveClientId);
+
+  // Handle contact selection - auto-fill phone number
+  const handleContactSelect = (contactId: string) => {
+    const selectedContact = clientContacts.find(c => c.id === contactId);
+    if (selectedContact) {
+      form.setValue('onsite_contact_name', selectedContact.contact_name);
+      form.setValue('onsite_contact_phone', getBestPhone(selectedContact));
+    } else if (contactId === '__manual__') {
+      // User wants to enter manually - clear fields
+      form.setValue('onsite_contact_name', '');
+      form.setValue('onsite_contact_phone', '');
+    }
+  };
 
   // Pre-populate from existing event (editing mode)
   useEffect(() => {
@@ -487,9 +514,44 @@ export default function EventForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>On-site Contact</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Contact name" className="bg-secondary" />
-                      </FormControl>
+                      {clientContacts.length > 0 ? (
+                        <Select 
+                          onValueChange={(value) => {
+                            if (value === '__manual__') {
+                              field.onChange('');
+                              form.setValue('onsite_contact_phone', '');
+                            } else {
+                              handleContactSelect(value);
+                            }
+                          }}
+                          value={clientContacts.find(c => c.contact_name === field.value)?.id || '__manual__'}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-secondary">
+                              <SelectValue placeholder="Select contact" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {clientContacts.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id}>
+                                {contact.contact_name}
+                                {getBestPhone(contact) && (
+                                  <span className="text-muted-foreground ml-2">
+                                    ({getBestPhone(contact)})
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="__manual__">
+                              <span className="text-muted-foreground">Enter manually...</span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <FormControl>
+                          <Input {...field} placeholder="Contact name" className="bg-secondary" />
+                        </FormControl>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
