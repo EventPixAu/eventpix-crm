@@ -217,12 +217,14 @@ export function InitializeWorkflowDialog({
                       <div className="flex items-center gap-2">
                         <Settings2 className="h-4 w-4 text-muted-foreground" />
                         <span>{type.name}</span>
-                        <Badge 
-                          variant={hasCustomSteps ? "default" : "outline"} 
-                          className="text-xs"
-                        >
-                          {hasCustomSteps ? `${stepCount} steps` : 'All steps'}
-                        </Badge>
+                        <span>
+                          <Badge 
+                            variant={hasCustomSteps ? "default" : "outline"} 
+                            className="text-xs"
+                          >
+                            {hasCustomSteps ? `${stepCount} steps` : 'All steps'}
+                          </Badge>
+                        </span>
                       </div>
                     </SelectItem>
                   );
