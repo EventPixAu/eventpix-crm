@@ -127,6 +127,43 @@ export default function StaffDetail() {
         .maybeSingle();
 
       if (profileResult) {
+        // Check if there's a linked staff record with additional data
+        const { data: linkedStaffData } = await supabase
+          .from('staff')
+          .select(`
+            business_name, abn,
+            address_line1, address_line2, address_city, address_state, address_postcode,
+            vehicle_make_model, vehicle_registration,
+            pli_details, pli_expiry,
+            photography_equipment,
+            dietary_requirements, certificates, location
+          `)
+          .eq('user_id', id)
+          .maybeSingle();
+        
+        // Merge staff data as fallback for empty profile fields
+        if (linkedStaffData) {
+          const mergedProfile: StaffProfile = {
+            ...profileResult as StaffProfile,
+            business_name: profileResult.business_name || linkedStaffData.business_name || null,
+            abn: profileResult.abn || linkedStaffData.abn || null,
+            address_line1: profileResult.address_line1 || linkedStaffData.address_line1 || null,
+            address_line2: profileResult.address_line2 || linkedStaffData.address_line2 || null,
+            address_city: profileResult.address_city || linkedStaffData.address_city || null,
+            address_state: profileResult.address_state || linkedStaffData.address_state || null,
+            address_postcode: profileResult.address_postcode || linkedStaffData.address_postcode || null,
+            vehicle_make_model: profileResult.vehicle_make_model || linkedStaffData.vehicle_make_model || null,
+            vehicle_registration: profileResult.vehicle_registration || linkedStaffData.vehicle_registration || null,
+            pli_details: profileResult.pli_details || linkedStaffData.pli_details || null,
+            pli_expiry: profileResult.pli_expiry || linkedStaffData.pli_expiry || null,
+            photography_equipment: profileResult.photography_equipment || linkedStaffData.photography_equipment || null,
+            dietary_requirements: profileResult.dietary_requirements || linkedStaffData.dietary_requirements || null,
+            certificates: profileResult.certificates || linkedStaffData.certificates || null,
+            location: profileResult.location || linkedStaffData.location || null,
+          };
+          return { profile: mergedProfile, sourceTable: 'profiles' as const, staffId: undefined };
+        }
+        
         return { profile: profileResult as StaffProfile, sourceTable: 'profiles' as const, staffId: undefined };
       }
       
