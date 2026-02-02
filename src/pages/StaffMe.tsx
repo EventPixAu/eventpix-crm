@@ -249,7 +249,12 @@ export default function StaffMe() {
   };
   
   const handleSave = async () => {
-    await updateProfile.mutateAsync(formData);
+    // If status is incomplete and user is saving, mark as pending_review
+    const updatedData = { ...formData };
+    if (profile?.onboarding_status === 'incomplete') {
+      (updatedData as any).onboarding_status = 'pending_review';
+    }
+    await updateProfile.mutateAsync(updatedData);
     setHasChanges(false);
   };
   
