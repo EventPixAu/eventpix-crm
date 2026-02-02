@@ -66,6 +66,8 @@ import {
 import { 
   useSalesWorkflowTemplates,
   useUpdateSalesWorkflowTemplate,
+  useCreateSalesWorkflowTemplate,
+  useDeleteSalesWorkflowTemplate,
   type SalesWorkflowTemplate,
   type SalesWorkflowItem,
 } from '@/hooks/useSalesWorkflowTemplates';
@@ -262,6 +264,8 @@ export default function WorkflowsAdmin() {
   const deleteStep = useDeleteMasterStep();
   const reorderSteps = useReorderMasterSteps();
   const updateSalesWorkflow = useUpdateSalesWorkflowTemplate();
+  const createSalesWorkflow = useCreateSalesWorkflowTemplate();
+  const deleteSalesWorkflow = useDeleteSalesWorkflowTemplate();
   
   // DnD sensors
   const sensors = useSensors(
@@ -289,6 +293,11 @@ export default function WorkflowsAdmin() {
   // Sales Workflow Editor State
   const [editingSalesWorkflow, setEditingSalesWorkflow] = useState<SalesWorkflowTemplate | null>(null);
   const [salesWorkflowItems, setSalesWorkflowItems] = useState<SalesWorkflowItem[]>([]);
+  const [newSalesWorkflowDialog, setNewSalesWorkflowDialog] = useState(false);
+  const [newSalesWorkflow, setNewSalesWorkflow] = useState<{ name: string; description: string }>({
+    name: '',
+    description: '',
+  });
 
   // Active steps only
   const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
@@ -459,6 +468,24 @@ export default function WorkflowsAdmin() {
     });
     
     setEditingSalesWorkflow(null);
+  };
+
+  const handleCreateSalesWorkflow = async () => {
+    if (!newSalesWorkflow.name.trim()) return;
+    
+    await createSalesWorkflow.mutateAsync({
+      name: newSalesWorkflow.name.trim(),
+      description: newSalesWorkflow.description.trim() || null,
+      items: [{ title: 'Step 1', sort_order: 0 }],
+    });
+    
+    setNewSalesWorkflowDialog(false);
+    setNewSalesWorkflow({ name: '', description: '' });
+  };
+
+  const handleDeleteSalesWorkflow = async (id: string, name: string) => {
+    if (!confirm(`Delete workflow "${name}"? This cannot be undone.`)) return;
+    await deleteSalesWorkflow.mutateAsync(id);
   };
 
   const isLoading = typesLoading || stepsLoading || defaultsLoading;
@@ -686,11 +713,17 @@ export default function WorkflowsAdmin() {
         {/* Sales Workflows Tab */}
         <TabsContent value="sales">
           <div className="bg-card border border-border rounded-xl">
-            <div className="p-4 border-b border-border bg-muted/30">
-              <h2 className="font-semibold">Sales Workflows</h2>
-              <p className="text-sm text-muted-foreground">
-                Configure workflows for new leads and repeat clients
-              </p>
+            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold">Sales Workflows</h2>
+                <p className="text-sm text-muted-foreground">
+                  Configure workflows for leads. Select one when creating a lead.
+                </p>
+              </div>
+              <Button onClick={() => setNewSalesWorkflowDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Workflow
+              </Button>
             </div>
             
             <div className="p-4 grid md:grid-cols-2 gap-4">
@@ -704,18 +737,31 @@ export default function WorkflowsAdmin() {
                       <h3 className="font-medium">{workflow.name}</h3>
                       {workflow.workflow_key && (
                         <Badge variant="outline" className="text-xs mt-1">
-                          {workflow.workflow_key === 'new_lead' ? 'New Leads' : 'Repeat Clients'}
+                          {workflow.workflow_key === 'new_lead' ? 'New Leads' : 
+                           workflow.workflow_key === 'repeat_client' ? 'Repeat Clients' : ''}
                         </Badge>
                       )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditSalesWorkflow(workflow)}
-                    >
-                      <Pencil className="h-4 w-4 mr-1" />
-                      Edit Steps
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditSalesWorkflow(workflow)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Edit Steps
+                      </Button>
+                      {!workflow.workflow_key && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteSalesWorkflow(workflow.id, workflow.name)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   {workflow.description && (
                     <p className="text-sm text-muted-foreground mb-3">{workflow.description}</p>
@@ -738,7 +784,7 @@ export default function WorkflowsAdmin() {
               
               {salesWorkflows.length === 0 && (
                 <div className="col-span-2 text-center py-8 text-muted-foreground">
-                  No sales workflows configured
+                  No sales workflows configured. Click "Add Workflow" to create one.
                 </div>
               )}
             </div>
@@ -1061,13 +1107,54 @@ export default function WorkflowsAdmin() {
         </DialogContent>
       </Dialog>
 
+      {/* New Sales Workflow Dialog */}
+      <Dialog open={newSalesWorkflowDialog} onOpenChange={setNewSalesWorkflowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Sales Workflow</DialogTitle>
+            <DialogDescription>
+              Create a new workflow template for leads
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Workflow Name *</Label>
+              <Input
+                value={newSalesWorkflow.name}
+                onChange={e => setNewSalesWorkflow(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Corporate Events"
+              />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Input
+                value={newSalesWorkflow.description}
+                onChange={e => setNewSalesWorkflow(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Brief description of this workflow..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewSalesWorkflowDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateSalesWorkflow} 
+              disabled={!newSalesWorkflow.name.trim() || createSalesWorkflow.isPending}
+            >
+              Create Workflow
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Info Box */}
       <div className="mt-6 bg-muted/30 border border-border rounded-xl p-4">
         <h3 className="font-medium mb-2">How Workflows Work</h3>
         <ul className="text-sm text-muted-foreground space-y-1">
           <li>• <strong>Operations Steps:</strong> Master list of all workflow steps. Assign to event types in the Event Type Defaults tab.</li>
           <li>• <strong>Event Type Defaults:</strong> Select which steps apply to each event type. If none selected, all active steps are used.</li>
-          <li>• <strong>Sales Workflows:</strong> Two workflows (New Leads, Repeat Clients) are selectable when creating a lead.</li>
+          <li>• <strong>Sales Workflows:</strong> Create multiple workflows and select one when creating a lead to track its progress.</li>
           <li>• Changes to defaults only affect new events - existing events keep their current workflows.</li>
         </ul>
       </div>

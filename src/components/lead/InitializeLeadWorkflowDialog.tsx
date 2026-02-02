@@ -1,11 +1,12 @@
 /**
  * INITIALIZE LEAD WORKFLOW DIALOG
  * 
- * Allows user to select a workflow template and initialize it for a Lead.
+ * Allows user to select a Sales Workflow template and initialize it for a Lead.
+ * Fetches workflows from the Sales Workflows configuration in Administration.
  * Supports replacing existing workflows with confirmation.
  */
 import { useState } from 'react';
-import { Settings, Check, Clock, Loader2, AlertTriangle } from 'lucide-react';
+import { Settings, Check, ListChecks, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -35,7 +36,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useWorkflowTemplatesForEntity, useInitializeWorkflow, useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSalesWorkflowTemplates, type SalesWorkflowTemplate } from '@/hooks/useSalesWorkflowTemplates';
+import { useInitializeSalesWorkflow, useLeadSalesWorkflowInstance } from '@/hooks/useLeadSalesWorkflow';
 import { useAuth } from '@/lib/auth';
 
 interface InitializeLeadWorkflowDialogProps {
@@ -58,12 +61,10 @@ export function InitializeLeadWorkflowDialog({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   
-  const { role, isAdmin, isOperations } = useAuth();
-  const { data: templates = [], isLoading } = useWorkflowTemplatesForEntity(entityType);
-  const { data: existingInstance } = entityType === 'lead' 
-    ? useLeadWorkflowInstance(entityId) 
-    : { data: null };
-  const initializeWorkflow = useInitializeWorkflow();
+  const { isAdmin, isOperations } = useAuth();
+  const { data: templates = [], isLoading } = useSalesWorkflowTemplates();
+  const { data: existingInstance } = useLeadSalesWorkflowInstance(entityId);
+  const initializeWorkflow = useInitializeSalesWorkflow();
   
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
   const hasExistingWorkflow = !!existingInstance;
@@ -81,10 +82,8 @@ export function InitializeLeadWorkflowDialog({
     }
     
     await initializeWorkflow.mutateAsync({
+      leadId: entityId,
       templateId: selectedTemplateId,
-      entityType,
-      entityId,
-      mainShootAt,
     });
     
     setSelectedTemplateId('');
@@ -125,26 +124,26 @@ export function InitializeLeadWorkflowDialog({
               </Alert>
             )}
             
-            {hasExistingWorkflow && (
+            {hasExistingWorkflow && existingInstance && (
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Current workflow:</strong> {existingInstance?.template?.template_name}
+                  <strong>Current workflow:</strong> {existingInstance.workflow_name}
                   <br />
                   <span className="text-muted-foreground">
-                    Replacing will delete all existing step progress.
+                    Replacing will reset the workflow for this lead.
                   </span>
                 </AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
-              <Label>Workflow Template</Label>
+              <Label>Sales Workflow</Label>
               {isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading templates...</p>
+                <p className="text-sm text-muted-foreground">Loading workflows...</p>
               ) : templates.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No workflow templates available. Create one in Admin → Workflows.
+                  No sales workflows available. Create one in Administration → Workflows → Sales Workflows.
                 </p>
               ) : (
                 <Select 
@@ -153,18 +152,21 @@ export function InitializeLeadWorkflowDialog({
                   disabled={!canInitialize}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a template" />
+                    <SelectValue placeholder="Select a workflow" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover">
                     {templates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          {template.template_name}
-                          {template.applies_to && (
-                            <Badge variant="outline" className="text-xs ml-2">
-                              {template.applies_to}
-                            </Badge>
+                          <ListChecks className="h-4 w-4" />
+                          <span>{template.name}</span>
+                          {template.workflow_key && (
+                            <span>
+                              <Badge variant="outline" className="text-xs ml-2">
+                                {template.workflow_key === 'new_lead' ? 'New Lead' : 
+                                 template.workflow_key === 'repeat_client' ? 'Repeat Client' : ''}
+                              </Badge>
+                            </span>
                           )}
                         </div>
                       </SelectItem>
@@ -173,6 +175,24 @@ export function InitializeLeadWorkflowDialog({
                 </Select>
               )}
             </div>
+            
+            {selectedTemplate && selectedTemplate.items.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Workflow Steps Preview</Label>
+                <ScrollArea className="h-[200px] rounded-lg border border-border">
+                  <div className="p-3 space-y-1">
+                    {selectedTemplate.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm py-1">
+                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
+                          {index + 1}
+                        </span>
+                        <span>{item.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
             
             {selectedTemplate?.description && (
               <div className="p-3 bg-muted rounded-lg">
@@ -218,8 +238,8 @@ export function InitializeLeadWorkflowDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Replace existing workflow?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete all step progress for the current workflow 
-              "{existingInstance?.template?.template_name}". This action cannot be undone.
+              This will replace the current workflow 
+              "{existingInstance?.workflow_name}". Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
