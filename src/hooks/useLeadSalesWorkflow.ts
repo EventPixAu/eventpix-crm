@@ -3,11 +3,12 @@
  * 
  * Manages Sales Workflow instances for Leads.
  * Uses the leads.sales_workflow_id column and sales_workflow_templates table.
+ * Also populates lead_workflow_items for tracking step completion.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { SalesWorkflowTemplate, SalesWorkflowItem } from './useSalesWorkflowTemplates';
+import type { SalesWorkflowItem } from './useSalesWorkflowTemplates';
 
 export interface LeadSalesWorkflowInstance {
   lead_id: string;
@@ -56,6 +57,7 @@ export function useLeadSalesWorkflowInstance(leadId: string | undefined) {
 }
 
 // Initialize/assign a sales workflow to a lead
+// This also creates the workflow items in lead_workflow_items table
 export function useInitializeSalesWorkflow() {
   const queryClient = useQueryClient();
   
@@ -67,6 +69,40 @@ export function useInitializeSalesWorkflow() {
       leadId: string;
       templateId: string;
     }) => {
+      // First, get the template items
+      const { data: template, error: templateError } = await supabase
+        .from('sales_workflow_templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+      
+      if (templateError) throw templateError;
+      
+      // Delete any existing workflow items for this lead
+      const { error: deleteError } = await supabase
+        .from('lead_workflow_items')
+        .delete()
+        .eq('lead_id', leadId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Create new workflow items from template
+      const items = ((template.items as unknown as SalesWorkflowItem[]) || []).map((item, index) => ({
+        lead_id: leadId,
+        title: item.title,
+        sort_order: item.sort_order ?? index,
+        is_done: false,
+      }));
+      
+      if (items.length > 0) {
+        const { error: insertError } = await supabase
+          .from('lead_workflow_items')
+          .insert(items);
+        
+        if (insertError) throw insertError;
+      }
+      
+      // Update the lead with the workflow reference
       const { data, error } = await supabase
         .from('leads')
         .update({ sales_workflow_id: templateId })
@@ -79,6 +115,7 @@ export function useInitializeSalesWorkflow() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lead-sales-workflow', variables.leadId] });
+      queryClient.invalidateQueries({ queryKey: ['lead-workflow-items', variables.leadId] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       toast.success('Sales workflow assigned');
     },

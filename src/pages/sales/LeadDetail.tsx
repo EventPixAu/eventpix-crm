@@ -58,7 +58,7 @@ import { useLeadContacts } from '@/hooks/useLeadContacts';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
-  LeadWorkflowRailV2,
+  SalesWorkflowRail,
   LeadSummaryCard,
   LeadClientCard,
   LeadCollapsiblePanel,
@@ -69,7 +69,6 @@ import {
   MarkAsClientButton,
   CompanyStatusBadgeDropdown,
 } from '@/components/lead';
-import { useLeadWorkflowInstance } from '@/hooks/useWorkflowInstances';
 
 export default function LeadDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -397,9 +396,8 @@ export default function LeadDetail(): JSX.Element {
 
           {/* Workflow Rail */}
           <div className="bg-card border rounded-lg p-4">
-            <LeadWorkflowRailV2
+            <SalesWorkflowRail
               leadId={id!}
-              mainShootDate={mainShootStart}
               onInitializeWorkflow={() => setIsInitWorkflowOpen(true)}
             />
           </div>
