@@ -95,3 +95,27 @@ export function useEquipmentCategories() {
     },
   });
 }
+
+export interface Location {
+  id: string;
+  name: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+// Returns ACTIVE locations only, sorted alphabetically
+export function useLocations() {
+  return useQuery({
+    queryKey: ['locations', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data as Location[];
+    },
+  });
+}
