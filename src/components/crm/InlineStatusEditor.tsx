@@ -17,25 +17,33 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ChevronDown, Check, Info } from 'lucide-react';
+import { ChevronDown, Check, Info, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 
-type ComputedStatus = 'prospect' | 'active_event' | 'current_client' | 'previous_client';
-
-const STATUS_OPTIONS: { value: ComputedStatus; label: string; className: string }[] = [
+// Fallback options if database query fails
+const FALLBACK_STATUS_OPTIONS = [
   { value: 'prospect', label: 'Prospect', className: 'bg-muted text-muted-foreground' },
   { value: 'active_event', label: 'Active Event', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
   { value: 'current_client', label: 'Current Client', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
   { value: 'previous_client', label: 'Previous Client', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
 ];
 
+// Map badge_variant to className
+const variantToClassName: Record<string, string> = {
+  secondary: 'bg-muted text-muted-foreground',
+  default: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  destructive: 'bg-red-500/10 text-red-600 border-red-500/20',
+  outline: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+};
+
 interface InlineStatusEditorProps {
   companyId: string;
-  currentStatus: ComputedStatus;
+  currentStatus: string;
   isOverride: boolean;
-  computedStatus: ComputedStatus;
+  computedStatus: string;
   overrideReason?: string | null;
   onStatusChange?: () => void;
 }
@@ -50,11 +58,24 @@ export function InlineStatusEditor({
 }: InlineStatusEditorProps) {
   const { isAdmin } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
+  const { data: dbStatuses, isLoading: statusesLoading } = useCompanyStatuses();
   
   const canEdit = isAdmin; // Only Admin can edit status
-  const statusConfig = STATUS_OPTIONS.find(s => s.value === currentStatus) || STATUS_OPTIONS[0];
 
-  const handleStatusClick = async (newStatus: ComputedStatus) => {
+  // Map database statuses to dropdown format, with fallback
+  const STATUS_OPTIONS = dbStatuses?.map(s => ({
+    value: s.name,
+    label: s.label,
+    className: variantToClassName[s.badge_variant || 'secondary'] || 'bg-muted text-muted-foreground',
+  })) || FALLBACK_STATUS_OPTIONS;
+
+  const statusConfig = STATUS_OPTIONS.find(s => s.value === currentStatus) || {
+    value: currentStatus,
+    label: currentStatus.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+    className: 'bg-muted text-muted-foreground',
+  };
+
+  const handleStatusClick = async (newStatus: string) => {
     if (newStatus === currentStatus) return;
     
     setIsUpdating(true);
@@ -127,7 +148,7 @@ export function InlineStatusEditor({
     return (
       <div className="flex items-center gap-1.5">
         <Badge variant="outline" className={statusConfig.className}>
-          {statusConfig.label}
+          {statusesLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : statusConfig.label}
         </Badge>
         {isOverride && (
           <Tooltip>
