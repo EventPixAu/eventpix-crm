@@ -36,6 +36,7 @@ interface StaffProfile {
   home_state: string | null;
   status: string | null;
   seniority: string | null;
+  onboarding_status?: string | null;
   travel_ready: boolean | null;
   preferred_start_time: string | null;
   preferred_end_time: string | null;
@@ -65,6 +66,15 @@ interface StaffProfileEditorProps {
   profile: StaffProfile;
   sourceTable?: 'profiles' | 'staff';
   staffId?: string;
+}
+
+// Helper to check if basic profile info is complete
+function hasBasicProfileInfo(data: Record<string, any>): boolean {
+  // Basic info is complete if they have name AND at least business/ABN OR address
+  const hasName = !!data.full_name?.trim();
+  const hasBusinessInfo = !!data.business_name?.trim() || !!data.abn?.trim();
+  const hasAddress = !!data.address_line1?.trim();
+  return hasName && (hasBusinessInfo || hasAddress);
 }
 
 const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
@@ -142,39 +152,47 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         if (error) throw error;
       } else {
         // Update profiles table for members with linked accounts
+        // Auto-transition from incomplete to pending_review if basic info is now complete
+        const updateData: Record<string, any> = {
+          full_name: data.full_name || null,
+          phone: data.phone || null,
+          home_city: data.home_city || null,
+          home_state: data.home_state || null,
+          status: data.status,
+          seniority: data.seniority,
+          travel_ready: data.travel_ready,
+          preferred_start_time: data.preferred_start_time || null,
+          preferred_end_time: data.preferred_end_time || null,
+          notes_internal: data.notes_internal || null,
+          default_role_id: data.default_role_id || null,
+          vehicle_registration: data.vehicle_registration || null,
+          dietary_requirements: data.dietary_requirements || null,
+          certificates: data.certificates || null,
+          assigned_equipment_notes: data.assigned_equipment_notes || null,
+          location: data.location || null,
+          location_state: data.location_state || null,
+          location_postcode: data.location_postcode || null,
+          business_name: data.business_name || null,
+          abn: data.abn || null,
+          address_line1: data.address_line1 || null,
+          address_line2: data.address_line2 || null,
+          address_city: data.address_city || null,
+          address_state: data.address_state || null,
+          address_postcode: data.address_postcode || null,
+          vehicle_make_model: data.vehicle_make_model || null,
+          pli_details: data.pli_details || null,
+          pli_expiry: data.pli_expiry || null,
+          photography_equipment: data.photography_equipment || null,
+        };
+
+        // If currently incomplete and has basic info, transition to pending_review
+        if (profile.onboarding_status === 'incomplete' && hasBasicProfileInfo(data)) {
+          updateData.onboarding_status = 'pending_review';
+        }
+
         const { error } = await supabase
           .from('profiles')
-          .update({
-            full_name: data.full_name || null,
-            phone: data.phone || null,
-            home_city: data.home_city || null,
-            home_state: data.home_state || null,
-            status: data.status,
-            seniority: data.seniority,
-            travel_ready: data.travel_ready,
-            preferred_start_time: data.preferred_start_time || null,
-            preferred_end_time: data.preferred_end_time || null,
-            notes_internal: data.notes_internal || null,
-            default_role_id: data.default_role_id || null,
-            vehicle_registration: data.vehicle_registration || null,
-            dietary_requirements: data.dietary_requirements || null,
-            certificates: data.certificates || null,
-            assigned_equipment_notes: data.assigned_equipment_notes || null,
-            location: data.location || null,
-            location_state: data.location_state || null,
-            location_postcode: data.location_postcode || null,
-            business_name: data.business_name || null,
-            abn: data.abn || null,
-            address_line1: data.address_line1 || null,
-            address_line2: data.address_line2 || null,
-            address_city: data.address_city || null,
-            address_state: data.address_state || null,
-            address_postcode: data.address_postcode || null,
-            vehicle_make_model: data.vehicle_make_model || null,
-            pli_details: data.pli_details || null,
-            pli_expiry: data.pli_expiry || null,
-            photography_equipment: data.photography_equipment || null,
-          })
+          .update(updateData)
           .eq('id', profile.id);
 
         if (error) throw error;

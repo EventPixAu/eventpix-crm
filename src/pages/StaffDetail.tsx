@@ -476,9 +476,12 @@ export default function StaffDetail() {
               />
               <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={onboardingConfig.variant}>
-                    {onboardingConfig.label}
-                  </Badge>
+                  {/* Only show onboarding badge if not fully active (avoid duplicate "Active" badges) */}
+                  {onboardingStatus !== 'active' && (
+                    <Badge variant={onboardingConfig.variant}>
+                      {onboardingConfig.label}
+                    </Badge>
+                  )}
                   {profile.status && (
                     <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
                       {profile.status}
