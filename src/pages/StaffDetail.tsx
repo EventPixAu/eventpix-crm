@@ -22,7 +22,8 @@ import {
   Camera,
   User,
   Building2,
-  Shield
+  Shield,
+  CheckCircle
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -43,7 +44,7 @@ import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
 import { PhotographyEquipmentEditor, type PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
-import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
+import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -371,6 +372,18 @@ export default function StaffDetail() {
     },
   });
 
+  // Admin: Update onboarding status
+  const updateOnboardingStatusMutation = useUpdateOnboardingStatus();
+
+  const handleApproveProfile = () => {
+    if (!id) return;
+    updateOnboardingStatusMutation.mutate({
+      userId: id,
+      status: 'active',
+      notes: 'Approved by admin',
+    });
+  };
+
   if (!id) {
     return (
       <AppLayout>
@@ -478,9 +491,24 @@ export default function StaffDetail() {
                 <div className="flex items-center gap-2 flex-wrap">
                   {/* Only show onboarding badge if not fully active (avoid duplicate "Active" badges) */}
                   {onboardingStatus !== 'active' && (
-                    <Badge variant={onboardingConfig.variant}>
-                      {onboardingConfig.label}
-                    </Badge>
+                    <>
+                      <Badge variant={onboardingConfig.variant}>
+                        {onboardingConfig.label}
+                      </Badge>
+                      {/* Admin can approve profiles that are pending review */}
+                      {isAdmin && onboardingStatus === 'pending_review' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-xs gap-1 border-green-500 text-green-600 hover:bg-green-50"
+                          onClick={handleApproveProfile}
+                          disabled={updateOnboardingStatusMutation.isPending}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                          {updateOnboardingStatusMutation.isPending ? 'Approving...' : 'Approve'}
+                        </Button>
+                      )}
+                    </>
                   )}
                   {profile.status && (
                     <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
