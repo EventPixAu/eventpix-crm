@@ -32,6 +32,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { AdminReadinessQueues } from '@/components/AdminReadinessQueues';
 import { EscalationBanners } from '@/components/EscalationBanners';
+import { JobTasksDueDates } from '@/components/JobTasksDueDates';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 
@@ -160,6 +161,18 @@ export default function Dashboard() {
             />
           </motion.div>
         </div>
+      )}
+
+      {/* Job Tasks with Due Dates - Admin Only */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mb-8"
+        >
+          <JobTasksDueDates />
+        </motion.div>
       )}
 
       {/* Main Content Grid */}
