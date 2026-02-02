@@ -501,7 +501,9 @@ export function useInitializeWorkflowFromEventType() {
         
         return {
           event_id: eventId,
-          master_step_id: step.id,
+          // event_workflow_steps only supports linking to workflow_template_items via template_item_id.
+          // For Event Type Defaults (master steps), we store the step as an instance-only row.
+          template_item_id: null,
           step_label: step.label,
           step_order: index + 1,
           completion_type: step.completion_type || 'manual',
