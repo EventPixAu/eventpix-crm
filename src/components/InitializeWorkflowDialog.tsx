@@ -48,6 +48,7 @@ export function InitializeWorkflowDialog({
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
   const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
   const [showItems, setShowItems] = useState(false);
+  const [hasTouchedSelection, setHasTouchedSelection] = useState(false);
   
   // Fetch event types for dropdown
   const { data: eventTypes = [], isLoading: eventTypesLoading } = useEventTypes();
@@ -105,18 +106,30 @@ export function InitializeWorkflowDialog({
     return allStepDefaults.some(d => d.event_type_id === selectedEventTypeId);
   }, [selectedEventTypeId, allStepDefaults]);
   
-  // Reset selections when event type changes
+  // Reset selections when event type changes / steps load
   useEffect(() => {
-    if (selectedEventTypeId && stepsForSelectedType.length > 0) {
-      setSelectedStepIds(new Set(stepsForSelectedType.map(step => step.id)));
-      setShowItems(true);
-    } else {
+    // When a new event type is chosen, default to selecting all steps once they are available
+    // so the user always has a clear "confirm" action (Add Steps) without extra clicks.
+    if (!selectedEventTypeId) {
       setSelectedStepIds(new Set());
       setShowItems(false);
+      setHasTouchedSelection(false);
+      return;
+    }
+
+    if (stepsForSelectedType.length === 0) {
+      setSelectedStepIds(new Set());
+      return;
+    }
+
+    setShowItems(true);
+    if (!hasTouchedSelection) {
+      setSelectedStepIds(new Set(stepsForSelectedType.map(step => step.id)));
     }
   }, [selectedEventTypeId, stepsForSelectedType]);
   
   const handleItemToggle = (stepId: string) => {
+    setHasTouchedSelection(true);
     setSelectedStepIds(prev => {
       const next = new Set(prev);
       if (next.has(stepId)) {
@@ -129,10 +142,12 @@ export function InitializeWorkflowDialog({
   };
   
   const handleSelectAll = () => {
+    setHasTouchedSelection(true);
     setSelectedStepIds(new Set(stepsForSelectedType.map(step => step.id)));
   };
   
   const handleSelectNone = () => {
+    setHasTouchedSelection(true);
     setSelectedStepIds(new Set());
   };
   
