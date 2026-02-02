@@ -14,6 +14,7 @@ export interface SalesWorkflowTemplate {
   workflow_key: string | null; // 'new_lead' | 'repeat_client' | null
   items: SalesWorkflowItem[];
   is_active: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +60,53 @@ export function useMainSalesWorkflows() {
   });
 }
 
+// Create new sales workflow template
+export function useCreateSalesWorkflowTemplate() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (input: {
+      name: string;
+      description?: string | null;
+      workflow_key?: string | null;
+      items?: SalesWorkflowItem[];
+    }) => {
+      // Get max sort_order
+      const { data: existing } = await supabase
+        .from('sales_workflow_templates')
+        .select('sort_order')
+        .order('sort_order', { ascending: false })
+        .limit(1);
+      
+      const maxOrder = existing?.[0]?.sort_order ?? -1;
+      
+      const { data, error } = await supabase
+        .from('sales_workflow_templates')
+        .insert({
+          name: input.name,
+          description: input.description || null,
+          workflow_key: input.workflow_key || null,
+          items: JSON.parse(JSON.stringify(input.items || [])),
+          sort_order: maxOrder + 1,
+          is_active: true,
+          workflow_domain: 'sales',
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-workflow-templates-new'] });
+      toast.success('Sales workflow created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create workflow: ' + error.message);
+    },
+  });
+}
+
 // Update sales workflow template
 export function useUpdateSalesWorkflowTemplate() {
   const queryClient = useQueryClient();
@@ -88,6 +136,32 @@ export function useUpdateSalesWorkflowTemplate() {
     },
     onError: (error) => {
       toast.error('Failed to update workflow: ' + error.message);
+    },
+  });
+}
+
+// Delete sales workflow template (soft delete via is_active = false)
+export function useDeleteSalesWorkflowTemplate() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('sales_workflow_templates')
+        .update({ 
+          is_active: false, 
+          archived_at: new Date().toISOString() 
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-workflow-templates-new'] });
+      toast.success('Sales workflow deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete workflow: ' + error.message);
     },
   });
 }
