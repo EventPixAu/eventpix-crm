@@ -689,9 +689,9 @@ export default function EventDetail() {
                         </div>
                         {isAdmin && (
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="shrink-0 h-8 w-8"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0 h-8"
                             onClick={() => {
                               const userId = assignment.user_id || assignment.staff?.id;
                               if (!userId || !id) return;
@@ -705,7 +705,8 @@ export default function EventDetail() {
                             disabled={sendNotification.isPending}
                             title="Resend notification email"
                           >
-                            <Send className="h-4 w-4" />
+                            <Send className="h-4 w-4 mr-2" />
+                            Resend
                           </Button>
                         )}
                       </div>
