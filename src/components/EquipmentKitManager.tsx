@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,7 +50,11 @@ export function EquipmentKitManager() {
     if (editingKit) {
       await updateKit.mutateAsync({ id: editingKit.id, ...kitData });
     } else {
-      await createKit.mutateAsync(kitData);
+      const newKit = await createKit.mutateAsync(kitData);
+      // Auto-select the new kit to allow adding items immediately
+      if (newKit?.id) {
+        setSelectedKitId(newKit.id);
+      }
     }
 
     setDialogOpen(false);
@@ -59,6 +63,7 @@ export function EquipmentKitManager() {
 
   const handleEdit = (kit: EquipmentKit) => {
     setEditingKit(kit);
+    setSelectedKitId(kit.id); // Also select the kit to show items editor
     setFormData({
       name: kit.name,
       description: kit.description || '',
@@ -89,7 +94,7 @@ export function EquipmentKitManager() {
                 Create Kit
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingKit ? 'Edit' : 'Create'} Equipment Kit</DialogTitle>
               </DialogHeader>
@@ -111,7 +116,15 @@ export function EquipmentKitManager() {
                     placeholder="What's included and when to use..."
                   />
                 </div>
-                <div className="flex justify-end gap-2">
+                
+                {/* Show items editor inline when editing an existing kit */}
+                {editingKit && (
+                  <div className="border-t pt-4 mt-4">
+                    <InlineKitItemsEditor kitId={editingKit.id} allItems={allItems || []} />
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancel
                   </Button>
@@ -158,6 +171,103 @@ export function EquipmentKitManager() {
 
       {selectedKitId && (
         <KitItemsEditor kitId={selectedKitId} allItems={allItems || []} />
+      )}
+    </div>
+  );
+}
+
+// Inline version for use within the dialog
+function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: string; name: string; category: string }[] }) {
+  const { data: kit, isLoading } = useEquipmentKit(kitId);
+  const addItem = useAddKitItem();
+  const removeItem = useRemoveKitItem();
+  const [selectedItemId, setSelectedItemId] = useState('');
+
+  const handleAddItem = async () => {
+    if (!selectedItemId) return;
+    await addItem.mutateAsync({ kitId, equipmentItemId: selectedItemId });
+    setSelectedItemId('');
+  };
+
+  const handleRemoveItem = async (id: string) => {
+    await removeItem.mutateAsync({ id, kitId });
+  };
+
+  if (isLoading) {
+    return <div className="text-muted-foreground text-sm">Loading kit items...</div>;
+  }
+
+  const availableItems = allItems.filter(
+    (item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)
+  );
+
+  return (
+    <div className="space-y-3">
+      <Label className="flex items-center gap-2">
+        <Package className="h-4 w-4" />
+        Equipment Items in Kit
+      </Label>
+      
+      {availableItems.length > 0 ? (
+        <div className="flex gap-2">
+          <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select equipment to add..." />
+            </SelectTrigger>
+            <SelectContent>
+              {availableItems.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name} ({item.category})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button type="button" onClick={handleAddItem} disabled={!selectedItemId || addItem.isPending}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {allItems.length === 0 
+            ? 'No equipment items available. Add items to Equipment Inventory first.' 
+            : 'All equipment items have been added to this kit.'}
+        </p>
+      )}
+
+      {kit?.items && kit.items.length > 0 ? (
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="w-[60px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {kit.items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.equipment_item?.name}</TableCell>
+                  <TableCell className="capitalize">{item.equipment_item?.category}</TableCell>
+                  <TableCell>
+                    <Button 
+                      type="button"
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => handleRemoveItem(item.id)}
+                      disabled={removeItem.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground py-2">No items in this kit yet</p>
       )}
     </div>
   );
