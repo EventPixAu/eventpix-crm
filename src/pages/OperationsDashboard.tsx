@@ -3,6 +3,7 @@
  * 
  * Operations-focused dashboard showing:
  * - Today's events & upcoming events
+ * - Job tasks with due dates from workflows
  * - Readiness queues and escalations
  * - Staff and delivery status
  */
@@ -25,6 +26,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { AdminReadinessQueues } from '@/components/AdminReadinessQueues';
 import { EscalationBanners } from '@/components/EscalationBanners';
+import { JobTasksDueDates } from '@/components/JobTasksDueDates';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 
@@ -115,11 +117,21 @@ export default function OperationsDashboard() {
         </motion.div>
       </div>
 
+      {/* Job Tasks with Due Dates */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="mb-8"
+      >
+        <JobTasksDueDates />
+      </motion.div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="bg-card border border-border rounded-xl shadow-card lg:col-span-2"
         >
           <div className="flex items-center justify-between p-5 border-b border-border">
@@ -193,7 +205,7 @@ export default function OperationsDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
         >
           <AdminReadinessQueues />
         </motion.div>
