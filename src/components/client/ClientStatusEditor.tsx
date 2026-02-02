@@ -36,13 +36,23 @@ import { useUpdateClient } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 
-const STATUS_OPTIONS = [
+// Fallback options if database query fails
+const FALLBACK_STATUS_OPTIONS = [
   { value: 'prospect', label: 'Prospect', color: 'bg-slate-100 text-slate-700 border-slate-200' },
   { value: 'active_event', label: 'Active Event', color: 'bg-green-100 text-green-700 border-green-200' },
   { value: 'current_client', label: 'Current Client', color: 'bg-blue-100 text-blue-700 border-blue-200' },
   { value: 'previous_client', label: 'Previous Client', color: 'bg-amber-100 text-amber-700 border-amber-200' },
 ];
+
+// Map badge_variant to color classes
+const variantToColor: Record<string, string> = {
+  secondary: 'bg-slate-100 text-slate-700 border-slate-200',
+  default: 'bg-blue-100 text-blue-700 border-blue-200',
+  destructive: 'bg-red-100 text-red-700 border-red-200',
+  outline: 'bg-amber-100 text-amber-700 border-amber-200',
+};
 
 interface ClientStatusEditorProps {
   clientId: string;
@@ -63,16 +73,28 @@ export function ClientStatusEditor({
 }: ClientStatusEditorProps) {
   const { isAdmin } = useAuth();
   const updateClient = useUpdateClient();
+  const { data: dbStatuses } = useCompanyStatuses();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(manualStatus || '');
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Map database statuses to dropdown format, with fallback
+  const STATUS_OPTIONS = dbStatuses?.map(s => ({
+    value: s.name,
+    label: s.label,
+    color: variantToColor[s.badge_variant || 'secondary'] || 'bg-slate-100 text-slate-700 border-slate-200',
+  })) || FALLBACK_STATUS_OPTIONS;
+
   const canEdit = isAdmin; // Only Admin can edit
   const isOverridden = !!manualStatus;
   const displayStatus = manualStatus || computedStatus;
   
-  const statusConfig = STATUS_OPTIONS.find(s => s.value === displayStatus) || STATUS_OPTIONS[0];
+  const statusConfig = STATUS_OPTIONS.find(s => s.value === displayStatus) || {
+    value: displayStatus,
+    label: displayStatus.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+    color: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
 
   const handleSave = async () => {
     if (!selectedStatus) return;
@@ -211,7 +233,7 @@ export function ClientStatusEditor({
               <AlertDialogDescription>
                 This will remove the manual status override and the company status will be 
                 automatically computed from its events. The status will change to: <strong>
-                {STATUS_OPTIONS.find(s => s.value === computedStatus)?.label}
+                {STATUS_OPTIONS.find(s => s.value === computedStatus)?.label || computedStatus}
                 </strong>
               </AlertDialogDescription>
             </AlertDialogHeader>
