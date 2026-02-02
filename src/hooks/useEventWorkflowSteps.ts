@@ -393,6 +393,144 @@ export function useInitializeWorkflowStepsMultiTemplate() {
   });
 }
 
+// Initialize workflow steps from master steps (Event Type Defaults)
+export function useInitializeWorkflowFromEventType() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      eventId, 
+      selectedStepIds,
+    }: { 
+      eventId: string; 
+      selectedStepIds: string[];
+    }) => {
+      // Get event details for date calculations
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .eq('id', eventId)
+        .single();
+      
+      if (eventError) throw eventError;
+      
+      // Get job accepted date from lead if exists
+      let jobAcceptedDate = event.booking_date || event.created_at;
+      let leadCreatedDate = event.created_at;
+      if (event.lead_id) {
+        const { data: lead } = await supabase
+          .from('leads')
+          .select('created_at, updated_at')
+          .eq('id', event.lead_id)
+          .maybeSingle();
+        if (lead) {
+          leadCreatedDate = lead.created_at;
+          // Check if lead was won
+          const { data: wonLead } = await supabase
+            .from('leads')
+            .select('updated_at')
+            .eq('id', event.lead_id)
+            .eq('status', 'won')
+            .maybeSingle();
+          if (wonLead) {
+            jobAcceptedDate = wonLead.updated_at;
+          }
+        }
+      }
+      
+      // Get selected master steps
+      const { data: masterSteps, error: stepsError } = await supabase
+        .from('workflow_master_steps')
+        .select('*')
+        .in('id', selectedStepIds)
+        .eq('is_active', true)
+        .order('phase')
+        .order('sort_order');
+      
+      if (stepsError) throw stepsError;
+      if (!masterSteps || masterSteps.length === 0) throw new Error('No valid steps selected');
+      
+      // Delete existing workflow steps for this event
+      const { error: deleteError } = await supabase
+        .from('event_workflow_steps')
+        .delete()
+        .eq('event_id', eventId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Calculate due dates and create steps
+      const eventDate = new Date(event.main_shoot_date || event.event_date);
+      const bookingDate = new Date(jobAcceptedDate || event.created_at);
+      const createdDate = new Date(leadCreatedDate || event.created_at);
+      const deliveryDeadline = event.delivery_deadline ? new Date(event.delivery_deadline) : null;
+      
+      // Sort steps by phase then sort_order
+      const phaseOrder = { pre_event: 0, day_of: 1, post_event: 2 };
+      const sortedSteps = [...masterSteps].sort((a, b) => {
+        const aPhase = phaseOrder[a.phase as keyof typeof phaseOrder] ?? 1;
+        const bPhase = phaseOrder[b.phase as keyof typeof phaseOrder] ?? 1;
+        if (aPhase !== bPhase) return aPhase - bPhase;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+      
+      const steps = sortedSteps.map((step, index) => {
+        let dueDate: string | null = null;
+        
+        if (step.date_offset_days !== null && step.date_offset_reference) {
+          let referenceDate: Date;
+          switch (step.date_offset_reference) {
+            case 'job_accepted':
+              referenceDate = bookingDate;
+              break;
+            case 'lead_created':
+              referenceDate = createdDate;
+              break;
+            case 'event_date':
+              referenceDate = eventDate;
+              break;
+            case 'delivery_deadline':
+              referenceDate = deliveryDeadline || eventDate;
+              break;
+            default:
+              referenceDate = eventDate;
+          }
+          const calculated = new Date(referenceDate);
+          calculated.setDate(calculated.getDate() + step.date_offset_days);
+          dueDate = calculated.toISOString().split('T')[0];
+        }
+        
+        return {
+          event_id: eventId,
+          master_step_id: step.id,
+          step_label: step.label,
+          step_order: index + 1,
+          completion_type: step.completion_type || 'manual',
+          auto_trigger_event: step.auto_trigger_event,
+          due_date: dueDate,
+          is_completed: false,
+          notes: step.help_text,
+        };
+      });
+      
+      const { error: insertError } = await supabase
+        .from('event_workflow_steps')
+        .insert(steps);
+      
+      if (insertError) throw insertError;
+      
+      return steps.length;
+    },
+    onSuccess: (count, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
+      toast.success(`Added ${count} workflow steps`);
+    },
+    onError: (error) => {
+      toast.error('Failed to add workflow steps: ' + error.message);
+    },
+  });
+}
+
 // Update step notes
 export function useUpdateWorkflowStepNotes() {
   const queryClient = useQueryClient();
