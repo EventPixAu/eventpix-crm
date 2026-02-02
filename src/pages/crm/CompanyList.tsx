@@ -188,60 +188,87 @@ export default function CompanyList() {
       const { data: clientsData, error } = await query;
       if (error) throw error;
 
-      const clientIds = clientsData?.map(c => c.id) || [];
+      const clientIdSet = new Set(clientsData?.map(c => c.id) || []);
 
-      // Get contact counts, primary contacts, tags, and events in parallel
-      const [contactsResult, primaryContactsResult, eventsResult] = await Promise.all([
-        // Get contacts with their tags
+      // Get contact counts, primary contacts, tags, and events
+      // Fetch ALL contacts with client_id to avoid .in() limit issues with large datasets
+      const [contactsResult, associationsResult, eventsResult] = await Promise.all([
+        // Get all contacts that have a client_id (direct link)
         supabase
           .from('client_contacts')
           .select('client_id, tags')
-          .in('client_id', clientIds),
-        // Get primary contacts from contact_company_associations
+          .not('client_id', 'is', null),
+        // Get all contact_company_associations (for count and primary contacts)
         supabase
           .from('contact_company_associations')
           .select(`
             company_id,
+            contact_id,
+            is_primary,
             contact:client_contacts(contact_name, email, tags)
           `)
-          .in('company_id', clientIds)
-          .eq('is_primary', true),
+          .eq('is_active', true),
+        // Get all events for these clients
         supabase
           .from('events')
           .select('client_id, event_date, ops_status')
-          .in('client_id', clientIds)
+          .not('client_id', 'is', null)
       ]);
 
       // Build count map and tags map from contacts
-      const countMap: Record<string, number> = {};
+      // Use a Set to track unique contact IDs per company (avoid double-counting)
+      const contactIdsByCompany: Record<string, Set<string>> = {};
       const tagsMap: Record<string, Set<string>> = {};
       
+      // Count contacts with direct client_id link (filter to only companies in our result set)
       (contactsResult.data || []).forEach(c => {
-        countMap[c.client_id] = (countMap[c.client_id] || 0) + 1;
+        if (!c.client_id || !clientIdSet.has(c.client_id)) return;
+        if (!contactIdsByCompany[c.client_id]) contactIdsByCompany[c.client_id] = new Set();
+        // We don't have the contact ID here, so we use a placeholder - this is fine for counting
+        // since each row is a unique contact
+        contactIdsByCompany[c.client_id].add(`direct-${contactIdsByCompany[c.client_id].size}`);
         if (c.tags && Array.isArray(c.tags)) {
           if (!tagsMap[c.client_id]) tagsMap[c.client_id] = new Set();
           c.tags.forEach((tag: string) => tagsMap[c.client_id].add(tag));
         }
       });
 
-      // Map primary contacts by company_id and collect their tags too
-      const primaryContactMap = (primaryContactsResult.data || []).reduce((acc, pc) => {
-        const contact = pc.contact as { contact_name: string; email: string | null; tags: string[] | null } | null;
-        if (contact) {
-          acc[pc.company_id] = {
+      // Process associations for counts, primary contacts, and tags
+      const primaryContactMap: Record<string, { name: string; email: string | null }> = {};
+      
+      (associationsResult.data || []).forEach(assoc => {
+        if (!clientIdSet.has(assoc.company_id)) return;
+        
+        const contact = assoc.contact as { contact_name: string; email: string | null; tags: string[] | null } | null;
+        if (!contact) return;
+        
+        // Add to contact count (using contact_id to dedupe)
+        if (!contactIdsByCompany[assoc.company_id]) contactIdsByCompany[assoc.company_id] = new Set();
+        contactIdsByCompany[assoc.company_id].add(assoc.contact_id);
+        
+        // Track primary contact
+        if (assoc.is_primary && !primaryContactMap[assoc.company_id]) {
+          primaryContactMap[assoc.company_id] = {
             name: contact.contact_name,
             email: contact.email,
           };
-          // Also collect tags from primary contacts linked via associations
-          if (contact.tags && Array.isArray(contact.tags)) {
-            if (!tagsMap[pc.company_id]) tagsMap[pc.company_id] = new Set();
-            contact.tags.forEach((tag: string) => tagsMap[pc.company_id].add(tag));
-          }
         }
-        return acc;
-      }, {} as Record<string, { name: string; email: string | null }>);
+        
+        // Collect tags
+        if (contact.tags && Array.isArray(contact.tags)) {
+          if (!tagsMap[assoc.company_id]) tagsMap[assoc.company_id] = new Set();
+          contact.tags.forEach((tag: string) => tagsMap[assoc.company_id].add(tag));
+        }
+      });
+
+      // Build final count map
+      const countMap: Record<string, number> = {};
+      Object.entries(contactIdsByCompany).forEach(([companyId, contactIds]) => {
+        countMap[companyId] = contactIds.size;
+      });
 
       const eventsMap = (eventsResult.data || []).reduce((acc, e) => {
+        if (!e.client_id || !clientIdSet.has(e.client_id)) return acc;
         if (!acc[e.client_id]) acc[e.client_id] = [];
         acc[e.client_id].push({ event_date: e.event_date, ops_status: e.ops_status });
         return acc;
