@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +8,13 @@ import { EquipmentKitManager } from '@/components/EquipmentKitManager';
 import { EquipmentAvailabilityCalendar } from '@/components/EquipmentAvailabilityCalendar';
 
 export default function Equipment() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'inventory';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
+
   return (
     <AppLayout>
       <PageHeader
@@ -14,7 +22,7 @@ export default function Equipment() {
         description="Manage equipment inventory and kits"
       />
 
-      <Tabs defaultValue="inventory" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList>
           <TabsTrigger value="inventory" className="flex items-center gap-2">
             <Package className="h-4 w-4" />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +18,8 @@ import {
   Trash2,
   User,
   Users,
-  Camera
+  Camera,
+  Settings2
 } from 'lucide-react';
 import { 
   useEventAllocations, 
@@ -227,10 +229,16 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                 </div>
 
                 <div className="border-t pt-4">
-                  <Label className="flex items-center gap-2 mb-2">
-                    <Layers className="h-4 w-4" />
-                    Allocate Kit
-                  </Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="flex items-center gap-2">
+                      <Layers className="h-4 w-4" />
+                      Allocate Kit
+                    </Label>
+                    <Link to="/equipment?tab=kits" className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <Settings2 className="h-3 w-3" />
+                      Manage Kits
+                    </Link>
+                  </div>
                   <div className="flex gap-2">
                     <Select value={selectedKitId} onValueChange={setSelectedKitId}>
                       <SelectTrigger className="flex-1">
