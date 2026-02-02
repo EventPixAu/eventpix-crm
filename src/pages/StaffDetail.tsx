@@ -165,7 +165,27 @@ export default function StaffDetail() {
           .single();
         
         if (linkedProfile) {
-          return { profile: linkedProfile as StaffProfile, sourceTable: 'profiles' as const, staffId: id };
+          // Merge staff data as fallback for empty profile fields
+          // Crew member's profile data takes priority, staff data is fallback
+          const mergedProfile: StaffProfile = {
+            ...linkedProfile as StaffProfile,
+            business_name: linkedProfile.business_name || staffData.business_name || null,
+            abn: linkedProfile.abn || staffData.abn || null,
+            address_line1: linkedProfile.address_line1 || staffData.address_line1 || null,
+            address_line2: linkedProfile.address_line2 || staffData.address_line2 || null,
+            address_city: linkedProfile.address_city || staffData.address_city || null,
+            address_state: linkedProfile.address_state || staffData.address_state || null,
+            address_postcode: linkedProfile.address_postcode || staffData.address_postcode || null,
+            vehicle_make_model: linkedProfile.vehicle_make_model || staffData.vehicle_make_model || null,
+            vehicle_registration: linkedProfile.vehicle_registration || staffData.vehicle_registration || null,
+            pli_details: linkedProfile.pli_details || staffData.pli_details || null,
+            pli_expiry: linkedProfile.pli_expiry || staffData.pli_expiry || null,
+            photography_equipment: linkedProfile.photography_equipment || staffData.photography_equipment || null,
+            dietary_requirements: linkedProfile.dietary_requirements || staffData.dietary_requirements || null,
+            certificates: linkedProfile.certificates || staffData.certificates || null,
+            location: linkedProfile.location || staffData.location || null,
+          };
+          return { profile: mergedProfile, sourceTable: 'profiles' as const, staffId: id };
         }
       }
       
