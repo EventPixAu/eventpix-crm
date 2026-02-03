@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
   Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon,
-  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone
+  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -479,14 +485,39 @@ export default function QuoteDetail() {
             </Button>
           )}
           {!isLocked && isAdmin && (
-            <Button 
-              variant="outline" 
-              onClick={() => acceptQuote.mutate({ quoteId: id! })}
-              disabled={acceptQuote.isPending}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {acceptQuote.isPending ? 'Accepting...' : 'Mark as Accepted'}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Mark As...
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                <DropdownMenuItem
+                  onClick={() => setIsSendQuoteOpen(true)}
+                  disabled={quote.status === 'sent'}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Sent
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => acceptQuote.mutate({ quoteId: id! })}
+                  disabled={acceptQuote.isPending}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accepted
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    await updateQuote.mutateAsync({ id: id!, status: 'rejected' });
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Rejected
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           {quote.status === 'accepted' && !(quote as any).linked_event_id && (
             <Button onClick={() => setIsConvertOpen(true)}>
