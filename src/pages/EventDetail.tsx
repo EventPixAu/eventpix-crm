@@ -585,6 +585,20 @@ export default function EventDetail() {
               {isAdmin && id && (
                 <MailHistoryPanel eventId={id} maxItems={5} />
               )}
+
+              {/* Contracts Panel */}
+              {isAdmin && id && event.client_id && (
+                <ContractsPanel
+                  eventId={id}
+                  clientId={event.client_id}
+                  clientName={(event as any).client_name}
+                  clientEmail={(event as any).clients?.primary_contact_email}
+                  quoteId={(event as any).quote_id}
+                  eventName={(event as any).event_name}
+                  eventDate={(event as any).event_date}
+                  defaultOpen={true}
+                />
+              )}
             </motion.div>
 
             {/* Column 3: Quick Actions, Workflow, Tasks, Contracts */}
@@ -634,19 +648,6 @@ export default function EventDetail() {
               {/* Setup Tasks */}
               {isAdmin && id && <EventTasksCard eventId={id} />}
 
-              {/* Contracts Panel */}
-              {isAdmin && id && event.client_id && (
-                <ContractsPanel
-                  eventId={id}
-                  clientId={event.client_id}
-                  clientName={(event as any).client_name}
-                  clientEmail={(event as any).clients?.primary_contact_email}
-                  quoteId={(event as any).quote_id}
-                  eventName={(event as any).event_name}
-                  eventDate={(event as any).event_date}
-                  defaultOpen={true}
-                />
-              )}
             </motion.div>
           </div>
         </TabsContent>
