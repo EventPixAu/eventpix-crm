@@ -6,9 +6,10 @@
  * - Merge field picker with insert at cursor
  * - Live preview with sample data
  * - Support for both text and HTML format templates
+ * - Hyperlink insertion via [text](url) markdown syntax
  */
 import { useState, useRef, useCallback } from 'react';
-import { Search, Copy, Check, Plus, Eye } from 'lucide-react';
+import { Search, Copy, Check, Plus, Eye, Link } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { AVAILABLE_MERGE_FIELDS, renderMergeFields as renderMergeFieldsFromHook, MergeFieldContext } from '@/hooks/useContractTemplates';
 
 export type TemplateFormat = 'text' | 'html';
@@ -107,6 +115,12 @@ export function PlainTextTemplateEditor({
   const [mergeFieldSearch, setMergeFieldSearch] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['Client', 'Job', 'Quote']);
+  
+  // Link insertion state
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [linkSelectionRange, setLinkSelectionRange] = useState<{ start: number; end: number } | null>(null);
 
   // Group fields by category
   const categories = AVAILABLE_MERGE_FIELDS.reduce((acc, field) => {
@@ -166,6 +180,53 @@ export function PlainTextTemplateEditor({
     );
   };
 
+  // Open link dialog with selected text
+  const handleInsertLink = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+    
+    setLinkText(selectedText || '');
+    setLinkUrl('https://');
+    setLinkSelectionRange({ start, end });
+    setLinkDialogOpen(true);
+  }, [value]);
+
+  // Apply link to text
+  const handleApplyLink = useCallback(() => {
+    if (!linkUrl || linkUrl === 'https://') return;
+    
+    const textarea = textareaRef.current;
+    const displayText = linkText || linkUrl;
+    const linkMarkdown = `[${displayText}](${linkUrl})`;
+    
+    if (linkSelectionRange) {
+      const { start, end } = linkSelectionRange;
+      const newValue = value.substring(0, start) + linkMarkdown + value.substring(end);
+      onChange(newValue);
+      
+      // Restore focus and cursor
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          const newPosition = start + linkMarkdown.length;
+          textarea.setSelectionRange(newPosition, newPosition);
+        }
+      }, 0);
+    } else {
+      insertAtCursor(linkMarkdown);
+    }
+    
+    // Reset dialog state
+    setLinkDialogOpen(false);
+    setLinkUrl('');
+    setLinkText('');
+    setLinkSelectionRange(null);
+  }, [linkUrl, linkText, linkSelectionRange, value, onChange, insertAtCursor]);
+
   // Convert basic markdown to HTML for preview
   const convertMarkdownToHtml = (text: string): string => {
     let html = text;
@@ -175,6 +236,9 @@ export function PlainTextTemplateEditor({
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+    
+    // Links: [text](url) - must be done before other formatting
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color: #0891b2; text-decoration: underline;">$1</a>');
     
     // Bold: **text** or __text__
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -235,7 +299,23 @@ export function PlainTextTemplateEditor({
           <TabsContent value="edit" className="mt-2 space-y-0" forceMount style={{ display: activeTab === 'edit' ? 'block' : 'none' }}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Template textarea */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-2">
+                {/* Toolbar */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={handleInsertLink}
+                  >
+                    <Link className="h-3 w-3" />
+                    Insert Link
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Select text first, then click to add a hyperlink
+                  </span>
+                </div>
                 <Textarea
                   ref={textareaRef}
                   value={value}
@@ -254,7 +334,15 @@ export function PlainTextTemplateEditor({
                   {format === 'text' && (
                     <div className="text-xs text-muted-foreground mb-2 p-2 bg-muted rounded border">
                       <p className="font-medium mb-1">Formatting:</p>
-                      <p><code className="bg-background px-1 rounded">**bold**</code> <code className="bg-background px-1 rounded">*italic*</code> <code className="bg-background px-1 rounded">~~underline~~</code></p>
+                      <p className="space-x-1">
+                        <code className="bg-background px-1 rounded">**bold**</code>
+                        <code className="bg-background px-1 rounded">*italic*</code>
+                        <code className="bg-background px-1 rounded">~~underline~~</code>
+                      </p>
+                      <p className="mt-1">
+                        <code className="bg-background px-1 rounded">[text](url)</code>
+                        <span className="ml-1">for links</span>
+                      </p>
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground mb-2">
@@ -420,6 +508,48 @@ export function PlainTextTemplateEditor({
           </div>
         </>
       )}
+
+      {/* Link insertion dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Insert Hyperlink</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="link-text">Link Text</Label>
+              <Input
+                id="link-text"
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                placeholder="Text to display"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-url">URL</Label>
+              <Input
+                id="link-url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+            {linkText && linkUrl && linkUrl !== 'https://' && (
+              <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                Preview: <a href="#" className="text-primary underline" onClick={(e) => e.preventDefault()}>{linkText}</a>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleApplyLink} disabled={!linkUrl || linkUrl === 'https://'}>
+              Insert Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -460,26 +590,40 @@ export function convertHtmlToText(html: string): string {
 
 /**
  * Render text template as HTML for display
- * Converts newlines to <br> and wraps in a clean container
+ * Converts markdown formatting (including links) and newlines to HTML
  */
 export function renderTextTemplateAsHtml(text: string, context: MergeFieldContext): string {
   const rendered = renderMergeFields(text, context);
   
   // Escape HTML characters
-  const escaped = rendered
+  let html = rendered
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
   
+  // Links: [text](url) - must be done before other formatting
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color: #0891b2; text-decoration: underline;">$1</a>');
+  
+  // Bold: **text** or __text__
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  
+  // Italic: *text* or _text_
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  
+  // Underline: ~~text~~
+  html = html.replace(/~~(.+?)~~/g, '<u>$1</u>');
+  
   // Convert newlines to <br>
-  const withBreaks = escaped.replace(/\n/g, '<br>');
+  html = html.replace(/\n/g, '<br>');
   
   // Wrap in a container with basic styling
   return `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a1a;">
-      ${withBreaks}
+      ${html}
     </div>
   `;
 }
