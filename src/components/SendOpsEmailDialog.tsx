@@ -5,9 +5,9 @@
  * Supports client, photographer, and assistant recipients.
  * Uses templates with merge fields.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import { Mail, Send, Eye, Users } from 'lucide-react';
+import { Mail, Send, Eye, Users, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -74,6 +74,13 @@ export function SendOpsEmailDialog({
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
+  
+  // Link insertion state
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [linkSelectionRange, setLinkSelectionRange] = useState<{ start: number; end: number } | null>(null);
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Default-select the client recipient when opening.
   useEffect(() => {
@@ -127,6 +134,45 @@ export function SendOpsEmailDialog({
     );
   };
 
+  // Handle link insertion
+  const handleInsertLink = useCallback(() => {
+    const textarea = bodyTextareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = body.substring(start, end);
+    
+    setLinkSelectionRange({ start, end });
+    setLinkText(selectedText);
+    setLinkUrl('');
+    setLinkDialogOpen(true);
+  }, [body]);
+
+  const handleApplyLink = useCallback(() => {
+    if (!linkUrl || !linkSelectionRange) return;
+    
+    const { start, end } = linkSelectionRange;
+    const displayText = linkText || linkUrl;
+    const linkMarkdown = `[${displayText}](${linkUrl})`;
+    
+    const newValue = body.substring(0, start) + linkMarkdown + body.substring(end);
+    setBody(newValue);
+    
+    setLinkDialogOpen(false);
+    setLinkUrl('');
+    setLinkText('');
+    setLinkSelectionRange(null);
+  }, [linkUrl, linkText, linkSelectionRange, body]);
+
+  // Convert markdown links to HTML for preview/send
+  const convertLinksToHtml = (text: string) => {
+    return text.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g, 
+      '<a href="$2" style="color: #0891b2; text-decoration: underline;">$1</a>'
+    );
+  };
+
   const handleSend = async () => {
     if (selectedRecipients.length === 0 || !subject) {
       toast({ 
@@ -143,8 +189,9 @@ export function SendOpsEmailDialog({
       
       // Send emails to each recipient via edge function
       const sendPromises = selectedRecipientData.map(async (recipient) => {
-        // Convert newlines to <br> tags for HTML email
-        const bodyWithLineBreaks = body.replace(/\n/g, '<br>');
+        // Convert newlines to <br> tags and markdown links to HTML for email
+        const bodyWithLinks = convertLinksToHtml(body);
+        const bodyWithLineBreaks = bodyWithLinks.replace(/\n/g, '<br>');
         const personalizedBody = replaceMergeFields(bodyWithLineBreaks, recipient.name);
         
         // Resolve contactId if not provided - lookup by email
@@ -296,8 +343,21 @@ export function SendOpsEmailDialog({
 
             {/* Body */}
             <div className="space-y-2">
-              <Label htmlFor="body">Message</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="body">Message</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleInsertLink}
+                  className="h-7 text-xs"
+                >
+                  <Link className="h-3 w-3 mr-1" />
+                  Insert Link
+                </Button>
+              </div>
               <Textarea
+                ref={bodyTextareaRef}
                 id="body"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -329,7 +389,7 @@ export function SendOpsEmailDialog({
               <div className="border-t pt-4">
                 <div 
                   className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body || '<p class="text-muted-foreground">No message content</p>') }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(convertLinksToHtml(body.replace(/\n/g, '<br>')) || '<p class="text-muted-foreground">No message content</p>') }}
                 />
               </div>
             </div>
@@ -363,6 +423,50 @@ export function SendOpsEmailDialog({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Link insertion dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link className="h-4 w-4" />
+              Insert Link
+            </DialogTitle>
+            <DialogDescription>
+              Add a hyperlink to your email message.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="linkText">Display Text</Label>
+              <Input
+                id="linkText"
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                placeholder="Click here"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkUrl">URL *</Label>
+              <Input
+                id="linkUrl"
+                type="url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleApplyLink} disabled={!linkUrl}>
+              Insert Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
