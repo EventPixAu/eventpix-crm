@@ -435,7 +435,11 @@ export default function WorkflowsAdmin() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     
-    const phaseSteps = masterSteps.filter(s => s.phase === phase);
+    // IMPORTANT: Use the exact same ordering as the rendered list (sort_order)
+    // otherwise DnD indices won't match what the user sees.
+    const phaseSteps = masterSteps
+      .filter(s => s.phase === phase)
+      .sort(compareStepsBySortOrder);
     const oldIndex = phaseSteps.findIndex(s => s.id === active.id);
     const newIndex = phaseSteps.findIndex(s => s.id === over.id);
     
@@ -560,7 +564,9 @@ export default function WorkflowsAdmin() {
               {phases.map(phase => {
                 const phaseSteps = masterSteps
                   .filter(s => s.phase === phase.key)
-                  .sort(compareStepsByDue);
+                  // Render strictly by persisted sort_order so manual positioning is respected
+                  // (auto-sorting can still update sort_order server-side when appropriate).
+                  .sort(compareStepsBySortOrder);
                 return (
                   <div key={phase.key}>
                     <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
