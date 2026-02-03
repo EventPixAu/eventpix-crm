@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, parseISO, isPast, isToday } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Collapsible,
   CollapsibleContent,
@@ -328,6 +329,22 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [editingStep, setEditingStep] = useState<EventWorkflowStepWithProfile | null>(null);
   const { total, completed, percentage, overdue, steps } = useWorkflowProgress(eventId);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const firstIncompleteRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to first incomplete step on mount
+  useEffect(() => {
+    if (firstIncompleteRef.current && scrollAreaRef.current) {
+      // Small delay to ensure the scroll area is rendered
+      const timer = setTimeout(() => {
+        firstIncompleteRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [steps]);
+  
+  // Find index of first incomplete step
+  const firstIncompleteIndex = steps.findIndex(step => !step.is_completed);
   
   if (steps.length === 0) {
     return (
@@ -362,22 +379,28 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
           )}
         </div>
         
-        {/* Steps List */}
-        <div className="relative">
-          {steps.map((step) => (
-            <StepItem
-              key={step.id}
-              step={step}
-              eventId={eventId}
-              isAdmin={isAdmin}
-              isExpanded={expandedStep === step.id}
-              onToggle={() => setExpandedStep(
-                expandedStep === step.id ? null : step.id
-              )}
-              onEdit={(step) => setEditingStep(step)}
-            />
-          ))}
-        </div>
+        {/* Steps List with ScrollArea */}
+        <ScrollArea className="h-[400px] pr-3" ref={scrollAreaRef}>
+          <div className="relative">
+            {steps.map((step, index) => (
+              <div
+                key={step.id}
+                ref={index === firstIncompleteIndex ? firstIncompleteRef : undefined}
+              >
+                <StepItem
+                  step={step}
+                  eventId={eventId}
+                  isAdmin={isAdmin}
+                  isExpanded={expandedStep === step.id}
+                  onToggle={() => setExpandedStep(
+                    expandedStep === step.id ? null : step.id
+                  )}
+                  onEdit={(step) => setEditingStep(step)}
+                />
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
         
         {/* Legend */}
         <TooltipProvider>
