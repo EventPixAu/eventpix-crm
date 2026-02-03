@@ -120,6 +120,7 @@ export function useCreateMasterStep() {
 // 1) date_offset_reference (job_accepted first)
 // 2) date_offset_days (nulls first, then ascending)
 // 3) existing sort_order as a stable tiebreaker
+// NOTE: Steps with 'previous_step' reference preserve their manual position
 async function reorderStepsByDateOffset(phase: WorkflowPhase) {
   const { data: phaseSteps, error: fetchError } = await supabase
     .from('workflow_master_steps')
@@ -129,7 +130,16 @@ async function reorderStepsByDateOffset(phase: WorkflowPhase) {
   if (fetchError) return;
   if (!phaseSteps || phaseSteps.length === 0) return;
 
-  const sorted = [...phaseSteps].sort((a, b) => {
+  // Separate steps into auto-sortable and manually positioned
+  const autoSortSteps = phaseSteps.filter(
+    (s: any) => s.date_offset_reference !== 'previous_step'
+  );
+  const manualSteps = phaseSteps.filter(
+    (s: any) => s.date_offset_reference === 'previous_step'
+  );
+
+  // Sort only the auto-sortable steps
+  const sortedAuto = [...autoSortSteps].sort((a, b) => {
     const rankA = getDateOffsetReferenceRank(
       (a as any).date_offset_reference ?? null
     );
@@ -149,7 +159,36 @@ async function reorderStepsByDateOffset(phase: WorkflowPhase) {
     return ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0);
   });
 
-  const updates = sorted.map((step, index) =>
+  // Merge back: insert manual steps at their original relative positions
+  // For simplicity, place auto-sorted steps first, then keep manual steps at their original sort_order
+  // This allows manual drag-and-drop to position them anywhere
+  const allSorted = [...sortedAuto, ...manualSteps].sort((a, b) => {
+    // If both are manual, preserve relative order
+    const aIsManual = (a as any).date_offset_reference === 'previous_step';
+    const bIsManual = (b as any).date_offset_reference === 'previous_step';
+    
+    // Manual steps keep their existing sort_order as anchor
+    if (aIsManual && bIsManual) {
+      return ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0);
+    }
+    
+    // For mixed comparisons, use current indices from sorted arrays
+    if (aIsManual) {
+      // Compare manual step's sort_order against auto step's new position
+      const autoIndex = sortedAuto.findIndex(s => (s as any).id === (b as any).id);
+      return ((a as any).sort_order ?? 0) - autoIndex;
+    }
+    if (bIsManual) {
+      const autoIndex = sortedAuto.findIndex(s => (s as any).id === (a as any).id);
+      return autoIndex - ((b as any).sort_order ?? 0);
+    }
+    
+    // Both auto-sorted: use their sorted order
+    return sortedAuto.findIndex(s => (s as any).id === (a as any).id) - 
+           sortedAuto.findIndex(s => (s as any).id === (b as any).id);
+  });
+
+  const updates = allSorted.map((step, index) =>
     supabase
       .from('workflow_master_steps')
       .update({ sort_order: index, updated_at: new Date().toISOString() })
