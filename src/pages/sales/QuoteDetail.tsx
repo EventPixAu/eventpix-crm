@@ -55,6 +55,7 @@ import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
 import { EditQuoteItemDialog } from '@/components/quote/EditQuoteItemDialog';
 import { SortableQuoteItems } from '@/components/quote/SortableQuoteItems';
+import { QuoteDiscountDialog } from '@/components/quote/QuoteDiscountDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
@@ -111,6 +112,8 @@ export default function QuoteDetail() {
   const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [savingDiscount, setSavingDiscount] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
@@ -292,6 +295,20 @@ export default function QuoteDetail() {
       quote_id: id,
       ...updates,
     });
+  };
+
+  const handleSaveDiscount = async (discountPercent: number, discountAmount: number) => {
+    if (!id) return;
+    setSavingDiscount(true);
+    try {
+      await updateQuote.mutateAsync({
+        id,
+        discount_percent: discountPercent,
+        discount_amount: discountAmount,
+      } as any);
+    } finally {
+      setSavingDiscount(false);
+    }
   };
 
   const handleSendQuote = async () => {
@@ -605,9 +622,25 @@ export default function QuoteDetail() {
                 <div className="text-sm text-muted-foreground">Subtotal</div>
                 <div className="text-lg font-semibold">{formatCurrency(quote.subtotal || 0)}</div>
               </div>
-              <div className="text-right">
-                <div className="text-sm text-primary cursor-pointer hover:underline">Discount</div>
-                <div className="text-muted-foreground">None</div>
+              <div 
+                className="text-right cursor-pointer group"
+                onClick={() => !isLocked && setIsDiscountDialogOpen(true)}
+              >
+                <div className={`text-sm ${!isLocked ? 'text-primary hover:underline' : 'text-muted-foreground'}`}>
+                  Discount
+                </div>
+                <div className={
+                  ((quote as any).discount_percent > 0 || (quote as any).discount_amount > 0) 
+                    ? 'text-green-600 font-medium' 
+                    : 'text-muted-foreground'
+                }>
+                  {(quote as any).discount_percent > 0 
+                    ? `${(quote as any).discount_percent}%`
+                    : (quote as any).discount_amount > 0 
+                      ? formatCurrency((quote as any).discount_amount)
+                      : 'None'
+                  }
+                </div>
               </div>
             </div>
           </div>
@@ -1028,6 +1061,17 @@ export default function QuoteDetail() {
         onOpenChange={(open) => !open && setEditingItem(null)}
         onSave={handleEditItem}
         isSaving={updateItem.isPending}
+      />
+
+      {/* Discount Dialog */}
+      <QuoteDiscountDialog
+        open={isDiscountDialogOpen}
+        onOpenChange={setIsDiscountDialogOpen}
+        currentDiscountPercent={(quote as any).discount_percent || 0}
+        currentDiscountAmount={(quote as any).discount_amount || 0}
+        subtotal={quote.subtotal || 0}
+        onSave={handleSaveDiscount}
+        isSaving={savingDiscount}
       />
     </AppLayout>
   );
