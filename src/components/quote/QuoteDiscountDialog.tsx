@@ -24,8 +24,9 @@ interface QuoteDiscountDialogProps {
   onOpenChange: (open: boolean) => void;
   currentDiscountPercent: number;
   currentDiscountAmount: number;
+  currentDiscountLabel: string;
   subtotal: number;
-  onSave: (discountPercent: number, discountAmount: number) => Promise<void>;
+  onSave: (discountPercent: number, discountAmount: number, discountLabel: string) => Promise<void>;
   isSaving?: boolean;
 }
 
@@ -34,6 +35,7 @@ export function QuoteDiscountDialog({
   onOpenChange,
   currentDiscountPercent,
   currentDiscountAmount,
+  currentDiscountLabel,
   subtotal,
   onSave,
   isSaving = false,
@@ -43,10 +45,12 @@ export function QuoteDiscountDialog({
   );
   const [percentValue, setPercentValue] = useState(currentDiscountPercent || 0);
   const [amountValue, setAmountValue] = useState(currentDiscountAmount || 0);
+  const [labelValue, setLabelValue] = useState(currentDiscountLabel || '');
 
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
+      setLabelValue(currentDiscountLabel || '');
       if (currentDiscountAmount > 0) {
         setDiscountType('amount');
         setAmountValue(currentDiscountAmount);
@@ -57,7 +61,7 @@ export function QuoteDiscountDialog({
         setAmountValue(0);
       }
     }
-  }, [open, currentDiscountPercent, currentDiscountAmount]);
+  }, [open, currentDiscountPercent, currentDiscountAmount, currentDiscountLabel]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
@@ -83,9 +87,9 @@ export function QuoteDiscountDialog({
 
   const handleSave = async () => {
     if (discountType === 'percent') {
-      await onSave(percentValue, 0);
+      await onSave(percentValue, 0, labelValue);
     } else {
-      await onSave(0, amountValue);
+      await onSave(0, amountValue, labelValue);
     }
     onOpenChange(false);
   };
@@ -93,7 +97,8 @@ export function QuoteDiscountDialog({
   const handleClear = async () => {
     setPercentValue(0);
     setAmountValue(0);
-    await onSave(0, 0);
+    setLabelValue('');
+    await onSave(0, 0, '');
     onOpenChange(false);
   };
 
@@ -110,6 +115,20 @@ export function QuoteDiscountDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Discount Label */}
+          <div className="space-y-2">
+            <Label>Discount Name</Label>
+            <Input
+              type="text"
+              placeholder="e.g. Multi-day, Producer Discount"
+              value={labelValue}
+              onChange={(e) => setLabelValue(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional label to describe this discount
+            </p>
+          </div>
+
           <Tabs value={discountType} onValueChange={(v) => setDiscountType(v as 'percent' | 'amount')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="percent" className="gap-2">
