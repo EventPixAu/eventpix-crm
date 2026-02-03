@@ -35,6 +35,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   draft: { label: 'Draft', variant: 'secondary' },
   sent: { label: 'Sent', variant: 'outline' },
   accepted: { label: 'Accepted', variant: 'default' },
+  rejected: { label: 'Rejected', variant: 'destructive' },
 };
 
 export default function QuoteList() {
