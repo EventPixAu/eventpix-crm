@@ -464,15 +464,6 @@ export default function EventDetail() {
                 phone: event.onsite_contact_phone,
                 }}
               />
-            </motion.div>
-
-            {/* Column 2: Additional Details, Documents, Contracts */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="space-y-6"
-            >
               {/* Coverage, Photography Instructions & Notes */}
               {(event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
@@ -502,75 +493,16 @@ export default function EventDetail() {
               {id && (
                 <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
               )}
-              
-              {/* Contracts Panel */}
-              {isAdmin && id && event.client_id && (
-                <ContractsPanel
-                  eventId={id}
-                  clientId={event.client_id}
-                  clientName={(event as any).client_name}
-                  clientEmail={(event as any).clients?.primary_contact_email}
-                  quoteId={(event as any).quote_id}
-                  eventName={(event as any).event_name}
-                  eventDate={(event as any).event_date}
-                  defaultOpen={true}
-                />
-              )}
             </motion.div>
 
-            {/* Column 3: Quick Actions, Mail History, Workflow, Tasks, Status */}
+            {/* Column 2: Status, Mail History */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.05 }}
               className="space-y-6"
             >
-              {/* Quick Actions */}
-              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-                <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
-                <div className="space-y-2">
-                  <Link to={`/events/${id}/day-of`} className="block">
-                    <Button variant="default" className="w-full justify-start">
-                      <Play className="h-4 w-4 mr-2" />
-                      {isAdmin ? 'Day-Of View' : 'Job Sheet'}
-                    </Button>
-                  </Link>
-                  <Link to={`/events/${id}/worksheets`} className="block">
-                    <Button variant="outline" className="w-full justify-start">
-                      View Worksheets
-                    </Button>
-                  </Link>
-                  {isAdmin && (
-                    <Button variant="outline" className="w-full justify-start" onClick={() => setSendEmailOpen(true)}>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Mail History */}
-              {isAdmin && id && (
-                <MailHistoryPanel eventId={id} maxItems={5} />
-              )}
-
-              {/* Workflow Rail - Admin/Ops Only */}
-              {isAdmin && id && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <InitializeWorkflowDialog 
-                      eventId={id} 
-                      currentTemplateId={(event as any).workflow_template_id}
-                    />
-                  </div>
-                  <JobWorkflowRail eventId={id} isAdmin={isAdmin} />
-                </div>
-              )}
-
-              {/* Setup Tasks */}
-              {isAdmin && id && <EventTasksCard eventId={id} />}
-
-
+              {/* Status */}
               {isAdmin && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <h2 className="text-lg font-display font-semibold mb-4">Status</h2>
@@ -647,6 +579,73 @@ export default function EventDetail() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Mail History */}
+              {isAdmin && id && (
+                <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
+            </motion.div>
+
+            {/* Column 3: Quick Actions, Workflow, Tasks, Contracts */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-6"
+            >
+              {/* Quick Actions */}
+              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
+                <div className="space-y-2">
+                  <Link to={`/events/${id}/day-of`} className="block">
+                    <Button variant="default" className="w-full justify-start">
+                      <Play className="h-4 w-4 mr-2" />
+                      {isAdmin ? 'Day-Of View' : 'Job Sheet'}
+                    </Button>
+                  </Link>
+                  <Link to={`/events/${id}/worksheets`} className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      View Worksheets
+                    </Button>
+                  </Link>
+                  {isAdmin && (
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setSendEmailOpen(true)}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send Email
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Workflow Rail - Admin/Ops Only */}
+              {isAdmin && id && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <InitializeWorkflowDialog 
+                      eventId={id} 
+                      currentTemplateId={(event as any).workflow_template_id}
+                    />
+                  </div>
+                  <JobWorkflowRail eventId={id} isAdmin={isAdmin} />
+                </div>
+              )}
+
+              {/* Setup Tasks */}
+              {isAdmin && id && <EventTasksCard eventId={id} />}
+
+              {/* Contracts Panel */}
+              {isAdmin && id && event.client_id && (
+                <ContractsPanel
+                  eventId={id}
+                  clientId={event.client_id}
+                  clientName={(event as any).client_name}
+                  clientEmail={(event as any).clients?.primary_contact_email}
+                  quoteId={(event as any).quote_id}
+                  eventName={(event as any).event_name}
+                  eventDate={(event as any).event_date}
+                  defaultOpen={true}
+                />
               )}
             </motion.div>
           </div>
