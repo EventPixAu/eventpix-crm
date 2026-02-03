@@ -54,6 +54,7 @@ interface SendOpsEmailDialogProps {
     venue_address?: string | null;
     client_name: string;
     client_id?: string | null;
+    primary_contact_name?: string | null;
   };
   recipients: Recipient[];
 }
@@ -105,6 +106,11 @@ export function SendOpsEmailDialog({
 
   // Replace merge fields - supports both simple {{field}} and dot-notation {{object.field}}
   const replaceMergeFields = (text: string, recipientName?: string) => {
+    // Get primary contact name - prefer from eventData, fallback to first client recipient
+    const primaryContactName = eventData.primary_contact_name || 
+      recipients.find(r => r.type === 'client')?.name || 
+      eventData.client_name;
+    
     return text
       // Event fields - both formats
       .replace(/\{\{event_name\}\}/gi, eventData.event_name)
@@ -123,7 +129,7 @@ export function SendOpsEmailDialog({
       .replace(/\{\{client_name\}\}/gi, eventData.client_name)
       .replace(/\{\{client\.name\}\}/gi, eventData.client_name)
       .replace(/\{\{client\.business_name\}\}/gi, eventData.client_name)
-      .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || eventData.client_name)
+      .replace(/\{\{client\.primary_contact_name\}\}/gi, primaryContactName)
       // Photographer/recipient
       .replace(/\{\{photographer_name\}\}/gi, recipientName || 'Team Member')
       .replace(/\{\{recipient_name\}\}/gi, recipientName || 'Team Member');
