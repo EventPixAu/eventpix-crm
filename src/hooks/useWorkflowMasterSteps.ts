@@ -12,7 +12,7 @@ export interface WorkflowMasterStep {
   completion_type: 'manual' | 'auto';
   auto_trigger_event: string | null;
   date_offset_days: number | null;
-  date_offset_reference: 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | null;
+  date_offset_reference: 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | 'previous_step' | null;
   help_text: string | null;
   is_active: boolean;
   created_at: string;
@@ -41,12 +41,14 @@ function getDateOffsetReferenceRank(
       return 0;
     case 'lead_created':
       return 1;
-    case 'event_date':
+    case 'previous_step':
       return 2;
-    case 'delivery_deadline':
+    case 'event_date':
       return 3;
-    default:
+    case 'delivery_deadline':
       return 4;
+    default:
+      return 5;
   }
 }
 

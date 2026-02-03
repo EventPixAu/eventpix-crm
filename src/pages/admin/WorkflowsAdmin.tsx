@@ -87,6 +87,7 @@ function formatDateOffset(step: WorkflowMasterStep): string | null {
     job_accepted: 'job accepted',
     event_date: 'event date',
     delivery_deadline: 'delivery deadline',
+    previous_step: 'previous step',
   };
   
   const refLabel = refLabels[ref] || ref;
@@ -1056,7 +1057,7 @@ export default function WorkflowsAdmin() {
                     value={editingStep.date_offset_reference || ''}
                     onValueChange={v => setEditingStep({ 
                       ...editingStep, 
-                      date_offset_reference: v as 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | null 
+                      date_offset_reference: v as 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | 'previous_step' | null 
                     })}
                   >
                     <SelectTrigger>
@@ -1067,6 +1068,7 @@ export default function WorkflowsAdmin() {
                       <SelectItem value="lead_created">Lead Created</SelectItem>
                       <SelectItem value="job_accepted">Job Accepted</SelectItem>
                       <SelectItem value="delivery_deadline">Delivery Deadline</SelectItem>
+                      <SelectItem value="previous_step">Previous Step Completed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
