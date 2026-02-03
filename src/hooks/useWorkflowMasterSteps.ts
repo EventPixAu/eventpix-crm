@@ -159,36 +159,44 @@ async function reorderStepsByDateOffset(phase: WorkflowPhase) {
     return ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0);
   });
 
-  // Merge back: insert manual steps at their original relative positions
-  // For simplicity, place auto-sorted steps first, then keep manual steps at their original sort_order
-  // This allows manual drag-and-drop to position them anywhere
-  const allSorted = [...sortedAuto, ...manualSteps].sort((a, b) => {
-    // If both are manual, preserve relative order
-    const aIsManual = (a as any).date_offset_reference === 'previous_step';
-    const bIsManual = (b as any).date_offset_reference === 'previous_step';
-    
-    // Manual steps keep their existing sort_order as anchor
-    if (aIsManual && bIsManual) {
-      return ((a as any).sort_order ?? 0) - ((b as any).sort_order ?? 0);
-    }
-    
-    // For mixed comparisons, use current indices from sorted arrays
-    if (aIsManual) {
-      // Compare manual step's sort_order against auto step's new position
-      const autoIndex = sortedAuto.findIndex(s => (s as any).id === (b as any).id);
-      return ((a as any).sort_order ?? 0) - autoIndex;
-    }
-    if (bIsManual) {
-      const autoIndex = sortedAuto.findIndex(s => (s as any).id === (a as any).id);
-      return autoIndex - ((b as any).sort_order ?? 0);
-    }
-    
-    // Both auto-sorted: use their sorted order
-    return sortedAuto.findIndex(s => (s as any).id === (a as any).id) - 
-           sortedAuto.findIndex(s => (s as any).id === (b as any).id);
+  // Build final list: interleave manual steps at their current sort_order positions
+  // Create a map of position -> manual step for steps that should be inserted
+  const manualByPosition = new Map<number, typeof manualSteps[0]>();
+  manualSteps.forEach((s: any) => {
+    manualByPosition.set(s.sort_order ?? 0, s);
   });
 
-  const updates = allSorted.map((step, index) =>
+  // Build the final ordered list
+  const finalList: typeof phaseSteps = [];
+  let autoIndex = 0;
+  const totalCount = phaseSteps.length;
+
+  for (let pos = 0; pos < totalCount; pos++) {
+    const manualStep = manualByPosition.get(pos);
+    if (manualStep) {
+      // Insert manual step at its designated position
+      finalList.push(manualStep);
+    } else if (autoIndex < sortedAuto.length) {
+      // Insert next auto-sorted step
+      finalList.push(sortedAuto[autoIndex]);
+      autoIndex++;
+    }
+  }
+
+  // Add any remaining auto-sorted steps
+  while (autoIndex < sortedAuto.length) {
+    finalList.push(sortedAuto[autoIndex]);
+    autoIndex++;
+  }
+
+  // Add any manual steps whose sort_order was beyond current range
+  manualSteps.forEach((s: any) => {
+    if (!finalList.find((f: any) => f.id === s.id)) {
+      finalList.push(s);
+    }
+  });
+
+  const updates = finalList.map((step, index) =>
     supabase
       .from('workflow_master_steps')
       .update({ sort_order: index, updated_at: new Date().toISOString() })
