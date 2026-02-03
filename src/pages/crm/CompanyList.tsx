@@ -54,6 +54,7 @@ import {
   Upload,
   CheckSquare,
   Trash2,
+  FolderOpen,
   Database,
   ArrowUpDown,
   ArrowUp,
@@ -62,6 +63,7 @@ import {
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
 import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog';
+import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDialog';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
@@ -129,6 +131,7 @@ export default function CompanyList() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkCategoryDialogOpen, setBulkCategoryDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
@@ -397,6 +400,10 @@ export default function CompanyList() {
                   <CheckSquare className="h-4 w-4 mr-2" />
                   Set Status ({selectedIds.size})
                 </Button>
+                <Button variant="outline" onClick={() => setBulkCategoryDialogOpen(true)}>
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Set Category ({selectedIds.size})
+                </Button>
                 <Button 
                   variant="destructive" 
                   onClick={() => setDeleteDialogOpen(true)}
@@ -452,6 +459,13 @@ export default function CompanyList() {
         onOpenChange={setBulkDialogOpen}
         selectedCompanyIds={Array.from(selectedIds)}
         companies={companies}
+        onComplete={handleBulkComplete}
+      />
+
+      <BulkCategoryUpdateDialog
+        open={bulkCategoryDialogOpen}
+        onOpenChange={setBulkCategoryDialogOpen}
+        selectedCompanyIds={Array.from(selectedIds)}
         onComplete={handleBulkComplete}
       />
 
