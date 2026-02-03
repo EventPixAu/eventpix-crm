@@ -73,6 +73,33 @@ import {
 } from '@/hooks/useSalesWorkflowTemplates';
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 
+// Helper to format date offset display
+function formatDateOffset(step: WorkflowMasterStep): string | null {
+  if (step.date_offset_days === null || !step.date_offset_reference) {
+    return null;
+  }
+  
+  const days = step.date_offset_days;
+  const ref = step.date_offset_reference;
+  
+  const refLabels: Record<string, string> = {
+    lead_created: 'lead created',
+    job_accepted: 'job accepted',
+    event_date: 'event date',
+    delivery_deadline: 'delivery deadline',
+  };
+  
+  const refLabel = refLabels[ref] || ref;
+  
+  if (days === 0) {
+    return `On ${refLabel}`;
+  } else if (days > 0) {
+    return `${days} day${days !== 1 ? 's' : ''} after ${refLabel}`;
+  } else {
+    return `${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} before ${refLabel}`;
+  }
+}
+
 // Sortable Step Item Component for Operations Steps tab
 function SortableStepItem({ 
   step, 
@@ -99,6 +126,8 @@ function SortableStepItem({
     zIndex: isDragging ? 10 : undefined,
   };
 
+  const dateOffsetText = formatDateOffset(step);
+
   return (
     <div
       ref={setNodeRef}
@@ -116,6 +145,11 @@ function SortableStepItem({
       </button>
       <ClipboardList className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1">{step.label}</span>
+      {dateOffsetText && (
+        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+          {dateOffsetText}
+        </span>
+      )}
       {step.completion_type === 'auto' && (
         <Badge variant="outline" className="text-xs">Auto</Badge>
       )}
