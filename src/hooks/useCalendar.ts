@@ -38,6 +38,7 @@ export interface CalendarLead {
   venue_text: string | null;
   event_type_id: string | null;
   status: string;
+  session_label?: string; // Label for this specific session (e.g., "Day 1")
 }
 
 export interface ConflictInfo {
@@ -55,7 +56,20 @@ export function useCalendarLeads(currentMonth: Date) {
       const rangeStart = format(subMonths(startOfMonth(currentMonth), 1), 'yyyy-MM-dd');
       const rangeEnd = format(addMonths(endOfMonth(currentMonth), 1), 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
+      // First, get lead IDs that have sessions in the date range
+      const { data: leadSessionsInRange } = await supabase
+        .from('event_sessions')
+        .select('lead_id, session_date, label')
+        .not('lead_id', 'is', null)
+        .gte('session_date', rangeStart)
+        .lte('session_date', rangeEnd);
+
+      const leadIdsWithSessions = [...new Set((leadSessionsInRange || []).map(s => s.lead_id).filter(Boolean))];
+
+      // Build query to get leads that either:
+      // 1. Have estimated_event_date in range, OR
+      // 2. Have sessions in range (by ID)
+      let query = supabase
         .from('leads')
         .select(`
           id,
@@ -67,22 +81,72 @@ export function useCalendarLeads(currentMonth: Date) {
           client:clients(id, business_name)
         `)
         .in('status', ['new', 'qualified', 'quoted', 'contract_sent'])
-        .not('estimated_event_date', 'is', null)
-        .gte('estimated_event_date', rangeStart)
-        .lte('estimated_event_date', rangeEnd)
         .order('estimated_event_date', { ascending: true });
 
+      if (leadIdsWithSessions.length > 0) {
+        query = query.or(
+          `and(estimated_event_date.gte.${rangeStart},estimated_event_date.lte.${rangeEnd},estimated_event_date.not.is.null),id.in.(${leadIdsWithSessions.join(',')})`
+        );
+      } else {
+        query = query
+          .not('estimated_event_date', 'is', null)
+          .gte('estimated_event_date', rangeStart)
+          .lte('estimated_event_date', rangeEnd);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map(lead => ({
-        id: lead.id,
-        lead_name: lead.lead_name,
-        client_name: (lead.client as any)?.business_name || 'Unknown',
-        estimated_date: lead.estimated_event_date!,
-        venue_text: lead.venue_text,
-        event_type_id: lead.event_type_id,
-        status: lead.status,
-      })) as CalendarLead[];
+      // Build calendar entries - one per session date for leads with sessions
+      const calendarEntries: CalendarLead[] = [];
+      const sessionsByLeadId = new Map<string, Array<{ session_date: string; label: string | null }>>();
+      
+      (leadSessionsInRange || []).forEach(session => {
+        if (session.lead_id) {
+          if (!sessionsByLeadId.has(session.lead_id)) {
+            sessionsByLeadId.set(session.lead_id, []);
+          }
+          sessionsByLeadId.get(session.lead_id)!.push({
+            session_date: session.session_date,
+            label: session.label,
+          });
+        }
+      });
+
+      (data || []).forEach(lead => {
+        const sessions = sessionsByLeadId.get(lead.id);
+        
+        if (sessions && sessions.length > 0) {
+          // Lead has sessions - create an entry for each session date
+          sessions.forEach(session => {
+            calendarEntries.push({
+              id: lead.id,
+              lead_name: session.label ? `${lead.lead_name} - ${session.label}` : lead.lead_name,
+              client_name: (lead.client as any)?.business_name || 'Unknown',
+              estimated_date: session.session_date,
+              venue_text: lead.venue_text,
+              event_type_id: lead.event_type_id,
+              status: lead.status,
+              session_label: session.label || undefined,
+            });
+          });
+        } else if (lead.estimated_event_date && 
+                   lead.estimated_event_date >= rangeStart && 
+                   lead.estimated_event_date <= rangeEnd) {
+          // No sessions - use estimated_event_date
+          calendarEntries.push({
+            id: lead.id,
+            lead_name: lead.lead_name,
+            client_name: (lead.client as any)?.business_name || 'Unknown',
+            estimated_date: lead.estimated_event_date,
+            venue_text: lead.venue_text,
+            event_type_id: lead.event_type_id,
+            status: lead.status,
+          });
+        }
+      });
+
+      return calendarEntries;
     },
   });
 }
