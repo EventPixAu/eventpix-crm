@@ -51,6 +51,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useEventTypes } from '@/hooks/useLookups';
+import { useUpdateEventType } from '@/hooks/useAdminLookups';
 import { 
   useWorkflowMasterSteps, 
   useAllEventTypeStepDefaults, 
@@ -314,6 +315,11 @@ export default function WorkflowsAdmin() {
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Edit Event Type State
+  const [editEventTypeDialog, setEditEventTypeDialog] = useState(false);
+  const [editEventTypeName, setEditEventTypeName] = useState('');
+  const updateEventType = useUpdateEventType();
   
   // Master Steps Editor State
   const [editingStep, setEditingStep] = useState<WorkflowMasterStep | null>(null);
@@ -662,16 +668,32 @@ export default function WorkflowsAdmin() {
                 {selectedEventType ? (
                   <div className="bg-card border border-border rounded-xl">
                     <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-                      <div>
-                        <h2 className="font-semibold">
-                          Steps for {eventTypes.find(t => t.id === selectedEventType)?.name}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedSteps.length === 0 
-                            ? 'No steps selected - all active steps will be used'
-                            : `${selectedSteps.length} step(s) selected`
-                          }
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <h2 className="font-semibold">
+                            Steps for {eventTypes.find(t => t.id === selectedEventType)?.name}
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedSteps.length === 0 
+                              ? 'No steps selected - all active steps will be used'
+                              : `${selectedSteps.length} step(s) selected`
+                            }
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            const eventType = eventTypes.find(t => t.id === selectedEventType);
+                            if (eventType) {
+                              setEditEventTypeName(eventType.name);
+                              setEditEventTypeDialog(true);
+                            }
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button 
@@ -1185,6 +1207,44 @@ export default function WorkflowsAdmin() {
               disabled={!newSalesWorkflow.name.trim() || createSalesWorkflow.isPending}
             >
               Create Workflow
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Type Dialog */}
+      <Dialog open={editEventTypeDialog} onOpenChange={setEditEventTypeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Event Type</DialogTitle>
+            <DialogDescription>
+              Update the name of this event type
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Event Type Name *</Label>
+              <Input
+                value={editEventTypeName}
+                onChange={e => setEditEventTypeName(e.target.value)}
+                placeholder="Event type name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditEventTypeDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedEventType && editEventTypeName.trim()) {
+                  updateEventType.mutate({ id: selectedEventType, name: editEventTypeName.trim() });
+                  setEditEventTypeDialog(false);
+                }
+              }}
+              disabled={!editEventTypeName.trim() || updateEventType.isPending}
+            >
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
