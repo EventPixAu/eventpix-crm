@@ -103,17 +103,30 @@ export function SendOpsEmailDialog({
     };
   }, [recipients]);
 
-  // Replace merge fields
+  // Replace merge fields - supports both simple {{field}} and dot-notation {{object.field}}
   const replaceMergeFields = (text: string, recipientName?: string) => {
     return text
-      .replace(/\{\{event_name\}\}/g, eventData.event_name)
-      .replace(/\{\{event_date\}\}/g, eventData.event_date ? format(new Date(eventData.event_date), 'EEEE, MMMM d, yyyy') : '')
-      .replace(/\{\{start_time\}\}/g, eventData.start_time || 'TBD')
-      .replace(/\{\{end_time\}\}/g, eventData.end_time || 'TBD')
-      .replace(/\{\{venue_name\}\}/g, eventData.venue_name || '')
-      .replace(/\{\{venue_address\}\}/g, eventData.venue_address || '')
-      .replace(/\{\{client_name\}\}/g, eventData.client_name)
-      .replace(/\{\{photographer_name\}\}/g, recipientName || 'Team Member');
+      // Event fields - both formats
+      .replace(/\{\{event_name\}\}/gi, eventData.event_name)
+      .replace(/\{\{event\.event_name\}\}/gi, eventData.event_name)
+      .replace(/\{\{event_date\}\}/gi, eventData.event_date ? format(new Date(eventData.event_date), 'EEEE, MMMM d, yyyy') : '')
+      .replace(/\{\{event\.event_date\}\}/gi, eventData.event_date ? format(new Date(eventData.event_date), 'EEEE, MMMM d, yyyy') : '')
+      .replace(/\{\{start_time\}\}/gi, eventData.start_time || 'TBD')
+      .replace(/\{\{event\.start_time\}\}/gi, eventData.start_time || 'TBD')
+      .replace(/\{\{end_time\}\}/gi, eventData.end_time || 'TBD')
+      .replace(/\{\{event\.end_time\}\}/gi, eventData.end_time || 'TBD')
+      .replace(/\{\{venue_name\}\}/gi, eventData.venue_name || '')
+      .replace(/\{\{event\.venue_name\}\}/gi, eventData.venue_name || '')
+      .replace(/\{\{venue_address\}\}/gi, eventData.venue_address || '')
+      .replace(/\{\{event\.venue_address\}\}/gi, eventData.venue_address || '')
+      // Client fields - both formats
+      .replace(/\{\{client_name\}\}/gi, eventData.client_name)
+      .replace(/\{\{client\.name\}\}/gi, eventData.client_name)
+      .replace(/\{\{client\.business_name\}\}/gi, eventData.client_name)
+      .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || eventData.client_name)
+      // Photographer/recipient
+      .replace(/\{\{photographer_name\}\}/gi, recipientName || 'Team Member')
+      .replace(/\{\{recipient_name\}\}/gi, recipientName || 'Team Member');
   };
 
   // Apply template when selected
