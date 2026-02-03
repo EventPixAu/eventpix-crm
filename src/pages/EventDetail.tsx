@@ -304,16 +304,16 @@ export default function EventDetail() {
 
         <TabsContent value="overview">
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Main Info */}
+            {/* Column 1: Event Details, Sessions, Contacts */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="lg:col-span-2 space-y-6"
+              className="space-y-6"
             >
               {/* Event Details */}
               <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                 <h2 className="text-lg font-display font-semibold mb-4">Event Details</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
                       <Calendar className="h-4 w-4 text-primary" />
@@ -399,7 +399,7 @@ export default function EventDetail() {
                   </div>
 
                   {event.venue_name && (
-                    <div className="flex items-start gap-3 sm:col-span-2">
+                    <div className="flex items-start gap-3">
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <MapPin className="h-4 w-4 text-primary" />
                       </div>
@@ -416,7 +416,7 @@ export default function EventDetail() {
                 
                 {/* Venue Access & Parking Notes */}
                 {((event as any).venue_access_notes || (event as any).venue_parking_notes) && (
-                  <div className="mt-4 pt-4 border-t border-border grid sm:grid-cols-2 gap-4">
+                  <div className="mt-4 pt-4 border-t border-border space-y-3">
                     {(event as any).venue_access_notes && (
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Access Notes</p>
@@ -464,7 +464,15 @@ export default function EventDetail() {
                 phone: event.onsite_contact_phone,
                 }}
               />
+            </motion.div>
 
+            {/* Column 2: Additional Details, Documents, Contracts */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="space-y-6"
+            >
               {/* Coverage, Photography Instructions & Notes */}
               {(event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
@@ -510,7 +518,7 @@ export default function EventDetail() {
               )}
             </motion.div>
 
-            {/* Sidebar */}
+            {/* Column 3: Quick Actions, Mail History, Workflow, Tasks, Status */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
