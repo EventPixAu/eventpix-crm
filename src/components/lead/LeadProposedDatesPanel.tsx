@@ -43,7 +43,7 @@ export function LeadProposedDatesPanel({ leadId }: LeadProposedDatesPanelProps) 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-muted-foreground" />
-            <CardTitle className="text-base">Proposed Dates</CardTitle>
+            <CardTitle className="text-base">Event Sessions</CardTitle>
             {sessions.length > 0 && (
               <Badge variant="secondary" className="text-xs">
                 {sessions.length}
@@ -72,9 +72,9 @@ export function LeadProposedDatesPanel({ leadId }: LeadProposedDatesPanelProps) 
                       <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium">
                         {index + 1}
                       </div>
-                      <div>
+                    <div>
                         <span className="font-medium">
-                          {session.label || `Option ${index + 1}`}
+                          {session.label || `Day ${index + 1}`}
                         </span>
                         {session.session_date && (
                           <div className="text-sm text-muted-foreground">
