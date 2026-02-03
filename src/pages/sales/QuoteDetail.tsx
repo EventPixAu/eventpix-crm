@@ -297,7 +297,7 @@ export default function QuoteDetail() {
     });
   };
 
-  const handleSaveDiscount = async (discountPercent: number, discountAmount: number) => {
+  const handleSaveDiscount = async (discountPercent: number, discountAmount: number, discountLabel: string) => {
     if (!id) return;
     setSavingDiscount(true);
     try {
@@ -305,6 +305,7 @@ export default function QuoteDetail() {
         id,
         discount_percent: discountPercent,
         discount_amount: discountAmount,
+        discount_label: discountLabel,
       } as any);
     } finally {
       setSavingDiscount(false);
@@ -1069,6 +1070,7 @@ export default function QuoteDetail() {
         onOpenChange={setIsDiscountDialogOpen}
         currentDiscountPercent={(quote as any).discount_percent || 0}
         currentDiscountAmount={(quote as any).discount_amount || 0}
+        currentDiscountLabel={(quote as any).discount_label || ''}
         subtotal={quote.subtotal || 0}
         onSave={handleSaveDiscount}
         isSaving={savingDiscount}

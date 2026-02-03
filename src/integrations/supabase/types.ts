@@ -3758,6 +3758,7 @@ export type Database = {
           created_by: string | null
           declined_at: string | null
           discount_amount: number | null
+          discount_label: string | null
           discount_percent: number | null
           event_id: string | null
           expires_at: string | null
@@ -3794,6 +3795,7 @@ export type Database = {
           created_by?: string | null
           declined_at?: string | null
           discount_amount?: number | null
+          discount_label?: string | null
           discount_percent?: number | null
           event_id?: string | null
           expires_at?: string | null
@@ -3830,6 +3832,7 @@ export type Database = {
           created_by?: string | null
           declined_at?: string | null
           discount_amount?: number | null
+          discount_label?: string | null
           discount_percent?: number | null
           event_id?: string | null
           expires_at?: string | null
