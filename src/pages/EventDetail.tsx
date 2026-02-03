@@ -494,6 +494,20 @@ export default function EventDetail() {
               {id && (
                 <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
               )}
+              
+              {/* Contracts Panel */}
+              {isAdmin && id && event.client_id && (
+                <ContractsPanel
+                  eventId={id}
+                  clientId={event.client_id}
+                  clientName={(event as any).client_name}
+                  clientEmail={(event as any).clients?.primary_contact_email}
+                  quoteId={(event as any).quote_id}
+                  eventName={(event as any).event_name}
+                  eventDate={(event as any).event_date}
+                  defaultOpen={true}
+                />
+              )}
             </motion.div>
 
             {/* Sidebar */}
@@ -548,18 +562,6 @@ export default function EventDetail() {
               {/* Setup Tasks */}
               {isAdmin && id && <EventTasksCard eventId={id} />}
 
-              {/* Contracts Panel - Studio Ninja Style */}
-              {isAdmin && id && event.client_id && (
-                <ContractsPanel
-                  eventId={id}
-                  clientId={event.client_id}
-                  clientName={(event as any).client_name}
-                  quoteId={(event as any).quote_id}
-                  eventName={(event as any).event_name}
-                  eventDate={(event as any).event_date}
-                  defaultOpen={false}
-                />
-              )}
 
               {isAdmin && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
