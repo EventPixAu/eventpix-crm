@@ -13,7 +13,7 @@
  * - Bulk status update for selected companies
  * - Bulk delete for selected companies
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +55,9 @@ import {
   CheckSquare,
   Trash2,
   Database,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
@@ -62,6 +65,9 @@ import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog'
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
+
+type SortColumn = 'tags' | 'category' | 'source' | 'status' | null;
+type SortDirection = 'asc' | 'desc';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
 
@@ -125,6 +131,8 @@ export default function CompanyList() {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
@@ -294,6 +302,60 @@ export default function CompanyList() {
     },
   });
 
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-50" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3.5 w-3.5 ml-1" />
+      : <ArrowDown className="h-3.5 w-3.5 ml-1" />;
+  };
+
+  const sortedCompanies = useMemo(() => {
+    if (!sortColumn) return companies;
+    
+    return [...companies].sort((a, b) => {
+      let aVal: string = '';
+      let bVal: string = '';
+      
+      switch (sortColumn) {
+        case 'tags':
+          aVal = a.tags.join(',').toLowerCase();
+          bVal = b.tags.join(',').toLowerCase();
+          break;
+        case 'category':
+          aVal = (a.category?.name || '').toLowerCase();
+          bVal = (b.category?.name || '').toLowerCase();
+          break;
+        case 'source':
+          aVal = (a.lead_source || '').toLowerCase();
+          bVal = (b.lead_source || '').toLowerCase();
+          break;
+        case 'status':
+          aVal = a.display_status.toLowerCase();
+          bVal = b.display_status.toLowerCase();
+          break;
+      }
+      
+      // Empty values always go to the end
+      if (!aVal && bVal) return 1;
+      if (aVal && !bVal) return -1;
+      if (!aVal && !bVal) return 0;
+      
+      const comparison = aVal.localeCompare(bVal);
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [companies, sortColumn, sortDirection]);
+
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
   };
@@ -435,16 +497,48 @@ export default function CompanyList() {
                   )}
                   <TableHead>Company</TableHead>
                   <TableHead>Contact Info</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Source</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('tags')}
+                  >
+                    <div className="flex items-center">
+                      Tags
+                      <SortIcon column="tags" />
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('category')}
+                  >
+                    <div className="flex items-center">
+                      Category
+                      <SortIcon column="category" />
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('source')}
+                  >
+                    <div className="flex items-center">
+                      Source
+                      <SortIcon column="source" />
+                    </div>
+                  </TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center">
+                      Status
+                      <SortIcon column="status" />
+                    </div>
+                  </TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {companies.map((company) => (
+                {sortedCompanies.map((company) => (
                   <TableRow key={company.id}>
                     {canBulkEdit && (
                       <TableCell>
