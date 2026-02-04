@@ -256,20 +256,22 @@ export function ContractsPanel({
   };
   
   // Open send email dialog for a contract
-  const openSendEmailDialog = async (contract: Contract) => {
-    // First, ensure the contract has a public token by marking as sent if it's a draft
-    if (contract.status === 'draft' && !contract.public_token) {
-      try {
-        const result = await markAsSent.mutateAsync(contract.id);
-        // Update the selected contract with the new token
-        setSelectedContract({ ...contract, public_token: result.public_token, status: 'sent' as const });
-      } catch (error) {
-        return; // Error handled by hook
-      }
-    } else {
-      setSelectedContract(contract);
-    }
+  const openSendEmailDialog = (contract: Contract) => {
+    setSelectedContract(contract);
     setIsSendEmailOpen(true);
+  };
+  
+  // Handle successful email send - mark contract as sent
+  const handleContractEmailSent = async () => {
+    if (selectedContract && selectedContract.status === 'draft') {
+      try {
+        const result = await markAsSent.mutateAsync(selectedContract.id);
+        // Update the selected contract with the new token
+        setSelectedContract({ ...selectedContract, public_token: result.public_token, status: 'sent' as const });
+      } catch (error) {
+        // Error handled by hook
+      }
+    }
   };
   
   // Get the contract signing URL
@@ -806,6 +808,7 @@ The EventPix Team`}
           eventDate: eventDate,
           contractSignUrl: getContractSignUrl(selectedContract),
         }}
+        onSendSuccess={handleContractEmailSent}
       />
     </>
   );
