@@ -24,7 +24,17 @@ import {
   Eye,
   ExternalLink,
   ArrowRightCircle,
+  XCircle,
+  MoreHorizontal,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useUpdateQuote } from '@/hooks/useSales';
+import { useToast } from '@/hooks/use-toast';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -73,12 +83,14 @@ import {
 export default function LeadDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Don't fetch data for "new" - it's not a valid UUID
   const isCreateMode = id === 'new';
   
   const { data: lead, isLoading } = useLead(isCreateMode ? undefined : id);
   const updateLead = useUpdateLead();
+  const updateQuote = useUpdateQuote();
   
   // Workflow state
   const { data: workflowItems = [] } = useLeadWorkflowItems(isCreateMode ? undefined : id);
@@ -314,22 +326,62 @@ export default function LeadDetail(): JSX.Element {
           >
             <div className="space-y-2">
               {quotes.map((quote: any) => (
-                <Link
+                <div
                   key={quote.id}
-                  to={`/sales/quotes/${quote.id}`}
                   className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-2">
+                  <Link
+                    to={`/sales/quotes/${quote.id}`}
+                    className="flex items-center gap-2 flex-1"
+                  >
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{quote.quote_number || 'Draft Quote'}</span>
-                    <Badge variant="outline" className="text-xs">{quote.status}</Badge>
+                    <Badge 
+                      variant={quote.status === 'rejected' ? 'destructive' : quote.status === 'accepted' ? 'default' : 'outline'} 
+                      className="text-xs"
+                    >
+                      {quote.status}
+                    </Badge>
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    {quote.total_estimate && (
+                      <span className="font-semibold">
+                        ${quote.total_estimate.toLocaleString()}
+                      </span>
+                    )}
+                    {quote.status !== 'accepted' && quote.status !== 'rejected' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-popover">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate(`/sales/quotes/${quote.id}`);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Quote
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              await updateQuote.mutateAsync({ id: quote.id, status: 'rejected' });
+                              toast({ title: 'Quote marked as rejected' });
+                            }}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Mark as Rejected
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
-                  {quote.total_estimate && (
-                    <span className="font-semibold">
-                      ${quote.total_estimate.toLocaleString()}
-                    </span>
-                  )}
-                </Link>
+                </div>
               ))}
             </div>
           </LeadCollapsiblePanel>
