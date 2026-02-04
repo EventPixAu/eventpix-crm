@@ -59,6 +59,7 @@ interface SendEmailDialogProps {
   defaultBody?: string;
   context: 'quote' | 'contract';
   mergeContext?: MergeFieldContext;
+  onSendSuccess?: () => void | Promise<void>;
 }
 
 export function SendEmailDialog({
@@ -75,6 +76,7 @@ export function SendEmailDialog({
   defaultBody = '',
   context,
   mergeContext,
+  onSendSuccess,
 }: SendEmailDialogProps) {
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
@@ -355,7 +357,11 @@ export function SendEmailDialog({
       clientId: clientId || undefined,
       templateId: selectedTemplateId || undefined,
     }, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Call the success callback (e.g., to mark contract as sent)
+        if (onSendSuccess) {
+          await onSendSuccess();
+        }
         onOpenChange(false);
       }
     });
