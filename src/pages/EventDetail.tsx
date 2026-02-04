@@ -498,7 +498,13 @@ export default function EventDetail() {
               {/* Coverage, Photography Instructions & Notes */}
               {(event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-                  <h2 className="text-lg font-display font-semibold mb-4">Additional Details</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-display font-semibold">Additional Details</h2>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/events/${id}/edit`)}>
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
                   {event.coverage_details && (
                     <div className="mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
