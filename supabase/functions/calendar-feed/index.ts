@@ -240,9 +240,12 @@ Deno.serve(async (req) => {
     const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const futureDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
 
-    // For privileged users, show all events. Otherwise, only events assigned to them.
+    // For privileged users, show all events AND leads. Otherwise, only events assigned to them.
     let assignedEvents: any[] = [];
+    let leads: any[] = [];
+    
     if (isPrivilegedUser) {
+      // Fetch all confirmed events
       const { data: events, error: eventsError } = await supabase
         .from('events')
         .select(`
@@ -281,6 +284,37 @@ Deno.serve(async (req) => {
 
       // Normalize to match the existing loop's shape (assignment.events)
       assignedEvents = (events || []).map((e) => ({ events: e }));
+      
+      // Fetch active leads (not converted, not lost) with proposed dates
+      const { data: leadsData, error: leadsError } = await supabase
+        .from('leads')
+        .select(`
+          id,
+          lead_name,
+          client_name,
+          proposed_event_date,
+          event_type,
+          timezone,
+          venue_name,
+          venue_address,
+          status,
+          lead_proposed_dates (
+            id,
+            proposed_date,
+            start_time,
+            end_time,
+            notes
+          )
+        `)
+        .in('status', ['new', 'contacted', 'qualified', 'proposal_sent', 'negotiating'])
+        .or(`proposed_event_date.gte.${format(pastDate, 'yyyy-MM-dd')},lead_proposed_dates.proposed_date.gte.${format(pastDate, 'yyyy-MM-dd')}`);
+
+      if (leadsError) {
+        console.error('Error fetching leads:', leadsError);
+        // Don't fail - just proceed without leads
+      } else {
+        leads = leadsData || [];
+      }
     } else {
       const { data: assignments, error: assignmentError } = await supabase
         .from('event_assignments')
@@ -494,6 +528,132 @@ Deno.serve(async (req) => {
         }
         
         icsLines.push(foldLine(`SUMMARY:${escapeICS(eventTitle)}`));
+        
+        if (description) {
+          icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));
+        }
+        
+        if (location) {
+          icsLines.push(foldLine(`LOCATION:${escapeICS(location)}`));
+        }
+        
+        icsLines.push('END:VEVENT');
+      }
+    }
+
+    // Generate VEVENT entries for leads (privileged users only)
+    for (const lead of leads) {
+      const leadTz = lead.timezone || 'Australia/Sydney';
+      usedTimezones.add(leadTz);
+      
+      const proposedDates = (lead.lead_proposed_dates as any[]) || [];
+      
+      // If lead has proposed dates, create one VEVENT per proposed date
+      if (proposedDates.length > 0) {
+        for (const proposedDate of proposedDates) {
+          const dateStr = proposedDate.proposed_date;
+          // Filter by date range
+          if (dateStr < format(pastDate, 'yyyy-MM-dd') || dateStr > format(futureDate, 'yyyy-MM-dd')) {
+            continue;
+          }
+
+          const tzAbbr = getTzAbbr(leadTz);
+          const dtstart = formatICSDate(dateStr, proposedDate.start_time);
+          const dtend = proposedDate.end_time
+            ? formatICSDate(dateStr, proposedDate.end_time)
+            : formatICSDate(dateStr, proposedDate.start_time || '10:00:00');
+
+          const location = [lead.venue_name, lead.venue_address]
+            .filter(Boolean)
+            .join(', ');
+
+          // Prefix with [LEAD] and timezone if not Sydney
+          const leadTitle = leadTz !== 'Australia/Sydney'
+            ? `[LEAD ${tzAbbr}] ${lead.lead_name}`
+            : `[LEAD] ${lead.lead_name}`;
+
+          const descriptionParts = [
+            `Client: ${lead.client_name || 'TBC'}`,
+            `Status: ${lead.status}`,
+          ];
+          
+          if (lead.event_type) {
+            descriptionParts.push(`Type: ${lead.event_type}`);
+          }
+          
+          if (leadTz !== 'Australia/Sydney') {
+            descriptionParts.push(`Timezone: ${leadTz}`);
+          }
+          
+          if (proposedDate.notes) {
+            descriptionParts.push(`Notes: ${proposedDate.notes}`);
+          }
+          
+          const description = descriptionParts.join('\\n');
+
+          icsLines.push('BEGIN:VEVENT');
+          icsLines.push(`UID:lead-${lead.id}-date-${proposedDate.id}@eventpix.app`);
+          icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
+          
+          if (proposedDate.start_time) {
+            icsLines.push(`DTSTART;TZID=${leadTz}:${dtstart}`);
+            icsLines.push(`DTEND;TZID=${leadTz}:${dtend}`);
+          } else {
+            icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(dateStr)}`);
+            icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(dateStr)}`);
+          }
+          
+          icsLines.push(foldLine(`SUMMARY:${escapeICS(leadTitle)}`));
+          
+          if (description) {
+            icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));
+          }
+          
+          if (location) {
+            icsLines.push(foldLine(`LOCATION:${escapeICS(location)}`));
+          }
+          
+          icsLines.push('END:VEVENT');
+        }
+      } else if (lead.proposed_event_date) {
+        // No proposed dates table entries - use main proposed_event_date
+        const dateStr = lead.proposed_event_date;
+        if (dateStr < format(pastDate, 'yyyy-MM-dd') || dateStr > format(futureDate, 'yyyy-MM-dd')) {
+          continue;
+        }
+
+        const tzAbbr = getTzAbbr(leadTz);
+        
+        const location = [lead.venue_name, lead.venue_address]
+          .filter(Boolean)
+          .join(', ');
+
+        // Prefix with [LEAD] and timezone if not Sydney
+        const leadTitle = leadTz !== 'Australia/Sydney'
+          ? `[LEAD ${tzAbbr}] ${lead.lead_name}`
+          : `[LEAD] ${lead.lead_name}`;
+
+        const descriptionParts = [
+          `Client: ${lead.client_name || 'TBC'}`,
+          `Status: ${lead.status}`,
+        ];
+        
+        if (lead.event_type) {
+          descriptionParts.push(`Type: ${lead.event_type}`);
+        }
+        
+        if (leadTz !== 'Australia/Sydney') {
+          descriptionParts.push(`Timezone: ${leadTz}`);
+        }
+        
+        const description = descriptionParts.join('\\n');
+
+        icsLines.push('BEGIN:VEVENT');
+        icsLines.push(`UID:lead-${lead.id}@eventpix.app`);
+        icsLines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
+        icsLines.push(`DTSTART;VALUE=DATE:${formatICSDate(dateStr)}`);
+        icsLines.push(`DTEND;VALUE=DATE:${formatICSDate(dateStr)}`);
+        icsLines.push(foldLine(`SUMMARY:${escapeICS(leadTitle)}`));
         
         if (description) {
           icsLines.push(foldLine(`DESCRIPTION:${escapeICS(description)}`));
