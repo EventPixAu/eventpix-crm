@@ -257,22 +257,34 @@ export function ContractsPanel({
   };
   
   // Open send email dialog for a contract
-  const openSendEmailDialog = (contract: Contract) => {
-    setSelectedContract(contract);
-    setIsSendEmailOpen(true);
+  // For draft contracts, we generate the token FIRST so the email contains the correct signing URL
+  const openSendEmailDialog = async (contract: Contract) => {
+    // If the contract is a draft without a token, generate one first
+    if (contract.status === 'draft' && !contract.public_token) {
+      try {
+        const result = await markAsSent.mutateAsync(contract.id);
+        // Update contract with the new token and status
+        const updatedContract = { 
+          ...contract, 
+          public_token: result.public_token || null, 
+          status: 'sent' as const 
+        };
+        setSelectedContract(updatedContract);
+        setIsSendEmailOpen(true);
+      } catch (error) {
+        // Error handled by hook - don't open dialog if token generation failed
+        return;
+      }
+    } else {
+      // Contract already has a token (resending)
+      setSelectedContract(contract);
+      setIsSendEmailOpen(true);
+    }
   };
   
-  // Handle successful email send - mark contract as sent
+  // Handle successful email send - no longer needs to mark as sent since we do it before opening dialog
   const handleContractEmailSent = async () => {
-    if (selectedContract && selectedContract.status === 'draft') {
-      try {
-        const result = await markAsSent.mutateAsync(selectedContract.id);
-        // Update the selected contract with the new token
-        setSelectedContract({ ...selectedContract, public_token: result.public_token, status: 'sent' as const });
-      } catch (error) {
-        // Error handled by hook
-      }
-    }
+    // Token already generated in openSendEmailDialog, just close and cleanup
   };
   
   // Get the contract signing URL using public base URL for client-facing links
