@@ -164,6 +164,37 @@ export default function EventDetail() {
       return acc;
     }, {} as Record<string, string>);
   }, [deliveryMethods]);
+  
+  // Resolve primary contact email for contracts/emails
+  // Priority: event_contacts (primary) > client.primary_contact_email > company_email
+  const primaryContactEmail = useMemo(() => {
+    // First try primary event contact
+    const primaryContact = eventContacts.find((c: any) => c.contact_type === 'primary');
+    if (primaryContact) {
+      return primaryContact.contact_email || primaryContact.client_contact?.email;
+    }
+    // Fall back to any event contact with email
+    const anyContact = eventContacts.find((c: any) => c.contact_email || c.client_contact?.email);
+    if (anyContact) {
+      return anyContact.contact_email || anyContact.client_contact?.email;
+    }
+    // Fall back to client primary contact email
+    const client = (event?.client_id ? (event as any).clients : clientByName) as any;
+    return client?.primary_contact_email || client?.company_email || null;
+  }, [eventContacts, event, clientByName]);
+  
+  const primaryContactName = useMemo(() => {
+    const primaryContact = eventContacts.find((c: any) => c.contact_type === 'primary');
+    if (primaryContact) {
+      return primaryContact.contact_name || primaryContact.client_contact?.contact_name;
+    }
+    const anyContact = eventContacts.find((c: any) => c.contact_name || c.client_contact?.contact_name);
+    if (anyContact) {
+      return anyContact.contact_name || anyContact.client_contact?.contact_name;
+    }
+    const client = (event?.client_id ? (event as any).clients : clientByName) as any;
+    return client?.primary_contact_name || (event as any)?.client_name || null;
+  }, [eventContacts, event, clientByName]);
 
   // Helper to get event type name
   const getEventTypeName = () => {
@@ -591,8 +622,8 @@ export default function EventDetail() {
                 <ContractsPanel
                   eventId={id}
                   clientId={event.client_id}
-                  clientName={(event as any).client_name}
-                  clientEmail={(event as any).clients?.primary_contact_email}
+                  clientName={primaryContactName || (event as any).client_name}
+                  clientEmail={primaryContactEmail}
                   quoteId={(event as any).quote_id}
                   eventName={(event as any).event_name}
                   eventDate={(event as any).event_date}
