@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
 import { format, differenceInHours } from 'date-fns';
 import { Check, Copy, Download, ExternalLink, QrCode, ToggleLeft, AlertTriangle, Clock, ShieldAlert } from 'lucide-react';
@@ -45,8 +46,8 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
   const isDeadlineApproaching = hoursUntilDeadline !== null && hoursUntilDeadline > 0 && hoursUntilDeadline <= 24;
   const isDeadlinePassed = hoursUntilDeadline !== null && hoursUntilDeadline <= 0;
 
-  // Get the public URL from the origin
-  const publicUrl = `${window.location.origin}/g/${record?.qr_token}`;
+  // Get the public URL using published domain for client-facing links
+  const publicUrl = `${getPublicBaseUrl()}/g/${record?.qr_token}`;
 
   const handleSave = async () => {
     if (record) {

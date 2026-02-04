@@ -5,6 +5,7 @@
  * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate, Delete.
  */
 import { useState, useMemo } from 'react';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
 import {
@@ -274,10 +275,10 @@ export function ContractsPanel({
     }
   };
   
-  // Get the contract signing URL
+  // Get the contract signing URL using public base URL for client-facing links
   const getContractSignUrl = (contract: Contract | null) => {
     if (!contract?.public_token) return undefined;
-    return `${window.location.origin}/contract/sign/${contract.public_token}`;
+    return `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`;
   };
   
   const handleSignContract = async () => {
@@ -334,7 +335,7 @@ export function ContractsPanel({
   
   const copyPublicLink = async (contract: Contract) => {
     if (contract.public_token) {
-      const publicUrl = `${window.location.origin}/public/contract/${contract.public_token}`;
+      const publicUrl = `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`;
       await navigator.clipboard.writeText(publicUrl);
       toast({ title: 'Signing link copied to clipboard' });
     }

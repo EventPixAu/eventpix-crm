@@ -5,6 +5,7 @@
  * Access: Admin, Sales roles only (enforced via RLS)
  */
 import { useState } from 'react';
+import { getPublicBaseUrl } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -54,10 +55,10 @@ export default function ContractDetail() {
   const clientData = contract?.client as any;
   const leadData = contract?.lead as any;
   
-  // Generate the public signing URL
+  // Generate the public signing URL using published domain for client-facing links
   const getPublicSigningUrl = () => {
     if (!contract?.public_token) return null;
-    return `${window.location.origin}/contract/sign/${contract.public_token}`;
+    return `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`;
   };
 
   const handleCopyLink = () => {
@@ -418,7 +419,7 @@ export default function ContractDetail() {
           venueName: leadData?.venue_text,
           leadName: leadData?.lead_name,
           contractSignUrl: contract.public_token
-            ? `${window.location.origin}/contract/sign/${contract.public_token}`
+            ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
             : undefined,
         }}
       />
