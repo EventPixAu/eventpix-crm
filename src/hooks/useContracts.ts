@@ -45,6 +45,7 @@ export interface ContractInsert {
   status?: ContractStatus;
   sent_at?: string | null;
   signed_at?: string | null;
+  rendered_html?: string | null;
 }
 
 export interface ContractUpdate extends Partial<ContractInsert> {

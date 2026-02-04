@@ -53,6 +53,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -63,6 +64,7 @@ import {
   useSignContractInternal,
   useCreateContract,
   useDeleteContract,
+  useUpdateContract,
 } from '@/hooks/useContracts';
 import { 
   useActiveContractTemplates,
@@ -122,6 +124,7 @@ export function ContractsPanel({
   const signContract = useSignContractInternal();
   const createContract = useCreateContract();
   const deleteContract = useDeleteContract();
+  const updateContract = useUpdateContract();
   
   // State
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -134,7 +137,7 @@ export function ContractsPanel({
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
-  const [editTemplateId, setEditTemplateId] = useState<string>('');
+  const [editContractHtml, setEditContractHtml] = useState('');
   const [editContractTitle, setEditContractTitle] = useState('');
   const [signedByName, setSignedByName] = useState('');
   const [signedByEmail, setSignedByEmail] = useState('');
@@ -278,37 +281,28 @@ export function ContractsPanel({
   const openEditDialog = (contract: Contract) => {
     setSelectedContract(contract);
     setEditContractTitle(contract.title);
-    setEditTemplateId(contract.template_id || '');
+    setEditContractHtml(contract.rendered_html || '');
     setIsEditOpen(true);
   };
   
-  // Handle editing a draft contract (regenerate from template)
-  const handleEditContract = async () => {
-    if (!selectedContract || !editTemplateId || !editContractTitle) {
+  // Handle saving edited contract content
+  const handleSaveContract = async () => {
+    if (!selectedContract || !editContractTitle) {
       toast({ title: 'Please fill in all required fields', variant: 'destructive' });
       return;
     }
     
     try {
-      // Delete the old contract
-      await deleteContract.mutateAsync(selectedContract.id);
-      
-      // Create a new one with the updated template/title
-      await generateContract.mutateAsync({
-        templateId: editTemplateId,
-        clientId,
-        leadId: leadId || null,
-        eventId: eventId || null,
-        quoteId: quoteId || null,
+      await updateContract.mutateAsync({
+        id: selectedContract.id,
         title: editContractTitle,
+        rendered_html: editContractHtml,
       });
       
       setIsEditOpen(false);
       setSelectedContract(null);
-      setEditTemplateId('');
+      setEditContractHtml('');
       setEditContractTitle('');
-      
-      toast({ title: 'Contract updated successfully' });
       
       // Invalidate relevant queries
       if (leadId) {
@@ -543,37 +537,32 @@ export function ContractsPanel({
 
       {/* Edit Contract Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Contract</DialogTitle>
             <DialogDescription>
-              Update the contract template or title. This will regenerate the contract content.
+              Edit the contract content directly. Changes are saved when you click "Save Changes".
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 flex-1 overflow-hidden flex flex-col">
             <div className="space-y-2">
-              <Label htmlFor="editTemplate">Template *</Label>
-              <Select value={editTemplateId} onValueChange={setEditTemplateId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="editTitle">Contract Title *</Label>
+              <Label htmlFor="editTitle">Contract Title</Label>
               <Input
                 id="editTitle"
                 value={editContractTitle}
                 onChange={(e) => setEditContractTitle(e.target.value)}
                 placeholder="Photography Agreement"
+              />
+            </div>
+            
+            <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+              <Label htmlFor="editContent">Contract Content (HTML)</Label>
+              <Textarea
+                id="editContent"
+                value={editContractHtml}
+                onChange={(e) => setEditContractHtml(e.target.value)}
+                placeholder="<p>Contract content...</p>"
+                className="flex-1 min-h-[400px] font-mono text-sm resize-none"
               />
             </div>
           </div>
@@ -582,10 +571,10 @@ export function ContractsPanel({
               Cancel
             </Button>
             <Button 
-              onClick={handleEditContract} 
-              disabled={generateContract.isPending || deleteContract.isPending || !editTemplateId || !editContractTitle}
+              onClick={handleSaveContract} 
+              disabled={updateContract.isPending || !editContractTitle}
             >
-              {(generateContract.isPending || deleteContract.isPending) ? 'Updating...' : 'Update Contract'}
+              {updateContract.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
