@@ -11,12 +11,20 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   useEventCrewChecklists, 
   useToggleCrewChecklistItem,
-  useCreateCrewChecklistForUser,
   useDeleteCrewChecklistItem,
+  useCrewChecklistTemplates,
 } from '@/hooks/useCrewChecklists';
+import { useCreateCrewChecklistFromTemplate } from '@/hooks/useCreateCrewChecklistFromTemplate';
 import type { EventAssignment } from '@/hooks/useEvents';
 
 interface AssignmentChecklistPanelProps {
@@ -26,9 +34,12 @@ interface AssignmentChecklistPanelProps {
 
 export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChecklistPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  
   const { data: checklists = [] } = useEventCrewChecklists(eventId);
+  const { data: templates = [] } = useCrewChecklistTemplates();
   const toggleItem = useToggleCrewChecklistItem();
-  const createChecklist = useCreateCrewChecklistForUser();
+  const createChecklist = useCreateCrewChecklistFromTemplate();
   const deleteItem = useDeleteCrewChecklistItem();
   
   // Find checklist for this assignment's user
@@ -38,21 +49,19 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
   const completedCount = checklist?.items.filter(i => i.is_done).length || 0;
   const totalCount = checklist?.items.length || 0;
 
+  // Filter templates to show role-specific first, then default ones
+  const availableTemplates = templates.filter(t => t.is_active);
+
   const handleCreateChecklist = async () => {
     if (!userId) return;
-    
-    console.log('Creating checklist for assignment:', {
-      eventId,
-      userId,
-      staffRoleId: assignment.staff_role_id,
-      assignmentId: assignment.id,
-    });
+    if (!selectedTemplateId) return;
     
     await createChecklist.mutateAsync({
       eventId,
       userId,
-      staffRoleId: assignment.staff_role_id || undefined,
+      templateId: selectedTemplateId,
     });
+    setSelectedTemplateId('');
   };
 
   const handleToggleItem = async (itemId: string, currentState: boolean) => {
@@ -102,13 +111,31 @@ export function AssignmentChecklistPanel({ eventId, assignment }: AssignmentChec
       
       <CollapsibleContent className="mt-2">
         {!checklist ? (
-          <div className="text-center py-3">
-            <p className="text-xs text-muted-foreground mb-2">No checklist for this assignment</p>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">Select a checklist template:</p>
+            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Choose template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableTemplates.map((template) => (
+                  <SelectItem key={template.id} value={template.id} className="text-xs">
+                    {template.name}
+                    {template.staff_role_id && (
+                      <span className="text-muted-foreground ml-1">
+                        ({template.items.length} items)
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button 
               size="sm" 
               variant="outline"
               onClick={handleCreateChecklist}
-              disabled={createChecklist.isPending}
+              disabled={createChecklist.isPending || !selectedTemplateId}
+              className="w-full"
             >
               Create Checklist
             </Button>
