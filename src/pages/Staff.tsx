@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStaff, useCreateStaff, useProfiles, Staff as StaffType } from '@/hooks/useStaff';
+import { useStaff, useCreateStaff, useProfiles, useStaffDirectory, Staff as StaffType } from '@/hooks/useStaff';
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -45,13 +45,32 @@ import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 
+// Unified team member type that works for both profiles and legacy staff
+interface UnifiedTeamMember {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  location: string | null;
+  role: 'photographer' | 'videographer' | 'assistant';
+  status: 'active' | 'inactive';
+  user_id: string | null;
+  source: 'profile' | 'staff';
+  // Legacy Staff fields for StaffBulkActions compatibility
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function Staff() {
   const { isAdmin } = useAuth();
-  const { data: staff = [], isLoading } = useStaff();
-  const { data: profiles = [] } = useProfiles();
+  const { data: staff = [], isLoading: staffLoading } = useStaff();
+  const { data: profiles = [], isLoading: profilesLoading } = useProfiles();
   const { data: locations = [] } = useActiveLocations();
   const createStaff = useCreateStaff();
   const { toast } = useToast();
+  
+  const isLoading = staffLoading || profilesLoading;
   
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -84,7 +103,52 @@ export default function Staff() {
     return [...locations].sort((a, b) => a.name.localeCompare(b.name));
   }, [locations]);
 
-  const filteredStaff = staff.filter((member) => {
+  // Create unified team member list from profiles and legacy staff
+  const unifiedTeamMembers: UnifiedTeamMember[] = useMemo(() => {
+    // Build a set of profile IDs for deduplication
+    const profileIds = new Set(profiles.map(p => p.id));
+    const now = new Date().toISOString();
+    
+    // Map profiles to unified format
+    const profileMembers: UnifiedTeamMember[] = profiles.map(p => ({
+      id: p.id,
+      name: p.full_name || p.email || 'Unknown',
+      email: p.email || '',
+      phone: p.phone || null,
+      location: p.location || null,
+      role: 'photographer' as const, // Default role for profile-based members
+      status: (p.status === 'inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
+      user_id: p.id, // Profile ID IS the user ID
+      source: 'profile' as const,
+      notes: null,
+      created_at: p.created_at || now,
+      updated_at: p.updated_at || now,
+    }));
+    
+    // Add unlinked staff (those without user_id or user_id not in profiles)
+    const unlinkedStaff: UnifiedTeamMember[] = staff
+      .filter(s => !s.user_id || !profileIds.has(s.user_id))
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: s.phone,
+        location: s.location,
+        role: s.role,
+        status: s.status,
+        user_id: s.user_id,
+        source: 'staff' as const,
+        notes: s.notes,
+        created_at: s.created_at,
+        updated_at: s.updated_at,
+      }));
+    
+    return [...profileMembers, ...unlinkedStaff].sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
+  }, [profiles, staff]);
+
+  const filteredStaff = unifiedTeamMembers.filter((member) => {
     const searchLower = search.toLowerCase();
     const matchesSearch =
       member.name.toLowerCase().includes(searchLower) ||
@@ -97,7 +161,7 @@ export default function Staff() {
     return matchesSearch && matchesRole && matchesLocation;
   });
 
-  const selectedStaff = staff.filter(s => selectedIds.has(s.id));
+  const selectedStaff = unifiedTeamMembers.filter(s => selectedIds.has(s.id));
 
   const handleSelectAll = () => {
     if (selectedIds.size === filteredStaff.length) {
@@ -150,7 +214,7 @@ export default function Staff() {
     <AppLayout>
       <PageHeader
         title="Team"
-        description={`${staff.length} team members`}
+        description={`${unifiedTeamMembers.length} team members`}
         actions={
           isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
