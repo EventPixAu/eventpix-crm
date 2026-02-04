@@ -124,6 +124,11 @@ export function SendEmailDialog({
       // Apply defaults when opening
       if (defaultSubject) setSubject(defaultSubject);
       if (defaultBody) setBody(defaultBody);
+      // Set recipient from clientEmail/clientName when dialog opens (if no contact selected)
+      if (!selectedContactId) {
+        if (clientEmail) setRecipientEmail(clientEmail);
+        if (clientName) setRecipientName(clientName);
+      }
     }
   }, [open, defaultSubject, defaultBody, clientEmail, clientName, context]);
 
