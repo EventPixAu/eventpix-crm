@@ -355,6 +355,8 @@ export function SendEmailDialog({
       attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
       contactId: selectedContactId || undefined,
       clientId: clientId || undefined,
+      quoteId: relatedQuoteId || undefined,
+      contractId: relatedContractId || undefined,
       templateId: selectedTemplateId || undefined,
     }, {
       onSuccess: async () => {

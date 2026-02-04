@@ -23,6 +23,8 @@ export interface SendEmailParams {
   clientId?: string;
   leadId?: string;
   eventId?: string;
+  quoteId?: string;
+  contractId?: string;
   templateId?: string;
 }
 

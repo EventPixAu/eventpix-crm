@@ -23,6 +23,8 @@ interface SendEmailRequest {
   clientId?: string;
   leadId?: string;
   eventId?: string;
+  quoteId?: string;
+  contractId?: string;
   templateId?: string;
   // For scheduling
   scheduledEmailId?: string;
@@ -79,6 +81,8 @@ const handler = async (req: Request): Promise<Response> => {
       clientId,
       leadId,
       eventId,
+      quoteId,
+      contractId,
       templateId,
       scheduledEmailId,
     } = body;
@@ -196,6 +200,8 @@ const handler = async (req: Request): Promise<Response> => {
     if (clientId) emailLogData.client_id = clientId;
     if (leadId) emailLogData.lead_id = leadId;
     if (eventId) emailLogData.event_id = eventId;
+    if (quoteId) emailLogData.quote_id = quoteId;
+    if (contractId) emailLogData.contract_id = contractId;
     if (templateId) emailLogData.template_id = templateId;
 
     const { error: logError } = await supabase
