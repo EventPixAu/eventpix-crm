@@ -58,7 +58,7 @@ export function EventCloseOutDialog({ eventId, eventName, assignedStaff, trigger
       // Update event status
       await updateEvent.mutateAsync({
         id: eventId,
-        ops_status: 'closed',
+        ops_status: 'completed',
       });
 
       // Submit feedback for each staff member

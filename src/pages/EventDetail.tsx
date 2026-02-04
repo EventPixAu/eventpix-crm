@@ -563,10 +563,11 @@ export default function EventDetail() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="awaiting_details">Awaiting Details</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
                           <SelectItem value="ready">Ready</SelectItem>
                           <SelectItem value="in_progress">In Progress</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

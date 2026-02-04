@@ -3,7 +3,7 @@ import { Clock, CheckCircle, Play, Truck, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OpsStatusBadgeProps {
-  status: 'awaiting_details' | 'ready' | 'in_progress' | 'delivered' | 'closed' | null;
+  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | null;
   className?: string;
 }
 
@@ -13,6 +13,11 @@ export function OpsStatusBadge({ status, className }: OpsStatusBadgeProps) {
       label: 'Awaiting Details',
       icon: Clock,
       className: 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400',
+    },
+    confirmed: {
+      label: 'Confirmed',
+      icon: CheckCircle,
+      className: 'border-teal-500/50 bg-teal-500/10 text-teal-700 dark:text-teal-400',
     },
     ready: {
       label: 'Ready',
@@ -29,8 +34,8 @@ export function OpsStatusBadge({ status, className }: OpsStatusBadgeProps) {
       icon: Truck,
       className: 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400',
     },
-    closed: {
-      label: 'Closed',
+    completed: {
+      label: 'Completed',
       icon: Archive,
       className: 'border-muted-foreground/50 bg-muted text-muted-foreground',
     },
