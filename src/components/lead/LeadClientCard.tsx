@@ -97,7 +97,7 @@ export function LeadClientCard({ client, onSendEmail }: LeadClientCardProps) {
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/sales/clients/${client.id}`}>
+            <Link to={`/crm/companies/${client.id}`}>
               <Pencil className="h-4 w-4 mr-1.5" />
               Edit Client
             </Link>
