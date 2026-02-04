@@ -57,9 +57,10 @@ interface EventSessionsEditorProps {
   eventId?: string;
   leadId?: string;
   disabled?: boolean;
+  hideHeader?: boolean;
 }
 
-export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessionsEditorProps) {
+export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: EventSessionsEditorProps) {
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: leadSessions = [] } = useLeadSessions(leadId);
   const sessions = eventId ? eventSessions : leadSessions;
@@ -136,15 +137,26 @@ export function EventSessionsEditor({ eventId, leadId, disabled }: EventSessions
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Label className="text-base font-semibold">Sessions</Label>
-        {!disabled && (
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <Label className="text-base font-semibold">Sessions</Label>
+          {!disabled && (
+            <Button type="button" variant="outline" size="sm" onClick={handleOpenCreate}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Session
+            </Button>
+          )}
+        </div>
+      )}
+      
+      {hideHeader && !disabled && (
+        <div className="flex justify-end">
           <Button type="button" variant="outline" size="sm" onClick={handleOpenCreate}>
             <Plus className="h-4 w-4 mr-1" />
             Add Session
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {sessions.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">

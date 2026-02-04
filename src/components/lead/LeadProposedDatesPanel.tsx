@@ -56,6 +56,7 @@ export function LeadProposedDatesPanel({ leadId, disabled = false }: LeadPropose
         <EventSessionsEditor 
           leadId={leadId} 
           disabled={disabled}
+          hideHeader
         />
       </CardContent>
     </Card>
