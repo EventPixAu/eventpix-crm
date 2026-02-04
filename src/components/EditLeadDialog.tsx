@@ -63,7 +63,17 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
     estimated_event_date: '',
     venue_text: '',
     notes: '',
+    status: '',
   });
+
+  const statusOptions = [
+    { value: 'new', label: 'New Lead' },
+    { value: 'qualified', label: 'Qualified' },
+    { value: 'quoted', label: 'Quoted' },
+    { value: 'contract_sent', label: 'Contract Sent' },
+    { value: 'won', label: 'Won' },
+    { value: 'lost', label: 'Lost' },
+  ];
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -76,6 +86,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
         estimated_event_date: lead.estimated_event_date || '',
         venue_text: lead.venue_text || '',
         notes: lead.notes || '',
+        status: lead.status || 'new',
       });
     }
   }, [open, lead]);
@@ -92,6 +103,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
       estimated_event_date: formData.estimated_event_date || null,
       venue_text: formData.venue_text || null,
       notes: formData.notes || null,
+      status: formData.status as 'new' | 'qualified' | 'quoted' | 'contract_sent' | 'won' | 'lost' | 'accepted',
     });
     
     setOpen(false);
@@ -123,6 +135,25 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
               onChange={(e) => setFormData({ ...formData, lead_name: e.target.value })}
               placeholder="Company Annual Gala 2026"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit_status">Status</Label>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => setFormData({ ...formData, status: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
