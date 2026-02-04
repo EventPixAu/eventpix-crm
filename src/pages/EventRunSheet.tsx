@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import {
@@ -311,7 +312,7 @@ export default function EventRunSheet() {
                 <div>
                   <span className="text-muted-foreground print:text-gray-600">Gallery URL: </span>
                   <span className="break-all">
-                    {window.location.origin}/g/{deliveryRecord.qr_token}
+                    {getPublicBaseUrl()}/g/{deliveryRecord.qr_token}
                   </span>
                 </div>
               )}

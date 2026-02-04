@@ -12,6 +12,7 @@
  * - Bottom: Subtotal / Discount row
  */
 import { useState, useMemo, useEffect } from 'react';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
@@ -382,7 +383,7 @@ export default function QuoteDetail() {
 
   const copyProposalLink = () => {
     if (!quote?.public_token) return;
-    const link = `${window.location.origin}/accept/${quote.public_token}`;
+    const link = `${getPublicBaseUrl()}/accept/${quote.public_token}`;
     navigator.clipboard.writeText(link);
     toast({ title: 'Link copied to clipboard' });
   };
@@ -1012,7 +1013,7 @@ export default function QuoteDetail() {
               <div className="flex items-center gap-2">
                 <Input 
                   readOnly 
-                  value={quote?.public_token ? `${window.location.origin}/accept/${quote.public_token}` : 'Link will be generated'}
+                  value={quote?.public_token ? `${getPublicBaseUrl()}/accept/${quote.public_token}` : 'Link will be generated'}
                   className="text-xs"
                 />
                 {quote?.public_token && (
@@ -1059,7 +1060,7 @@ export default function QuoteDetail() {
           venueName: leadData?.venue_text,
           leadName: leadData?.lead_name,
           quoteAcceptUrl: quote.public_token 
-            ? `${window.location.origin}/accept/${quote.public_token}` 
+            ? `${getPublicBaseUrl()}/accept/${quote.public_token}` 
             : undefined,
         }}
       />

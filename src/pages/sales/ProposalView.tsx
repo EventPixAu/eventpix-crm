@@ -7,6 +7,7 @@
  * NOTE: This view must NOT display notes_internal - it is for internal use only.
  */
 import { useMemo, useState } from 'react';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowLeft, Printer, Check } from 'lucide-react';
@@ -387,7 +388,7 @@ export default function ProposalView() {
               <div className="mb-8 flex items-center justify-center gap-6 p-6 border rounded-lg bg-gray-50 print:bg-white print:border-gray-300">
                 <div className="flex-shrink-0">
                   <QRCodeSVG 
-                    value={`${window.location.origin}/accept/${quote.public_token}`}
+                    value={`${getPublicBaseUrl()}/accept/${quote.public_token}`}
                     size={100}
                     level="M"
                     includeMargin={false}
@@ -399,7 +400,7 @@ export default function ProposalView() {
                     Scan this QR code with your phone camera to view and accept this proposal online.
                   </p>
                   <p className="text-xs text-gray-500 mt-2 print:block hidden">
-                    Or visit: {window.location.origin}/accept/{quote.public_token}
+                    Or visit: {getPublicBaseUrl()}/accept/{quote.public_token}
                   </p>
                 </div>
               </div>
