@@ -4,7 +4,7 @@
  * Studio Ninja-style contracts panel for Lead and Job detail pages.
  * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate, Delete.
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
 import {
@@ -55,6 +55,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Contract,
@@ -139,11 +140,88 @@ export function ContractsPanel({
   const [contractTitle, setContractTitle] = useState('');
   const [editContractHtml, setEditContractHtml] = useState('');
   const [editContractTitle, setEditContractTitle] = useState('');
+  const [editMode, setEditMode] = useState<'plain' | 'html'>('plain');
   const [signedByName, setSignedByName] = useState('');
   const [signedByEmail, setSignedByEmail] = useState('');
   
+  // Convert HTML to plain text for editing
+  const htmlToPlainText = (html: string): string => {
+    // Replace <br> and block elements with newlines
+    let text = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<li>/gi, '• ')
+      .replace(/<\/tr>/gi, '\n')
+      // Convert bold
+      .replace(/<strong>([^<]*)<\/strong>/gi, '**$1**')
+      .replace(/<b>([^<]*)<\/b>/gi, '**$1**')
+      // Convert italic
+      .replace(/<em>([^<]*)<\/em>/gi, '*$1*')
+      .replace(/<i>([^<]*)<\/i>/gi, '*$1*')
+      // Convert underline
+      .replace(/<u>([^<]*)<\/u>/gi, '~~$1~~')
+      // Convert links
+      .replace(/<a[^>]*href=["']([^"']*)["'][^>]*>([^<]*)<\/a>/gi, '[$2]($1)');
+    
+    // Strip remaining HTML tags
+    text = text.replace(/<[^>]+>/g, '');
+    
+    // Decode HTML entities
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    text = textarea.value;
+    
+    // Clean up multiple newlines
+    text = text.replace(/\n{3,}/g, '\n\n').trim();
+    
+    return text;
+  };
+  
+  // Convert plain text (with markdown) to HTML
+  const plainTextToHtml = (text: string): string => {
+    let html = text;
+    
+    // Escape HTML entities first
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // Links: [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color: #0891b2; text-decoration: underline;">$1</a>');
+    
+    // Bold: **text**
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // Italic: *text*
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    
+    // Underline: ~~text~~
+    html = html.replace(/~~(.+?)~~/g, '<u>$1</u>');
+    
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, '<br>');
+    
+    // Wrap in a styled div
+    return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">${html}</div>`;
+  };
+  
+  // Derived plain text for editing
+  const editContractPlainText = useMemo(() => {
+    return htmlToPlainText(editContractHtml);
+  }, [editContractHtml]);
+  
+  // Handle plain text changes - convert to HTML
+  const handlePlainTextChange = (plainText: string) => {
+    setEditContractHtml(plainTextToHtml(plainText));
+  };
+  
   // Combine contracts from lead and event
   const contracts = leadId ? leadContracts : eventContracts;
+
   
   const handleCreateContract = async () => {
     if (!selectedTemplateId || !contractTitle) {
@@ -556,14 +634,38 @@ export function ContractsPanel({
             </div>
             
             <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
-              <Label htmlFor="editContent">Contract Content (HTML)</Label>
-              <Textarea
-                id="editContent"
-                value={editContractHtml}
-                onChange={(e) => setEditContractHtml(e.target.value)}
-                placeholder="<p>Contract content...</p>"
-                className="flex-1 min-h-[400px] font-mono text-sm resize-none"
-              />
+              <Tabs value={editMode} onValueChange={(v) => setEditMode(v as 'plain' | 'html')} className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Contract Content</Label>
+                  <TabsList className="h-8">
+                    <TabsTrigger value="plain" className="text-xs px-3">Plain Text</TabsTrigger>
+                    <TabsTrigger value="html" className="text-xs px-3">HTML</TabsTrigger>
+                  </TabsList>
+                </div>
+                
+                <TabsContent value="plain" className="flex-1 overflow-hidden m-0">
+                  <div className="space-y-2 h-full flex flex-col">
+                    <p className="text-xs text-muted-foreground">
+                      Use **bold**, *italic*, ~~underline~~, and [link text](url) for formatting.
+                    </p>
+                    <Textarea
+                      value={editContractPlainText}
+                      onChange={(e) => handlePlainTextChange(e.target.value)}
+                      placeholder="Contract content..."
+                      className="flex-1 min-h-[350px] text-sm resize-none"
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="html" className="flex-1 overflow-hidden m-0">
+                  <Textarea
+                    value={editContractHtml}
+                    onChange={(e) => setEditContractHtml(e.target.value)}
+                    placeholder="<p>Contract content...</p>"
+                    className="flex-1 min-h-[380px] font-mono text-xs resize-none"
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
           <DialogFooter>
