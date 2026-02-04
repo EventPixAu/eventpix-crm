@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Trash2,
   Mail,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -125,6 +126,7 @@ export function ContractsPanel({
   // State
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSignOpen, setIsSignOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -132,6 +134,8 @@ export function ContractsPanel({
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
+  const [editTemplateId, setEditTemplateId] = useState<string>('');
+  const [editContractTitle, setEditContractTitle] = useState('');
   const [signedByName, setSignedByName] = useState('');
   const [signedByEmail, setSignedByEmail] = useState('');
   
@@ -269,6 +273,54 @@ export function ContractsPanel({
     setSelectedContract(contract);
     setIsDeleteOpen(true);
   };
+  
+  // Open edit dialog for a draft contract
+  const openEditDialog = (contract: Contract) => {
+    setSelectedContract(contract);
+    setEditContractTitle(contract.title);
+    setEditTemplateId(contract.template_id || '');
+    setIsEditOpen(true);
+  };
+  
+  // Handle editing a draft contract (regenerate from template)
+  const handleEditContract = async () => {
+    if (!selectedContract || !editTemplateId || !editContractTitle) {
+      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    
+    try {
+      // Delete the old contract
+      await deleteContract.mutateAsync(selectedContract.id);
+      
+      // Create a new one with the updated template/title
+      await generateContract.mutateAsync({
+        templateId: editTemplateId,
+        clientId,
+        leadId: leadId || null,
+        eventId: eventId || null,
+        quoteId: quoteId || null,
+        title: editContractTitle,
+      });
+      
+      setIsEditOpen(false);
+      setSelectedContract(null);
+      setEditTemplateId('');
+      setEditContractTitle('');
+      
+      toast({ title: 'Contract updated successfully' });
+      
+      // Invalidate relevant queries
+      if (leadId) {
+        queryClient.invalidateQueries({ queryKey: ['contracts', 'lead', leadId] });
+      }
+      if (eventId) {
+        queryClient.invalidateQueries({ queryKey: ['contracts', 'event', eventId] });
+      }
+    } catch (error) {
+      // Error handled by hooks
+    }
+  };
 
   return (
     <>
@@ -340,6 +392,18 @@ export function ContractsPanel({
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        
+                        {/* Edit (only for draft contracts) */}
+                        {contract.status === 'draft' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(contract)}
+                            title="Edit Contract"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                         
                         {/* Send Email (for draft contracts) */}
                         {contract.status === 'draft' && (
@@ -472,6 +536,56 @@ export function ContractsPanel({
               disabled={generateContract.isPending || !selectedTemplateId || !contractTitle}
             >
               {generateContract.isPending ? 'Creating...' : 'Create Contract'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Contract</DialogTitle>
+            <DialogDescription>
+              Update the contract template or title. This will regenerate the contract content.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editTemplate">Template *</Label>
+              <Select value={editTemplateId} onValueChange={setEditTemplateId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="editTitle">Contract Title *</Label>
+              <Input
+                id="editTitle"
+                value={editContractTitle}
+                onChange={(e) => setEditContractTitle(e.target.value)}
+                placeholder="Photography Agreement"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleEditContract} 
+              disabled={generateContract.isPending || deleteContract.isPending || !editTemplateId || !editContractTitle}
+            >
+              {(generateContract.isPending || deleteContract.isPending) ? 'Updating...' : 'Update Contract'}
             </Button>
           </DialogFooter>
         </DialogContent>
