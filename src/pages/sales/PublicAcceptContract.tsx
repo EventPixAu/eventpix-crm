@@ -235,9 +235,6 @@ export default function PublicAcceptContract() {
         <div className="bg-black rounded-lg p-6 mb-8 text-center">
           <img src={logo} alt="Eventpix" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white">Photography Agreement</h1>
-          <p className="text-gray-300">
-            {contract.title}
-          </p>
         </div>
 
         {/* Contract Document */}
