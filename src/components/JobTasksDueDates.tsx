@@ -72,7 +72,7 @@ export function JobTasksDueDates() {
     switch (status) {
       case 'ready':
       case 'delivered':
-      case 'closed':
+      case 'completed':
         return 'bg-green-500';
       case 'in_progress':
         return 'bg-blue-500';
