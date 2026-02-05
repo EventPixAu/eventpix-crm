@@ -16,6 +16,7 @@ export interface EventSeries {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+   default_workflow_step_ids: string[] | null;
 }
 
 export type CreateEventSeriesInput = {
@@ -28,6 +29,7 @@ export type CreateEventSeriesInput = {
   default_roles_json?: Json | null;
   notes?: string | null;
   is_active?: boolean;
+   default_workflow_step_ids?: string[] | null;
 };
 
 export interface EventSeriesWithStats extends EventSeries {
