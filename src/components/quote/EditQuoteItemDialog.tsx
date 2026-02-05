@@ -4,7 +4,7 @@
  * Allows inline editing of quote line item details:
  * description, quantity, unit price, tax rate, group
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RotateCcw } from 'lucide-react';
 import {
   Dialog,
@@ -25,15 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { QuoteItem } from '@/hooks/useQuoteItems';
-
-const GROUP_LABELS = [
-  'Coverage',
-  'Delivery',
-  'Add-ons',
-  'Equipment',
-  'Travel',
-  'Other',
-];
+import { useProductCategories } from '@/hooks/useProducts';
 
 interface EditQuoteItemDialogProps {
   item: QuoteItem | null;
@@ -56,6 +48,21 @@ export function EditQuoteItemDialog({
   onSave,
   isSaving = false,
 }: EditQuoteItemDialogProps) {
+  const { data: categories = [] } = useProductCategories();
+  
+  // Use category names as group labels, with "Other" as fallback
+  const groupLabels = useMemo(() => {
+    const categoryNames = categories
+      .filter(c => c.is_active)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(c => c.name);
+    // Always include "Other" as a fallback option
+    if (!categoryNames.includes('Other')) {
+      categoryNames.push('Other');
+    }
+    return categoryNames;
+  }, [categories]);
+
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
@@ -173,7 +180,7 @@ export function EditQuoteItemDialog({
                 <SelectValue placeholder="Select a group" />
               </SelectTrigger>
               <SelectContent>
-                {GROUP_LABELS.map((label) => (
+                {groupLabels.map((label) => (
                   <SelectItem key={label} value={label}>{label}</SelectItem>
                 ))}
               </SelectContent>
