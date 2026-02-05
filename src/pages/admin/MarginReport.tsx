@@ -207,8 +207,11 @@ export default function MarginReport() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Staff Cost</p>
+                    <p className="text-sm text-muted-foreground">Total Costs</p>
                     <p className="text-2xl font-bold">{formatCurrency(marginData.totalCost)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Team + Travel + Accom + Sundry
+                    </p>
                   </div>
                   <DollarSign className="h-8 w-8 text-amber-500" />
                 </div>
@@ -254,14 +257,14 @@ export default function MarginReport() {
 
             <TabsContent value="events" className="mt-4">
               <Card>
-                <CardHeader>
+              <CardHeader>
                   <CardTitle>Event Margins</CardTitle>
-                  <CardDescription>Cost vs quoted total per event</CardDescription>
+                  <CardDescription>Revenue (paid invoices) vs total costs per event</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {marginData.events.length === 0 ? (
                     <p className="text-center py-8 text-muted-foreground">
-                      No events with accepted quotes found
+                      No events with paid invoices found
                     </p>
                   ) : (
                     <Table>
@@ -270,8 +273,8 @@ export default function MarginReport() {
                           <TableHead>Event</TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead>Client</TableHead>
-                          <TableHead className="text-right">Quoted</TableHead>
-                          <TableHead className="text-right">Staff Cost</TableHead>
+                          <TableHead className="text-right">Revenue</TableHead>
+                          <TableHead className="text-right">Total Cost</TableHead>
                           <TableHead className="text-right">Margin</TableHead>
                           <TableHead className="text-right">Margin %</TableHead>
                         </TableRow>
@@ -290,7 +293,9 @@ export default function MarginReport() {
                             <TableCell>{format(new Date(event.eventDate), 'MMM d, yyyy')}</TableCell>
                             <TableCell>{event.clientName}</TableCell>
                             <TableCell className="text-right">{formatCurrency(event.quotedTotal)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(event.staffCost)}</TableCell>
+                            <TableCell className="text-right" title={`Team: ${formatCurrency(event.staffCost)}, Travel: ${formatCurrency(event.travelCost)}, Accom: ${formatCurrency(event.accommodationCost)}, Sundry: ${formatCurrency(event.sundryCost)}`}>
+                              {formatCurrency(event.totalCost)}
+                            </TableCell>
                             <TableCell className={cn(
                               'text-right font-medium',
                               event.margin >= 0 ? 'text-green-600' : 'text-red-600'
