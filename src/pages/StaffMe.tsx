@@ -442,10 +442,10 @@ export default function StaffMe() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="abn">ABN</Label>
+                        <Label htmlFor="abn">ABN or TFN</Label>
                         <Input
                           id="abn"
-                          placeholder="Australian Business Number"
+                          placeholder="ABN or Tax File Number"
                           value={formData.abn || ''}
                           onChange={(e) => handleFieldChange('abn', e.target.value)}
                         />

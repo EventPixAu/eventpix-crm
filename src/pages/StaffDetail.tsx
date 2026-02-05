@@ -694,7 +694,7 @@ export default function StaffDetail() {
                 
                 {profile.abn && (
                   <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">ABN</span>
+                    <span className="text-xs text-muted-foreground">ABN or TFN</span>
                     <p className="text-sm font-medium">{profile.abn}</p>
                   </div>
                 )}
