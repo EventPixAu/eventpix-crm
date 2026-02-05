@@ -2,10 +2,9 @@
  * INVOICE STATUS SYNC PAGE (XERO)
  * 
  * Admin-only page for viewing and syncing invoice statuses from Xero.
- * Currently a placeholder - Xero OAuth integration required.
  */
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   RefreshCw, 
@@ -14,7 +13,8 @@ import {
   AlertCircle,
   DollarSign,
   FileText,
-  ExternalLink,
+  Link2,
+  Link2Off,
   Settings
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -25,7 +25,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth';
-import { useEventsWithInvoices, useXeroSyncLogs, useSyncInvoiceStatus } from '@/hooks/useXeroSync';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  useEventsWithInvoices, 
+  useXeroSyncLogs, 
+  useSyncInvoiceStatus,
+  useXeroConnectionStatus,
+  useXeroAuthorize,
+  useXeroRefreshToken,
+  useXeroDisconnect
+} from '@/hooks/useXeroSync';
 
 const STATUS_COLORS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -38,21 +47,64 @@ const STATUS_COLORS: Record<string, { label: string; variant: 'default' | 'secon
 
 export default function InvoiceSync() {
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const { data: events, isLoading: eventsLoading } = useEventsWithInvoices();
-  const { data: syncLogs, isLoading: logsLoading } = useXeroSyncLogs();
+  const { data: syncLogs } = useXeroSyncLogs();
+  const { data: xeroStatus, isLoading: statusLoading, refetch: refetchStatus } = useXeroConnectionStatus();
+  
   const syncInvoices = useSyncInvoiceStatus();
+  const xeroAuthorize = useXeroAuthorize();
+  const xeroRefresh = useXeroRefreshToken();
+  const xeroDisconnect = useXeroDisconnect();
+
+  // Handle OAuth callback params
+  useEffect(() => {
+    const connected = searchParams.get('xero_connected');
+    const error = searchParams.get('xero_error');
+    
+    if (connected === 'true') {
+      toast({ title: 'Xero connected successfully!' });
+      refetchStatus();
+      setSearchParams({});
+    } else if (error) {
+      toast({ 
+        title: 'Xero connection failed', 
+        description: error.replace(/_/g, ' '),
+        variant: 'destructive'
+      });
+      setSearchParams({});
+    }
+  }, [searchParams, toast, refetchStatus, setSearchParams]);
   
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
 
   const handleSync = () => {
-    syncInvoices.mutate(undefined);
+    syncInvoices.mutate();
+  };
+
+  const handleConnect = () => {
+    xeroAuthorize.mutate();
+  };
+
+  const handleRefresh = () => {
+    xeroRefresh.mutate();
+  };
+
+  const handleDisconnect = () => {
+    if (confirm('Are you sure you want to disconnect from Xero?')) {
+      xeroDisconnect.mutate();
+    }
   };
 
   const lastSync = syncLogs?.[0];
   const paidCount = events?.filter(e => e.invoice_status === 'paid').length || 0;
   const unpaidCount = events?.filter(e => e.invoice_status && e.invoice_status !== 'paid').length || 0;
+
+  const isConnected = xeroStatus?.connected && !xeroStatus?.isExpired;
 
   return (
     <AppLayout>
@@ -61,15 +113,92 @@ export default function InvoiceSync() {
         description="View invoice payment status synced from Xero"
       />
 
-      {/* Setup Required Alert */}
-      <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
-        <Settings className="h-4 w-4 text-amber-500" />
-        <AlertTitle className="text-amber-500">Xero Integration Pending</AlertTitle>
-        <AlertDescription>
-          Xero OAuth integration needs to be configured to enable automatic invoice status sync.
-          Currently showing manual invoice references from events.
-        </AlertDescription>
-      </Alert>
+      {/* Xero Connection Status */}
+      {!statusLoading && (
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">Xero Connection</CardTitle>
+                {isConnected ? (
+                  <Badge variant="default" className="bg-green-600">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Connected
+                  </Badge>
+                ) : xeroStatus?.connected && xeroStatus?.isExpired ? (
+                  <Badge variant="destructive">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Token Expired
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    <Link2Off className="h-3 w-3 mr-1" />
+                    Not Connected
+                  </Badge>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {isConnected ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleRefresh}
+                      disabled={xeroRefresh.isPending}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${xeroRefresh.isPending ? 'animate-spin' : ''}`} />
+                      Refresh Token
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleDisconnect}
+                      disabled={xeroDisconnect.isPending}
+                    >
+                      Disconnect
+                    </Button>
+                  </>
+                ) : xeroStatus?.isExpired ? (
+                  <Button 
+                    size="sm"
+                    onClick={handleRefresh}
+                    disabled={xeroRefresh.isPending}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${xeroRefresh.isPending ? 'animate-spin' : ''}`} />
+                    Refresh Token
+                  </Button>
+                ) : (
+                  <Button 
+                    size="sm"
+                    onClick={handleConnect}
+                    disabled={xeroAuthorize.isPending}
+                  >
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Connect to Xero
+                  </Button>
+                )}
+              </div>
+            </div>
+            {xeroStatus?.tenants && xeroStatus.tenants.length > 0 && (
+              <CardDescription>
+                Connected to: {xeroStatus.tenants.map(t => t.tenant_name).join(', ')}
+              </CardDescription>
+            )}
+          </CardHeader>
+        </Card>
+      )}
+
+      {/* Setup Required Alert - only show if not connected */}
+      {!isConnected && !statusLoading && (
+        <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+          <Settings className="h-4 w-4 text-amber-500" />
+          <AlertTitle className="text-amber-500">Xero Connection Required</AlertTitle>
+          <AlertDescription>
+            Connect to Xero above to enable automatic invoice status sync.
+            You'll need your Xero credentials configured in the backend.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -121,7 +250,7 @@ export default function InvoiceSync() {
               <Button 
                 size="sm" 
                 onClick={handleSync}
-                disabled={syncInvoices.isPending}
+                disabled={syncInvoices.isPending || !isConnected}
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${syncInvoices.isPending ? 'animate-spin' : ''}`} />
                 Sync
@@ -154,6 +283,7 @@ export default function InvoiceSync() {
                   <TableHead>Event</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Invoice Ref</TableHead>
+                  <TableHead>Xero Tag</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Paid At</TableHead>
                 </TableRow>
@@ -169,6 +299,15 @@ export default function InvoiceSync() {
                         <code className="text-sm bg-muted px-2 py-1 rounded">
                           {event.invoice_reference}
                         </code>
+                      </TableCell>
+                      <TableCell>
+                        {(event as any).xero_tag ? (
+                          <code className="text-sm bg-muted px-2 py-1 rounded">
+                            {(event as any).xero_tag}
+                          </code>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusConfig.variant}>
