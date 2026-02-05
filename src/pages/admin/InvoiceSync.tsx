@@ -109,7 +109,7 @@ export default function InvoiceSync() {
   return (
     <AppLayout>
       <PageHeader
-        title="Invoice Status"
+        title="Xero Status"
         description="View invoice payment status synced from Xero"
       />
 
