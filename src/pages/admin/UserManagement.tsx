@@ -69,7 +69,8 @@ const ROLES = [
   { value: 'admin', label: 'Admin', description: 'Full access to all features' },
   { value: 'sales', label: 'Sales', description: 'Access to clients, leads, quotes' },
   { value: 'operations', label: 'Operations', description: 'Access to events, assignments, delivery' },
-  { value: 'crew', label: 'Crew', description: 'Access to assigned events only' },
+  { value: 'photographer', label: 'Photographer', description: 'Access to assigned events, equipment required' },
+  { value: 'assistant', label: 'Assistant', description: 'Access to assigned events only' },
 ];
 
 function getRoleBadgeVariant(role: string | null) {
@@ -77,7 +78,8 @@ function getRoleBadgeVariant(role: string | null) {
     case 'admin': return 'destructive';
     case 'sales': return 'default';
     case 'operations': return 'secondary';
-    case 'crew': return 'outline';
+    case 'photographer': return 'outline';
+    case 'assistant': return 'outline';
     default: return 'outline';
   }
 }
@@ -109,7 +111,7 @@ function getStatusIcon(status: string) {
 function InviteUserDialog() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('crew');
+  const [role, setRole] = useState('photographer');
   
   const inviteUser = useInviteUser();
 
@@ -120,7 +122,7 @@ function InviteUserDialog() {
     
     setOpen(false);
     setEmail('');
-    setRole('crew');
+    setRole('photographer');
   };
 
   return (

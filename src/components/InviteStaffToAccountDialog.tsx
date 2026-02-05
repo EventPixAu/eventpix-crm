@@ -36,7 +36,8 @@ interface InviteStaffToAccountDialogProps {
 }
 
 const ROLES = [
-  { value: 'crew', label: 'Crew', description: 'Can view assigned events and update status' },
+  { value: 'photographer', label: 'Photographer', description: 'Can view assigned events, equipment required' },
+  { value: 'assistant', label: 'Assistant', description: 'Can view assigned events only' },
   { value: 'operations', label: 'Operations', description: 'Can manage events and crew assignments' },
   { value: 'sales', label: 'Sales', description: 'Can manage leads, clients, and quotes' },
   { value: 'admin', label: 'Admin', description: 'Full access to all features' },
@@ -48,7 +49,7 @@ export function InviteStaffToAccountDialog({
   onSuccess 
 }: InviteStaffToAccountDialogProps) {
   const [open, setOpen] = useState(false);
-  const [role, setRole] = useState('crew');
+  const [role, setRole] = useState('photographer');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
