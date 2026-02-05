@@ -40,19 +40,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { QuoteItem } from '@/hooks/useQuoteItems';
-
-const GROUP_LABELS = [
-  'Coverage',
-  'Delivery',
-  'Add-ons',
-  'Equipment',
-  'Travel',
-  'Other',
-];
+import { useProductCategories } from '@/hooks/useProducts';
 
 interface SortableRowProps {
   item: QuoteItem;
   isLocked: boolean;
+  groupLabels: string[];
   formatCurrency: (value: number) => string;
   onEdit: (item: QuoteItem) => void;
   onDelete: (itemId: string) => void;
@@ -62,6 +55,7 @@ interface SortableRowProps {
 function SortableRow({
   item,
   isLocked,
+  groupLabels,
   formatCurrency,
   onEdit,
   onDelete,
@@ -126,7 +120,7 @@ function SortableRow({
               <SelectValue placeholder="Group" />
             </SelectTrigger>
             <SelectContent>
-              {GROUP_LABELS.map((label) => (
+              {groupLabels.map((label) => (
                 <SelectItem key={label} value={label}>{label}</SelectItem>
               ))}
             </SelectContent>
@@ -167,6 +161,21 @@ export function SortableQuoteItems({
   onGroupChange,
   onReorder,
 }: SortableQuoteItemsProps) {
+  const { data: categories = [] } = useProductCategories();
+  
+  // Use category names as group labels, with "Other" as fallback
+  const groupLabels = useMemo(() => {
+    const categoryNames = categories
+      .filter(c => c.is_active)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(c => c.name);
+    // Always include "Other" as a fallback option
+    if (!categoryNames.includes('Other')) {
+      categoryNames.push('Other');
+    }
+    return categoryNames;
+  }, [categories]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -193,16 +202,15 @@ export function SortableQuoteItems({
 
   // Sort group keys with custom ordering
   const sortedGroupKeys = useMemo(() => {
-    const order = ['Coverage', 'Delivery', 'Add-ons', 'Equipment', 'Travel', 'Other'];
     return Object.keys(groupedItems).sort((a, b) => {
-      const indexA = order.indexOf(a);
-      const indexB = order.indexOf(b);
+      const indexA = groupLabels.indexOf(a);
+      const indexB = groupLabels.indexOf(b);
       if (indexA === -1 && indexB === -1) return a.localeCompare(b);
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
-  }, [groupedItems]);
+  }, [groupedItems, groupLabels]);
 
   const handleDragEnd = (event: DragEndEvent, groupItems: QuoteItem[]) => {
     const { active, over } = event;
@@ -269,6 +277,7 @@ export function SortableQuoteItems({
                         key={item.id}
                         item={item}
                         isLocked={isLocked}
+                        groupLabels={groupLabels}
                         formatCurrency={formatCurrency}
                         onEdit={onEdit}
                         onDelete={onDelete}
