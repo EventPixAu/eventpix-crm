@@ -77,6 +77,7 @@ import { SeriesCostSummary } from '@/components/SeriesCostSummary';
 import { SeriesRepeatIndicators } from '@/components/SeriesRepeatIndicators';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
+ import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -317,11 +318,15 @@ export default function EventSeriesDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+         <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
           </TabsTrigger>
+           <TabsTrigger value="assignments" className="flex items-center gap-2">
+             <Users className="h-4 w-4" />
+             Assignments
+           </TabsTrigger>
           <TabsTrigger value="coverage" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Coverage
@@ -391,33 +396,6 @@ export default function EventSeriesDetail() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Events by Location */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Events by State
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {overview && Object.keys(overview.eventsByState).length > 0 ? (
-                  <div className="space-y-2">
-                    {Object.entries(overview.eventsByState)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 8)
-                      .map(([state, count]) => (
-                        <div key={state} className="flex justify-between items-center">
-                          <span className="text-sm">{state}</span>
-                          <Badge variant="secondary">{count}</Badge>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No location data</p>
-                )}
-              </CardContent>
-            </Card>
-
             {/* Staffing Forecast */}
             <StaffingForecast 
               seriesId={id!} 
@@ -450,6 +428,11 @@ export default function EventSeriesDetail() {
           )}
         </TabsContent>
 
+         {/* Assignments Tab */}
+         <TabsContent value="assignments">
+           <SeriesDefaultAssignmentsPanel seriesId={id!} />
+         </TabsContent>
+ 
         {/* Coverage Tab */}
         <TabsContent value="coverage" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
