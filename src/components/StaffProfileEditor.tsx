@@ -334,12 +334,12 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
               </div>
 
               <div>
-                <Label htmlFor="abn">ABN</Label>
+                <Label htmlFor="abn">ABN or TFN</Label>
                 <Input
                   id="abn"
                   value={formData.abn}
                   onChange={(e) => setFormData({ ...formData, abn: e.target.value })}
-                  placeholder="Australian Business Number"
+                  placeholder="ABN or Tax File Number"
                 />
               </div>
             </div>
