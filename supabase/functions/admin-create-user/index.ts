@@ -240,28 +240,69 @@ serve(async (req) => {
       }
     } else {
       // New user - use inviteUserByEmail
-      const { data: created, error: createErr } = await admin.auth.admin.inviteUserByEmail(inv.email, {
-        redirectTo: inviteRedirectTo,
-        data: { role: inv.role },
+     // Generate invite link manually so we can send via Resend with onboarding link
+     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+       type: 'invite',
+       email: inv.email,
+       options: {
+         redirectTo: inviteRedirectTo,
+         data: { role: inv.role },
+       },
       });
 
-      console.log("User creation result:", { created, createErr });
+     console.log("Generate invite link result:", { linkData, linkErr });
 
-      if (createErr || !created?.user) {
+     if (linkErr || !linkData?.user) {
         // Mark invitation as failed
         await admin.from("user_invitations").update({
           status: "failed",
-          error: createErr?.message ?? "Unknown error creating user",
+         error: linkErr?.message ?? "Unknown error creating user",
           updated_at: new Date().toISOString(),
         }).eq("id", invitation_id);
 
         return new Response(
-          JSON.stringify({ success: false, error: createErr?.message ?? "Failed to create user" }),
+         JSON.stringify({ success: false, error: linkErr?.message ?? "Failed to create user" }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      userId = created.user.id;
+     userId = linkData.user.id;
+
+     // Send invite email via Resend with onboarding link
+     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+     if (resendApiKey) {
+       try {
+         const emailRes = await fetch("https://api.resend.com/emails", {
+           method: "POST",
+           headers: {
+             "Content-Type": "application/json",
+             "Authorization": `Bearer ${resendApiKey}`,
+           },
+           body: JSON.stringify({
+             from: "EventPix <pix@rs.eventpix.com.au>",
+             to: [inv.email],
+             subject: "You're invited to join EventPix",
+             html: `
+               <h2>Welcome to EventPix!</h2>
+               <p>You've been invited to join the EventPix team as <strong>${inv.role}</strong>.</p>
+               <p>Click the button below to set up your account:</p>
+               <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
+               <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a> to learn how everything works.</p>
+               <hr>
+               <p>Looking forward to working with you,<br>
+               <strong>Trevor Connell</strong><br>
+               EventPix Operations</p>
+             `,
+           }),
+         });
+         const emailResult = await emailRes.json();
+         console.log("Resend invite email result:", emailResult);
+       } catch (emailErr) {
+         console.error("Failed to send invite email via Resend:", emailErr);
+       }
+     } else {
+       console.warn("RESEND_API_KEY not configured, invite email not sent");
+     }
     }
 
     
