@@ -4124,6 +4124,82 @@ export type Database = {
           },
         ]
       }
+      series_default_assignments: {
+        Row: {
+          assignment_notes: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          series_id: string
+          sort_order: number
+          staff_role_id: string | null
+          user_id: string
+        }
+        Insert: {
+          assignment_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          series_id: string
+          sort_order?: number
+          staff_role_id?: string | null
+          user_id: string
+        }
+        Update: {
+          assignment_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          series_id?: string
+          sort_order?: number
+          staff_role_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_default_assignments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_assignments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_assignments_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_assignments_staff_role_id_fkey"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_assignments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           created_at: string
