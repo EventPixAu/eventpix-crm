@@ -1,13 +1,12 @@
 import { useRef } from 'react';
-import { Printer, Download, ArrowLeft, Smartphone, Calendar, Camera, CheckSquare, User, MapPin, Clock, Bell } from 'lucide-react';
+import { Printer, Smartphone, Calendar, Camera, CheckSquare, User, MapPin, Clock, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useNavigate } from 'react-router-dom';
+
 
 export default function CrewOnboardingGuide() {
   const printRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   const handlePrint = () => {
     window.print();
@@ -17,17 +16,11 @@ export default function CrewOnboardingGuide() {
     <div className="min-h-screen bg-background">
       {/* Header - hidden on print */}
       <div className="print:hidden sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-end">
+          <Button onClick={handlePrint} variant="default">
+            <Printer className="h-4 w-4 mr-2" />
+            Print / Save PDF
           </Button>
-          <div className="flex gap-2">
-            <Button onClick={handlePrint} variant="default">
-              <Printer className="h-4 w-4 mr-2" />
-              Print / Save PDF
-            </Button>
-          </div>
         </div>
       </div>
 
