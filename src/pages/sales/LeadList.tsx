@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Target, Calendar, Building2 } from 'lucide-react';
+import { Search, Target, Calendar, Building2, DollarSign } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
@@ -143,6 +143,7 @@ export default function LeadList() {
                 <TableRow>
                   <TableHead>Lead</TableHead>
                   <TableHead>Company</TableHead>
+                  <TableHead>Budget</TableHead>
                   <TableHead>Event Type</TableHead>
                   <TableHead>Est. Date</TableHead>
                   <TableHead>Source</TableHead>
@@ -172,6 +173,21 @@ export default function LeadList() {
                           </span>
                         ) : (
                           <span className="text-muted-foreground">No company</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {(lead as any).budget ? (
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3 text-muted-foreground" />
+                            {new Intl.NumberFormat('en-AU', { 
+                              style: 'currency', 
+                              currency: 'AUD',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0
+                            }).format((lead as any).budget)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell>
