@@ -35,6 +35,7 @@ import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
 import { useGenerateProposalPdf, htmlToPdfBlob, blobToBase64 } from '@/hooks/useGenerateProposalPdf';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MergeFieldContext {
   eventName?: string;
@@ -95,16 +96,35 @@ export function SendEmailDialog({
   const [attachContractPdf, setAttachContractPdf] = useState(context === 'contract');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [hasAutoResolved, setHasAutoResolved] = useState(false);
 
-  // Update recipient when clientEmail changes (for legacy/fallback)
+  // Auto-resolve contact by email when dialog opens
   useEffect(() => {
-    if (clientEmail && !selectedContactId) {
-      setRecipientEmail(clientEmail);
+    if (open && clientEmail && !selectedContactId && !hasAutoResolved) {
+      setHasAutoResolved(true);
+      // Try to find existing CRM contact by email
+      supabase
+        .from('client_contacts')
+        .select('id, contact_name, first_name, email, phone_mobile, phone_office, phone')
+        .ilike('email', clientEmail)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            // Auto-select the matching contact
+            setSelectedContactId(data.id);
+            setSelectedContact(data as unknown as CrmContact);
+            setRecipientEmail(data.email || clientEmail);
+            setRecipientName(data.contact_name || clientName || '');
+          } else {
+            // No match found, use legacy values
+            setRecipientEmail(clientEmail);
+            setRecipientName(clientName || '');
+          }
+        });
+    } else if (!open) {
+      setHasAutoResolved(false);
     }
-    if (clientName && !selectedContactId) {
-      setRecipientName(clientName);
-    }
-  }, [clientEmail, clientName, selectedContactId]);
+  }, [open, clientEmail, clientName, selectedContactId, hasAutoResolved]);
 
   // Reset form when dialog opens/closes and apply defaults
   useEffect(() => {
@@ -119,6 +139,7 @@ export function SendEmailDialog({
       setAttachProposalPdf(context === 'quote');
       setAttachContractPdf(context === 'contract');
       setIsGeneratingPdf(false);
+      setHasAutoResolved(false);
       // Restore default recipient
       setRecipientEmail(clientEmail || '');
       setRecipientName(clientName || '');
@@ -392,8 +413,6 @@ export function SendEmailDialog({
                 onChange={handleContactChange}
                 placeholder="Search for a contact..."
                 companyId={clientId}
-                legacyName={!selectedContactId ? clientName : undefined}
-                legacyEmail={!selectedContactId ? clientEmail : undefined}
               />
               <p className="text-xs text-muted-foreground">
                 Select a CRM contact or type directly below
