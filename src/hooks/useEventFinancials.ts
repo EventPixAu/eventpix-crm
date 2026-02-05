@@ -1,0 +1,128 @@
+/**
+ * EVENT FINANCIALS HOOKS
+ * 
+ * Provides combined income and expense data for events.
+ * Access: Admin only
+ */
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface EventFinancials {
+  // Income
+  quotedTotal: number;
+  invoiceStatus: string | null;
+  invoicePaidAt: string | null;
+  isPaid: boolean;
+  
+  // Expenses by category
+  staffCost: number;      // From event_assignments.estimated_cost
+  travelCost: number;     // From event_expenses
+  accommodationCost: number; // From event_expenses
+  sundryCost: number;     // From event_expenses
+  
+  // Totals
+  totalExpenses: number;
+  profit: number;
+  profitMargin: number;
+}
+
+export function useEventFinancials(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ['event-financials', eventId],
+    queryFn: async (): Promise<EventFinancials> => {
+      if (!eventId) throw new Error('Event ID required');
+      
+      // Fetch event with quote and invoice status
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select(`
+          id,
+          invoice_status,
+          invoice_paid_at,
+          quote_id,
+          quotes:quote_id (
+            total_estimate,
+            subtotal,
+            status
+          )
+        `)
+        .eq('id', eventId)
+        .single();
+      
+      if (eventError) throw eventError;
+      
+      // Fetch staff costs from assignments
+      const { data: assignments, error: assignError } = await supabase
+        .from('event_assignments')
+        .select('estimated_cost')
+        .eq('event_id', eventId);
+      
+      if (assignError) throw assignError;
+      
+      // Fetch expenses from event_expenses table
+      const { data: expenses, error: expenseError } = await supabase
+        .from('event_expenses')
+        .select('expense_category, amount')
+        .eq('event_id', eventId);
+      
+      if (expenseError) throw expenseError;
+      
+      // Calculate income
+      const quote = event.quotes as any;
+      const quotedTotal = quote?.total_estimate || quote?.subtotal || 0;
+      const isPaid = event.invoice_status === 'paid';
+      
+      // Calculate staff costs from assignments
+      const staffCost = (assignments || []).reduce((sum, a) => sum + (a.estimated_cost || 0), 0);
+      
+      // Calculate expense totals by category
+      let travelCost = 0;
+      let accommodationCost = 0;
+      let sundryCost = 0;
+      
+      (expenses || []).forEach((exp) => {
+        const amount = exp.amount || 0;
+        switch (exp.expense_category) {
+          case 'travel':
+            travelCost += amount;
+            break;
+          case 'accommodation':
+            accommodationCost += amount;
+            break;
+          case 'sundry':
+            sundryCost += amount;
+            break;
+          case 'staff':
+            // Staff expenses from Xero (supplements assignment costs)
+            // These are additional staff-related costs not captured in assignments
+            break;
+        }
+      });
+      
+      // Add any Xero-synced staff expenses to staffCost
+      const xeroStaffCost = (expenses || [])
+        .filter((e) => e.expense_category === 'staff')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+      
+      const totalStaffCost = staffCost + xeroStaffCost;
+      const totalExpenses = totalStaffCost + travelCost + accommodationCost + sundryCost;
+      const profit = quotedTotal - totalExpenses;
+      const profitMargin = quotedTotal > 0 ? (profit / quotedTotal) * 100 : 0;
+      
+      return {
+        quotedTotal,
+        invoiceStatus: event.invoice_status,
+        invoicePaidAt: event.invoice_paid_at,
+        isPaid,
+        staffCost: totalStaffCost,
+        travelCost,
+        accommodationCost,
+        sundryCost,
+        totalExpenses,
+        profit,
+        profitMargin,
+      };
+    },
+    enabled: !!eventId,
+  });
+}

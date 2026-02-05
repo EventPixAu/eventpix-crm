@@ -2077,6 +2077,56 @@ export type Database = {
           },
         ]
       }
+      event_expenses: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string
+          event_id: string
+          expense_category: string
+          expense_date: string | null
+          id: string
+          synced_at: string | null
+          updated_at: string | null
+          xero_invoice_id: string | null
+          xero_line_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          description: string
+          event_id: string
+          expense_category: string
+          expense_date?: string | null
+          id?: string
+          synced_at?: string | null
+          updated_at?: string | null
+          xero_invoice_id?: string | null
+          xero_line_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string
+          event_id?: string
+          expense_category?: string
+          expense_date?: string | null
+          id?: string
+          synced_at?: string | null
+          updated_at?: string | null
+          xero_invoice_id?: string | null
+          xero_line_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_expenses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_notes: {
         Row: {
           content: string
@@ -2511,6 +2561,7 @@ export type Database = {
           venue_parking_notes: string | null
           venue_postcode: string | null
           workflow_template_id: string | null
+          xero_tag: string | null
         }
         Insert: {
           booking_date?: string | null
@@ -2568,6 +2619,7 @@ export type Database = {
           venue_parking_notes?: string | null
           venue_postcode?: string | null
           workflow_template_id?: string | null
+          xero_tag?: string | null
         }
         Update: {
           booking_date?: string | null
@@ -2625,6 +2677,7 @@ export type Database = {
           venue_parking_notes?: string | null
           venue_postcode?: string | null
           workflow_template_id?: string | null
+          xero_tag?: string | null
         }
         Relationships: [
           {

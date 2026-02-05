@@ -2,6 +2,8 @@
  * MARGIN REPORTING HOOKS
  * 
  * Provides admin-only margin analysis.
+ * Revenue: Only counts events where invoice_status = 'paid'
+ * Costs: Staff assignments + expenses (travel, accommodation, sundry) from Xero
  * Access: Admin only (enforced in component)
  */
 import { useQuery } from '@tanstack/react-query';
@@ -16,8 +18,13 @@ export interface EventMargin {
   seriesName: string | null;
   quotedTotal: number;
   staffCost: number;
+  travelCost: number;
+  accommodationCost: number;
+  sundryCost: number;
+  totalCost: number;
   margin: number;
   marginPercent: number;
+  isPaid: boolean;
 }
 
 export interface SeriesMargin {
@@ -51,7 +58,7 @@ export function useMarginReport(filters?: MarginFilters) {
   return useQuery({
     queryKey: ['margin-report', filters],
     queryFn: async (): Promise<MarginSummary> => {
-      // Build query for events with quotes
+      // Build query for events with PAID invoices (revenue recognition)
       let query = supabase
         .from('events')
         .select(`
@@ -60,6 +67,7 @@ export function useMarginReport(filters?: MarginFilters) {
           event_date,
           client_name,
           event_series_id,
+          invoice_status,
           event_series:event_series_id (name),
           quotes:quote_id (
             total_estimate,
@@ -67,7 +75,7 @@ export function useMarginReport(filters?: MarginFilters) {
             status
           )
         `)
-        .not('quote_id', 'is', null);
+        .eq('invoice_status', 'paid'); // Only paid invoices count as revenue
 
       if (filters?.startDate) {
         query = query.gte('event_date', filters.startDate);
@@ -98,7 +106,7 @@ export function useMarginReport(filters?: MarginFilters) {
         };
       }
 
-      // Get staff costs for these events
+      // Get staff costs from assignments
       const { data: assignments, error: assignError } = await supabase
         .from('event_assignments')
         .select('event_id, estimated_cost')
@@ -106,11 +114,41 @@ export function useMarginReport(filters?: MarginFilters) {
 
       if (assignError) throw assignError;
 
-      // Calculate costs per event
-      const costByEvent = new Map<string, number>();
+      // Get expenses from event_expenses table
+      const { data: expenses, error: expenseError } = await supabase
+        .from('event_expenses')
+        .select('event_id, expense_category, amount')
+        .in('event_id', eventIds);
+
+      if (expenseError) throw expenseError;
+
+      // Calculate staff costs per event from assignments
+      const staffCostByEvent = new Map<string, number>();
       for (const assignment of assignments || []) {
-        const current = costByEvent.get(assignment.event_id) || 0;
-        costByEvent.set(assignment.event_id, current + (assignment.estimated_cost || 0));
+        const current = staffCostByEvent.get(assignment.event_id) || 0;
+        staffCostByEvent.set(assignment.event_id, current + (assignment.estimated_cost || 0));
+      }
+
+      // Calculate expenses by event and category
+      const expensesByEvent = new Map<string, { staff: number; travel: number; accommodation: number; sundry: number }>();
+      for (const expense of expenses || []) {
+        const current = expensesByEvent.get(expense.event_id) || { staff: 0, travel: 0, accommodation: 0, sundry: 0 };
+        const amount = expense.amount || 0;
+        switch (expense.expense_category) {
+          case 'staff':
+            current.staff += amount;
+            break;
+          case 'travel':
+            current.travel += amount;
+            break;
+          case 'accommodation':
+            current.accommodation += amount;
+            break;
+          case 'sundry':
+            current.sundry += amount;
+            break;
+        }
+        expensesByEvent.set(expense.event_id, current);
       }
 
       // Build event margin data
@@ -130,12 +168,18 @@ export function useMarginReport(filters?: MarginFilters) {
         const quote = event.quotes as any;
         const series = event.event_series as any;
         
-        // Only include accepted quotes
-        if (!quote || quote.status !== 'accepted') continue;
-
-        const quotedTotal = quote.total_estimate || quote.subtotal || 0;
-        const staffCost = costByEvent.get(event.id) || 0;
-        const margin = quotedTotal - staffCost;
+        const quotedTotal = quote?.total_estimate || quote?.subtotal || 0;
+        const assignmentCost = staffCostByEvent.get(event.id) || 0;
+        const eventExpenses = expensesByEvent.get(event.id) || { staff: 0, travel: 0, accommodation: 0, sundry: 0 };
+        
+        // Total staff cost = assignments + Xero staff expenses
+        const staffCost = assignmentCost + eventExpenses.staff;
+        const travelCost = eventExpenses.travel;
+        const accommodationCost = eventExpenses.accommodation;
+        const sundryCost = eventExpenses.sundry;
+        const eventTotalCost = staffCost + travelCost + accommodationCost + sundryCost;
+        
+        const margin = quotedTotal - eventTotalCost;
         const marginPercent = quotedTotal > 0 ? (margin / quotedTotal) * 100 : 0;
 
         eventMargins.push({
@@ -147,12 +191,17 @@ export function useMarginReport(filters?: MarginFilters) {
           seriesName: series?.name || null,
           quotedTotal,
           staffCost,
+          travelCost,
+          accommodationCost,
+          sundryCost,
+          totalCost: eventTotalCost,
           margin,
           marginPercent,
+          isPaid: event.invoice_status === 'paid',
         });
 
         totalRevenue += quotedTotal;
-        totalCost += staffCost;
+        totalCost += eventTotalCost;
 
         // Aggregate by series
         if (event.event_series_id && series) {
@@ -165,7 +214,7 @@ export function useMarginReport(filters?: MarginFilters) {
           };
           existing.eventCount++;
           existing.totalQuoted += quotedTotal;
-          existing.totalCost += staffCost;
+          existing.totalCost += eventTotalCost;
           seriesMap.set(event.event_series_id, existing);
         }
       }

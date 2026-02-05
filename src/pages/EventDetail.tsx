@@ -61,6 +61,7 @@ import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
 import { ContractsPanel } from '@/components/ContractsPanel';
+import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
@@ -615,6 +616,29 @@ export default function EventDetail() {
                         disabled={isUpdatingStatus}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="xero_tag">Xero Tag</Label>
+                      <Input
+                        id="xero_tag"
+                        placeholder="e.g., 260419 Stihl"
+                        defaultValue={(event as any).xero_tag || ''}
+                        onBlur={async (e) => {
+                          const value = e.target.value;
+                          if (value !== (event as any).xero_tag) {
+                            setIsUpdatingStatus(true);
+                            await updateEvent.mutateAsync({
+                              id: event.id,
+                              xero_tag: value || null,
+                            });
+                            setIsUpdatingStatus(false);
+                          }
+                        }}
+                        disabled={isUpdatingStatus}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        6-digit code + event name for Xero expense sync
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -622,6 +646,11 @@ export default function EventDetail() {
               {/* Mail History */}
               {isAdmin && id && (
                 <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
+
+              {/* Event Financials - above Contracts */}
+              {isAdmin && id && (
+                <EventFinancialsCard eventId={id} />
               )}
 
               {/* Contracts Panel */}
