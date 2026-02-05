@@ -47,6 +47,7 @@ import { PhotographyEquipmentEditor, type PhotographyEquipment } from '@/compone
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
+ import { isAssistantRole } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface StaffProfile {
@@ -423,6 +424,10 @@ export default function StaffDetail() {
   }
   const onboardingStatus = profile.onboarding_status as OnboardingStatus;
   const onboardingConfig = ONBOARDING_STATUS_CONFIG[onboardingStatus] || ONBOARDING_STATUS_CONFIG.incomplete;
+ 
+   // Determine if this staff member is an assistant (equipment not required)
+   const staffRoleName = profile.default_role?.name;
+   const isAssistant = isAssistantRole(staffRoleName);
 
   // Group assignments by status
   const upcomingAssignments = assignments?.filter(a => 
@@ -627,10 +632,12 @@ export default function StaffDetail() {
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="equipment" className="flex items-center gap-2">
-            <Camera className="h-4 w-4" />
-            Equipment
-          </TabsTrigger>
+          {!isAssistant && (
+            <TabsTrigger value="equipment" className="flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Equipment
+            </TabsTrigger>
+          )}
           <TabsTrigger value="assignments" className="flex items-center gap-2">
             <Briefcase className="h-4 w-4" />
             Assignments
@@ -909,30 +916,32 @@ export default function StaffDetail() {
         )}
 
         {/* Equipment Tab - Photography Equipment (Team member's own gear) */}
-        <TabsContent value="equipment" className="space-y-6">
-          {/* Photography Equipment (Owned Gear) */}
-          {equipmentLoading ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Photography Equipment
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <PhotographyEquipmentEditor
-              initialData={photographyEquipment || undefined}
-              onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
-              isSaving={updateEquipmentMutation.isPending}
-            />
-          )}
-        </TabsContent>
+        {!isAssistant && (
+          <TabsContent value="equipment" className="space-y-6">
+            {/* Photography Equipment (Owned Gear) */}
+            {equipmentLoading ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Camera className="h-4 w-4" />
+                    Photography Equipment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <PhotographyEquipmentEditor
+                initialData={photographyEquipment || undefined}
+                onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
+                isSaving={updateEquipmentMutation.isPending}
+              />
+            )}
+          </TabsContent>
+        )}
 
         {/* Allocations Tab (Admin only) - Company equipment assigned to team member */}
         {isAdmin && (

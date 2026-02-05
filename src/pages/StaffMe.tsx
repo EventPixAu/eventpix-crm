@@ -38,6 +38,7 @@ import { PhotographyEquipmentEditor, PhotographyEquipment } from '@/components/P
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+ import { isAssistantRole } from '@/lib/utils';
 
 const AUSTRALIAN_STATES = [
   { value: 'NSW', label: 'New South Wales' },
@@ -78,6 +79,10 @@ interface ProfileData {
   vehicle_make_model: string | null;
   vehicle_registration: string | null;
   dietary_requirements: string | null;
+   default_role_id: string | null;
+   default_role: {
+     name: string;
+   } | null;
 }
 
 interface UpcomingEvent {
@@ -102,7 +107,7 @@ function useMyProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, photography_equipment_json, business_name, abn, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements')
+        .select('*, photography_equipment_json, business_name, abn, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements, default_role_id, default_role:staff_roles(name)')
         .eq('id', user.id)
         .single();
       
@@ -287,6 +292,10 @@ export default function StaffMe() {
   }, {} as Record<string, UpcomingEvent[]>);
   
   const multiJobDates = Object.entries(eventsByDate).filter(([_, events]) => events.length > 1);
+   
+   // Determine if user is an assistant (equipment not required)
+   const userRoleName = profile?.default_role?.name;
+   const isAssistant = isAssistantRole(userRoleName);
   
   return (
     <AppLayout>
@@ -301,10 +310,12 @@ export default function StaffMe() {
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="equipment" className="gap-2">
-            <Camera className="h-4 w-4" />
-            Equipment
-          </TabsTrigger>
+          {!isAssistant && (
+            <TabsTrigger value="equipment" className="gap-2">
+              <Camera className="h-4 w-4" />
+              Equipment
+            </TabsTrigger>
+          )}
           <TabsTrigger value="notifications" className="gap-2">
             <Settings className="h-4 w-4" />
             Notifications
@@ -694,17 +705,19 @@ export default function StaffMe() {
           </div>
         </TabsContent>
         
-        <TabsContent value="equipment">
-          <div className="max-w-2xl">
-            <PhotographyEquipmentEditor
-              initialData={profile.photography_equipment_json}
-              onSave={async (data) => {
-                await updateEquipment.mutateAsync(data);
-              }}
-              isSaving={updateEquipment.isPending}
-            />
-          </div>
-        </TabsContent>
+        {!isAssistant && (
+          <TabsContent value="equipment">
+            <div className="max-w-2xl">
+              <PhotographyEquipmentEditor
+                initialData={profile.photography_equipment_json}
+                onSave={async (data) => {
+                  await updateEquipment.mutateAsync(data);
+                }}
+                isSaving={updateEquipment.isPending}
+              />
+            </div>
+          </TabsContent>
+        )}
         
         
         <TabsContent value="notifications">
