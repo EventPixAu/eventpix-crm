@@ -99,7 +99,7 @@ const administrationItems: NavItem[] = [
   { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
   { href: '/admin/lookups', label: 'Lookups', icon: Settings },
-  { href: '/admin/invoices', label: 'Invoice Sync', icon: DollarSign },
+  { href: '/admin/invoices', label: 'Xero Sync', icon: DollarSign },
   { href: '/admin/margins', label: 'Margin Report', icon: TrendingUp },
 ];
 
