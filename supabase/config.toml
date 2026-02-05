@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.inbound-email-webhook]
 verify_jwt = false
+
+[functions.xero-auth]
+verify_jwt = false
+
+[functions.xero-sync]
+verify_jwt = false

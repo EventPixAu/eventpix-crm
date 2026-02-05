@@ -1,7 +1,7 @@
 /**
  * XERO SYNC HOOKS
  * 
- * Provides read-only invoice status sync from Xero.
+ * Provides Xero OAuth connection and invoice/expense sync.
  * Access: Admin only
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,12 +19,137 @@ export interface XeroSyncLog {
   created_by: string | null;
 }
 
+export interface XeroConnectionStatus {
+  connected: boolean;
+  isExpired: boolean;
+  tenants: Array<{
+    tenant_id: string;
+    tenant_name: string;
+    expires_at: string;
+    updated_at: string;
+  }>;
+  needsRefresh: boolean;
+}
+
 export interface InvoiceSyncResult {
   eventId: string;
-  invoiceReference: string;
+  eventName: string;
   oldStatus: string | null;
   newStatus: string;
   paidAt: string | null;
+}
+
+// Check Xero connection status
+export function useXeroConnectionStatus() {
+  return useQuery({
+    queryKey: ['xero-connection-status'],
+    queryFn: async (): Promise<XeroConnectionStatus> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('xero-auth/status', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    refetchInterval: 60000, // Check every minute
+  });
+}
+
+// Get Xero authorization URL
+export function useXeroAuthorize() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('xero-auth/authorize', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (response.error) throw response.error;
+      return response.data as { url: string; state: string };
+    },
+    onSuccess: (data) => {
+      // Open Xero OAuth in new window
+      window.open(data.url, '_blank', 'width=600,height=700');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to connect to Xero',
+        description: error.message,
+        variant: 'destructive'
+      });
+    },
+  });
+}
+
+// Refresh Xero tokens
+export function useXeroRefreshToken() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('xero-auth/refresh', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xero-connection-status'] });
+      toast({ title: 'Xero token refreshed' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to refresh Xero token',
+        description: error.message,
+        variant: 'destructive'
+      });
+    },
+  });
+}
+
+// Disconnect from Xero
+export function useXeroDisconnect() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('xero-auth/disconnect', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xero-connection-status'] });
+      toast({ title: 'Disconnected from Xero' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to disconnect',
+        description: error.message,
+        variant: 'destructive'
+      });
+    },
+  });
 }
 
 // Fetch sync history
@@ -51,7 +176,7 @@ export function useEventsWithInvoices() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, event_name, event_date, invoice_reference, invoice_status, invoice_paid_at')
+        .select('id, event_name, event_date, invoice_reference, invoice_status, invoice_paid_at, xero_tag')
         .not('invoice_reference', 'is', null)
         .order('event_date', { ascending: false });
       
@@ -61,79 +186,31 @@ export function useEventsWithInvoices() {
   });
 }
 
-// Manual invoice status sync (placeholder - simulates Xero sync)
+// Sync invoice statuses from Xero
 export function useSyncInvoiceStatus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (eventIds?: string[]) => {
-      // Get user ID for logging
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
 
-      // Create sync log entry
-      const { data: logEntry, error: logError } = await supabase
-        .from('xero_sync_log')
-        .insert({
-          sync_type: 'invoice_status',
-          status: 'running',
-          created_by: user.id,
-        })
-        .select()
-        .single();
+      const response = await supabase.functions.invoke('xero-sync/invoices', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
-      if (logError) throw logError;
-
-      // Get events to sync
-      let query = supabase
-        .from('events')
-        .select('id, invoice_reference, invoice_status')
-        .not('invoice_reference', 'is', null);
-      
-      if (eventIds && eventIds.length > 0) {
-        query = query.in('id', eventIds);
-      }
-
-      const { data: events, error: eventsError } = await query;
-      if (eventsError) throw eventsError;
-
-      // Placeholder: In production, this would call Xero API
-      // For now, we just log the sync attempt
-      const results: InvoiceSyncResult[] = [];
-      
-      // Simulate checking each invoice (placeholder logic)
-      // In production: Call Xero API to get invoice status
-      for (const event of events || []) {
-        // Placeholder - no actual API call
-        results.push({
-          eventId: event.id,
-          invoiceReference: event.invoice_reference || '',
-          oldStatus: event.invoice_status,
-          newStatus: event.invoice_status || 'unknown',
-          paidAt: null,
-        });
-      }
-
-      // Update sync log as completed
-      await supabase
-        .from('xero_sync_log')
-        .update({
-          completed_at: new Date().toISOString(),
-          status: 'completed',
-          events_synced: results.length,
-        })
-        .eq('id', logEntry.id);
-
-      return { logId: logEntry.id, synced: results.length, results };
+      if (response.error) throw response.error;
+      return response.data as { synced: number; results: InvoiceSyncResult[] };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['xero-sync-logs'] });
       queryClient.invalidateQueries({ queryKey: ['events-with-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       toast({ 
-        title: 'Sync completed', 
-        description: `Checked ${data.synced} invoices. Xero integration pending setup.` 
+        title: 'Invoice sync completed', 
+        description: `Updated ${data.synced} invoice statuses from Xero.` 
       });
     },
     onError: (error: Error) => {
@@ -146,7 +223,44 @@ export function useSyncInvoiceStatus() {
   });
 }
 
-// Update single event invoice status (for manual updates or webhook)
+// Sync expenses for a specific event from Xero
+export function useSyncEventExpenses() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('xero-sync/expenses', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { eventId }
+      });
+
+      if (response.error) throw response.error;
+      return response.data as { synced: number; expenses: any[] };
+    },
+    onSuccess: (data, eventId) => {
+      queryClient.invalidateQueries({ queryKey: ['event-expenses', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['event-financials', eventId] });
+      toast({ 
+        title: 'Expenses synced', 
+        description: `Imported ${data.synced} expense lines from Xero.` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Expense sync failed', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+    },
+  });
+}
+
+// Update single event invoice status (for manual updates)
 export function useUpdateInvoiceStatus() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
