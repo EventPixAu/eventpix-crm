@@ -28,3 +28,12 @@ export function getPublicBaseUrl(): string {
   // If we're on a preview/development URL, use the published URL for client-facing links
   return PUBLISHED_URL;
 }
+ 
+ /**
+  * Check if a staff role is an assistant-type role (doesn't require equipment)
+  * Matches role names containing "assistant" (case-insensitive)
+  */
+ export function isAssistantRole(roleName: string | null | undefined): boolean {
+   if (!roleName) return false;
+   return roleName.toLowerCase().includes('assistant');
+ }

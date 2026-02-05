@@ -267,17 +267,47 @@ serve(async (req) => {
     
 
     // 4) If this invitation has a linked staff record, fetch that data for the profile
-    let staffData: { name?: string; phone?: string; notes?: string; location?: string } | null = null;
+    let staffData: { name?: string; phone?: string; notes?: string; location?: string; role?: string } | null = null;
     if (inv.staff_id) {
       const { data: staff, error: staffErr } = await admin
         .from("staff")
-        .select("name, phone, notes, location")
+        .select("name, phone, notes, location, role")
         .eq("id", inv.staff_id)
         .single();
       
       if (!staffErr && staff) {
         staffData = staff;
         console.log("Found linked staff record:", staffData);
+      }
+    }
+
+    // 4.5) Look up the staff_roles id if we have a role name from staff record
+    let defaultRoleId: string | null = null;
+    if (staffData?.role) {
+      // Map legacy role enum to staff_roles table
+      // Legacy roles: 'photographer', 'videographer', 'assistant'
+      // We need to find the best matching staff_role
+      const roleName = staffData.role.toLowerCase();
+      let searchName: string;
+      
+      if (roleName === 'assistant') {
+        searchName = 'Assistant';
+      } else if (roleName === 'videographer') {
+        searchName = 'Videographer';
+      } else {
+        // Default photographers to 'Photographer' role
+        searchName = 'Photographer';
+      }
+      
+      const { data: roleRow, error: roleSearchErr } = await admin
+        .from("staff_roles")
+        .select("id")
+        .eq("name", searchName)
+        .maybeSingle();
+      
+      if (roleRow && !roleSearchErr) {
+        defaultRoleId = roleRow.id;
+        console.log(`Mapped staff role '${staffData.role}' to staff_role id: ${defaultRoleId}`);
       }
     }
 
@@ -292,6 +322,7 @@ serve(async (req) => {
         phone: staffData?.phone || null,
         notes_internal: staffData?.notes || null,
         home_city: staffData?.location || null,
+        default_role_id: defaultRoleId,
         is_active: true,
         onboarding_status: 'incomplete',
         updated_at: new Date().toISOString(),
