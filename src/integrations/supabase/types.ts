@@ -3072,6 +3072,7 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
+          budget: number | null
           client_id: string | null
           converted_job_id: string | null
           created_at: string | null
@@ -3103,6 +3104,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          budget?: number | null
           client_id?: string | null
           converted_job_id?: string | null
           created_at?: string | null
@@ -3134,6 +3136,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          budget?: number | null
           client_id?: string | null
           converted_job_id?: string | null
           created_at?: string | null
