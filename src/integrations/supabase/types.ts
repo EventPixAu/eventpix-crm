@@ -2138,6 +2138,7 @@ export type Database = {
           default_photographers_required: number | null
           default_roles_json: Json | null
           default_venue_city: string | null
+          default_workflow_step_ids: string[] | null
           event_type_id: string | null
           id: string
           is_active: boolean | null
@@ -2156,6 +2157,7 @@ export type Database = {
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           default_venue_city?: string | null
+          default_workflow_step_ids?: string[] | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -2174,6 +2176,7 @@ export type Database = {
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           default_venue_city?: string | null
+          default_workflow_step_ids?: string[] | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
