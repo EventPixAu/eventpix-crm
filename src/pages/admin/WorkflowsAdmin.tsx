@@ -73,6 +73,7 @@ import {
   type SalesWorkflowItem,
 } from '@/hooks/useSalesWorkflowTemplates';
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
+import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplatesManager';
 
 // Helper to format date offset display
 function formatDateOffset(step: WorkflowMasterStep): string | null {
@@ -548,6 +549,7 @@ export default function WorkflowsAdmin() {
           <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
           <TabsTrigger value="sales">Sales Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
+          <TabsTrigger value="briefs">Event Briefs</TabsTrigger>
         </TabsList>
 
         {/* Operations Master Steps Tab */}
@@ -857,6 +859,11 @@ export default function WorkflowsAdmin() {
         {/* Crew Checklists Tab */}
         <TabsContent value="crew">
           <CrewChecklistTemplatesManager />
+        </TabsContent>
+
+        {/* Event Briefs Tab */}
+        <TabsContent value="briefs">
+          <EventBriefTemplatesManager />
         </TabsContent>
       </Tabs>
 
@@ -1257,6 +1264,7 @@ export default function WorkflowsAdmin() {
           <li>• <strong>Operations Steps:</strong> Master list of all workflow steps. Assign to event types in the Event Type Defaults tab.</li>
           <li>• <strong>Event Type Defaults:</strong> Select which steps apply to each event type. If none selected, all active steps are used.</li>
           <li>• <strong>Sales Workflows:</strong> Create multiple workflows and select one when creating a lead to track its progress.</li>
+          <li>• <strong>Event Briefs:</strong> Create standard brief templates that can be applied to events.</li>
           <li>• Changes to defaults only affect new events - existing events keep their current workflows.</li>
         </ul>
       </div>

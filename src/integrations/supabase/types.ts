@@ -1973,6 +1973,39 @@ export type Database = {
           },
         ]
       }
+      event_brief_templates: {
+        Row: {
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_contacts: {
         Row: {
           client_contact_id: string | null
@@ -2509,6 +2542,9 @@ export type Database = {
       events: {
         Row: {
           booking_date: string | null
+          brief_content: string | null
+          brief_template_id: string | null
+          brief_updated_at: string | null
           calendar_sequence: number
           camera_settings: string | null
           city: string | null
@@ -2565,6 +2601,9 @@ export type Database = {
         }
         Insert: {
           booking_date?: string | null
+          brief_content?: string | null
+          brief_template_id?: string | null
+          brief_updated_at?: string | null
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
@@ -2623,6 +2662,9 @@ export type Database = {
         }
         Update: {
           booking_date?: string | null
+          brief_content?: string | null
+          brief_template_id?: string | null
+          brief_updated_at?: string | null
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
@@ -2680,6 +2722,13 @@ export type Database = {
           xero_tag?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "events_brief_template_id_fkey"
+            columns: ["brief_template_id"]
+            isOneToOne: false
+            referencedRelation: "event_brief_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "events_client_id_fkey"
             columns: ["client_id"]
