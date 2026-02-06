@@ -18,6 +18,7 @@ import {
   History,
   Wand2,
   ExternalLink,
+  Users,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -87,6 +88,7 @@ export default function EventDetail() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
+  const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -705,6 +707,27 @@ export default function EventDetail() {
                     <Button variant="outline" className="w-full justify-start" onClick={() => setSendEmailOpen(true)}>
                       <Mail className="h-4 w-4 mr-2" />
                       Send Email
+                    </Button>
+                  )}
+                  {isAdmin && assignments.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      disabled={isSendingTeamUpdate}
+                      onClick={async () => {
+                        setIsSendingTeamUpdate(true);
+                        try {
+                          await sendNotification.mutateAsync({
+                            type: 'event_update',
+                            event_id: id!,
+                          });
+                        } finally {
+                          setIsSendingTeamUpdate(false);
+                        }
+                      }}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      {isSendingTeamUpdate ? 'Sending...' : 'Send Updated Details to Team'}
                     </Button>
                   )}
                 </div>
