@@ -67,6 +67,7 @@ import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
+import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { useSendNotification } from '@/hooks/useNotifications';
 
 export default function EventDetail() {
@@ -530,6 +531,16 @@ export default function EventDetail() {
               {/* Event Documents */}
               {id && (
                 <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
+              )}
+              
+              {/* Event Brief */}
+              {id && (
+                <EventBriefPanel
+                  eventId={id}
+                  briefTemplateId={(event as any).brief_template_id}
+                  briefContent={(event as any).brief_content}
+                  isAdmin={isAdmin}
+                />
               )}
             </motion.div>
 
