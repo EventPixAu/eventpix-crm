@@ -11,8 +11,9 @@
 
 import { format, parseISO, isBefore, addDays } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Upload, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, Clock, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,8 @@ interface DeliveryInfoProps {
   deliveryDeadline?: string | null;
   isDelivered?: boolean;
 }
+
+const MASV_UPLOAD_URL = 'https://www.eventpix.com.au/masv/';
 
 const DELIVERY_INSTRUCTIONS: Record<string, string[]> = {
   send_files: [
@@ -49,6 +52,11 @@ const DELIVERY_INSTRUCTIONS: Record<string, string[]> = {
     'Prepare final images in the standard folder structure',
     'Copy to USB drive with event name label',
     'Return USB to office for client delivery',
+  ],
+  masv: [
+    'Use the MASV upload portal link below',
+    'Upload all final images and files',
+    'You will receive a confirmation once upload is complete',
   ],
 };
 
@@ -134,6 +142,22 @@ export function DeliveryInfo({
                   <li key={i}>{instruction}</li>
                 ))}
               </ol>
+            </div>
+          )}
+
+          {/* MASV Upload Link */}
+          {deliveryMethod?.toLowerCase() === 'masv' && (
+            <div className="pt-2">
+              <a 
+                href={MASV_UPLOAD_URL} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button className="w-full gap-2">
+                  <ExternalLink className="h-4 w-4" />
+                  Open MASV Upload Portal
+                </Button>
+              </a>
             </div>
           )}
         </CardContent>
