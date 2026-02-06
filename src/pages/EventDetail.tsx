@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
+  DollarSign,
   Edit,
   Mail,
   MapPin,
@@ -703,6 +704,14 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
+                  {isAdmin && event?.quote_id && (
+                    <Link to={`/sales/quotes/${event.quote_id}`} className="block">
+                      <Button variant="outline" className="w-full justify-start">
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        View Budget
+                      </Button>
+                    </Link>
+                  )}
                   {isAdmin && (
                     <Button variant="outline" className="w-full justify-start" onClick={() => setSendEmailOpen(true)}>
                       <Mail className="h-4 w-4 mr-2" />
