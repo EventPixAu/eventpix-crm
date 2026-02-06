@@ -5,11 +5,14 @@
  * Shows data from accepted quotes and Xero-synced expenses.
  * Access: Admin only
  */
-import { DollarSign, TrendingUp, TrendingDown, Users, Car, Home, Package } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Users, Car, Home, Package, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
+import { useEvent } from '@/hooks/useEvents';
 import { cn } from '@/lib/utils';
 
 interface EventFinancialsCardProps {
@@ -27,6 +30,7 @@ const formatCurrency = (value: number) => {
 
 export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
   const { data: financials, isLoading } = useEventFinancials(eventId);
+  const { data: event } = useEvent(eventId);
   
   if (isLoading) {
     return (
@@ -162,6 +166,15 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
           <p className="text-xs text-muted-foreground text-center py-2">
             No expenses synced yet
           </p>
+        )}
+        
+        {event?.quote_id && (
+          <Link to={`/sales/quotes/${event.quote_id}`}>
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <ExternalLink className="h-3.5 w-3.5" />
+              View Budget
+            </Button>
+          </Link>
         )}
       </CardContent>
     </Card>
