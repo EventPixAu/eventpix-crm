@@ -1869,6 +1869,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          other_items: string[] | null
         }
         Insert: {
           created_at?: string | null
@@ -1876,6 +1877,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          other_items?: string[] | null
         }
         Update: {
           created_at?: string | null
@@ -1883,6 +1885,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          other_items?: string[] | null
         }
         Relationships: []
       }
