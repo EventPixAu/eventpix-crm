@@ -10,6 +10,7 @@ export interface EquipmentAllocation {
   event_id: string;
   user_id: string | null;
   equipment_item_id: string;
+  kit_id: string | null;
   allocated_at: string;
   returned_at: string | null;
   status: AllocationStatus;
@@ -23,6 +24,11 @@ export interface EquipmentAllocationWithDetails extends EquipmentAllocation {
     full_name: string | null;
     email: string;
   };
+  equipment_kit?: {
+    id: string;
+    name: string;
+    other_items: string[] | null;
+  } | null;
 }
 
 export function useEventAllocations(eventId: string | undefined) {
@@ -36,7 +42,8 @@ export function useEventAllocations(eventId: string | undefined) {
         .select(`
           *,
           equipment_item:equipment_items(*),
-          profile:profiles(full_name, email)
+          profile:profiles(full_name, email),
+          equipment_kit:equipment_kits(id, name, other_items)
         `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
@@ -141,11 +148,12 @@ export function useAllocateKit() {
 
       if (kitError) throw kitError;
 
-      // Allocate each item
+      // Allocate each item with kit_id reference
       const allocations = kitItems.map((item) => ({
         event_id: eventId,
         equipment_item_id: item.equipment_item_id,
         user_id: userId || null,
+        kit_id: kitId,
         status: 'allocated' as const,
       }));
 

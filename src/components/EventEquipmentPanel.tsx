@@ -165,6 +165,28 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const activeAllocations = allocations?.filter(a => a.status !== 'returned') || [];
   const returnedAllocations = allocations?.filter(a => a.status === 'returned') || [];
 
+  // Group allocations by kit for display
+  const groupedAllocations = activeAllocations.reduce((acc, alloc) => {
+    const kitId = alloc.kit_id || 'individual';
+    if (!acc[kitId]) {
+      acc[kitId] = {
+        kitId: alloc.kit_id,
+        kitName: alloc.equipment_kit?.name || null,
+        otherItems: alloc.equipment_kit?.other_items || null,
+        allocations: [],
+      };
+    }
+    acc[kitId].allocations.push(alloc);
+    return acc;
+  }, {} as Record<string, { kitId: string | null; kitName: string | null; otherItems: string[] | null; allocations: typeof activeAllocations }>);
+
+  const kitGroups = Object.values(groupedAllocations).sort((a, b) => {
+    // Show kits first, then individual items
+    if (a.kitName && !b.kitName) return -1;
+    if (!a.kitName && b.kitName) return 1;
+    return (a.kitName || '').localeCompare(b.kitName || '');
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -300,59 +322,87 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
         />
       </CardHeader>
       <CardContent>
-        {activeAllocations.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Item</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Status</TableHead>
-                {isAdmin && <TableHead className="w-[100px]"></TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeAllocations.map((alloc) => (
-                <TableRow key={alloc.id}>
-                  <TableCell className="font-medium">{alloc.equipment_item.name}</TableCell>
-                  <TableCell className="capitalize">{alloc.equipment_item.category}</TableCell>
-                  <TableCell>
-                    {alloc.profile ? (
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {alloc.profile.full_name || alloc.profile.email}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">Unassigned</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(alloc.status)}</TableCell>
-                  {isAdmin && (
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => openStatusDialog(alloc.id, alloc.status, alloc.user_id)}
-                          title="Update status"
-                        >
-                          <ArrowLeftRight className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleRemove(alloc.id)}
-                          title="Remove"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        {kitGroups.length > 0 ? (
+          <div className="space-y-6">
+            {kitGroups.map((group) => (
+              <div key={group.kitId || 'individual'} className="space-y-2">
+                {/* Kit Header */}
+                {group.kitName && (
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <Layers className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{group.kitName}</span>
+                    <Badge variant="secondary" className="text-xs">Kit</Badge>
+                  </div>
+                )}
+                
+                {/* Kit Items Table */}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Status</TableHead>
+                      {isAdmin && <TableHead className="w-[100px]"></TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {group.allocations.map((alloc) => (
+                      <TableRow key={alloc.id}>
+                        <TableCell className="font-medium">{alloc.equipment_item.name}</TableCell>
+                        <TableCell className="capitalize">{alloc.equipment_item.category}</TableCell>
+                        <TableCell>
+                          {alloc.profile ? (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {alloc.profile.full_name || alloc.profile.email}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Unassigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{getStatusBadge(alloc.status)}</TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => openStatusDialog(alloc.id, alloc.status, alloc.user_id)}
+                                title="Update status"
+                              >
+                                <ArrowLeftRight className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleRemove(alloc.id)}
+                                title="Remove"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Other Items in Kit */}
+                {group.otherItems && group.otherItems.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2 pl-2">
+                    <span className="text-xs text-muted-foreground mr-1">Also includes:</span>
+                    {group.otherItems.map((item, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {item}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <p className="text-muted-foreground text-center py-8">
             No equipment allocated to this event
