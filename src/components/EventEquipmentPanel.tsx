@@ -19,7 +19,8 @@ import {
   User,
   Users,
   Camera,
-  Settings2
+  Settings2,
+  ExternalLink
 } from 'lucide-react';
 import { 
   useEventAllocations, 
@@ -327,11 +328,25 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
             {kitGroups.map((group) => (
               <div key={group.kitId || 'individual'} className="space-y-2">
                 {/* Kit Header */}
-                {group.kitName && (
+                {group.kitName && group.kitId && (
                   <div className="flex items-center gap-2 pb-2 border-b">
                     <Layers className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{group.kitName}</span>
+                    <Link 
+                      to={`/equipment?tab=kits`} 
+                      className="font-medium hover:text-primary hover:underline flex items-center gap-1"
+                    >
+                      {group.kitName}
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
                     <Badge variant="secondary" className="text-xs">Kit</Badge>
+                  </div>
+                )}
+
+                {/* Header for individual items section */}
+                {!group.kitName && (
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-muted-foreground">Individual Items</span>
                   </div>
                 )}
                 
