@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Layers, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, Package, X } from 'lucide-react';
 import { 
   useEquipmentKits, 
   useEquipmentKit,
@@ -32,27 +32,54 @@ export function EquipmentKitManager() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    other_items: [] as string[],
     is_active: true,
   });
+  const [newOtherItem, setNewOtherItem] = useState('');
+  const [pendingInventoryItems, setPendingInventoryItems] = useState<string[]>([]);
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', is_active: true });
+    setFormData({ name: '', description: '', other_items: [], is_active: true });
     setEditingKit(null);
+    setNewOtherItem('');
+    setPendingInventoryItems([]);
+  };
+
+  const addOtherItem = () => {
+    if (newOtherItem.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        other_items: [...prev.other_items, newOtherItem.trim()]
+      }));
+      setNewOtherItem('');
+    }
+  };
+
+  const removeOtherItem = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      other_items: prev.other_items.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const kitData = {
-      ...formData,
+      name: formData.name,
       description: formData.description || null,
+      other_items: formData.other_items.length > 0 ? formData.other_items : null,
+      is_active: formData.is_active,
     };
 
     if (editingKit) {
       await updateKit.mutateAsync({ id: editingKit.id, ...kitData });
     } else {
       const newKit = await createKit.mutateAsync(kitData);
-      // Auto-select the new kit to allow adding items immediately
+      // Add any pending inventory items to the new kit
       if (newKit?.id) {
+        for (const itemId of pendingInventoryItems) {
+          await addKitItem.mutateAsync({ kitId: newKit.id, equipmentItemId: itemId });
+        }
         setSelectedKitId(newKit.id);
       }
     }
@@ -61,16 +88,30 @@ export function EquipmentKitManager() {
     resetForm();
   };
 
+  const addPendingItem = (itemId: string) => {
+    if (!pendingInventoryItems.includes(itemId)) {
+      setPendingInventoryItems(prev => [...prev, itemId]);
+    }
+  };
+
+  const removePendingItem = (itemId: string) => {
+    setPendingInventoryItems(prev => prev.filter(id => id !== itemId));
+  };
+
   const handleEdit = (kit: EquipmentKit) => {
     setEditingKit(kit);
-    setSelectedKitId(kit.id); // Also select the kit to show items editor
+    setSelectedKitId(kit.id);
     setFormData({
       name: kit.name,
       description: kit.description || '',
+      other_items: kit.other_items || [],
       is_active: kit.is_active,
     });
+    setPendingInventoryItems([]);
     setDialogOpen(true);
   };
+
+  const addKitItem = useAddKitItem();
 
   if (isLoading) {
     return <div className="text-muted-foreground">Loading kits...</div>;
@@ -117,12 +158,87 @@ export function EquipmentKitManager() {
                   />
                 </div>
                 
-                {/* Show items editor inline when editing an existing kit */}
-                {editingKit && (
+                {/* Equipment Inventory Items */}
+                {editingKit ? (
                   <div className="border-t pt-4 mt-4">
                     <InlineKitItemsEditor kitId={editingKit.id} allItems={allItems || []} />
                   </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Equipment from Inventory
+                    </Label>
+                    {allItems && allItems.length > 0 ? (
+                      <>
+                        <Select onValueChange={addPendingItem} value="">
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select equipment to add..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allItems.filter(item => !pendingInventoryItems.includes(item.id)).map((item) => (
+                              <SelectItem key={item.id} value={item.id}>
+                                {item.name} ({item.category})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {pendingInventoryItems.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {pendingInventoryItems.map(itemId => {
+                              const item = allItems.find(i => i.id === itemId);
+                              return (
+                                <Badge key={itemId} variant="secondary" className="gap-1">
+                                  {item?.name}
+                                  <button type="button" onClick={() => removePendingItem(itemId)}>
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No equipment items available. Add items to Equipment Inventory first.
+                      </p>
+                    )}
+                  </div>
                 )}
+
+                {/* Other Items (non-inventory) */}
+                <div className="space-y-3">
+                  <Label>Other Items (cables, power leads, etc.)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newOtherItem}
+                      onChange={(e) => setNewOtherItem(e.target.value)}
+                      placeholder="e.g., Power extension lead"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addOtherItem();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="secondary" onClick={addOtherItem}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {formData.other_items.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.other_items.map((item, index) => (
+                        <Badge key={index} variant="outline" className="gap-1">
+                          {item}
+                          <button type="button" onClick={() => removeOtherItem(index)}>
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
@@ -155,8 +271,18 @@ export function EquipmentKitManager() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
                   <p className="text-sm text-muted-foreground">{kit.description || 'No description'}</p>
+                  {kit.other_items && kit.other_items.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {kit.other_items.slice(0, 3).map((item, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">{item}</Badge>
+                      ))}
+                      {kit.other_items.length > 3 && (
+                        <Badge variant="outline" className="text-xs">+{kit.other_items.length - 3} more</Badge>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -355,12 +481,24 @@ function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: st
             {(!kit?.items || kit.items.length === 0) && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                  No items in this kit
+                  No inventory items in this kit
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+
+        {/* Display Other Items */}
+        {kit?.other_items && kit.other_items.length > 0 && (
+          <div className="space-y-2 pt-2 border-t">
+            <Label className="text-sm font-medium">Other Items</Label>
+            <div className="flex flex-wrap gap-2">
+              {kit.other_items.map((item, index) => (
+                <Badge key={index} variant="secondary">{item}</Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

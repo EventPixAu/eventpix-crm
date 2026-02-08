@@ -7,6 +7,7 @@ export interface EquipmentKit {
   id: string;
   name: string;
   description: string | null;
+  other_items: string[] | null;
   is_active: boolean;
   created_at: string;
 }
