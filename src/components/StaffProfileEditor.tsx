@@ -290,8 +290,8 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
               {/* Personal Info Section */}
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Personal Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-3">
                 <Label htmlFor="full_name">Full Name</Label>
                 <Input
                   id="full_name"
@@ -301,7 +301,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 />
               </div>
 
-              <div>
+              <div className="col-span-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -328,7 +328,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 />
               </div>
 
-              <div className="col-span-2">
+              <div className="col-span-3">
                 <Label htmlFor="business_name">Business Name</Label>
                 <Input
                   id="business_name"
@@ -338,7 +338,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 />
               </div>
 
-              <div>
+              <div className="col-span-2">
                 <Label htmlFor="abn">ABN or TFN</Label>
                 <Input
                   id="abn"
