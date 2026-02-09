@@ -3588,6 +3588,7 @@ export type Database = {
           email: string
           email_notifications_enabled: boolean | null
           full_name: string | null
+          gst_registered: boolean | null
           home_city: string | null
           home_state: string | null
           id: string
@@ -3632,6 +3633,7 @@ export type Database = {
           email: string
           email_notifications_enabled?: boolean | null
           full_name?: string | null
+          gst_registered?: boolean | null
           home_city?: string | null
           home_state?: string | null
           id: string
@@ -3676,6 +3678,7 @@ export type Database = {
           email?: string
           email_notifications_enabled?: boolean | null
           full_name?: string | null
+          gst_registered?: boolean | null
           home_city?: string | null
           home_state?: string | null
           id?: string
@@ -4376,6 +4379,7 @@ export type Database = {
           created_at: string | null
           dietary_requirements: string | null
           email: string
+          gst_registered: boolean | null
           id: string
           location: string | null
           name: string
@@ -4404,6 +4408,7 @@ export type Database = {
           created_at?: string | null
           dietary_requirements?: string | null
           email: string
+          gst_registered?: boolean | null
           id?: string
           location?: string | null
           name: string
@@ -4432,6 +4437,7 @@ export type Database = {
           created_at?: string | null
           dietary_requirements?: string | null
           email?: string
+          gst_registered?: boolean | null
           id?: string
           location?: string | null
           name?: string
