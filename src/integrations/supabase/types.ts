@@ -5777,6 +5777,7 @@ export type Database = {
         | "executive"
         | "operations"
         | "crew"
+        | "assistant"
       audit_action:
         | "event_created"
         | "event_updated"
@@ -5994,6 +5995,7 @@ export const Constants = {
         "executive",
         "operations",
         "crew",
+        "assistant",
       ],
       audit_action: [
         "event_created",
