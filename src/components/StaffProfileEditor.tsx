@@ -51,6 +51,7 @@ interface StaffProfile {
   location_postcode?: string | null;
   business_name?: string | null;
   abn?: string | null;
+  gst_registered?: boolean | null;
   address_line1?: string | null;
   address_line2?: string | null;
   address_city?: string | null;
@@ -105,6 +106,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
     location_postcode: profile.location_postcode || '',
     business_name: profile.business_name || '',
     abn: profile.abn || '',
+    gst_registered: profile.gst_registered ?? false,
     address_line1: profile.address_line1 || '',
     address_line2: profile.address_line2 || '',
     address_city: profile.address_city || '',
@@ -134,6 +136,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             location: data.location || null,
             business_name: data.business_name || null,
             abn: data.abn || null,
+            gst_registered: data.gst_registered ?? false,
             address_line1: data.address_line1 || null,
             address_line2: data.address_line2 || null,
             address_city: data.address_city || null,
@@ -174,6 +177,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
           location_postcode: data.location_postcode || null,
           business_name: data.business_name || null,
           abn: data.abn || null,
+          gst_registered: data.gst_registered ?? false,
           address_line1: data.address_line1 || null,
           address_line2: data.address_line2 || null,
           address_city: data.address_city || null,
@@ -242,12 +246,13 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         location_state: profile.location_state || '',
         location_postcode: profile.location_postcode || '',
         business_name: profile.business_name || '',
-        abn: profile.abn || '',
-        address_line1: profile.address_line1 || '',
-        address_line2: profile.address_line2 || '',
-        address_city: profile.address_city || '',
-        address_state: profile.address_state || '',
-        address_postcode: profile.address_postcode || '',
+    abn: profile.abn || '',
+    gst_registered: profile.gst_registered ?? false,
+    address_line1: profile.address_line1 || '',
+    address_line2: profile.address_line2 || '',
+    address_city: profile.address_city || '',
+    address_state: profile.address_state || '',
+    address_postcode: profile.address_postcode || '',
         vehicle_make_model: profile.vehicle_make_model || '',
         pli_details: profile.pli_details || '',
         pli_expiry: profile.pli_expiry || '',
@@ -296,7 +301,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 />
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -313,6 +318,16 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                 )}
               </div>
 
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+
               <div className="col-span-2">
                 <Label htmlFor="business_name">Business Name</Label>
                 <Input
@@ -324,16 +339,6 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="abn">ABN or TFN</Label>
                 <Input
                   id="abn"
@@ -341,6 +346,22 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                   onChange={(e) => setFormData({ ...formData, abn: e.target.value })}
                   placeholder="ABN or Tax File Number"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="gst_registered">Registered for GST?</Label>
+                <Select
+                  value={formData.gst_registered ? 'yes' : 'no'}
+                  onValueChange={(value) => setFormData({ ...formData, gst_registered: value === 'yes' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
