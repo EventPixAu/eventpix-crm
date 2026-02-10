@@ -465,9 +465,13 @@ Deno.serve(async (req) => {
                   
                   if (amount === 0) continue;
                   
-                  // Only include expense accounts (positive amounts in expense sections)
-                  // In P&L, expenses are typically positive values under expense sections
-                  if (!isExpenseSection && amount > 0) continue;
+                  // Skip summary/total rows
+                  const acctNameLower = accountName.toLowerCase();
+                  if (acctNameLower.includes('net profit') || acctNameLower.includes('total') || 
+                      acctNameLower.includes('gross profit') || acctNameLower.includes('net loss')) continue;
+                  
+                  // Only include expense accounts from expense sections
+                  if (!isExpenseSection) continue;
                   
                   // Categorise based on account name
                   const acctLower = accountName.toLowerCase();
