@@ -311,11 +311,12 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
   }, [toast]);
 
   const handleStartImport = useCallback(() => {
-    // Inject the import tag into every contact before importing
+    // Inject the import tag as both a tag and the source field
     const taggedContacts = importTag.trim()
       ? contacts.map(c => ({
           ...c,
           tags: [...new Set([...(c.tags || []), importTag.trim()])],
+          source: importTag.trim(),
         }))
       : contacts;
 
@@ -503,7 +504,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
               />
             </div>
             <p className="text-xs text-muted-foreground pb-2 max-w-[200px]">
-              This tag will be added to all imported contacts
+              Added as a tag and saved as the contact's Source
             </p>
           </div>
 
