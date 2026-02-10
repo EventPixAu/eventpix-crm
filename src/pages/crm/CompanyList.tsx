@@ -68,7 +68,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
-type SortColumn = 'tags' | 'category' | 'source' | 'status' | null;
+type SortColumn = 'tags' | 'category' | 'source' | 'contact_sources' | 'status' | null;
 type SortDirection = 'asc' | 'desc';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
@@ -94,6 +94,8 @@ interface Company {
   primary_contact_email: string | null;
   // Aggregated tags from all linked contacts
   tags: string[];
+  // Aggregated sources from all linked contacts
+  contact_sources: string[];
 }
 
 function computeClientStatus(events: Array<{ event_date: string; ops_status: string | null }>): ComputedStatus {
@@ -207,7 +209,7 @@ export default function CompanyList() {
         // Get all contacts that have a client_id (direct link)
         supabase
           .from('client_contacts')
-          .select('client_id, tags')
+          .select('client_id, tags, source')
           .not('client_id', 'is', null),
         // Get all contact_company_associations (for count and primary contacts)
         supabase
@@ -216,7 +218,7 @@ export default function CompanyList() {
             company_id,
             contact_id,
             is_primary,
-            contact:client_contacts(contact_name, email, tags)
+            contact:client_contacts(contact_name, email, tags, source)
           `)
           .eq('is_active', true),
         // Get all events for these clients
@@ -230,6 +232,7 @@ export default function CompanyList() {
       // Use a Set to track unique contact IDs per company (avoid double-counting)
       const contactIdsByCompany: Record<string, Set<string>> = {};
       const tagsMap: Record<string, Set<string>> = {};
+      const sourcesMap: Record<string, Set<string>> = {};
       
       // Count contacts with direct client_id link (filter to only companies in our result set)
       (contactsResult.data || []).forEach(c => {
@@ -242,6 +245,10 @@ export default function CompanyList() {
           if (!tagsMap[c.client_id]) tagsMap[c.client_id] = new Set();
           c.tags.forEach((tag: string) => tagsMap[c.client_id].add(tag));
         }
+        if (c.source) {
+          if (!sourcesMap[c.client_id]) sourcesMap[c.client_id] = new Set();
+          sourcesMap[c.client_id].add(c.source);
+        }
       });
 
       // Process associations for counts, primary contacts, and tags
@@ -250,7 +257,7 @@ export default function CompanyList() {
       (associationsResult.data || []).forEach(assoc => {
         if (!clientIdSet.has(assoc.company_id)) return;
         
-        const contact = assoc.contact as { contact_name: string; email: string | null; tags: string[] | null } | null;
+        const contact = assoc.contact as { contact_name: string; email: string | null; tags: string[] | null; source: string | null } | null;
         if (!contact) return;
         
         // Add to contact count (using contact_id to dedupe)
@@ -269,6 +276,12 @@ export default function CompanyList() {
         if (contact.tags && Array.isArray(contact.tags)) {
           if (!tagsMap[assoc.company_id]) tagsMap[assoc.company_id] = new Set();
           contact.tags.forEach((tag: string) => tagsMap[assoc.company_id].add(tag));
+        }
+        
+        // Collect sources
+        if (contact.source) {
+          if (!sourcesMap[assoc.company_id]) sourcesMap[assoc.company_id] = new Set();
+          sourcesMap[assoc.company_id].add(contact.source);
         }
       });
 
@@ -290,6 +303,7 @@ export default function CompanyList() {
         const manualStatus = company.manual_status as ComputedStatus | null;
         const primaryContact = primaryContactMap[company.id];
         const companyTags = tagsMap[company.id] ? Array.from(tagsMap[company.id]).sort() : [];
+        const companySources = sourcesMap[company.id] ? Array.from(sourcesMap[company.id]).sort() : [];
         return {
           ...company,
           contact_count: countMap[company.id] || 0,
@@ -300,6 +314,7 @@ export default function CompanyList() {
           primary_contact_name: primaryContact?.name || null,
           primary_contact_email: primaryContact?.email || null,
           tags: companyTags,
+          contact_sources: companySources,
         };
       }) as Company[];
     },
@@ -342,6 +357,10 @@ export default function CompanyList() {
         case 'source':
           aVal = (a.lead_source || '').toLowerCase();
           bVal = (b.lead_source || '').toLowerCase();
+          break;
+        case 'contact_sources':
+          aVal = a.contact_sources.join(',').toLowerCase();
+          bVal = b.contact_sources.join(',').toLowerCase();
           break;
         case 'status':
           aVal = a.display_status.toLowerCase();
@@ -538,6 +557,15 @@ export default function CompanyList() {
                       <SortIcon column="source" />
                     </div>
                   </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('contact_sources')}
+                  >
+                    <div className="flex items-center">
+                      Contact Sources
+                      <SortIcon column="contact_sources" />
+                    </div>
+                  </TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
@@ -636,6 +664,25 @@ export default function CompanyList() {
                           <Database className="h-3 w-3" />
                           {company.lead_source}
                         </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {company.contact_sources.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                          {company.contact_sources.slice(0, 3).map((src) => (
+                            <Badge key={src} variant="secondary" className="gap-1 text-xs">
+                              <Database className="h-3 w-3" />
+                              {src}
+                            </Badge>
+                          ))}
+                          {company.contact_sources.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{company.contact_sources.length - 3}
+                            </Badge>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}

@@ -41,6 +41,7 @@ import {
   Filter,
   X,
   Tag,
+  Database,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
@@ -84,6 +85,7 @@ interface Contact {
   is_freelance: boolean | null;
   companies: CompanyAssociation[];
   tags: string[] | null;
+  source: string | null;
 }
 
 export default function ContactList() {
@@ -149,6 +151,7 @@ export default function ContactList() {
           client_id,
           is_freelance,
           tags,
+          source,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
@@ -199,6 +202,7 @@ export default function ContactList() {
             client_id,
             is_freelance,
             tags,
+            source,
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
@@ -300,6 +304,7 @@ export default function ContactList() {
           is_freelance: contact.is_freelance,
           companies,
           tags: contact.tags,
+          source: contact.source || null,
         };
       }) as Contact[];
     },
@@ -573,6 +578,7 @@ export default function ContactList() {
                       <TableHead className="min-w-[150px]">Name</TableHead>
                       <TableHead className="min-w-[200px]">Companies</TableHead>
                       <TableHead className="min-w-[120px]">Job Title</TableHead>
+                      <TableHead className="min-w-[100px]">Source</TableHead>
                       <TableHead className="min-w-[180px]">Email</TableHead>
                       <TableHead className="min-w-[120px]">Mobile</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
@@ -632,6 +638,16 @@ export default function ContactList() {
                             </Badge>
                           ) : contact.role_title ? (
                             <span className="text-sm">{contact.role_title}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.source ? (
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <Database className="h-3 w-3" />
+                              {contact.source}
+                            </Badge>
                           ) : (
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
