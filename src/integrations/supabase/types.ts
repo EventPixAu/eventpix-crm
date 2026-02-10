@@ -577,6 +577,57 @@ export type Database = {
         }
         Relationships: []
       }
+      company_insurance_policies: {
+        Row: {
+          coc_file_name: string | null
+          coc_file_path: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          insurance_type: string
+          insurer_name: string | null
+          is_active: boolean
+          notes: string | null
+          policy_number: string | null
+          renewal_due_date: string | null
+          renewal_paid_date: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          coc_file_name?: string | null
+          coc_file_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          insurance_type: string
+          insurer_name?: string | null
+          is_active?: boolean
+          notes?: string | null
+          policy_number?: string | null
+          renewal_due_date?: string | null
+          renewal_paid_date?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          coc_file_name?: string | null
+          coc_file_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          insurance_type?: string
+          insurer_name?: string | null
+          is_active?: boolean
+          notes?: string | null
+          policy_number?: string | null
+          renewal_due_date?: string | null
+          renewal_paid_date?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_status_audit: {
         Row: {
           action: string
