@@ -132,10 +132,62 @@ Deno.serve(async (req) => {
       console.log('Token auto-refreshed successfully');
     }
 
-    const xeroHeaders = {
+    // Helper to make Xero API calls with auto-retry on 401
+    const makeXeroHeaders = () => ({
       'Authorization': `Bearer ${xeroToken.access_token}`,
       'xero-tenant-id': xeroToken.tenant_id,
       'Accept': 'application/json'
+    });
+
+    const refreshTokenAndRetry = async () => {
+      const XERO_CLIENT_ID = Deno.env.get('XERO_CLIENT_ID');
+      const XERO_CLIENT_SECRET = Deno.env.get('XERO_CLIENT_SECRET');
+      if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) throw new Error('Xero credentials not configured');
+
+      const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${btoa(`${XERO_CLIENT_ID}:${XERO_CLIENT_SECRET}`)}`
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: xeroToken.refresh_token
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('Token refresh failed:', errorText);
+        throw new Error('Xero token refresh failed. Please reconnect to Xero.');
+      }
+
+      const newTokens = await tokenResponse.json();
+      const newExpiresAt = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
+
+      await supabase
+        .from('xero_tokens')
+        .update({
+          access_token: newTokens.access_token,
+          refresh_token: newTokens.refresh_token,
+          expires_at: newExpiresAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', xeroToken.id);
+
+      xeroToken = { ...xeroToken, access_token: newTokens.access_token, refresh_token: newTokens.refresh_token };
+      console.log('Token refreshed after 401');
+    };
+
+    // Fetch with auto-retry on 401
+    const xeroFetch = async (url: string, options?: RequestInit): Promise<Response> => {
+      let response = await fetch(url, { ...options, headers: { ...makeXeroHeaders(), ...options?.headers } });
+      if (response.status === 401) {
+        console.log('Got 401 from Xero, refreshing token and retrying...');
+        await refreshTokenAndRetry();
+        response = await fetch(url, { ...options, headers: { ...makeXeroHeaders(), ...options?.headers } });
+      }
+      return response;
     };
 
     switch (path) {
@@ -171,7 +223,7 @@ Deno.serve(async (req) => {
           try {
             // Search for invoice by reference number
             const searchUrl = `${XERO_API_URL}/Invoices?where=InvoiceNumber=="${event.invoice_reference}"`;
-            const response = await fetch(searchUrl, { headers: xeroHeaders });
+            const response = await xeroFetch(searchUrl);
 
             if (!response.ok) {
               console.error(`Failed to fetch invoice for ${event.invoice_reference}:`, await response.text());
@@ -330,7 +382,7 @@ Deno.serve(async (req) => {
         console.log(`Searching for expenses with tag: "${event.xero_tag}"`);
 
         // Step 1: Find the tracking category and option that matches the event tag
-        const tcResponse = await fetch(`${XERO_API_URL}/TrackingCategories`, { headers: xeroHeaders });
+        const tcResponse = await xeroFetch(`${XERO_API_URL}/TrackingCategories`);
         if (!tcResponse.ok) {
           const errorText = await tcResponse.text();
           console.error('Failed to fetch tracking categories:', errorText);
@@ -377,7 +429,7 @@ Deno.serve(async (req) => {
         const reportUrl = `${XERO_API_URL}/Reports/ProfitAndLoss?trackingCategoryID=${trackingCategoryID}&trackingOptionID=${trackingOptionID}&standardLayout=true`;
         console.log(`Fetching P&L report for tracking option`);
         
-        const reportResponse = await fetch(reportUrl, { headers: xeroHeaders });
+        const reportResponse = await xeroFetch(reportUrl);
         if (!reportResponse.ok) {
           const errorText = await reportResponse.text();
           console.error('Failed to fetch P&L report:', errorText);
