@@ -59,6 +59,7 @@ import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
+import CompanyInsurance from "./pages/admin/CompanyInsurance";
 import { CompanyList, ContactList, CrmEmails, PromotionsDashboard } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
 import ResetPassword from "./pages/ResetPassword";
@@ -170,6 +171,7 @@ function AppRoutes() {
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/insurance" element={<ProtectedRoute><AdminGuard><CompanyInsurance /></AdminGuard></ProtectedRoute>} />
       
       {/* CRM routes - admin + sales */}
       <Route path="/crm/promotions" element={<ProtectedRoute><SalesGuard><PromotionsDashboard /></SalesGuard></ProtectedRoute>} />
