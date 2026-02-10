@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Plus, Trash2, Edit2, ToggleLeft, ToggleRight, Archive, RotateCcw } from 'lucide-react';
+import { FileText, Plus, Trash2, Edit2, ToggleLeft, ToggleRight, Archive, RotateCcw, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -156,6 +156,16 @@ export default function QuoteTemplates() {
     await restoreTemplate.mutateAsync(id);
   };
 
+  const handleDuplicate = async (template: QuoteTemplate) => {
+    await createTemplate.mutateAsync({
+      name: `${template.name} (Copy)`,
+      description: template.description || null,
+      terms_text: template.terms_text || null,
+      items_json: template.items_json || [],
+    });
+    toast({ title: 'Template duplicated' });
+  };
+
   return (
     <AppLayout>
       <PageHeader
@@ -274,6 +284,14 @@ export default function QuoteTemplates() {
                                 onClick={() => handleEdit(template)}
                               >
                                 <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDuplicate(template)}
+                                title="Duplicate template"
+                              >
+                                <Copy className="h-4 w-4" />
                               </Button>
                               {isAdmin && (
                                 <>
