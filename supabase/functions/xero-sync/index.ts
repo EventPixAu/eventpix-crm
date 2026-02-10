@@ -225,60 +225,89 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Search for invoices/bills with this tracking category
-        // Note: Xero uses tracking categories or reference fields for tagging
-        // We'll search for bills (expenses) with the tag in Reference
-        const searchUrl = `${XERO_API_URL}/Invoices?where=Type=="ACCPAY"`;
-        const response = await fetch(searchUrl, { headers: xeroHeaders });
+        // Helper to categorize expense lines
+        const categoriseLine = (desc: string): 'staff' | 'travel' | 'accommodation' | 'sundry' => {
+          const d = desc.toLowerCase();
+          if (d.includes('travel') || d.includes('fuel') || d.includes('mileage') || d.includes('transport') || d.includes('flight') || d.includes('airfare') || d.includes('uber') || d.includes('taxi') || d.includes('car hire')) {
+            return 'travel';
+          } else if (d.includes('hotel') || d.includes('accommodation') || d.includes('lodging') || d.includes('airbnb')) {
+            return 'accommodation';
+          } else if (d.includes('staff') || d.includes('wage') || d.includes('salary') || d.includes('contractor')) {
+            return 'staff';
+          }
+          return 'sundry';
+        };
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Failed to fetch expenses:', errorText);
-          return new Response(
-            JSON.stringify({ error: 'Failed to fetch expenses from Xero', details: errorText }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        // Helper to check if a transaction matches the event tag
+        const matchesEventTag = (item: any, tag: string): boolean => {
+          return (
+            item.Reference?.includes(tag) ||
+            item.LineItems?.some((line: any) =>
+              line.Description?.includes(tag) ||
+              line.Tracking?.some((t: any) => t.Option?.includes(tag))
+            )
           );
-        }
+        };
 
-        const data = await response.json();
+        // Helper to extract expense lines from a matched transaction
+        const extractLines = (txn: any, tag: string, idField: string) => {
+          const lines: any[] = [];
+          for (const line of txn.LineItems || []) {
+            // Check if this specific line matches the tag via tracking
+            const lineMatchesTag = line.Tracking?.some((t: any) => t.Option?.includes(tag));
+            // If the whole transaction matches by Reference, include all lines
+            // If only some lines match by tracking, include only those
+            const txnMatchesByRef = txn.Reference?.includes(tag);
+            if (!txnMatchesByRef && !lineMatchesTag) continue;
+
+            // Use tracking category name or account name to help categorise
+            const accountName = (line.AccountCode || '').toLowerCase();
+            const trackingName = line.Tracking?.map((t: any) => t.Name || '').join(' ').toLowerCase() || '';
+            const descForCat = `${line.Description || ''} ${accountName} ${trackingName}`;
+
+            lines.push({
+              event_id: eventId,
+              expense_category: categoriseLine(descForCat),
+              description: line.Description || txn.Reference || 'Xero expense',
+              amount: Math.abs(line.LineAmount || 0),
+              expense_date: txn.Date || txn.DateString || null,
+              xero_line_id: line.LineItemID,
+              xero_invoice_id: txn[idField],
+              synced_at: new Date().toISOString()
+            });
+          }
+          return lines;
+        };
+
         const expenses: any[] = [];
 
-        // Filter bills that match our tag (in Reference or LineItem descriptions)
-        for (const bill of data.Invoices || []) {
-          const matchesTag = 
-            bill.Reference?.includes(event.xero_tag) ||
-            bill.LineItems?.some((line: any) => 
-              line.Description?.includes(event.xero_tag) ||
-              line.Tracking?.some((t: any) => t.Option?.includes(event.xero_tag))
-            );
-
-          if (matchesTag) {
-            for (const line of bill.LineItems || []) {
-              // Categorize based on account or description
-              let category: 'staff' | 'travel' | 'accommodation' | 'sundry' = 'sundry';
-              const desc = (line.Description || '').toLowerCase();
-              const accountName = (line.AccountCode || '').toLowerCase();
-
-              if (desc.includes('travel') || desc.includes('fuel') || desc.includes('mileage') || desc.includes('transport')) {
-                category = 'travel';
-              } else if (desc.includes('hotel') || desc.includes('accommodation') || desc.includes('lodging')) {
-                category = 'accommodation';
-              } else if (desc.includes('staff') || desc.includes('wage') || desc.includes('salary') || desc.includes('contractor')) {
-                category = 'staff';
-              }
-
-              expenses.push({
-                event_id: eventId,
-                expense_category: category,
-                description: line.Description || bill.Reference || 'Xero expense',
-                amount: line.LineAmount || 0,
-                expense_date: bill.Date,
-                xero_line_id: line.LineItemID,
-                xero_invoice_id: bill.InvoiceID,
-                synced_at: new Date().toISOString()
-              });
+        // 1) Search Bills (Accounts Payable invoices)
+        const billsUrl = `${XERO_API_URL}/Invoices?where=Type=="ACCPAY"&page=1`;
+        const billsResponse = await fetch(billsUrl, { headers: xeroHeaders });
+        if (billsResponse.ok) {
+          const billsData = await billsResponse.json();
+          for (const bill of billsData.Invoices || []) {
+            if (matchesEventTag(bill, event.xero_tag)) {
+              expenses.push(...extractLines(bill, event.xero_tag, 'InvoiceID'));
             }
           }
+        } else {
+          console.error('Failed to fetch bills:', await billsResponse.text());
+        }
+
+        // 2) Search Bank Transactions (Spend Money / Receive Money)
+        // This is where most tagged expenses live (credit card transactions, etc.)
+        const bankTxnUrl = `${XERO_API_URL}/BankTransactions?where=Type=="SPEND"&page=1`;
+        const bankResponse = await fetch(bankTxnUrl, { headers: xeroHeaders });
+        if (bankResponse.ok) {
+          const bankData = await bankResponse.json();
+          for (const txn of bankData.BankTransactions || []) {
+            if (matchesEventTag(txn, event.xero_tag)) {
+              expenses.push(...extractLines(txn, event.xero_tag, 'BankTransactionID'));
+            }
+          }
+        } else {
+          console.error('Failed to fetch bank transactions:', await bankResponse.text());
         }
 
         // Clear existing synced expenses and insert new ones
