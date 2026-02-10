@@ -280,35 +280,132 @@ Deno.serve(async (req) => {
         };
 
         const expenses: any[] = [];
+        console.log(`Searching for expenses with tag: "${event.xero_tag}"`);
 
-        // 1) Search Bills (Accounts Payable invoices)
-        const billsUrl = `${XERO_API_URL}/Invoices?where=Type=="ACCPAY"&page=1`;
-        const billsResponse = await fetch(billsUrl, { headers: xeroHeaders });
-        if (billsResponse.ok) {
-          const billsData = await billsResponse.json();
-          for (const bill of billsData.Invoices || []) {
-            if (matchesEventTag(bill, event.xero_tag)) {
-              expenses.push(...extractLines(bill, event.xero_tag, 'InvoiceID'));
-            }
-          }
-        } else {
-          console.error('Failed to fetch bills:', await billsResponse.text());
+        // Step 1: Find the tracking category and option that matches the event tag
+        const tcResponse = await fetch(`${XERO_API_URL}/TrackingCategories`, { headers: xeroHeaders });
+        if (!tcResponse.ok) {
+          const errorText = await tcResponse.text();
+          console.error('Failed to fetch tracking categories:', errorText);
+          return new Response(
+            JSON.stringify({ error: 'Failed to fetch tracking categories from Xero', details: errorText }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
-        // 2) Search Bank Transactions (Spend Money / Receive Money)
-        // This is where most tagged expenses live (credit card transactions, etc.)
-        const bankTxnUrl = `${XERO_API_URL}/BankTransactions?where=Type=="SPEND"&page=1`;
-        const bankResponse = await fetch(bankTxnUrl, { headers: xeroHeaders });
-        if (bankResponse.ok) {
-          const bankData = await bankResponse.json();
-          for (const txn of bankData.BankTransactions || []) {
-            if (matchesEventTag(txn, event.xero_tag)) {
-              expenses.push(...extractLines(txn, event.xero_tag, 'BankTransactionID'));
+        const tcData = await tcResponse.json();
+        let trackingCategoryID: string | null = null;
+        let trackingOptionID: string | null = null;
+        let trackingCategoryName: string | null = null;
+
+        for (const category of tcData.TrackingCategories || []) {
+          for (const option of category.Options || []) {
+            if (option.Name === event.xero_tag) {
+              trackingCategoryID = category.TrackingCategoryID;
+              trackingOptionID = option.TrackingOptionID;
+              trackingCategoryName = category.Name;
+              break;
             }
           }
-        } else {
-          console.error('Failed to fetch bank transactions:', await bankResponse.text());
+          if (trackingCategoryID) break;
         }
+
+        if (!trackingCategoryID || !trackingOptionID) {
+          console.log(`No tracking option found for tag "${event.xero_tag}". Available categories:`, 
+            (tcData.TrackingCategories || []).map((c: any) => `${c.Name}: ${(c.Options || []).map((o: any) => o.Name).join(', ')}`).join(' | ')
+          );
+          return new Response(
+            JSON.stringify({ 
+              synced: 0, 
+              message: `No tracking option found in Xero matching "${event.xero_tag}". Check that the Xero Tag matches a tracking category option exactly.` 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log(`Found tracking: "${trackingCategoryName}" > "${event.xero_tag}" (${trackingCategoryID}/${trackingOptionID})`);
+
+        // Step 2: Use Xero Reports API to get expense totals for this tracking option
+        // This is efficient - just 1 API call instead of thousands of individual fetches
+        const reportUrl = `${XERO_API_URL}/Reports/ProfitAndLoss?trackingCategoryID=${trackingCategoryID}&trackingOptionID=${trackingOptionID}&standardLayout=true`;
+        console.log(`Fetching P&L report for tracking option`);
+        
+        const reportResponse = await fetch(reportUrl, { headers: xeroHeaders });
+        if (!reportResponse.ok) {
+          const errorText = await reportResponse.text();
+          console.error('Failed to fetch P&L report:', errorText);
+          // Fall back to empty result rather than error
+          console.log('P&L report unavailable, trying alternative approach...');
+        } else {
+          const reportData = await reportResponse.json();
+          const report = reportData.Reports?.[0];
+          
+          if (report) {
+            console.log(`Report: ${report.ReportName}, rows: ${report.Rows?.length}`);
+            
+            // Parse the P&L report rows to extract expense accounts
+            // P&L report structure: Rows -> Section (Header: "Expenses") -> Rows -> individual accounts
+            for (const section of report.Rows || []) {
+              // We want expense sections (not income/revenue)
+              const sectionTitle = section.Title || '';
+              const isExpenseSection = sectionTitle.toLowerCase().includes('expense') || 
+                                       sectionTitle.toLowerCase().includes('cost') ||
+                                       sectionTitle.toLowerCase().includes('overhead') ||
+                                       sectionTitle.toLowerCase().includes('direct');
+              
+              // Also check if this is a "Less" section (expenses in P&L)
+              if (section.RowType === 'Section') {
+                for (const row of section.Rows || []) {
+                  if (row.RowType !== 'Row') continue;
+                  
+                  const cells = row.Cells || [];
+                  if (cells.length < 2) continue;
+                  
+                  const accountName = cells[0]?.Value || '';
+                  const amount = parseFloat(cells[1]?.Value || '0');
+                  
+                  if (amount === 0) continue;
+                  
+                  // Only include expense accounts (positive amounts in expense sections)
+                  // In P&L, expenses are typically positive values under expense sections
+                  if (!isExpenseSection && amount > 0) continue;
+                  
+                  // Categorise based on account name
+                  const acctLower = accountName.toLowerCase();
+                  let category: 'staff' | 'travel' | 'accommodation' | 'sundry' = 'sundry';
+                  
+                  if (acctLower.includes('travel') || acctLower.includes('fuel') || 
+                      acctLower.includes('transport') || acctLower.includes('motor') ||
+                      acctLower.includes('accommodation & meals') || acctLower.includes('airfare')) {
+                    category = 'travel';
+                  } else if (acctLower.includes('hotel') || acctLower.includes('accommodation') || 
+                             acctLower.includes('lodging')) {
+                    category = 'accommodation';
+                  } else if (acctLower.includes('staff') || acctLower.includes('wage') || 
+                             acctLower.includes('salary') || acctLower.includes('contractor') ||
+                             acctLower.includes('subcontract')) {
+                    category = 'staff';
+                  }
+                  
+                  console.log(`Expense account: ${accountName} = $${Math.abs(amount)} (${category})`);
+                  
+                  expenses.push({
+                    event_id: eventId,
+                    expense_category: category,
+                    description: accountName,
+                    amount: Math.abs(amount),
+                    expense_date: null, // Report gives totals, not individual dates
+                    xero_line_id: null,
+                    xero_invoice_id: `report-${trackingOptionID}`,
+                    synced_at: new Date().toISOString()
+                  });
+                }
+              }
+            }
+          }
+        }
+        
+        console.log(`Found ${expenses.length} expense entries from report`);
 
         // Clear existing synced expenses and insert new ones
         await supabase
