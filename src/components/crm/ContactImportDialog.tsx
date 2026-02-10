@@ -409,7 +409,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {contacts.length - withCompany} contacts don't have a company and will be skipped.
+              {contacts.length - withCompany} contacts don't have a company — they'll be matched against existing records by email or name and updated if found, otherwise skipped.
             </AlertDescription>
           </Alert>
         )}
@@ -511,9 +511,9 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
             <Button variant="outline" onClick={() => setStep('select')}>
               Back
             </Button>
-            <Button onClick={handleStartImport} disabled={withCompany === 0}>
+            <Button onClick={handleStartImport} disabled={contacts.length === 0}>
               <Upload className="h-4 w-4 mr-2" />
-              Import {withCompany} Contacts
+              Import {contacts.length} Contacts
             </Button>
           </div>
         </div>

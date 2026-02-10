@@ -459,42 +459,66 @@ export function useContactImport() {
             }
           }
 
-          // Skip contact if no company could be determined
-          if (!companyId) {
-            result.contactsSkipped++;
-            result.errors.push(`Skipped contact "${contact.firstName || ''} ${contact.lastName || ''}": No company specified`);
-            continue;
-          }
-
-          // Check for existing contact by email OR by name within the company
+          // Check for existing contact — scoped to company if we have one, or global search
           let existingContact: ExistingContact | null = null;
-          if (contact.email) {
+
+          if (companyId && contact.email) {
             const { data } = await supabase
               .from('client_contacts')
               .select('id, email, tags')
               .eq('client_id', companyId)
               .eq('email', contact.email)
               .maybeSingle();
-            
             existingContact = data as ExistingContact | null;
           }
 
-          // Fallback: match by first+last name within the company if no email match
-          if (!existingContact && (contact.firstName || contact.lastName)) {
+          // Fallback: match by first+last name within the company
+          if (!existingContact && companyId && (contact.firstName || contact.lastName)) {
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             let nameQuery = supabase
               .from('client_contacts')
               .select('id, email, tags')
               .eq('client_id', companyId);
-            
             if (contact.firstName && contact.lastName) {
               nameQuery = nameQuery.eq('first_name', contact.firstName).eq('last_name', contact.lastName);
             } else {
               nameQuery = nameQuery.eq('contact_name', contactName);
             }
-            
             const { data } = await nameQuery.maybeSingle();
             existingContact = data as ExistingContact | null;
+          }
+
+          // No company — search globally by email
+          if (!existingContact && !companyId && contact.email) {
+            const { data } = await supabase
+              .from('client_contacts')
+              .select('id, email, tags')
+              .eq('email', contact.email)
+              .limit(1)
+              .maybeSingle();
+            existingContact = data as ExistingContact | null;
+          }
+
+          // No company, no email match — search globally by name
+          if (!existingContact && !companyId && (contact.firstName || contact.lastName)) {
+            const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
+            let nameQuery = supabase
+              .from('client_contacts')
+              .select('id, email, tags');
+            if (contact.firstName && contact.lastName) {
+              nameQuery = nameQuery.eq('first_name', contact.firstName).eq('last_name', contact.lastName);
+            } else {
+              nameQuery = nameQuery.eq('contact_name', contactName);
+            }
+            const { data } = await nameQuery.limit(1).maybeSingle();
+            existingContact = data as ExistingContact | null;
+          }
+
+          // If still no match and no company, skip creation (can't create without a company)
+          if (!existingContact && !companyId) {
+            result.contactsSkipped++;
+            result.errors.push(`Skipped "${contact.firstName || ''} ${contact.lastName || ''}": No company and no existing match found`);
+            continue;
           }
 
           // Map job title
