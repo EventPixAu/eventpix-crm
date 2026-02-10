@@ -454,6 +454,9 @@ Deno.serve(async (req) => {
               
               // Also check if this is a "Less" section (expenses in P&L)
               if (section.RowType === 'Section') {
+                // Only process expense sections - skip income, summary, etc.
+                if (!isExpenseSection) continue;
+                
                 for (const row of section.Rows || []) {
                   if (row.RowType !== 'Row') continue;
                   
@@ -469,9 +472,6 @@ Deno.serve(async (req) => {
                   const acctNameLower = accountName.toLowerCase();
                   if (acctNameLower.includes('net profit') || acctNameLower.includes('total') || 
                       acctNameLower.includes('gross profit') || acctNameLower.includes('net loss')) continue;
-                  
-                  // Only include expense accounts from expense sections
-                  if (!isExpenseSection) continue;
                   
                   // Categorise based on account name
                   const acctLower = accountName.toLowerCase();
