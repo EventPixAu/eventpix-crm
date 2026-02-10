@@ -15,10 +15,9 @@ export interface EventFinancials {
   isPaid: boolean;
   
   // Expenses by category
-  staffCost: number;      // From event_assignments.estimated_cost
-  travelCost: number;     // From event_expenses
-  accommodationCost: number; // From event_expenses
-  sundryCost: number;     // From event_expenses
+  staffCost: number;
+  travelAccommodationCost: number;
+  sundryCost: number;
   
   // Totals
   totalExpenses: number;
@@ -76,36 +75,30 @@ export function useEventFinancials(eventId: string | undefined) {
       const staffCost = (assignments || []).reduce((sum, a) => sum + (a.estimated_cost || 0), 0);
       
       // Calculate expense totals by category
-      let travelCost = 0;
-      let accommodationCost = 0;
+      let travelAccommodationCost = 0;
       let sundryCost = 0;
       
       (expenses || []).forEach((exp) => {
         const amount = exp.amount || 0;
         switch (exp.expense_category) {
           case 'travel':
-            travelCost += amount;
-            break;
           case 'accommodation':
-            accommodationCost += amount;
+            travelAccommodationCost += amount;
             break;
           case 'sundry':
             sundryCost += amount;
             break;
           case 'staff':
-            // Staff expenses from Xero (supplements assignment costs)
-            // These are additional staff-related costs not captured in assignments
             break;
         }
       });
       
-      // Add any Xero-synced staff expenses to staffCost
       const xeroStaffCost = (expenses || [])
         .filter((e) => e.expense_category === 'staff')
         .reduce((sum, e) => sum + (e.amount || 0), 0);
       
       const totalStaffCost = staffCost + xeroStaffCost;
-      const totalExpenses = totalStaffCost + travelCost + accommodationCost + sundryCost;
+      const totalExpenses = totalStaffCost + travelAccommodationCost + sundryCost;
       const profit = quotedTotal - totalExpenses;
       const profitMargin = quotedTotal > 0 ? (profit / quotedTotal) * 100 : 0;
       
@@ -115,8 +108,7 @@ export function useEventFinancials(eventId: string | undefined) {
         invoicePaidAt: event.invoice_paid_at,
         isPaid,
         staffCost: totalStaffCost,
-        travelCost,
-        accommodationCost,
+        travelAccommodationCost,
         sundryCost,
         totalExpenses,
         profit,
