@@ -52,7 +52,7 @@ export function LinkContactToCompanyDialog({
 }: LinkContactToCompanyDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [relationshipType, setRelationshipType] = useState('contractor');
+  const [relationshipType, setRelationshipType] = useState('employee');
   const [linking, setLinking] = useState(false);
   
   const createAssociation = useCreateContactAssociation();
@@ -114,7 +114,7 @@ export function LinkContactToCompanyDialog({
       // Reset and close
       setSelectedContactId(null);
       setSearchQuery('');
-      setRelationshipType('contractor');
+    setRelationshipType('employee');
       onOpenChange(false);
     } finally {
       setLinking(false);
@@ -124,7 +124,7 @@ export function LinkContactToCompanyDialog({
   const handleClose = () => {
     setSelectedContactId(null);
     setSearchQuery('');
-    setRelationshipType('contractor');
+    setRelationshipType('employee');
     onOpenChange(false);
   };
 
