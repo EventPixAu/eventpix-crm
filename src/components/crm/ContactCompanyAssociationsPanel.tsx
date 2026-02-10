@@ -391,7 +391,7 @@ export function ContactCompanyAssociationsPanel({
             </div>
 
             <div className="space-y-2">
-              <Label>Custom Title (optional)</Label>
+              <Label>Optional Job Title</Label>
               <Input 
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
