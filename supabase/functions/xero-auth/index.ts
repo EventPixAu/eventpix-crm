@@ -35,9 +35,7 @@ Deno.serve(async (req) => {
 
   // Get redirect URI from request origin or use default
   const origin = req.headers.get('origin') || url.origin;
-  const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-  // Include apikey in callback URL so Xero's redirect works without auth headers
-  const REDIRECT_URI = `${SUPABASE_URL}/functions/v1/xero-auth/callback?apikey=${SUPABASE_ANON_KEY}`;
+  const REDIRECT_URI = `${SUPABASE_URL}/functions/v1/xero-auth/callback`;
 
   if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
     return new Response(
