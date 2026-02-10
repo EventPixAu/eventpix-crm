@@ -7,7 +7,7 @@
  * - Inline creation with duplicate checking
  * - Returns contact_id reference
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, User, Building2, Phone, Mail, Plus, X, Loader2, Check, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ import {
 } from '@/hooks/useContactSearch';
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { useClients } from '@/hooks/useSales';
+import { useClientContacts } from '@/hooks/useClientContacts';
 
 interface ContactSelectorProps {
   value: string | null; // contact_id
@@ -106,12 +107,24 @@ export function ContactSelector({
   // Search contacts
   const { data: searchResults = [], isLoading: isSearching } = useContactSearch(searchTerm);
 
+  // Fetch company contacts to show first when companyId is set
+  const { data: companyContacts = [] } = useClientContacts(companyId);
+
   // Create contact mutation
   const createContact = useCreateCrmContact();
 
   // Job titles and companies for create form
   const { data: jobTitles = [] } = useJobTitles();
   const { data: companies = [] } = useClients();
+
+  // Sort search results: company-linked contacts first
+  const sortedSearchResults = useMemo(() => {
+    if (!companyId || searchResults.length === 0) return searchResults;
+    const companyContactIds = new Set(companyContacts.map(c => c.id));
+    const linked = searchResults.filter(c => companyContactIds.has(c.id));
+    const others = searchResults.filter(c => !companyContactIds.has(c.id));
+    return [...linked, ...others];
+  }, [searchResults, companyId, companyContacts]);
 
   // Reset search when popover closes
   useEffect(() => {
@@ -306,17 +319,78 @@ export function ContactSelector({
                 <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
                 Searching...
               </div>
+            ) : searchTerm.length < 2 && companyId && companyContacts.length > 0 ? (
+              <div className="p-1">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  Company Contacts
+                </div>
+                {companyContacts.map((contact) => {
+                  const isSelected = contact.id === value;
+                  return (
+                    <button
+                      key={contact.id}
+                      className={cn(
+                        'w-full flex items-start gap-3 p-2 rounded-md text-left hover:bg-accent transition-colors',
+                        isSelected && 'bg-accent'
+                      )}
+                      onClick={() => handleSelect({
+                        id: contact.id,
+                        contact_name: contact.contact_name,
+                        first_name: null,
+                        last_name: null,
+                        email: contact.email,
+                        phone_mobile: contact.phone_mobile,
+                        phone_office: contact.phone_office,
+                        phone: contact.phone,
+                        job_title_id: null,
+                        role_title: null,
+                        is_freelance: null,
+                        client_id: null,
+                      })}
+                    >
+                      <div className="p-1.5 bg-muted rounded shrink-0 mt-0.5">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{contact.contact_name}</span>
+                          {isSelected && (
+                            <Check className="h-4 w-4 text-primary ml-auto" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                          {contact.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {contact.email}
+                            </span>
+                          )}
+                          {(contact.phone_mobile || contact.phone) && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {contact.phone_mobile || contact.phone}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+                <div className="px-2 py-1.5 text-xs text-muted-foreground italic">
+                  Type to search all contacts
+                </div>
+              </div>
             ) : searchTerm.length < 2 ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
                 Type at least 2 characters to search
               </div>
-            ) : searchResults.length === 0 ? (
+            ) : sortedSearchResults.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
                 No contacts found
               </div>
             ) : (
               <div className="p-1">
-                {searchResults.map((contact) => {
+                {sortedSearchResults.map((contact) => {
                   const display = getContactDisplay(contact);
                   const isSelected = contact.id === value;
 
