@@ -176,6 +176,18 @@ export default function EmailTemplates() {
     setDeleteId(null);
   };
 
+  const handleDuplicate = async (template: EmailTemplate) => {
+    await createTemplate.mutateAsync({
+      name: `${template.name} (Copy)`,
+      subject: template.subject,
+      body_html: template.body_html,
+      body_text: template.body_text || template.body_html,
+      trigger_type: template.trigger_type,
+      format: template.format || 'text',
+    });
+    toast({ title: 'Template duplicated' });
+  };
+
   const handlePreview = (template: EmailTemplate) => {
     setPreviewTemplate(template);
     setIsPreviewOpen(true);
@@ -311,6 +323,14 @@ export default function EmailTemplates() {
                           onClick={() => handleEdit(template)}
                         >
                           <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicate(template)}
+                          title="Duplicate template"
+                        >
+                          <Copy className="h-4 w-4" />
                         </Button>
                         {isAdmin && (
                           <Button

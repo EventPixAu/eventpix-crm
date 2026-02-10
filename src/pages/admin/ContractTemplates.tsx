@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { format } from 'date-fns';
-import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, RefreshCw, Archive, RotateCcw } from 'lucide-react';
+import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, RefreshCw, Archive, RotateCcw, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -192,6 +192,17 @@ export default function ContractTemplates() {
 
   const handleRestore = async (template: ContractTemplate) => {
     await restoreTemplate.mutateAsync(template.id);
+  };
+
+  const handleDuplicate = async (template: ContractTemplate) => {
+    const templateFormat = getTemplateFormat(template);
+    await createTemplate.mutateAsync({
+      name: `${template.name} (Copy)`,
+      body_text: template.body_text || template.body_html || '',
+      body_html: template.body_html || '',
+      is_active: true,
+    });
+    toast({ title: 'Template duplicated' });
   };
 
   // Filter templates based on archived status
@@ -421,6 +432,14 @@ export default function ContractTemplates() {
                                 title="Edit"
                               >
                                 <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleDuplicate(template)}
+                                title="Duplicate template"
+                              >
+                                <Copy className="h-4 w-4" />
                               </Button>
                               {/* Archive button (always visible for in-use templates) */}
                               <Button 
