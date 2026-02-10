@@ -101,22 +101,13 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
               <span>{formatCurrency(financials.staffCost)}</span>
             </div>
             
-            {/* Travel */}
+            {/* Travel & Accommodation */}
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Car className="h-3.5 w-3.5" />
-                Travel
+                Travel & Accommodation
               </span>
-              <span>{formatCurrency(financials.travelCost)}</span>
-            </div>
-            
-            {/* Accommodation */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-muted-foreground">
-                <Home className="h-3.5 w-3.5" />
-                Accommodation
-              </span>
-              <span>{formatCurrency(financials.accommodationCost)}</span>
+              <span>{formatCurrency(financials.travelAccommodationCost)}</span>
             </div>
             
             {/* Sundry */}
