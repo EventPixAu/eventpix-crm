@@ -4511,6 +4511,9 @@ export type Database = {
           id: string
           issued_date: string | null
           notes: string | null
+          policy_number: string | null
+          renewal_due_date: string | null
+          renewal_paid_date: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -4527,6 +4530,9 @@ export type Database = {
           id?: string
           issued_date?: string | null
           notes?: string | null
+          policy_number?: string | null
+          renewal_due_date?: string | null
+          renewal_paid_date?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -4543,6 +4549,9 @@ export type Database = {
           id?: string
           issued_date?: string | null
           notes?: string | null
+          policy_number?: string | null
+          renewal_due_date?: string | null
+          renewal_paid_date?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string

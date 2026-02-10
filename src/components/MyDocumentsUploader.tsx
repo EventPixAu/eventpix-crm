@@ -36,6 +36,9 @@ export function MyDocumentsUploader() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [issuedDate, setIssuedDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
+  const [policyNumber, setPolicyNumber] = useState('');
+  const [renewalDueDate, setRenewalDueDate] = useState('');
+  const [renewalPaidDate, setRenewalPaidDate] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -158,12 +161,18 @@ export function MyDocumentsUploader() {
       documentTypeId: uploadingType.id,
       issuedDate: issuedDate || undefined,
       expiryDate: expiryDate || undefined,
+      policyNumber: policyNumber || undefined,
+      renewalDueDate: renewalDueDate || undefined,
+      renewalPaidDate: renewalPaidDate || undefined,
     }, {
       onSuccess: () => {
         setUploadingType(null);
         setSelectedFile(null);
         setIssuedDate('');
         setExpiryDate('');
+        setPolicyNumber('');
+        setRenewalDueDate('');
+        setRenewalPaidDate('');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -172,10 +181,14 @@ export function MyDocumentsUploader() {
   };
 
   const openUploadDialog = (docType: ComplianceDocumentType) => {
+    const existingDoc = documentsByType.get(docType.id);
     setUploadingType(docType);
     setSelectedFile(null);
-    setIssuedDate('');
-    setExpiryDate('');
+    setIssuedDate(existingDoc?.issued_date || '');
+    setExpiryDate(existingDoc?.expiry_date || '');
+    setPolicyNumber(existingDoc?.policy_number || '');
+    setRenewalDueDate(existingDoc?.renewal_due_date || '');
+    setRenewalPaidDate(existingDoc?.renewal_paid_date || '');
   };
 
   const getExpiryWarning = (expiryDate: string | null) => {
@@ -356,6 +369,15 @@ export function MyDocumentsUploader() {
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label>Policy Number (optional)</Label>
+              <Input
+                value={policyNumber}
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                placeholder="e.g. POL-123456"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Issued Date (optional)</Label>
@@ -375,6 +397,25 @@ export function MyDocumentsUploader() {
                   />
                 </div>
               )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Renewal Due Date (optional)</Label>
+                <Input
+                  type="date"
+                  value={renewalDueDate}
+                  onChange={(e) => setRenewalDueDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Renewal Paid Date (optional)</Label>
+                <Input
+                  type="date"
+                  value={renewalPaidDate}
+                  onChange={(e) => setRenewalPaidDate(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -430,26 +471,43 @@ function DocumentCard({
           {docType.description && (
             <p className="text-sm text-muted-foreground">{docType.description}</p>
           )}
-          {document?.expiry_date && (
-            <div className="flex items-center gap-2 mt-1">
-              <Calendar className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                Expires: {format(parseISO(document.expiry_date), 'PP')}
-              </span>
-              {expiryWarning && (
-                <Badge 
-                  variant={expiryWarning.level === 'expired' ? 'destructive' : 'outline'}
-                  className={cn(
-                    'text-[10px]',
-                    expiryWarning.level === 'critical' && 'border-destructive text-destructive',
-                    expiryWarning.level === 'warning' && 'border-orange-500 text-orange-500'
-                  )}
-                >
-                  {expiryWarning.text}
-                </Badge>
-              )}
-            </div>
+          {document?.policy_number && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Policy: {document.policy_number}
+            </p>
           )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+            {document?.expiry_date && (
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  Expires: {format(parseISO(document.expiry_date), 'PP')}
+                </span>
+                {expiryWarning && (
+                  <Badge 
+                    variant={expiryWarning.level === 'expired' ? 'destructive' : 'outline'}
+                    className={cn(
+                      'text-[10px]',
+                      expiryWarning.level === 'critical' && 'border-destructive text-destructive',
+                      expiryWarning.level === 'warning' && 'border-orange-500 text-orange-500'
+                    )}
+                  >
+                    {expiryWarning.text}
+                  </Badge>
+                )}
+              </div>
+            )}
+            {document?.renewal_due_date && (
+              <span className="text-xs text-muted-foreground">
+                Renewal due: {format(parseISO(document.renewal_due_date), 'PP')}
+              </span>
+            )}
+            {document?.renewal_paid_date && (
+              <span className="text-xs text-muted-foreground">
+                Paid: {format(parseISO(document.renewal_paid_date), 'PP')}
+              </span>
+            )}
+          </div>
           {document?.status === 'rejected' && document.notes && (
             <p className="text-xs text-destructive mt-1">Reason: {document.notes}</p>
           )}

@@ -273,6 +273,12 @@ export function StaffCompliancePanel({
             )}
 
             <div className="grid grid-cols-2 gap-4 text-sm">
+              {reviewingDoc?.policy_number && (
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Policy Number</Label>
+                  <p>{reviewingDoc.policy_number}</p>
+                </div>
+              )}
               {reviewingDoc?.issued_date && (
                 <div>
                   <Label className="text-muted-foreground">Issued Date</Label>
@@ -283,6 +289,18 @@ export function StaffCompliancePanel({
                 <div>
                   <Label className="text-muted-foreground">Expiry Date</Label>
                   <p>{format(parseISO(reviewingDoc.expiry_date), 'PP')}</p>
+                </div>
+              )}
+              {reviewingDoc?.renewal_due_date && (
+                <div>
+                  <Label className="text-muted-foreground">Renewal Due</Label>
+                  <p>{format(parseISO(reviewingDoc.renewal_due_date), 'PP')}</p>
+                </div>
+              )}
+              {reviewingDoc?.renewal_paid_date && (
+                <div>
+                  <Label className="text-muted-foreground">Renewal Paid</Label>
+                  <p>{format(parseISO(reviewingDoc.renewal_paid_date), 'PP')}</p>
                 </div>
               )}
             </div>
@@ -405,6 +423,11 @@ function DocumentRow({
           {docType.description && (
             <p className="text-xs text-muted-foreground">{docType.description}</p>
           )}
+          {document?.policy_number && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Policy: {document.policy_number}
+            </p>
+          )}
           {document?.expiry_date && (
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="h-3 w-3 text-muted-foreground" />
@@ -424,6 +447,11 @@ function DocumentRow({
                 </Badge>
               )}
             </div>
+          )}
+          {document?.renewal_due_date && (
+            <span className="text-xs text-muted-foreground">
+              Renewal due: {format(parseISO(document.renewal_due_date), 'PP')}
+            </span>
           )}
         </div>
       </div>

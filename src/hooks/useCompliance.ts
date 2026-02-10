@@ -26,6 +26,9 @@ export interface StaffComplianceDocument {
   file_name: string | null;
   issued_date: string | null;
   expiry_date: string | null;
+  policy_number: string | null;
+  renewal_due_date: string | null;
+  renewal_paid_date: string | null;
   status: DocumentStatus;
   uploaded_at: string;
   reviewed_by: string | null;
@@ -126,11 +129,17 @@ export function useUploadComplianceDocument() {
       documentTypeId,
       issuedDate,
       expiryDate,
+      policyNumber,
+      renewalDueDate,
+      renewalPaidDate,
     }: {
       file: File;
       documentTypeId: string;
       issuedDate?: string;
       expiryDate?: string;
+      policyNumber?: string;
+      renewalDueDate?: string;
+      renewalPaidDate?: string;
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
@@ -167,6 +176,9 @@ export function useUploadComplianceDocument() {
             file_name: file.name,
             issued_date: issuedDate || null,
             expiry_date: expiryDate || null,
+            policy_number: policyNumber || null,
+            renewal_due_date: renewalDueDate || null,
+            renewal_paid_date: renewalPaidDate || null,
             status: 'pending_review',
             uploaded_at: new Date().toISOString(),
             reviewed_by: null,
@@ -190,6 +202,9 @@ export function useUploadComplianceDocument() {
             file_name: file.name,
             issued_date: issuedDate || null,
             expiry_date: expiryDate || null,
+            policy_number: policyNumber || null,
+            renewal_due_date: renewalDueDate || null,
+            renewal_paid_date: renewalPaidDate || null,
             status: 'pending_review',
           })
           .select()
