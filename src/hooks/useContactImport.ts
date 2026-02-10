@@ -127,11 +127,44 @@ export function parseCSV(csvContent: string): ImportedContact[] {
 
     // Only add if we have at least a name or email
     if (contact.firstName || contact.lastName || contact.email) {
+      // If no company name, try to derive from email domain
+      if (!contact.companyName && contact.email) {
+        const derived = deriveCompanyFromEmail(contact.email);
+        if (derived) {
+          contact.companyName = derived;
+        }
+      }
       contacts.push(contact);
     }
   }
 
   return contacts;
+}
+
+// Common free/personal email providers to skip
+const FREE_EMAIL_PROVIDERS = new Set([
+  'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.uk', 'yahoo.com.au',
+  'hotmail.com', 'hotmail.co.uk', 'outlook.com', 'outlook.com.au',
+  'live.com', 'live.com.au', 'msn.com', 'aol.com', 'icloud.com', 'me.com', 'mac.com',
+  'mail.com', 'protonmail.com', 'proton.me', 'zoho.com',
+  'ymail.com', 'inbox.com', 'fastmail.com', 'hey.com',
+  'bigpond.com', 'bigpond.net.au', 'optusnet.com.au', 'internode.on.net',
+  'tpg.com.au', 'iiNet.net.au', 'adam.com.au',
+]);
+
+// Derive a company name from an email domain
+function deriveCompanyFromEmail(email: string): string | null {
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain || FREE_EMAIL_PROVIDERS.has(domain)) return null;
+
+  // Take the domain name part (before TLD), capitalise it
+  const parts = domain.split('.');
+  // e.g. "acme.com.au" → "acme", "acme.co.uk" → "acme"
+  const name = parts[0];
+  if (!name || name.length < 2) return null;
+
+  // Title-case
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 // Parse a single CSV line handling quoted values
