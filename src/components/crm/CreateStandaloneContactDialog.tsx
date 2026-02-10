@@ -26,7 +26,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useJobTitles } from '@/hooks/useJobTitles';
+import { useJobTitles, useCreateJobTitle } from '@/hooks/useJobTitles';
 import { cn } from '@/lib/utils';
 
 interface CreateStandaloneContactDialogProps {
@@ -67,8 +67,11 @@ export function CreateStandaloneContactDialog({
   onOpenChange,
 }: CreateStandaloneContactDialogProps) {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
+  const [showNewJobTitle, setShowNewJobTitle] = useState(false);
+  const [newJobTitleName, setNewJobTitleName] = useState('');
   const queryClient = useQueryClient();
   const { data: jobTitles = [] } = useJobTitles();
+  const createJobTitle = useCreateJobTitle();
 
   // Create contact (and optionally company) mutation
   const createContact = useMutation({
@@ -292,21 +295,57 @@ export function CreateStandaloneContactDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="job_title_id">Job Title</Label>
-              <Select
-                value={formData.job_title_id}
-                onValueChange={(value) => setFormData({ ...formData, job_title_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select title" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobTitles.map((title) => (
-                    <SelectItem key={title.id} value={title.id}>
-                      {title.name}
+              {showNewJobTitle ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newJobTitleName}
+                    onChange={(e) => setNewJobTitleName(e.target.value)}
+                    placeholder="New job title name"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!newJobTitleName.trim() || createJobTitle.isPending}
+                    onClick={async () => {
+                      const result = await createJobTitle.mutateAsync(newJobTitleName.trim());
+                      setFormData({ ...formData, job_title_id: result.id });
+                      setNewJobTitleName('');
+                      setShowNewJobTitle(false);
+                    }}
+                  >
+                    Add
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewJobTitle(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  value={formData.job_title_id}
+                  onValueChange={(value) => {
+                    if (value === '__new__') {
+                      setShowNewJobTitle(true);
+                    } else {
+                      setFormData({ ...formData, job_title_id: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select title" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobTitles.map((title) => (
+                      <SelectItem key={title.id} value={title.id}>
+                        {title.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__new__" className="text-primary font-medium">
+                      + Add new job title
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="role_title">Custom Title</Label>

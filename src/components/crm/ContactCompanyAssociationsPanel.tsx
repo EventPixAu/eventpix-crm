@@ -40,7 +40,7 @@ import {
 } from '@/hooks/useContactCompanyAssociations';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useJobTitles } from '@/hooks/useJobTitles';
+import { useJobTitles, useCreateJobTitle } from '@/hooks/useJobTitles';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContactCompanyAssociationsPanelProps {
@@ -59,6 +59,8 @@ export function ContactCompanyAssociationsPanel({
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [relationshipType, setRelationshipType] = useState('contractor');
   const [jobTitleId, setJobTitleId] = useState<string>('');
+  const [newJobTitleName, setNewJobTitleName] = useState('');
+  const [showNewJobTitle, setShowNewJobTitle] = useState(false);
   const [customTitle, setCustomTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
@@ -71,6 +73,7 @@ export function ContactCompanyAssociationsPanel({
   const updateAssociation = useUpdateContactAssociation();
   const deleteAssociation = useDeleteContactAssociation();
   const { data: jobTitles = [] } = useJobTitles();
+  const createJobTitle = useCreateJobTitle();
 
   // Check if this is a standalone contact (no primary company)
   const hasNoPrimaryCompany = !primaryCompanyId;
@@ -333,22 +336,58 @@ export function ContactCompanyAssociationsPanel({
 
             <div className="space-y-2">
               <Label>Job Title</Label>
-              <Select 
-                value={jobTitleId || "none"} 
-                onValueChange={(val) => setJobTitleId(val === "none" ? "" : val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select or leave blank" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="none">None</SelectItem>
-                  {jobTitles.map((title) => (
-                    <SelectItem key={title.id} value={title.id}>
-                      {title.name}
+              {showNewJobTitle ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={newJobTitleName}
+                    onChange={(e) => setNewJobTitleName(e.target.value)}
+                    placeholder="New job title name"
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!newJobTitleName.trim() || createJobTitle.isPending}
+                    onClick={async () => {
+                      const result = await createJobTitle.mutateAsync(newJobTitleName.trim());
+                      setJobTitleId(result.id);
+                      setNewJobTitleName('');
+                      setShowNewJobTitle(false);
+                    }}
+                  >
+                    Add
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewJobTitle(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Select 
+                  value={jobTitleId || "none"} 
+                  onValueChange={(val) => {
+                    if (val === '__new__') {
+                      setShowNewJobTitle(true);
+                    } else {
+                      setJobTitleId(val === "none" ? "" : val);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select or leave blank" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="none">None</SelectItem>
+                    {jobTitles.map((title) => (
+                      <SelectItem key={title.id} value={title.id}>
+                        {title.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__new__" className="text-primary font-medium">
+                      + Add new job title
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
