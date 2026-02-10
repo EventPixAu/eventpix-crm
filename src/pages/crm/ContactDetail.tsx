@@ -101,6 +101,7 @@ export default function ContactDetail() {
     email: '',
     phone_mobile: '',
     job_title_id: '',
+    role_title: '',
     notes: '',
     client_id: '',
   });
@@ -207,6 +208,7 @@ export default function ContactDetail() {
       email: string;
       phone_mobile: string;
       job_title_id: string | null;
+      role_title?: string | null;
       notes: string;
       client_id: string;
     }) => {
@@ -220,6 +222,7 @@ export default function ContactDetail() {
           email: data.email || null,
           phone_mobile: data.phone_mobile || null,
           job_title_id: data.job_title_id,
+          role_title: data.role_title || null,
           notes: data.notes || null,
           client_id: data.client_id,
         })
@@ -301,6 +304,7 @@ export default function ContactDetail() {
         email: contact.email || '',
         phone_mobile: contact.phone_mobile || '',
         job_title_id: contact.job_title_id || '',
+        role_title: contact.role_title || '',
         notes: contact.notes || '',
         client_id: contact.client_id || '',
       });
@@ -323,6 +327,7 @@ export default function ContactDetail() {
       email: formData.email,
       phone_mobile: formData.phone_mobile,
       job_title_id: formData.job_title_id || null,
+      role_title: formData.role_title || null,
       notes: formData.notes,
       client_id: formData.client_id,
     });
@@ -335,6 +340,7 @@ export default function ContactDetail() {
       email: formData.email,
       phone_mobile: formData.phone_mobile,
       job_title_id: formData.job_title_id || null,
+      role_title: formData.role_title || null,
       notes: formData.notes,
     } as any);
   };
@@ -494,6 +500,17 @@ export default function ContactDetail() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create_role_title">Optional Job Title</Label>
+              <Input
+                id="create_role_title"
+                value={formData.role_title}
+                onChange={(e) => setFormData({ ...formData, role_title: e.target.value })}
+                placeholder="e.g. Senior Events Coordinator"
+              />
+              <p className="text-xs text-muted-foreground">For specific titles not in the dropdown</p>
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="create_notes">Notes</Label>
@@ -591,10 +608,10 @@ export default function ContactDetail() {
                   <CardTitle className="text-xl">
                     {contact.first_name} {contact.last_name}
                   </CardTitle>
-                  {contact.job_title?.name && (
+                  {(contact.job_title?.name || contact.role_title) && (
                     <Badge variant="secondary" className="mt-1.5">
                       <Briefcase className="h-3 w-3 mr-1" />
-                      {contact.job_title.name}
+                      {contact.role_title || contact.job_title?.name}
                     </Badge>
                   )}
                   {contact.is_primary && (
@@ -872,6 +889,17 @@ export default function ContactDetail() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_role_title">Optional Job Title</Label>
+              <Input
+                id="edit_role_title"
+                value={formData.role_title}
+                onChange={(e) => setFormData({ ...formData, role_title: e.target.value })}
+                placeholder="e.g. Senior Events Coordinator"
+              />
+              <p className="text-xs text-muted-foreground">For specific titles not in the dropdown</p>
             </div>
             
             <div className="space-y-2">

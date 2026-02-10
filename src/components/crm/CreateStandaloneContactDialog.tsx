@@ -348,13 +348,14 @@ export function CreateStandaloneContactDialog({
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role_title">Custom Title</Label>
+              <Label htmlFor="role_title">Optional Job Title</Label>
               <Input
                 id="role_title"
                 value={formData.role_title}
                 onChange={(e) => setFormData({ ...formData, role_title: e.target.value })}
-                placeholder="Or enter custom"
+                placeholder="e.g. Senior Events Coordinator"
               />
+              <p className="text-xs text-muted-foreground">For specific titles not in the dropdown</p>
             </div>
           </div>
 
