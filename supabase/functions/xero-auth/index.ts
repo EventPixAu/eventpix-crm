@@ -92,6 +92,8 @@ Deno.serve(async (req) => {
           'email',
           'accounting.transactions.read',
           'accounting.contacts.read',
+          'accounting.settings.read',
+          'accounting.reports.read',
           'offline_access'
         ].join(' ');
 
