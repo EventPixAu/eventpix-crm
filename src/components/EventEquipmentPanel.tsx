@@ -36,6 +36,7 @@ import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useAuth } from '@/lib/auth';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
+import { StaffEquipmentPreview } from './StaffEquipmentPreview';
 
 interface EventAssignment {
   id: string;
@@ -249,6 +250,9 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedUserId && selectedUserId !== 'unassigned' && (
+                    <StaffEquipmentPreview userId={selectedUserId} />
+                  )}
                 </div>
 
                 <div className="border-t pt-4">
