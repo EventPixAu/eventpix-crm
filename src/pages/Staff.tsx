@@ -41,6 +41,8 @@ import { useStaff, useCreateStaff, useProfiles, useStaffDirectory, Staff as Staf
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
@@ -67,6 +69,14 @@ export default function Staff() {
   const { data: staff = [], isLoading: staffLoading } = useStaff();
   const { data: profiles = [], isLoading: profilesLoading } = useProfiles();
   const { data: locations = [] } = useActiveLocations();
+  const { data: userRolesMap = new Map<string, string>() } = useQuery({
+    queryKey: ['user-roles-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_roles').select('user_id, role');
+      if (error) throw error;
+      return new Map((data || []).map(r => [r.user_id, r.role]));
+    },
+  });
   const createStaff = useCreateStaff();
   const { toast } = useToast();
   
@@ -116,7 +126,7 @@ export default function Staff() {
       email: p.email || '',
       phone: p.phone || null,
       location: p.location || null,
-      role: 'photographer' as const, // Default role for profile-based members
+      role: (['photographer', 'videographer', 'assistant'].includes(userRolesMap.get(p.id) || '') ? userRolesMap.get(p.id) : 'photographer') as 'photographer' | 'videographer' | 'assistant',
       status: (p.status === 'inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
       user_id: p.id, // Profile ID IS the user ID
       source: 'profile' as const,
