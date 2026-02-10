@@ -433,7 +433,7 @@ export function useContactImport() {
             continue;
           }
 
-          // Check for existing contact by email within the company
+          // Check for existing contact by email OR by name within the company
           let existingContact: ExistingContact | null = null;
           if (contact.email) {
             const { data } = await supabase
@@ -443,6 +443,24 @@ export function useContactImport() {
               .eq('email', contact.email)
               .maybeSingle();
             
+            existingContact = data as ExistingContact | null;
+          }
+
+          // Fallback: match by first+last name within the company if no email match
+          if (!existingContact && (contact.firstName || contact.lastName)) {
+            const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
+            let nameQuery = supabase
+              .from('client_contacts')
+              .select('id, email, tags')
+              .eq('client_id', companyId);
+            
+            if (contact.firstName && contact.lastName) {
+              nameQuery = nameQuery.eq('first_name', contact.firstName).eq('last_name', contact.lastName);
+            } else {
+              nameQuery = nameQuery.eq('contact_name', contactName);
+            }
+            
+            const { data } = await nameQuery.maybeSingle();
             existingContact = data as ExistingContact | null;
           }
 

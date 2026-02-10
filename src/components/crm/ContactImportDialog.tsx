@@ -26,6 +26,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Upload,
   FileSpreadsheet,
@@ -38,6 +40,7 @@ import {
   Mail,
   Phone,
   Briefcase,
+  Tag,
 } from 'lucide-react';
 import { useContactImport, parseCSV, parseGoogleContactsWithGroups, fetchGoogleContactGroups, ImportedContact } from '@/hooks/useContactImport';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +56,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
   const [step, setStep] = useState<ImportStep>('select');
   const [contacts, setContacts] = useState<ImportedContact[]>([]);
   const [importSource, setImportSource] = useState<'csv' | 'google' | null>(null);
+  const [importTag, setImportTag] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -142,6 +146,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
       setStep('select');
       setContacts([]);
       setImportSource(null);
+      setImportTag('');
       onOpenChange(false);
     }
   }, [isImporting, onOpenChange]);
@@ -306,12 +311,20 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
   }, [toast]);
 
   const handleStartImport = useCallback(() => {
+    // Inject the import tag into every contact before importing
+    const taggedContacts = importTag.trim()
+      ? contacts.map(c => ({
+          ...c,
+          tags: [...new Set([...(c.tags || []), importTag.trim()])],
+        }))
+      : contacts;
+
     setStep('importing');
-    importContacts(contacts, {
+    importContacts(taggedContacts, {
       onSuccess: () => setStep('complete'),
       onError: () => setStep('preview'),
     });
-  }, [contacts, importContacts]);
+  }, [contacts, importContacts, importTag]);
 
   const renderSelectStep = () => (
     <div className="grid gap-4 md:grid-cols-2">
@@ -475,14 +488,34 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           )}
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setStep('select')}>
-            Back
-          </Button>
-          <Button onClick={handleStartImport} disabled={withCompany === 0}>
-            <Upload className="h-4 w-4 mr-2" />
-            Import {withCompany} Contacts
-          </Button>
+        <div className="space-y-3">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Label htmlFor="import-tag" className="text-sm font-medium flex items-center gap-1.5 mb-1.5">
+                <Tag className="h-3.5 w-3.5" />
+                Import Tag
+              </Label>
+              <Input
+                id="import-tag"
+                placeholder="e.g. MEA2024"
+                value={importTag}
+                onChange={(e) => setImportTag(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground pb-2 max-w-[200px]">
+              This tag will be added to all imported contacts
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setStep('select')}>
+              Back
+            </Button>
+            <Button onClick={handleStartImport} disabled={withCompany === 0}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import {withCompany} Contacts
+            </Button>
+          </div>
         </div>
       </div>
     );
