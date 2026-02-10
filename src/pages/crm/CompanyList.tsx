@@ -25,6 +25,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -59,6 +66,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Filter,
+  X,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
@@ -66,6 +75,7 @@ import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog'
 import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDialog';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type SortColumn = 'tags' | 'category' | 'source' | 'status' | null;
@@ -136,6 +146,10 @@ export default function CompanyList() {
   const [bulkCategoryDialogOpen, setBulkCategoryDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [filterTag, setFilterTag] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterSource, setFilterSource] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
@@ -143,6 +157,7 @@ export default function CompanyList() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const canBulkEdit = isAdmin; // Only Admin can bulk edit
+  const { data: companyStatuses = [] } = useCompanyStatuses();
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
@@ -381,6 +396,54 @@ export default function CompanyList() {
     });
   }, [companies, sortColumn, sortDirection]);
 
+  // Compute unique filter options from data
+  const filterOptions = useMemo(() => {
+    const tags = new Set<string>();
+    const categories = new Set<string>();
+    const sources = new Set<string>();
+    const statuses = new Set<string>();
+
+    companies.forEach(c => {
+      c.tags.forEach(t => tags.add(t));
+      if (c.category?.name) categories.add(c.category.name);
+      if (c.lead_source) sources.add(c.lead_source);
+      c.contact_sources.forEach(s => sources.add(s));
+      statuses.add(c.display_status);
+    });
+
+    return {
+      tags: Array.from(tags).sort(),
+      categories: Array.from(categories).sort(),
+      sources: Array.from(sources).sort(),
+      statuses: Array.from(statuses).sort(),
+    };
+  }, [companies]);
+
+  // Apply filters
+  const filteredCompanies = useMemo(() => {
+    return sortedCompanies.filter(c => {
+      if (filterTag && !c.tags.includes(filterTag)) return false;
+      if (filterCategory && c.category?.name !== filterCategory) return false;
+      if (filterSource) {
+        const allSources = new Set<string>();
+        if (c.lead_source) allSources.add(c.lead_source);
+        c.contact_sources.forEach(s => allSources.add(s));
+        if (!allSources.has(filterSource)) return false;
+      }
+      if (filterStatus && c.display_status !== filterStatus) return false;
+      return true;
+    });
+  }, [sortedCompanies, filterTag, filterCategory, filterSource, filterStatus]);
+
+  const hasActiveFilters = filterTag || filterCategory || filterSource || filterStatus;
+
+  const clearAllFilters = () => {
+    setFilterTag('');
+    setFilterCategory('');
+    setFilterSource('');
+    setFilterStatus('');
+  };
+
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
   };
@@ -396,10 +459,10 @@ export default function CompanyList() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === companies.length) {
+    if (selectedIds.size === filteredCompanies.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(companies.map(c => c.id)));
+      setSelectedIds(new Set(filteredCompanies.map(c => c.id)));
     }
   };
 
@@ -493,7 +556,7 @@ export default function CompanyList() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -504,8 +567,68 @@ export default function CompanyList() {
               />
             </div>
             <div className="text-sm text-muted-foreground">
-              {companies.length} {companies.length === 1 ? 'company' : 'companies'}
+              {hasActiveFilters
+                ? `${filteredCompanies.length} of ${companies.length} companies`
+                : `${companies.length} ${companies.length === 1 ? 'company' : 'companies'}`}
             </div>
+          </div>
+
+          {/* Filter row */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={filterTag || '__all__'} onValueChange={v => setFilterTag(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Tags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Tags</SelectItem>
+                {filterOptions.tags.map(t => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterCategory || '__all__'} onValueChange={v => setFilterCategory(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Categories</SelectItem>
+                {filterOptions.categories.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterSource || '__all__'} onValueChange={v => setFilterSource(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Sources" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Sources</SelectItem>
+                {filterOptions.sources.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus || '__all__'} onValueChange={v => setFilterStatus(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Statuses</SelectItem>
+                {filterOptions.statuses.map(s => {
+                  const statusDef = companyStatuses.find(cs => cs.name === s);
+                  return (
+                    <SelectItem key={s} value={s}>{statusDef?.label || s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-2 text-xs">
+                <X className="h-3 w-3 mr-1" />
+                Clear
+              </Button>
+            )}
           </div>
 
           {isLoading ? (
@@ -526,7 +649,7 @@ export default function CompanyList() {
                   {canBulkEdit && (
                     <TableHead className="w-[40px]">
                       <Checkbox
-                        checked={selectedIds.size === companies.length && companies.length > 0}
+                        checked={selectedIds.size === filteredCompanies.length && filteredCompanies.length > 0}
                         onCheckedChange={toggleSelectAll}
                       />
                     </TableHead>
@@ -574,7 +697,7 @@ export default function CompanyList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedCompanies.map((company) => (
+                {filteredCompanies.map((company) => (
                   <TableRow key={company.id}>
                     {canBulkEdit && (
                       <TableCell>
