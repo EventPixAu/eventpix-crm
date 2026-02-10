@@ -5,7 +5,7 @@
  * Shows data from accepted quotes and Xero-synced expenses.
  * Access: Admin only
  */
-import { DollarSign, TrendingUp, TrendingDown, Users, Car, Home, Package, ExternalLink } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Users, Car, Home, Package, ExternalLink, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
 import { useEvent } from '@/hooks/useEvents';
+import { useSyncEventExpenses as useXeroSyncEventExpenses } from '@/hooks/useXeroSync';
+import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 interface EventFinancialsCardProps {
@@ -31,6 +33,8 @@ const formatCurrency = (value: number) => {
 export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
   const { data: financials, isLoading } = useEventFinancials(eventId);
   const { data: event } = useEvent(eventId);
+  const { isAdmin } = useAuth();
+  const syncExpenses = useXeroSyncEventExpenses();
   
   if (isLoading) {
     return (
@@ -167,7 +171,19 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
             No expenses synced yet
           </p>
         )}
-        
+
+        {isAdmin && event?.xero_tag && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full gap-2"
+            onClick={() => syncExpenses.mutate(eventId)}
+            disabled={syncExpenses.isPending}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending ? 'animate-spin' : ''}`} />
+            {syncExpenses.isPending ? 'Syncing Expenses…' : 'Sync Expenses from Xero'}
+          </Button>
+        )}
         {event?.quote_id && (
           <Link to={`/sales/quotes/${event.quote_id}`}>
             <Button variant="outline" size="sm" className="w-full gap-2">

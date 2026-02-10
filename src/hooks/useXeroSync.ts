@@ -245,6 +245,7 @@ export function useSyncEventExpenses() {
     onSuccess: (data, eventId) => {
       queryClient.invalidateQueries({ queryKey: ['event-expenses', eventId] });
       queryClient.invalidateQueries({ queryKey: ['event-financials', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['event-costs', eventId] });
       toast({ 
         title: 'Expenses synced', 
         description: `Imported ${data.synced} expense lines from Xero.` 
