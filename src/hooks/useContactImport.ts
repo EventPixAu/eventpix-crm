@@ -23,6 +23,7 @@ export interface ImportedContact {
   leadSource?: string;
   industry?: string;
   tags?: string[];
+  source?: string;
 }
 
 export interface ImportResult {
@@ -553,6 +554,9 @@ export function useContactImport() {
               updateData.contact_name = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             }
 
+            // Set source if provided and not already set
+            if (contact.source) updateData.source = contact.source;
+
             if (Object.keys(updateData).length > 0) {
               const { error: updateError } = await supabase
                 .from('client_contacts')
@@ -584,6 +588,7 @@ export function useContactImport() {
                 phone: contact.phone || null,
                 job_title_id: jobTitleId,
                 tags: contact.tags || [],
+                source: contact.source || null,
               });
 
             if (contactError) {
