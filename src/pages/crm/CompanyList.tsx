@@ -68,7 +68,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
-type SortColumn = 'tags' | 'category' | 'source' | 'contact_sources' | 'status' | null;
+type SortColumn = 'tags' | 'category' | 'source' | 'status' | null;
 type SortDirection = 'asc' | 'desc';
 
 type ComputedStatus = 'active_event' | 'current_client' | 'previous_client' | 'prospect';
@@ -354,14 +354,17 @@ export default function CompanyList() {
           aVal = (a.category?.name || '').toLowerCase();
           bVal = (b.category?.name || '').toLowerCase();
           break;
-        case 'source':
-          aVal = (a.lead_source || '').toLowerCase();
-          bVal = (b.lead_source || '').toLowerCase();
+        case 'source': {
+          const aSources = new Set<string>();
+          if (a.lead_source) aSources.add(a.lead_source);
+          a.contact_sources.forEach(s => aSources.add(s));
+          const bSources = new Set<string>();
+          if (b.lead_source) bSources.add(b.lead_source);
+          b.contact_sources.forEach(s => bSources.add(s));
+          aVal = Array.from(aSources).join(',').toLowerCase();
+          bVal = Array.from(bSources).join(',').toLowerCase();
           break;
-        case 'contact_sources':
-          aVal = a.contact_sources.join(',').toLowerCase();
-          bVal = b.contact_sources.join(',').toLowerCase();
-          break;
+        }
         case 'status':
           aVal = a.display_status.toLowerCase();
           bVal = b.display_status.toLowerCase();
@@ -557,15 +560,6 @@ export default function CompanyList() {
                       <SortIcon column="source" />
                     </div>
                   </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort('contact_sources')}
-                  >
-                    <div className="flex items-center">
-                      Contact Sources
-                      <SortIcon column="contact_sources" />
-                    </div>
-                  </TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
@@ -659,33 +653,28 @@ export default function CompanyList() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {company.lead_source ? (
-                        <Badge variant="secondary" className="gap-1 text-xs">
-                          <Database className="h-3 w-3" />
-                          {company.lead_source}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {company.contact_sources.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {company.contact_sources.slice(0, 3).map((src) => (
-                            <Badge key={src} variant="secondary" className="gap-1 text-xs">
-                              <Database className="h-3 w-3" />
-                              {src}
-                            </Badge>
-                          ))}
-                          {company.contact_sources.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{company.contact_sources.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
+                      {(() => {
+                        const allSources = new Set<string>();
+                        if (company.lead_source) allSources.add(company.lead_source);
+                        company.contact_sources.forEach(s => allSources.add(s));
+                        const sources = Array.from(allSources);
+                        if (sources.length === 0) return <span className="text-muted-foreground text-sm">—</span>;
+                        return (
+                          <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {sources.slice(0, 3).map((src) => (
+                              <Badge key={src} variant="secondary" className="gap-1 text-xs">
+                                <Database className="h-3 w-3" />
+                                {src}
+                              </Badge>
+                            ))}
+                            {sources.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{sources.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
