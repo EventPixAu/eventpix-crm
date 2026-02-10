@@ -57,7 +57,7 @@ export function ContactCompanyAssociationsPanel({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
-  const [relationshipType, setRelationshipType] = useState('contractor');
+  const [relationshipType, setRelationshipType] = useState('employee');
   const [jobTitleId, setJobTitleId] = useState<string>('');
   const [newJobTitleName, setNewJobTitleName] = useState('');
   const [showNewJobTitle, setShowNewJobTitle] = useState(false);
