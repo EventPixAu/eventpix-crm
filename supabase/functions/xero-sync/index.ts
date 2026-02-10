@@ -75,14 +75,61 @@ Deno.serve(async (req) => {
       );
     }
 
-    const xeroToken = tokens[0];
+    let xeroToken = tokens[0];
     
-    // Check if token is expired
-    if (new Date(xeroToken.expires_at) < new Date()) {
-      return new Response(
-        JSON.stringify({ error: 'Xero token expired. Please refresh.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Auto-refresh if token is expired or about to expire (within 60s)
+    const expiresAt = new Date(xeroToken.expires_at);
+    const now = new Date();
+    const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+    console.log(`XERO-SYNC-V2: Token expires in ${Math.round(timeUntilExpiry / 1000)}s`);
+    if (timeUntilExpiry < 60000) {
+      console.log('XERO-SYNC-V2: Token expired or expiring soon, auto-refreshing...');
+      const XERO_CLIENT_ID = Deno.env.get('XERO_CLIENT_ID');
+      const XERO_CLIENT_SECRET = Deno.env.get('XERO_CLIENT_SECRET');
+      
+      if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
+        return new Response(
+          JSON.stringify({ error: 'Xero credentials not configured for auto-refresh' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${btoa(`${XERO_CLIENT_ID}:${XERO_CLIENT_SECRET}`)}`
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: xeroToken.refresh_token
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('Auto-refresh failed:', errorText);
+        return new Response(
+          JSON.stringify({ error: 'Xero token expired and auto-refresh failed. Please reconnect to Xero.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const newTokens = await tokenResponse.json();
+      const newExpiresAt = new Date(Date.now() + newTokens.expires_in * 1000).toISOString();
+
+      await supabase
+        .from('xero_tokens')
+        .update({
+          access_token: newTokens.access_token,
+          refresh_token: newTokens.refresh_token,
+          expires_at: newExpiresAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', xeroToken.id);
+
+      xeroToken = { ...xeroToken, access_token: newTokens.access_token };
+      console.log('Token auto-refreshed successfully');
     }
 
     const xeroHeaders = {
