@@ -1065,7 +1065,7 @@ export default function QuoteDetail() {
         }}
         onSendSuccess={async () => {
           // Auto-mark quote as "Sent" when email is successfully dispatched
-          if (quote.status === 'draft') {
+          if (quote.status !== 'accepted') {
             try {
               await supabase.rpc('mark_quote_as_sent', { p_quote_id: id });
               window.location.reload();
