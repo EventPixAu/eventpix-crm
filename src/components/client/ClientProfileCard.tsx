@@ -28,6 +28,7 @@ interface ClientProfileCardProps {
     manual_status?: string | null;
     status_override_at?: string | null;
     status_override_reason?: string | null;
+    tags?: string[] | null;
   };
   computedStatus?: string;
   onEdit: () => void;
@@ -91,6 +92,11 @@ export function ClientProfileCard({
                   {client.lead_source}
                 </Badge>
               )}
+              {client.tags && client.tags.length > 0 && client.tags.map(tag => (
+                <Badge key={tag} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
             </div>
           </div>
         </div>

@@ -117,6 +117,7 @@ export default function ClientDetail() {
     category_id: '',
     website: '',
     lead_source: '',
+    tags: '' as string,
   });
 
   const handleAddCategory = async () => {
@@ -133,6 +134,7 @@ export default function ClientDetail() {
 
   const handleOpenEdit = () => {
     if (client) {
+      const clientTags = (client as any).tags as string[] | null;
       setFormData({
         business_name: client.business_name || '',
         company_phone: (client as any).company_phone || '',
@@ -141,6 +143,7 @@ export default function ClientDetail() {
         category_id: (client as any).category_id || '',
         website: (client as any).website || '',
         lead_source: (client as any).lead_source || '',
+        tags: clientTags?.join(', ') || '',
       });
       setIsEditOpen(true);
     }
@@ -148,12 +151,21 @@ export default function ClientDetail() {
 
   const handleUpdate = async () => {
     if (!id || !formData.business_name.trim()) return;
+    const tagsArray = formData.tags
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
     await updateClient.mutateAsync({ 
       id, 
-      ...formData,
+      business_name: formData.business_name,
+      company_phone: formData.company_phone,
+      company_email: formData.company_email,
+      billing_address: formData.billing_address,
+      website: formData.website,
       category_id: formData.category_id || null,
       lead_source: formData.lead_source || null,
-    });
+      tags: tagsArray.length > 0 ? tagsArray : null,
+    } as any);
     setIsEditOpen(false);
   };
 
@@ -584,6 +596,17 @@ export default function ClientDetail() {
               />
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <Input
+                id="tags"
+                value={formData.tags}
+                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                placeholder="e.g. EPX Client - Previous, EPX Client - current"
+              />
+              <p className="text-xs text-muted-foreground">Comma-separated tags</p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="billing_address">Address</Label>
               <Textarea

@@ -317,7 +317,9 @@ export default function CompanyList() {
         const computed = computeClientStatus(eventsMap[company.id] || []);
         const manualStatus = company.manual_status as ComputedStatus | null;
         const primaryContact = primaryContactMap[company.id];
-        const companyTags = tagsMap[company.id] ? Array.from(tagsMap[company.id]).sort() : [];
+        const contactTags = tagsMap[company.id] ? Array.from(tagsMap[company.id]) : [];
+        const clientTags = (company as any).tags as string[] | null;
+        const mergedTags = Array.from(new Set([...(clientTags || []), ...contactTags])).sort();
         const companySources = sourcesMap[company.id] ? Array.from(sourcesMap[company.id]).sort() : [];
         return {
           ...company,
@@ -328,7 +330,7 @@ export default function CompanyList() {
           status_override_reason: company.status_override_reason,
           primary_contact_name: primaryContact?.name || null,
           primary_contact_email: primaryContact?.email || null,
-          tags: companyTags,
+          tags: mergedTags,
           contact_sources: companySources,
         };
       }) as Company[];
