@@ -352,12 +352,25 @@ export function SendOpsEmailDialog({
             {/* Subject */}
             <div className="space-y-2">
               <Label htmlFor="subject">Subject *</Label>
-              <Input
-                id="subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder={`Re: ${eventData.event_name}`}
-              />
+              <div className="relative">
+                <Input
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder={`Re: ${eventData.event_name}`}
+                />
+                {!subject && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setSubject(`Re: ${eventData.event_name}`)}
+                  >
+                    Use suggested
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Body */}
