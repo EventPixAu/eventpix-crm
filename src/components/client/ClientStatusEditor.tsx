@@ -255,27 +255,6 @@ export function ClientStatusEditor({
         {statusConfig.label}
       </Badge>
       
-      {isOverridden && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600 border-purple-200 cursor-help">
-              <Info className="h-3 w-3 mr-1" />
-              Manual override
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-[250px]">
-            <p className="font-medium mb-1">Manual override</p>
-            {statusOverrideReason && (
-              <p className="text-xs text-muted-foreground">{statusOverrideReason}</p>
-            )}
-            {statusOverrideAt && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Set on {new Date(statusOverrideAt).toLocaleDateString()}
-              </p>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      )}
       
       {canEdit && (
         <Button
