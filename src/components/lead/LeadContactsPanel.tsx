@@ -108,11 +108,36 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
       });
     } else {
       if (!contactName.trim()) return;
+      
+      // Create a proper CRM contact record, linked to the company if available
+      const nameParts = contactName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      const insertPayload = {
+        contact_name: contactName.trim(),
+        first_name: firstName,
+        last_name: lastName,
+        email: contactEmail.trim() || null,
+        phone_mobile: contactPhone.trim() || null,
+        client_id: clientId || null,
+      };
+      
+      const { data: newContact, error } = await supabase
+        .from('client_contacts')
+        .insert(insertPayload)
+        .select('id')
+        .single();
+      
+      if (error) {
+        console.error('Failed to create CRM contact:', error);
+        return;
+      }
+      
+      // Link the new CRM contact to the lead
       await createContact.mutateAsync({
         lead_id: leadId,
-        contact_name: contactName.trim(),
-        contact_email: contactEmail.trim() || undefined,
-        contact_phone: contactPhone.trim() || undefined,
+        contact_id: newContact.id,
         role: selectedRole,
       });
     }
