@@ -18,6 +18,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const DISCOUNT_PRESETS = [
+  'NFP 20%',
+  'Multi-day Discount',
+  'Repeat Client',
+  'Producer Discount',
+  'Charity Rate',
+  'Early Bird',
+];
 
 interface QuoteDiscountDialogProps {
   open: boolean;
@@ -118,14 +134,36 @@ export function QuoteDiscountDialog({
           {/* Discount Label */}
           <div className="space-y-2">
             <Label>Discount Name</Label>
-            <Input
-              type="text"
-              placeholder="e.g. Multi-day, Producer Discount"
-              value={labelValue}
-              onChange={(e) => setLabelValue(e.target.value)}
-            />
+            <Select
+              value={DISCOUNT_PRESETS.includes(labelValue) ? labelValue : '_custom'}
+              onValueChange={(val) => {
+                if (val === '_custom') {
+                  setLabelValue('');
+                } else {
+                  setLabelValue(val);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a discount type" />
+              </SelectTrigger>
+              <SelectContent>
+                {DISCOUNT_PRESETS.map((preset) => (
+                  <SelectItem key={preset} value={preset}>{preset}</SelectItem>
+                ))}
+                <SelectItem value="_custom">Custom...</SelectItem>
+              </SelectContent>
+            </Select>
+            {(!DISCOUNT_PRESETS.includes(labelValue)) && (
+              <Input
+                type="text"
+                placeholder="Enter custom discount name"
+                value={labelValue}
+                onChange={(e) => setLabelValue(e.target.value)}
+              />
+            )}
             <p className="text-xs text-muted-foreground">
-              Optional label to describe this discount
+              Choose a preset or enter a custom label
             </p>
           </div>
 
