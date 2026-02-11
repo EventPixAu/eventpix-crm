@@ -5,7 +5,7 @@
  * - Send Email tab: Compose and send emails
  * - Mail History tab: View sent/received emails
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Send, History } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ interface LeadMailTabsProps {
   defaultRecipientEmail?: string;
   leadName?: string;
   maxItems?: number;
+  forceTab?: string;
+  onTabChanged?: () => void;
 }
 
 export function LeadMailTabs({
@@ -43,8 +45,17 @@ export function LeadMailTabs({
   defaultRecipientEmail,
   leadName,
   maxItems = 10,
+  forceTab,
+  onTabChanged,
 }: LeadMailTabsProps) {
   const [activeTab, setActiveTab] = useState('history');
+
+  useEffect(() => {
+    if (forceTab) {
+      setActiveTab(forceTab);
+      onTabChanged?.();
+    }
+  }, [forceTab, onTabChanged]);
   
   // Send email state
   const { data: templates } = useActiveEmailTemplates();

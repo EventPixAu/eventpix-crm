@@ -7,7 +7,7 @@
  * - Right: Client card + Files + Notes
  * - Bottom: Mail history
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -107,6 +107,8 @@ export default function LeadDetail(): JSX.Element {
   const [isInitWorkflowOpen, setIsInitWorkflowOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<SalesWorkflowTemplate | null>(null);
   const [applyMode, setApplyMode] = useState<'append' | 'replace'>('append');
+  const mailTabsRef = useRef<HTMLDivElement>(null);
+  const [forceMailTab, setForceMailTab] = useState<string | undefined>(undefined);
 
   if (isLoading && !isCreateMode) {
     return (
@@ -244,7 +246,12 @@ export default function LeadDetail(): JSX.Element {
           {/* Client Card */}
           <LeadClientCard
             client={client}
-            onSendEmail={() => {}}
+            onSendEmail={() => {
+              setForceMailTab('send');
+              setTimeout(() => {
+                mailTabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            }}
           />
 
           {/* Contacts Panel */}
@@ -255,15 +262,19 @@ export default function LeadDetail(): JSX.Element {
           />
 
           {/* Mail Tabs: Send Email + History */}
-          <LeadMailTabs
-            leadId={id!}
-            clientId={(lead as any).client_id}
-            contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
-            defaultRecipientName={leadContacts[0]?.client_contact?.contact_name || leadContacts[0]?.contact_name}
-            defaultRecipientEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
-            leadName={lead.lead_name}
-            maxItems={10}
-          />
+          <div ref={mailTabsRef}>
+            <LeadMailTabs
+              leadId={id!}
+              clientId={(lead as any).client_id}
+              contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
+              defaultRecipientName={leadContacts[0]?.client_contact?.contact_name || leadContacts[0]?.contact_name}
+              defaultRecipientEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
+              leadName={lead.lead_name}
+              maxItems={10}
+              forceTab={forceMailTab}
+              onTabChanged={() => setForceMailTab(undefined)}
+            />
+          </div>
         </div>
 
         {/* CENTER COLUMN: Lead Summary + Stacked Panels */}
