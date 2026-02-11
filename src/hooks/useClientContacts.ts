@@ -70,7 +70,7 @@ export function useClientContacts(clientId: string | null | undefined) {
       );
     },
     enabled: !!clientId,
-    staleTime: 30000,
+    staleTime: 10000,
   });
 }
 

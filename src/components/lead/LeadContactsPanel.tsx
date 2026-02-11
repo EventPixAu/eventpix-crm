@@ -142,10 +142,12 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
         role: selectedRole,
       });
       
-      // Invalidate company contacts cache so the new contact appears everywhere
+      // Invalidate ALL company contacts caches so the new contact appears everywhere
       if (clientId) {
         queryClient.invalidateQueries({ queryKey: ['client-contacts', clientId] });
+        queryClient.invalidateQueries({ queryKey: ['client-contacts-for-lead', clientId] });
         queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+        queryClient.invalidateQueries({ queryKey: ['contact-search'] });
       }
     }
     
