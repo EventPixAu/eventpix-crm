@@ -2,6 +2,7 @@
  * SEND EMAIL DIALOG
  * 
  * Reusable dialog for sending emails from quotes or contracts.
+ * Supports multiple recipients - sends individual emails per contact.
  * Sends real emails via Resend through the send-crm-email edge function.
  * Logs communication to email_logs and contact_activities tables.
  * Uses ContactSelector for CRM-linked recipient selection.
@@ -9,12 +10,13 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
-import { Mail, Send, Eye, Paperclip, X, FileText, Loader2 } from 'lucide-react';
+import { Mail, Send, Eye, Paperclip, X, FileText, Loader2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +38,7 @@ import { useGenerateProposalPdf, htmlToPdfBlob, blobToBase64 } from '@/hooks/use
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface MergeFieldContext {
   eventName?: string;
@@ -44,6 +47,13 @@ interface MergeFieldContext {
   leadName?: string;
   quoteAcceptUrl?: string;
   contractSignUrl?: string;
+}
+
+interface Recipient {
+  email: string;
+  name: string;
+  contactId?: string;
+  contact?: CrmContact | null;
 }
 
 interface SendEmailDialogProps {
@@ -82,12 +92,12 @@ export function SendEmailDialog({
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
   const generatePdf = useGenerateProposalPdf();
+  const { toast } = useToast();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
-  const [recipientEmail, setRecipientEmail] = useState(clientEmail || '');
-  const [recipientName, setRecipientName] = useState(clientName || '');
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualName, setManualName] = useState('');
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
@@ -95,14 +105,16 @@ export function SendEmailDialog({
   const [attachProposalPdf, setAttachProposalPdf] = useState(context === 'quote');
   const [attachContractPdf, setAttachContractPdf] = useState(context === 'contract');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasAutoResolved, setHasAutoResolved] = useState(false);
+  // Temporary state for contact selector
+  const [selectorContactId, setSelectorContactId] = useState<string | null>(null);
 
   // Auto-resolve contact by email when dialog opens
   useEffect(() => {
-    if (open && clientEmail && !selectedContactId && !hasAutoResolved) {
+    if (open && clientEmail && recipients.length === 0 && !hasAutoResolved) {
       setHasAutoResolved(true);
-      // Try to find existing CRM contact by email
       supabase
         .from('client_contacts')
         .select('id, contact_name, first_name, email, phone_mobile, phone_office, phone')
@@ -110,28 +122,32 @@ export function SendEmailDialog({
         .maybeSingle()
         .then(({ data }) => {
           if (data) {
-            // Auto-select the matching contact
-            setSelectedContactId(data.id);
-            setSelectedContact(data as unknown as CrmContact);
-            setRecipientEmail(data.email || clientEmail);
-            setRecipientName(data.contact_name || clientName || '');
+            setRecipients([{
+              email: data.email || clientEmail,
+              name: data.contact_name || clientName || '',
+              contactId: data.id,
+              contact: data as unknown as CrmContact,
+            }]);
           } else {
-            // No match found, use legacy values
-            setRecipientEmail(clientEmail);
-            setRecipientName(clientName || '');
+            setRecipients([{
+              email: clientEmail,
+              name: clientName || '',
+            }]);
           }
         });
     } else if (!open) {
       setHasAutoResolved(false);
     }
-  }, [open, clientEmail, clientName, selectedContactId, hasAutoResolved]);
+  }, [open, clientEmail, clientName, recipients.length, hasAutoResolved]);
 
-  // Reset form when dialog opens/closes and apply defaults
+  // Reset form when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setSelectedTemplateId('');
-      setSelectedContactId(null);
-      setSelectedContact(null);
+      setRecipients([]);
+      setSelectorContactId(null);
+      setManualEmail('');
+      setManualName('');
       setSubject(defaultSubject);
       setBody('');
       setShowPreview(false);
@@ -139,21 +155,13 @@ export function SendEmailDialog({
       setAttachProposalPdf(context === 'quote');
       setAttachContractPdf(context === 'contract');
       setIsGeneratingPdf(false);
+      setIsSending(false);
       setHasAutoResolved(false);
-      // Restore default recipient
-      setRecipientEmail(clientEmail || '');
-      setRecipientName(clientName || '');
     } else {
-      // Apply defaults when opening
       if (defaultSubject) setSubject(defaultSubject);
       if (defaultBody) setBody(defaultBody);
-      // Set recipient from clientEmail/clientName when dialog opens (if no contact selected)
-      if (!selectedContactId) {
-        if (clientEmail) setRecipientEmail(clientEmail);
-        if (clientName) setRecipientName(clientName);
-      }
     }
-  }, [open, defaultSubject, defaultBody, clientEmail, clientName, context]);
+  }, [open, defaultSubject, defaultBody, context]);
 
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,16 +172,12 @@ export function SendEmailDialog({
     
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // Limit file size to 10MB
-      if (file.size > 10 * 1024 * 1024) {
-        continue; // Skip files over 10MB
-      }
+      if (file.size > 10 * 1024 * 1024) continue;
       
       const base64 = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const result = reader.result as string;
-          // Remove the data URL prefix to get just the base64 content
           resolve(result.split(',')[1]);
         };
         reader.readAsDataURL(file);
@@ -187,7 +191,6 @@ export function SendEmailDialog({
     }
     
     setAttachments((prev) => [...prev, ...newAttachments]);
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -197,34 +200,60 @@ export function SendEmailDialog({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Handle contact selection
-  const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
-    setSelectedContactId(contactId);
-    setSelectedContact(contact || null);
-    if (contact) {
-      setRecipientEmail(contact.email || '');
-      setRecipientName(contact.contact_name || '');
-    } else if (!contactId) {
-      // Cleared - restore defaults
-      setRecipientEmail(clientEmail || '');
-      setRecipientName(clientName || '');
+  // Handle contact selection from ContactSelector - add to recipients list
+  const handleContactSelect = (contactId: string | null, contact?: CrmContact | null) => {
+    setSelectorContactId(null); // Reset selector immediately
+    if (contact && contact.email) {
+      // Check if already added
+      const alreadyAdded = recipients.some(r => r.email.toLowerCase() === contact.email!.toLowerCase());
+      if (!alreadyAdded) {
+        setRecipients(prev => [...prev, {
+          email: contact.email!,
+          name: contact.contact_name || '',
+          contactId: contact.id,
+          contact,
+        }]);
+      }
     }
   };
 
-  // Process merge fields in text and convert line breaks to HTML
-  const processMergeFields = (text: string): string => {
-    // Prioritize selected contact's first_name, then parse from recipientName
-    const contactFirstName = selectedContact?.first_name 
-      || recipientName?.split(' ')[0] 
+  // Add manual email as recipient
+  const handleAddManualRecipient = () => {
+    if (!manualEmail) return;
+    const alreadyAdded = recipients.some(r => r.email.toLowerCase() === manualEmail.toLowerCase());
+    if (!alreadyAdded) {
+      setRecipients(prev => [...prev, {
+        email: manualEmail,
+        name: manualName,
+      }]);
+    }
+    setManualEmail('');
+    setManualName('');
+  };
+
+  // Remove a recipient
+  const removeRecipient = (index: number) => {
+    setRecipients(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Get the "primary" recipient for merge field context (first one)
+  const primaryRecipient = recipients[0];
+
+  // Process merge fields in text
+  const processMergeFields = (text: string, recipient?: Recipient): string => {
+    const r = recipient || primaryRecipient;
+    const contactFirstName = r?.contact?.first_name 
+      || r?.name?.split(' ')[0] 
       || clientName?.split(' ')[0] 
       || '';
+    const recipientName = r?.name || clientName || '';
+    const recipientEmail = r?.email || clientEmail || '';
     const eventDate = mergeContext?.eventDate 
       ? new Date(mergeContext.eventDate).toLocaleDateString('en-AU', { 
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
         })
       : '';
     
-    // Generate button HTML for quote/contract links
     const quoteButtonHtml = mergeContext?.quoteAcceptUrl 
       ? `<a href="${mergeContext.quoteAcceptUrl}" style="display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0;">View Your Budget</a>`
       : '';
@@ -232,68 +261,56 @@ export function SendEmailDialog({
       ? `<a href="${mergeContext.contractSignUrl}" style="display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 16px 0;">Sign Contract</a>`
       : '';
 
-    // First convert line breaks to <br> for plain text templates
     let processed = text.replace(/\n/g, '<br>');
     
-    // Then apply merge field replacements
     return processed
-      // Client merge fields
-      .replace(/\{\{client_name\}\}/gi, recipientName || clientName || '')
-      .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || clientName || '')
+      .replace(/\{\{client_name\}\}/gi, recipientName)
+      .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName)
       .replace(/\{\{client\.business_name\}\}/gi, clientName || '')
-      // Contact merge fields  
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
-      .replace(/\{\{contact\.name\}\}/gi, recipientName || clientName || '')
-      .replace(/\{\{contact\.email\}\}/gi, recipientEmail || clientEmail || '')
-      // Event merge fields
+      .replace(/\{\{contact\.name\}\}/gi, recipientName)
+      .replace(/\{\{contact\.email\}\}/gi, recipientEmail)
       .replace(/\{\{event\.event_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
       .replace(/\{\{event\.name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
       .replace(/\{\{event\.event_date\}\}/gi, eventDate)
       .replace(/\{\{event\.date\}\}/gi, eventDate)
       .replace(/\{\{event\.venue\}\}/gi, mergeContext?.venueName || '')
       .replace(/\{\{event\.venue_name\}\}/gi, mergeContext?.venueName || '')
-      // Lead merge fields
       .replace(/\{\{lead\.name\}\}/gi, mergeContext?.leadName || '')
       .replace(/\{\{lead_or_job_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
-      // Quote/Contract link buttons
       .replace(/\{\{quote\.link\}\}/gi, quoteButtonHtml)
       .replace(/\{\{quote\.button\}\}/gi, quoteButtonHtml)
       .replace(/\{\{budget\.link\}\}/gi, quoteButtonHtml)
       .replace(/\{\{budget\.button\}\}/gi, quoteButtonHtml)
       .replace(/\{\{contract\.link\}\}/gi, contractButtonHtml)
       .replace(/\{\{contract\.button\}\}/gi, contractButtonHtml)
-      // Plain URLs (if user prefers text links)
       .replace(/\{\{quote\.url\}\}/gi, mergeContext?.quoteAcceptUrl || '')
       .replace(/\{\{budget\.url\}\}/gi, mergeContext?.quoteAcceptUrl || '')
       .replace(/\{\{contract\.url\}\}/gi, mergeContext?.contractSignUrl || '');
   };
 
-  // Apply template when selected - keep raw text for editing
+  // Apply template when selected
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
     if (template) {
-      // Process subject merge fields but keep body as raw template for editing
       setSubject(processMergeFields(template.subject));
-      // Use body_text if available (plain text), otherwise strip HTML tags for editing
       const rawBody = template.body_text || template.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
       setBody(rawBody);
     }
   };
 
-  // Process body for preview/send - converts plain text to HTML with merge fields
-  const getProcessedBody = () => {
-    return processMergeFields(body);
+  const getProcessedBody = (recipient?: Recipient) => {
+    return processMergeFields(body, recipient);
   };
 
   const handleSend = async () => {
-    if (!recipientEmail || !subject) {
-      return;
-    }
+    if (recipients.length === 0 || !subject) return;
 
+    setIsSending(true);
     let finalAttachments = [...attachments];
 
-    // Generate and attach PDF if checkbox is checked and we have a quote
+    // Generate PDF attachments once
     if (attachProposalPdf && relatedQuoteId && context === 'quote') {
       setIsGeneratingPdf(true);
       try {
@@ -302,27 +319,19 @@ export function SendEmailDialog({
           const filename = `Proposal-${result.quote?.quote_number || relatedQuoteId.slice(0, 8)}.pdf`;
           const pdfBlob = await htmlToPdfBlob(result.html, filename);
           const base64Content = await blobToBase64(pdfBlob);
-          
-          finalAttachments.push({
-            filename,
-            content: base64Content,
-            contentType: 'application/pdf',
-          });
+          finalAttachments.push({ filename, content: base64Content, contentType: 'application/pdf' });
         }
       } catch (error) {
         console.error('Failed to generate PDF:', error);
-        // Continue without PDF attachment
       } finally {
         setIsGeneratingPdf(false);
       }
     }
 
-    // Generate and attach contract PDF if checkbox is checked and we have contract HTML
     if (attachContractPdf && contractHtml && context === 'contract') {
       setIsGeneratingPdf(true);
       try {
         const filename = `Agreement-${(contractTitle || 'Contract').replace(/\s+/g, '_')}.pdf`;
-        // Wrap contract HTML in a full document structure for proper PDF rendering
         const fullContractHtml = `
 <!DOCTYPE html>
 <html>
@@ -331,64 +340,61 @@ export function SendEmailDialog({
   <title>${contractTitle || 'Agreement'}</title>
   <style>
     @page { margin: 0.5in; size: A4; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-      font-size: 14px; 
-      line-height: 1.6; 
-      color: #111; 
-      margin: 0; 
-      padding: 32px; 
-      background: white;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #111; margin: 0; padding: 32px; background: white; }
     strong { font-weight: 600; }
     br { display: block; margin: 8px 0; }
   </style>
 </head>
-<body>
-  ${contractHtml}
-</body>
-</html>
-        `;
+<body>${contractHtml}</body>
+</html>`;
         const pdfBlob = await htmlToPdfBlob(fullContractHtml, filename);
         const base64Content = await blobToBase64(pdfBlob);
-        
-        finalAttachments.push({
-          filename,
-          content: base64Content,
-          contentType: 'application/pdf',
-        });
+        finalAttachments.push({ filename, content: base64Content, contentType: 'application/pdf' });
       } catch (error) {
         console.error('Failed to generate contract PDF:', error);
-        // Continue without PDF attachment
       } finally {
         setIsGeneratingPdf(false);
       }
     }
 
-    // Get processed HTML body for sending
-    const processedBody = getProcessedBody();
+    // Send to each recipient individually
+    let successCount = 0;
+    let failCount = 0;
 
-    sendEmail.mutate({
-      recipientEmail,
-      recipientName: recipientName || undefined,
-      subject,
-      bodyHtml: processedBody,
-      attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
-      contactId: selectedContactId || undefined,
-      clientId: clientId || undefined,
-      quoteId: relatedQuoteId || undefined,
-      contractId: relatedContractId || undefined,
-      templateId: selectedTemplateId || undefined,
-    }, {
-      onSuccess: async () => {
-        // Call the success callback (e.g., to mark contract as sent)
-        if (onSendSuccess) {
-          await onSendSuccess();
-        }
-        onOpenChange(false);
+    for (const recipient of recipients) {
+      const processedBody = getProcessedBody(recipient);
+      try {
+        await sendEmail.mutateAsync({
+          recipientEmail: recipient.email,
+          recipientName: recipient.name || undefined,
+          subject,
+          bodyHtml: processedBody,
+          attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
+          contactId: recipient.contactId || undefined,
+          clientId: clientId || undefined,
+          quoteId: relatedQuoteId || undefined,
+          contractId: relatedContractId || undefined,
+          templateId: selectedTemplateId || undefined,
+        });
+        successCount++;
+      } catch {
+        failCount++;
       }
-    });
+    }
+
+    setIsSending(false);
+
+    if (successCount > 0) {
+      toast({
+        title: `Email sent to ${successCount} recipient${successCount > 1 ? 's' : ''}`,
+        description: failCount > 0 ? `${failCount} failed to send` : undefined,
+      });
+      if (onSendSuccess) await onSendSuccess();
+      onOpenChange(false);
+    }
   };
+
+  const hasValidRecipients = recipients.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -405,41 +411,79 @@ export function SendEmailDialog({
 
         {!showPreview ? (
           <div className="space-y-4 py-4">
-            {/* Contact Selection */}
+            {/* Recipients */}
             <div className="space-y-2">
-              <Label>Recipient Contact</Label>
+              <Label>Recipients</Label>
+              
+              {/* Selected recipients as chips */}
+              {recipients.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-muted/20 min-h-[40px]">
+                  {recipients.map((r, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1 px-2 py-1 text-xs">
+                      <span className="font-medium">{r.name || r.email}</span>
+                      {r.name && <span className="text-muted-foreground">({r.email})</span>}
+                      <button
+                        type="button"
+                        onClick={() => removeRecipient(index)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Contact selector for adding */}
               <ContactSelector
-                value={selectedContactId}
-                onChange={handleContactChange}
-                placeholder="Search for a contact..."
+                value={selectorContactId}
+                onChange={handleContactSelect}
+                placeholder="Search and add a contact..."
                 companyId={clientId}
               />
-              <p className="text-xs text-muted-foreground">
-                Select a CRM contact or type directly below
-              </p>
-            </div>
 
-            {/* Manual Email Override */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="recipient">Recipient Email *</Label>
-                <Input
-                  id="recipient"
-                  type="email"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="client@example.com"
-                />
+              {/* Manual email entry */}
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Input
+                    type="email"
+                    value={manualEmail}
+                    onChange={(e) => setManualEmail(e.target.value)}
+                    placeholder="Or type an email address..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddManualRecipient();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="w-40">
+                  <Input
+                    value={manualName}
+                    onChange={(e) => setManualName(e.target.value)}
+                    placeholder="Name (optional)"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddManualRecipient();
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleAddManualRecipient}
+                  disabled={!manualEmail}
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="recipientName">Recipient Name</Label>
-                <Input
-                  id="recipientName"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="John Smith"
-                />
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Add multiple recipients from CRM or type email addresses manually
+              </p>
             </div>
 
             {/* Template Selection */}
@@ -482,7 +526,7 @@ export function SendEmailDialog({
                 rows={8}
               />
               <p className="text-xs text-muted-foreground">
-                Use {'{{client_name}}'} to insert the client's name.
+                Use {'{{client_name}}'} to insert the client's name. Merge fields are personalised per recipient.
               </p>
             </div>
 
@@ -574,7 +618,8 @@ export function SendEmailDialog({
             <div className="border rounded-lg p-4 bg-muted/30">
               <div className="space-y-2 mb-4">
                 <div className="text-sm">
-                  <span className="font-medium">To:</span> {recipientName ? `${recipientName} <${recipientEmail}>` : recipientEmail}
+                  <span className="font-medium">To:</span>{' '}
+                  {recipients.map(r => r.name ? `${r.name} <${r.email}>` : r.email).join(', ')}
                 </div>
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
@@ -591,6 +636,11 @@ export function SendEmailDialog({
                     </span>
                   </div>
                 )}
+                {recipients.length > 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    Individual emails will be sent to each recipient with personalised merge fields.
+                  </p>
+                )}
               </div>
               <div className="border-t pt-4">
                 <div 
@@ -605,16 +655,23 @@ export function SendEmailDialog({
         <DialogFooter className="gap-2">
           {showPreview ? (
             <>
-              <Button variant="outline" onClick={() => setShowPreview(false)} disabled={isGeneratingPdf || sendEmail.isPending}>
+              <Button variant="outline" onClick={() => setShowPreview(false)} disabled={isGeneratingPdf || isSending}>
                 Edit
               </Button>
-              <Button onClick={handleSend} disabled={sendEmail.isPending || isGeneratingPdf}>
+              <Button onClick={handleSend} disabled={isSending || isGeneratingPdf}>
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generating PDF...
                   </>
-                ) : sendEmail.isPending ? 'Sending...' : 'Send Email'}
+                ) : isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  `Send to ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}`
+                )}
               </Button>
             </>
           ) : (
@@ -626,16 +683,21 @@ export function SendEmailDialog({
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              <Button onClick={handleSend} disabled={sendEmail.isPending || isGeneratingPdf || !recipientEmail || !subject}>
+              <Button onClick={handleSend} disabled={isSending || isGeneratingPdf || !hasValidRecipients || !subject}>
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generating PDF...
                   </>
+                ) : isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    {sendEmail.isPending ? 'Sending...' : 'Send'}
+                    {recipients.length > 1 ? `Send to ${recipients.length}` : 'Send'}
                   </>
                 )}
               </Button>
