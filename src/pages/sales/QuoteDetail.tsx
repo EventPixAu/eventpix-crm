@@ -130,7 +130,7 @@ export default function QuoteDetail() {
     quantity: 1,
     unit_price: 0,
     tax_rate: 0.1,
-    group_label: '',
+    group_label: 'Photography',
   });
   const [eventData, setEventData] = useState({
     event_name: '',
@@ -212,7 +212,7 @@ export default function QuoteDetail() {
       quantity: 1,
       unit_price: 0,
       tax_rate: 0.1,
-      group_label: '',
+      group_label: 'Photography',
     });
   };
 
