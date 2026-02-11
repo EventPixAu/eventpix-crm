@@ -1063,6 +1063,17 @@ export default function QuoteDetail() {
             ? `${getPublicBaseUrl()}/accept/${quote.public_token}` 
             : undefined,
         }}
+        onSendSuccess={async () => {
+          // Auto-mark quote as "Sent" when email is successfully dispatched
+          if (quote.status === 'draft') {
+            try {
+              await supabase.rpc('mark_quote_as_sent', { p_quote_id: id });
+              window.location.reload();
+            } catch (err) {
+              console.error('Failed to mark quote as sent:', err);
+            }
+          }
+        }}
       />
 
       {/* Apply Template Dialog */}

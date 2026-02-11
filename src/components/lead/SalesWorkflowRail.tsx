@@ -202,9 +202,19 @@ export function SalesWorkflowRail({
       {/* Workflow items list */}
       {workflowItems.length === 0 ? (
         <div className="text-center py-6">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-3">
             No workflow steps defined
           </p>
+          {onInitializeWorkflow && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onInitializeWorkflow}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Initialize Workflow
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-1">
