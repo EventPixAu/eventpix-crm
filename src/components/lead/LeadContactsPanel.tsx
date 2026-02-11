@@ -36,7 +36,7 @@ import {
   LEAD_CONTACT_ROLES,
   type LeadContactRole,
 } from '@/hooks/useLeadContacts';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 const MAX_CONTACTS = 4;
@@ -53,6 +53,7 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
   const createContact = useCreateLeadContact();
   const updateContact = useUpdateLeadContact();
   const deleteContact = useDeleteLeadContact();
+  const queryClient = useQueryClient();
   
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -140,6 +141,12 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
         contact_id: newContact.id,
         role: selectedRole,
       });
+      
+      // Invalidate company contacts cache so the new contact appears everywhere
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ['client-contacts', clientId] });
+        queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      }
     }
     
     setIsDialogOpen(false);
