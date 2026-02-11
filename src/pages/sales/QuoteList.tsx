@@ -165,7 +165,14 @@ export default function QuoteList() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        {(quote.lead as any)?.lead_name || '—'}
+                        {(quote.lead as any)?.lead_name ? (
+                          <Link 
+                            to={`/sales/leads/${quote.lead_id}`}
+                            className="hover:underline text-primary"
+                          >
+                            {(quote.lead as any).lead_name}
+                          </Link>
+                        ) : '—'}
                       </TableCell>
                       <TableCell>
                         {clientName ? (
