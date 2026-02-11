@@ -569,6 +569,11 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
                             mode="single"
                             selected={session.date}
                             onSelect={(date) => updateSession(session.id, { date })}
+                            defaultMonth={
+                              !session.date && index > 0
+                                ? proposedSessions.slice(0, index).reverse().find(s => s.date)?.date
+                                : session.date || undefined
+                            }
                             initialFocus
                             className={cn("p-3 pointer-events-auto")}
                           />
