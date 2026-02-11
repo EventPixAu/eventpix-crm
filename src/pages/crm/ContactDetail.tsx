@@ -24,6 +24,7 @@ import {
   MessageSquare,
   PhoneCall,
   Calendar,
+  Send,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -64,6 +65,7 @@ import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { useToast } from '@/hooks/use-toast';
 import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
+import { SendContactEmailDialog } from '@/components/crm/SendContactEmailDialog';
 
 interface Contact {
   id: string;
@@ -92,6 +94,7 @@ export default function ContactDetail() {
   const isCreateMode = !id;
   
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEmailOpen, setIsEmailOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [activityDate, setActivityDate] = useState<Date>(new Date());
@@ -714,6 +717,12 @@ export default function ContactDetail() {
                   <Eye className="h-4 w-4 mr-1.5" />
                   View
                 </Button>
+                {contact.email && (
+                  <Button variant="outline" size="sm" onClick={() => setIsEmailOpen(true)}>
+                    <Send className="h-4 w-4 mr-1.5" />
+                    Email
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={handleOpenEdit}>
                   <Pencil className="h-4 w-4 mr-1.5" />
                   Edit
@@ -1143,6 +1152,20 @@ export default function ContactDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Send Email Dialog */}
+      {contact.email && (
+        <SendContactEmailDialog
+          open={isEmailOpen}
+          onOpenChange={setIsEmailOpen}
+          contactId={id!}
+          contactName={contact.contact_name}
+          contactEmail={contact.email}
+          contactFirstName={contact.first_name}
+          clientId={contact.client_id}
+          companyName={contact.client?.business_name}
+        />
+      )}
     </AppLayout>
   );
 }
