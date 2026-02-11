@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (roles.has('admin')) return 'admin';
     if (roles.has('operations')) return 'operations';
     if (roles.has('sales')) return 'sales';
-    if (roles.has('crew')) return 'crew';
+    if (roles.has('crew') || roles.has('photographer') || roles.has('assistant')) return 'crew';
     return null;
   };
 
