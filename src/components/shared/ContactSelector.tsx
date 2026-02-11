@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { cn } from '@/lib/utils';
 import {
   useContactSearch,
@@ -313,7 +313,7 @@ export function ContactSelector({
             </div>
           </div>
 
-          <ScrollArea className="max-h-[400px]">
+          <div className="max-h-[400px] overflow-y-auto">
             {isSearching ? (
               <div className="p-4 text-center text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
@@ -444,7 +444,7 @@ export function ContactSelector({
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
 
           {/* Create New Contact */}
           <div className="p-2 border-t">
