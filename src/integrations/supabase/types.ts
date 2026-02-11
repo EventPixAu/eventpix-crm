@@ -485,6 +485,7 @@ export type Database = {
           status_override_at: string | null
           status_override_by: string | null
           status_override_reason: string | null
+          tags: string[] | null
           trading_name: string | null
           updated_at: string | null
           website: string | null
@@ -512,6 +513,7 @@ export type Database = {
           status_override_at?: string | null
           status_override_by?: string | null
           status_override_reason?: string | null
+          tags?: string[] | null
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
@@ -539,6 +541,7 @@ export type Database = {
           status_override_at?: string | null
           status_override_by?: string | null
           status_override_reason?: string | null
+          tags?: string[] | null
           trading_name?: string | null
           updated_at?: string | null
           website?: string | null
