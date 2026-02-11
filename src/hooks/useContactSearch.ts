@@ -312,10 +312,15 @@ export function useCreateCrmContact() {
 
       return contact;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contact-search'] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       queryClient.invalidateQueries({ queryKey: ['all-contacts-for-linking'] });
+      // Invalidate company contacts cache so new contact appears in email dropdowns
+      if (variables.company_id) {
+        queryClient.invalidateQueries({ queryKey: ['client-contacts', variables.company_id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['client-contacts'] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to create contact');
