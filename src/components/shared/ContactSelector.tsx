@@ -313,7 +313,7 @@ export function ContactSelector({
             </div>
           </div>
 
-          <ScrollArea className="max-h-[300px]">
+          <ScrollArea className="max-h-[400px]">
             {isSearching ? (
               <div className="p-4 text-center text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
