@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.xero-sync]
 verify_jwt = false
+
+[functions.send-recovery-email]
+verify_jwt = false
