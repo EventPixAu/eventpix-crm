@@ -343,8 +343,6 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
     }
   }, [steps]);
   
-  // Find index of first incomplete step
-  const firstIncompleteIndex = steps.findIndex(step => !step.is_completed);
   
   if (steps.length === 0) {
     return (
@@ -379,26 +377,34 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
           )}
         </div>
         
-        {/* Steps List with ScrollArea */}
+        {/* Steps List with ScrollArea - completed float to top */}
         <ScrollArea className="h-[400px] pr-3" ref={scrollAreaRef}>
           <div className="relative">
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                ref={index === firstIncompleteIndex ? firstIncompleteRef : undefined}
-              >
-                <StepItem
-                  step={step}
-                  eventId={eventId}
-                  isAdmin={isAdmin}
-                  isExpanded={expandedStep === step.id}
-                  onToggle={() => setExpandedStep(
-                    expandedStep === step.id ? null : step.id
-                  )}
-                  onEdit={(step) => setEditingStep(step)}
-                />
-              </div>
-            ))}
+            {[...steps]
+              .sort((a, b) => {
+                if (a.is_completed === b.is_completed) return 0;
+                return a.is_completed ? -1 : 1;
+              })
+              .map((step) => {
+                const isFirstIncomplete = !step.is_completed && step.id === steps.find(s => !s.is_completed)?.id;
+                return (
+                  <div
+                    key={step.id}
+                    ref={isFirstIncomplete ? firstIncompleteRef : undefined}
+                  >
+                    <StepItem
+                      step={step}
+                      eventId={eventId}
+                      isAdmin={isAdmin}
+                      isExpanded={expandedStep === step.id}
+                      onToggle={() => setExpandedStep(
+                        expandedStep === step.id ? null : step.id
+                      )}
+                      onEdit={(step) => setEditingStep(step)}
+                    />
+                  </div>
+                );
+              })}
           </div>
         </ScrollArea>
         
