@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.admin-reset-password]
 verify_jwt = false
+
+[functions.email-tracking-pixel]
+verify_jwt = false
