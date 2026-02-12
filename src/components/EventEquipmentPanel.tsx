@@ -85,6 +85,9 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [photographerKitDialogOpen, setPhotographerKitDialogOpen] = useState(false);
+  const [eventPixKitDialogOpen, setEventPixKitDialogOpen] = useState(false);
+  const [epKitId, setEpKitId] = useState('');
+  const [epKitUserId, setEpKitUserId] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedKitId, setSelectedKitId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -93,6 +96,18 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const [newStatus, setNewStatus] = useState<AllocationStatus>('allocated');
   const [newAssigneeId, setNewAssigneeId] = useState<string>('');
   const [statusNotes, setStatusNotes] = useState('');
+
+  const handleAllocateEventPixKit = async () => {
+    if (!epKitId) return;
+    await allocateKit.mutateAsync({
+      eventId,
+      kitId: epKitId,
+      userId: epKitUserId && epKitUserId !== 'unassigned' ? epKitUserId : undefined,
+    });
+    setEpKitId('');
+    setEpKitUserId('');
+    setEventPixKitDialogOpen(false);
+  };
 
   const handleAllocateItem = async () => {
     if (!selectedItemId) return;
@@ -217,6 +232,60 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
         </CardTitle>
         {isAdmin && (
           <div className="flex gap-2">
+            <Dialog open={eventPixKitDialogOpen} onOpenChange={setEventPixKitDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Layers className="h-4 w-4 mr-1" />
+                  EventPix Kits
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Allocate EventPix Kit</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Select Kit</Label>
+                    <Select value={epKitId} onValueChange={setEpKitId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an equipment kit..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {kits?.map((kit) => (
+                          <SelectItem key={kit.id} value={kit.id}>
+                            {kit.name}
+                            {kit.description ? ` — ${kit.description}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Assign to Staff (Optional)</Label>
+                    <Select value={epKitUserId} onValueChange={setEpKitUserId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unassigned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {profileLinkedStaff.map((s) => (
+                          <SelectItem key={s.oderId} value={s.oderId}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEventPixKitDialogOpen(false)}>Cancel</Button>
+                  <Button 
+                    onClick={handleAllocateEventPixKit} 
+                    disabled={!epKitId || allocateKit.isPending}
+                  >
+                    {allocateKit.isPending ? 'Allocating...' : 'Allocate Kit'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button size="sm" variant="outline" onClick={() => setPhotographerKitDialogOpen(true)}>
               <Camera className="h-4 w-4 mr-1" />
               Photographer Kits
