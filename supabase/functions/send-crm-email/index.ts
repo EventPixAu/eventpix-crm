@@ -108,82 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
-    // Append footer to email body
-    const fullBodyHtml = bodyHtml + emailFooter;
-
-    // Build email payload
-    const emailPayload: Record<string, unknown> = {
-      from: "Eventpix <pix@rs.eventpix.com.au>",
-      reply_to: "pix@eventpix.com.au",
-      to: [recipientEmail],
-      subject: subject,
-      html: fullBodyHtml,
-    };
-
-    // Add attachments if provided
-    if (body.attachments && body.attachments.length > 0) {
-      emailPayload.attachments = body.attachments.map((att: EmailAttachment) => ({
-        filename: att.filename,
-        content: att.content,
-        content_type: att.contentType,
-      }));
-      console.log(`Adding ${body.attachments.length} attachment(s) to email`);
-    }
-
-    // Send via Resend with retry logic for rate limits
-    const maxRetries = 3;
-    let lastResponse: Response | undefined;
-    let lastResult: Record<string, unknown> = {};
-    
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      lastResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify(emailPayload),
-      });
-
-      lastResult = await lastResponse.json();
-      
-      // If rate limited, wait and retry
-      if (lastResponse.status === 429 && attempt < maxRetries - 1) {
-        const waitTime = Math.pow(2, attempt) * 500; // 500ms, 1s, 2s
-        console.log(`Rate limited, waiting ${waitTime}ms before retry ${attempt + 1}...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        continue;
-      }
-      break;
-    }
-    
-    const resendResponse = lastResponse!;
-    const resendResult = lastResult;
-
-    if (!resendResponse.ok) {
-      console.error("Resend API error:", resendResult);
-      
-      // Update scheduled email status if applicable
-      if (scheduledEmailId) {
-        await supabase
-          .from("scheduled_emails")
-          .update({ 
-            status: "failed", 
-            error_message: resendResult.message || "Failed to send",
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", scheduledEmailId);
-      }
-
-      return new Response(
-        JSON.stringify({ success: false, error: resendResult.message || "Failed to send email" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    console.log("Email sent successfully:", resendResult);
-
-    // Log to email_logs
+    // Log to email_logs FIRST to get the ID for the tracking pixel
     const emailLogData: Record<string, unknown> = {
       email_type: "crm_manual",
       recipient_email: recipientEmail,
@@ -191,8 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
       subject: subject,
       body_html: bodyHtml,
       body_preview: bodyHtml.replace(/<[^>]*>/g, "").substring(0, 200),
-      status: "sent",
-      sent_at: new Date().toISOString(),
+      status: "pending",
       sent_by: userData.user.id,
     };
 
@@ -204,12 +128,30 @@ const handler = async (req: Request): Promise<Response> => {
     if (contractId) emailLogData.contract_id = contractId;
     if (templateId) emailLogData.template_id = templateId;
 
-    const { error: logError } = await supabase
+    const { data: logData, error: logError } = await supabase
       .from("email_logs")
-      .insert(emailLogData);
+      .insert(emailLogData)
+      .select("id")
+      .single();
 
     if (logError) {
       console.error("Failed to log email:", logError);
+    }
+
+    // Build tracking pixel URL
+    const trackingPixel = logData?.id
+      ? `<img src="${supabaseUrl}/functions/v1/email-tracking-pixel?id=${logData.id}" width="1" height="1" style="display:none;" alt="" />`
+      : "";
+
+    // Append footer and tracking pixel to email body
+    const fullBodyHtml = bodyHtml + emailFooter + trackingPixel;
+
+    // Update email log status to "sent" after successful send
+    if (logData?.id) {
+      await supabase
+        .from("email_logs")
+        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .eq("id", logData.id);
     }
 
     // Log to contact_activities if we have a contact
