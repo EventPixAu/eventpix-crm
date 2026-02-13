@@ -78,6 +78,7 @@ import {
   LeadProposedDatesPanel,
   MarkAsClientButton,
   CompanyStatusBadgeDropdown,
+  LeadNotesPanel,
 } from '@/components/lead';
 
 export default function LeadDetail(): JSX.Element {
@@ -439,7 +440,9 @@ export default function LeadDetail(): JSX.Element {
             icon={FolderOpen}
             title="Files"
             badge="UP TO 50MB"
-            onAdd={() => {}}
+            onAdd={() => {
+              toast({ title: 'Coming soon', description: 'File uploads will be available shortly.' });
+            }}
             isEmpty={true}
             emptyMessage="No files uploaded yet"
           >
@@ -447,15 +450,7 @@ export default function LeadDetail(): JSX.Element {
           </LeadCollapsiblePanel>
 
           {/* Notes Panel */}
-          <LeadCollapsiblePanel
-            icon={StickyNote}
-            title="Notes"
-            onAdd={() => {}}
-            isEmpty={true}
-            emptyMessage="No notes yet"
-          >
-            <div />
-          </LeadCollapsiblePanel>
+          <LeadNotesPanel leadId={id!} />
 
           {/* Workflow Rail */}
           <div className="bg-card border rounded-lg p-4">
