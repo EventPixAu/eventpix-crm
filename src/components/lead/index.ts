@@ -12,3 +12,4 @@ export { LeadProposedDatesPanel } from './LeadProposedDatesPanel';
 export { MarkAsClientButton } from './MarkAsClientButton';
 export { CompanyStatusBadgeDropdown } from './CompanyStatusBadgeDropdown';
 export { LeadNotesPanel } from './LeadNotesPanel';
+export { LeadFilesPanel } from './LeadFilesPanel';

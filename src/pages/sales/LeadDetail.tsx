@@ -18,7 +18,6 @@ import {
   Receipt,
   FileSignature,
   ClipboardList,
-  FolderOpen,
   StickyNote,
   Mail,
   Eye,
@@ -79,6 +78,7 @@ import {
   MarkAsClientButton,
   CompanyStatusBadgeDropdown,
   LeadNotesPanel,
+  LeadFilesPanel,
 } from '@/components/lead';
 
 export default function LeadDetail(): JSX.Element {
@@ -436,18 +436,7 @@ export default function LeadDetail(): JSX.Element {
         {/* RIGHT COLUMN: Files + Notes + Workflow */}
         <div className="lg:col-span-4 space-y-4">
           {/* Files Panel */}
-          <LeadCollapsiblePanel
-            icon={FolderOpen}
-            title="Files"
-            badge="UP TO 50MB"
-            onAdd={() => {
-              toast({ title: 'Coming soon', description: 'File uploads will be available shortly.' });
-            }}
-            isEmpty={true}
-            emptyMessage="No files uploaded yet"
-          >
-            <div />
-          </LeadCollapsiblePanel>
+          <LeadFilesPanel leadId={id!} />
 
           {/* Notes Panel */}
           <LeadNotesPanel leadId={id!} />
