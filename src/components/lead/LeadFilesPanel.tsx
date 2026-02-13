@@ -51,16 +51,7 @@ export function LeadFilesPanel({ leadId }: LeadFilesPanelProps) {
   };
 
   return (
-    <LeadCollapsiblePanel
-      icon={FolderOpen}
-      title="Files"
-      badge="UP TO 50MB"
-      count={files.length}
-      onAdd={() => inputRef.current?.click()}
-      isEmpty={files.length === 0}
-      emptyMessage="No files uploaded yet"
-      defaultOpen={files.length > 0}
-    >
+    <>
       <input
         ref={inputRef}
         type="file"
@@ -68,32 +59,43 @@ export function LeadFilesPanel({ leadId }: LeadFilesPanelProps) {
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
-      <div className="space-y-2">
-        {files.map((f) => (
-          <div key={f.id} className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 text-sm">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="truncate">{f.file_name}</span>
-              {f.file_size && (
-                <span className="text-muted-foreground text-xs shrink-0">{formatFileSize(f.file_size)}</span>
-              )}
+      <LeadCollapsiblePanel
+        icon={FolderOpen}
+        title="Files"
+        badge="UP TO 50MB"
+        count={files.length}
+        onAdd={() => inputRef.current?.click()}
+        isEmpty={files.length === 0}
+        emptyMessage="No files uploaded yet"
+        defaultOpen={files.length > 0}
+      >
+        <div className="space-y-2">
+          {files.map((f) => (
+            <div key={f.id} className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 text-sm">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="truncate">{f.file_name}</span>
+                {f.file_size && (
+                  <span className="text-muted-foreground text-xs shrink-0">{formatFileSize(f.file_size)}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownload(f.file_path, f.file_name)}>
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  onClick={() => deleteFile.mutate({ file: f })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownload(f.file_path, f.file_name)}>
-                <Download className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                onClick={() => deleteFile.mutate({ file: f })}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </LeadCollapsiblePanel>
+          ))}
+        </div>
+      </LeadCollapsiblePanel>
+    </>
   );
 }
