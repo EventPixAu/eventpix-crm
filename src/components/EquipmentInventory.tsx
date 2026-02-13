@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { 
   useEquipmentItems, 
   useCreateEquipmentItem, 
@@ -35,6 +35,8 @@ export function EquipmentInventory() {
   const [editingItem, setEditingItem] = useState<EquipmentItemWithOwner | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [filterOwner, setFilterOwner] = useState<string>('all');
   const [formData, setFormData] = useState({
     name: '',
@@ -113,6 +115,38 @@ export function EquipmentInventory() {
     if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
     return true;
   });
+
+  const sortedItems = useMemo(() => {
+    if (!filteredItems) return [];
+    return [...filteredItems].sort((a, b) => {
+      let aVal = '';
+      let bVal = '';
+      switch (sortField) {
+        case 'name': aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+        case 'owner': aVal = (a.owner?.full_name || 'EventPix').toLowerCase(); bVal = (b.owner?.full_name || 'EventPix').toLowerCase(); break;
+        case 'category': aVal = (a.category || '').toLowerCase(); bVal = (b.category || '').toLowerCase(); break;
+        case 'brand': aVal = `${a.brand || ''} ${a.model || ''}`.trim().toLowerCase(); bVal = `${b.brand || ''} ${b.model || ''}`.trim().toLowerCase(); break;
+        case 'condition': aVal = a.condition; bVal = b.condition; break;
+      }
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredItems, sortField, sortDir]);
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3 ml-1" /> : <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   const getStatusBadge = (status: EquipmentStatus) => {
     const variants: Record<EquipmentStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -329,17 +363,27 @@ export function EquipmentInventory() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Brand/Model</TableHead>
-              <TableHead>Condition</TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('name')}>
+                <span className="flex items-center">Name<SortIcon field="name" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('owner')}>
+                <span className="flex items-center">Owner<SortIcon field="owner" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('category')}>
+                <span className="flex items-center">Category<SortIcon field="category" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('brand')}>
+                <span className="flex items-center">Brand/Model<SortIcon field="brand" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('condition')}>
+                <span className="flex items-center">Condition<SortIcon field="condition" /></span>
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredItems?.map((item) => (
+            {sortedItems.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell>
@@ -367,7 +411,7 @@ export function EquipmentInventory() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!filteredItems || filteredItems.length === 0) && (
+            {sortedItems.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No equipment items found
