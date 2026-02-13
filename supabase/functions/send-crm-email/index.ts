@@ -146,7 +146,72 @@ const handler = async (req: Request): Promise<Response> => {
     // Append footer and tracking pixel to email body
     const fullBodyHtml = bodyHtml + emailFooter + trackingPixel;
 
-    // Update email log status to "sent" after successful send
+    // Build attachments for Resend
+    const resendAttachments = (body.attachments || []).map((att: EmailAttachment) => ({
+      filename: att.filename,
+      content: att.content,
+      type: att.contentType,
+    }));
+
+    // Send via Resend API with retry logic
+    let resendResult: Record<string, unknown> | null = null;
+    let lastError: string | null = null;
+    const maxRetries = 3;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const resendPayload: Record<string, unknown> = {
+        from: "EventPix <pix@rs.eventpix.com.au>",
+        reply_to: "pix@eventpix.com.au",
+        to: [recipientName ? `${recipientName} <${recipientEmail}>` : recipientEmail],
+        subject,
+        html: fullBodyHtml,
+      };
+
+      if (resendAttachments.length > 0) {
+        resendPayload.attachments = resendAttachments;
+      }
+
+      const resendRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${resendKey}`,
+        },
+        body: JSON.stringify(resendPayload),
+      });
+
+      if (resendRes.ok) {
+        resendResult = await resendRes.json();
+        break;
+      }
+
+      lastError = await resendRes.text();
+      console.error(`Resend attempt ${attempt + 1} failed (${resendRes.status}):`, lastError);
+
+      // Retry on rate limit (429)
+      if (resendRes.status === 429 && attempt < maxRetries - 1) {
+        await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+
+      break;
+    }
+
+    if (!resendResult) {
+      // Update log to failed
+      if (logData?.id) {
+        await supabase
+          .from("email_logs")
+          .update({ status: "failed", error_message: lastError || "Send failed" })
+          .eq("id", logData.id);
+      }
+      return new Response(
+        JSON.stringify({ success: false, error: lastError || "Failed to send email" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Update email log status to "sent"
     if (logData?.id) {
       await supabase
         .from("email_logs")
