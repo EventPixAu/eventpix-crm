@@ -99,9 +99,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function RoleBasedDashboard() {
   const { role, isAdmin } = useAuth();
   
-  // Admin and Operations get the full dashboard
+  // Admin and Operations default to CRM Emails inbox
   if (isAdmin || role === 'operations') {
-    return <Dashboard />;
+    return <Navigate to="/crm/emails" replace />;
   }
   
   // Sales users get sales dashboard
