@@ -41,10 +41,14 @@ export function LeadFilesPanel({ leadId }: LeadFilesPanelProps) {
     if (inputRef.current) inputRef.current.value = '';
   };
 
-  const handleDownload = (filePath: string, fileName: string) => {
-    const { data } = supabase.storage.from('lead-files').getPublicUrl(filePath);
+  const handleDownload = async (filePath: string, fileName: string) => {
+    const { data, error } = await supabase.storage.from('lead-files').createSignedUrl(filePath, 3600);
+    if (error || !data?.signedUrl) {
+      toast({ title: 'Download failed', description: error?.message || 'Could not generate download link', variant: 'destructive' });
+      return;
+    }
     const a = document.createElement('a');
-    a.href = data.publicUrl;
+    a.href = data.signedUrl;
     a.download = fileName;
     a.target = '_blank';
     a.click();
