@@ -133,6 +133,27 @@ export function useRecipientEmailLogs(recipientEmail: string | undefined | null)
   });
 }
 
+// Fetch all inbound email replies
+export function useInboundReplies() {
+  return useQuery({
+    queryKey: ['email-logs', 'inbound-replies'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select(`
+          *,
+          sent_by_profile:profiles!email_logs_sent_by_fkey(full_name, email)
+        `)
+        .eq('direction', 'inbound')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      
+      if (error) throw error;
+      return data as EmailLog[];
+    },
+  });
+}
+
 // Log an email send
 export function useLogEmailSend() {
   const queryClient = useQueryClient();
