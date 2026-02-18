@@ -114,9 +114,20 @@ export function LeadSummaryCard({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-muted-foreground" />
-          <CardTitle className="text-lg">Lead</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-lg">Lead</CardTitle>
+          </div>
+          <EditLeadDialog
+            lead={lead}
+            trigger={
+              <Button variant="ghost" size="sm">
+                <Pencil className="h-4 w-4 mr-1.5" />
+                Edit
+              </Button>
+            }
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -208,16 +219,6 @@ export function LeadSummaryCard({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
-          <EditLeadDialog
-            lead={lead}
-            trigger={
-              <Button variant="outline" size="sm">
-                <Pencil className="h-4 w-4 mr-1.5" />
-                Edit
-              </Button>
-            }
-          />
-          
           {/* Mark as Lost */}
           <Dialog open={lostOpen} onOpenChange={setLostOpen}>
             <DialogTrigger asChild>
