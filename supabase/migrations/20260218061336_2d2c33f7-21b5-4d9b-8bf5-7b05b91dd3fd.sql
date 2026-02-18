@@ -1,0 +1,2 @@
+ALTER TABLE public.events DROP CONSTRAINT events_ops_status_check;
+ALTER TABLE public.events ADD CONSTRAINT events_ops_status_check CHECK (ops_status = ANY (ARRAY['awaiting_details'::text, 'confirmed'::text, 'ready'::text, 'in_progress'::text, 'delivered'::text, 'completed'::text, 'archived'::text]));
