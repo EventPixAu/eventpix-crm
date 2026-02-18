@@ -299,6 +299,7 @@ export default function LeadDetail(): JSX.Element {
             workflowName={workflowItems.length > 0 ? 'Custom Workflow' : undefined}
             mainShootStart={mainShootStart}
             mainShootEnd={mainShootEnd}
+            onArchive={() => navigate('/sales/leads')}
             onDelete={handleDelete}
           />
 

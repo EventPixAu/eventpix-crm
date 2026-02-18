@@ -105,10 +105,11 @@ export function LeadSummaryCard({
       lost_reason_id: lostReasonId || null,
       notes: lostNotes ? `${lead.notes ? lead.notes + '\n' : ''}Lost: ${lostNotes}` : lead.notes,
     });
-    toast({ title: 'Lead marked as lost' });
+    toast({ title: 'Lead marked as lost and archived' });
     setLostOpen(false);
     setLostReasonId('');
     setLostNotes('');
+    onArchive?.();
   };
 
   return (
