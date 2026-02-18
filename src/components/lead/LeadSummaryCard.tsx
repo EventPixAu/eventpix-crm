@@ -7,14 +7,28 @@
  * - Lead source
  * - Edit, Archive, Delete actions
  */
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Pencil, MapPin } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil, MapPin, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useUpdateLead } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
+import { useLostReasons } from '@/hooks/useLostReasons';
 import { EditLeadDialog } from '@/components/EditLeadDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +84,11 @@ export function LeadSummaryCard({
   const updateLead = useUpdateLead();
   const { toast } = useToast();
 
+  const { data: lostReasons } = useLostReasons();
+  const [lostOpen, setLostOpen] = useState(false);
+  const [lostReasonId, setLostReasonId] = useState<string>('');
+  const [lostNotes, setLostNotes] = useState('');
+
   const handleArchive = async () => {
     await updateLead.mutateAsync({
       id: lead.id,
@@ -77,6 +96,19 @@ export function LeadSummaryCard({
     });
     toast({ title: 'Lead archived' });
     onArchive?.();
+  };
+
+  const handleMarkAsLost = async () => {
+    await updateLead.mutateAsync({
+      id: lead.id,
+      status: 'lost',
+      lost_reason_id: lostReasonId || null,
+      notes: lostNotes ? `${lead.notes ? lead.notes + '\n' : ''}Lost: ${lostNotes}` : lead.notes,
+    });
+    toast({ title: 'Lead marked as lost' });
+    setLostOpen(false);
+    setLostReasonId('');
+    setLostNotes('');
   };
 
   return (
@@ -186,6 +218,54 @@ export function LeadSummaryCard({
             }
           />
           
+          {/* Mark as Lost */}
+          <Dialog open={lostOpen} onOpenChange={setLostOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                <XCircle className="h-4 w-4 mr-1.5" />
+                Mark Lost
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Mark lead as lost</DialogTitle>
+                <DialogDescription>
+                  Select a reason and optionally add notes. This will move the lead to the Lost stage.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label>Lost Reason</Label>
+                  <Select value={lostReasonId} onValueChange={setLostReasonId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a reason..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lostReasons?.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes (optional)</Label>
+                  <Textarea
+                    value={lostNotes}
+                    onChange={(e) => setLostNotes(e.target.value)}
+                    placeholder="Any additional context..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setLostOpen(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleMarkAsLost} disabled={!lostReasonId}>
+                  Mark as Lost
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <div className="flex-1" />
           
           <AlertDialog>
