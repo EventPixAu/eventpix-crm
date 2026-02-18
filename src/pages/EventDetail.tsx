@@ -583,6 +583,7 @@ export default function EventDetail() {
                           <SelectItem value="in_progress">In Progress</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

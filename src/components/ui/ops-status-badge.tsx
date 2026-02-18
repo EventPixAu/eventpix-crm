@@ -3,7 +3,7 @@ import { Clock, CheckCircle, Play, Truck, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OpsStatusBadgeProps {
-  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | null;
+  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | null;
   className?: string;
 }
 
@@ -38,6 +38,11 @@ export function OpsStatusBadge({ status, className }: OpsStatusBadgeProps) {
       label: 'Completed',
       icon: Archive,
       className: 'border-muted-foreground/50 bg-muted text-muted-foreground',
+    },
+    archived: {
+      label: 'Archived',
+      icon: Archive,
+      className: 'border-gray-500/50 bg-gray-500/10 text-gray-500 dark:text-gray-400',
     },
   };
 

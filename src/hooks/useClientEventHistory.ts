@@ -61,7 +61,7 @@ export function useClientEventHistory(clientId: string | undefined) {
       const today = new Date().toISOString().split('T')[0];
       const completedEvents = events.filter(e => 
         deliveredEventIds.has(e.id) || 
-        (e.event_date < today && e.ops_status === 'completed')
+        (e.event_date < today && ['completed', 'archived'].includes(e.ops_status || ''))
       );
 
       // Unique series

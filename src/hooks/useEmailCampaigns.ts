@@ -127,14 +127,14 @@ export function computeClientStatus(events: Array<{ event_date: string; ops_stat
   // Check for active events (not completed/cancelled, date is today or future)
   const hasActiveEvent = events.some(e => {
     const eventDate = parseISO(e.event_date);
-    const isActive = !['completed', 'cancelled'].includes(e.ops_status || '');
+    const isActive = !['completed', 'cancelled', 'archived'].includes(e.ops_status || '');
     return isActive && !isBefore(eventDate, today);
   });
   
   if (hasActiveEvent) return 'active_event';
   
   // Check for completed events
-  const completedEvents = events.filter(e => e.ops_status === 'completed');
+  const completedEvents = events.filter(e => ['completed', 'archived'].includes(e.ops_status || ''));
   if (completedEvents.length === 0) return 'prospect';
   
   // Find most recent completed event
