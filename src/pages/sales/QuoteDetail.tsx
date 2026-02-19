@@ -800,13 +800,38 @@ export default function QuoteDetail() {
           {/* Total Summary */}
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-sm opacity-80">Total Amount</div>
-                <div className="text-3xl font-bold">
-                  {formatCurrency(quote.total_estimate || 0)}
+              <div className="space-y-2">
+                {/* Subtotal (ex GST) */}
+                <div className="flex justify-between text-sm">
+                  <span className="opacity-80">Subtotal (ex GST)</span>
+                  <span>{formatCurrency(quote.subtotal || 0)}</span>
                 </div>
-                <div className="text-sm opacity-80 mt-1">
-                  Inc. {formatCurrency(quote.tax_total || 0)} GST
+                {/* Discount (ex GST) */}
+                {(() => {
+                  const discountPct = (quote as any).discount_percent || 0;
+                  const discountAmt = (quote as any).discount_amount || 0;
+                  const discountValue = discountPct > 0
+                    ? (quote.subtotal || 0) * discountPct / 100
+                    : discountAmt;
+                  if (discountValue <= 0) return null;
+                  return (
+                    <div className="flex justify-between text-sm">
+                      <span className="opacity-80">
+                        Discount (ex GST){discountPct > 0 ? ` (${discountPct}%)` : ''}
+                      </span>
+                      <span>-{formatCurrency(discountValue)}</span>
+                    </div>
+                  );
+                })()}
+                {/* Total (ex GST) */}
+                <div className="flex justify-between text-sm font-medium border-t border-primary-foreground/20 pt-2">
+                  <span className="opacity-80">Total (ex GST)</span>
+                  <span>{formatCurrency((quote.total_estimate || 0) - (quote.tax_total || 0))}</span>
+                </div>
+                {/* Total (incl GST) */}
+                <div className="flex justify-between font-bold text-lg border-t border-primary-foreground/20 pt-2">
+                  <span>Total (incl GST)</span>
+                  <span>{formatCurrency(quote.total_estimate || 0)}</span>
                 </div>
               </div>
             </CardContent>
