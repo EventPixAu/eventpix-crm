@@ -68,11 +68,13 @@ export function LeadClientCard({ client, onSendEmail }: LeadClientCardProps) {
           
           <div className="flex-1 min-w-0">
             <div className="font-semibold">
-              {client.primary_contact_name || client.business_name}
+              {client.business_name}
             </div>
-            <div className="text-sm text-muted-foreground">
-              (Primary)
-            </div>
+            {client.primary_contact_name && (
+              <div className="text-sm text-muted-foreground">
+                {client.primary_contact_name} (Primary)
+              </div>
+            )}
             {client.primary_contact_email && (
               <a 
                 href={`mailto:${client.primary_contact_email}`}
