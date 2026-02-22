@@ -30,37 +30,43 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLeads } from '@/hooks/useSales';
+import { useLeadStatuses } from '@/hooks/useLeadStatuses';
 import { CreateLeadDialog } from '@/components/CreateLeadDialog';
 
-// Studio Ninja-style pipeline stages
-const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
-  new: { label: 'New Lead', variant: 'default' },
-  qualified: { label: 'Qualified', variant: 'secondary' },
-  quoted: { label: 'Quoted', variant: 'outline' },
-  contract_sent: { label: 'Contract Sent', variant: 'outline' },
-  won: { label: 'Won', variant: 'default' },
-  accepted: { label: 'Won', variant: 'default' }, // Legacy support
-  lost: { label: 'Lost', variant: 'destructive' },
+// Fallback config for badge variants
+const VARIANT_MAP: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  default: 'default',
+  secondary: 'secondary',
+  outline: 'outline',
+  destructive: 'destructive',
 };
-
-// Active statuses (in pipeline, not yet converted)
-const ACTIVE_STATUSES = ['new', 'qualified', 'quoted', 'contract_sent'];
 
 export default function LeadList() {
   const { data: leads, isLoading } = useLeads();
+  const { data: leadStatuses = [] } = useLeadStatuses();
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to active leads only
+
+  // Build status config from DB lookup
+  const statusConfig = leadStatuses.reduce((acc, s) => {
+    acc[s.name] = { label: s.label, variant: VARIANT_MAP[s.badge_variant] || 'secondary' };
+    return acc;
+  }, {} as Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }>);
+
+  // Active = everything except won/lost
+  const activeStatuses = leadStatuses
+    .filter(s => !['won', 'lost'].includes(s.name))
+    .map(s => s.name);
 
   const filteredLeads = leads?.filter(lead => {
     const matchesSearch = 
       lead.lead_name?.toLowerCase().includes(search.toLowerCase()) ||
       (lead.client as any)?.business_name?.toLowerCase().includes(search.toLowerCase());
     
-    // Handle 'active' filter - excludes won/lost (converted or closed)
     const matchesStatus = 
       statusFilter === 'all' ? true :
-      statusFilter === 'active' ? ACTIVE_STATUSES.includes(lead.status) :
+      statusFilter === 'active' ? activeStatuses.includes(lead.status) :
       lead.status === statusFilter;
     
     return matchesSearch && matchesStatus;
@@ -82,17 +88,15 @@ export default function LeadList() {
 
       {/* Pipeline Summary */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-6">
-        {Object.entries(STATUS_CONFIG)
-          .filter(([status]) => status !== 'accepted') // Exclude legacy status from display
-          .map(([status, config]) => (
+        {leadStatuses.map((s) => (
           <Card 
-            key={status} 
-            className={`cursor-pointer transition-colors ${statusFilter === status ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
+            key={s.name} 
+            className={`cursor-pointer transition-colors ${statusFilter === s.name ? 'ring-2 ring-primary' : ''}`}
+            onClick={() => setStatusFilter(statusFilter === s.name ? 'all' : s.name)}
           >
             <CardContent className="p-3">
-              <div className="text-xl font-bold">{statusCounts[status] || 0}</div>
-              <div className="text-xs text-muted-foreground">{config.label}</div>
+              <div className="text-xl font-bold">{statusCounts[s.name] || 0}</div>
+              <div className="text-xs text-muted-foreground">{s.label}</div>
             </CardContent>
           </Card>
         ))}
@@ -117,11 +121,9 @@ export default function LeadList() {
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {Object.entries(STATUS_CONFIG)
-                  .filter(([status]) => status !== 'accepted') // Exclude legacy status
-                  .map(([status, config]) => (
-                    <SelectItem key={status} value={status}>{config.label}</SelectItem>
-                  ))}
+                {leadStatuses.map((s) => (
+                  <SelectItem key={s.name} value={s.name}>{s.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -153,7 +155,7 @@ export default function LeadList() {
               </TableHeader>
               <TableBody>
                 {filteredLeads.map((lead) => {
-                  const statusConfig = STATUS_CONFIG[lead.status] || STATUS_CONFIG.new;
+                  const sc = statusConfig[lead.status] || { label: lead.status, variant: 'secondary' as const };
                   return (
                     <TableRow key={lead.id}>
                       <TableCell>
@@ -205,8 +207,8 @@ export default function LeadList() {
                         {(lead as any).lead_source?.name || lead.source || '—'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusConfig.variant}>
-                          {statusConfig.label}
+                        <Badge variant={sc.variant}>
+                          {sc.label}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
