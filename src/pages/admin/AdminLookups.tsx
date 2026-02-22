@@ -96,6 +96,11 @@ import {
   useUpdateCompanyStatus,
 } from '@/hooks/useCompanyStatuses';
 import {
+  useAllLeadStatuses,
+  useCreateLeadStatus,
+  useUpdateLeadStatus,
+} from '@/hooks/useLeadStatuses';
+import {
   useAllCompanyCategories,
   useCreateCompanyCategory,
   useUpdateCompanyCategory,
@@ -416,6 +421,11 @@ export default function AdminLookups() {
   const createCompanyCategory = useCreateCompanyCategory();
   const updateCompanyCategory = useUpdateCompanyCategory();
 
+  // Lead Statuses
+  const { data: leadStatuses = [], isLoading: leadStatusesLoading } = useAllLeadStatuses();
+  const createLeadStatus = useCreateLeadStatus();
+  const updateLeadStatus = useUpdateLeadStatus();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -479,6 +489,13 @@ export default function AdminLookups() {
               >
                 <Target className="h-4 w-4 mr-2" />
                 Lead Sources
+              </TabsTrigger>
+              <TabsTrigger 
+                value="lead-statuses"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <CircleDot className="h-4 w-4 mr-2" />
+                Lead Statuses
               </TabsTrigger>
               <TabsTrigger 
                 value="lost-reasons"
@@ -640,6 +657,23 @@ export default function AdminLookups() {
                 createPending={createLostReason.isPending}
                 updatePending={updateLostReason.isPending}
                 itemLabel="Lost Reason"
+              />
+            </TabsContent>
+
+            <TabsContent value="lead-statuses" className="m-0">
+              <LookupTable
+                items={leadStatuses.map(s => ({ 
+                  id: s.id, 
+                  name: s.label, 
+                  is_active: s.is_active, 
+                  sort_order: s.sort_order 
+                }))}
+                isLoading={leadStatusesLoading}
+                onCreate={async (name) => { await createLeadStatus.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateLeadStatus.mutateAsync({ id, ...updates }); }}
+                createPending={createLeadStatus.isPending}
+                updatePending={updateLeadStatus.isPending}
+                itemLabel="Lead Status"
               />
             </TabsContent>
 

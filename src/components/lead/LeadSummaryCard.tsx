@@ -16,7 +16,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useUpdateLead } from '@/hooks/useSales';
+import { useLeadStatuses } from '@/hooks/useLeadStatuses';
 import { useToast } from '@/hooks/use-toast';
 import { useLostReasons } from '@/hooks/useLostReasons';
 import { EditLeadDialog } from '@/components/EditLeadDialog';
@@ -63,12 +65,11 @@ interface LeadSummaryCardProps {
   onDelete?: () => void;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-amber-400',
-  qualified: 'bg-purple-400',
-  quoted: 'bg-blue-400',
-  accepted: 'bg-emerald-400',
-  lost: 'bg-gray-400',
+const VARIANT_MAP: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  default: 'default',
+  secondary: 'secondary',
+  outline: 'outline',
+  destructive: 'destructive',
 };
 
 export function LeadSummaryCard({
@@ -83,11 +84,24 @@ export function LeadSummaryCard({
 }: LeadSummaryCardProps) {
   const updateLead = useUpdateLead();
   const { toast } = useToast();
+  const { data: leadStatuses = [] } = useLeadStatuses();
 
   const { data: lostReasons } = useLostReasons();
   const [lostOpen, setLostOpen] = useState(false);
   const [lostReasonId, setLostReasonId] = useState<string>('');
   const [lostNotes, setLostNotes] = useState('');
+
+  const currentStatus = leadStatuses.find(s => s.name === lead.status);
+  const badgeVariant = VARIANT_MAP[currentStatus?.badge_variant || 'secondary'] || 'secondary';
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === 'lost') {
+      setLostOpen(true);
+      return;
+    }
+    await updateLead.mutateAsync({ id: lead.id, status: newStatus as any });
+    toast({ title: `Status updated to ${leadStatuses.find(s => s.name === newStatus)?.label || newStatus}` });
+  };
 
   const handleArchive = async () => {
     await updateLead.mutateAsync({
@@ -132,10 +146,25 @@ export function LeadSummaryCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Lead name with status dot */}
-        <div className="flex items-center gap-2">
-          <div className={`h-2.5 w-2.5 rounded-full ${STATUS_COLORS[lead.status] || 'bg-gray-400'}`} />
+        {/* Lead name with status badge */}
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-lg">{lead.lead_name}</span>
+          <Badge variant={badgeVariant}>{currentStatus?.label || lead.status}</Badge>
+        </div>
+
+        {/* Status selector */}
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground text-sm">Status</span>
+          <Select value={lead.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-[180px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {leadStatuses.map(s => (
+                <SelectItem key={s.name} value={s.name}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Details grid */}
