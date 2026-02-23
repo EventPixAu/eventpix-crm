@@ -3375,7 +3375,7 @@ export type Database = {
           requirements_summary: string | null
           sales_workflow_id: string | null
           source: string | null
-          status: Database["public"]["Enums"]["lead_status"]
+          status: string
           updated_at: string | null
           venue_text: string | null
           workflow_template_id: string | null
@@ -3407,7 +3407,7 @@ export type Database = {
           requirements_summary?: string | null
           sales_workflow_id?: string | null
           source?: string | null
-          status?: Database["public"]["Enums"]["lead_status"]
+          status?: string
           updated_at?: string | null
           venue_text?: string | null
           workflow_template_id?: string | null
@@ -3439,7 +3439,7 @@ export type Database = {
           requirements_summary?: string | null
           sales_workflow_id?: string | null
           source?: string | null
-          status?: Database["public"]["Enums"]["lead_status"]
+          status?: string
           updated_at?: string | null
           venue_text?: string | null
           workflow_template_id?: string | null
@@ -6003,14 +6003,6 @@ export type Database = {
         | "sports"
         | "other"
       handoff_status: "draft" | "ready_for_ops" | "converted" | "cancelled"
-      lead_status:
-        | "new"
-        | "qualified"
-        | "quoted"
-        | "contract_sent"
-        | "accepted"
-        | "lost"
-        | "won"
       lead_type: "new" | "existing" | "repeat"
       quote_status: "draft" | "sent" | "accepted" | "rejected"
       quote_status_enum: "draft" | "sent" | "accepted" | "declined" | "expired"
@@ -6226,15 +6218,6 @@ export const Constants = {
         "other",
       ],
       handoff_status: ["draft", "ready_for_ops", "converted", "cancelled"],
-      lead_status: [
-        "new",
-        "qualified",
-        "quoted",
-        "contract_sent",
-        "accepted",
-        "lost",
-        "won",
-      ],
       lead_type: ["new", "existing", "repeat"],
       quote_status: ["draft", "sent", "accepted", "rejected"],
       quote_status_enum: ["draft", "sent", "accepted", "declined", "expired"],
