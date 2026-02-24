@@ -63,6 +63,7 @@ import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
 import { ContractsPanel } from '@/components/ContractsPanel';
+import { EventBudgetCard } from '@/components/EventBudgetCard';
 import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
@@ -666,6 +667,11 @@ export default function EventDetail() {
               {/* Event Financials - above Contracts */}
               {isAdmin && id && (
                 <EventFinancialsCard eventId={id} />
+              )}
+
+              {/* Budget (Quote) Panel */}
+              {isAdmin && (event as any).quote_id && (
+                <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
               )}
 
               {/* Contracts Panel */}
