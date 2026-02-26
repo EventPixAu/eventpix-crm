@@ -128,6 +128,7 @@ function AppRoutes() {
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
       <Route path="/" element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute><OpsGuard><Dashboard /></OpsGuard></ProtectedRoute>} />
       
       {/* Operations routes - Admin + Operations */}
       <Route path="/events" element={<ProtectedRoute><OpsGuard><Events /></OpsGuard></ProtectedRoute>} />

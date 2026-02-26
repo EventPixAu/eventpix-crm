@@ -82,7 +82,7 @@ const salesItems: NavItem[] = [
 
 // ===== OPERATIONS SECTION (Cleaned of admin settings) =====
 const operationsItems: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/operations', label: 'Dashboard', icon: Home },
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/day-load', label: 'Day Load', icon: CalendarCheck },
