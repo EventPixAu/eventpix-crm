@@ -80,7 +80,7 @@ export function useCalendarLeads(currentMonth: Date) {
           status,
           client:clients(id, business_name)
         `)
-        .in('status', ['new', 'qualified', 'quoted', 'contract_sent'])
+        .in('status', ['new', 'qualified', 'quoted', 'contract_sent', 'budget_sent', 'accepted'])
         .order('estimated_event_date', { ascending: true });
 
       if (leadIdsWithSessions.length > 0) {
