@@ -100,6 +100,11 @@ export function LeadSummaryCard({
       setLostOpen(true);
       return;
     }
+    // If marking as "won", trigger conversion to event automatically
+    if (newStatus === 'won' && !(lead as any).converted_job_id) {
+      onConvert?.();
+      return;
+    }
     await updateLead.mutateAsync({ id: lead.id, status: newStatus as any });
     toast({ title: `Status updated to ${leadStatuses.find(s => s.name === newStatus)?.label || newStatus}` });
   };
