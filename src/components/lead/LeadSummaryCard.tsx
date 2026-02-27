@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Pencil, MapPin } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -62,6 +62,7 @@ interface LeadSummaryCardProps {
   mainShootEnd?: string | null;
   onArchive?: () => void;
   onDelete?: () => void;
+  onConvert?: () => void;
 }
 
 const VARIANT_MAP: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -80,6 +81,7 @@ export function LeadSummaryCard({
   mainShootEnd,
   onArchive,
   onDelete,
+  onConvert,
 }: LeadSummaryCardProps) {
   const updateLead = useUpdateLead();
   const { toast } = useToast();
@@ -290,6 +292,12 @@ export function LeadSummaryCard({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
+          {onConvert && (
+            <Button variant="default" size="sm" onClick={onConvert}>
+              <ArrowRightCircle className="h-4 w-4 mr-1.5" />
+              Convert to Event
+            </Button>
+          )}
           <div className="flex-1" />
           
           <AlertDialog>
