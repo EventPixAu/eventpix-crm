@@ -64,14 +64,7 @@ import {
   type UserProfile,
   type UserInvitation,
 } from '@/hooks/useUserManagement';
-
-const ROLES = [
-  { value: 'admin', label: 'Admin', description: 'Full access to all features' },
-  { value: 'sales', label: 'Sales', description: 'Access to clients, leads, quotes' },
-  { value: 'operations', label: 'Operations', description: 'Access to events, assignments, delivery' },
-  { value: 'photographer', label: 'Photographer', description: 'Access to assigned events, equipment required' },
-  { value: 'assistant', label: 'Assistant', description: 'Access to assigned events only' },
-];
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
 function getRoleBadgeVariant(role: string | null) {
   switch (role) {
@@ -112,6 +105,8 @@ function InviteUserDialog() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('photographer');
+  const { data: staffRoles = [] } = useAllStaffRoles();
+  const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
   
   const inviteUser = useInviteUser();
 
@@ -190,6 +185,8 @@ function UsersTable({ users }: { users: UserProfile[] }) {
   const { toast } = useToast();
   const setUserActive = useSetUserActive();
   const setUserRole = useSetUserRole();
+  const { data: staffRoles = [] } = useAllStaffRoles();
+  const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
   const [sendingAccessEmail, setSendingAccessEmail] = useState<string | null>(null);
 
   const handleSendAccessEmail = async (user: UserProfile) => {

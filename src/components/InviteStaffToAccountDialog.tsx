@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Mail, UserPlus } from 'lucide-react';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
 interface StaffMember {
   id: string;
@@ -35,14 +36,6 @@ interface InviteStaffToAccountDialogProps {
   onSuccess?: () => void;
 }
 
-const ROLES = [
-  { value: 'photographer', label: 'Photographer', description: 'Can view assigned events, equipment required' },
-  { value: 'assistant', label: 'Assistant', description: 'Can view assigned events only' },
-  { value: 'operations', label: 'Operations', description: 'Can manage events and crew assignments' },
-  { value: 'sales', label: 'Sales', description: 'Can manage leads, clients, and quotes' },
-  { value: 'admin', label: 'Admin', description: 'Full access to all features' },
-];
-
 export function InviteStaffToAccountDialog({ 
   staff, 
   trigger,
@@ -52,6 +45,8 @@ export function InviteStaffToAccountDialog({
   const [role, setRole] = useState('photographer');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: staffRoles = [] } = useAllStaffRoles();
+  const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
 
   const inviteMutation = useMutation({
     mutationFn: async ({ email, role, staffId }: { email: string; role: string; staffId: string }) => {
