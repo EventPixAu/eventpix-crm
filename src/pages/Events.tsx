@@ -35,7 +35,7 @@ export default function Events() {
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('upcoming');
   const [deliveryFilter, setDeliveryFilter] = useState('all');
 
   // Create lookup maps for display
@@ -73,17 +73,25 @@ export default function Events() {
       const matchesDelivery = deliveryFilter === 'all' || deliveryMethodName === deliveryFilter.toLowerCase();
 
       const date = parseISO(event.event_date);
-      const status = isToday(date) ? 'today' : isFuture(date) ? 'upcoming' : 'past';
+      const isArchived = (event as any).ops_status === 'archived';
+      let status: string;
+      if (isArchived) {
+        status = 'archived';
+      } else if (isFuture(date) || isToday(date)) {
+        status = 'upcoming';
+      } else {
+        status = 'past';
+      }
       const matchesStatus = statusFilter === 'all' || status === statusFilter;
 
       return matchesSearch && matchesType && matchesStatus && matchesDelivery;
     });
   }, [events, search, typeFilter, statusFilter, deliveryFilter, eventTypeMap, deliveryMethodMap]);
 
-  const getEventStatus = (dateStr: string) => {
+  const getEventStatus = (dateStr: string, event?: any) => {
+    if (event?.ops_status === 'archived') return 'archived';
     const date = parseISO(dateStr);
-    if (isToday(date)) return 'today';
-    if (isFuture(date)) return 'upcoming';
+    if (isToday(date) || isFuture(date)) return 'upcoming';
     return 'past';
   };
 
@@ -156,9 +164,9 @@ export default function Events() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="today">Today</SelectItem>
             <SelectItem value="upcoming">Upcoming</SelectItem>
             <SelectItem value="past">Past</SelectItem>
+            <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -205,7 +213,7 @@ export default function Events() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium truncate">{event.event_name}</h3>
-                      <StatusBadge status={getEventStatus(event.event_date)} />
+                      <StatusBadge status={getEventStatus(event.event_date, event)} />
                       {isAdmin && (
                         <>
                           <OpsStatusBadge status={(event as any).ops_status} />

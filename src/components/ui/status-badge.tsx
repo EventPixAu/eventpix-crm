@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-type StatusType = 'pending' | 'in_progress' | 'completed' | 'active' | 'inactive' | 'upcoming' | 'today' | 'past';
+type StatusType = 'pending' | 'in_progress' | 'completed' | 'active' | 'inactive' | 'upcoming' | 'today' | 'past' | 'archived';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -39,6 +39,10 @@ const statusConfig: Record<StatusType, { label: string; className: string }> = {
   past: {
     label: 'Past',
     className: 'bg-muted text-muted-foreground',
+  },
+  archived: {
+    label: 'Archived',
+    className: 'bg-muted/50 text-muted-foreground/70',
   },
 };
 
