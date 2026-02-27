@@ -301,6 +301,7 @@ export default function LeadDetail(): JSX.Element {
             mainShootEnd={mainShootEnd}
             onArchive={() => navigate('/sales/leads')}
             onDelete={handleDelete}
+            onConvert={() => setIsConvertDialogOpen(true)}
           />
 
           {/* Proposed Dates Panel */}
