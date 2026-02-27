@@ -24,9 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Events() {
   const { isAdmin } = useAuth();
@@ -37,6 +40,22 @@ export default function Events() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('upcoming');
   const [deliveryFilter, setDeliveryFilter] = useState('all');
+
+  // Fetch assignment counts for all events
+  const { data: assignmentCounts = {} } = useQuery({
+    queryKey: ['event-assignment-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_assignments')
+        .select('event_id, user_id, staff_id');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((a) => {
+        counts[a.event_id] = (counts[a.event_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
 
   // Create lookup maps for display
   const eventTypeMap = useMemo(() => {
@@ -243,6 +262,15 @@ export default function Events() {
                           <span className="hidden sm:flex items-center gap-1 truncate">
                             <MapPin className="h-3.5 w-3.5" />
                             {event.venue_name}
+                          </span>
+                        </>
+                      )}
+                      {(assignmentCounts[event.id] || 0) > 0 && (
+                        <>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="hidden sm:flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" />
+                            {assignmentCounts[event.id]}
                           </span>
                         </>
                       )}
