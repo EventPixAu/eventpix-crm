@@ -64,6 +64,7 @@ import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { EventBudgetCard } from '@/components/EventBudgetCard';
+import { EventQuotesPanel } from '@/components/EventQuotesPanel';
 import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
@@ -685,6 +686,15 @@ export default function EventDetail() {
                   eventName={(event as any).event_name}
                   eventDate={(event as any).event_date}
                   defaultOpen={true}
+                />
+              )}
+
+              {/* Quotes Panel */}
+              {isAdmin && (
+                <EventQuotesPanel
+                  eventId={id!}
+                  quoteId={(event as any).quote_id}
+                  leadId={(event as any).lead_id}
                 />
               )}
             </motion.div>
