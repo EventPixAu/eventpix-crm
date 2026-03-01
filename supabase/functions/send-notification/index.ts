@@ -276,7 +276,7 @@ async function sendEmail(
     </div>
     <div class="content">
       <p>Hi ${recipientName},</p>
-      <p>${subject.includes('New assignment') ? 'You have been assigned to a new event:' : 'The following event details have been updated:'}</p>
+      <p>${subject.includes('New assignment') ? 'You have been assigned to the following event. Please check the details below and confirm your availability.' : 'The following event details have been updated:'}</p>
       
       <div class="detail">
         <div class="detail-label">Event</div>
@@ -310,6 +310,8 @@ async function sendEmail(
       ` : ''}
       
       <a href="${appUrl}/events/${event.id}" class="button">View Event Details</a>
+      
+      ${subject.includes('New assignment') ? '<p style="margin-top: 20px; font-weight: 500;">Please confirm your availability by return email.</p>' : ''}
     </div>
     <div class="footer">
       <p>Eventpix - Event Photography Management</p>

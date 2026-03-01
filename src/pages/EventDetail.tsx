@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Calendar,
+  CheckCircle,
   Clock,
   DollarSign,
   Edit,
@@ -73,7 +74,9 @@ import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel'
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { useSendNotification } from '@/hooks/useNotifications';
-
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -86,7 +89,8 @@ export default function EventDetail() {
   const deleteEvent = useDeleteEvent();
   const updateEvent = useUpdateEvent();
   const sendNotification = useSendNotification();
-  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
@@ -802,6 +806,8 @@ export default function EventDetail() {
                   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
                   const initial = name.charAt(0).toUpperCase();
                   
+                  const confirmationStatus = (assignment as any).confirmation_status || 'pending';
+                  
                   return (
                     <div
                       key={assignment.id}
@@ -814,7 +820,15 @@ export default function EventDetail() {
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{name}</p>
+                            <Badge 
+                              variant={confirmationStatus === 'confirmed' ? 'default' : confirmationStatus === 'declined' ? 'destructive' : 'secondary'}
+                              className="text-xs shrink-0"
+                            >
+                              {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
+                            </Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground capitalize">
                             {role}
                           </p>
@@ -825,26 +839,48 @@ export default function EventDetail() {
                           )}
                         </div>
                         {isAdmin && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0 h-8"
-                            onClick={() => {
-                              const userId = assignment.user_id || assignment.staff?.id;
-                              if (!userId || !id) return;
-                              sendNotification.mutate({
-                                type: 'assignment',
-                                event_id: id,
-                                user_id: userId,
-                                assignment_id: assignment.id,
-                              });
-                            }}
-                            disabled={sendNotification.isPending}
-                            title="Resend notification email"
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Resend
-                          </Button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {confirmationStatus !== 'confirmed' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                onClick={async () => {
+                                  const { error } = await supabase
+                                    .from('event_assignments')
+                                    .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+                                    .eq('id', assignment.id);
+                                  if (!error) {
+                                    queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
+                                    toast({ title: 'Marked as confirmed' });
+                                  }
+                                }}
+                                title="Mark as confirmed"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => {
+                                const userId = assignment.user_id || assignment.staff?.id;
+                                if (!userId || !id) return;
+                                sendNotification.mutate({
+                                  type: 'assignment',
+                                  event_id: id,
+                                  user_id: userId,
+                                  assignment_id: assignment.id,
+                                });
+                              }}
+                              disabled={sendNotification.isPending}
+                              title="Resend notification email"
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              Resend
+                            </Button>
+                          </div>
                         )}
                       </div>
                       
