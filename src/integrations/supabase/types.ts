@@ -1958,6 +1958,8 @@ export type Database = {
           assignment_notes: string | null
           assignment_status: string | null
           call_time_at: string | null
+          confirmation_status: string
+          confirmed_at: string | null
           created_at: string | null
           estimated_cost: number | null
           event_id: string
@@ -1974,6 +1976,8 @@ export type Database = {
           assignment_notes?: string | null
           assignment_status?: string | null
           call_time_at?: string | null
+          confirmation_status?: string
+          confirmed_at?: string | null
           created_at?: string | null
           estimated_cost?: number | null
           event_id: string
@@ -1990,6 +1994,8 @@ export type Database = {
           assignment_notes?: string | null
           assignment_status?: string | null
           call_time_at?: string | null
+          confirmation_status?: string
+          confirmed_at?: string | null
           created_at?: string | null
           estimated_cost?: number | null
           event_id?: string
