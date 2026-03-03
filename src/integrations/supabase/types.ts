@@ -258,6 +258,39 @@ export type Database = {
           },
         ]
       }
+      client_brief_templates: {
+        Row: {
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_communications: {
         Row: {
           client_id: string
@@ -2622,6 +2655,7 @@ export type Database = {
           camera_settings: string | null
           city: string | null
           client_brief_content: string | null
+          client_brief_template_id: string | null
           client_id: string | null
           client_name: string
           client_portal_token: string | null
@@ -2685,6 +2719,7 @@ export type Database = {
           camera_settings?: string | null
           city?: string | null
           client_brief_content?: string | null
+          client_brief_template_id?: string | null
           client_id?: string | null
           client_name: string
           client_portal_token?: string | null
@@ -2750,6 +2785,7 @@ export type Database = {
           camera_settings?: string | null
           city?: string | null
           client_brief_content?: string | null
+          client_brief_template_id?: string | null
           client_id?: string | null
           client_name?: string
           client_portal_token?: string | null
@@ -2812,6 +2848,13 @@ export type Database = {
             columns: ["brief_template_id"]
             isOneToOne: false
             referencedRelation: "event_brief_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_client_brief_template_id_fkey"
+            columns: ["client_brief_template_id"]
+            isOneToOne: false
+            referencedRelation: "client_brief_templates"
             referencedColumns: ["id"]
           },
           {
