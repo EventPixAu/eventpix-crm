@@ -62,8 +62,8 @@ serve(async (req) => {
       .from("event_assignments")
       .select(`
         id, role_on_event, staff_id, user_id, staff_role_id,
-        staff:staff_id (id, name),
-        profile:profiles!event_assignments_user_id_fkey (full_name, avatar_url),
+        staff:staff_id (id, name, phone),
+        profile:profiles!event_assignments_user_id_fkey (full_name, avatar_url, phone),
         staff_role:staff_roles!event_assignments_staff_role_id_fkey (name)
       `)
       .eq("event_id", event.id);
@@ -73,6 +73,7 @@ serve(async (req) => {
       role: a.staff_role?.name || a.role_on_event || "Team Member",
       name: a.profile?.full_name || a.staff?.name || "TBC",
       avatar_url: a.profile?.avatar_url || null,
+      phone: a.profile?.phone || a.staff?.phone || null,
     }));
 
     // Generate signed URL for QR file

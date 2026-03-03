@@ -76,6 +76,7 @@ interface PortalData {
     role: string;
     name: string;
     avatar_url: string | null;
+    phone: string | null;
   }>;
   contacts: Array<{
     id: string;
@@ -327,6 +328,11 @@ export default function ClientPortal() {
                   <div>
                     <p className="text-white font-medium text-sm">{member.name}</p>
                     <p className="text-white/50 text-xs capitalize">{member.role}</p>
+                    {member.phone && (
+                      <a href={`tel:${member.phone}`} className="text-blue-400 text-xs flex items-center gap-1 hover:underline mt-0.5">
+                        <Phone className="h-3 w-3" /> {member.phone}
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
