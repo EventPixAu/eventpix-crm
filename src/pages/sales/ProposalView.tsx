@@ -26,20 +26,13 @@ import {
 } from '@/components/ui/table';
 import { useQuote } from '@/hooks/useSales';
 import { useQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
+import { useProductCategories } from '@/hooks/useProducts';
 import { useSiteSettingsMap } from '@/hooks/useSiteSettings';
 import { useLeadContacts } from '@/hooks/useLeadContacts';
 import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
 import { toast } from 'sonner';
 import logo from '@/assets/eventpix-logo.png';
 
-const GROUP_LABELS = [
-  'Coverage',
-  'Delivery',
-  'Add-ons',
-  'Equipment',
-  'Travel',
-  'Other',
-];
 
 export default function ProposalView() {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +41,7 @@ export default function ProposalView() {
   const { data: quote, isLoading } = useQuote(id);
   const { data: items } = useQuoteItems(id);
   const { settings } = useSiteSettingsMap();
+  const { data: categories = [] } = useProductCategories();
   const acceptQuote = useAcceptQuote();
   const [isAccepting, setIsAccepting] = useState(false);
 
@@ -100,17 +94,26 @@ export default function ProposalView() {
     }, {} as Record<string, QuoteItem[]>);
   }, [items]);
 
+  const groupLabels = useMemo(() => {
+    const names = categories
+      .filter(c => c.is_active)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(c => c.name);
+    if (!names.includes('Other')) names.push('Other');
+    return names;
+  }, [categories]);
+
   const sortedGroupKeys = useMemo(() => {
     const keys = Object.keys(groupedItems);
     return keys.sort((a, b) => {
-      const indexA = GROUP_LABELS.indexOf(a);
-      const indexB = GROUP_LABELS.indexOf(b);
+      const indexA = groupLabels.indexOf(a);
+      const indexB = groupLabels.indexOf(b);
       if (indexA === -1 && indexB === -1) return a.localeCompare(b);
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
-  }, [groupedItems]);
+  }, [groupedItems, groupLabels]);
 
   const hasGroupedItems = sortedGroupKeys.length > 1 || (sortedGroupKeys.length === 1 && sortedGroupKeys[0] !== 'Other');
   
