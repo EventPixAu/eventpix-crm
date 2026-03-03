@@ -75,6 +75,7 @@ import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel'
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
+import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -555,12 +556,21 @@ export default function EventDetail() {
                 />
               )}
               
-              {/* Event Brief */}
+              {/* Team Brief (internal) */}
               {id && (
                 <EventBriefPanel
                   eventId={id}
                   briefTemplateId={(event as any).brief_template_id}
                   briefContent={(event as any).brief_content}
+                  isAdmin={isAdmin}
+                />
+              )}
+
+              {/* Event Brief (shared with client) */}
+              {id && (
+                <ClientBriefPanel
+                  eventId={id}
+                  clientBriefContent={(event as any).client_brief_content}
                   isAdmin={isAdmin}
                 />
               )}

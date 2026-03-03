@@ -95,7 +95,7 @@ export function EventBriefPanel({
                 <FileText className="h-5 w-5 text-primary" />
               </div>
               <div className="text-left">
-                <h2 className="font-semibold">Event Brief</h2>
+                <h2 className="font-semibold">Team Brief</h2>
                 {currentTemplate && (
                   <p className="text-sm text-muted-foreground">
                     {currentTemplate.name}

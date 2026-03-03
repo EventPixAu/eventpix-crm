@@ -2621,6 +2621,7 @@ export type Database = {
           calendar_sequence: number
           camera_settings: string | null
           city: string | null
+          client_brief_content: string | null
           client_id: string | null
           client_name: string
           client_portal_token: string | null
@@ -2683,6 +2684,7 @@ export type Database = {
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
+          client_brief_content?: string | null
           client_id?: string | null
           client_name: string
           client_portal_token?: string | null
@@ -2747,6 +2749,7 @@ export type Database = {
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
+          client_brief_content?: string | null
           client_id?: string | null
           client_name?: string
           client_portal_token?: string | null

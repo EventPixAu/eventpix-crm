@@ -10,6 +10,7 @@ import {
   Calendar,
   Clock,
   Download,
+  FileCheck2,
   FileText,
   Loader2,
   MapPin,
@@ -18,11 +19,28 @@ import {
   QrCode,
   User,
   Users,
-  Image as ImageIcon,
+  ExternalLink,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import eventpixLogo from '@/assets/eventpix-logo.png';
+
+interface PortalContract {
+  id: string;
+  title: string;
+  status: string | null;
+  public_token: string | null;
+  signed_at: string | null;
+  sent_at: string | null;
+}
+
+interface PortalQuote {
+  id: string;
+  quote_number: string | null;
+  status: string | null;
+  public_token: string | null;
+  total_estimate: number | null;
+}
 
 interface PortalData {
   event_name: string;
@@ -59,13 +77,6 @@ interface PortalData {
     name: string;
     avatar_url: string | null;
   }>;
-  documents: Array<{
-    id: string;
-    file_name: string;
-    description: string | null;
-    mime_type: string | null;
-    signed_url: string | null;
-  }>;
   contacts: Array<{
     id: string;
     contact_type: string;
@@ -74,6 +85,8 @@ interface PortalData {
     contact_phone: string | null;
     notes: string | null;
   }>;
+  contracts: PortalContract[];
+  quotes: PortalQuote[];
   qr_file_name: string | null;
   qr_signed_url: string | null;
 }
@@ -86,6 +99,27 @@ function formatTime(time: string | null): string {
   } catch {
     return time;
   }
+}
+
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+}
+
+function ContractStatusBadge({ status }: { status: string | null }) {
+  const s = status?.toLowerCase();
+  if (s === 'signed') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Signed</Badge>;
+  if (s === 'sent') return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Awaiting Signature</Badge>;
+  return <Badge className="bg-white/10 text-white/60 border-white/20">{status || 'Draft'}</Badge>;
+}
+
+function QuoteStatusBadge({ status }: { status: string | null }) {
+  const s = status?.toLowerCase();
+  if (s === 'accepted') return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Accepted</Badge>;
+  if (s === 'sent') return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Awaiting Response</Badge>;
+  return <Badge className="bg-white/10 text-white/60 border-white/20">{status || 'Draft'}</Badge>;
 }
 
 export default function ClientPortal() {
@@ -150,6 +184,7 @@ export default function ClientPortal() {
         .filter(Boolean)
         .join(', ')
     : null;
+  const baseUrl = getBaseUrl();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -240,10 +275,7 @@ export default function ClientPortal() {
             </h2>
             <div className="space-y-3">
               {data.sessions.map((s) => (
-                <div
-                  key={s.id}
-                  className="bg-white/5 rounded-lg p-3 border border-white/5"
-                >
+                <div key={s.id} className="bg-white/5 rounded-lg p-3 border border-white/5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-white font-medium">
@@ -284,16 +316,9 @@ export default function ClientPortal() {
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {data.team.map((member, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5"
-                >
+                <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5">
                   {member.avatar_url ? (
-                    <img
-                      src={member.avatar_url}
-                      alt={member.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
+                    <img src={member.avatar_url} alt={member.name} className="h-10 w-10 rounded-full object-cover" />
                   ) : (
                     <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center">
                       <User className="h-5 w-5 text-white/40" />
@@ -376,8 +401,8 @@ export default function ClientPortal() {
           </motion.div>
         )}
 
-        {/* Documents */}
-        {(data.documents?.length ?? 0) > 0 && (
+        {/* Contracts */}
+        {(data.contracts?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -385,35 +410,83 @@ export default function ClientPortal() {
             className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <FileText className="h-5 w-5 text-red-400" />
-              Documents
+              <FileCheck2 className="h-5 w-5 text-orange-400" />
+              Contracts
             </h2>
             <div className="space-y-2">
-              {data.documents.map((doc) => (
+              {data.contracts.map((contract) => (
                 <div
-                  key={doc.id}
+                  key={contract.id}
                   className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {doc.mime_type?.includes('image') ? (
-                      <ImageIcon className="h-4 w-4 text-blue-400 shrink-0" />
-                    ) : (
-                      <FileText className="h-4 w-4 text-red-400 shrink-0" />
-                    )}
+                    <FileCheck2 className="h-4 w-4 text-orange-400 shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{doc.file_name}</p>
-                      {doc.description && (
-                        <p className="text-white/50 text-xs truncate">{doc.description}</p>
+                      <p className="text-white text-sm font-medium truncate">{contract.title}</p>
+                      {contract.signed_at && (
+                        <p className="text-white/50 text-xs">
+                          Signed {format(parseISO(contract.signed_at), 'MMM d, yyyy')}
+                        </p>
                       )}
                     </div>
                   </div>
-                  {doc.signed_url && (
-                    <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white shrink-0">
-                      <a href={doc.signed_url} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <ContractStatusBadge status={contract.status} />
+                    {contract.public_token && contract.status !== 'signed' && (
+                      <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
+                        <a href={`${baseUrl}/contract/sign/${contract.public_token}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quotes */}
+        {(data.quotes?.length ?? 0) > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
+          >
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-cyan-400" />
+              Quotes
+            </h2>
+            <div className="space-y-2">
+              {data.quotes.map((quote) => (
+                <div
+                  key={quote.id}
+                  className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <FileText className="h-4 w-4 text-cyan-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-white text-sm font-medium truncate">
+                        {quote.quote_number ? `Quote #${quote.quote_number}` : 'Quote'}
+                      </p>
+                      {quote.total_estimate != null && (
+                        <p className="text-white/50 text-xs">
+                          ${Number(quote.total_estimate).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <QuoteStatusBadge status={quote.status} />
+                    {quote.public_token && (
+                      <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
+                        <a href={`${baseUrl}/quote/accept/${quote.public_token}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -425,7 +498,7 @@ export default function ClientPortal() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.45 }}
             className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
