@@ -305,7 +305,7 @@ export default function QuoteDetail() {
     });
   };
 
-  const handleSaveDiscount = async (discountPercent: number, discountAmount: number, discountLabel: string) => {
+  const handleSaveDiscount = async (discountPercent: number, discountAmount: number, discountLabel: string, discountGroups: string[] | null) => {
     if (!id) return;
     setSavingDiscount(true);
     try {
@@ -314,11 +314,22 @@ export default function QuoteDetail() {
         discount_percent: discountPercent,
         discount_amount: discountAmount,
         discount_label: discountLabel,
+        discount_groups: discountGroups,
       } as any);
     } finally {
       setSavingDiscount(false);
     }
   };
+
+  // Calculate per-group subtotals for the discount dialog
+  const groupSubtotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    (items || []).forEach((item) => {
+      const group = item.group_label || 'Other';
+      totals[group] = (totals[group] || 0) + item.line_total;
+    });
+    return totals;
+  }, [items]);
 
   const handleSendQuote = async () => {
     if (!id) return;
@@ -669,7 +680,7 @@ export default function QuoteDetail() {
                     : 'text-muted-foreground'
                 }>
                   {(quote as any).discount_percent > 0 
-                    ? `${(quote as any).discount_percent}%`
+                    ? `${(quote as any).discount_percent}%${(quote as any).discount_groups?.length ? ` (${(quote as any).discount_groups.join(', ')})` : ''}`
                     : (quote as any).discount_amount > 0 
                       ? formatCurrency((quote as any).discount_amount)
                       : 'None'
@@ -1140,7 +1151,9 @@ export default function QuoteDetail() {
         currentDiscountPercent={(quote as any).discount_percent || 0}
         currentDiscountAmount={(quote as any).discount_amount || 0}
         currentDiscountLabel={(quote as any).discount_label || ''}
+        currentDiscountGroups={(quote as any).discount_groups || null}
         subtotal={quote.subtotal || 0}
+        groupSubtotals={groupSubtotals}
         onSave={handleSaveDiscount}
         isSaving={savingDiscount}
       />

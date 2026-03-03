@@ -4103,6 +4103,7 @@ export type Database = {
           created_by: string | null
           declined_at: string | null
           discount_amount: number | null
+          discount_groups: string[] | null
           discount_label: string | null
           discount_percent: number | null
           event_id: string | null
@@ -4140,6 +4141,7 @@ export type Database = {
           created_by?: string | null
           declined_at?: string | null
           discount_amount?: number | null
+          discount_groups?: string[] | null
           discount_label?: string | null
           discount_percent?: number | null
           event_id?: string | null
@@ -4177,6 +4179,7 @@ export type Database = {
           created_by?: string | null
           declined_at?: string | null
           discount_amount?: number | null
+          discount_groups?: string[] | null
           discount_label?: string | null
           discount_percent?: number | null
           event_id?: string | null

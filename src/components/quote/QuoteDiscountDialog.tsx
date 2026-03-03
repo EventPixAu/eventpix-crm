@@ -3,8 +3,9 @@
  * 
  * Dialog for applying a discount to the quote subtotal.
  * Supports either percentage or fixed amount discount.
+ * Supports per-group discount targeting.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Percent, DollarSign } from 'lucide-react';
 import {
   Dialog,
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -41,8 +43,11 @@ interface QuoteDiscountDialogProps {
   currentDiscountPercent: number;
   currentDiscountAmount: number;
   currentDiscountLabel: string;
+  currentDiscountGroups: string[] | null;
   subtotal: number;
-  onSave: (discountPercent: number, discountAmount: number, discountLabel: string) => Promise<void>;
+  /** Map of group_label → subtotal for that group */
+  groupSubtotals: Record<string, number>;
+  onSave: (discountPercent: number, discountAmount: number, discountLabel: string, discountGroups: string[] | null) => Promise<void>;
   isSaving?: boolean;
 }
 
@@ -52,7 +57,9 @@ export function QuoteDiscountDialog({
   currentDiscountPercent,
   currentDiscountAmount,
   currentDiscountLabel,
+  currentDiscountGroups,
   subtotal,
+  groupSubtotals,
   onSave,
   isSaving = false,
 }: QuoteDiscountDialogProps) {
@@ -62,6 +69,10 @@ export function QuoteDiscountDialog({
   const [percentValue, setPercentValue] = useState(currentDiscountPercent || 0);
   const [amountValue, setAmountValue] = useState(currentDiscountAmount || 0);
   const [labelValue, setLabelValue] = useState(currentDiscountLabel || '');
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [applyToAll, setApplyToAll] = useState(true);
+
+  const availableGroups = useMemo(() => Object.keys(groupSubtotals).sort(), [groupSubtotals]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -76,25 +87,39 @@ export function QuoteDiscountDialog({
         setPercentValue(currentDiscountPercent || 0);
         setAmountValue(0);
       }
+      if (currentDiscountGroups && currentDiscountGroups.length > 0) {
+        setApplyToAll(false);
+        setSelectedGroups(currentDiscountGroups);
+      } else {
+        setApplyToAll(true);
+        setSelectedGroups([]);
+      }
     }
-  }, [open, currentDiscountPercent, currentDiscountAmount, currentDiscountLabel]);
+  }, [open, currentDiscountPercent, currentDiscountAmount, currentDiscountLabel, currentDiscountGroups]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
   };
 
+  const discountableSubtotal = useMemo(() => {
+    if (applyToAll) return subtotal;
+    return selectedGroups.reduce((sum, g) => sum + (groupSubtotals[g] || 0), 0);
+  }, [applyToAll, selectedGroups, groupSubtotals, subtotal]);
+
   const calculateDiscountedTotal = () => {
+    const discountBase = discountableSubtotal;
+    const nonDiscountable = subtotal - discountBase;
     if (discountType === 'percent') {
-      return subtotal * (1 - percentValue / 100);
+      return nonDiscountable + discountBase * (1 - percentValue / 100);
     } else {
-      return Math.max(0, subtotal - amountValue);
+      return nonDiscountable + Math.max(0, discountBase - amountValue);
     }
   };
 
   const getDiscountDisplay = () => {
     if (discountType === 'percent') {
       if (percentValue <= 0) return 'None';
-      return `${percentValue}% (${formatCurrency(subtotal * (percentValue / 100))})`;
+      return `${percentValue}% (${formatCurrency(discountableSubtotal * (percentValue / 100))})`;
     } else {
       if (amountValue <= 0) return 'None';
       return formatCurrency(amountValue);
@@ -102,10 +127,11 @@ export function QuoteDiscountDialog({
   };
 
   const handleSave = async () => {
+    const groups = applyToAll ? null : (selectedGroups.length > 0 ? selectedGroups : null);
     if (discountType === 'percent') {
-      await onSave(percentValue, 0, labelValue);
+      await onSave(percentValue, 0, labelValue, groups);
     } else {
-      await onSave(0, amountValue, labelValue);
+      await onSave(0, amountValue, labelValue, groups);
     }
     onOpenChange(false);
   };
@@ -114,8 +140,16 @@ export function QuoteDiscountDialog({
     setPercentValue(0);
     setAmountValue(0);
     setLabelValue('');
-    await onSave(0, 0, '');
+    setSelectedGroups([]);
+    setApplyToAll(true);
+    await onSave(0, 0, '', null);
     onOpenChange(false);
+  };
+
+  const toggleGroup = (group: string) => {
+    setSelectedGroups(prev =>
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    );
   };
 
   const hasDiscount = discountType === 'percent' ? percentValue > 0 : amountValue > 0;
@@ -126,7 +160,7 @@ export function QuoteDiscountDialog({
         <DialogHeader>
           <DialogTitle>Apply Discount</DialogTitle>
           <DialogDescription>
-            Add a discount to the quote subtotal. Choose between a percentage or fixed amount.
+            Add a discount to the quote. You can apply it to all groups or select specific ones.
           </DialogDescription>
         </DialogHeader>
 
@@ -162,10 +196,50 @@ export function QuoteDiscountDialog({
                 onChange={(e) => setLabelValue(e.target.value)}
               />
             )}
-            <p className="text-xs text-muted-foreground">
-              Choose a preset or enter a custom label
-            </p>
           </div>
+
+          {/* Apply To Groups */}
+          {availableGroups.length > 1 && (
+            <div className="space-y-2">
+              <Label>Apply To</Label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="apply-all"
+                    checked={applyToAll}
+                    onCheckedChange={(checked) => {
+                      setApplyToAll(!!checked);
+                      if (checked) setSelectedGroups([]);
+                    }}
+                  />
+                  <label htmlFor="apply-all" className="text-sm font-medium cursor-pointer">
+                    All groups
+                  </label>
+                </div>
+                {!applyToAll && (
+                  <div className="ml-6 space-y-1.5 border-l-2 border-muted pl-3">
+                    {availableGroups.map((group) => (
+                      <div key={group} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`group-${group}`}
+                            checked={selectedGroups.includes(group)}
+                            onCheckedChange={() => toggleGroup(group)}
+                          />
+                          <label htmlFor={`group-${group}`} className="text-sm cursor-pointer">
+                            {group}
+                          </label>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatCurrency(groupSubtotals[group] || 0)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <Tabs value={discountType} onValueChange={(v) => setDiscountType(v as 'percent' | 'amount')}>
             <TabsList className="grid w-full grid-cols-2">
@@ -194,9 +268,6 @@ export function QuoteDiscountDialog({
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Enter a percentage between 0 and 100
-                </p>
               </div>
             </TabsContent>
 
@@ -214,9 +285,6 @@ export function QuoteDiscountDialog({
                     className="pl-8"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Enter a fixed dollar amount to deduct
-                </p>
               </div>
             </TabsContent>
           </Tabs>
@@ -224,8 +292,10 @@ export function QuoteDiscountDialog({
           {/* Summary */}
           <div className="border-t pt-4 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
+              <span className="text-muted-foreground">
+                {applyToAll ? 'Subtotal' : 'Discountable subtotal'}
+              </span>
+              <span>{formatCurrency(discountableSubtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Discount</span>
