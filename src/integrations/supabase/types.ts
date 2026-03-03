@@ -2654,6 +2654,8 @@ export type Database = {
           onsite_contact_phone: string | null
           ops_status: string | null
           photography_brief: string | null
+          qr_file_name: string | null
+          qr_file_path: string | null
           quote_id: string | null
           recommended_kit_id: string | null
           run_sheet_url: string | null
@@ -2715,6 +2717,8 @@ export type Database = {
           onsite_contact_phone?: string | null
           ops_status?: string | null
           photography_brief?: string | null
+          qr_file_name?: string | null
+          qr_file_path?: string | null
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
@@ -2776,6 +2780,8 @@ export type Database = {
           onsite_contact_phone?: string | null
           ops_status?: string | null
           photography_brief?: string | null
+          qr_file_name?: string | null
+          qr_file_path?: string | null
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
