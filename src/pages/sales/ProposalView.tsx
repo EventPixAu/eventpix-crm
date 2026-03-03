@@ -76,7 +76,12 @@ export default function ProposalView() {
   
   // Helper to get item display text (product name + description)
   const getItemDisplayText = (item: QuoteItem) => {
-    const name = item.product?.name || item.description;
+    // Prefer the item-level description (which includes custom text entered by the user)
+    // over the generic product name/description
+    if (item.description) {
+      return item.description;
+    }
+    const name = item.product?.name || '';
     const description = item.product?.description;
     if (description && description !== name) {
       return `${name} – ${description}`;
