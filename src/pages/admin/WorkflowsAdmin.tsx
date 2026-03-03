@@ -549,7 +549,7 @@ export default function WorkflowsAdmin() {
           <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
           <TabsTrigger value="sales">Sales Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
-          <TabsTrigger value="briefs">Event Briefs</TabsTrigger>
+          <TabsTrigger value="briefs">Team Briefs</TabsTrigger>
         </TabsList>
 
         {/* Operations Master Steps Tab */}
@@ -1264,7 +1264,7 @@ export default function WorkflowsAdmin() {
           <li>• <strong>Operations Steps:</strong> Master list of all workflow steps. Assign to event types in the Event Type Defaults tab.</li>
           <li>• <strong>Event Type Defaults:</strong> Select which steps apply to each event type. If none selected, all active steps are used.</li>
           <li>• <strong>Sales Workflows:</strong> Create multiple workflows and select one when creating a lead to track its progress.</li>
-          <li>• <strong>Event Briefs:</strong> Create standard brief templates that can be applied to events.</li>
+          <li>• <strong>Team Briefs:</strong> Create standard brief templates that can be applied to events.</li>
           <li>• Changes to defaults only affect new events - existing events keep their current workflows.</li>
         </ul>
       </div>
