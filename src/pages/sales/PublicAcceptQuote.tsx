@@ -32,6 +32,7 @@ interface PublicQuoteData {
     quantity: number;
     unit_price: number;
     line_total: number;
+    group_label: string | null;
   }>;
 }
 
@@ -87,7 +88,7 @@ export default function PublicAcceptQuote() {
       // Fetch items separately - only safe fields
       const { data: itemsData } = await supabase
         .from('quote_items')
-        .select('description, quantity, unit_price, line_total')
+        .select('description, quantity, unit_price, line_total, group_label')
         .eq('quote_id', quoteData.id)
         .order('sort_order');
 
@@ -256,19 +257,52 @@ export default function PublicAcceptQuote() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {quote.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-start gap-8">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.description}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {item.quantity} × {formatCurrency(item.unit_price)}
+              {(() => {
+                // Group items by group_label, preserving sort_order within groups
+                const groups: Record<string, typeof quote.items> = {};
+                quote.items.forEach((item) => {
+                  const key = item.group_label || 'Other';
+                  if (!groups[key]) groups[key] = [];
+                  groups[key].push(item);
+                });
+                const groupKeys = Object.keys(groups);
+                const hasGroups = groupKeys.length > 1 || (groupKeys.length === 1 && groupKeys[0] !== 'Other');
+                
+                if (hasGroups) {
+                  return groupKeys.map((groupKey) => (
+                    <div key={groupKey} className="space-y-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{groupKey}</h4>
+                      {groups[groupKey].map((item, index) => (
+                        <div key={index} className="flex justify-between items-start gap-8">
+                          <div className="flex-1">
+                            <div className="font-medium">{item.description}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {item.quantity} × {formatCurrency(item.unit_price)}
+                            </div>
+                          </div>
+                          <div className="font-medium text-right shrink-0">
+                            {formatCurrency(item.quantity * item.unit_price)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ));
+                }
+                
+                return quote.items.map((item, index) => (
+                  <div key={index} className="flex justify-between items-start gap-8">
+                    <div className="flex-1">
+                      <div className="font-medium">{item.description}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.quantity} × {formatCurrency(item.unit_price)}
+                      </div>
+                    </div>
+                    <div className="font-medium text-right shrink-0">
+                      {formatCurrency(item.quantity * item.unit_price)}
                     </div>
                   </div>
-                  <div className="font-medium text-right shrink-0">
-                    {formatCurrency(item.quantity * item.unit_price)}
-                  </div>
-                </div>
-              ))}
+                ));
+              })()}
               
               <Separator />
               
