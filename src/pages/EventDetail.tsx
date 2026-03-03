@@ -738,13 +738,18 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
-                  {isAdmin && (event as any).client_portal_token && (
+                  {isAdmin && (
                     <Button
                       variant="outline"
                       className="w-full justify-start"
                       onClick={() => {
-                        const baseUrl = getPublicBaseUrl();
-                        window.open(`${baseUrl}/event/${(event as any).client_portal_token}`, '_blank');
+                        const token = event.client_portal_token;
+                        if (token) {
+                          const baseUrl = getPublicBaseUrl();
+                          window.open(`${baseUrl}/event/${token}`, '_blank');
+                        } else {
+                          toast({ title: 'Portal token not found', description: 'Try refreshing the page.', variant: 'destructive' });
+                        }
                       }}
                     >
                       <Eye className="h-4 w-4 mr-2" />
