@@ -331,24 +331,60 @@ export default function ProposalView() {
 
               {/* Totals */}
               <div className="mt-4 border-t pt-4">
-                <Table>
-                  <TableFooter className="print:bg-gray-100">
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">Subtotal (ex GST)</TableCell>
-                      <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.subtotal || 0)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">GST (10%)</TableCell>
-                      <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.tax_total || 0)}</TableCell>
-                    </TableRow>
-                    <TableRow className="bg-primary/10 print:bg-blue-50">
-                      <TableCell colSpan={3} className="text-right text-lg font-bold text-gray-900 print:text-black">Total (incl. GST)</TableCell>
-                      <TableCell className="text-right text-lg font-bold w-28 text-gray-900 print:text-black">
-                        {formatCurrency(quote.total_estimate || 0)}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                {(() => {
+                  const discountPct = (quote as any).discount_percent || 0;
+                  const discountAmt = (quote as any).discount_amount || 0;
+                  const discountLabel = (quote as any).discount_label || '';
+                  const discountGroups: string[] | null = (quote as any).discount_groups || null;
+                  const hasDiscount = discountPct > 0 || discountAmt > 0;
+                  
+                  // Calculate discount value for display
+                  let discountDisplayValue = 0;
+                  if (discountPct > 0) {
+                    // If groups are specified, calculate only discountable subtotal
+                    if (discountGroups && discountGroups.length > 0 && items.length > 0) {
+                      const discountableSubtotal = items
+                        .filter(i => discountGroups.includes(i.group_label || 'Other'))
+                        .reduce((sum, i) => sum + (i.line_total || 0), 0);
+                      discountDisplayValue = discountableSubtotal * discountPct / 100;
+                    } else {
+                      discountDisplayValue = (quote.subtotal || 0) * discountPct / 100;
+                    }
+                  } else if (discountAmt > 0) {
+                    discountDisplayValue = discountAmt;
+                  }
+
+                  const discountDescription = hasDiscount
+                    ? `Discount${discountLabel ? ` – ${discountLabel}` : ''}${discountPct > 0 ? ` (${discountPct}%)` : ''}${discountGroups?.length ? ` on ${discountGroups.join(', ')}` : ''}`
+                    : '';
+
+                  return (
+                    <Table>
+                      <TableFooter className="print:bg-gray-100">
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">Subtotal (ex GST)</TableCell>
+                          <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.subtotal || 0)}</TableCell>
+                        </TableRow>
+                        {hasDiscount && (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">{discountDescription}</TableCell>
+                            <TableCell className="text-right w-28 text-green-700 print:text-green-800">-{formatCurrency(discountDisplayValue)}</TableCell>
+                          </TableRow>
+                        )}
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-right text-gray-900 print:text-black">GST (10%)</TableCell>
+                          <TableCell className="text-right w-28 text-gray-900 print:text-black">{formatCurrency(quote.tax_total || 0)}</TableCell>
+                        </TableRow>
+                        <TableRow className="bg-primary/10 print:bg-blue-50">
+                          <TableCell colSpan={3} className="text-right text-lg font-bold text-gray-900 print:text-black">Total (incl. GST)</TableCell>
+                          <TableCell className="text-right text-lg font-bold w-28 text-gray-900 print:text-black">
+                            {formatCurrency(quote.total_estimate || 0)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  );
+                })()}
               </div>
             </div>
 
