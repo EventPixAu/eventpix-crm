@@ -219,7 +219,7 @@ export function EventBriefTemplatesManager() {
     <div className="bg-card border border-border rounded-xl">
       <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
         <div>
-          <h2 className="font-semibold">Event Brief Templates</h2>
+          <h2 className="font-semibold">Team Brief Templates</h2>
           <p className="text-sm text-muted-foreground">
             Standard briefs that can be applied to events
           </p>
