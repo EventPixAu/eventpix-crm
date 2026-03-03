@@ -227,7 +227,7 @@ export default function ClientPortal() {
         </motion.div>
 
         {/* Sessions / Schedule */}
-        {data.sessions.length > 0 && (
+        {(data.sessions?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -271,7 +271,7 @@ export default function ClientPortal() {
         )}
 
         {/* Your Team */}
-        {data.team.length > 0 && (
+        {(data.team?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -310,7 +310,7 @@ export default function ClientPortal() {
         )}
 
         {/* Event Contacts */}
-        {data.contacts.length > 0 && (
+        {(data.contacts?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -377,7 +377,7 @@ export default function ClientPortal() {
         )}
 
         {/* Documents */}
-        {data.documents.length > 0 && (
+        {(data.documents?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
