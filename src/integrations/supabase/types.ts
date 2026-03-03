@@ -2623,6 +2623,7 @@ export type Database = {
           city: string | null
           client_id: string | null
           client_name: string
+          client_portal_token: string | null
           cost_threshold: number | null
           coverage_details: string | null
           coverage_package_id: string | null
@@ -2684,6 +2685,7 @@ export type Database = {
           city?: string | null
           client_id?: string | null
           client_name: string
+          client_portal_token?: string | null
           cost_threshold?: number | null
           coverage_details?: string | null
           coverage_package_id?: string | null
@@ -2747,6 +2749,7 @@ export type Database = {
           city?: string | null
           client_id?: string | null
           client_name?: string
+          client_portal_token?: string | null
           cost_threshold?: number | null
           coverage_details?: string | null
           coverage_package_id?: string | null
