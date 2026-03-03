@@ -96,7 +96,7 @@ function SortableRow({
       )}
       <TableCell>
         <div>
-          <div className="font-medium">{item.description}</div>
+          <div className="font-medium whitespace-pre-line">{item.description}</div>
           {item.product && (
             <div className="text-xs text-muted-foreground">
               Product: {item.product.name}

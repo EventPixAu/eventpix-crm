@@ -30,6 +30,7 @@ interface SelectedItem {
   unit_price: number;
   tax_rate: number;
   quantity: number;
+  group_label?: string | null;
 }
 
 interface AddProductsPackagesDialogProps {
@@ -170,6 +171,7 @@ export function AddProductsPackagesDialog({
         unit_price: product.unit_price,
         tax_rate: product.tax_rate,
         quantity: 1,
+        group_label: product.category?.name || null,
       });
     }
     setSelectedItems(newSelected);

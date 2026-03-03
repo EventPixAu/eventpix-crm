@@ -287,7 +287,7 @@ export default function ProposalView() {
                         <TableBody>
                           {groupedItems[groupKey].map((item) => (
                             <TableRow key={item.id} className="print:border-b print:border-gray-300">
-                              <TableCell className="text-gray-900 print:text-black">{getItemDisplayText(item)}</TableCell>
+                              <TableCell className="text-gray-900 print:text-black whitespace-pre-line">{getItemDisplayText(item)}</TableCell>
                               <TableCell className="text-right text-gray-900 print:text-black">{item.quantity}</TableCell>
                               <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.unit_price)}</TableCell>
                               <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>
@@ -312,7 +312,7 @@ export default function ProposalView() {
                   <TableBody>
                     {items?.map((item) => (
                       <TableRow key={item.id} className="print:border-b print:border-gray-300">
-                        <TableCell className="text-gray-900 print:text-black">{getItemDisplayText(item)}</TableCell>
+                        <TableCell className="text-gray-900 print:text-black whitespace-pre-line">{getItemDisplayText(item)}</TableCell>
                         <TableCell className="text-right text-gray-900 print:text-black">{item.quantity}</TableCell>
                         <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.unit_price)}</TableCell>
                         <TableCell className="text-right text-gray-900 print:text-black">{formatCurrency(item.quantity * item.unit_price)}</TableCell>

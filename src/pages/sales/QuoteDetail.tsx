@@ -242,6 +242,7 @@ export default function QuoteDetail() {
           quantity: item.quantity,
           unit_price: item.unit_price,
           tax_rate: item.tax_rate,
+          group_label: (item as any).group_label || null,
         });
       }
     }
