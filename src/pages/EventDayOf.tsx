@@ -18,6 +18,7 @@ import {
   MessageSquarePlus,
   Phone,
   Printer,
+  QrCode,
   Send,
   Trash2,
   WifiOff,
@@ -62,6 +63,36 @@ const phases = [
   { key: 'day_of', label: 'Day-Of' },
   { key: 'post_event', label: 'Post-Event' },
 ] as const;
+
+/** Small helper to show a QR file with pre-fetched signed URL */
+function QrFileCard({ filePath, fileName, getDocumentUrl }: { filePath: string; fileName: string | null; getDocumentUrl: (p: string) => Promise<string> }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDocumentUrl(filePath).then((u) => { if (!cancelled) setUrl(u); }).catch(() => {}).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [filePath, getDocumentUrl]);
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-3 flex items-center gap-3">
+      <div className="p-2 bg-muted rounded-lg shrink-0">
+        <QrCode className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium truncate">{fileName || 'QR Code'}</p>
+      </div>
+      {loading ? (
+        <Button variant="ghost" size="sm" className="shrink-0" disabled><Loader2 className="h-4 w-4 animate-spin" /></Button>
+      ) : url ? (
+        <Button variant="ghost" size="sm" asChild className="shrink-0">
+          <a href={url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4" /></a>
+        </Button>
+      ) : null}
+    </div>
+  );
+}
 
 function safeParseISO(value: string | null | undefined): Date | null {
   if (!value) return null;
@@ -823,6 +854,23 @@ export default function EventDayOf() {
                 </div>
               ))}
             </div>
+          </motion.section>
+        )}
+
+        {/* QR for this Event - visible to team and client */}
+        {(event as any)?.qr_file_path && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.195 }}
+            className="mx-4 mb-4"
+          >
+            <h3 className="font-semibold mb-3">QR for this Event</h3>
+            <QrFileCard
+              filePath={(event as any).qr_file_path}
+              fileName={(event as any).qr_file_name}
+              getDocumentUrl={getDocumentUrl}
+            />
           </motion.section>
         )}
 
