@@ -57,21 +57,23 @@ serve(async (req) => {
       .order("sort_order");
 
     // Fetch assigned crew (public info only)
-    const { data: assignments = [] } = await supabase
+    const { data: assignments } = await supabase
       .from("event_assignments")
       .select(`
-        id, role, staff_id, user_id,
-        staff:staff_id (id, first_name, last_name),
-        profile:user_id (full_name, avatar_url)
+        id, role_on_event, staff_id, user_id, staff_role_id,
+        staff:staff_id (id, name),
+        profile:profiles!event_assignments_user_id_fkey (full_name, avatar_url),
+        staff_role:staff_roles!event_assignments_staff_role_id_fkey (name)
       `)
       .eq("event_id", event.id);
 
     // Map to safe crew list
-    const team = assignments.map((a: any) => ({
-      role: a.role || "Team Member",
+    const team = (assignments || []).map((a: any) => ({
+      role: a.staff_role?.name || a.role_on_event || "Team Member",
       name:
         a.profile?.full_name ||
-        (a.staff ? `${a.staff.first_name || ""} ${a.staff.last_name || ""}`.trim() : "TBC"),
+        a.staff?.name ||
+        "TBC",
       avatar_url: a.profile?.avatar_url || null,
     }));
 
