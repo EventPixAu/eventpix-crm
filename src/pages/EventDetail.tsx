@@ -9,6 +9,7 @@ import {
   Clock,
   DollarSign,
   Edit,
+  Eye,
   Mail,
   MapPin,
   Package,
@@ -75,6 +76,7 @@ import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { useSendNotification } from '@/hooks/useNotifications';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -736,6 +738,19 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
+                  {isAdmin && (event as any).client_portal_token && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        const baseUrl = getPublicBaseUrl();
+                        window.open(`${baseUrl}/event/${(event as any).client_portal_token}`, '_blank');
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View as Client
+                    </Button>
+                  )}
                   {isAdmin && event?.quote_id && (
                     <Link to={`/sales/quotes/${event.quote_id}`} className="block">
                       <Button variant="outline" className="w-full justify-start">

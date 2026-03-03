@@ -66,6 +66,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SalesDashboard from "./pages/sales/SalesDashboard";
 import PublicEnquiry from "./pages/PublicEnquiry";
 import EnquiryEmbed from "./pages/EnquiryEmbed";
+import ClientPortal from "./pages/ClientPortal";
 
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -124,6 +125,7 @@ function AppRoutes() {
       <Route path="/contract/sign/:token" element={<PublicAcceptContract />} />
       <Route path="/enquiry" element={<PublicEnquiry />} />
       <Route path="/enquiry/embed" element={<EnquiryEmbed />} />
+      <Route path="/event/:token" element={<ClientPortal />} />
       
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
