@@ -72,6 +72,7 @@ import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
+import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
@@ -540,6 +541,16 @@ export default function EventDetail() {
               {/* Event Documents */}
               {id && (
                 <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
+              )}
+
+              {/* QR for this Event */}
+              {id && (
+                <EventQrPanel
+                  eventId={id}
+                  qrFilePath={(event as any).qr_file_path || null}
+                  qrFileName={(event as any).qr_file_name || null}
+                  isAdmin={isAdmin}
+                />
               )}
               
               {/* Event Brief */}
