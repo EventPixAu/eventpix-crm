@@ -130,8 +130,10 @@ export default function EventForm() {
     },
   });
 
-  // Watch client_name to lookup client and fetch contacts
+  // Watch client and on-site contact fields to lookup linked records
   const clientNameValue = form.watch('client_name');
+  const onsiteContactNameValue = form.watch('onsite_contact_name');
+  const onsiteContactPhoneValue = form.watch('onsite_contact_phone');
   
   // Resolve client ID from business name
   const { data: resolvedClient } = useClientByBusinessName(clientNameValue);
@@ -166,6 +168,24 @@ export default function EventForm() {
       resetOnsiteContact();
     }
   };
+
+  useEffect(() => {
+    if (!onsiteContactNameValue || onsiteContactPhoneValue) return;
+
+    const matchedContact = clientContacts.find(
+      (contact) => contact.contact_name === onsiteContactNameValue
+    );
+
+    if (!matchedContact) return;
+
+    const matchedPhone = getBestPhone(matchedContact);
+    if (!matchedPhone) return;
+
+    form.setValue('onsite_contact_phone', matchedPhone, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [clientContacts, form, onsiteContactNameValue, onsiteContactPhoneValue]);
 
   // Pre-populate from existing event (editing mode)
   useEffect(() => {
