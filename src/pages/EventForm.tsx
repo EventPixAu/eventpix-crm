@@ -32,6 +32,7 @@ import { useEventLocking } from '@/hooks/useGuardrails';
 import { useAuth } from '@/lib/auth';
 import { EventSessionsEditor } from '@/components/EventSessionsEditor';
 import { EventContactsEditor } from '@/components/EventContactsEditor';
+import { EventClientLookup } from '@/components/EventClientLookup';
 import { useLead } from '@/hooks/useSales';
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -86,6 +87,7 @@ export default function EventForm() {
   const { isLocked, minutesUntilStart } = useEventLocking(event?.start_at || null);
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   
   // Determine if form should be disabled due to lock
   const isFormLocked = isEditing && isLocked && !isUnlocked;
@@ -134,22 +136,34 @@ export default function EventForm() {
   // Resolve client ID from business name
   const { data: resolvedClient } = useClientByBusinessName(clientNameValue);
   
-  // Determine effective client ID (from event or resolved from name)
-  const effectiveClientId = event?.client_id || resolvedClient?.id || null;
+  // Determine effective client ID from explicit selection or exact-name fallback
+  const effectiveClientId = selectedClientId ?? resolvedClient?.id ?? null;
   
   // Fetch contacts for the client
   const { data: clientContacts = [] } = useClientContacts(effectiveClientId);
 
-  // Handle contact selection - auto-fill phone number
+  const resetOnsiteContact = () => {
+    form.setValue('onsite_contact_name', '');
+    form.setValue('onsite_contact_phone', '');
+  };
+
+  const handleClientNameChange = (clientName: string) => {
+    const previousName = form.getValues('client_name');
+    form.setValue('client_name', clientName, { shouldDirty: true, shouldValidate: true });
+
+    if (clientName !== previousName) {
+      setSelectedClientId(null);
+      resetOnsiteContact();
+    }
+  };
+
   const handleContactSelect = (contactId: string) => {
     const selectedContact = clientContacts.find(c => c.id === contactId);
     if (selectedContact) {
-      form.setValue('onsite_contact_name', selectedContact.contact_name);
-      form.setValue('onsite_contact_phone', getBestPhone(selectedContact));
+      form.setValue('onsite_contact_name', selectedContact.contact_name, { shouldDirty: true, shouldValidate: true });
+      form.setValue('onsite_contact_phone', getBestPhone(selectedContact), { shouldDirty: true, shouldValidate: true });
     } else if (contactId === '__manual__') {
-      // User wants to enter manually - clear fields
-      form.setValue('onsite_contact_name', '');
-      form.setValue('onsite_contact_phone', '');
+      resetOnsiteContact();
     }
   };
 
@@ -187,6 +201,7 @@ export default function EventForm() {
         delivery_deadline: event.delivery_deadline || '',
         notes: event.notes || '',
       });
+      setSelectedClientId(event.client_id || null);
     }
   }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId]);
 
@@ -224,6 +239,7 @@ export default function EventForm() {
         delivery_deadline: deliveryDeadline,
         notes: sourceLead.notes || '',
       });
+      setSelectedClientId((sourceLead as any).client_id || null);
     }
   }, [isConvertingFromLead, sourceLead, leadSessions, eventTypes, form, isEditing]);
 
@@ -241,6 +257,7 @@ export default function EventForm() {
       event_type_id: values.event_type_id,
       event_date: values.event_date,
       client_name: values.client_name,
+      client_id: effectiveClientId,
       start_time: values.start_time || null,
       end_time: values.end_time || null,
       venue_name: values.venue_name || null,
@@ -500,7 +517,23 @@ export default function EventForm() {
                   <FormItem>
                     <FormLabel>Client Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Client's name" className="bg-secondary" />
+                      <EventClientLookup
+                        value={field.value}
+                        onValueChange={handleClientNameChange}
+                        onCompanySelect={(company) => {
+                          form.setValue('client_name', company.business_name, { shouldDirty: true, shouldValidate: true });
+                          setSelectedClientId(company.id);
+                          resetOnsiteContact();
+                        }}
+                        onContactSelect={({ contactName, phone, companyId, companyName }) => {
+                          form.setValue('client_name', companyName || contactName, { shouldDirty: true, shouldValidate: true });
+                          form.setValue('onsite_contact_name', contactName, { shouldDirty: true, shouldValidate: true });
+                          form.setValue('onsite_contact_phone', phone, { shouldDirty: true, shouldValidate: true });
+                          setSelectedClientId(companyId);
+                        }}
+                        placeholder="Search existing client or contact"
+                        disabled={isFormLocked}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
