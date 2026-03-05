@@ -59,7 +59,7 @@ export default function CrewOnboardingGuide() {
               <div>
                 <h3 className="font-semibold mb-2">Access the App</h3>
                 <p className="text-muted-foreground text-sm">
-                  Visit <strong>app.eventpix.com.au</strong> from any device. The app is mobile-optimized, so you can use it on your phone at events.
+                  Visit <strong>app.eventpix.com.au</strong> from a computer to complete your profile. The app is mobile-optimized, so you can use it on your phone at events.
                 </p>
               </div>
               
