@@ -119,7 +119,7 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Badge variant={statusVariant(quote.status)} className="capitalize text-xs">
-                {quote.status || 'draft'}
+                {statusLabel(quote.status)}
               </Badge>
               {quote.is_locked && (
                 <Badge variant="outline" className="text-xs">Locked</Badge>
