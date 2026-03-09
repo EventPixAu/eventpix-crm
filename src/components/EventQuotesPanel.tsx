@@ -74,9 +74,21 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
   const statusVariant = (s: string | null): 'default' | 'secondary' | 'destructive' | 'outline' => {
     switch (s) {
       case 'accepted': return 'default';
-      case 'sent': return 'secondary';
+      case 'sent': case 'opened': return 'secondary';
       case 'rejected': case 'declined': return 'destructive';
       default: return 'outline';
+    }
+  };
+
+  const statusLabel = (s: string | null): string => {
+    switch (s) {
+      case 'draft': return 'Draft';
+      case 'sent': return 'Sent';
+      case 'opened': return 'Opened';
+      case 'accepted': return 'Accepted';
+      case 'rejected': return 'Rejected';
+      case 'declined': return 'Declined';
+      default: return s || 'Draft';
     }
   };
 
