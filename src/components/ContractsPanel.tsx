@@ -257,34 +257,35 @@ export function ContractsPanel({
   };
   
   // Open send email dialog for a contract
-  // For draft contracts, we generate the token FIRST so the email contains the correct signing URL
+  // For draft contracts, mark as sent FIRST so the email contains the correct signing URL
   const openSendEmailDialog = async (contract: Contract) => {
-    // If the contract is a draft without a token, generate one first
-    if (contract.status === 'draft' && !contract.public_token) {
+    if (contract.status === 'draft') {
       try {
         const result = await markAsSent.mutateAsync(contract.id);
         // Update contract with the new token and status
         const updatedContract = { 
           ...contract, 
-          public_token: result.public_token || null, 
+          public_token: result.public_token || contract.public_token || null, 
           status: 'sent' as const 
         };
         setSelectedContract(updatedContract);
         setIsSendEmailOpen(true);
+        // Invalidate to refresh list with new status
+        queryClient.invalidateQueries({ queryKey: ['contracts'] });
       } catch (error) {
-        // Error handled by hook - don't open dialog if token generation failed
+        // Error handled by hook - don't open dialog if marking failed
         return;
       }
     } else {
-      // Contract already has a token (resending)
+      // Contract already sent (resending)
       setSelectedContract(contract);
       setIsSendEmailOpen(true);
     }
   };
   
-  // Handle successful email send - no longer needs to mark as sent since we do it before opening dialog
+  // Handle successful email send
   const handleContractEmailSent = async () => {
-    // Token already generated in openSendEmailDialog, just close and cleanup
+    queryClient.invalidateQueries({ queryKey: ['contracts'] });
   };
   
   // Get the contract signing URL using public base URL for client-facing links
