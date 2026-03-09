@@ -349,12 +349,12 @@ export default function LeadDetail(): JSX.Element {
                     className="flex items-center gap-2 flex-1"
                   >
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{quote.quote_number || 'Draft Quote'}</span>
+                    <span className="font-medium">{quote.quote_number || 'Quote'}</span>
                     <Badge 
-                      variant={quote.status === 'rejected' ? 'destructive' : quote.status === 'accepted' ? 'default' : 'outline'} 
-                      className="text-xs"
+                      variant={quote.status === 'rejected' ? 'destructive' : quote.status === 'accepted' ? 'default' : quote.status === 'sent' || quote.status === 'opened' ? 'secondary' : 'outline'} 
+                      className="text-xs capitalize"
                     >
-                      {quote.status}
+                      {quote.status || 'draft'}
                     </Badge>
                   </Link>
                   <div className="flex items-center gap-2">
