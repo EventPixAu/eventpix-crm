@@ -34,6 +34,7 @@ import { useQuotes, useCreateQuote } from '@/hooks/useSales';
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
   sent: { label: 'Sent', variant: 'outline' },
+  opened: { label: 'Opened', variant: 'outline' },
   accepted: { label: 'Accepted', variant: 'default' },
   rejected: { label: 'Rejected', variant: 'destructive' },
 };
