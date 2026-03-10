@@ -364,7 +364,7 @@ export default function LeadDetail(): JSX.Element {
           {/* Quotes Panel */}
           <LeadCollapsiblePanel
             icon={FileText}
-            title="Quotes"
+            title="Budgets"
             count={quotes.length}
             onAdd={() => {
               // Pass lead context to quote creation
