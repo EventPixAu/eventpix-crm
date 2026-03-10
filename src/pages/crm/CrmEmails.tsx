@@ -48,7 +48,6 @@ export default function CrmEmails() {
   const { data: templates = [] } = useEmailTemplates();
   const { data: scheduledEmails = [], isLoading: loadingScheduled } = useScheduledEmails();
   const { data: inboundReplies = [], isLoading: loadingInbound } = useInboundReplies();
-  const { data: outboundEmails = [], isLoading: loadingOutbound } = useOutboundEmails({ search: sentSearch, statusFilter: sentStatusFilter });
   const cancelScheduledEmail = useCancelScheduledEmail();
   const deleteScheduledEmail = useDeleteScheduledEmail();
   const createScheduledEmail = useCreateScheduledEmail();
