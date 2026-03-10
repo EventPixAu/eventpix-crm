@@ -138,6 +138,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     } else {
       setSelectedDate(dateStr);
       setEditNotes(dayAvailability?.notes || '');
+      setEditFromTime(dayAvailability?.unavailable_from?.slice(0, 5) || '');
+      setEditUntilTime(dayAvailability?.unavailable_until?.slice(0, 5) || '');
     }
   };
   
