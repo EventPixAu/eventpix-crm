@@ -114,6 +114,14 @@ export function EquipmentInventory() {
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
     if (filterOwner === 'eventpixii' && item.owner_user_id !== null) return false;
     if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const haystack = [
+        item.name, item.brand, item.model, item.serial_number,
+        item.category, item.owner?.full_name, item.notes
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
     return true;
   });
 
