@@ -1,10 +1,22 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function createGmailTransporter() {
+  const appPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+  if (!appPassword) throw new Error("GMAIL_APP_PASSWORD not configured");
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user: "pix@eventpix.com.au", pass: appPassword },
+  });
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,7 +26,6 @@ serve(async (req) => {
   try {
     const { email, secret } = await req.json();
 
-    // Simple shared secret to prevent abuse (one-time use function)
     if (secret !== Deno.env.get("RECOVERY_SECRET")) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
@@ -39,40 +50,18 @@ serve(async (req) => {
       );
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      return new Response(
-        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${resendApiKey}`,
-      },
-      body: JSON.stringify({
-        from: "EventPix <pix@rs.eventpix.com.au>",
-        to: [email],
-        subject: "Reset your EventPix password",
-        html: `
-          <h2>Password Reset</h2>
-          <p>Click the button below to reset your password:</p>
-          <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset My Password</a></p>
-          <p>If you didn't request this, you can safely ignore this email.</p>
-        `,
-      }),
+    const transporter = createGmailTransporter();
+    await transporter.sendMail({
+      from: '"EventPix" <pix@eventpix.com.au>',
+      to: email,
+      subject: "Reset your EventPix password",
+      html: `
+        <h2>Password Reset</h2>
+        <p>Click the button below to reset your password:</p>
+        <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset My Password</a></p>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+      `,
     });
-
-    const result = await emailRes.json();
-    if (!emailRes.ok) {
-      return new Response(
-        JSON.stringify({ error: result.message || "Failed to send" }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Log to email_logs
     await admin.from("email_logs").insert({
