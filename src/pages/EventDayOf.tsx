@@ -493,6 +493,33 @@ export default function EventDayOf() {
                 ))}
               </div>
             )}
+            {/* Confirm availability button for crew */}
+            {!isAdmin && myAssignment && (!myAssignment.confirmation_status || myAssignment.confirmation_status === 'pending') && (
+              <Button
+                size="sm"
+                className="mt-3 gap-2"
+                onClick={async () => {
+                  const { error } = await supabase
+                    .from('event_assignments')
+                    .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+                    .eq('id', myAssignment.id);
+                  if (!error) {
+                    queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
+                    queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+                    toast({ title: 'Availability confirmed!' });
+                  }
+                }}
+              >
+                <Check className="h-4 w-4" />
+                Confirm Availability
+              </Button>
+            )}
+            {!isAdmin && myAssignment?.confirmation_status === 'confirmed' && (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+                <Check className="h-3.5 w-3.5" />
+                Availability Confirmed
+              </div>
+            )}
           </div>
         </header>
 
