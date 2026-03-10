@@ -117,6 +117,7 @@ export default function EventDayOf() {
   const { id } = useParams<{ id: string }>();
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Data fetching
   const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id);
