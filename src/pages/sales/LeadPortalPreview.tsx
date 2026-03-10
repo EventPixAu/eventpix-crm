@@ -325,7 +325,7 @@ export default function LeadPortalPreview() {
           </motion.div>
         )}
 
-        {/* Quotes */}
+        {/* Budgets */}
         {quotes.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -335,7 +335,7 @@ export default function LeadPortalPreview() {
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <FileText className="h-5 w-5 text-cyan-400" />
-              Quotes
+              Budgets
             </h2>
             <div className="space-y-2">
               {quotes.map((quote) => (
