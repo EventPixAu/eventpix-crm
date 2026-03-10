@@ -94,8 +94,10 @@ export default function Staff() {
     },
   });
   const createStaff = useCreateStaff();
+  const deleteStaff = useDeleteStaff();
   const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+  const [memberToDelete, setMemberToDelete] = useState<UnifiedTeamMember | null>(null);
   const isLoading = staffLoading || profilesLoading;
   
   const [search, setSearch] = useState('');
