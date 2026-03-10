@@ -125,6 +125,44 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Inbound email logged successfully:", emailLog.id);
 
+    // Auto-confirm assignment if reply contains confirmation keywords
+    const bodyText = (text || html?.replace(/<[^>]*>/g, "") || "").toLowerCase();
+    const subjectLower = (subject || "").toLowerCase();
+    const confirmKeywords = ["confirm", "confirmed", "available", "i can make it", "count me in", "yes", "will be there"];
+    const isConfirmation = confirmKeywords.some(kw => bodyText.includes(kw) || subjectLower.includes(kw));
+
+    if (isConfirmation) {
+      // Find staff profile by email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", fromEmail)
+        .maybeSingle();
+
+      if (profile) {
+        // Update any pending assignments for this user
+        const { data: updated } = await supabase
+          .from("event_assignments")
+          .update({ confirmation_status: "confirmed", confirmed_at: new Date().toISOString() })
+          .eq("user_id", profile.id)
+          .is("confirmation_status", null)
+          .select("id");
+
+        // Also update ones explicitly set to 'pending'
+        const { data: updated2 } = await supabase
+          .from("event_assignments")
+          .update({ confirmation_status: "confirmed", confirmed_at: new Date().toISOString() })
+          .eq("user_id", profile.id)
+          .eq("confirmation_status", "pending")
+          .select("id");
+
+        const totalUpdated = (updated?.length || 0) + (updated2?.length || 0);
+        if (totalUpdated > 0) {
+          console.log(`Auto-confirmed ${totalUpdated} assignment(s) for ${fromEmail}`);
+        }
+      }
+    }
+
     // Log to contact_activities if we have a contact
     if (emailLogData.contact_id) {
       const { error: activityError } = await supabase
