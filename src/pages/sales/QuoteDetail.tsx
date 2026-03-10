@@ -348,10 +348,10 @@ export default function QuoteDetail() {
         throw new Error(result.error || 'Failed to send quote');
       }
       
-      toast({ title: 'Quote marked as sent', description: 'Share the proposal link with your client.' });
+      toast({ title: 'Budget marked as sent', description: 'Share the proposal link with your client.' });
       window.location.reload();
     } catch (err: any) {
-      toast({ title: 'Failed to send quote', description: err.message, variant: 'destructive' });
+      toast({ title: 'Failed to send budget', description: err.message, variant: 'destructive' });
     } finally {
       setSendingQuote(false);
     }
@@ -445,7 +445,7 @@ export default function QuoteDetail() {
   // Lead/job info for right panel - use lead data with sessions
   const leadSessions = leadData?.event_sessions || [];
   const firstSession = leadSessions[0];
-  const jobName = leadData?.lead_name || quote.quote_number || 'Quote';
+  const jobName = leadData?.lead_name || quote.quote_number || 'Budget';
   const eventDate = firstSession?.session_date || leadData?.tentative_date || leadData?.estimated_event_date;
   const eventTime = firstSession?.start_time || leadData?.tentative_time;
   const venueAddress = leadData?.venue_text || leadData?.venue_address;
@@ -460,7 +460,7 @@ export default function QuoteDetail() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{quote.quote_number || `Quote ${quote.id.slice(0, 8)}`}</h1>
+              <h1 className="text-2xl font-bold">{quote.quote_number || `Budget ${quote.id.slice(0, 8)}`}</h1>
               <Badge variant={statusConfig.variant}>
                 {statusConfig.label}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
               </Badge>
@@ -553,10 +553,10 @@ export default function QuoteDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Main Form */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Quote Header Fields */}
+          {/* Budget Header Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Quote ID *</Label>
+              <Label>Budget ID *</Label>
               <Input 
                 value={quote.quote_number || `Q-${quote.id.slice(0, 8)}`}
                 readOnly
@@ -1090,7 +1090,7 @@ export default function QuoteDetail() {
         clientEmail={primaryContactEmail}
         clientName={primaryContactName || clientName}
         relatedQuoteId={quote.id}
-        defaultSubject={`Quote: ${quote.quote_number || quote.id.slice(0, 8)}`}
+        defaultSubject={`Budget: ${quote.quote_number || quote.id.slice(0, 8)}`}
         context="quote"
         mergeContext={{
           eventName: leadData?.lead_name || quote.quote_number,

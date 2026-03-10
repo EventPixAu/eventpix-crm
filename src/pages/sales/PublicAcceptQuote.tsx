@@ -80,7 +80,7 @@ export default function PublicAcceptQuote() {
         .single();
 
       if (quoteError || !quoteData) {
-        setError('Quote not found or link has expired');
+        setError('Budget not found or link has expired');
         setLoading(false);
         return;
       }
@@ -134,7 +134,7 @@ export default function PublicAcceptQuote() {
       }
 
       setAccepted(true);
-      toast({ title: 'Quote accepted successfully!' });
+      toast({ title: 'Budget accepted successfully!' });
 
       // Send confirmation emails (fire and forget - don't block UI)
       if (quote?.id) {

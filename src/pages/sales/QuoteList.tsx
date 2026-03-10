@@ -68,12 +68,12 @@ export default function QuoteList() {
   return (
     <AppLayout>
       <PageHeader
-        title="Quotes"
+        title="Budgets"
         description="Manage pricing proposals"
         actions={
           <Button onClick={handleNewQuote} disabled={createQuote.isPending}>
             <Plus className="mr-2 h-4 w-4" />
-            {createQuote.isPending ? 'Creating...' : 'New Quote'}
+            {createQuote.isPending ? 'Creating...' : 'New Budget'}
           </Button>
         }
       />
@@ -134,14 +134,14 @@ export default function QuoteList() {
           ) : !filteredQuotes?.length ? (
             <div className="text-center py-8 text-muted-foreground">
               {search || statusFilter !== 'all' 
-                ? 'No quotes found matching your filters' 
-                : 'No quotes yet. Create your first quote!'}
+                ? 'No budgets found matching your filters' 
+                : 'No budgets yet. Create your first budget!'}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Quote #</TableHead>
+                  <TableHead>Budget #</TableHead>
                   <TableHead>Lead</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Amount</TableHead>

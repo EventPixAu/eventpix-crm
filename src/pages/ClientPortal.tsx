@@ -452,7 +452,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           </motion.div>
         )}
 
-        {/* Quotes */}
+        {/* Budgets */}
         {(data.quotes?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -462,37 +462,43 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <FileText className="h-5 w-5 text-cyan-400" />
-              Quotes
+              Budgets
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {data.quotes.map((quote) => (
                 <div
                   key={quote.id}
-                  className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5"
+                  className="bg-white/5 rounded-lg p-4 border border-white/5"
                 >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <FileText className="h-4 w-4 text-cyan-400 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-white text-sm font-medium truncate">
-                        {quote.quote_number ? `Quote #${quote.quote_number}` : 'Quote'}
-                      </p>
-                      {quote.total_estimate != null && (
-                        <p className="text-white/50 text-xs">
-                          ${Number(quote.total_estimate).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <FileText className="h-4 w-4 text-cyan-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-medium truncate">
+                          {quote.quote_number ? `Budget #${quote.quote_number}` : 'Budget'}
                         </p>
-                      )}
+                        {quote.total_estimate != null && (
+                          <p className="text-white/50 text-xs">
+                            ${Number(quote.total_estimate).toLocaleString('en-AU', { minimumFractionDigits: 2 })}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
                     <QuoteStatusBadge status={quote.status} />
-                    {quote.public_token && (
-                      <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
-                        <a href={`${baseUrl}/quote/accept/${quote.public_token}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
                   </div>
+                  {quote.public_token && (
+                    <a
+                      href={`${baseUrl}/accept/${quote.public_token}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-3">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Budget
+                      </Button>
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

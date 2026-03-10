@@ -140,7 +140,7 @@ function StepItem({
   
   const getAutoTriggerLabel = (trigger: string | null) => {
     switch (trigger) {
-      case 'quote_accepted': return 'Quote Accepted';
+      case 'quote_accepted': return 'Budget Accepted';
       case 'contract_signed': return 'Contract Signed';
       case 'invoice_paid': return 'Invoice Paid';
       case 'event_date': return 'Event Date';

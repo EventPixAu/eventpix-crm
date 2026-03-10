@@ -364,7 +364,7 @@ export default function LeadDetail(): JSX.Element {
           {/* Quotes Panel */}
           <LeadCollapsiblePanel
             icon={FileText}
-            title="Quotes"
+            title="Budgets"
             count={quotes.length}
             onAdd={() => {
               // Pass lead context to quote creation
@@ -389,7 +389,7 @@ export default function LeadDetail(): JSX.Element {
               navigate(`/sales/quotes/new?${params.toString()}`);
             }}
             isEmpty={quotes.length === 0}
-            emptyMessage="No quotes yet"
+            emptyMessage="No budgets yet"
             defaultOpen={quotes.length > 0}
           >
             <div className="space-y-2">
@@ -403,7 +403,7 @@ export default function LeadDetail(): JSX.Element {
                     className="flex items-center gap-2 flex-1"
                   >
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{quote.quote_number || 'Quote'}</span>
+                    <span className="font-medium">{quote.quote_number || 'Budget'}</span>
                     <Badge 
                       variant={quote.status === 'rejected' ? 'destructive' : quote.status === 'accepted' ? 'default' : quote.status === 'sent' || quote.status === 'opened' ? 'secondary' : 'outline'} 
                       className="text-xs capitalize"
@@ -438,7 +438,7 @@ export default function LeadDetail(): JSX.Element {
                             onClick={async (e) => {
                               e.preventDefault();
                               await updateQuote.mutateAsync({ id: quote.id, status: 'rejected' });
-                              toast({ title: 'Quote marked as rejected' });
+                              toast({ title: 'Budget marked as rejected' });
                             }}
                             className="text-destructive focus:text-destructive"
                           >
