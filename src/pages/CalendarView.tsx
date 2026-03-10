@@ -702,6 +702,11 @@ export default function CalendarView() {
                             </TooltipTrigger>
                             <TooltipContent side="bottom" className="max-w-xs">
                               <p className="font-medium">{selectedStaffName} — {dayAvailability.status === 'unavailable' ? 'Unavailable' : 'Limited'}</p>
+                              {dayAvailability.from && dayAvailability.until && (
+                                <p className="text-xs mt-0.5">
+                                  {format(new Date(`2000-01-01T${dayAvailability.from}`), 'h:mm a')} – {format(new Date(`2000-01-01T${dayAvailability.until}`), 'h:mm a')}
+                                </p>
+                              )}
                               {dayAvailability.notes && <p className="text-xs mt-1">{dayAvailability.notes}</p>}
                             </TooltipContent>
                           </Tooltip>
