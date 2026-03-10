@@ -64,6 +64,9 @@ import {
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { useLeadEmailLogs } from '@/hooks/useEmailLogs';
 import { useLeadContacts } from '@/hooks/useLeadContacts';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
