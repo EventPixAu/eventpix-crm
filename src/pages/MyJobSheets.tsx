@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Filter,
+  CheckCircle,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -42,11 +43,16 @@ import {
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
 import { useMyJobSheets } from '@/hooks/useMyJobSheets';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 type FilterMode = 'upcoming' | 'today' | 'past';
 
 function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][number] }) {
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
   const eventDate = parseISO(job.event_date);
   const isEventToday = isToday(eventDate);
   const isEventTomorrow = isTomorrow(eventDate);
@@ -59,6 +65,26 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
     // Usually suburb is second-to-last or third part
     return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
   }, [job.venue_address]);
+
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setConfirming(true);
+    try {
+      const { error } = await supabase
+        .from('event_assignments')
+        .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+        .eq('id', job.assignment_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Availability confirmed!');
+    } catch (err) {
+      toast.error('Failed to confirm');
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <Link to={`/events/${job.id}/day-of`}>
@@ -168,6 +194,27 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                 </Badge>
               )}
             </div>
+
+            {/* Confirm availability button */}
+            {!isEventPast && (!job.confirmation_status || job.confirmation_status === 'pending') && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={handleConfirm}
+                disabled={confirming}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {confirming ? 'Confirming...' : 'Confirm Availability'}
+              </Button>
+            )}
+
+            {job.confirmation_status === 'confirmed' && (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 mt-3">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Confirmed
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

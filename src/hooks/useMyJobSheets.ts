@@ -20,9 +20,10 @@ import { addDays, isBefore } from 'date-fns';
 
 export interface MyJobSheet {
   id: string;
+  assignment_id: string;
   event_name: string;
   event_date: string;
-  arrival_time: string | null; // Crew call time - prioritize for display
+  arrival_time: string | null;
   start_time: string | null;
   end_time: string | null;
   venue_name: string | null;
@@ -30,6 +31,7 @@ export interface MyJobSheet {
   onsite_contact_name: string | null;
   onsite_contact_phone: string | null;
   coverage_details: string | null;
+  confirmation_status: string | null;
   // Equipment status (aggregated)
   has_equipment: boolean;
   equipment_picked_up: boolean;
@@ -55,7 +57,9 @@ export function useMyJobSheets() {
       const { data: assignments, error } = await supabase
         .from('event_assignments')
         .select(`
+          id,
           event_id,
+          confirmation_status,
           events!inner(
             id,
             event_name,
@@ -125,6 +129,7 @@ export function useMyJobSheets() {
 
         return {
           id: event.id,
+          assignment_id: a.id,
           event_name: event.event_name,
           event_date: event.event_date,
           arrival_time: arrivalTime,
@@ -135,6 +140,7 @@ export function useMyJobSheets() {
           onsite_contact_name: event.onsite_contact_name,
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
+          confirmation_status: (a as any).confirmation_status || null,
           has_equipment: hasEquipment,
           equipment_picked_up: equipmentPickedUp,
           checklist_total: checklistTotal,

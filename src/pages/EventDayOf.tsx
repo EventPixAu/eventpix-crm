@@ -35,6 +35,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
@@ -115,6 +117,7 @@ export default function EventDayOf() {
   const { id } = useParams<{ id: string }>();
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Data fetching
   const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id);
@@ -491,6 +494,33 @@ export default function EventDayOf() {
                     {badge.label}
                   </Badge>
                 ))}
+              </div>
+            )}
+            {/* Confirm availability button for crew */}
+            {!isAdmin && myAssignment && (!myAssignment.confirmation_status || myAssignment.confirmation_status === 'pending') && (
+              <Button
+                size="sm"
+                className="mt-3 gap-2"
+                onClick={async () => {
+                  const { error } = await supabase
+                    .from('event_assignments')
+                    .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+                    .eq('id', myAssignment.id);
+                  if (!error) {
+                    queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
+                    queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+                    toast({ title: 'Availability confirmed!' });
+                  }
+                }}
+              >
+                <Check className="h-4 w-4" />
+                Confirm Availability
+              </Button>
+            )}
+            {!isAdmin && myAssignment?.confirmation_status === 'confirmed' && (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+                <Check className="h-3.5 w-3.5" />
+                Availability Confirmed
               </div>
             )}
           </div>
