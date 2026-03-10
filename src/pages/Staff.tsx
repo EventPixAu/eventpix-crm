@@ -37,7 +37,23 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStaff, useCreateStaff, useProfiles, useStaffDirectory, Staff as StaffType } from '@/hooks/useStaff';
+import { useStaff, useCreateStaff, useDeleteStaff, useProfiles, useStaffDirectory, Staff as StaffType } from '@/hooks/useStaff';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
