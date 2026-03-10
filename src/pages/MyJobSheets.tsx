@@ -66,6 +66,26 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
     return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
   }, [job.venue_address]);
 
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setConfirming(true);
+    try {
+      const { error } = await supabase
+        .from('event_assignments')
+        .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+        .eq('id', job.assignment_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Availability confirmed!');
+    } catch (err) {
+      toast.error('Failed to confirm');
+    } finally {
+      setConfirming(false);
+    }
+  };
+
   return (
     <Link to={`/events/${job.id}/day-of`}>
       <motion.div
