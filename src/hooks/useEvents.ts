@@ -182,6 +182,31 @@ export function useCreateEvent() {
             console.error('Failed to copy contacts:', contactError);
           }
         }
+        
+        // Transfer lead assignments to event assignments (as pending)
+        const { data: leadAssignments } = await supabase
+          .from('lead_assignments')
+          .select('*')
+          .eq('lead_id', event.lead_id);
+        
+        if (leadAssignments && leadAssignments.length > 0) {
+          const eventAssignments = (leadAssignments as any[]).map((la) => ({
+            event_id: data.id,
+            user_id: la.user_id,
+            staff_role_id: la.staff_role_id,
+            role_on_event: la.role_on_event,
+            assignment_notes: la.assignment_notes,
+            confirmation_status: la.confirmation_status || 'pending',
+          }));
+          
+          const { error: assignError } = await supabase
+            .from('event_assignments')
+            .insert(eventAssignments);
+          
+          if (assignError) {
+            console.error('Failed to transfer lead assignments:', assignError);
+          }
+        }
       }
       
       return data;
