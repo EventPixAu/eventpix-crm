@@ -129,6 +129,7 @@ export function useMyJobSheets() {
 
         return {
           id: event.id,
+          assignment_id: a.id,
           event_name: event.event_name,
           event_date: event.event_date,
           arrival_time: arrivalTime,
@@ -139,6 +140,7 @@ export function useMyJobSheets() {
           onsite_contact_name: event.onsite_contact_name,
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
+          confirmation_status: (a as any).confirmation_status || null,
           has_equipment: hasEquipment,
           equipment_picked_up: equipmentPickedUp,
           checklist_total: checklistTotal,
