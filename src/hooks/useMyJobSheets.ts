@@ -20,9 +20,10 @@ import { addDays, isBefore } from 'date-fns';
 
 export interface MyJobSheet {
   id: string;
+  assignment_id: string;
   event_name: string;
   event_date: string;
-  arrival_time: string | null; // Crew call time - prioritize for display
+  arrival_time: string | null;
   start_time: string | null;
   end_time: string | null;
   venue_name: string | null;
@@ -30,6 +31,7 @@ export interface MyJobSheet {
   onsite_contact_name: string | null;
   onsite_contact_phone: string | null;
   coverage_details: string | null;
+  confirmation_status: string | null;
   // Equipment status (aggregated)
   has_equipment: boolean;
   equipment_picked_up: boolean;
