@@ -34,13 +34,17 @@ interface StaffAssignment {
 }
 
 function createGmailTransporter() {
-  const appPassword = Deno.env.get("GMAIL_APP_PASSWORD");
-  if (!appPassword) throw new Error("GMAIL_APP_PASSWORD not configured");
+  const clientId = Deno.env.get("GMAIL_CLIENT_ID");
+  const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET");
+  const refreshToken = Deno.env.get("GMAIL_REFRESH_TOKEN");
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error("Gmail OAuth2 credentials not configured");
+  }
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    auth: { user: "pix@eventpix.com.au", pass: appPassword },
+    auth: { type: "OAuth2", user: "pix@eventpix.com.au", clientId, clientSecret, refreshToken },
   });
 }
 
