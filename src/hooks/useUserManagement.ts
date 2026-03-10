@@ -13,6 +13,7 @@ export interface UserProfile {
   created_at: string | null;
   updated_at: string | null;
   role?: string | null;
+  registration_status: 'pending' | 'active' | 'inactive';
 }
 
 export interface UserInvitation {
