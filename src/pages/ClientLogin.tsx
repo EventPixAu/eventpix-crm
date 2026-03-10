@@ -85,7 +85,7 @@ export default function ClientLogin() {
               animate={{ opacity: 1 }}
               className="text-center py-4 space-y-4"
             >
-              <CheckCircle className="h-12 w-12 text-green-400 mx-auto" />
+              <CheckCircle className="h-12 w-12 text-primary mx-auto" />
               <h2 className="text-lg font-semibold text-foreground">Check your email</h2>
               <p className="text-muted-foreground text-sm">
                 We've sent a login link to <strong className="text-foreground">{email}</strong>. 
