@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,26 +28,104 @@ interface SendEmailRequest {
   scheduledEmailId?: string;
 }
 
-function createGmailTransporter() {
+async function getGmailAccessToken(): Promise<string> {
   const clientId = Deno.env.get("GMAIL_CLIENT_ID");
   const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET");
   const refreshToken = Deno.env.get("GMAIL_REFRESH_TOKEN");
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error("Gmail OAuth2 credentials not configured");
   }
-
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      type: "OAuth2",
-      user: "pix@eventpix.com.au",
-      clientId,
-      clientSecret,
-      refreshToken,
-    },
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
   });
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Failed to refresh Gmail access token: ${err}`);
+  }
+  const data = await resp.json();
+  return data.access_token;
+}
+
+function buildMimeMessage(
+  to: string,
+  subject: string,
+  htmlBody: string,
+  attachments?: EmailAttachment[],
+): string {
+  const boundary = `boundary_${crypto.randomUUID().replace(/-/g, "")}`;
+  const from = '"EventPix" <pix@eventpix.com.au>';
+
+  const headers = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+    "MIME-Version: 1.0",
+  ];
+
+  if (!attachments || attachments.length === 0) {
+    headers.push("Content-Type: text/html; charset=UTF-8");
+    headers.push("Content-Transfer-Encoding: base64");
+    return headers.join("\r\n") + "\r\n\r\n" + btoa(unescape(encodeURIComponent(htmlBody)));
+  }
+
+  headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+  let mime = headers.join("\r\n") + "\r\n\r\n";
+
+  // HTML part
+  mime += `--${boundary}\r\n`;
+  mime += "Content-Type: text/html; charset=UTF-8\r\n";
+  mime += "Content-Transfer-Encoding: base64\r\n\r\n";
+  mime += btoa(unescape(encodeURIComponent(htmlBody))) + "\r\n";
+
+  // Attachments
+  for (const att of attachments) {
+    mime += `--${boundary}\r\n`;
+    mime += `Content-Type: ${att.contentType || "application/octet-stream"}; name="${att.filename}"\r\n`;
+    mime += `Content-Disposition: attachment; filename="${att.filename}"\r\n`;
+    mime += "Content-Transfer-Encoding: base64\r\n\r\n";
+    mime += att.content + "\r\n";
+  }
+
+  mime += `--${boundary}--`;
+  return mime;
+}
+
+function base64UrlEncode(str: string): string {
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function sendViaGmailApi(
+  to: string,
+  subject: string,
+  htmlBody: string,
+  attachments?: EmailAttachment[],
+): Promise<string> {
+  const accessToken = await getGmailAccessToken();
+  const mime = buildMimeMessage(to, subject, htmlBody, attachments);
+  const raw = base64UrlEncode(mime);
+
+  const resp = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ raw }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Gmail API send failed: ${err}`);
+  }
+  const data = await resp.json();
+  return data.id || "sent";
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -60,7 +137,6 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Authenticate request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -96,7 +172,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending CRM email to: ${recipientEmail}, subject: ${subject}`);
 
-    // Standard email footer
     const emailFooter = `
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">
         <p style="margin: 0 0 4px 0; font-weight: 600;">Trevor Connell</p>
@@ -142,18 +217,10 @@ const handler = async (req: Request): Promise<Response> => {
       ? `<img src="${supabaseUrl}/functions/v1/email-tracking-pixel?id=${logData.id}" width="1" height="1" style="display:none;" alt="" />`
       : "";
 
-    // Append footer and tracking pixel to email body
     const fullBodyHtml = bodyHtml + emailFooter + trackingPixel;
+    const toAddress = recipientName ? `"${recipientName}" <${recipientEmail}>` : recipientEmail;
 
-    // Build attachments for nodemailer
-    const mailAttachments = (body.attachments || []).map((att: EmailAttachment) => ({
-      filename: att.filename,
-      content: att.content,
-      encoding: "base64" as const,
-      contentType: att.contentType,
-    }));
-
-    // Send via Gmail SMTP with retry logic
+    // Send via Gmail API with retry logic
     let sendSuccess = false;
     let lastError: string | null = null;
     let messageId: string | null = null;
@@ -161,20 +228,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const transporter = createGmailTransporter();
-        const info = await transporter.sendMail({
-          from: '"EventPix" <pix@eventpix.com.au>',
-          to: recipientName ? `"${recipientName}" <${recipientEmail}>` : recipientEmail,
-          subject,
-          html: fullBodyHtml,
-          attachments: mailAttachments.length > 0 ? mailAttachments : undefined,
-        });
-        messageId = info.messageId;
+        messageId = await sendViaGmailApi(toAddress, subject, fullBodyHtml, body.attachments);
         sendSuccess = true;
         break;
       } catch (err: unknown) {
         lastError = err instanceof Error ? err.message : String(err);
-        console.error(`Gmail send attempt ${attempt + 1} failed:`, lastError);
+        console.error(`Gmail API send attempt ${attempt + 1} failed:`, lastError);
         if (attempt < maxRetries - 1) {
           await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
         }
@@ -194,7 +253,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Update email log status to "sent"
     if (logData?.id) {
       await supabase
         .from("email_logs")
@@ -202,7 +260,6 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", logData.id);
     }
 
-    // Log to contact_activities if we have a contact
     if (contactId) {
       const { error: activityError } = await supabase
         .from("contact_activities")
@@ -219,7 +276,6 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Update scheduled email status if applicable
     if (scheduledEmailId) {
       await supabase
         .from("scheduled_emails")
@@ -235,7 +291,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: true,
         messageId,
-        message: "Email sent successfully via Gmail",
+        message: "Email sent successfully via Gmail API",
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
