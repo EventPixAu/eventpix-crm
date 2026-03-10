@@ -332,12 +332,17 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const firstIncompleteRef = useRef<HTMLDivElement>(null);
   
-  // Scroll to first incomplete step on mount
+  // Scroll to first incomplete step within the scroll area only (not the whole page)
   useEffect(() => {
     if (firstIncompleteRef.current && scrollAreaRef.current) {
-      // Small delay to ensure the scroll area is rendered
       const timer = setTimeout(() => {
-        firstIncompleteRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+        const container = scrollAreaRef.current;
+        const target = firstIncompleteRef.current;
+        if (container && target) {
+          const containerRect = container.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          container.scrollTop += targetRect.top - containerRect.top;
+        }
       }, 100);
       return () => clearTimeout(timer);
     }
