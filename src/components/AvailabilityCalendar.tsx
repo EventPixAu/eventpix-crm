@@ -538,6 +538,28 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
               </ToggleGroup>
             </div>
             
+            {/* Time range for partial-day unavailability */}
+            {(rangeStatus === 'unavailable' || rangeStatus === 'limited') && (
+              <div className="space-y-2">
+                <Label>Time range (optional — leave blank for all day)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={rangeFromTime}
+                    onChange={(e) => setRangeFromTime(e.target.value)}
+                    className="h-9"
+                  />
+                  <span className="text-sm text-muted-foreground">to</span>
+                  <Input
+                    type="time"
+                    value={rangeUntilTime}
+                    onChange={(e) => setRangeUntilTime(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Notes (optional)</Label>
               <Textarea
