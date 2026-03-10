@@ -106,7 +106,21 @@ export default function LeadDetail(): JSX.Element {
   const { data: emailLogs = [] } = useLeadEmailLogs(isCreateMode ? undefined : id);
   const { data: leadContacts = [] } = useLeadContacts(isCreateMode ? undefined : id);
   
-  
+  // Query for linked event's client portal token
+  const { data: linkedEvent } = useQuery({
+    queryKey: ['lead-linked-event', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('id, client_portal_token')
+        .eq('lead_id', id!)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id && !isCreateMode,
+  });
+
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [isInitWorkflowOpen, setIsInitWorkflowOpen] = useState(false);
