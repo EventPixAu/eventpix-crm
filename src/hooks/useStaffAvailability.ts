@@ -127,13 +127,17 @@ export function useSetAvailability() {
       date,
       status,
       notes,
+      unavailableFrom,
+      unavailableUntil,
     }: {
       userId: string;
       date: string;
       status: AvailabilityStatus;
       notes?: string;
+      unavailableFrom?: string | null;
+      unavailableUntil?: string | null;
     }) => {
-      // If setting to available with no notes, delete the record (default is available)
+      // If setting to available with no notes and no time range, delete the record (default is available)
       if (status === 'available' && !notes) {
         const { error } = await supabase
           .from('staff_availability')
@@ -153,6 +157,8 @@ export function useSetAvailability() {
           date,
           availability_status: status,
           notes: notes || null,
+          unavailable_from: unavailableFrom || null,
+          unavailable_until: unavailableUntil || null,
         }, {
           onConflict: 'user_id,date',
         })
