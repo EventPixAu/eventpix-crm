@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronRight, FileCheck, Mail, MapPin, Phone, Plus, Search, UserCircle, Users, X } from 'lucide-react';
+import { Check, ChevronRight, FileCheck, Mail, MapPin, MoreVertical, Phone, Plus, Search, Trash2, UserCircle, Users, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -37,11 +37,27 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStaff, useCreateStaff, useProfiles, useStaffDirectory, Staff as StaffType } from '@/hooks/useStaff';
+import { useStaff, useCreateStaff, useDeleteStaff, useProfiles, useStaffDirectory, Staff as StaffType } from '@/hooks/useStaff';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
@@ -78,8 +94,10 @@ export default function Staff() {
     },
   });
   const createStaff = useCreateStaff();
+  const deleteStaff = useDeleteStaff();
   const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+  const [memberToDelete, setMemberToDelete] = useState<UnifiedTeamMember | null>(null);
   const isLoading = staffLoading || profilesLoading;
   
   const [search, setSearch] = useState('');
@@ -193,6 +211,28 @@ export default function Staff() {
 
   const handleClearSelection = () => {
     setSelectedIds(new Set());
+  };
+
+  const handleDeleteMember = async () => {
+    if (!memberToDelete) return;
+    try {
+      if (memberToDelete.source === 'staff') {
+        await deleteStaff.mutateAsync(memberToDelete.id);
+      } else {
+        // Profile-based: delete from staff table if there's a matching record, then deactivate profile
+        const { error } = await supabase
+          .from('profiles')
+          .update({ is_active: false, status: 'inactive' })
+          .eq('id', memberToDelete.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        queryClient.invalidateQueries({ queryKey: ['staff-directory'] });
+        toast({ title: 'Team member deactivated' });
+      }
+      setMemberToDelete(null);
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Failed to remove', description: err.message });
+    }
   };
 
   const handleCreateStaff = async () => {
@@ -519,7 +559,28 @@ export default function Staff() {
                                 );
                               })()}
                             </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            {isAdmin && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setMemberToDelete(member);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Remove
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                            {!isAdmin && <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           </div>
                           <p className="text-sm text-muted-foreground capitalize mb-3">
                             {member.role}
@@ -558,6 +619,31 @@ export default function Staff() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              {memberToDelete?.source === 'staff' ? (
+                <>Are you sure you want to remove <strong>{memberToDelete?.name}</strong>? This will permanently delete their record.</>
+              ) : (
+                <>Are you sure you want to deactivate <strong>{memberToDelete?.name}</strong>? Their account will be marked as inactive and they will no longer appear in the active directory.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMember}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {memberToDelete?.source === 'staff' ? 'Delete' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
