@@ -51,6 +51,8 @@ import { cn } from '@/lib/utils';
 type FilterMode = 'upcoming' | 'today' | 'past';
 
 function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][number] }) {
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
   const eventDate = parseISO(job.event_date);
   const isEventToday = isToday(eventDate);
   const isEventTomorrow = isTomorrow(eventDate);
