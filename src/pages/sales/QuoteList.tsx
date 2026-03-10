@@ -134,8 +134,8 @@ export default function QuoteList() {
           ) : !filteredQuotes?.length ? (
             <div className="text-center py-8 text-muted-foreground">
               {search || statusFilter !== 'all' 
-                ? 'No quotes found matching your filters' 
-                : 'No quotes yet. Create your first quote!'}
+                ? 'No budgets found matching your filters' 
+                : 'No budgets yet. Create your first budget!'}
             </div>
           ) : (
             <Table>
