@@ -1,11 +1,12 @@
 /**
  * LEAD ASSIGNMENTS PANEL
  * 
- * Shows staff assigned to a lead with pending confirmation status.
- * Allows adding/removing staff from a lead before conversion to event.
+ * Shows staff assigned to a lead, grouped by session for multi-day events.
+ * Allows adding/removing staff per session or as general assignments.
  */
 import { useState } from 'react';
-import { Users, Plus, Trash2, Clock, UserPlus } from 'lucide-react';
+import { Users, Plus, Trash2, Clock, UserPlus, Calendar } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -32,9 +33,19 @@ import {
   LeadAssignment,
 } from '@/hooks/useLeadAssignments';
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LeadAssignmentsPanelProps {
   leadId: string;
+}
+
+interface SessionInfo {
+  id: string;
+  session_date: string;
+  label: string | null;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 function AssignmentRow({
@@ -89,19 +100,73 @@ function AssignmentRow({
   );
 }
 
+function formatSessionDate(dateStr: string) {
+  try {
+    return format(parseISO(dateStr), 'EEE, d MMM');
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTime(timeStr: string | null) {
+  if (!timeStr) return '';
+  try {
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}
+
 export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
   const { data: assignments = [], isLoading } = useLeadAssignments(leadId);
   const createAssignment = useCreateLeadAssignment();
   const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
 
+  // Fetch sessions for this lead
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['lead-sessions-for-assignments', leadId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_sessions')
+        .select('id, session_date, label, start_time, end_time')
+        .eq('lead_id', leadId)
+        .order('session_date')
+        .order('sort_order');
+      if (error) throw error;
+      return (data || []) as SessionInfo[];
+    },
+    enabled: !!leadId,
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [selectedSession, setSelectedSession] = useState('all');
   const [notes, setNotes] = useState('');
 
-  // Filter out already-assigned staff
-  const assignedUserIds = new Set(assignments.map((a) => a.user_id));
+  const hasSessions = sessions.length > 0;
+
+  // Group assignments by session
+  const generalAssignments = assignments.filter((a) => !a.session_id);
+  const sessionAssignments = new Map<string, LeadAssignment[]>();
+  sessions.forEach((s) => sessionAssignments.set(s.id, []));
+  assignments.forEach((a) => {
+    if (a.session_id && sessionAssignments.has(a.session_id)) {
+      sessionAssignments.get(a.session_id)!.push(a);
+    }
+  });
+
+  // Filter out already-assigned staff for the selected session context
+  const assignedUserIds = new Set(
+    assignments
+      .filter((a) => selectedSession === 'all' ? !a.session_id : a.session_id === selectedSession)
+      .map((a) => a.user_id)
+  );
   const availableProfiles = profiles.filter(
     (p) => !assignedUserIds.has(p.id)
   );
@@ -112,6 +177,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
       lead_id: leadId,
       user_id: selectedUser,
       staff_role_id: selectedRole || undefined,
+      session_id: selectedSession !== 'all' ? selectedSession : undefined,
       assignment_notes: notes || undefined,
     });
     setDialogOpen(false);
@@ -119,6 +185,13 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
     setSelectedRole('');
     setNotes('');
   };
+
+  const openDialogForSession = (sessionId?: string) => {
+    setSelectedSession(sessionId || 'all');
+    setDialogOpen(true);
+  };
+
+  const totalAssignments = assignments.length;
 
   return (
     <>
@@ -128,16 +201,16 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-muted-foreground" />
               <CardTitle className="text-lg">Team</CardTitle>
-              {assignments.length > 0 && (
+              {totalAssignments > 0 && (
                 <Badge variant="secondary" className="text-xs">
-                  {assignments.length}
+                  {totalAssignments}
                 </Badge>
               )}
             </div>
             <Button
               size="icon"
               className="h-7 w-7 rounded-full bg-primary"
-              onClick={() => setDialogOpen(true)}
+              onClick={() => openDialogForSession()}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -148,7 +221,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
             <div className="text-sm text-muted-foreground text-center py-4">
               Loading...
             </div>
-          ) : assignments.length === 0 ? (
+          ) : totalAssignments === 0 && !hasSessions ? (
             <div className="text-center py-6">
               <UserPlus className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
               <p className="text-sm text-muted-foreground">No team assigned yet</p>
@@ -156,21 +229,85 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={() => setDialogOpen(true)}
+                onClick={() => openDialogForSession()}
               >
                 <Plus className="h-4 w-4 mr-1.5" />
                 Assign Staff
               </Button>
             </div>
           ) : (
-            <div className="space-y-1">
-              {assignments.map((assignment) => (
-                <AssignmentRow
-                  key={assignment.id}
-                  assignment={assignment}
-                  leadId={leadId}
-                />
-              ))}
+            <div className="space-y-3">
+              {/* General (all-session) assignments */}
+              {generalAssignments.length > 0 && hasSessions && (
+                <div>
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                    All Sessions
+                  </div>
+                  <div className="space-y-1">
+                    {generalAssignments.map((a) => (
+                      <AssignmentRow key={a.id} assignment={a} leadId={leadId} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* If no sessions, show flat list */}
+              {!hasSessions && generalAssignments.length > 0 && (
+                <div className="space-y-1">
+                  {generalAssignments.map((a) => (
+                    <AssignmentRow key={a.id} assignment={a} leadId={leadId} />
+                  ))}
+                </div>
+              )}
+
+              {/* Per-session assignments */}
+              {hasSessions && sessions.map((session) => {
+                const sessionAssigns = sessionAssignments.get(session.id) || [];
+                return (
+                  <div key={session.id} className="border border-border rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-sm font-medium">
+                          {formatSessionDate(session.session_date)}
+                        </span>
+                        {session.start_time && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatTime(session.start_time)}
+                            {session.end_time ? ` – ${formatTime(session.end_time)}` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => openDialogForSession(session.id)}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    {sessionAssigns.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic pl-5">
+                        No crew assigned
+                      </p>
+                    ) : (
+                      <div className="space-y-1">
+                        {sessionAssigns.map((a) => (
+                          <AssignmentRow key={a.id} assignment={a} leadId={leadId} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Empty sessions prompt */}
+              {hasSessions && totalAssignments === 0 && (
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  Assign staff to individual sessions above
+                </p>
+              )}
             </div>
           )}
         </CardContent>
@@ -180,9 +317,29 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign Staff to Lead</DialogTitle>
+            <DialogTitle>Assign Staff</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {hasSessions && (
+              <div className="space-y-2">
+                <Label>Session</Label>
+                <Select value={selectedSession} onValueChange={setSelectedSession}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select session..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sessions</SelectItem>
+                    {sessions.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {formatSessionDate(s.session_date)}
+                        {s.start_time ? ` • ${formatTime(s.start_time)}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Team Member</Label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
@@ -231,7 +388,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
               disabled={!selectedUser || createAssignment.isPending}
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              Assign to Lead
+              Assign
             </Button>
           </div>
         </DialogContent>

@@ -7,6 +7,7 @@ export interface LeadAssignment {
   lead_id: string;
   user_id: string | null;
   staff_role_id: string | null;
+  session_id: string | null;
   role_on_event: string | null;
   assignment_notes: string | null;
   confirmation_status: string;
@@ -34,12 +35,6 @@ export function useLeadAssignments(leadId: string | undefined) {
         .from('lead_assignments')
         .select(`
           *,
-          profile:profiles!lead_assignments_user_id_fkey (
-            id,
-            full_name,
-            email,
-            avatar_url
-          ),
           staff_role:staff_roles!lead_assignments_staff_role_id_fkey (
             id,
             name
@@ -49,7 +44,24 @@ export function useLeadAssignments(leadId: string | undefined) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as unknown as LeadAssignment[];
+
+      // Fetch profiles separately since FK points to auth.users not profiles
+      const userIds = (data || []).map((a: any) => a.user_id).filter(Boolean);
+      let profileMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, avatar_url')
+          .in('id', userIds);
+        if (profiles) {
+          profiles.forEach((p) => { profileMap[p.id] = p; });
+        }
+      }
+
+      return (data || []).map((a: any) => ({
+        ...a,
+        profile: a.user_id ? profileMap[a.user_id] || null : null,
+      })) as LeadAssignment[];
     },
     enabled: !!leadId,
   });
@@ -63,6 +75,7 @@ export function useCreateLeadAssignment() {
       lead_id: string;
       user_id: string;
       staff_role_id?: string;
+      session_id?: string;
       assignment_notes?: string;
     }) => {
       const { data, error } = await supabase
@@ -71,9 +84,10 @@ export function useCreateLeadAssignment() {
           lead_id: params.lead_id,
           user_id: params.user_id,
           staff_role_id: params.staff_role_id || null,
+          session_id: params.session_id || null,
           assignment_notes: params.assignment_notes || null,
           confirmation_status: 'pending',
-        })
+        } as any)
         .select()
         .single();
 
@@ -82,7 +96,7 @@ export function useCreateLeadAssignment() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lead-assignments', variables.lead_id] });
-      toast.success('Staff assigned to lead');
+      toast.success('Staff assigned');
     },
     onError: (error: Error) => {
       toast.error('Failed to assign staff: ' + error.message);
