@@ -114,7 +114,7 @@ export function PlainTextTemplateEditor({
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [mergeFieldSearch, setMergeFieldSearch] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['Client', 'Job', 'Quote']);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(['Client', 'Job', 'Budget']);
   
   // Link insertion state
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
