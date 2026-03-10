@@ -143,6 +143,7 @@ function AppRoutes() {
       <Route path="/enquiry" element={<PublicEnquiry />} />
       <Route path="/enquiry/embed" element={<EnquiryEmbed />} />
       <Route path="/event/:token" element={<ClientPortal />} />
+      <Route path="/lead/:token" element={<ClientPortal portalFunction="lead-portal" />} />
       
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
