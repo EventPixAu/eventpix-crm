@@ -236,6 +236,7 @@ function App() {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <ErrorBoundary title="App error" backTo="/auth">
             <AuthProvider>
               <AppRoutes />
