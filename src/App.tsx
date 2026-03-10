@@ -208,6 +208,7 @@ function AppRoutes() {
       {/* Clients moved to CRM > Companies */}
       <Route path="/sales/leads" element={<ProtectedRoute><SalesGuard><LeadList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/leads/:id" element={<ProtectedRoute><SalesGuard><LeadDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/leads/:id/portal-preview" element={<ProtectedRoute><SalesGuard><LeadPortalPreview /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/quotes" element={<ProtectedRoute><SalesGuard><QuoteList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/quotes/:id" element={<ProtectedRoute><SalesGuard><QuoteDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/products" element={<ProtectedRoute><SalesGuard><ProductList /></SalesGuard></ProtectedRoute>} />
