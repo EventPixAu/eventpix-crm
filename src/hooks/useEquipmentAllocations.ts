@@ -294,12 +294,13 @@ export function useAllocatePhotographerKits() {
             equipmentItemId = newItem.id;
           }
 
-          // Check if already allocated to this event
+          // Check if already actively allocated (to ANY event - unique index is per-item globally)
           const { data: existing } = await supabase
             .from('equipment_allocations')
             .select('id')
-            .eq('event_id', eventId)
             .eq('equipment_item_id', equipmentItemId)
+            .is('returned_at', null)
+            .not('status', 'in', '("returned","missing")')
             .maybeSingle();
 
           if (!existing) {
@@ -326,11 +327,15 @@ export function useAllocatePhotographerKits() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, { eventId }) => {
+    onSuccess: (data, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-allocations', eventId] });
       queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
       queryClient.invalidateQueries({ queryKey: ['photographer-equipment'] });
-      toast.success('Photographer kits allocated to event');
+      if (data.length === 0) {
+        toast.info('All items already allocated — nothing new to add');
+      } else {
+        toast.success(`${data.length} item(s) allocated to event`);
+      }
     },
     onError: (error) => {
       console.error('Failed to allocate photographer kits:', error);
