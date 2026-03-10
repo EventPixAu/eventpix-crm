@@ -221,6 +221,20 @@ export default function LeadDetail(): JSX.Element {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const token = linkedEvent?.client_portal_token;
+                if (token) {
+                  window.open(`${getPublicBaseUrl()}/event/${token}`, '_blank');
+                } else {
+                  toast({ title: 'Client Portal not available', description: 'This lead has not been converted to a job yet, or the portal token is missing.' });
+                }
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Client Portal
+            </Button>
             <MarkAsClientButton
               clientId={client?.id}
               clientStatus={client?.manual_status || client?.status}
