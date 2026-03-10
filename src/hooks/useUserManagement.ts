@@ -13,6 +13,7 @@ export interface UserProfile {
   created_at: string | null;
   updated_at: string | null;
   role?: string | null;
+  registration_status: 'pending' | 'active' | 'inactive';
 }
 
 export interface UserInvitation {
@@ -48,34 +49,61 @@ export function useUsers() {
   return useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      // First get profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, phone, status, is_active, created_at, updated_at')
-        .order('created_at', { ascending: false });
+      // Fetch profiles, roles, and invitations in parallel
+      const [profilesRes, rolesRes, invitationsRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, email, full_name, phone, status, is_active, created_at, updated_at, onboarding_status')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('user_roles')
+          .select('user_id, role'),
+        supabase
+          .from('user_invitations')
+          .select('auth_user_id, status')
+          .not('auth_user_id', 'is', null),
+      ]);
 
-      if (profilesError) throw profilesError;
+      if (profilesRes.error) throw profilesRes.error;
+      if (rolesRes.error) throw rolesRes.error;
 
-      // Then get roles for each profile
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) throw rolesError;
-
-      // Merge roles into profiles
-      const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+      const roleMap = new Map(rolesRes.data?.map(r => [r.user_id, r.role]) || []);
       
-      return (profiles || []).map(p => ({
-        id: p.id,
-        email: p.email,
-        full_name: p.full_name,
-        phone: p.phone,
-        is_active: p.is_active ?? p.status === 'active',
-        created_at: p.created_at,
-        updated_at: p.updated_at,
-        role: roleMap.get(p.id) || null
-      })) as UserProfile[];
+      // Build a map of user_id -> invitation status
+      const invitationStatusMap = new Map<string, string>();
+      (invitationsRes.data || []).forEach(inv => {
+        if (inv.auth_user_id) {
+          invitationStatusMap.set(inv.auth_user_id, inv.status);
+        }
+      });
+      
+      return (profilesRes.data || []).map(p => {
+        const invStatus = invitationStatusMap.get(p.id);
+        // User is "pending" if they have an invitation that hasn't been accepted
+        // AND they have no full_name set (haven't completed registration)
+        const hasNotRegistered = !p.full_name || p.full_name.trim() === '';
+        const invitationPending = invStatus && invStatus !== 'accepted';
+        const isInactive = p.is_active === false || p.status === 'inactive';
+        
+        let registration_status: 'pending' | 'active' | 'inactive' = 'active';
+        if (isInactive) {
+          registration_status = 'inactive';
+        } else if (hasNotRegistered && invitationPending) {
+          registration_status = 'pending';
+        }
+
+        return {
+          id: p.id,
+          email: p.email,
+          full_name: p.full_name,
+          phone: p.phone,
+          is_active: p.is_active ?? p.status === 'active',
+          created_at: p.created_at,
+          updated_at: p.updated_at,
+          role: roleMap.get(p.id) || null,
+          registration_status,
+        };
+      }) as UserProfile[];
     },
   });
 }

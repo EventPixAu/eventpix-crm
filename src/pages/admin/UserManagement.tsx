@@ -276,16 +276,22 @@ function UsersTable({ users }: { users: UserProfile[] }) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Switch
-                    checked={user.is_active ?? true}
-                    onCheckedChange={(checked) => 
-                      setUserActive.mutate({ userId: user.id, isActive: checked })
-                    }
-                    disabled={setUserActive.isPending}
-                  />
-                  <span className={user.is_active ? 'text-green-600' : 'text-muted-foreground'}>
-                    {user.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                  {user.registration_status === 'pending' ? (
+                    <Badge variant="secondary" className="gap-1">
+                      <Clock className="h-3 w-3" />
+                      Pending
+                    </Badge>
+                  ) : user.registration_status === 'inactive' ? (
+                    <Badge variant="outline" className="gap-1 text-muted-foreground">
+                      <XCircle className="h-3 w-3" />
+                      Inactive
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="gap-1 border-green-500/30 text-green-500">
+                      <CheckCircle className="h-3 w-3" />
+                      Active
+                    </Badge>
+                  )}
                 </div>
               </TableCell>
               <TableCell className="text-muted-foreground">
