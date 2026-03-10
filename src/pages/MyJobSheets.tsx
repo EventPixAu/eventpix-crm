@@ -194,6 +194,27 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                 </Badge>
               )}
             </div>
+
+            {/* Confirm availability button */}
+            {!isEventPast && (!job.confirmation_status || job.confirmation_status === 'pending') && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={handleConfirm}
+                disabled={confirming}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {confirming ? 'Confirming...' : 'Confirm Availability'}
+              </Button>
+            )}
+
+            {job.confirmation_status === 'confirmed' && (
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 mt-3">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Confirmed
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
