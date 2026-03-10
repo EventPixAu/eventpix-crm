@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone, Inbox, ArrowDownLeft, Building2, Briefcase, Camera } from 'lucide-react';
+import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone, Inbox, ArrowDownLeft, Building2, Briefcase, Camera, ArrowUpRight } from 'lucide-react';
 import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useScheduledEmails, useCancelScheduledEmail, useCreateScheduledEmail, useDeleteScheduledEmail } from '@/hooks/useScheduledEmails';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
