@@ -58,12 +58,23 @@ serve(async (req) => {
     }
 
     // Fetch sessions linked to this lead
-    const { data: sessions = [] } = await supabase
+    const { data: rawSessions = [] } = await supabase
       .from("event_sessions")
-      .select("id, session_date, start_time, end_time, session_label, location, notes, sort_order")
+      .select("id, session_date, start_time, end_time, label, venue_name, venue_address, notes, sort_order")
       .eq("lead_id", lead.id)
       .order("session_date")
       .order("sort_order");
+
+    const sessions = (rawSessions || []).map((s: any) => ({
+      id: s.id,
+      session_date: s.session_date,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      session_label: s.label,
+      location: [s.venue_name, s.venue_address].filter(Boolean).join(', ') || null,
+      notes: s.notes,
+      sort_order: s.sort_order,
+    }));
 
     // Fetch event type name
     let eventTypeName = null;
