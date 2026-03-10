@@ -273,10 +273,20 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
   });
   const { user, signOut, isAdmin, isSales, isOperations, isCrew, role } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
+
+  // Scroll to top on every route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await signOut();
