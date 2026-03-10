@@ -403,7 +403,7 @@ export default function LeadDetail(): JSX.Element {
                     className="flex items-center gap-2 flex-1"
                   >
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{quote.quote_number || 'Quote'}</span>
+                    <span className="font-medium">{quote.quote_number || 'Budget'}</span>
                     <Badge 
                       variant={quote.status === 'rejected' ? 'destructive' : quote.status === 'accepted' ? 'default' : quote.status === 'sent' || quote.status === 'opened' ? 'secondary' : 'outline'} 
                       className="text-xs capitalize"
