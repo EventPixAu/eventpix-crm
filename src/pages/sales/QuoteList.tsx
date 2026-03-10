@@ -68,12 +68,12 @@ export default function QuoteList() {
   return (
     <AppLayout>
       <PageHeader
-        title="Quotes"
+        title="Budgets"
         description="Manage pricing proposals"
         actions={
           <Button onClick={handleNewQuote} disabled={createQuote.isPending}>
             <Plus className="mr-2 h-4 w-4" />
-            {createQuote.isPending ? 'Creating...' : 'New Quote'}
+            {createQuote.isPending ? 'Creating...' : 'New Budget'}
           </Button>
         }
       />
