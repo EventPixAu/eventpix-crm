@@ -260,6 +260,7 @@ export default function LeadDetail(): JSX.Element {
               }}
             >
               <Copy className="h-4 w-4" />
+            </Button>
             <MarkAsClientButton
               clientId={client?.id}
               clientStatus={client?.manual_status || client?.status}
