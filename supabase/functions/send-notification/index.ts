@@ -235,6 +235,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Single recipient (assignment notification)
     const emailResult = await sendEmail(resendKey, recipientEmail!, recipientName!, subject, event, icsContent, appUrl);
 
+    // Log to email_logs
+    await logNotificationEmail(supabase, {
+      recipientEmail: recipientEmail!,
+      recipientName: recipientName!,
+      subject,
+      eventId: event_id,
+      sentBy: user.id,
+    });
+
     return new Response(
       JSON.stringify({ 
         success: true, 
