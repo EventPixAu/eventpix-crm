@@ -554,7 +554,7 @@ export function ContractsPanel({
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
-                                a.download = `${contract.title.replace(/[^a-zA-Z0-9 ]/g, '')}.pdf`;
+                                a.download = `${(eventName || leadName || 'Agreement').replace(/[^a-zA-Z0-9 ]/g, '')} Agreement.pdf`;
                                 a.click();
                                 URL.revokeObjectURL(url);
                                 toast({ title: 'PDF downloaded' });
