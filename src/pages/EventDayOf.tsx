@@ -35,6 +35,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
