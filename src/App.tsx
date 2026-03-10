@@ -84,6 +84,8 @@ import SalesDashboard from "./pages/sales/SalesDashboard";
 import PublicEnquiry from "./pages/PublicEnquiry";
 import EnquiryEmbed from "./pages/EnquiryEmbed";
 import ClientPortal from "./pages/ClientPortal";
+import ClientLogin from "./pages/ClientLogin";
+import ClientPortalDashboard from "./pages/ClientPortalDashboard";
 
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
