@@ -74,6 +74,20 @@ serve(async (req) => {
       );
     }
 
+    // Log to email_logs
+    await admin.from("email_logs").insert({
+      email_type: "password_recovery",
+      recipient_email: email,
+      recipient_name: email,
+      subject: "Reset your EventPix password",
+      body_preview: "Password reset request",
+      status: "sent",
+      sent_at: new Date().toISOString(),
+      direction: "outbound",
+    }).then(({ error: logErr }) => {
+      if (logErr) console.error("Failed to log recovery email:", logErr);
+    });
+
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
