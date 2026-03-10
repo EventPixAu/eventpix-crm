@@ -80,7 +80,7 @@ export default function PublicAcceptQuote() {
         .single();
 
       if (quoteError || !quoteData) {
-        setError('Quote not found or link has expired');
+        setError('Budget not found or link has expired');
         setLoading(false);
         return;
       }
