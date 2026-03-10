@@ -294,17 +294,30 @@ export function useAllocatePhotographerKits() {
             equipmentItemId = newItem.id;
           }
 
-          // Add to allocations list
-          allAllocations.push({
-            event_id: eventId,
-            equipment_item_id: equipmentItemId,
-            user_id: kit.userId,
-            status: 'allocated',
-          });
+          // Check if already allocated to this event
+          const { data: existing } = await supabase
+            .from('equipment_allocations')
+            .select('id')
+            .eq('event_id', eventId)
+            .eq('equipment_item_id', equipmentItemId)
+            .maybeSingle();
+
+          if (!existing) {
+            allAllocations.push({
+              event_id: eventId,
+              equipment_item_id: equipmentItemId,
+              user_id: kit.userId,
+              status: 'allocated',
+            });
+          }
         }
       }
 
-      // Insert all allocations
+      if (allAllocations.length === 0) {
+        return []; // All items already allocated
+      }
+
+      // Insert only new allocations
       const { data, error } = await supabase
         .from('equipment_allocations')
         .insert(allAllocations)
