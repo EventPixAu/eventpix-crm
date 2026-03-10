@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronRight, FileCheck, Mail, MapPin, Phone, Plus, Search, UserCircle, Users, X } from 'lucide-react';
+import { Check, ChevronRight, FileCheck, Mail, MapPin, MoreVertical, Phone, Plus, Search, Trash2, UserCircle, Users, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
