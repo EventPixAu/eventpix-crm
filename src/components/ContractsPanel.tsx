@@ -20,6 +20,7 @@ import {
   Trash2,
   Mail,
   Pencil,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,6 +75,7 @@ import {
 } from '@/hooks/useContractTemplates';
 import { useQueryClient } from '@tanstack/react-query';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
 
 interface ContractsPanelProps {
   leadId?: string;
@@ -540,6 +542,32 @@ export function ContractsPanel({
                           </Button>
                         )}
                         
+                        {/* Download PDF (for contracts with rendered HTML) */}
+                        {contract.rendered_html && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                toast({ title: 'Generating PDF...' });
+                                const blob = await htmlToPdfBlob(contract.rendered_html!, contract.title);
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `${contract.title.replace(/[^a-zA-Z0-9 ]/g, '')}.pdf`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                                toast({ title: 'PDF downloaded' });
+                              } catch (err: any) {
+                                toast({ title: 'Failed to generate PDF', description: err.message, variant: 'destructive' });
+                              }
+                            }}
+                            title="Download PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+
                         {/* Duplicate */}
                         <Button
                           variant="ghost"
