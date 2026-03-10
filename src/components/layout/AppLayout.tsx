@@ -75,7 +75,7 @@ const salesItems: NavItem[] = [
   { href: '/sales/dashboard', label: 'Dashboard', icon: Home },
   { href: '/sales/leads', label: 'Leads', icon: Target },
   { href: '/sales/pipeline', label: 'Pipeline', icon: Kanban },
-  { href: '/sales/quotes', label: 'Quotes', icon: DollarSign },
+  { href: '/sales/quotes', label: 'Budgets', icon: DollarSign },
   { href: '/sales/contracts', label: 'Contracts', icon: FileSignature },
   { href: '/sales/products', label: 'Products', icon: ShoppingBag },
 ];
