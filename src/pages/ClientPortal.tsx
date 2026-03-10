@@ -123,7 +123,7 @@ function QuoteStatusBadge({ status }: { status: string | null }) {
   return <Badge className="bg-white/10 text-white/60 border-white/20">{status || 'Draft'}</Badge>;
 }
 
-export default function ClientPortal() {
+export default function ClientPortal({ portalFunction = 'client-portal' }: { portalFunction?: string }) {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<PortalData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,7 +136,7 @@ export default function ClientPortal() {
       try {
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const resp = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/client-portal?token=${token}`,
+          `https://${projectId}.supabase.co/functions/v1/${portalFunction}?token=${token}`,
           {
             headers: {
               'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
