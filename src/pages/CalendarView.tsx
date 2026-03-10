@@ -656,6 +656,7 @@ export default function CalendarView() {
                 const totalItems = dayEvents.length + dayLeads.length;
                 const isBusyDay = totalItems >= 5;
                 const dateStr = format(day, 'yyyy-MM-dd');
+                const dayAvailability = availabilityByDate.get(dateStr);
 
                 return (
                   <div
@@ -664,18 +665,43 @@ export default function CalendarView() {
                       'min-h-[120px] border-b border-r border-border p-2 transition-colors',
                       !isSameMonth(day, currentMonth) && 'bg-muted/30',
                       isCurrentDay && 'bg-primary/5',
-                      isBusyDay && 'ring-1 ring-inset ring-primary/30'
+                      isBusyDay && 'ring-1 ring-inset ring-primary/30',
+                      dayAvailability?.status === 'unavailable' && 'bg-destructive/10',
+                      dayAvailability?.status === 'limited' && 'bg-amber-500/10'
                     )}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span
-                        className={cn(
-                          'w-7 h-7 flex items-center justify-center text-sm rounded-full',
-                          isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={cn(
+                            'w-7 h-7 flex items-center justify-center text-sm rounded-full',
+                            isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
+                          )}
+                        >
+                          {format(day, 'd')}
+                        </span>
+                        {dayAvailability && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className={cn(
+                                'inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                                dayAvailability.status === 'unavailable' && 'bg-destructive/20 text-destructive',
+                                dayAvailability.status === 'limited' && 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                              )}>
+                                {dayAvailability.status === 'unavailable' ? (
+                                  <><UserX className="h-3 w-3" /> Off</>
+                                ) : (
+                                  <><UserMinus className="h-3 w-3" /> Ltd</>
+                                )}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="max-w-xs">
+                              <p className="font-medium">{selectedStaffName} — {dayAvailability.status === 'unavailable' ? 'Unavailable' : 'Limited'}</p>
+                              {dayAvailability.notes && <p className="text-xs mt-1">{dayAvailability.notes}</p>}
+                            </TooltipContent>
+                          </Tooltip>
                         )}
-                      >
-                        {format(day, 'd')}
-                      </span>
+                      </div>
                       {isBusyDay && (
                         <button
                           onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
