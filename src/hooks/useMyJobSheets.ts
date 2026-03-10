@@ -57,7 +57,9 @@ export function useMyJobSheets() {
       const { data: assignments, error } = await supabase
         .from('event_assignments')
         .select(`
+          id,
           event_id,
+          confirmation_status,
           events!inner(
             id,
             event_name,
