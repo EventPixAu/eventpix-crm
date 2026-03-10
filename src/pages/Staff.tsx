@@ -559,7 +559,28 @@ export default function Staff() {
                                 );
                               })()}
                             </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            {isAdmin && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+                                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setMemberToDelete(member);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Remove
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                            {!isAdmin && <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           </div>
                           <p className="text-sm text-muted-foreground capitalize mb-3">
                             {member.role}
