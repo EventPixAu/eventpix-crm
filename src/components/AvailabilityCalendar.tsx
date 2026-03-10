@@ -55,6 +55,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
+  const [editFromTime, setEditFromTime] = useState('');
+  const [editUntilTime, setEditUntilTime] = useState('');
   const [pendingStatus, setPendingStatus] = useState<AvailabilityStatus | null>(null);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   
@@ -65,6 +67,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const [showRangeDialog, setShowRangeDialog] = useState(false);
   const [rangeStatus, setRangeStatus] = useState<AvailabilityStatus>('unavailable');
   const [rangeNotes, setRangeNotes] = useState('');
+  const [rangeFromTime, setRangeFromTime] = useState('');
+  const [rangeUntilTime, setRangeUntilTime] = useState('');
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
