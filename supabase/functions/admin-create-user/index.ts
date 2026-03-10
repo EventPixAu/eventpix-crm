@@ -248,6 +248,22 @@ serve(async (req) => {
           });
           const emailResult = await emailRes.json();
           console.log("Resend email result:", emailResult);
+
+          // Log to email_logs
+          if (emailRes.ok) {
+            await admin.from("email_logs").insert({
+              email_type: "team_invite",
+              recipient_email: inv.email,
+              recipient_name: inv.email,
+              subject: "Set your EventPix password",
+              body_preview: "Set your EventPix password",
+              status: "sent",
+              sent_at: new Date().toISOString(),
+              direction: "outbound",
+            }).then(({ error: logErr }) => {
+              if (logErr) console.error("Failed to log email:", logErr);
+            });
+          }
         } catch (emailErr) {
           console.error("Failed to send email via Resend:", emailErr);
         }
