@@ -18,6 +18,8 @@ export interface EventAssignment {
   role_on_event: string | null;
   assignment_notes: string | null;
   notes: string | null;
+  confirmation_status: string | null;
+  confirmed_at: string | null;
   profile?: {
     id: string;
     full_name: string | null;
