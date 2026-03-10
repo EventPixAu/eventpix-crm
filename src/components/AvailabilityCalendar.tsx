@@ -192,6 +192,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
       dates,
       status: rangeStatus,
       notes: rangeNotes || undefined,
+      unavailableFrom: rangeFromTime || null,
+      unavailableUntil: rangeUntilTime || null,
     });
     
     // Reset range selection
@@ -200,6 +202,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     setShowRangeDialog(false);
     setIsSelectingRange(false);
     setRangeNotes('');
+    setRangeFromTime('');
+    setRangeUntilTime('');
   };
   
   const cancelRangeSelection = () => {
@@ -208,6 +212,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     setIsSelectingRange(false);
     setShowRangeDialog(false);
     setRangeNotes('');
+    setRangeFromTime('');
+    setRangeUntilTime('');
   };
   
   const getStatusIcon = (status: AvailabilityStatus | undefined) => {
