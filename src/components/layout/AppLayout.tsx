@@ -459,10 +459,13 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
       </aside>
 
       {/* Main Content */}
-      <main className={cn(
-        "pt-14 min-h-screen transition-all duration-300",
-        mainPadding
-      )}>
+      <main
+        ref={mainRef}
+        className={cn(
+          "pt-14 min-h-screen transition-all duration-300",
+          mainPadding
+        )}
+      >
         <div className="p-3 sm:p-4 md:p-6 xl:p-8">
           {children}
         </div>
