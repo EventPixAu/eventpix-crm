@@ -18,11 +18,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone, Inbox, ArrowDownLeft, Building2, Briefcase, Camera } from 'lucide-react';
+import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone, Inbox, ArrowDownLeft, Building2, Briefcase, Camera, ArrowUpRight } from 'lucide-react';
 import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useScheduledEmails, useCancelScheduledEmail, useCreateScheduledEmail, useDeleteScheduledEmail } from '@/hooks/useScheduledEmails';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
-import { useInboundReplies, type EmailLog } from '@/hooks/useEmailLogs';
+import { useInboundReplies, useOutboundEmails, getEmailStatusInfo, type EmailLog } from '@/hooks/useEmailLogs';
 import DOMPurify from 'dompurify';
 import { EmailCampaignManager } from '@/components/crm/EmailCampaignManager';
 import { ContactSelector } from '@/components/shared/ContactSelector';
@@ -56,6 +56,11 @@ export default function CrmEmails() {
   // Inbox filter state
   const [inboxFilter, setInboxFilter] = useState<'all' | 'crm' | 'sales' | 'operations'>('all');
   const [inboxSearch, setInboxSearch] = useState('');
+  const [sentSearch, setSentSearch] = useState('');
+  const [sentStatusFilter, setSentStatusFilter] = useState('all');
+
+  // Outbound emails hook (after state declarations)
+  const { data: outboundEmails = [], isLoading: loadingOutbound } = useOutboundEmails({ search: sentSearch, statusFilter: sentStatusFilter });
 
   // Categorize inbound replies
   const categorizedReplies = useMemo(() => {
@@ -202,6 +207,10 @@ export default function CrmEmails() {
                   {inboxCounts.all}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="sent" className="flex items-center gap-2">
+              <ArrowUpRight className="h-4 w-4" />
+              Sent
             </TabsTrigger>
             <TabsTrigger value="campaigns" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" />
@@ -351,6 +360,104 @@ export default function CrmEmails() {
                       );
                     })}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sent Tab */}
+          <TabsContent value="sent" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Sent Emails</CardTitle>
+                    <CardDescription>
+                      Track delivery status of all outbound emails
+                    </CardDescription>
+                  </div>
+                  <Input
+                    placeholder="Search emails..."
+                    value={sentSearch}
+                    onChange={(e) => setSentSearch(e.target.value)}
+                    className="max-w-xs"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2 flex-wrap">
+                  {['all', 'delivered', 'opened', 'clicked', 'bounced', 'failed', 'sent', 'pending'].map((s) => (
+                    <Button
+                      key={s}
+                      variant={sentStatusFilter === s ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSentStatusFilter(s)}
+                      className="capitalize"
+                    >
+                      {s === 'all' ? 'All' : s}
+                    </Button>
+                  ))}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingOutbound ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading emails...</div>
+                ) : outboundEmails.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Send className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="font-medium">No sent emails found</p>
+                    <p className="text-sm mt-1">Emails you send will appear here with their delivery status</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>To</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Sent</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {outboundEmails.map((email) => {
+                        const statusInfo = getEmailStatusInfo(email.status);
+                        return (
+                          <TableRow
+                            key={email.id}
+                            className="cursor-pointer"
+                            onClick={() => setPreviewHtml(email.body_html || email.body_preview || '')}
+                          >
+                            <TableCell className="max-w-[300px]">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="truncate text-sm">
+                                  {email.recipient_name
+                                    ? `${email.recipient_name} <${email.recipient_email}>`
+                                    : email.recipient_email}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${statusInfo.color} ${statusInfo.bgColor} border-transparent`}
+                              >
+                                {statusInfo.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[300px]">
+                              <span className="truncate text-sm">{email.subject}</span>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                              {email.sent_at
+                                ? format(new Date(email.sent_at), 'dd MMM yyyy, h:mm a')
+                                : email.created_at
+                                ? format(new Date(email.created_at), 'dd MMM yyyy, h:mm a')
+                                : '—'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>

@@ -133,6 +133,46 @@ export function useRecipientEmailLogs(recipientEmail: string | undefined | null)
   });
 }
 
+// Fetch all outbound emails with delivery status
+export function useOutboundEmails(options?: { search?: string; statusFilter?: string; limit?: number }) {
+  const { search, statusFilter, limit = 200 } = options || {};
+  return useQuery({
+    queryKey: ['email-logs', 'outbound', search, statusFilter, limit],
+    queryFn: async () => {
+      let query = supabase
+        .from('email_logs')
+        .select(`
+          *,
+          sent_by_profile:profiles!email_logs_sent_by_fkey(full_name, email)
+        `)
+        .eq('direction', 'outbound')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (statusFilter && statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      let results = data as EmailLog[];
+
+      // Client-side search filtering
+      if (search?.trim()) {
+        const q = search.toLowerCase();
+        results = results.filter(r =>
+          r.recipient_email?.toLowerCase().includes(q) ||
+          r.recipient_name?.toLowerCase().includes(q) ||
+          r.subject?.toLowerCase().includes(q)
+        );
+      }
+
+      return results;
+    },
+  });
+}
+
 // Fetch all inbound email replies
 export function useInboundReplies() {
   return useQuery({
