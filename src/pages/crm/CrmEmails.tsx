@@ -59,6 +59,9 @@ export default function CrmEmails() {
   const [sentSearch, setSentSearch] = useState('');
   const [sentStatusFilter, setSentStatusFilter] = useState('all');
 
+  // Outbound emails hook (after state declarations)
+  const { data: outboundEmails = [], isLoading: loadingOutbound } = useOutboundEmails({ search: sentSearch, statusFilter: sentStatusFilter });
+
   // Categorize inbound replies
   const categorizedReplies = useMemo(() => {
     return inboundReplies.map(reply => {
