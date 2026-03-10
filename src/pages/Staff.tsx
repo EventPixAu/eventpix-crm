@@ -619,6 +619,31 @@ export default function Staff() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              {memberToDelete?.source === 'staff' ? (
+                <>Are you sure you want to remove <strong>{memberToDelete?.name}</strong>? This will permanently delete their record.</>
+              ) : (
+                <>Are you sure you want to deactivate <strong>{memberToDelete?.name}</strong>? Their account will be marked as inactive and they will no longer appear in the active directory.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMember}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {memberToDelete?.source === 'staff' ? 'Delete' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
