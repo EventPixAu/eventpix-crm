@@ -22,7 +22,7 @@ import { Mail, Send, Clock, Calendar, Eye, X, Trash2, Plus, FileText, Megaphone,
 import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useScheduledEmails, useCancelScheduledEmail, useCreateScheduledEmail, useDeleteScheduledEmail } from '@/hooks/useScheduledEmails';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
-import { useInboundReplies, type EmailLog } from '@/hooks/useEmailLogs';
+import { useInboundReplies, useOutboundEmails, getEmailStatusInfo, type EmailLog } from '@/hooks/useEmailLogs';
 import DOMPurify from 'dompurify';
 import { EmailCampaignManager } from '@/components/crm/EmailCampaignManager';
 import { ContactSelector } from '@/components/shared/ContactSelector';
