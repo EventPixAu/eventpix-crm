@@ -294,14 +294,28 @@ export function useAllocatePhotographerKits() {
             equipmentItemId = newItem.id;
           }
 
-          // Check if already actively allocated (to ANY event - unique index is per-item globally)
+          // For photographer-owned gear, first return any prior active allocation
+          // so the unique index allows re-allocation to this event
           const { data: existing } = await supabase
             .from('equipment_allocations')
-            .select('id')
+            .select('id, event_id')
             .eq('equipment_item_id', equipmentItemId)
             .is('returned_at', null)
             .not('status', 'in', '("returned","missing")')
             .maybeSingle();
+
+          if (existing && existing.event_id === eventId) {
+            // Already allocated to this event — skip
+            continue;
+          }
+
+          if (existing) {
+            // Return the prior allocation so we can re-allocate to this event
+            await supabase
+              .from('equipment_allocations')
+              .update({ status: 'returned', returned_at: new Date().toISOString() })
+              .eq('id', existing.id);
+          }
 
           if (!existing) {
             allAllocations.push({
