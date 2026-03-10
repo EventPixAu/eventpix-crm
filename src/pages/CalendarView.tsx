@@ -286,6 +286,28 @@ export default function CalendarView() {
   
   const { data: leads = [] } = useCalendarLeads(currentMonth);
 
+  // Fetch staff availability when a specific staff member is selected
+  const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+  const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+  const { data: staffAvailability = [] } = useStaffAvailabilityByUser(
+    selectedStaff !== 'all' ? selectedStaff : undefined,
+    monthStart,
+    monthEnd
+  );
+
+  const availabilityByDate = useMemo(() => {
+    const map = new Map<string, { status: AvailabilityStatus; notes: string | null }>();
+    staffAvailability.forEach((a) => {
+      map.set(a.date, { status: a.availability_status as AvailabilityStatus, notes: a.notes });
+    });
+    return map;
+  }, [staffAvailability]);
+
+  const selectedStaffName = useMemo(() => {
+    if (selectedStaff === 'all') return null;
+    return staffProfiles.find(p => p.id === selectedStaff)?.full_name || 'Staff';
+  }, [selectedStaff, staffProfiles]);
+
   // Create consistent color mapping for series
   const seriesColorMap = useMemo(() => {
     const map = new Map<string, number>();
