@@ -4687,6 +4687,8 @@ export type Database = {
           date: string
           id: string
           notes: string | null
+          unavailable_from: string | null
+          unavailable_until: string | null
           updated_at: string
           user_id: string
         }
@@ -4696,6 +4698,8 @@ export type Database = {
           date: string
           id?: string
           notes?: string | null
+          unavailable_from?: string | null
+          unavailable_until?: string | null
           updated_at?: string
           user_id: string
         }
@@ -4705,6 +4709,8 @@ export type Database = {
           date?: string
           id?: string
           notes?: string | null
+          unavailable_from?: string | null
+          unavailable_until?: string | null
           updated_at?: string
           user_id?: string
         }

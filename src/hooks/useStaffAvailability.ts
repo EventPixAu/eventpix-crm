@@ -11,6 +11,8 @@ export interface StaffAvailability {
   date: string;
   availability_status: AvailabilityStatus;
   notes: string | null;
+  unavailable_from: string | null;
+  unavailable_until: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -125,13 +127,17 @@ export function useSetAvailability() {
       date,
       status,
       notes,
+      unavailableFrom,
+      unavailableUntil,
     }: {
       userId: string;
       date: string;
       status: AvailabilityStatus;
       notes?: string;
+      unavailableFrom?: string | null;
+      unavailableUntil?: string | null;
     }) => {
-      // If setting to available with no notes, delete the record (default is available)
+      // If setting to available with no notes and no time range, delete the record (default is available)
       if (status === 'available' && !notes) {
         const { error } = await supabase
           .from('staff_availability')
@@ -151,6 +157,8 @@ export function useSetAvailability() {
           date,
           availability_status: status,
           notes: notes || null,
+          unavailable_from: unavailableFrom || null,
+          unavailable_until: unavailableUntil || null,
         }, {
           onConflict: 'user_id,date',
         })
@@ -183,11 +191,15 @@ export function useBulkSetAvailability() {
       dates,
       status,
       notes,
+      unavailableFrom,
+      unavailableUntil,
     }: {
       userId: string;
       dates: string[];
       status: AvailabilityStatus;
       notes?: string;
+      unavailableFrom?: string | null;
+      unavailableUntil?: string | null;
     }) => {
       // If setting to available with no notes, delete the records
       if (status === 'available' && !notes) {
@@ -207,6 +219,8 @@ export function useBulkSetAvailability() {
         date,
         availability_status: status,
         notes: notes || null,
+        unavailable_from: unavailableFrom || null,
+        unavailable_until: unavailableUntil || null,
       }));
       
       const { data, error } = await supabase

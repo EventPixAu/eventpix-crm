@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, parseISO, isBefore, isAfter, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, Circle, CircleDot, CircleSlash, Loader2, AlertTriangle, CalendarRange } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -55,6 +56,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
+  const [editFromTime, setEditFromTime] = useState('');
+  const [editUntilTime, setEditUntilTime] = useState('');
   const [pendingStatus, setPendingStatus] = useState<AvailabilityStatus | null>(null);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   
@@ -65,6 +68,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
   const [showRangeDialog, setShowRangeDialog] = useState(false);
   const [rangeStatus, setRangeStatus] = useState<AvailabilityStatus>('unavailable');
   const [rangeNotes, setRangeNotes] = useState('');
+  const [rangeFromTime, setRangeFromTime] = useState('');
+  const [rangeUntilTime, setRangeUntilTime] = useState('');
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -134,6 +139,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     } else {
       setSelectedDate(dateStr);
       setEditNotes(dayAvailability?.notes || '');
+      setEditFromTime(dayAvailability?.unavailable_from?.slice(0, 5) || '');
+      setEditUntilTime(dayAvailability?.unavailable_until?.slice(0, 5) || '');
     }
   };
   
@@ -158,10 +165,14 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
       date: selectedDate,
       status,
       notes: editNotes || undefined,
+      unavailableFrom: editFromTime || null,
+      unavailableUntil: editUntilTime || null,
     });
     
     setSelectedDate(null);
     setEditNotes('');
+    setEditFromTime('');
+    setEditUntilTime('');
     setPendingStatus(null);
   };
   
@@ -182,6 +193,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
       dates,
       status: rangeStatus,
       notes: rangeNotes || undefined,
+      unavailableFrom: rangeFromTime || null,
+      unavailableUntil: rangeUntilTime || null,
     });
     
     // Reset range selection
@@ -190,6 +203,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     setShowRangeDialog(false);
     setIsSelectingRange(false);
     setRangeNotes('');
+    setRangeFromTime('');
+    setRangeUntilTime('');
   };
   
   const cancelRangeSelection = () => {
@@ -198,6 +213,8 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
     setIsSelectingRange(false);
     setShowRangeDialog(false);
     setRangeNotes('');
+    setRangeFromTime('');
+    setRangeUntilTime('');
   };
   
   const getStatusIcon = (status: AvailabilityStatus | undefined) => {
@@ -417,6 +434,30 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
                     </ToggleGroupItem>
                   </ToggleGroup>
                   
+                  {/* Time range for partial-day unavailability */}
+                  {(status === 'unavailable' || status === 'limited') && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">Time range (optional — leave blank for all day)</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={editFromTime}
+                          onChange={(e) => setEditFromTime(e.target.value)}
+                          className="text-sm h-8"
+                          placeholder="From"
+                        />
+                        <span className="text-xs text-muted-foreground">to</span>
+                        <Input
+                          type="time"
+                          value={editUntilTime}
+                          onChange={(e) => setEditUntilTime(e.target.value)}
+                          className="text-sm h-8"
+                          placeholder="Until"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label className="text-xs">Notes (optional)</Label>
                     <Textarea
@@ -428,14 +469,16 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
                     />
                   </div>
                   
-                  {editNotes !== (dayAvailability?.notes || '') && (
+                  {(editNotes !== (dayAvailability?.notes || '') || 
+                    editFromTime !== (dayAvailability?.unavailable_from?.slice(0, 5) || '') ||
+                    editUntilTime !== (dayAvailability?.unavailable_until?.slice(0, 5) || '')) && (
                     <Button 
                       size="sm" 
                       className="w-full"
                       onClick={() => handleSetAvailability(status || 'available')}
                       disabled={setAvailability.isPending}
                     >
-                      Save Notes
+                      Save Changes
                     </Button>
                   )}
                 </div>
@@ -495,6 +538,28 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
               </ToggleGroup>
             </div>
             
+            {/* Time range for partial-day unavailability */}
+            {(rangeStatus === 'unavailable' || rangeStatus === 'limited') && (
+              <div className="space-y-2">
+                <Label>Time range (optional — leave blank for all day)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={rangeFromTime}
+                    onChange={(e) => setRangeFromTime(e.target.value)}
+                    className="h-9"
+                  />
+                  <span className="text-sm text-muted-foreground">to</span>
+                  <Input
+                    type="time"
+                    value={rangeUntilTime}
+                    onChange={(e) => setRangeUntilTime(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Notes (optional)</Label>
               <Textarea

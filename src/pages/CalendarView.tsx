@@ -296,9 +296,14 @@ export default function CalendarView() {
   );
 
   const availabilityByDate = useMemo(() => {
-    const map = new Map<string, { status: AvailabilityStatus; notes: string | null }>();
+    const map = new Map<string, { status: AvailabilityStatus; notes: string | null; from: string | null; until: string | null }>();
     staffAvailability.forEach((a) => {
-      map.set(a.date, { status: a.availability_status as AvailabilityStatus, notes: a.notes });
+      map.set(a.date, { 
+        status: a.availability_status as AvailabilityStatus, 
+        notes: a.notes,
+        from: a.unavailable_from || null,
+        until: a.unavailable_until || null,
+      });
     });
     return map;
   }, [staffAvailability]);
@@ -689,7 +694,7 @@ export default function CalendarView() {
                                 dayAvailability.status === 'limited' && 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                               )}>
                                 {dayAvailability.status === 'unavailable' ? (
-                                  <><UserX className="h-3 w-3" /> Off</>
+                                  <><UserX className="h-3 w-3" /> {dayAvailability.from ? format(new Date(`2000-01-01T${dayAvailability.from}`), 'ha') : 'Off'}</>
                                 ) : (
                                   <><UserMinus className="h-3 w-3" /> Ltd</>
                                 )}
@@ -697,6 +702,11 @@ export default function CalendarView() {
                             </TooltipTrigger>
                             <TooltipContent side="bottom" className="max-w-xs">
                               <p className="font-medium">{selectedStaffName} — {dayAvailability.status === 'unavailable' ? 'Unavailable' : 'Limited'}</p>
+                              {dayAvailability.from && dayAvailability.until && (
+                                <p className="text-xs mt-0.5">
+                                  {format(new Date(`2000-01-01T${dayAvailability.from}`), 'h:mm a')} – {format(new Date(`2000-01-01T${dayAvailability.until}`), 'h:mm a')}
+                                </p>
+                              )}
                               {dayAvailability.notes && <p className="text-xs mt-1">{dayAvailability.notes}</p>}
                             </TooltipContent>
                           </Tooltip>
