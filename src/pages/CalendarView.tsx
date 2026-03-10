@@ -694,7 +694,7 @@ export default function CalendarView() {
                                 dayAvailability.status === 'limited' && 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                               )}>
                                 {dayAvailability.status === 'unavailable' ? (
-                                  <><UserX className="h-3 w-3" /> Off</>
+                                  <><UserX className="h-3 w-3" /> {dayAvailability.from ? format(new Date(`2000-01-01T${dayAvailability.from}`), 'ha') : 'Off'}</>
                                 ) : (
                                   <><UserMinus className="h-3 w-3" /> Ltd</>
                                 )}
