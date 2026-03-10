@@ -348,10 +348,10 @@ export default function QuoteDetail() {
         throw new Error(result.error || 'Failed to send quote');
       }
       
-      toast({ title: 'Quote marked as sent', description: 'Share the proposal link with your client.' });
+      toast({ title: 'Budget marked as sent', description: 'Share the proposal link with your client.' });
       window.location.reload();
     } catch (err: any) {
-      toast({ title: 'Failed to send quote', description: err.message, variant: 'destructive' });
+      toast({ title: 'Failed to send budget', description: err.message, variant: 'destructive' });
     } finally {
       setSendingQuote(false);
     }
