@@ -261,6 +261,34 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+async function logNotificationEmail(
+  supabase: any,
+  params: {
+    recipientEmail: string;
+    recipientName: string;
+    subject: string;
+    eventId: string;
+    sentBy: string;
+  }
+) {
+  try {
+    await supabase.from("email_logs").insert({
+      email_type: "crew_notification",
+      recipient_email: params.recipientEmail,
+      recipient_name: params.recipientName,
+      subject: params.subject,
+      body_preview: params.subject,
+      event_id: params.eventId,
+      sent_by: params.sentBy,
+      status: "sent",
+      sent_at: new Date().toISOString(),
+      direction: "outbound",
+    });
+  } catch (e) {
+    console.error("Failed to log notification email:", e);
+  }
+}
+
 async function sendEmail(
   resendKey: string | undefined,
   recipientEmail: string,
