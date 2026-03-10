@@ -191,11 +191,15 @@ export function useBulkSetAvailability() {
       dates,
       status,
       notes,
+      unavailableFrom,
+      unavailableUntil,
     }: {
       userId: string;
       dates: string[];
       status: AvailabilityStatus;
       notes?: string;
+      unavailableFrom?: string | null;
+      unavailableUntil?: string | null;
     }) => {
       // If setting to available with no notes, delete the records
       if (status === 'available' && !notes) {
@@ -215,6 +219,8 @@ export function useBulkSetAvailability() {
         date,
         availability_status: status,
         notes: notes || null,
+        unavailable_from: unavailableFrom || null,
+        unavailable_until: unavailableUntil || null,
       }));
       
       const { data, error } = await supabase
