@@ -224,12 +224,17 @@ export default function LeadDetail(): JSX.Element {
             <Button
               variant="outline"
               onClick={() => {
-                const token = linkedEvent?.client_portal_token;
-                if (token) {
-                  window.open(`${getPublicBaseUrl()}/event/${token}`, '_blank');
+                const eventToken = linkedEvent?.client_portal_token;
+                if (eventToken) {
+                  window.open(`${getPublicBaseUrl()}/event/${eventToken}`, '_blank');
                 } else {
-                  // No converted event yet — open the preview in same tab (requires auth)
-                  navigate(`/sales/leads/${id}/portal-preview`);
+                  // Use lead's own portal token for public access
+                  const leadToken = (lead as any)?.client_portal_token;
+                  if (leadToken) {
+                    window.open(`${getPublicBaseUrl()}/lead/${leadToken}`, '_blank');
+                  } else {
+                    toast({ title: 'Portal not available', description: 'No portal token found for this lead.' });
+                  }
                 }
               }}
             >
