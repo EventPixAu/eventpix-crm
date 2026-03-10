@@ -365,6 +365,104 @@ export default function CrmEmails() {
             </Card>
           </TabsContent>
 
+          {/* Sent Tab */}
+          <TabsContent value="sent" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>Sent Emails</CardTitle>
+                    <CardDescription>
+                      Track delivery status of all outbound emails
+                    </CardDescription>
+                  </div>
+                  <Input
+                    placeholder="Search emails..."
+                    value={sentSearch}
+                    onChange={(e) => setSentSearch(e.target.value)}
+                    className="max-w-xs"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2 flex-wrap">
+                  {['all', 'delivered', 'opened', 'clicked', 'bounced', 'failed', 'sent', 'pending'].map((s) => (
+                    <Button
+                      key={s}
+                      variant={sentStatusFilter === s ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSentStatusFilter(s)}
+                      className="capitalize"
+                    >
+                      {s === 'all' ? 'All' : s}
+                    </Button>
+                  ))}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingOutbound ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading emails...</div>
+                ) : outboundEmails.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Send className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                    <p className="font-medium">No sent emails found</p>
+                    <p className="text-sm mt-1">Emails you send will appear here with their delivery status</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>To</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Sent</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {outboundEmails.map((email) => {
+                        const statusInfo = getEmailStatusInfo(email.status);
+                        return (
+                          <TableRow
+                            key={email.id}
+                            className="cursor-pointer"
+                            onClick={() => setPreviewHtml(email.body_html || email.body_preview || '')}
+                          >
+                            <TableCell className="max-w-[300px]">
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="truncate text-sm">
+                                  {email.recipient_name
+                                    ? `${email.recipient_name} <${email.recipient_email}>`
+                                    : email.recipient_email}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${statusInfo.color} ${statusInfo.bgColor} border-transparent`}
+                              >
+                                {statusInfo.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[300px]">
+                              <span className="truncate text-sm">{email.subject}</span>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                              {email.sent_at
+                                ? format(new Date(email.sent_at), 'dd MMM yyyy, h:mm a')
+                                : email.created_at
+                                ? format(new Date(email.created_at), 'dd MMM yyyy, h:mm a')
+                                : '—'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Campaigns Tab */}
           <TabsContent value="campaigns" className="mt-6">
             <EmailCampaignManager />
