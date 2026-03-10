@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search } from 'lucide-react';
 import { 
   useEquipmentItems, 
   useCreateEquipmentItem, 
@@ -38,6 +38,7 @@ export function EquipmentInventory() {
   const [sortField, setSortField] = useState<string>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [filterOwner, setFilterOwner] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -113,6 +114,14 @@ export function EquipmentInventory() {
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
     if (filterOwner === 'eventpixii' && item.owner_user_id !== null) return false;
     if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const haystack = [
+        item.name, item.brand, item.model, item.serial_number,
+        item.category, item.owner?.full_name, item.notes
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
     return true;
   });
 
@@ -358,6 +367,15 @@ export function EquipmentInventory() {
               <SelectItem value="photographer">Photographer Gear</SelectItem>
             </SelectContent>
           </Select>
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search equipment..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         <Table>
