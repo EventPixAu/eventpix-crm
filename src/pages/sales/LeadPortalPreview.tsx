@@ -347,7 +347,7 @@ export default function LeadPortalPreview() {
                     <FileText className="h-4 w-4 text-cyan-400 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-white text-sm font-medium truncate">
-                        {quote.quote_number ? `Quote #${quote.quote_number}` : 'Quote'}
+                        {quote.quote_number ? `Budget #${quote.quote_number}` : 'Budget'}
                       </p>
                       {quote.total_estimate != null && (
                         <p className="text-white/50 text-xs">

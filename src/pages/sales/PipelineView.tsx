@@ -76,10 +76,10 @@ const COLUMNS: PipelineColumn[] = [
   },
   { 
     status: 'quoted', 
-    label: 'Quoted', 
+    label: 'Budget Sent', 
     color: 'bg-violet-500',
     icon: <DollarSign className="h-3 w-3" />,
-    description: 'Quote has been sent',
+    description: 'Budget has been sent',
     canDragTo: ['contract_sent', 'lost']
   },
   { 
