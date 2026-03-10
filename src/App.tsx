@@ -117,8 +117,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
  * - Crew: Photographer-focused mobile dashboard
  */
 function RoleBasedDashboard() {
-  const { role, isAdmin } = useAuth();
+  const { role, isAdmin, loading, user } = useAuth();
   
+  // Still resolving role — show spinner instead of prematurely redirecting
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   // Admin and Operations default to CRM Emails inbox
   if (isAdmin || role === 'operations') {
     return <Navigate to="/crm/emails" replace />;
