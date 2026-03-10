@@ -5955,6 +5955,7 @@ export type Database = {
       expire_compliance_documents: { Args: never; Returns: number }
       gen_random_bytes: { Args: { len: number }; Returns: string }
       gen_random_uuid: { Args: never; Returns: string }
+      get_client_portal_data: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -84,6 +84,8 @@ import SalesDashboard from "./pages/sales/SalesDashboard";
 import PublicEnquiry from "./pages/PublicEnquiry";
 import EnquiryEmbed from "./pages/EnquiryEmbed";
 import ClientPortal from "./pages/ClientPortal";
+import ClientLogin from "./pages/ClientLogin";
+import ClientPortalDashboard from "./pages/ClientPortalDashboard";
 
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -128,7 +130,12 @@ function RoleBasedDashboard() {
   }
   
   // Crew (photographers) get the mobile-first photographer dashboard
-  return <PhotographerDashboard />;
+  if (role === 'crew') {
+    return <PhotographerDashboard />;
+  }
+  
+  // No staff role — likely a client user, send to client portal
+  return <Navigate to="/portal" replace />;
 }
 
 function AppRoutes() {
@@ -144,6 +151,8 @@ function AppRoutes() {
       <Route path="/enquiry/embed" element={<EnquiryEmbed />} />
       <Route path="/event/:token" element={<ClientPortal />} />
       <Route path="/lead/:token" element={<ClientPortal portalFunction="lead-portal" />} />
+      <Route path="/client-login" element={<ClientLogin />} />
+      <Route path="/portal" element={<ClientPortalDashboard />} />
       
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
