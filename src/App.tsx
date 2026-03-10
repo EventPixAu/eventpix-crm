@@ -130,7 +130,12 @@ function RoleBasedDashboard() {
   }
   
   // Crew (photographers) get the mobile-first photographer dashboard
-  return <PhotographerDashboard />;
+  if (role === 'crew') {
+    return <PhotographerDashboard />;
+  }
+  
+  // No staff role — likely a client user, send to client portal
+  return <Navigate to="/portal" replace />;
 }
 
 function AppRoutes() {
