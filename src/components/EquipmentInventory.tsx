@@ -38,6 +38,7 @@ export function EquipmentInventory() {
   const [sortField, setSortField] = useState<string>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [filterOwner, setFilterOwner] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
