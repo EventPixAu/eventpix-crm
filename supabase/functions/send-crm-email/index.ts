@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +19,6 @@ interface SendEmailRequest {
   subject: string;
   bodyHtml: string;
   attachments?: EmailAttachment[];
-  // Optional: for logging
   contactId?: string;
   clientId?: string;
   leadId?: string;
@@ -26,28 +26,32 @@ interface SendEmailRequest {
   quoteId?: string;
   contractId?: string;
   templateId?: string;
-  // For scheduling
   scheduledEmailId?: string;
 }
 
+function createGmailTransporter() {
+  const appPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+  if (!appPassword) throw new Error("GMAIL_APP_PASSWORD not configured");
+  
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: "pix@eventpix.com.au",
+      pass: appPassword,
+    },
+  });
+}
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const resendKey = Deno.env.get("RESEND_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    if (!resendKey) {
-      console.error("RESEND_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ success: false, error: "Email service not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
 
     // Authenticate request
     const authHeader = req.headers.get("Authorization");
@@ -59,11 +63,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Verify the JWT
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: authError } = await supabase.auth.getUser(token);
-    
+
     if (authError || !userData.user) {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid token" }),
@@ -73,21 +75,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     const body: SendEmailRequest = await req.json();
     const {
-      recipientEmail,
-      recipientName,
-      subject,
-      bodyHtml,
-      contactId,
-      clientId,
-      leadId,
-      eventId,
-      quoteId,
-      contractId,
-      templateId,
+      recipientEmail, recipientName, subject, bodyHtml,
+      contactId, clientId, leadId, eventId, quoteId, contractId, templateId,
       scheduledEmailId,
     } = body;
 
-    // Validate required fields
     if (!recipientEmail || !subject || !bodyHtml) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required fields" }),
@@ -146,59 +138,43 @@ const handler = async (req: Request): Promise<Response> => {
     // Append footer and tracking pixel to email body
     const fullBodyHtml = bodyHtml + emailFooter + trackingPixel;
 
-    // Build attachments for Resend
-    const resendAttachments = (body.attachments || []).map((att: EmailAttachment) => ({
+    // Build attachments for nodemailer
+    const mailAttachments = (body.attachments || []).map((att: EmailAttachment) => ({
       filename: att.filename,
       content: att.content,
-      type: att.contentType,
+      encoding: "base64" as const,
+      contentType: att.contentType,
     }));
 
-    // Send via Resend API with retry logic
-    let resendResult: Record<string, unknown> | null = null;
+    // Send via Gmail SMTP with retry logic
+    let sendSuccess = false;
     let lastError: string | null = null;
+    let messageId: string | null = null;
     const maxRetries = 3;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const resendPayload: Record<string, unknown> = {
-        from: "EventPix <pix@rs.eventpix.com.au>",
-        reply_to: "pix@eventpix.com.au",
-        to: [recipientName ? `${recipientName} <${recipientEmail}>` : recipientEmail],
-        subject,
-        html: fullBodyHtml,
-      };
-
-      if (resendAttachments.length > 0) {
-        resendPayload.attachments = resendAttachments;
-      }
-
-      const resendRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify(resendPayload),
-      });
-
-      if (resendRes.ok) {
-        resendResult = await resendRes.json();
+      try {
+        const transporter = createGmailTransporter();
+        const info = await transporter.sendMail({
+          from: '"EventPix" <pix@eventpix.com.au>',
+          to: recipientName ? `"${recipientName}" <${recipientEmail}>` : recipientEmail,
+          subject,
+          html: fullBodyHtml,
+          attachments: mailAttachments.length > 0 ? mailAttachments : undefined,
+        });
+        messageId = info.messageId;
+        sendSuccess = true;
         break;
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err.message : String(err);
+        console.error(`Gmail send attempt ${attempt + 1} failed:`, lastError);
+        if (attempt < maxRetries - 1) {
+          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
+        }
       }
-
-      lastError = await resendRes.text();
-      console.error(`Resend attempt ${attempt + 1} failed (${resendRes.status}):`, lastError);
-
-      // Retry on rate limit (429)
-      if (resendRes.status === 429 && attempt < maxRetries - 1) {
-        await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
-        continue;
-      }
-
-      break;
     }
 
-    if (!resendResult) {
-      // Update log to failed
+    if (!sendSuccess) {
       if (logData?.id) {
         await supabase
           .from("email_logs")
@@ -231,7 +207,6 @@ const handler = async (req: Request): Promise<Response> => {
           notes: `Email sent to ${recipientEmail}`,
           created_by: userData.user.id,
         });
-
       if (activityError) {
         console.error("Failed to log contact activity:", activityError);
       }
@@ -241,26 +216,25 @@ const handler = async (req: Request): Promise<Response> => {
     if (scheduledEmailId) {
       await supabase
         .from("scheduled_emails")
-        .update({ 
-          status: "sent", 
+        .update({
+          status: "sent",
           sent_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", scheduledEmailId);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        messageId: resendResult.id,
-        message: "Email sent successfully" 
+      JSON.stringify({
+        success: true,
+        messageId,
+        message: "Email sent successfully via Gmail",
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
-
   } catch (error: unknown) {
     console.error("Error in send-crm-email:", error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
