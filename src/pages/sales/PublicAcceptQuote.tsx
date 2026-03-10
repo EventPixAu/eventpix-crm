@@ -77,7 +77,7 @@ export default function PublicAcceptQuote() {
           accepted_at
         `)
         .eq('public_token', token)
-        .single();
+        .maybeSingle();
 
       if (quoteError || !quoteData) {
         setError('Budget not found or link has expired');
