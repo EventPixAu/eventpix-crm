@@ -862,7 +862,9 @@ export default function EventDetail() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{name}</p>
+                            <Link to={`/staff/${assignment.user_id || assignment.staff_id}`} className="font-medium truncate hover:underline text-primary">
+                              {name}
+                            </Link>
                             <Badge 
                               variant={confirmationStatus === 'confirmed' ? 'default' : confirmationStatus === 'declined' ? 'destructive' : 'secondary'}
                               className="text-xs shrink-0"
