@@ -207,7 +207,16 @@ const handler = async (req: Request): Promise<Response> => {
 
       // For event updates, we'll loop through all recipients
       const emailPromises = results.map(async (recipient) => {
-        return sendEmail(resendKey, recipient.email, recipient.name, subject, event, icsContent, appUrl);
+        const result = await sendEmail(resendKey, recipient.email, recipient.name, subject, event, icsContent, appUrl);
+        // Log to email_logs
+        await logNotificationEmail(supabase, {
+          recipientEmail: recipient.email,
+          recipientName: recipient.name,
+          subject,
+          eventId: event_id,
+          sentBy: user.id,
+        });
+        return result;
       });
 
       const emailResults = await Promise.all(emailPromises);
