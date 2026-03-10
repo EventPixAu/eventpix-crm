@@ -2000,6 +2000,7 @@ export type Database = {
           notes: string | null
           notified: boolean | null
           role_on_event: string | null
+          session_id: string | null
           staff_id: string | null
           staff_role_id: string | null
           user_id: string | null
@@ -2018,6 +2019,7 @@ export type Database = {
           notes?: string | null
           notified?: boolean | null
           role_on_event?: string | null
+          session_id?: string | null
           staff_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
@@ -2036,6 +2038,7 @@ export type Database = {
           notes?: string | null
           notified?: boolean | null
           role_on_event?: string | null
+          session_id?: string | null
           staff_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
@@ -2047,6 +2050,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_assignments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "event_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -3233,6 +3243,7 @@ export type Database = {
           id: string
           lead_id: string
           role_on_event: string | null
+          session_id: string | null
           staff_role_id: string | null
           user_id: string | null
         }
@@ -3245,6 +3256,7 @@ export type Database = {
           id?: string
           lead_id: string
           role_on_event?: string | null
+          session_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
         }
@@ -3257,6 +3269,7 @@ export type Database = {
           id?: string
           lead_id?: string
           role_on_event?: string | null
+          session_id?: string | null
           staff_role_id?: string | null
           user_id?: string | null
         }
@@ -3266,6 +3279,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_assignments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "event_sessions"
             referencedColumns: ["id"]
           },
           {
