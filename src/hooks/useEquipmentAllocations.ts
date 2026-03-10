@@ -294,12 +294,13 @@ export function useAllocatePhotographerKits() {
             equipmentItemId = newItem.id;
           }
 
-          // Check if already allocated to this event
+          // Check if already actively allocated (to ANY event - unique index is per-item globally)
           const { data: existing } = await supabase
             .from('equipment_allocations')
             .select('id')
-            .eq('event_id', eventId)
             .eq('equipment_item_id', equipmentItemId)
+            .is('returned_at', null)
+            .not('status', 'in', '("returned","missing")')
             .maybeSingle();
 
           if (!existing) {
