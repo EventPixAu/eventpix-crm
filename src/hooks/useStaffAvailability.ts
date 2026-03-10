@@ -11,6 +11,8 @@ export interface StaffAvailability {
   date: string;
   availability_status: AvailabilityStatus;
   notes: string | null;
+  unavailable_from: string | null;
+  unavailable_until: string | null;
   created_at: string;
   updated_at: string;
 }
