@@ -192,7 +192,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
                 <SelectContent>
                   {availableProfiles.map((profile) => (
                     <SelectItem key={profile.id} value={profile.id}>
-                      {profile.full_name || profile.email}
+                      {profile.full_name || profile.id}
                     </SelectItem>
                   ))}
                 </SelectContent>
