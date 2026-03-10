@@ -296,9 +296,14 @@ export default function CalendarView() {
   );
 
   const availabilityByDate = useMemo(() => {
-    const map = new Map<string, { status: AvailabilityStatus; notes: string | null }>();
+    const map = new Map<string, { status: AvailabilityStatus; notes: string | null; from: string | null; until: string | null }>();
     staffAvailability.forEach((a) => {
-      map.set(a.date, { status: a.availability_status as AvailabilityStatus, notes: a.notes });
+      map.set(a.date, { 
+        status: a.availability_status as AvailabilityStatus, 
+        notes: a.notes,
+        from: a.unavailable_from || null,
+        until: a.unavailable_until || null,
+      });
     });
     return map;
   }, [staffAvailability]);
