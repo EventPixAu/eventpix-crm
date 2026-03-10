@@ -228,8 +228,8 @@ export default function LeadDetail(): JSX.Element {
                 if (token) {
                   window.open(`${getPublicBaseUrl()}/event/${token}`, '_blank');
                 } else {
-                  // No converted event yet — open the preview
-                  window.open(`/sales/leads/${id}/portal-preview`, '_blank');
+                  // No converted event yet — open the preview in same tab (requires auth)
+                  navigate(`/sales/leads/${id}/portal-preview`);
                 }
               }}
             >
