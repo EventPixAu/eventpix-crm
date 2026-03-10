@@ -213,6 +213,28 @@ export default function Staff() {
     setSelectedIds(new Set());
   };
 
+  const handleDeleteMember = async () => {
+    if (!memberToDelete) return;
+    try {
+      if (memberToDelete.source === 'staff') {
+        await deleteStaff.mutateAsync(memberToDelete.id);
+      } else {
+        // Profile-based: delete from staff table if there's a matching record, then deactivate profile
+        const { error } = await supabase
+          .from('profiles')
+          .update({ is_active: false, status: 'inactive' })
+          .eq('id', memberToDelete.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        queryClient.invalidateQueries({ queryKey: ['staff-directory'] });
+        toast({ title: 'Team member deactivated' });
+      }
+      setMemberToDelete(null);
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Failed to remove', description: err.message });
+    }
+  };
+
   const handleCreateStaff = async () => {
     if (!newStaff.name || !newStaff.email) {
       toast({ variant: 'destructive', title: 'Name and email are required' });
