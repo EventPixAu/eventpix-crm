@@ -207,7 +207,16 @@ const handler = async (req: Request): Promise<Response> => {
 
       // For event updates, we'll loop through all recipients
       const emailPromises = results.map(async (recipient) => {
-        return sendEmail(resendKey, recipient.email, recipient.name, subject, event, icsContent, appUrl);
+        const result = await sendEmail(resendKey, recipient.email, recipient.name, subject, event, icsContent, appUrl);
+        // Log to email_logs
+        await logNotificationEmail(supabase, {
+          recipientEmail: recipient.email,
+          recipientName: recipient.name,
+          subject,
+          eventId: event_id,
+          sentBy: user.id,
+        });
+        return result;
       });
 
       const emailResults = await Promise.all(emailPromises);
@@ -226,6 +235,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Single recipient (assignment notification)
     const emailResult = await sendEmail(resendKey, recipientEmail!, recipientName!, subject, event, icsContent, appUrl);
 
+    // Log to email_logs
+    await logNotificationEmail(supabase, {
+      recipientEmail: recipientEmail!,
+      recipientName: recipientName!,
+      subject,
+      eventId: event_id,
+      sentBy: user.id,
+    });
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -242,6 +260,34 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+async function logNotificationEmail(
+  supabase: any,
+  params: {
+    recipientEmail: string;
+    recipientName: string;
+    subject: string;
+    eventId: string;
+    sentBy: string;
+  }
+) {
+  try {
+    await supabase.from("email_logs").insert({
+      email_type: "crew_notification",
+      recipient_email: params.recipientEmail,
+      recipient_name: params.recipientName,
+      subject: params.subject,
+      body_preview: params.subject,
+      event_id: params.eventId,
+      sent_by: params.sentBy,
+      status: "sent",
+      sent_at: new Date().toISOString(),
+      direction: "outbound",
+    });
+  } catch (e) {
+    console.error("Failed to log notification email:", e);
+  }
+}
 
 async function sendEmail(
   resendKey: string | undefined,
