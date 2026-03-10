@@ -553,10 +553,10 @@ export default function QuoteDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Main Form */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Quote Header Fields */}
+          {/* Budget Header Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Quote ID *</Label>
+              <Label>Budget ID *</Label>
               <Input 
                 value={quote.quote_number || `Q-${quote.id.slice(0, 8)}`}
                 readOnly
