@@ -49,6 +49,9 @@ import { useStaffDirectory } from '@/hooks/useStaff';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useActiveEventSeries } from '@/hooks/useEventSeries';
 import { useAdminCalendarEvents, useCalendarLeads, getVenueSuburb, type CalendarEvent, type CalendarLead } from '@/hooks/useCalendar';
+import { useStaffAvailabilityByUser, type AvailabilityStatus } from '@/hooks/useStaffAvailability';
+import { UserX, UserMinus } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getTimezoneAbbr } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
