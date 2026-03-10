@@ -69,6 +69,7 @@ import ContractDetail from "./pages/sales/ContractDetail";
 import QuoteTemplates from "./pages/sales/QuoteTemplates";
 import SalesWorkflowTemplates from "./pages/sales/SalesWorkflowTemplates";
 import LeadDetail from "./pages/sales/LeadDetail";
+import LeadPortalPreview from "./pages/sales/LeadPortalPreview";
 import ContractTemplates from "./pages/admin/ContractTemplates";
 import EmailTemplates from "./pages/admin/EmailTemplates";
 import DayLoadView from "./pages/admin/DayLoadView";
