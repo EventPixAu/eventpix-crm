@@ -3223,6 +3223,60 @@ export type Database = {
           },
         ]
       }
+      lead_assignments: {
+        Row: {
+          assignment_notes: string | null
+          confirmation_status: string
+          confirmed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          lead_id: string
+          role_on_event: string | null
+          staff_role_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assignment_notes?: string | null
+          confirmation_status?: string
+          confirmed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lead_id: string
+          role_on_event?: string | null
+          staff_role_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assignment_notes?: string | null
+          confirmation_status?: string
+          confirmed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          lead_id?: string
+          role_on_event?: string | null
+          staff_role_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_assignments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_assignments_staff_role_id_fkey"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_files: {
         Row: {
           created_at: string

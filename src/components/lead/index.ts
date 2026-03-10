@@ -13,3 +13,4 @@ export { MarkAsClientButton } from './MarkAsClientButton';
 export { CompanyStatusBadgeDropdown } from './CompanyStatusBadgeDropdown';
 export { LeadNotesPanel } from './LeadNotesPanel';
 export { LeadFilesPanel } from './LeadFilesPanel';
+export { LeadAssignmentsPanel } from './LeadAssignmentsPanel';

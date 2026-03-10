@@ -79,6 +79,7 @@ import {
   CompanyStatusBadgeDropdown,
   LeadNotesPanel,
   LeadFilesPanel,
+  LeadAssignmentsPanel,
 } from '@/components/lead';
 
 export default function LeadDetail(): JSX.Element {
@@ -435,8 +436,11 @@ export default function LeadDetail(): JSX.Element {
           </LeadCollapsiblePanel>
         </div>
 
-        {/* RIGHT COLUMN: Files + Notes + Workflow */}
+        {/* RIGHT COLUMN: Team + Files + Notes + Workflow */}
         <div className="lg:col-span-4 space-y-4">
+          {/* Team Assignments */}
+          <LeadAssignmentsPanel leadId={id!} />
+
           {/* Files Panel */}
           <LeadFilesPanel leadId={id!} />
 
