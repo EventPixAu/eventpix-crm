@@ -208,6 +208,10 @@ export default function CrmEmails() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="sent" className="flex items-center gap-2">
+              <ArrowUpRight className="h-4 w-4" />
+              Sent
+            </TabsTrigger>
             <TabsTrigger value="campaigns" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" />
               Campaigns
