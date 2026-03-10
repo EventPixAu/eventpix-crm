@@ -35,7 +35,7 @@ serve(async (req) => {
         open_count: supabase.rpc ? undefined : 1, // fallback
       })
       .eq("id", emailLogId)
-      .in("status", ["sent", "delivered"]); // only upgrade, never downgrade
+      .in("status", ["sent", "delivered"]); // only upgrade, never downgrade (skip bounced/failed)
 
     // Increment open_count via raw SQL-safe approach
     const { data: current } = await supabase
