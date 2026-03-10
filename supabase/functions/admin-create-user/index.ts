@@ -100,7 +100,7 @@ serve(async (req) => {
               <p>Looking forward to working with you,<br>
               <strong>Trevor Connell</strong><br>
               EventPix Operations</p>
-            `,
+               `,
           }),
         });
         const emailResult = await emailRes.json();
@@ -112,6 +112,20 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
+        // Log to email_logs
+        await admin.from("email_logs").insert({
+          email_type: "team_invite",
+          recipient_email: email,
+          recipient_name: email,
+          subject: "Set your EventPix password",
+          body_preview: "Set your EventPix password",
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          direction: "outbound",
+        }).then(({ error: logErr }) => {
+          if (logErr) console.error("Failed to log email:", logErr);
+        });
       } else {
         return new Response(
           JSON.stringify({ success: false, error: "Email service not configured" }),
