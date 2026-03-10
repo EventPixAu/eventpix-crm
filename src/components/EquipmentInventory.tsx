@@ -367,6 +367,15 @@ export function EquipmentInventory() {
               <SelectItem value="photographer">Photographer Gear</SelectItem>
             </SelectContent>
           </Select>
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search equipment..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
 
         <Table>
