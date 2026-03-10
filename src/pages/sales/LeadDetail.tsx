@@ -21,6 +21,7 @@ import {
   StickyNote,
   Mail,
   Eye,
+  Copy,
   ExternalLink,
   ArrowRightCircle,
   XCircle,
