@@ -3467,6 +3467,7 @@ export type Database = {
           assigned_to: string | null
           budget: number | null
           client_id: string | null
+          client_portal_token: string | null
           converted_job_id: string | null
           created_at: string | null
           created_by: string | null
@@ -3499,6 +3500,7 @@ export type Database = {
           assigned_to?: string | null
           budget?: number | null
           client_id?: string | null
+          client_portal_token?: string | null
           converted_job_id?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -3531,6 +3533,7 @@ export type Database = {
           assigned_to?: string | null
           budget?: number | null
           client_id?: string | null
+          client_portal_token?: string | null
           converted_job_id?: string | null
           created_at?: string | null
           created_by?: string | null
