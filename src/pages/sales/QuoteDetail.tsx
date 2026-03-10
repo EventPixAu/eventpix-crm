@@ -445,7 +445,7 @@ export default function QuoteDetail() {
   // Lead/job info for right panel - use lead data with sessions
   const leadSessions = leadData?.event_sessions || [];
   const firstSession = leadSessions[0];
-  const jobName = leadData?.lead_name || quote.quote_number || 'Quote';
+  const jobName = leadData?.lead_name || quote.quote_number || 'Budget';
   const eventDate = firstSession?.session_date || leadData?.tentative_date || leadData?.estimated_event_date;
   const eventTime = firstSession?.start_time || leadData?.tentative_time;
   const venueAddress = leadData?.venue_text || leadData?.venue_address;

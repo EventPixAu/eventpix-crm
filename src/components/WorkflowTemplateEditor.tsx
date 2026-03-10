@@ -43,7 +43,7 @@ interface WorkflowTemplateEditorProps {
 }
 
 const AUTO_TRIGGER_OPTIONS = [
-  { value: 'quote_accepted', label: 'Quote Accepted' },
+  { value: 'quote_accepted', label: 'Budget Accepted' },
   { value: 'contract_signed', label: 'Contract Signed' },
   { value: 'event_date', label: 'Event Date' },
   { value: 'invoice_paid', label: 'Invoice Paid' },
