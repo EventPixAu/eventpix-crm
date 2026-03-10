@@ -21,6 +21,7 @@ import {
   StickyNote,
   Mail,
   Eye,
+  Copy,
   ExternalLink,
   ArrowRightCircle,
   XCircle,
@@ -240,6 +241,25 @@ export default function LeadDetail(): JSX.Element {
             >
               <Eye className="h-4 w-4 mr-2" />
               View Client Portal
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              title="Copy portal link"
+              onClick={() => {
+                const eventToken = linkedEvent?.client_portal_token;
+                const leadToken = (lead as any)?.client_portal_token;
+                const token = eventToken || leadToken;
+                if (token) {
+                  const url = `${getPublicBaseUrl()}/${eventToken ? 'event' : 'lead'}/${token}`;
+                  navigator.clipboard.writeText(url);
+                  toast({ title: 'Link copied', description: 'Portal link copied to clipboard.' });
+                } else {
+                  toast({ title: 'No link available', description: 'No portal token found.' });
+                }
+              }}
+            >
+              <Copy className="h-4 w-4" />
             </Button>
             <MarkAsClientButton
               clientId={client?.id}
