@@ -79,6 +79,7 @@ import {
   CompanyStatusBadgeDropdown,
   LeadNotesPanel,
   LeadFilesPanel,
+  LeadAssignmentsPanel,
 } from '@/components/lead';
 
 export default function LeadDetail(): JSX.Element {
