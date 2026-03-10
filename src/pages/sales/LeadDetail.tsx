@@ -64,6 +64,9 @@ import {
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { useLeadEmailLogs } from '@/hooks/useEmailLogs';
 import { useLeadContacts } from '@/hooks/useLeadContacts';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
@@ -103,7 +106,21 @@ export default function LeadDetail(): JSX.Element {
   const { data: emailLogs = [] } = useLeadEmailLogs(isCreateMode ? undefined : id);
   const { data: leadContacts = [] } = useLeadContacts(isCreateMode ? undefined : id);
   
-  
+  // Query for linked event's client portal token
+  const { data: linkedEvent } = useQuery({
+    queryKey: ['lead-linked-event', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('id, client_portal_token')
+        .eq('lead_id', id!)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id && !isCreateMode,
+  });
+
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
   const [isInitWorkflowOpen, setIsInitWorkflowOpen] = useState(false);
@@ -203,6 +220,20 @@ export default function LeadDetail(): JSX.Element {
             <Button variant="outline" onClick={() => navigate('/sales/leads')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const token = linkedEvent?.client_portal_token;
+                if (token) {
+                  window.open(`${getPublicBaseUrl()}/event/${token}`, '_blank');
+                } else {
+                  toast({ title: 'Client Portal not available', description: 'This lead has not been converted to a job yet, or the portal token is missing.' });
+                }
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Client Portal
             </Button>
             <MarkAsClientButton
               clientId={client?.id}
