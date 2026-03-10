@@ -389,7 +389,7 @@ export default function LeadDetail(): JSX.Element {
               navigate(`/sales/quotes/new?${params.toString()}`);
             }}
             isEmpty={quotes.length === 0}
-            emptyMessage="No quotes yet"
+            emptyMessage="No budgets yet"
             defaultOpen={quotes.length > 0}
           >
             <div className="space-y-2">
