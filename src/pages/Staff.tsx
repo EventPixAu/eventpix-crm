@@ -57,7 +57,7 @@ import {
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
