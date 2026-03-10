@@ -14,8 +14,8 @@
  * - Sales: CRM + Sales sections only (no Operations or Administration)
  * - Crew: Simplified job-focused navigation
  */
-import { ReactNode, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ReactNode, useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
