@@ -117,30 +117,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
  * - Crew: Photographer-focused mobile dashboard
  */
 function RoleBasedDashboard() {
-  const { role, isAdmin, loading } = useAuth();
+  const { role, isAdmin, loading, user } = useAuth();
   
-  // Wait for role to fully resolve before deciding where to redirect
-  if (loading || role === null) {
-    // If loading is done but role is still null, give a brief grace period
-    // before assuming client user. This prevents race-condition redirects.
+  // Still resolving role — show spinner instead of prematurely redirecting
+  if (loading) {
     return (
-      <RoleResolutionGate>
-        {(resolvedRole, resolvedIsAdmin) => {
-          if (resolvedIsAdmin || resolvedRole === 'operations') {
-            return <Navigate to="/crm/emails" replace />;
-          }
-          if (resolvedRole === 'sales') {
-            return <Navigate to="/sales/dashboard" replace />;
-          }
-          if (resolvedRole === 'crew') {
-            return <PhotographerDashboard />;
-          }
-          return <Navigate to="/portal" replace />;
-        }}
-      </RoleResolutionGate>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
     );
   }
-  
+
   // Admin and Operations default to CRM Emails inbox
   if (isAdmin || role === 'operations') {
     return <Navigate to="/crm/emails" replace />;
