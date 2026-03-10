@@ -69,6 +69,7 @@ import ContractDetail from "./pages/sales/ContractDetail";
 import QuoteTemplates from "./pages/sales/QuoteTemplates";
 import SalesWorkflowTemplates from "./pages/sales/SalesWorkflowTemplates";
 import LeadDetail from "./pages/sales/LeadDetail";
+import LeadPortalPreview from "./pages/sales/LeadPortalPreview";
 import ContractTemplates from "./pages/admin/ContractTemplates";
 import EmailTemplates from "./pages/admin/EmailTemplates";
 import DayLoadView from "./pages/admin/DayLoadView";
@@ -207,6 +208,7 @@ function AppRoutes() {
       {/* Clients moved to CRM > Companies */}
       <Route path="/sales/leads" element={<ProtectedRoute><SalesGuard><LeadList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/leads/:id" element={<ProtectedRoute><SalesGuard><LeadDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/sales/leads/:id/portal-preview" element={<ProtectedRoute><SalesGuard><LeadPortalPreview /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/quotes" element={<ProtectedRoute><SalesGuard><QuoteList /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/quotes/:id" element={<ProtectedRoute><SalesGuard><QuoteDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/sales/products" element={<ProtectedRoute><SalesGuard><ProductList /></SalesGuard></ProtectedRoute>} />

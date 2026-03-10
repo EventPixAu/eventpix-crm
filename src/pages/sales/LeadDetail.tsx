@@ -228,7 +228,8 @@ export default function LeadDetail(): JSX.Element {
                 if (token) {
                   window.open(`${getPublicBaseUrl()}/event/${token}`, '_blank');
                 } else {
-                  toast({ title: 'Client Portal not available', description: 'This lead has not been converted to a job yet, or the portal token is missing.' });
+                  // No converted event yet — open the preview
+                  window.open(`/sales/leads/${id}/portal-preview`, '_blank');
                 }
               }}
             >
