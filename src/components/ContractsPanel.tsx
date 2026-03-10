@@ -75,6 +75,7 @@ import {
 } from '@/hooks/useContractTemplates';
 import { useQueryClient } from '@tanstack/react-query';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
 
 interface ContractsPanelProps {
   leadId?: string;
