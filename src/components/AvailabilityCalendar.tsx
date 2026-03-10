@@ -164,10 +164,14 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
       date: selectedDate,
       status,
       notes: editNotes || undefined,
+      unavailableFrom: editFromTime || null,
+      unavailableUntil: editUntilTime || null,
     });
     
     setSelectedDate(null);
     setEditNotes('');
+    setEditFromTime('');
+    setEditUntilTime('');
     setPendingStatus(null);
   };
   
