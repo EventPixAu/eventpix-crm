@@ -14,8 +14,8 @@
  * - Sales: CRM + Sales sections only (no Operations or Administration)
  * - Crew: Simplified job-focused navigation
  */
-import { ReactNode, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ReactNode, useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
@@ -273,10 +273,20 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
   });
   const { user, signOut, isAdmin, isSales, isOperations, isCrew, role } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
+
+  // Scroll to top on every route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -459,10 +469,13 @@ export function AppLayout({ children }: AppLayoutProps): JSX.Element {
       </aside>
 
       {/* Main Content */}
-      <main className={cn(
-        "pt-14 min-h-screen transition-all duration-300",
-        mainPadding
-      )}>
+      <main
+        ref={mainRef}
+        className={cn(
+          "pt-14 min-h-screen transition-all duration-300",
+          mainPadding
+        )}
+      >
         <div className="p-3 sm:p-4 md:p-6 xl:p-8">
           {children}
         </div>
