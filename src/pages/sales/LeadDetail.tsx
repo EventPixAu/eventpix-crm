@@ -438,7 +438,7 @@ export default function LeadDetail(): JSX.Element {
                             onClick={async (e) => {
                               e.preventDefault();
                               await updateQuote.mutateAsync({ id: quote.id, status: 'rejected' });
-                              toast({ title: 'Quote marked as rejected' });
+                              toast({ title: 'Budget marked as rejected' });
                             }}
                             className="text-destructive focus:text-destructive"
                           >

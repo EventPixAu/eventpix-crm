@@ -134,7 +134,7 @@ export default function PublicAcceptQuote() {
       }
 
       setAccepted(true);
-      toast({ title: 'Quote accepted successfully!' });
+      toast({ title: 'Budget accepted successfully!' });
 
       // Send confirmation emails (fire and forget - don't block UI)
       if (quote?.id) {

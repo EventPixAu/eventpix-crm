@@ -330,7 +330,7 @@ export default function SalesDashboard() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate text-sm">
-                          {(quote as any).leads?.lead_name || 'Quote'}
+                          {(quote as any).leads?.lead_name || 'Budget'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           ${((quote as any).grand_total || 0).toLocaleString()}

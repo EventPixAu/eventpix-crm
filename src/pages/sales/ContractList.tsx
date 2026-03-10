@@ -187,7 +187,7 @@ export default function ContractList() {
                       <TableCell>
                         <div className="text-sm text-muted-foreground">
                           {(contract.quote as any)?.quote_number && (
-                            <span>Quote: {(contract.quote as any).quote_number}</span>
+                            <span>Budget: {(contract.quote as any).quote_number}</span>
                           )}
                         </div>
                       </TableCell>

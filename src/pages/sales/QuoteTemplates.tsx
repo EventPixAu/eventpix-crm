@@ -169,8 +169,8 @@ export default function QuoteTemplates() {
   return (
     <AppLayout>
       <PageHeader
-        title="Quote Templates"
-        description="Create and manage reusable quote templates"
+        title="Budget Templates"
+        description="Create and manage reusable budget templates"
         actions={
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">

@@ -141,7 +141,7 @@ export default function QuoteList() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Quote #</TableHead>
+                  <TableHead>Budget #</TableHead>
                   <TableHead>Lead</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Amount</TableHead>

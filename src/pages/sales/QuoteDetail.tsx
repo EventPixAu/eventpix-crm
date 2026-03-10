@@ -1090,7 +1090,7 @@ export default function QuoteDetail() {
         clientEmail={primaryContactEmail}
         clientName={primaryContactName || clientName}
         relatedQuoteId={quote.id}
-        defaultSubject={`Quote: ${quote.quote_number || quote.id.slice(0, 8)}`}
+        defaultSubject={`Budget: ${quote.quote_number || quote.id.slice(0, 8)}`}
         context="quote"
         mergeContext={{
           eventName: leadData?.lead_name || quote.quote_number,
