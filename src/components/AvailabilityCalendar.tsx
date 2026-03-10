@@ -434,6 +434,30 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
                     </ToggleGroupItem>
                   </ToggleGroup>
                   
+                  {/* Time range for partial-day unavailability */}
+                  {(status === 'unavailable' || status === 'limited') && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">Time range (optional — leave blank for all day)</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={editFromTime}
+                          onChange={(e) => setEditFromTime(e.target.value)}
+                          className="text-sm h-8"
+                          placeholder="From"
+                        />
+                        <span className="text-xs text-muted-foreground">to</span>
+                        <Input
+                          type="time"
+                          value={editUntilTime}
+                          onChange={(e) => setEditUntilTime(e.target.value)}
+                          className="text-sm h-8"
+                          placeholder="Until"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label className="text-xs">Notes (optional)</Label>
                     <Textarea
@@ -445,14 +469,16 @@ export function AvailabilityCalendar({ userId, readOnly = false }: AvailabilityC
                     />
                   </div>
                   
-                  {editNotes !== (dayAvailability?.notes || '') && (
+                  {(editNotes !== (dayAvailability?.notes || '') || 
+                    editFromTime !== (dayAvailability?.unavailable_from?.slice(0, 5) || '') ||
+                    editUntilTime !== (dayAvailability?.unavailable_until?.slice(0, 5) || '')) && (
                     <Button 
                       size="sm" 
                       className="w-full"
                       onClick={() => handleSetAvailability(status || 'available')}
                       disabled={setAvailability.isPending}
                     >
-                      Save Notes
+                      Save Changes
                     </Button>
                   )}
                 </div>
