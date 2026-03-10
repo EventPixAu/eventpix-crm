@@ -847,7 +847,7 @@ export default function EventDetail() {
                   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
                   const initial = name.charAt(0).toUpperCase();
                   
-                  const confirmationStatus = (assignment as any).confirmation_status || 'pending';
+                  const confirmationStatus = assignment.confirmation_status || 'pending';
                   
                   return (
                     <div
