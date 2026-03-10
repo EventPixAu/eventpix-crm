@@ -56,6 +56,8 @@ export default function CrmEmails() {
   // Inbox filter state
   const [inboxFilter, setInboxFilter] = useState<'all' | 'crm' | 'sales' | 'operations'>('all');
   const [inboxSearch, setInboxSearch] = useState('');
+  const [sentSearch, setSentSearch] = useState('');
+  const [sentStatusFilter, setSentStatusFilter] = useState('all');
 
   // Categorize inbound replies
   const categorizedReplies = useMemo(() => {
