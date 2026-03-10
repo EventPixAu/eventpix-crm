@@ -889,11 +889,18 @@ export default function EventDetail() {
                                 size="sm"
                                 className="h-8"
                                 onClick={async () => {
-                                  const { error } = await supabase
+                                  const { data: updated, error } = await supabase
                                     .from('event_assignments')
                                     .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
-                                    .eq('id', assignment.id);
-                                  if (!error) {
+                                    .eq('id', assignment.id)
+                                    .select();
+                                  if (error) {
+                                    console.error('Failed to confirm assignment:', error);
+                                    toast({ title: 'Failed to confirm', description: error.message, variant: 'destructive' });
+                                  } else if (!updated || updated.length === 0) {
+                                    console.error('Update returned 0 rows - possible RLS issue');
+                                    toast({ title: 'Failed to confirm', description: 'No rows updated. Check permissions.', variant: 'destructive' });
+                                  } else {
                                     queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
                                     toast({ title: 'Marked as confirmed' });
                                   }
