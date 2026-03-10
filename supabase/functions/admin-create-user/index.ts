@@ -324,13 +324,29 @@ serve(async (req) => {
                EventPix Operations</p>
              `,
            }),
-         });
-         const emailResult = await emailRes.json();
-         console.log("Resend invite email result:", emailResult);
-       } catch (emailErr) {
-         console.error("Failed to send invite email via Resend:", emailErr);
-       }
-     } else {
+          });
+          const emailResult = await emailRes.json();
+          console.log("Resend invite email result:", emailResult);
+
+          // Log to email_logs
+          if (emailRes.ok) {
+            await admin.from("email_logs").insert({
+              email_type: "team_invite",
+              recipient_email: inv.email,
+              recipient_name: inv.email,
+              subject: "You're invited to join EventPix",
+              body_preview: `Invited to join EventPix as ${inv.role}`,
+              status: "sent",
+              sent_at: new Date().toISOString(),
+              direction: "outbound",
+            }).then(({ error: logErr }) => {
+              if (logErr) console.error("Failed to log email:", logErr);
+            });
+          }
+        } catch (emailErr) {
+          console.error("Failed to send invite email via Resend:", emailErr);
+        }
+      } else {
        console.warn("RESEND_API_KEY not configured, invite email not sent");
      }
     }
