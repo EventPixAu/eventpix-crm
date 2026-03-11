@@ -84,7 +84,7 @@ export function SendPortalLinkButton({
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
+      <Button variant="outline" size={buttonSize} className={className} onClick={() => setConfirmOpen(true)}>
         <ExternalLink className="h-4 w-4 mr-1.5" />
         Send Portal Link
       </Button>
