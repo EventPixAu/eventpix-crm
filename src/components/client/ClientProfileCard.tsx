@@ -164,11 +164,18 @@ export function ClientProfileCard({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex flex-wrap gap-2 pt-4 border-t">
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="h-4 w-4 mr-1.5" />
             Edit
           </Button>
+          
+          <SendPortalLinkButton
+            clientId={client.id}
+            clientName={client.business_name}
+            contactEmail={client.primary_contact_email || client.company_email}
+            contactName={client.primary_contact_name}
+          />
           
           {canDelete && (
             <Button variant="outline" size="sm" onClick={onDelete}>
