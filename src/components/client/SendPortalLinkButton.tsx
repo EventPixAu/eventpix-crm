@@ -22,7 +22,7 @@ interface SendPortalLinkButtonProps {
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
-
+export function SendPortalLinkButton({
   clientId,
   clientName,
   contactEmail,
