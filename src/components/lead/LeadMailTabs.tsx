@@ -92,7 +92,8 @@ export function LeadMailTabs({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
-      .replace(/\{\{client_name\}\}/gi, recipientName || defaultRecipientName || '')
+      .replace(/\{\{client_name\}\}/gi, contactFirstName)
+      .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || defaultRecipientName || '')
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{contact\.name\}\}/gi, recipientName || defaultRecipientName || '')
