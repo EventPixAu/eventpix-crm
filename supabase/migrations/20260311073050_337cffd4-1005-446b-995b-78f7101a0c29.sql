@@ -1,0 +1,1 @@
+DELETE FROM contracts WHERE id = '49d2ab79-2a70-430d-a9d5-ec9f68938f2f';
