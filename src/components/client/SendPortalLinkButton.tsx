@@ -13,7 +13,16 @@ import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { useToast } from '@/hooks/use-toast';
 import { getPublicBaseUrl } from '@/lib/utils';
 
-export function SendPortalLinkButton({
+interface SendPortalLinkButtonProps {
+  clientId: string;
+  clientName: string;
+  contactEmail: string | null | undefined;
+  contactName: string | null | undefined;
+  className?: string;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+}
+
+
   clientId,
   clientName,
   contactEmail,
