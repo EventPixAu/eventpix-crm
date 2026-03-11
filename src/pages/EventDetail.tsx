@@ -787,6 +787,8 @@ export default function EventDetail() {
                       clientName={(event as any)?.client_name || ''}
                       contactEmail={primaryContactEmail}
                       contactName={primaryContactName}
+                      className="w-full justify-start"
+                      buttonSize="default"
                     />
                   )}
                   {isAdmin && assignments.length > 0 && (
