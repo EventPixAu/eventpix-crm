@@ -96,7 +96,8 @@ export function LeadMailTabs({
       .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || defaultRecipientName || '')
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
-      .replace(/\{\{contact\.name\}\}/gi, recipientName || defaultRecipientName || '')
+      .replace(/\{\{contact\.name\}\}/gi, contactFirstName)
+      .replace(/\{\{contact_name\}\}/gi, contactFirstName)
       .replace(/\{\{contact\.email\}\}/gi, recipientEmail || defaultRecipientEmail || '')
       .replace(/\{\{lead\.name\}\}/gi, leadName || '')
       .replace(/\{\{lead_or_job_name\}\}/gi, leadName || '');
