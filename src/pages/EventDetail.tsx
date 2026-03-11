@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
+import { SendPortalLinkButton } from '@/components/client/SendPortalLinkButton';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { InvoiceStatusBadge } from '@/components/ui/invoice-status-badge';
@@ -779,6 +780,16 @@ export default function EventDetail() {
                       <Mail className="h-4 w-4 mr-2" />
                       Send Email
                     </Button>
+                  )}
+                  {isAdmin && event?.client_id && primaryContactEmail && (
+                    <SendPortalLinkButton
+                      clientId={event.client_id}
+                      clientName={(event as any)?.client_name || ''}
+                      contactEmail={primaryContactEmail}
+                      contactName={primaryContactName}
+                      className="w-full justify-start"
+                      buttonSize="default"
+                    />
                   )}
                   {isAdmin && assignments.length > 0 && (
                     <Button 

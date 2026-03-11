@@ -17,6 +17,8 @@ interface SendPortalLinkButtonProps {
   clientName: string;
   contactEmail: string | null | undefined;
   contactName: string | null | undefined;
+  className?: string;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
 function getPublicBaseUrl(): string {
@@ -35,6 +37,8 @@ export function SendPortalLinkButton({
   clientName,
   contactEmail,
   contactName,
+  className,
+  buttonSize = 'sm',
 }: SendPortalLinkButtonProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const sendEmail = useSendCrmEmail();
@@ -80,7 +84,7 @@ export function SendPortalLinkButton({
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
+      <Button variant="outline" size={buttonSize} className={className} onClick={() => setConfirmOpen(true)}>
         <ExternalLink className="h-4 w-4 mr-1.5" />
         Send Portal Link
       </Button>
