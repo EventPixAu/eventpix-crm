@@ -37,6 +37,8 @@ export function SendPortalLinkButton({
   clientName,
   contactEmail,
   contactName,
+  className,
+  buttonSize = 'sm',
 }: SendPortalLinkButtonProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const sendEmail = useSendCrmEmail();
