@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { useToast } from '@/hooks/use-toast';
+import { getPublicBaseUrl } from '@/lib/utils';
 
 interface SendPortalLinkButtonProps {
   clientId: string;
@@ -19,17 +20,6 @@ interface SendPortalLinkButtonProps {
   contactName: string | null | undefined;
   className?: string;
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
-}
-
-function getPublicBaseUrl(): string {
-  const host = window.location.hostname;
-  if (host.includes('lovable.app')) {
-    return 'https://eventpix-crm.lovable.app';
-  }
-  if (host === 'app.eventpix.com.au') {
-    return 'https://app.eventpix.com.au';
-  }
-  return window.location.origin;
 }
 
 export function SendPortalLinkButton({
