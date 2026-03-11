@@ -781,6 +781,14 @@ export default function EventDetail() {
                       Send Email
                     </Button>
                   )}
+                  {isAdmin && event?.client_id && primaryContactEmail && (
+                    <SendPortalLinkButton
+                      clientId={event.client_id}
+                      clientName={(event as any)?.client_name || ''}
+                      contactEmail={primaryContactEmail}
+                      contactName={primaryContactName}
+                    />
+                  )}
                   {isAdmin && assignments.length > 0 && (
                     <Button 
                       variant="outline" 
