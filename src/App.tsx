@@ -143,8 +143,34 @@ function RoleBasedDashboard() {
     return <PhotographerDashboard />;
   }
   
-  // No staff role — likely a client user, send to client portal
-  return <Navigate to="/portal" replace />;
+  // No staff role resolved — show a helpful fallback instead of dumping into client portal
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="text-center space-y-4 max-w-md">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+        <h2 className="text-lg font-semibold text-foreground">Setting up your account…</h2>
+        <p className="text-sm text-muted-foreground">
+          If this takes more than a few seconds, your role may not be assigned yet. Please contact an admin.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-sm text-primary hover:underline"
+        >
+          Retry
+        </button>
+        <button
+          onClick={async () => {
+            const { supabase } = await import('@/integrations/supabase/client');
+            await supabase.auth.signOut();
+            window.location.href = '/auth';
+          }}
+          className="block mx-auto text-sm text-muted-foreground hover:text-foreground"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function AppRoutes() {
