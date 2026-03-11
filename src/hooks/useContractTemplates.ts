@@ -136,7 +136,8 @@ function formatCurrency(value: number | null | undefined): string {
 export const AVAILABLE_MERGE_FIELDS = [
   // Client fields
   { field: '{{client.business_name}}', label: 'Client Business Name', category: 'Client' },
-  { field: '{{client.primary_contact_name}}', label: 'Primary Contact Name', category: 'Client' },
+  { field: '{{client.first_name}}', label: 'Contact First Name', category: 'Client' },
+  { field: '{{client.primary_contact_name}}', label: 'Primary Contact Full Name', category: 'Client' },
   { field: '{{client.primary_contact_email}}', label: 'Primary Contact Email', category: 'Client' },
   { field: '{{client.primary_contact_phone}}', label: 'Primary Contact Phone', category: 'Client' },
   { field: '{{client.billing_address}}', label: 'Billing Address', category: 'Client' },
@@ -173,7 +174,10 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   let rendered = html;
   
   // Client fields
+  const clientFirstName = (context.client?.primary_contact_name || '').split(' ')[0];
   rendered = rendered.replace(/\{\{client\.business_name\}\}/g, context.client?.business_name || '');
+  rendered = rendered.replace(/\{\{client\.first_name\}\}/g, clientFirstName);
+  rendered = rendered.replace(/\{\{client_name\}\}/g, clientFirstName);
   rendered = rendered.replace(/\{\{client\.primary_contact_name\}\}/g, context.client?.primary_contact_name || '');
   rendered = rendered.replace(/\{\{client\.primary_contact_email\}\}/g, context.client?.primary_contact_email || '');
   rendered = rendered.replace(/\{\{client\.primary_contact_phone\}\}/g, context.client?.primary_contact_phone || '');

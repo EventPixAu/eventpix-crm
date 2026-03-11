@@ -126,7 +126,8 @@ export function SendOpsEmailDialog({
       .replace(/\{\{venue_address\}\}/gi, eventData.venue_address || '')
       .replace(/\{\{event\.venue_address\}\}/gi, eventData.venue_address || '')
       // Client fields - both formats
-      .replace(/\{\{client_name\}\}/gi, eventData.client_name)
+      .replace(/\{\{client_name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
+      .replace(/\{\{client\.first_name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
       .replace(/\{\{client\.name\}\}/gi, eventData.client_name)
       .replace(/\{\{client\.business_name\}\}/gi, eventData.client_name)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, primaryContactName)

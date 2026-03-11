@@ -264,7 +264,8 @@ export function SendEmailDialog({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
-      .replace(/\{\{client_name\}\}/gi, recipientName)
+      .replace(/\{\{client_name\}\}/gi, contactFirstName)
+      .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName)
       .replace(/\{\{client\.business_name\}\}/gi, clientName || '')
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
@@ -526,7 +527,7 @@ export function SendEmailDialog({
                 rows={8}
               />
               <p className="text-xs text-muted-foreground">
-                Use {'{{client_name}}'} to insert the client's name. Merge fields are personalised per recipient.
+                Use {'{{client_name}}'} for first name. Merge fields are personalised per recipient.
               </p>
             </div>
 

@@ -92,7 +92,8 @@ export function LeadMailTabs({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
-      .replace(/\{\{client_name\}\}/gi, recipientName || defaultRecipientName || '')
+      .replace(/\{\{client_name\}\}/gi, contactFirstName)
+      .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName || defaultRecipientName || '')
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{contact\.name\}\}/gi, recipientName || defaultRecipientName || '')
@@ -233,7 +234,7 @@ export function LeadMailTabs({
                 rows={6}
               />
               <p className="text-xs text-muted-foreground">
-                Use {'{{client_name}}'} for contact name
+                Use {'{{client_name}}'} for first name
               </p>
             </div>
 
