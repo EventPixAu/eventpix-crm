@@ -13,6 +13,7 @@ import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems } from '@/hooks/useWorksheets';
 import { useMyCrewChecklist } from '@/hooks/useCrewChecklists';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
+import { useEventDocuments } from '@/hooks/useEventDocuments';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -26,6 +27,7 @@ export default function EventRunSheet() {
   
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
+  const { data: allDocuments = [] } = useEventDocuments(id);
   // Crew should NOT see admin workflow worksheets; they have their own role-based checklist.
   // Disable worksheet queries for crew to avoid mixing old/general checklist items into their printout.
   const worksheetsEventId = isAdmin ? id : undefined;
@@ -37,6 +39,11 @@ export default function EventRunSheet() {
   const crewChecklistEventId = isAdmin ? undefined : id;
   const { data: myCrewChecklist } = useMyCrewChecklist(crewChecklistEventId);
   
+  // Filter documents to only show crew-visible ones for non-admin users
+  const crewDocuments = useMemo(() => {
+    if (isAdmin) return allDocuments;
+    return allDocuments.filter(doc => doc.is_visible_to_crew);
+  }, [allDocuments, isAdmin]);
   const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
 
@@ -175,6 +182,18 @@ export default function EventRunSheet() {
           {event.venue_address && (
             <p className="text-muted-foreground print:text-gray-600">{event.venue_address}</p>
           )}
+          {(event as any).venue_access_notes && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Access Notes</p>
+              <p className="text-sm">{(event as any).venue_access_notes}</p>
+            </div>
+          )}
+          {(event as any).venue_parking_notes && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Parking Notes</p>
+              <p className="text-sm">{(event as any).venue_parking_notes}</p>
+            </div>
+          )}
           {event.notes && (
             <p className="text-sm mt-2 italic">{event.notes}</p>
           )}
@@ -194,6 +213,53 @@ export default function EventRunSheet() {
           <section className="mb-6 print-section">
             <h2 className="text-lg font-semibold mb-3 border-b pb-1">Coverage Details</h2>
             <p className="whitespace-pre-wrap">{event.coverage_details}</p>
+          </section>
+        )}
+
+        {/* Team Brief */}
+        {(event as any).brief_content && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Team Brief</h2>
+            <div className="whitespace-pre-wrap text-sm">{(event as any).brief_content}</div>
+          </section>
+        )}
+
+        {/* Photography Instructions */}
+        {(event as any).photography_brief && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Photography Instructions</h2>
+            <p className="whitespace-pre-wrap text-sm">{(event as any).photography_brief}</p>
+          </section>
+        )}
+
+        {/* Dress Code */}
+        {(event as any).dress_code && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Dress Code</h2>
+            <p className="text-sm">{(event as any).dress_code}</p>
+          </section>
+        )}
+
+        {/* Team Documents */}
+        {crewDocuments.length > 0 && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Documents</h2>
+            <ul className="space-y-1 text-sm">
+              {crewDocuments.map((doc) => (
+                <li key={doc.id} className="flex items-start gap-2 py-1">
+                  <span className="text-muted-foreground print:text-gray-600">•</span>
+                  <div>
+                    <span className="font-medium">{doc.file_name}</span>
+                    {doc.description && (
+                      <span className="text-muted-foreground print:text-gray-600"> — {doc.description}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground print:text-gray-500 mt-2 italic">
+              Download documents from the app before heading to the event.
+            </p>
           </section>
         )}
 
