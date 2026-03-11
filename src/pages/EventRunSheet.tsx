@@ -182,6 +182,18 @@ export default function EventRunSheet() {
           {event.venue_address && (
             <p className="text-muted-foreground print:text-gray-600">{event.venue_address}</p>
           )}
+          {(event as any).venue_access_notes && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Access Notes</p>
+              <p className="text-sm">{(event as any).venue_access_notes}</p>
+            </div>
+          )}
+          {(event as any).venue_parking_notes && (
+            <div className="mt-2">
+              <p className="text-sm font-medium">Parking Notes</p>
+              <p className="text-sm">{(event as any).venue_parking_notes}</p>
+            </div>
+          )}
           {event.notes && (
             <p className="text-sm mt-2 italic">{event.notes}</p>
           )}
