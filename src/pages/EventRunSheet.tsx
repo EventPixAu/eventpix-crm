@@ -13,6 +13,7 @@ import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems } from '@/hooks/useWorksheets';
 import { useMyCrewChecklist } from '@/hooks/useCrewChecklists';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
+import { useEventDocuments } from '@/hooks/useEventDocuments';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
