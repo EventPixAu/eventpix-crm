@@ -527,7 +527,7 @@ export function SendEmailDialog({
                 rows={8}
               />
               <p className="text-xs text-muted-foreground">
-                Use {'{{client_name}}'} to insert the client's name. Merge fields are personalised per recipient.
+                Use {'{{client_name}}'} for first name. Merge fields are personalised per recipient.
               </p>
             </div>
 

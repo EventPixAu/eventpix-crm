@@ -174,7 +174,10 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   let rendered = html;
   
   // Client fields
+  const clientFirstName = (context.client?.primary_contact_name || '').split(' ')[0];
   rendered = rendered.replace(/\{\{client\.business_name\}\}/g, context.client?.business_name || '');
+  rendered = rendered.replace(/\{\{client\.first_name\}\}/g, clientFirstName);
+  rendered = rendered.replace(/\{\{client_name\}\}/g, clientFirstName);
   rendered = rendered.replace(/\{\{client\.primary_contact_name\}\}/g, context.client?.primary_contact_name || '');
   rendered = rendered.replace(/\{\{client\.primary_contact_email\}\}/g, context.client?.primary_contact_email || '');
   rendered = rendered.replace(/\{\{client\.primary_contact_phone\}\}/g, context.client?.primary_contact_phone || '');

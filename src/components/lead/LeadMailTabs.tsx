@@ -234,7 +234,7 @@ export function LeadMailTabs({
                 rows={6}
               />
               <p className="text-xs text-muted-foreground">
-                Use {'{{client_name}}'} for contact name
+                Use {'{{client_name}}'} for first name
               </p>
             </div>
 

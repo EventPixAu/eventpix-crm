@@ -91,7 +91,8 @@ export function SendContactEmailDialog({
       '{{contact.first_name}}': contactFirstName || contactName.split(' ')[0] || '',
       '{{contact.name}}': contactName,
       '{{contact_name}}': contactName,
-      '{{client_name}}': companyName || '',
+      '{{client_name}}': (contactName || '').split(' ')[0],
+      '{{client.first_name}}': (contactName || '').split(' ')[0],
       '{{company_name}}': companyName || '',
     };
 
