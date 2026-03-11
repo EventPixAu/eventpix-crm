@@ -44,6 +44,7 @@ export default function EventRunSheet() {
     if (isAdmin) return allDocuments;
     return allDocuments.filter(doc => doc.is_visible_to_crew);
   }, [allDocuments, isAdmin]);
+  const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
 
   const handlePrint = () => {
