@@ -204,6 +204,53 @@ export default function EventRunSheet() {
           </section>
         )}
 
+        {/* Team Brief */}
+        {(event as any).brief_content && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Team Brief</h2>
+            <div className="whitespace-pre-wrap text-sm">{(event as any).brief_content}</div>
+          </section>
+        )}
+
+        {/* Photography Instructions */}
+        {(event as any).photography_brief && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Photography Instructions</h2>
+            <p className="whitespace-pre-wrap text-sm">{(event as any).photography_brief}</p>
+          </section>
+        )}
+
+        {/* Dress Code */}
+        {(event as any).dress_code && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Dress Code</h2>
+            <p className="text-sm">{(event as any).dress_code}</p>
+          </section>
+        )}
+
+        {/* Team Documents */}
+        {crewDocuments.length > 0 && (
+          <section className="mb-6 print-section">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-1">Documents</h2>
+            <ul className="space-y-1 text-sm">
+              {crewDocuments.map((doc) => (
+                <li key={doc.id} className="flex items-start gap-2 py-1">
+                  <span className="text-muted-foreground print:text-gray-600">•</span>
+                  <div>
+                    <span className="font-medium">{doc.file_name}</span>
+                    {doc.description && (
+                      <span className="text-muted-foreground print:text-gray-600"> — {doc.description}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground print:text-gray-500 mt-2 italic">
+              Download documents from the app before heading to the event.
+            </p>
+          </section>
+        )}
+
         {/* Assignments */}
         <section className="mb-6 print-section">
           <h2 className="text-lg font-semibold mb-3 border-b pb-1">Assigned Staff</h2>
