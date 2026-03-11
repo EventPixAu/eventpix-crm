@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
+import { SendPortalLinkButton } from '@/components/client/SendPortalLinkButton';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { InvoiceStatusBadge } from '@/components/ui/invoice-status-badge';
