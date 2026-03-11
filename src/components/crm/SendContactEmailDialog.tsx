@@ -87,12 +87,13 @@ export function SendContactEmailDialog({
     let processedBody = template.body_html || template.body_text || '';
 
     // Replace merge fields
+    const firstName = contactFirstName || contactName.split(' ')[0] || '';
     const mergeFields: Record<string, string> = {
-      '{{contact.first_name}}': contactFirstName || contactName.split(' ')[0] || '',
-      '{{contact.name}}': contactName,
-      '{{contact_name}}': contactName,
-      '{{client_name}}': (contactName || '').split(' ')[0],
-      '{{client.first_name}}': (contactName || '').split(' ')[0],
+      '{{contact.first_name}}': firstName,
+      '{{contact.name}}': firstName,
+      '{{contact_name}}': firstName,
+      '{{client_name}}': firstName,
+      '{{client.first_name}}': firstName,
       '{{company_name}}': companyName || '',
     };
 
