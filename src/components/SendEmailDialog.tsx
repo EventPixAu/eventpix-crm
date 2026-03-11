@@ -264,7 +264,8 @@ export function SendEmailDialog({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
-      .replace(/\{\{client_name\}\}/gi, recipientName)
+      .replace(/\{\{client_name\}\}/gi, contactFirstName)
+      .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName)
       .replace(/\{\{client\.business_name\}\}/gi, clientName || '')
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
