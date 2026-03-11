@@ -27,6 +27,7 @@ export default function EventRunSheet() {
   
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
+  const { data: allDocuments = [] } = useEventDocuments(id);
   // Crew should NOT see admin workflow worksheets; they have their own role-based checklist.
   // Disable worksheet queries for crew to avoid mixing old/general checklist items into their printout.
   const worksheetsEventId = isAdmin ? id : undefined;
@@ -38,7 +39,11 @@ export default function EventRunSheet() {
   const crewChecklistEventId = isAdmin ? undefined : id;
   const { data: myCrewChecklist } = useMyCrewChecklist(crewChecklistEventId);
   
-  const worksheetIds = useMemo(() => worksheets.map((w) => w.id), [worksheets]);
+  // Filter documents to only show crew-visible ones for non-admin users
+  const crewDocuments = useMemo(() => {
+    if (isAdmin) return allDocuments;
+    return allDocuments.filter(doc => doc.is_visible_to_crew);
+  }, [allDocuments, isAdmin]);
   const { data: worksheetItems = [] } = useAllWorksheetItems(worksheetIds);
 
   const handlePrint = () => {
