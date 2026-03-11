@@ -136,7 +136,8 @@ function formatCurrency(value: number | null | undefined): string {
 export const AVAILABLE_MERGE_FIELDS = [
   // Client fields
   { field: '{{client.business_name}}', label: 'Client Business Name', category: 'Client' },
-  { field: '{{client.primary_contact_name}}', label: 'Primary Contact Name', category: 'Client' },
+  { field: '{{client.first_name}}', label: 'Contact First Name', category: 'Client' },
+  { field: '{{client.primary_contact_name}}', label: 'Primary Contact Full Name', category: 'Client' },
   { field: '{{client.primary_contact_email}}', label: 'Primary Contact Email', category: 'Client' },
   { field: '{{client.primary_contact_phone}}', label: 'Primary Contact Phone', category: 'Client' },
   { field: '{{client.billing_address}}', label: 'Billing Address', category: 'Client' },
