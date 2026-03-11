@@ -17,6 +17,8 @@ interface SendPortalLinkButtonProps {
   clientName: string;
   contactEmail: string | null | undefined;
   contactName: string | null | undefined;
+  className?: string;
+  buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
 function getPublicBaseUrl(): string {
