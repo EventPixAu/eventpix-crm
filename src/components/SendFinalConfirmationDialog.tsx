@@ -67,11 +67,20 @@ function formatTime12h(time?: string | null): string {
   }
 }
 
+const OFFSITE_ROLES = ['editor', 'retoucher', 'post-production'];
+
+function isOnsiteAssignment(a: any): boolean {
+  const role = (a.staff_role?.name || a.role_on_event || '').toLowerCase();
+  return !OFFSITE_ROLES.some(offsite => role.includes(offsite));
+}
+
 function buildConfirmationBody(
   eventData: SendFinalConfirmationDialogProps['eventData'],
   assignments: any[],
   primaryContactName: string,
 ): string {
+  // Filter to onsite crew only
+  const onsiteAssignments = assignments.filter(isOnsiteAssignment);
   const eventDate = eventData.event_date
     ? format(parseISO(eventData.event_date), 'EEEE, d MMMM yyyy')
     : 'TBC';
