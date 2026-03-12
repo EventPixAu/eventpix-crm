@@ -88,6 +88,10 @@ serve(async (req) => {
         phone: c.contact_phone,
         email: c.contact_email,
       })),
+      crew: assignments?.map((a: any) => ({
+        name: a.profiles?.full_name,
+        role: a.staff_roles?.name || a.role_on_event,
+      })),
       crew_count: assignments?.length || 0,
       notes: event.notes,
       coverage_hours: event.coverage_hours,
