@@ -48,6 +48,9 @@ export function useSendCrmEmail() {
       if (variables.contactId) {
         queryClient.invalidateQueries({ queryKey: ['contact-activities', variables.contactId] });
       }
+      if (variables.eventId) {
+        queryClient.invalidateQueries({ queryKey: ['event-email-action-statuses', variables.eventId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['email-logs'] });
       toast({ title: 'Email sent successfully' });
     },
