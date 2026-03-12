@@ -80,7 +80,8 @@ import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
-import { getPublicBaseUrl } from '@/lib/utils';
+import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
+import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -193,6 +194,7 @@ export default function EventDetail() {
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
   const { data: eventSessions = [] } = useEventSessions(id);
+  const { data: emailStatuses } = useEventEmailActionStatuses(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: auditLog = [] } = useAuditLog(id);
@@ -885,41 +887,62 @@ export default function EventDetail() {
                     </Link>
                   )}
                   {isAdmin && (
-                    <Button variant="outline" className="w-full justify-start" onClick={() => setSendEmailOpen(true)}>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Send Email
+                    <Button variant="outline" className="w-full justify-between" onClick={() => setSendEmailOpen(true)}>
+                      <span className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send Email
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.send_email.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.send_email.status).label}
+                        </Badge>
+                      )}
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button variant="outline" className="w-full justify-start" onClick={() => setFinalConfirmOpen(true)}>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Send Final Confirmation
+                    <Button variant="outline" className="w-full justify-between" onClick={() => setFinalConfirmOpen(true)}>
+                      <span className="flex items-center">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Send Final Confirmation
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.final_confirmation.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.final_confirmation.status).label}
+                        </Badge>
+                      )}
                     </Button>
                   )}
                   {isAdmin && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
-                    <SendPortalLinkButton
-                      clientId={event.client_id}
-                      clientName={(event as any)?.client_name || ''}
-                      contactEmail={primaryContactEmail}
-                      contactName={primaryContactName}
-                      contacts={eventContacts
-                        .filter(c => {
-                          const email = c.contact_email || c.client_contact?.email;
-                          return !!email;
-                        })
-                        .map(c => ({
-                          name: c.contact_name || c.client_contact?.contact_name || null,
-                          email: (c.contact_email || c.client_contact?.email)!,
-                        }))
-                      }
-                      className="w-full justify-start"
-                      buttonSize="default"
-                    />
+                    <div className="flex items-center gap-2">
+                      <SendPortalLinkButton
+                        clientId={event.client_id}
+                        clientName={(event as any)?.client_name || ''}
+                        contactEmail={primaryContactEmail}
+                        contactName={primaryContactName}
+                        contacts={eventContacts
+                          .filter(c => {
+                            const email = c.contact_email || c.client_contact?.email;
+                            return !!email;
+                          })
+                          .map(c => ({
+                            name: c.contact_name || c.client_contact?.contact_name || null,
+                            email: (c.contact_email || c.client_contact?.email)!,
+                          }))
+                        }
+                        className="flex-1 justify-start"
+                        buttonSize="default"
+                      />
+                      {emailStatuses && emailStatuses.portal_link.status !== 'not_sent' && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 shrink-0', getActionStatusDisplay(emailStatuses.portal_link.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.portal_link.status).label}
+                        </Badge>
+                      )}
+                    </div>
                   )}
                   {isAdmin && assignments.length > 0 && (
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start" 
+                      className="w-full justify-between" 
                       disabled={isSendingTeamUpdate}
                       onClick={async () => {
                         setIsSendingTeamUpdate(true);
@@ -933,8 +956,15 @@ export default function EventDetail() {
                         }
                       }}
                     >
-                      <Users className="h-4 w-4 mr-2" />
-                      {isSendingTeamUpdate ? 'Sending...' : 'Send Updated Details to Team'}
+                      <span className="flex items-center">
+                        <Users className="h-4 w-4 mr-2" />
+                        {isSendingTeamUpdate ? 'Sending...' : 'Send Updated Details to Team'}
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.team_update.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.team_update.status).label}
+                        </Badge>
+                      )}
                     </Button>
                   )}
                 </div>
