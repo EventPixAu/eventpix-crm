@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send } from 'lucide-react';
-import { format } from 'date-fns';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send, Calendar } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import {
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLookups';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
 import { useCheckAssignmentConflicts, useStaffAvailabilityByDate, AssignmentWarning } from '@/hooks/useStaffAvailability';
@@ -41,11 +42,24 @@ interface StaffAssignmentDialogProps {
 
 const MAX_STAFF_DEFAULT = 8;
 
+function formatTime12(timeStr: string): string {
+  try {
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}
+
 export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STAFF_DEFAULT }: StaffAssignmentDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedSession, setSelectedSession] = useState('all');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
@@ -59,6 +73,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: roles = [] } = useStaffRoles();
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
+  const { data: sessions = [] } = useEventSessions(eventId);
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
   const sendNotification = useSendNotification();
@@ -125,9 +140,17 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     return dateAvailability.find(a => a.user_id === selectedUser);
   }, [selectedUser, dateAvailability]);
   
-  const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
+  const hasSessions = sessions.length > 0;
   
-  // Filter profiles by location if selected
+  // Filter assigned users by selected session context
+  const assignedUserIds = useMemo(() => {
+    return assignments
+      .filter((a) => selectedSession === 'all' ? !a.session_id : a.session_id === selectedSession)
+      .map((a) => a.user_id)
+      .filter(Boolean);
+  }, [assignments, selectedSession]);
+  
+  // Filter profiles by location and already-assigned
   const availableProfiles = useMemo(() => {
     let filtered = profiles.filter((profile) => !assignedUserIds.includes(profile.id));
     
@@ -189,10 +212,12 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       user_id?: string;
       staff_id?: string;
       staff_role_id?: string;
+      session_id?: string;
       assignment_notes?: string;
     } = {
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
+      session_id: selectedSession !== 'all' ? selectedSession : undefined,
       assignment_notes: assignmentNotes || undefined,
     };
 
@@ -227,6 +252,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     setSelectedUser('');
     setSelectedRole('');
     setAssignmentNotes('');
+    // Don't reset selectedSession - keep it for consecutive assignments to same session
     setGuardrailChecks(null);
     setGuardrailOverridden(false);
   };
@@ -347,6 +373,31 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
         ) : (
         <div className="space-y-3 pt-4 border-t">
           <Label>Add Team Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
+          
+          {/* Session Selector */}
+          {hasSessions && (
+            <Select value={selectedSession} onValueChange={(value) => {
+              setSelectedSession(value);
+              setSelectedUser('');
+            }}>
+              <SelectTrigger className="h-9">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="All Sessions" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sessions (General)</SelectItem>
+                {sessions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.session_date ? format(parseISO(s.session_date), 'EEE, d MMM') : 'No date'}
+                    {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                    {s.label ? ` – ${s.label}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           
           {/* Location Filter */}
           <Select value={selectedLocation} onValueChange={(value) => {

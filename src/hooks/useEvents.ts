@@ -15,6 +15,7 @@ export interface EventAssignment {
   user_id: string | null;
   staff_id: string | null; // Legacy field
   staff_role_id: string | null;
+  session_id: string | null;
   role_on_event: string | null;
   assignment_notes: string | null;
   notes: string | null;
@@ -28,6 +29,13 @@ export interface EventAssignment {
   staff_role?: {
     id: string;
     name: string;
+  } | null;
+  session?: {
+    id: string;
+    session_date: string;
+    label: string | null;
+    start_time: string | null;
+    end_time: string | null;
   } | null;
   // Legacy staff relation
   staff?: {
@@ -97,6 +105,13 @@ export function useEventAssignments(eventId: string | undefined) {
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (
             id,
             name
+          ),
+          session:event_sessions!event_assignments_session_id_fkey (
+            id,
+            session_date,
+            label,
+            start_time,
+            end_time
           ),
           staff:staff_id (
             id,
@@ -194,6 +209,7 @@ export function useCreateEvent() {
             event_id: data.id,
             user_id: la.user_id,
             staff_role_id: la.staff_role_id,
+            session_id: la.session_id || null,
             role_on_event: la.role_on_event,
             assignment_notes: la.assignment_notes,
             confirmation_status: la.confirmation_status || 'pending',
@@ -290,6 +306,7 @@ export function useCreateAssignment() {
       user_id?: string; 
       staff_id?: string; // Legacy support
       staff_role_id?: string;
+      session_id?: string;
       role_on_event?: string; 
       assignment_notes?: string;
     }) => {

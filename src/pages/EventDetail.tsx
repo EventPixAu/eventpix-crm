@@ -52,7 +52,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
-import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent } from '@/hooks/useEvents';
+import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent, type EventAssignment } from '@/hooks/useEvents';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
@@ -83,12 +84,115 @@ import { getPublicBaseUrl } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+function formatSessionTime(timeStr: string): string {
+  try {
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}
+
+function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
+  const sendNotification = useSendNotification();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
+  const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
+  const initial = name.charAt(0).toUpperCase();
+  const confirmationStatus = assignment.confirmation_status || 'pending';
+
+  return (
+    <div className="flex flex-col p-4 bg-muted/50 rounded-lg">
+      <div className="flex items-start gap-3">
+        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+          <span className="text-lg font-medium text-primary">{initial}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <Link to={`/staff/${assignment.user_id || assignment.staff_id}`} className="font-medium truncate hover:underline text-primary">
+              {name}
+            </Link>
+            <Badge
+              variant={confirmationStatus === 'confirmed' ? 'default' : confirmationStatus === 'declined' ? 'destructive' : 'secondary'}
+              className="text-xs shrink-0"
+            >
+              {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground capitalize">{role}</p>
+          {assignment.assignment_notes && (
+            <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
+          )}
+        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-1 shrink-0">
+            {confirmationStatus !== 'confirmed' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={async () => {
+                  const { data: updated, error } = await supabase
+                    .from('event_assignments')
+                    .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+                    .eq('id', assignment.id)
+                    .select();
+                  if (error) {
+                    toast({ title: 'Failed to confirm', description: error.message, variant: 'destructive' });
+                  } else if (!updated || updated.length === 0) {
+                    toast({ title: 'Failed to confirm', description: 'No rows updated. Check permissions.', variant: 'destructive' });
+                  } else {
+                    queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+                    toast({ title: 'Marked as confirmed' });
+                  }
+                }}
+                title="Mark as confirmed"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => {
+                const userId = assignment.user_id || assignment.staff?.id;
+                if (!userId) return;
+                sendNotification.mutate({
+                  type: 'assignment',
+                  event_id: eventId,
+                  user_id: userId,
+                  assignment_id: assignment.id,
+                });
+              }}
+              disabled={sendNotification.isPending}
+              title="Resend notification email"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Resend
+            </Button>
+          </div>
+        )}
+      </div>
+      {isAdmin && (
+        <AssignmentChecklistPanel eventId={eventId} assignment={assignment} />
+      )}
+    </div>
+  );
+}
+
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
+  const { data: eventSessions = [] } = useEventSessions(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: auditLog = [] } = useAuditLog(id);
@@ -873,105 +977,57 @@ export default function EventDetail() {
             {assignments.length === 0 ? (
               <p className="text-muted-foreground text-sm">No staff assigned yet</p>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {assignments.map((assignment) => {
-                  const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
-                  const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
-                  const initial = name.charAt(0).toUpperCase();
+              <div className="space-y-6">
+                {/* General (all-session) assignments */}
+                {(() => {
+                  const generalAssignments = assignments.filter(a => !a.session_id);
+                  const hasSessions = eventSessions.length > 0;
                   
-                  const confirmationStatus = assignment.confirmation_status || 'pending';
-                  
+                  if (generalAssignments.length > 0) {
+                    return (
+                      <div>
+                        {hasSessions && (
+                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">All Sessions</h3>
+                        )}
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {generalAssignments.map(assignment => (
+                            <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Per-session grouped assignments */}
+                {eventSessions.map(session => {
+                  const sessionAssigns = assignments.filter(a => a.session_id === session.id);
                   return (
-                    <div
-                      key={assignment.id}
-                      className="flex flex-col p-4 bg-muted/50 rounded-lg"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                          <span className="text-lg font-medium text-primary">
-                            {initial}
+                    <div key={session.id} className="border border-border rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <h3 className="text-sm font-medium">
+                          {format(parseISO(session.session_date), 'EEE, d MMM yyyy')}
+                        </h3>
+                        {session.start_time && (
+                          <span className="text-xs text-muted-foreground">
+                            {formatSessionTime(session.start_time)}
+                            {session.end_time ? ` – ${formatSessionTime(session.end_time)}` : ''}
                           </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <Link to={`/staff/${assignment.user_id || assignment.staff_id}`} className="font-medium truncate hover:underline text-primary">
-                              {name}
-                            </Link>
-                            <Badge 
-                              variant={confirmationStatus === 'confirmed' ? 'default' : confirmationStatus === 'declined' ? 'destructive' : 'secondary'}
-                              className="text-xs shrink-0"
-                            >
-                              {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground capitalize">
-                            {role}
-                          </p>
-                          {assignment.assignment_notes && (
-                            <p className="text-xs text-muted-foreground mt-1 truncate">
-                              {assignment.assignment_notes}
-                            </p>
-                          )}
-                        </div>
-                        {isAdmin && (
-                          <div className="flex items-center gap-1 shrink-0">
-                            {confirmationStatus !== 'confirmed' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8"
-                                onClick={async () => {
-                                  const { data: updated, error } = await supabase
-                                    .from('event_assignments')
-                                    .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
-                                    .eq('id', assignment.id)
-                                    .select();
-                                  if (error) {
-                                    console.error('Failed to confirm assignment:', error);
-                                    toast({ title: 'Failed to confirm', description: error.message, variant: 'destructive' });
-                                  } else if (!updated || updated.length === 0) {
-                                    console.error('Update returned 0 rows - possible RLS issue');
-                                    toast({ title: 'Failed to confirm', description: 'No rows updated. Check permissions.', variant: 'destructive' });
-                                  } else {
-                                    queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
-                                    toast({ title: 'Marked as confirmed' });
-                                  }
-                                }}
-                                title="Mark as confirmed"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8"
-                              onClick={() => {
-                                const userId = assignment.user_id || assignment.staff?.id;
-                                if (!userId || !id) return;
-                                sendNotification.mutate({
-                                  type: 'assignment',
-                                  event_id: id,
-                                  user_id: userId,
-                                  assignment_id: assignment.id,
-                                });
-                              }}
-                              disabled={sendNotification.isPending}
-                              title="Resend notification email"
-                            >
-                              <Send className="h-4 w-4 mr-2" />
-                              Resend
-                            </Button>
-                          </div>
+                        )}
+                        {session.label && (
+                          <Badge variant="outline" className="text-xs">{session.label}</Badge>
                         )}
                       </div>
-                      
-                      {/* Checklist panel for this assignment */}
-                      {isAdmin && id && (
-                        <AssignmentChecklistPanel 
-                          eventId={id} 
-                          assignment={assignment} 
-                        />
+                      {sessionAssigns.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic pl-6">No crew assigned to this session</p>
+                      ) : (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {sessionAssigns.map(assignment => (
+                            <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                          ))}
+                        </div>
                       )}
                     </div>
                   );
