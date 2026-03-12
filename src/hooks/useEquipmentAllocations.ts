@@ -142,7 +142,7 @@ export function useAllocateKit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ eventId, kitId, userId }: { eventId: string; kitId: string; userId?: string }) => {
+    mutationFn: async ({ eventId, kitId, userId, sessionId }: { eventId: string; kitId: string; userId?: string; sessionId?: string }) => {
       // Get kit items
       const { data: kitItems, error: kitError } = await supabase
         .from('equipment_kit_items')
@@ -156,6 +156,7 @@ export function useAllocateKit() {
         event_id: eventId,
         equipment_item_id: item.equipment_item_id,
         user_id: userId || null,
+        session_id: sessionId || null,
         kit_id: kitId,
         status: 'allocated' as const,
       }));
