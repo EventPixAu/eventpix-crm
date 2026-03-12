@@ -11,6 +11,7 @@ export interface EquipmentAllocation {
   user_id: string | null;
   equipment_item_id: string;
   kit_id: string | null;
+  session_id: string | null;
   allocated_at: string;
   returned_at: string | null;
   status: AllocationStatus;
@@ -29,6 +30,13 @@ export interface EquipmentAllocationWithDetails extends EquipmentAllocation {
     name: string;
     other_items: string[] | null;
   } | null;
+  session?: {
+    id: string;
+    session_date: string;
+    label: string | null;
+    start_time: string | null;
+    end_time: string | null;
+  } | null;
 }
 
 export function useEventAllocations(eventId: string | undefined) {
@@ -43,7 +51,8 @@ export function useEventAllocations(eventId: string | undefined) {
           *,
           equipment_item:equipment_items(*),
           profile:profiles(full_name, email),
-          equipment_kit:equipment_kits(id, name, other_items)
+          equipment_kit:equipment_kits(id, name, other_items),
+          session:event_sessions(id, session_date, label, start_time, end_time)
         `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
@@ -105,13 +114,14 @@ export function useAllocateEquipment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ eventId, equipmentItemId, userId }: { eventId: string; equipmentItemId: string; userId?: string }) => {
+    mutationFn: async ({ eventId, equipmentItemId, userId, sessionId }: { eventId: string; equipmentItemId: string; userId?: string; sessionId?: string }) => {
       const { data, error } = await supabase
         .from('equipment_allocations')
         .insert({
           event_id: eventId,
           equipment_item_id: equipmentItemId,
           user_id: userId || null,
+          session_id: sessionId || null,
           status: 'allocated',
         })
         .select()
@@ -139,7 +149,7 @@ export function useAllocateKit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ eventId, kitId, userId }: { eventId: string; kitId: string; userId?: string }) => {
+    mutationFn: async ({ eventId, kitId, userId, sessionId }: { eventId: string; kitId: string; userId?: string; sessionId?: string }) => {
       // Get kit items
       const { data: kitItems, error: kitError } = await supabase
         .from('equipment_kit_items')
@@ -153,6 +163,7 @@ export function useAllocateKit() {
         event_id: eventId,
         equipment_item_id: item.equipment_item_id,
         user_id: userId || null,
+        session_id: sessionId || null,
         kit_id: kitId,
         status: 'allocated' as const,
       }));

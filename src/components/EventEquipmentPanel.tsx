@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,7 +21,8 @@ import {
   Users,
   Camera,
   Settings2,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from 'lucide-react';
 import { 
   useEventAllocations, 
@@ -34,9 +36,22 @@ import {
 import { useAvailableEquipment } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useAuth } from '@/lib/auth';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
 import { StaffEquipmentPreview } from './StaffEquipmentPreview';
+
+function formatTime12(timeStr: string): string {
+  try {
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}
 
 interface EventAssignment {
   id: string;
@@ -77,10 +92,13 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const { data: allocations, isLoading } = useEventAllocations(eventId);
   const { data: availableItems } = useAvailableEquipment();
   const { data: kits } = useActiveEquipmentKits();
+  const { data: sessions = [] } = useEventSessions(eventId);
   const allocateEquipment = useAllocateEquipment();
   const allocateKit = useAllocateKit();
   const updateStatus = useUpdateAllocationStatus();
   const removeAllocation = useRemoveAllocation();
+
+  const hasSessions = sessions.length > 0;
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
@@ -88,9 +106,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const [eventPixKitDialogOpen, setEventPixKitDialogOpen] = useState(false);
   const [epKitId, setEpKitId] = useState('');
   const [epKitUserId, setEpKitUserId] = useState('');
+  const [epKitSessionId, setEpKitSessionId] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedKitId, setSelectedKitId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedSessionId, setSelectedSessionId] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedAllocation, setSelectedAllocation] = useState<{ id: string; status: AllocationStatus; userId: string | null } | null>(null);
   const [newStatus, setNewStatus] = useState<AllocationStatus>('allocated');
@@ -103,9 +123,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       eventId,
       kitId: epKitId,
       userId: epKitUserId && epKitUserId !== 'unassigned' ? epKitUserId : undefined,
+      sessionId: epKitSessionId && epKitSessionId !== 'all' ? epKitSessionId : undefined,
     });
     setEpKitId('');
     setEpKitUserId('');
+    setEpKitSessionId('');
     setEventPixKitDialogOpen(false);
   };
 
@@ -115,6 +137,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       eventId,
       equipmentItemId: selectedItemId,
       userId: selectedUserId && selectedUserId !== 'unassigned' ? selectedUserId : undefined,
+      sessionId: selectedSessionId && selectedSessionId !== 'all' ? selectedSessionId : undefined,
     });
     setSelectedItemId('');
     setSelectedUserId('');
@@ -127,6 +150,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       eventId,
       kitId: selectedKitId,
       userId: selectedUserId && selectedUserId !== 'unassigned' ? selectedUserId : undefined,
+      sessionId: selectedSessionId && selectedSessionId !== 'all' ? selectedSessionId : undefined,
     });
     setSelectedKitId('');
     setSelectedUserId('');
@@ -274,6 +298,26 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                       </SelectContent>
                     </Select>
                   </div>
+                  {hasSessions && (
+                    <div className="space-y-2">
+                      <Label>Session / Day (Optional)</Label>
+                      <Select value={epKitSessionId} onValueChange={setEpKitSessionId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Sessions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Sessions</SelectItem>
+                          {sessions.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {format(parseISO(s.session_date), 'EEE, d MMM')}
+                              {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                              {s.label ? ` – ${s.label}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setEventPixKitDialogOpen(false)}>Cancel</Button>
@@ -323,6 +367,27 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                     <StaffEquipmentPreview userId={selectedUserId} />
                   )}
                 </div>
+
+                {hasSessions && (
+                  <div className="space-y-2">
+                    <Label>Session / Day (Optional)</Label>
+                    <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Sessions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Sessions</SelectItem>
+                        {sessions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {format(parseISO(s.session_date), 'EEE, d MMM')}
+                            {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                            {s.label ? ` – ${s.label}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-2">
@@ -429,6 +494,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                     <TableRow>
                       <TableHead>Item</TableHead>
                       <TableHead>Category</TableHead>
+                      {hasSessions && <TableHead>Session</TableHead>}
                       <TableHead>Assigned To</TableHead>
                       <TableHead>Status</TableHead>
                       {isAdmin && <TableHead className="w-[100px]"></TableHead>}
@@ -439,6 +505,18 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                       <TableRow key={alloc.id}>
                         <TableCell className="font-medium">{alloc.equipment_item.name}</TableCell>
                         <TableCell className="capitalize">{alloc.equipment_item.category}</TableCell>
+                        {hasSessions && (
+                          <TableCell>
+                            {alloc.session ? (
+                              <span className="flex items-center gap-1 text-xs">
+                                <Calendar className="h-3 w-3 text-primary" />
+                                {format(parseISO(alloc.session.session_date), 'EEE, d MMM')}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">All</span>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell>
                           {alloc.profile ? (
                             <span className="flex items-center gap-1">
