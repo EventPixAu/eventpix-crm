@@ -251,7 +251,7 @@ export function AllocatePhotographerKitDialog({
           category: kit?.category || 'other', 
           items: kit?.items || [] 
         };
-      }).filter((kit): kit is { userId: string; category: string; items: any[] } => kit !== null);
+      }).filter(Boolean) as Array<{ userId: string; category: string; items: any[] }>;
 
       if (kitsToAllocate.length === 0) {
         toast.error('Unable to allocate - selected photographers must have linked accounts');
