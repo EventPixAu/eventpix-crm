@@ -129,8 +129,8 @@ function buildConfirmationBody(
     lines.push(`Mobile: ${leadPhone}`);
   }
 
-  // List additional team members if any
-  const otherAssignments = assignments.filter(a => a !== leadAssignment);
+  // List additional onsite team members if any
+  const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
   if (otherAssignments.length > 0) {
     lines.push('');
     otherAssignments.forEach((a: any) => {

@@ -102,8 +102,8 @@ serve(async (req) => {
     const systemPrompt = `You are a professional event photography company writing a brief for a client. 
 Write a clear, friendly, and professional event brief that the client will see in their portal.
 The brief should:
-- Confirm key event details (date, time, venue)
-- Mention the photography coverage they're getting
+- Do NOT repeat event details like date, time, or venue — those are shown separately in the portal
+- Mention the photography coverage they're getting (hours, number of photographers)
 - Include photographer name(s) from the crew list if available
 - Include any logistics or arrival info
 - If a pre-registration link is available, mention that a pre-registration link has been set up and recommend sharing it with attendees — but do NOT include the actual URL (it is shown separately in the portal)
