@@ -196,7 +196,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium flex items-center gap-1.5">
               <Link2 className="h-3.5 w-3.5" />
-              Pre-Registration Link
+              Registration & Live Feed Link
             </p>
             {isAdmin && !editingLink && (
               <Button
