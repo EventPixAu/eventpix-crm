@@ -348,7 +348,7 @@ export default function StaffDetail() {
   });
 
   const updateEquipmentMutation = useMutation({
-    mutationFn: async (equipment: PhotographyEquipment) => {
+    mutationFn: async (equipment: PhotographyEquipmentV2) => {
       if (sourceTable === 'staff' && staffId) {
         const { error } = await supabase
           .from('staff')
