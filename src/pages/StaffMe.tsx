@@ -123,7 +123,7 @@ function useUpdateMyEquipment() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (equipment: PhotographyEquipment) => {
+    mutationFn: async (equipment: PhotographyEquipmentV2) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       const { error } = await supabase
