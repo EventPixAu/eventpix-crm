@@ -128,9 +128,17 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     return dateAvailability.find(a => a.user_id === selectedUser);
   }, [selectedUser, dateAvailability]);
   
-  const assignedUserIds = assignments.map((a) => a.user_id).filter(Boolean);
+  const hasSessions = sessions.length > 0;
   
-  // Filter profiles by location if selected
+  // Filter assigned users by selected session context
+  const assignedUserIds = useMemo(() => {
+    return assignments
+      .filter((a) => selectedSession === 'all' ? !a.session_id : a.session_id === selectedSession)
+      .map((a) => a.user_id)
+      .filter(Boolean);
+  }, [assignments, selectedSession]);
+  
+  // Filter profiles by location and already-assigned
   const availableProfiles = useMemo(() => {
     let filtered = profiles.filter((profile) => !assignedUserIds.includes(profile.id));
     
