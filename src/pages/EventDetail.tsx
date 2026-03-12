@@ -77,6 +77,7 @@ import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
+import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
