@@ -159,6 +159,8 @@ function buildConfirmationBody(
   }
 
   lines.push('');
+  lines.push(`Full details regarding your event are available via the Eventpixii portal that you can access via this link: ${getPublicBaseUrl()}/client-login`);
+  lines.push('');
   lines.push('If you have any questions or changes, please don\'t hesitate to get in touch.');
   lines.push('');
   lines.push('Kind regards,');
