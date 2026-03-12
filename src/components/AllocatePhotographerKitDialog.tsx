@@ -20,6 +20,7 @@ import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
 import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
 
 interface PhotographerKit {
+  kitId: string;
   category: 'camera' | 'lighting' | 'backdrop' | 'other';
   label: string;
   icon: typeof Camera;
