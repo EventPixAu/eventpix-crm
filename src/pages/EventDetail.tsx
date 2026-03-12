@@ -701,6 +701,11 @@ export default function EventDetail() {
                 <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
               )}
 
+              {/* Event Documents */}
+              {id && (
+                <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
+              )}
+
               {/* Contracts Panel */}
               {isAdmin && id && event.client_id && (
                 <ContractsPanel
