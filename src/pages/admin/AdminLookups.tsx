@@ -106,6 +106,11 @@ import {
   useCreateCompanyCategory,
   useUpdateCompanyCategory,
 } from '@/hooks/useCompanyCategories';
+import {
+  useAllOpsStatuses,
+  useCreateOpsStatus,
+  useUpdateOpsStatus,
+} from '@/hooks/useOpsStatuses';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
