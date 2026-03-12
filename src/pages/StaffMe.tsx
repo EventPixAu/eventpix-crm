@@ -67,7 +67,7 @@ interface ProfileData {
     email_on_changes: boolean;
     in_app_notifications: boolean;
   } | null;
-  photography_equipment_json: PhotographyEquipment | null;
+  photography_equipment_json: StoredEquipment | null;
   // Additional editable fields
   business_name: string | null;
   abn: string | null;
