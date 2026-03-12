@@ -305,6 +305,7 @@ export function useCreateAssignment() {
       user_id?: string; 
       staff_id?: string; // Legacy support
       staff_role_id?: string;
+      session_id?: string;
       role_on_event?: string; 
       assignment_notes?: string;
     }) => {
