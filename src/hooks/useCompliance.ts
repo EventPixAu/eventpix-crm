@@ -55,6 +55,58 @@ export interface StaffEligibility {
   reason?: string;
 }
 
+function parseStorageReference(storedUrl: string, fallbackBucket: string): { bucket: string; filePath: string } | null {
+  if (!storedUrl) return null;
+
+  if (!storedUrl.includes('/storage/v1/object/')) {
+    const directMatch = storedUrl.match(/^([^/]+)\/(.+)$/);
+    if (directMatch) {
+      return { bucket: directMatch[1], filePath: directMatch[2] };
+    }
+
+    return { bucket: fallbackBucket, filePath: storedUrl.replace(/^\/+/, '') };
+  }
+
+  try {
+    const pathname = decodeURIComponent(new URL(storedUrl).pathname);
+    const publicMarker = '/storage/v1/object/public/';
+    const signMarker = '/storage/v1/object/sign/';
+    const marker = pathname.includes(publicMarker)
+      ? publicMarker
+      : pathname.includes(signMarker)
+      ? signMarker
+      : null;
+
+    if (!marker) return null;
+
+    const bucketAndPath = pathname.split(marker)[1];
+    if (!bucketAndPath) return null;
+
+    const [bucket, ...pathParts] = bucketAndPath.split('/');
+    if (!bucket || pathParts.length === 0) return null;
+
+    return { bucket, filePath: pathParts.join('/') };
+  } catch {
+    return null;
+  }
+}
+
+async function resolveSignedDocumentUrl(documentUrl: string): Promise<string> {
+  const parsed = parseStorageReference(documentUrl, 'compliance-documents');
+  if (!parsed) return documentUrl;
+
+  const { data, error } = await supabase.storage
+    .from(parsed.bucket)
+    .createSignedUrl(parsed.filePath, 3600);
+
+  if (error || !data?.signedUrl) {
+    console.warn('Failed to create signed URL for compliance document', { error: error?.message, parsed });
+    return documentUrl;
+  }
+
+  return data.signedUrl;
+}
+
 // Fetch all compliance document types
 export function useComplianceDocumentTypes() {
   return useQuery({
@@ -89,7 +141,14 @@ export function useStaffComplianceDocuments(userId: string | undefined) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as StaffComplianceDocumentWithType[];
+
+      const documents = (data ?? []) as StaffComplianceDocumentWithType[];
+      return Promise.all(
+        documents.map(async (document) => ({
+          ...document,
+          document_url: await resolveSignedDocumentUrl(document.document_url),
+        }))
+      );
     },
     enabled: !!userId,
   });
