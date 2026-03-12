@@ -34,7 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AvatarUpload } from '@/components/AvatarUpload';
 
 import { NotificationPreferencesPanel } from '@/components/NotificationPreferencesPanel';
-import { PhotographyEquipmentEditor, PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
+import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -67,7 +67,7 @@ interface ProfileData {
     email_on_changes: boolean;
     in_app_notifications: boolean;
   } | null;
-  photography_equipment_json: PhotographyEquipment | null;
+  photography_equipment_json: StoredEquipment | null;
   // Additional editable fields
   business_name: string | null;
   abn: string | null;
@@ -123,7 +123,7 @@ function useUpdateMyEquipment() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (equipment: PhotographyEquipment) => {
+    mutationFn: async (equipment: PhotographyEquipmentV2) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       const { error } = await supabase

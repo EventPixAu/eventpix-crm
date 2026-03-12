@@ -43,7 +43,7 @@ import { StaffRateEditor } from '@/components/StaffRateEditor';
 import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
-import { PhotographyEquipmentEditor, type PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
+import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
@@ -333,7 +333,7 @@ export default function StaffDetail() {
           .eq('id', staffId)
           .maybeSingle();
         if (error) throw error;
-        return (data?.photography_equipment_json as unknown) as PhotographyEquipment | null;
+        return (data?.photography_equipment_json as unknown) as StoredEquipment | null;
       } else {
         const { data, error } = await supabase
           .from('profiles')
@@ -341,14 +341,14 @@ export default function StaffDetail() {
           .eq('id', actualUserId)
           .maybeSingle();
         if (error) throw error;
-        return (data?.photography_equipment_json as unknown) as PhotographyEquipment | null;
+        return (data?.photography_equipment_json as unknown) as StoredEquipment | null;
       }
     },
     enabled: !!id && !!profile,
   });
 
   const updateEquipmentMutation = useMutation({
-    mutationFn: async (equipment: PhotographyEquipment) => {
+    mutationFn: async (equipment: PhotographyEquipmentV2) => {
       if (sourceTable === 'staff' && staffId) {
         const { error } = await supabase
           .from('staff')
