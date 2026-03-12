@@ -321,30 +321,30 @@ export function AllocatePhotographerKitDialog({
                   
                   <div className="grid gap-2 pl-6">
                     {photographer.kits.map(kit => {
-                      const key = `${photographer.displayId}:${kit.category}`;
+                      const key = `${photographer.displayId}:${kit.kitId}`;
                       const isSelected = selectedKits.has(key);
                       const Icon = kit.icon;
 
                       return (
                         <div
-                          key={kit.category}
+                          key={kit.kitId}
                           className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                             isSelected 
                               ? 'bg-primary/10 border-primary' 
                               : 'bg-muted/30 border-border hover:bg-muted/50'
                           }`}
-                          onClick={() => toggleKit(photographer.displayId, kit.category)}
+                          onClick={() => toggleKit(photographer.displayId, kit.kitId)}
                         >
                           <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => toggleKit(photographer.displayId, kit.category)}
+                            onCheckedChange={() => toggleKit(photographer.displayId, kit.kitId)}
                             onClick={(e) => e.stopPropagation()}
                           />
                           <Icon className="h-4 w-4 text-muted-foreground" />
                           <div className="flex-1">
                             <div className="font-medium text-sm">{kit.label}</div>
                             <div className="text-xs text-muted-foreground">
-                              {kit.items.map(item => `${item.brand} ${item.name}`).join(', ')}
+                              {kit.items.map(item => `${item.brand ? item.brand + ' ' : ''}${item.name}`).join(', ')}
                             </div>
                           </div>
                           <Badge variant="secondary" className="text-xs">
