@@ -106,6 +106,13 @@ export function useEventAssignments(eventId: string | undefined) {
             id,
             name
           ),
+          session:event_sessions!event_assignments_session_id_fkey (
+            id,
+            session_date,
+            label,
+            start_time,
+            end_time
+          ),
           staff:staff_id (
             id,
             name,
