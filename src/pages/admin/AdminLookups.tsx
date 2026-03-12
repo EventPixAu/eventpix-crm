@@ -509,6 +509,13 @@ export default function AdminLookups() {
                 Lead Statuses
               </TabsTrigger>
               <TabsTrigger 
+                value="ops-statuses"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Ops Status
+              </TabsTrigger>
+              <TabsTrigger 
                 value="lost-reasons"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
