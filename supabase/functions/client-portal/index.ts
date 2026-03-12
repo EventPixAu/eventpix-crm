@@ -35,7 +35,7 @@ serve(async (req) => {
         id, event_name, event_date, start_time, end_time, 
         venue_name, venue_id, client_name, event_type_id,
         special_instructions, notes, photography_brief,
-        qr_file_path, qr_file_name,
+        qr_file_path, qr_file_name, pre_registration_link,
         brief_content, client_brief_content, main_shoot_date,
         lead_id, quote_id
       `)
