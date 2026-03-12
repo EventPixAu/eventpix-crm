@@ -24,6 +24,7 @@ import {
   FileCheck,
   Building2,
   CircleDot,
+  ClipboardList,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
