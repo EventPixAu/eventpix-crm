@@ -77,6 +77,7 @@ import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
+import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +102,7 @@ export default function EventDetail() {
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
+  const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -784,6 +786,12 @@ export default function EventDetail() {
                       Send Email
                     </Button>
                   )}
+                  {isAdmin && (
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setFinalConfirmOpen(true)}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Send Final Confirmation
+                    </Button>
+                  )}
                   {isAdmin && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <SendPortalLinkButton
                       clientId={event.client_id}
@@ -1048,6 +1056,31 @@ export default function EventDetail() {
             client_id: event.client_id,
           }}
           recipients={emailRecipients}
+        />
+      )}
+
+      {/* Final Confirmation Dialog */}
+      {id && event && (
+        <SendFinalConfirmationDialog
+          open={finalConfirmOpen}
+          onOpenChange={setFinalConfirmOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+            primary_contact_name: primaryContactName,
+            primary_contact_phone: primaryContactEmail,
+            delivery_method: getDeliveryMethodName(),
+            client_brief_content: (event as any).client_brief_content,
+          }}
+          recipients={emailRecipients}
+          assignments={assignments}
         />
       )}
     </AppLayout>
