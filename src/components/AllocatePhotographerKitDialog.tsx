@@ -17,8 +17,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
+import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
 
 interface PhotographerKit {
+  kitId: string;
   category: 'camera' | 'lighting' | 'backdrop' | 'other';
   label: string;
   icon: typeof Camera;
@@ -182,24 +184,25 @@ export function AllocatePhotographerKitDialog({
       const profile = staff.hasProfile 
         ? photographerData.find(p => p.id === staff.ownerId) 
         : photographerData.find(p => p.id === userIdToLookup);
-      const equipment = (profile?.photography_equipment_json as Record<string, any>) || {};
+      const equipment = profile?.photography_equipment_json || {};
       
       console.log('[AllocateKit] Processing staff:', staff.name, 'hasProfile:', staff.hasProfile, 'equipment:', equipment);
 
-      // Map old keys to new keys for compatibility - filter out items with empty names
-      const normalizedEquipment: Record<string, any[]> = {
-        camera: (equipment.camera || equipment.cameras || []).filter((i: any) => i?.name?.trim()),
-        lighting: (equipment.lighting || equipment.lights || []).filter((i: any) => i?.name?.trim()),
-        backdrop: (equipment.backdrop || equipment.backdrops || []).filter((i: any) => i?.name?.trim()),
-        other: (equipment.other || equipment.lenses || []).filter((i: any) => i?.name?.trim()),
-      };
-
-      const kits: PhotographerKit[] = KIT_CONFIG.map(config => ({
-        category: config.key,
-        label: config.label,
-        icon: config.icon,
-        items: normalizedEquipment[config.key] || [],
-      })).filter(kit => kit.items.length > 0);
+      // Migrate to v2 format to support named kits
+      const v2 = migrateToV2(equipment as StoredEquipment);
+      
+      const kits: PhotographerKit[] = v2.kits
+        .filter(kit => kit.items.some(i => i.name?.trim()))
+        .map(kit => {
+          const cfg = CATEGORY_CONFIG.find(c => c.key === kit.category);
+          return {
+            kitId: kit.id,
+            category: kit.category,
+            label: kit.name,
+            icon: cfg?.icon || Package,
+            items: kit.items.filter(i => i.name?.trim()),
+          };
+        });
       
       console.log('[AllocateKit] Staff:', staff.name, 'kits:', kits.length);
 
@@ -212,8 +215,8 @@ export function AllocatePhotographerKitDialog({
     });
   }, [allAssignedStaff, photographerData, staffUserLinks]);
 
-  const toggleKit = (photographerId: string, category: string) => {
-    const key = `${photographerId}:${category}`;
+  const toggleKit = (photographerId: string, kitId: string) => {
+    const key = `${photographerId}:${kitId}`;
     setSelectedKits(prev => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -234,9 +237,9 @@ export function AllocatePhotographerKitDialog({
 
     try {
       const kitsToAllocate = Array.from(selectedKits).map(key => {
-        const [displayId, category] = key.split(':');
+        const [displayId, kitId] = key.split(':');
         const photographer = photographers.find(p => p.displayId === displayId);
-        const kit = photographer?.kits.find(k => k.category === category);
+        const kit = photographer?.kits.find(k => k.kitId === kitId);
         
         if (!photographer?.userId) {
           console.warn('[AllocateKit] Skipping kit - no profile user_id for:', photographer?.name);
@@ -244,11 +247,11 @@ export function AllocatePhotographerKitDialog({
         }
         
         return { 
-          userId: photographer.userId, // Use resolved profile user_id
-          category, 
+          userId: photographer.userId,
+          category: kit?.category || 'other', 
           items: kit?.items || [] 
         };
-      }).filter((kit): kit is { userId: string; category: string; items: any[] } => kit !== null);
+      }).filter(Boolean) as Array<{ userId: string; category: string; items: any[] }>;
 
       if (kitsToAllocate.length === 0) {
         toast.error('Unable to allocate - selected photographers must have linked accounts');
@@ -318,30 +321,30 @@ export function AllocatePhotographerKitDialog({
                   
                   <div className="grid gap-2 pl-6">
                     {photographer.kits.map(kit => {
-                      const key = `${photographer.displayId}:${kit.category}`;
+                      const key = `${photographer.displayId}:${kit.kitId}`;
                       const isSelected = selectedKits.has(key);
                       const Icon = kit.icon;
 
                       return (
                         <div
-                          key={kit.category}
+                          key={kit.kitId}
                           className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                             isSelected 
                               ? 'bg-primary/10 border-primary' 
                               : 'bg-muted/30 border-border hover:bg-muted/50'
                           }`}
-                          onClick={() => toggleKit(photographer.displayId, kit.category)}
+                          onClick={() => toggleKit(photographer.displayId, kit.kitId)}
                         >
                           <Checkbox
                             checked={isSelected}
-                            onCheckedChange={() => toggleKit(photographer.displayId, kit.category)}
+                            onCheckedChange={() => toggleKit(photographer.displayId, kit.kitId)}
                             onClick={(e) => e.stopPropagation()}
                           />
                           <Icon className="h-4 w-4 text-muted-foreground" />
                           <div className="flex-1">
                             <div className="font-medium text-sm">{kit.label}</div>
                             <div className="text-xs text-muted-foreground">
-                              {kit.items.map(item => `${item.brand} ${item.name}`).join(', ')}
+                              {kit.items.map(item => `${item.brand ? item.brand + ' ' : ''}${item.name}`).join(', ')}
                             </div>
                           </div>
                           <Badge variant="secondary" className="text-xs">
