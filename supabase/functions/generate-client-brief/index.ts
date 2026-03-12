@@ -41,6 +41,7 @@ serve(async (req) => {
     if (eventError || !event) throw new Error("Event not found");
 
     // Fetch assignments with profiles
+    // Fetch assignments with profiles
     const { data: assignments } = await supabase
       .from("event_assignments")
       .select(`
@@ -51,6 +52,13 @@ serve(async (req) => {
       `)
       .eq("event_id", eventId)
       .eq("confirmation_status", "confirmed");
+
+    // Fetch sessions for call/arrival time
+    const { data: sessions } = await supabase
+      .from("event_sessions")
+      .select("session_date, start_time, end_time, arrival_time, location, notes")
+      .eq("event_id", eventId)
+      .order("session_date");
 
     // Filter to onsite crew only
     const onsiteCrew = (assignments || []).filter((a: any) => {
@@ -74,6 +82,11 @@ serve(async (req) => {
       photographers_count: event.photographers_count,
       pre_registration_link: event.pre_registration_link,
       team_brief: event.brief_content || null,
+      session_call_times: sessions?.filter((s: any) => s.arrival_time).map((s: any) => ({
+        session_date: s.session_date,
+        call_time: s.arrival_time,
+        start_time: s.start_time,
+      })) || [],
       notes: event.notes,
     };
 
@@ -83,7 +96,7 @@ The brief should:
 - Do NOT repeat event details like date, time, or venue — those are shown separately in the portal
 - Mention the photography coverage they're getting (hours, number of photographers)
 - Only mention ONSITE crew members (photographers, assistants, etc.) — do NOT mention editors, retouchers, or any offsite/post-production roles
-- If a "team_brief" is provided, use it to determine arrival time and any setup details — reference these naturally (e.g. "Your photographer will arrive [time from team brief] before the start to [setup details from team brief]"). Do NOT fabricate or guess arrival times if the team brief doesn't mention them.
+- For arrival time: first check "session_call_times" for a scheduled call/arrival time, then check "team_brief" for additional setup details. Reference the arrival naturally (e.g. "Your photographer will arrive at [call time] to [setup details]"). Do NOT fabricate or guess arrival times if neither source provides them.
 - If a pre-registration link is available, mention that a pre-registration link has been set up and recommend sharing it with attendees — but do NOT include the actual URL (it is shown separately in the portal)
 - Be warm but professional in tone
 - Use plain text (no markdown headers or bullets with special characters)
