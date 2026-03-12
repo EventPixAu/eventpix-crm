@@ -209,6 +209,7 @@ export function useCreateEvent() {
             event_id: data.id,
             user_id: la.user_id,
             staff_role_id: la.staff_role_id,
+            session_id: la.session_id || null,
             role_on_event: la.role_on_event,
             assignment_notes: la.assignment_notes,
             confirmation_status: la.confirmation_status || 'pending',
