@@ -34,7 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AvatarUpload } from '@/components/AvatarUpload';
 
 import { NotificationPreferencesPanel } from '@/components/NotificationPreferencesPanel';
-import { PhotographyEquipmentEditor, PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
+import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';

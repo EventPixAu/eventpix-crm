@@ -43,7 +43,7 @@ import { StaffRateEditor } from '@/components/StaffRateEditor';
 import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
-import { PhotographyEquipmentEditor, type PhotographyEquipment } from '@/components/PhotographyEquipmentEditor';
+import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
