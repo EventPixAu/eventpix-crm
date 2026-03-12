@@ -39,9 +39,11 @@ export interface InvoiceSyncResult {
   paidAt: string | null;
 }
 
-// Check Xero connection status
+// Check Xero connection status — auto-refreshes expired tokens
 export function useXeroConnectionStatus() {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const statusQuery = useQuery({
     queryKey: ['xero-connection-status'],
     queryFn: async (): Promise<XeroConnectionStatus> => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -52,10 +54,35 @@ export function useXeroConnectionStatus() {
       });
 
       if (response.error) throw response.error;
-      return response.data;
+      const status = response.data as XeroConnectionStatus;
+
+      // If token is expired, auto-refresh silently
+      if (status.connected && status.isExpired) {
+        try {
+          const refreshResponse = await supabase.functions.invoke('xero-auth/refresh', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` }
+          });
+          if (!refreshResponse.error) {
+            // Re-fetch status after successful refresh
+            const updatedResponse = await supabase.functions.invoke('xero-auth/status', {
+              headers: { Authorization: `Bearer ${session.access_token}` }
+            });
+            if (!updatedResponse.error) {
+              return updatedResponse.data as XeroConnectionStatus;
+            }
+          }
+        } catch (e) {
+          console.warn('Xero auto-refresh failed:', e);
+        }
+      }
+
+      return status;
     },
-    refetchInterval: 60000, // Check every minute
+    refetchInterval: 60000,
   });
+
+  return statusQuery;
 }
 
 // Get Xero authorization URL
