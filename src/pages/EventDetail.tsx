@@ -1058,6 +1058,31 @@ export default function EventDetail() {
           recipients={emailRecipients}
         />
       )}
+
+      {/* Final Confirmation Dialog */}
+      {id && event && (
+        <SendFinalConfirmationDialog
+          open={finalConfirmOpen}
+          onOpenChange={setFinalConfirmOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+            primary_contact_name: primaryContactName,
+            primary_contact_phone: primaryContactEmail,
+            delivery_method: getDeliveryMethodName(),
+            client_brief_content: (event as any).client_brief_content,
+          }}
+          recipients={emailRecipients}
+          assignments={assignments}
+        />
+      )}
     </AppLayout>
   );
 }
