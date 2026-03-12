@@ -2700,6 +2700,7 @@ export type Database = {
           onsite_contact_phone: string | null
           ops_status: string | null
           photography_brief: string | null
+          pre_registration_link: string | null
           qr_file_name: string | null
           qr_file_path: string | null
           quote_id: string | null
@@ -2766,6 +2767,7 @@ export type Database = {
           onsite_contact_phone?: string | null
           ops_status?: string | null
           photography_brief?: string | null
+          pre_registration_link?: string | null
           qr_file_name?: string | null
           qr_file_path?: string | null
           quote_id?: string | null
@@ -2832,6 +2834,7 @@ export type Database = {
           onsite_contact_phone?: string | null
           ops_status?: string | null
           photography_brief?: string | null
+          pre_registration_link?: string | null
           qr_file_name?: string | null
           qr_file_path?: string | null
           quote_id?: string | null
