@@ -67,20 +67,29 @@ function formatTime12h(time?: string | null): string {
   }
 }
 
+const OFFSITE_ROLES = ['editor', 'retoucher', 'post-production'];
+
+function isOnsiteAssignment(a: any): boolean {
+  const role = (a.staff_role?.name || a.role_on_event || '').toLowerCase();
+  return !OFFSITE_ROLES.some(offsite => role.includes(offsite));
+}
+
 function buildConfirmationBody(
   eventData: SendFinalConfirmationDialogProps['eventData'],
   assignments: any[],
   primaryContactName: string,
 ): string {
+  // Filter to onsite crew only
+  const onsiteAssignments = assignments.filter(isOnsiteAssignment);
   const eventDate = eventData.event_date
     ? format(parseISO(eventData.event_date), 'EEEE, d MMMM yyyy')
     : 'TBC';
 
-  // Find lead photographer
-  const leadAssignment = assignments.find((a: any) => {
+  // Find lead photographer from onsite crew
+  const leadAssignment = onsiteAssignments.find((a: any) => {
     const role = a.staff_role?.name?.toLowerCase() || a.role_on_event?.toLowerCase() || '';
     return role.includes('lead') || role.includes('photographer');
-  }) || assignments[0];
+  }) || onsiteAssignments[0];
 
   const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
   const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
@@ -120,8 +129,8 @@ function buildConfirmationBody(
     lines.push(`Mobile: ${leadPhone}`);
   }
 
-  // List additional team members if any
-  const otherAssignments = assignments.filter(a => a !== leadAssignment);
+  // List additional onsite team members if any
+  const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
   if (otherAssignments.length > 0) {
     lines.push('');
     otherAssignments.forEach((a: any) => {
