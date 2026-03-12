@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Pencil, Check, X, ChevronDown } from 'lucide-react';
+import { FileText, Pencil, Check, X, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -7,46 +7,94 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useClientBriefTemplates, useApplyClientBriefToEvent } from '@/hooks/useClientBriefTemplates';
 
 interface ClientBriefPanelProps {
   eventId: string;
   clientBriefContent: string | null;
+  clientBriefTemplateId?: string | null;
   isAdmin: boolean;
 }
 
 export function ClientBriefPanel({
   eventId,
   clientBriefContent,
+  clientBriefTemplateId,
   isAdmin,
 }: ClientBriefPanelProps) {
   const queryClient = useQueryClient();
+  const { data: templates = [] } = useClientBriefTemplates();
+  const applyBrief = useApplyClientBriefToEvent();
+
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(clientBriefContent || '');
+  const [selectedTemplateId, setSelectedTemplateId] = useState(clientBriefTemplateId || '');
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const saveMutation = useMutation({
-    mutationFn: async (content: string | null) => {
-      const { error } = await supabase
-        .from('events')
-        .update({ client_brief_content: content })
-        .eq('id', eventId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['event'] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success('Event brief updated');
-    },
-    onError: (error) => {
-      toast.error('Failed to update brief: ' + error.message);
-    },
-  });
+  const currentTemplate = templates.find((t) => t.id === clientBriefTemplateId);
+
+  const handleTemplateChange = async (templateId: string) => {
+    const template = templates.find((t) => t.id === templateId);
+    if (!template) return;
+
+    setSelectedTemplateId(templateId);
+    setEditContent(template.content);
+
+    await applyBrief.mutateAsync({
+      eventId,
+      templateId: template.id,
+      content: template.content,
+    });
+  };
+
+  const handleGenerateAI = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-client-brief`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ eventId }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to generate brief');
+      }
+
+      const data = await response.json();
+      setEditContent(data.content);
+      setIsEditing(true);
+      toast.success('AI brief generated — review and save');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate brief');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSave = async () => {
-    await saveMutation.mutateAsync(editContent.trim() || null);
+    await applyBrief.mutateAsync({
+      eventId,
+      templateId: selectedTemplateId || null,
+      content: editContent.trim() || null,
+    });
     setIsEditing(false);
   };
 
@@ -57,7 +105,12 @@ export function ClientBriefPanel({
 
   const handleClear = async () => {
     if (!confirm('Remove the event brief?')) return;
-    await saveMutation.mutateAsync(null);
+    await applyBrief.mutateAsync({
+      eventId,
+      templateId: null,
+      content: null,
+    });
+    setSelectedTemplateId('');
     setEditContent('');
   };
 
@@ -74,7 +127,9 @@ export function ClientBriefPanel({
               </div>
               <div className="text-left">
                 <h2 className="font-semibold">Event Brief</h2>
-                <p className="text-xs text-muted-foreground">Shared with client</p>
+                <p className="text-xs text-muted-foreground">
+                  {currentTemplate ? currentTemplate.name : 'Shared with client'}
+                </p>
               </div>
             </div>
             <ChevronDown
@@ -87,6 +142,50 @@ export function ClientBriefPanel({
 
         <CollapsibleContent>
           <div className="px-4 pb-4 border-t border-border pt-4">
+            {isAdmin && !isEditing && (
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex-1">
+                  <Select
+                    value={selectedTemplateId}
+                    onValueChange={handleTemplateChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a brief template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateAI}
+                  disabled={isGenerating}
+                  title="Generate brief from event data using AI"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+                {hasContent && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+
             {isEditing ? (
               <div className="space-y-3">
                 <Textarea
@@ -132,14 +231,28 @@ export function ClientBriefPanel({
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No event brief for client</p>
                 {isAdmin && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Pencil className="h-4 w-4 mr-1" /> Add Brief
-                  </Button>
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" /> Write Manually
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateAI}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-1" />
+                      )}
+                      Generate with AI
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
