@@ -15,6 +15,7 @@ export interface EventAssignment {
   user_id: string | null;
   staff_id: string | null; // Legacy field
   staff_role_id: string | null;
+  session_id: string | null;
   role_on_event: string | null;
   assignment_notes: string | null;
   notes: string | null;
@@ -28,6 +29,13 @@ export interface EventAssignment {
   staff_role?: {
     id: string;
     name: string;
+  } | null;
+  session?: {
+    id: string;
+    session_date: string;
+    label: string | null;
+    start_time: string | null;
+    end_time: string | null;
   } | null;
   // Legacy staff relation
   staff?: {
