@@ -123,9 +123,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       eventId,
       kitId: epKitId,
       userId: epKitUserId && epKitUserId !== 'unassigned' ? epKitUserId : undefined,
+      sessionId: epKitSessionId && epKitSessionId !== 'all' ? epKitSessionId : undefined,
     });
     setEpKitId('');
     setEpKitUserId('');
+    setEpKitSessionId('');
     setEventPixKitDialogOpen(false);
   };
 
@@ -135,6 +137,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       eventId,
       equipmentItemId: selectedItemId,
       userId: selectedUserId && selectedUserId !== 'unassigned' ? selectedUserId : undefined,
+      sessionId: selectedSessionId && selectedSessionId !== 'all' ? selectedSessionId : undefined,
     });
     setSelectedItemId('');
     setSelectedUserId('');
@@ -147,6 +150,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
       eventId,
       kitId: selectedKitId,
       userId: selectedUserId && selectedUserId !== 'unassigned' ? selectedUserId : undefined,
+      sessionId: selectedSessionId && selectedSessionId !== 'all' ? selectedSessionId : undefined,
     });
     setSelectedKitId('');
     setSelectedUserId('');
