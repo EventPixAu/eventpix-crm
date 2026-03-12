@@ -184,24 +184,25 @@ export function AllocatePhotographerKitDialog({
       const profile = staff.hasProfile 
         ? photographerData.find(p => p.id === staff.ownerId) 
         : photographerData.find(p => p.id === userIdToLookup);
-      const equipment = (profile?.photography_equipment_json as Record<string, any>) || {};
+      const equipment = profile?.photography_equipment_json || {};
       
       console.log('[AllocateKit] Processing staff:', staff.name, 'hasProfile:', staff.hasProfile, 'equipment:', equipment);
 
-      // Map old keys to new keys for compatibility - filter out items with empty names
-      const normalizedEquipment: Record<string, any[]> = {
-        camera: (equipment.camera || equipment.cameras || []).filter((i: any) => i?.name?.trim()),
-        lighting: (equipment.lighting || equipment.lights || []).filter((i: any) => i?.name?.trim()),
-        backdrop: (equipment.backdrop || equipment.backdrops || []).filter((i: any) => i?.name?.trim()),
-        other: (equipment.other || equipment.lenses || []).filter((i: any) => i?.name?.trim()),
-      };
-
-      const kits: PhotographerKit[] = KIT_CONFIG.map(config => ({
-        category: config.key,
-        label: config.label,
-        icon: config.icon,
-        items: normalizedEquipment[config.key] || [],
-      })).filter(kit => kit.items.length > 0);
+      // Migrate to v2 format to support named kits
+      const v2 = migrateToV2(equipment as StoredEquipment);
+      
+      const kits: PhotographerKit[] = v2.kits
+        .filter(kit => kit.items.some(i => i.name?.trim()))
+        .map(kit => {
+          const cfg = CATEGORY_CONFIG.find(c => c.key === kit.category);
+          return {
+            kitId: kit.id,
+            category: kit.category,
+            label: kit.name,
+            icon: cfg?.icon || Package,
+            items: kit.items.filter(i => i.name?.trim()),
+          };
+        });
       
       console.log('[AllocateKit] Staff:', staff.name, 'kits:', kits.length);
 
