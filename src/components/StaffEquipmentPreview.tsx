@@ -1,30 +1,27 @@
 /**
  * StaffEquipmentPreview - Shows a compact read-only view of a staff member's
- * photography equipment profile, for use in allocation dialogs.
+ * photography equipment kits, for use in allocation dialogs.
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Camera, Lightbulb, Image, Aperture, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { PhotographyEquipment } from './PhotographyEquipmentEditor';
+import {
+  type StoredEquipment,
+  type PhotographyEquipmentV2,
+  migrateToV2,
+  CATEGORY_CONFIG,
+} from './PhotographyEquipmentEditor';
 
 interface StaffEquipmentPreviewProps {
   userId: string;
 }
 
-const CATEGORY_CONFIG = [
-  { key: 'camera' as const, label: 'Camera Kit', icon: Camera },
-  { key: 'lighting' as const, label: 'Lighting', icon: Lightbulb },
-  { key: 'backdrop' as const, label: 'Backdrops', icon: Image },
-  { key: 'other' as const, label: 'Other', icon: Aperture },
-];
-
 export function StaffEquipmentPreview({ userId }: StaffEquipmentPreviewProps) {
-  const { data: equipment, isLoading } = useQuery({
+  const { data: v2Data, isLoading } = useQuery({
     queryKey: ['staff-equipment-profile', userId],
-    queryFn: async () => {
-      // Try profiles first
+    queryFn: async (): Promise<PhotographyEquipmentV2 | null> => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('photography_equipment_json')
@@ -32,17 +29,20 @@ export function StaffEquipmentPreview({ userId }: StaffEquipmentPreviewProps) {
         .maybeSingle();
 
       if (profile?.photography_equipment_json) {
-        return profile.photography_equipment_json as unknown as PhotographyEquipment;
+        return migrateToV2(profile.photography_equipment_json as unknown as StoredEquipment);
       }
 
-      // Fallback: check staff table by user_id
       const { data: staff } = await supabase
         .from('staff')
         .select('photography_equipment_json')
         .eq('user_id', userId)
         .maybeSingle();
 
-      return (staff?.photography_equipment_json as unknown as PhotographyEquipment) || null;
+      if (staff?.photography_equipment_json) {
+        return migrateToV2(staff.photography_equipment_json as unknown as StoredEquipment);
+      }
+
+      return null;
     },
     enabled: !!userId,
   });
@@ -56,7 +56,7 @@ export function StaffEquipmentPreview({ userId }: StaffEquipmentPreviewProps) {
     );
   }
 
-  if (!equipment) {
+  if (!v2Data || v2Data.kits.length === 0) {
     return (
       <p className="text-xs text-muted-foreground py-2 italic">
         No equipment profile registered
@@ -64,17 +64,8 @@ export function StaffEquipmentPreview({ userId }: StaffEquipmentPreviewProps) {
     );
   }
 
-  // Normalize old key formats
-  const normalized: PhotographyEquipment = {
-    camera: equipment.camera || (equipment as any).cameras || [],
-    lighting: equipment.lighting || (equipment as any).lights || [],
-    backdrop: equipment.backdrop || (equipment as any).backdrops || [],
-    other: equipment.other || (equipment as any).lenses || [],
-  };
-
-  const hasAny = CATEGORY_CONFIG.some(c => (normalized[c.key]?.length || 0) > 0);
-
-  if (!hasAny) {
+  const hasItems = v2Data.kits.some(k => k.items.length > 0);
+  if (!hasItems) {
     return (
       <p className="text-xs text-muted-foreground py-2 italic">
         No equipment profile registered
@@ -84,18 +75,19 @@ export function StaffEquipmentPreview({ userId }: StaffEquipmentPreviewProps) {
 
   return (
     <div className="space-y-2 bg-muted/30 rounded-lg p-3">
-      <p className="text-xs font-medium text-muted-foreground">Equipment Profile</p>
-      {CATEGORY_CONFIG.map(({ key, label, icon: Icon }) => {
-        const items = normalized[key] || [];
-        if (items.length === 0) return null;
+      <p className="text-xs font-medium text-muted-foreground">Equipment Kits</p>
+      {v2Data.kits.map(kit => {
+        if (kit.items.length === 0) return null;
+        const cfg = CATEGORY_CONFIG.find(c => c.key === kit.category);
+        const Icon = cfg?.icon;
         return (
-          <div key={key} className="space-y-1">
+          <div key={kit.id} className="space-y-1">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Icon className="h-3 w-3" />
-              <span>{label}</span>
+              {Icon && <Icon className="h-3 w-3" />}
+              <span className="font-medium">{kit.name}</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              {items.map((item) => (
+              {kit.items.map(item => (
                 <Badge key={item.id} variant="outline" className="text-xs font-normal">
                   {item.name}{item.brand ? ` (${item.brand})` : ''}
                 </Badge>
