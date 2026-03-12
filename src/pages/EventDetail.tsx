@@ -80,6 +80,7 @@ import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
+import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
