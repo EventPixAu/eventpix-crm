@@ -200,10 +200,12 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       user_id?: string;
       staff_id?: string;
       staff_role_id?: string;
+      session_id?: string;
       assignment_notes?: string;
     } = {
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
+      session_id: selectedSession !== 'all' ? selectedSession : undefined,
       assignment_notes: assignmentNotes || undefined,
     };
 
