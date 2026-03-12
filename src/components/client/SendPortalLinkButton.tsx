@@ -28,6 +28,8 @@ interface SendPortalLinkButtonProps {
   contactName?: string | null;
   /** Multiple contacts to choose from */
   contacts?: PortalLinkContact[];
+  /** Optional event ID to link the email log to */
+  eventId?: string;
   className?: string;
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
 }
