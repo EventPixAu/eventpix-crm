@@ -786,6 +786,12 @@ export default function EventDetail() {
                       Send Email
                     </Button>
                   )}
+                  {isAdmin && (
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setFinalConfirmOpen(true)}>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Send Final Confirmation
+                    </Button>
+                  )}
                   {isAdmin && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <SendPortalLinkButton
                       clientId={event.client_id}
