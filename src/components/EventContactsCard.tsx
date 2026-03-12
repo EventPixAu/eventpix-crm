@@ -1,9 +1,30 @@
-import { Phone, Mail, User, Building2 } from 'lucide-react';
-import { useEventContacts, CONTACT_TYPES } from '@/hooks/useEventContacts';
+import { useState } from 'react';
+import { Phone, Mail, User, Building2, Plus, Trash2, Pencil } from 'lucide-react';
+import { useEventContacts, useCreateEventContact, useDeleteEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface EventContactsCardProps {
   eventId: string;
+  clientId?: string | null;
   clientName?: string;
   clientDetails?: {
     business_name?: string | null;
