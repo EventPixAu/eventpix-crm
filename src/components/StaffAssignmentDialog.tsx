@@ -240,6 +240,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     setSelectedUser('');
     setSelectedRole('');
     setAssignmentNotes('');
+    // Don't reset selectedSession - keep it for consecutive assignments to same session
     setGuardrailChecks(null);
     setGuardrailOverridden(false);
   };
