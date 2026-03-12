@@ -21,7 +21,8 @@ import {
   Users,
   Camera,
   Settings2,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from 'lucide-react';
 import { 
   useEventAllocations, 
