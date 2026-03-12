@@ -574,6 +574,7 @@ export default function EventDetail() {
                 <ClientBriefPanel
                   eventId={id}
                   clientBriefContent={(event as any).client_brief_content}
+                  clientBriefTemplateId={(event as any).client_brief_template_id}
                   isAdmin={isAdmin}
                 />
               )}
