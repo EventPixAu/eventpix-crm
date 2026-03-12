@@ -167,6 +167,7 @@ serve(async (req) => {
       quotes: safeQuotes,
       qr_file_name: event.qr_file_name,
       qr_signed_url: qrSignedUrl,
+      pre_registration_link: event.pre_registration_link || null,
     };
 
     return new Response(JSON.stringify(response), {
