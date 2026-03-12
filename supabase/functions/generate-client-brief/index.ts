@@ -88,6 +88,10 @@ serve(async (req) => {
         phone: c.contact_phone,
         email: c.contact_email,
       })),
+      crew: assignments?.map((a: any) => ({
+        name: a.profiles?.full_name,
+        role: a.staff_roles?.name || a.role_on_event,
+      })),
       crew_count: assignments?.length || 0,
       notes: event.notes,
       coverage_hours: event.coverage_hours,
@@ -100,13 +104,14 @@ Write a clear, friendly, and professional event brief that the client will see i
 The brief should:
 - Confirm key event details (date, time, venue)
 - Mention the photography coverage they're getting
+- Include photographer name(s) from the crew list if available
 - Include any logistics or arrival info
 - Mention the pre-registration link if available
 - Be warm but professional in tone
 - Use plain text (no markdown headers or bullets with special characters)
 - Keep it concise — around 150-250 words
-- Address the client by first name if available
-Do NOT include internal notes or staff names.`;
+- Do NOT start with a salutation or greeting (no "Dear...", "Hi...", etc.) — jump straight into the content
+Do NOT include internal notes.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
