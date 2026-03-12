@@ -47,6 +47,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
+  const [selectedSession, setSelectedSession] = useState('all');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
