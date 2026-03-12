@@ -504,6 +504,7 @@ export default function EventDetail() {
               {/* Event Contacts from CRM */}
               <EventContactsCard
                 eventId={id!}
+                clientId={event?.client_id || (clientByName as any)?.id || null}
                 clientName={event.client_name}
                 clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
                 onsiteContact={{
