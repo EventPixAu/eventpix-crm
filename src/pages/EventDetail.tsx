@@ -782,12 +782,22 @@ export default function EventDetail() {
                       Send Email
                     </Button>
                   )}
-                  {isAdmin && event?.client_id && primaryContactEmail && (
+                  {isAdmin && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <SendPortalLinkButton
                       clientId={event.client_id}
                       clientName={(event as any)?.client_name || ''}
                       contactEmail={primaryContactEmail}
                       contactName={primaryContactName}
+                      contacts={eventContacts
+                        .filter(c => {
+                          const email = c.contact_email || c.client_contact?.email;
+                          return !!email;
+                        })
+                        .map(c => ({
+                          name: c.contact_name || c.client_contact?.contact_name || null,
+                          email: (c.contact_email || c.client_contact?.email)!,
+                        }))
+                      }
                       className="w-full justify-start"
                       buttonSize="default"
                     />
