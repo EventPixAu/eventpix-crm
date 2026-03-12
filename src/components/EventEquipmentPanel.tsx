@@ -494,6 +494,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                     <TableRow>
                       <TableHead>Item</TableHead>
                       <TableHead>Category</TableHead>
+                      {hasSessions && <TableHead>Session</TableHead>}
                       <TableHead>Assigned To</TableHead>
                       <TableHead>Status</TableHead>
                       {isAdmin && <TableHead className="w-[100px]"></TableHead>}
@@ -504,6 +505,18 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                       <TableRow key={alloc.id}>
                         <TableCell className="font-medium">{alloc.equipment_item.name}</TableCell>
                         <TableCell className="capitalize">{alloc.equipment_item.category}</TableCell>
+                        {hasSessions && (
+                          <TableCell>
+                            {alloc.session ? (
+                              <span className="flex items-center gap-1 text-xs">
+                                <Calendar className="h-3 w-3 text-primary" />
+                                {format(parseISO(alloc.session.session_date), 'EEE, d MMM')}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">All</span>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell>
                           {alloc.profile ? (
                             <span className="flex items-center gap-1">
