@@ -368,6 +368,27 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                   )}
                 </div>
 
+                {hasSessions && (
+                  <div className="space-y-2">
+                    <Label>Session / Day (Optional)</Label>
+                    <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Sessions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Sessions</SelectItem>
+                        {sessions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {format(parseISO(s.session_date), 'EEE, d MMM')}
+                            {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                            {s.label ? ` – ${s.label}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <Label className="flex items-center gap-2">
