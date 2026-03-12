@@ -361,6 +361,31 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
         <div className="space-y-3 pt-4 border-t">
           <Label>Add Team Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
           
+          {/* Session Selector */}
+          {hasSessions && (
+            <Select value={selectedSession} onValueChange={(value) => {
+              setSelectedSession(value);
+              setSelectedUser('');
+            }}>
+              <SelectTrigger className="h-9">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="All Sessions" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sessions (General)</SelectItem>
+                {sessions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.session_date ? format(parseISO(s.session_date), 'EEE, d MMM') : 'No date'}
+                    {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                    {s.label ? ` – ${s.label}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          
           {/* Location Filter */}
           <Select value={selectedLocation} onValueChange={(value) => {
             setSelectedLocation(value);
