@@ -543,11 +543,6 @@ export default function EventDetail() {
                 </div>
               )}
               
-              {/* Event Documents */}
-              {id && (
-                <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
-              )}
-
               {/* QR for this Event */}
               {id && (
                 <EventQrPanel
