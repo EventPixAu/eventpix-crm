@@ -41,6 +41,7 @@ serve(async (req) => {
     if (eventError || !event) throw new Error("Event not found");
 
     // Fetch assignments with profiles
+    // Fetch assignments with profiles
     const { data: assignments } = await supabase
       .from("event_assignments")
       .select(`
@@ -51,6 +52,13 @@ serve(async (req) => {
       `)
       .eq("event_id", eventId)
       .eq("confirmation_status", "confirmed");
+
+    // Fetch sessions for call/arrival time
+    const { data: sessions } = await supabase
+      .from("event_sessions")
+      .select("session_date, start_time, end_time, arrival_time, location, notes")
+      .eq("event_id", eventId)
+      .order("session_date");
 
     // Filter to onsite crew only
     const onsiteCrew = (assignments || []).filter((a: any) => {
@@ -74,6 +82,11 @@ serve(async (req) => {
       photographers_count: event.photographers_count,
       pre_registration_link: event.pre_registration_link,
       team_brief: event.brief_content || null,
+      session_call_times: sessions?.filter((s: any) => s.arrival_time).map((s: any) => ({
+        session_date: s.session_date,
+        call_time: s.arrival_time,
+        start_time: s.start_time,
+      })) || [],
       notes: event.notes,
     };
 
