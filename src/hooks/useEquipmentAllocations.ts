@@ -11,6 +11,7 @@ export interface EquipmentAllocation {
   user_id: string | null;
   equipment_item_id: string;
   kit_id: string | null;
+  session_id: string | null;
   allocated_at: string;
   returned_at: string | null;
   status: AllocationStatus;
