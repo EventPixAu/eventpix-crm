@@ -92,10 +92,13 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const { data: allocations, isLoading } = useEventAllocations(eventId);
   const { data: availableItems } = useAvailableEquipment();
   const { data: kits } = useActiveEquipmentKits();
+  const { data: sessions = [] } = useEventSessions(eventId);
   const allocateEquipment = useAllocateEquipment();
   const allocateKit = useAllocateKit();
   const updateStatus = useUpdateAllocationStatus();
   const removeAllocation = useRemoveAllocation();
+
+  const hasSessions = sessions.length > 0;
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
@@ -103,9 +106,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const [eventPixKitDialogOpen, setEventPixKitDialogOpen] = useState(false);
   const [epKitId, setEpKitId] = useState('');
   const [epKitUserId, setEpKitUserId] = useState('');
+  const [epKitSessionId, setEpKitSessionId] = useState('');
   const [selectedItemId, setSelectedItemId] = useState('');
   const [selectedKitId, setSelectedKitId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedSessionId, setSelectedSessionId] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedAllocation, setSelectedAllocation] = useState<{ id: string; status: AllocationStatus; userId: string | null } | null>(null);
   const [newStatus, setNewStatus] = useState<AllocationStatus>('allocated');
