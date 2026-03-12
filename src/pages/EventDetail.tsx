@@ -102,6 +102,7 @@ export default function EventDetail() {
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
+  const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
