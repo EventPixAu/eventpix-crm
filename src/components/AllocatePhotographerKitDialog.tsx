@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
+import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
 
 interface PhotographerKit {
   category: 'camera' | 'lighting' | 'backdrop' | 'other';
