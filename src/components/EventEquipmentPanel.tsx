@@ -298,6 +298,26 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                       </SelectContent>
                     </Select>
                   </div>
+                  {hasSessions && (
+                    <div className="space-y-2">
+                      <Label>Session / Day (Optional)</Label>
+                      <Select value={epKitSessionId} onValueChange={setEpKitSessionId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Sessions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Sessions</SelectItem>
+                          {sessions.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {format(parseISO(s.session_date), 'EEE, d MMM')}
+                              {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                              {s.label ? ` – ${s.label}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setEventPixKitDialogOpen(false)}>Cancel</Button>
