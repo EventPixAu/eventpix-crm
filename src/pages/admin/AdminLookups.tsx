@@ -695,6 +695,23 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
+            <TabsContent value="ops-statuses" className="m-0">
+              <LookupTable
+                items={opsStatuses.map(s => ({ 
+                  id: s.id, 
+                  name: s.label, 
+                  is_active: s.is_active, 
+                  sort_order: s.sort_order 
+                }))}
+                isLoading={opsStatusesLoading}
+                onCreate={async (name) => { await createOpsStatus.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateOpsStatus.mutateAsync({ id, ...updates }); }}
+                createPending={createOpsStatus.isPending}
+                updatePending={updateOpsStatus.isPending}
+                itemLabel="Operations Status"
+              />
+            </TabsContent>
+
             <TabsContent value="coverage-packages" className="m-0">
               <LookupTable
                 items={coveragePackages.map(p => ({ 
