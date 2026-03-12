@@ -36,9 +36,22 @@ import {
 import { useAvailableEquipment } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useAuth } from '@/lib/auth';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
 import { StaffEquipmentPreview } from './StaffEquipmentPreview';
+
+function formatTime12(timeStr: string): string {
+  try {
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}
 
 interface EventAssignment {
   id: string;
