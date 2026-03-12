@@ -554,6 +554,7 @@ export default function EventDetail() {
                   eventId={id}
                   qrFilePath={(event as any).qr_file_path || null}
                   qrFileName={(event as any).qr_file_name || null}
+                  preRegistrationLink={(event as any).pre_registration_link || null}
                   isAdmin={isAdmin}
                 />
               )}

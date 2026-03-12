@@ -1,10 +1,12 @@
 /**
- * Panel for uploading/displaying a QR code (PDF or PNG) for an event.
+ * Panel for uploading/displaying a QR code (PDF or PNG) for an event,
+ * plus a pre-registration link field.
  */
 import { useState, useRef } from 'react';
-import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon } from 'lucide-react';
+import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -13,12 +15,17 @@ interface EventQrPanelProps {
   eventId: string;
   qrFilePath: string | null;
   qrFileName: string | null;
+  preRegistrationLink?: string | null;
   isAdmin?: boolean;
 }
 
-export function EventQrPanel({ eventId, qrFilePath, qrFileName, isAdmin = false }: EventQrPanelProps) {
+export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, isAdmin = false }: EventQrPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [editingLink, setEditingLink] = useState(false);
+  const [linkValue, setLinkValue] = useState(preRegistrationLink || '');
+  const [savingLink, setSavingLink] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -38,7 +45,6 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, isAdmin = false 
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const filePath = `${eventId}/qr_${Date.now()}_${safeName}`;
 
-      // Remove old file if exists
       if (qrFilePath) {
         await supabase.storage.from('event-documents').remove([qrFilePath]);
       }
@@ -95,6 +101,33 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, isAdmin = false 
     }
   };
 
+  const handleSaveLink = async () => {
+    setSavingLink(true);
+    try {
+      const value = linkValue.trim() || null;
+      const { error } = await supabase
+        .from('events')
+        .update({ pre_registration_link: value } as any)
+        .eq('id', eventId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      setEditingLink(false);
+      toast.success(value ? 'Pre-registration link saved' : 'Pre-registration link removed');
+    } catch {
+      toast.error('Failed to save link');
+    } finally {
+      setSavingLink(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!preRegistrationLink) return;
+    navigator.clipboard.writeText(preRegistrationLink);
+    setCopied(true);
+    toast.success('Link copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const isPdf = qrFileName?.toLowerCase().endsWith('.pdf');
 
   return (
@@ -103,7 +136,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, isAdmin = false 
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <QrCode className="h-4 w-4" />
-            QR for this Event
+            QR & Pre-Registration
           </CardTitle>
           {isAdmin && (
             <>
@@ -125,13 +158,14 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, isAdmin = false 
                 ) : (
                   <Upload className="h-4 w-4 mr-1" />
                 )}
-                {qrFilePath ? 'Replace' : 'Upload'}
+                {qrFilePath ? 'Replace QR' : 'Upload QR'}
               </Button>
             </>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 space-y-4">
+        {/* QR File Section */}
         {qrFilePath && qrFileName ? (
           <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -154,8 +188,76 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, isAdmin = false 
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground py-2">No QR file uploaded yet.</p>
+          <p className="text-sm text-muted-foreground">No QR file uploaded yet.</p>
         )}
+
+        {/* Pre-Registration Link Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium flex items-center gap-1.5">
+              <Link2 className="h-3.5 w-3.5" />
+              Pre-Registration Link
+            </p>
+            {isAdmin && !editingLink && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  setLinkValue(preRegistrationLink || '');
+                  setEditingLink(true);
+                }}
+              >
+                <Pencil className="h-3 w-3 mr-1" />
+                {preRegistrationLink ? 'Edit' : 'Add'}
+              </Button>
+            )}
+          </div>
+
+          {editingLink ? (
+            <div className="flex gap-2">
+              <Input
+                value={linkValue}
+                onChange={(e) => setLinkValue(e.target.value)}
+                placeholder="https://eventpixau.mypixhome.com/instant-gallery/..."
+                className="text-sm"
+              />
+              <Button size="sm" onClick={handleSaveLink} disabled={savingLink}>
+                {savingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditingLink(false)}>
+                Cancel
+              </Button>
+            </div>
+          ) : preRegistrationLink ? (
+            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+              <Link2 className="h-4 w-4 text-primary shrink-0" />
+              <a
+                href={preRegistrationLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline truncate flex-1"
+              >
+                {preRegistrationLink}
+              </a>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCopyLink}>
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => window.open(preRegistrationLink, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No pre-registration link set.</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
