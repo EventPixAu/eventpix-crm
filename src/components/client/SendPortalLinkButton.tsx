@@ -122,6 +122,7 @@ export function SendPortalLinkButton({
           subject: 'Your Client Portal Access — Eventpixii',
           bodyHtml,
           clientId,
+          eventId,
         });
       }
 

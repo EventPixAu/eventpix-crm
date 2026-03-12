@@ -919,6 +919,7 @@ export default function EventDetail() {
                         clientName={(event as any)?.client_name || ''}
                         contactEmail={primaryContactEmail}
                         contactName={primaryContactName}
+                        eventId={event.id}
                         contacts={eventContacts
                           .filter(c => {
                             const email = c.contact_email || c.client_contact?.email;
