@@ -106,7 +106,7 @@ The brief should:
 - Mention the photography coverage they're getting
 - Include photographer name(s) from the crew list if available
 - Include any logistics or arrival info
-- Mention the pre-registration link if available
+- If a pre-registration link is available, mention that a pre-registration link has been set up and recommend sharing it with attendees — but do NOT include the actual URL (it is shown separately in the portal)
 - Be warm but professional in tone
 - Use plain text (no markdown headers or bullets with special characters)
 - Keep it concise — around 150-250 words
