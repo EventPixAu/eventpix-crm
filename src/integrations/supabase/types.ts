@@ -1775,6 +1775,7 @@ export type Database = {
           kit_id: string | null
           notes: string | null
           returned_at: string | null
+          session_id: string | null
           status: string
           user_id: string | null
         }
@@ -1787,6 +1788,7 @@ export type Database = {
           kit_id?: string | null
           notes?: string | null
           returned_at?: string | null
+          session_id?: string | null
           status?: string
           user_id?: string | null
         }
@@ -1799,6 +1801,7 @@ export type Database = {
           kit_id?: string | null
           notes?: string | null
           returned_at?: string | null
+          session_id?: string | null
           status?: string
           user_id?: string | null
         }
@@ -1822,6 +1825,13 @@ export type Database = {
             columns: ["kit_id"]
             isOneToOne: false
             referencedRelation: "equipment_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_allocations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "event_sessions"
             referencedColumns: ["id"]
           },
           {
