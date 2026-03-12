@@ -237,9 +237,9 @@ export function AllocatePhotographerKitDialog({
 
     try {
       const kitsToAllocate = Array.from(selectedKits).map(key => {
-        const [displayId, category] = key.split(':');
+        const [displayId, kitId] = key.split(':');
         const photographer = photographers.find(p => p.displayId === displayId);
-        const kit = photographer?.kits.find(k => k.category === category);
+        const kit = photographer?.kits.find(k => k.kitId === kitId);
         
         if (!photographer?.userId) {
           console.warn('[AllocateKit] Skipping kit - no profile user_id for:', photographer?.name);
@@ -247,8 +247,8 @@ export function AllocatePhotographerKitDialog({
         }
         
         return { 
-          userId: photographer.userId, // Use resolved profile user_id
-          category, 
+          userId: photographer.userId,
+          category: kit?.category || 'other', 
           items: kit?.items || [] 
         };
       }).filter((kit): kit is { userId: string; category: string; items: any[] } => kit !== null);
