@@ -354,7 +354,7 @@ export function useAllocatePhotographerKits() {
       // Insert only new allocations
       const { data, error } = await supabase
         .from('equipment_allocations')
-        .insert(allAllocations)
+        .insert(uniqueAllocations)
         .select();
 
       if (error) throw error;
