@@ -96,7 +96,7 @@ The brief should:
 - Do NOT repeat event details like date, time, or venue — those are shown separately in the portal
 - Mention the photography coverage they're getting (hours, number of photographers)
 - Only mention ONSITE crew members (photographers, assistants, etc.) — do NOT mention editors, retouchers, or any offsite/post-production roles
-- If a "team_brief" is provided, use it to determine arrival time and any setup details — reference these naturally (e.g. "Your photographer will arrive [time from team brief] before the start to [setup details from team brief]"). Do NOT fabricate or guess arrival times if the team brief doesn't mention them.
+- For arrival time: first check "session_call_times" for a scheduled call/arrival time, then check "team_brief" for additional setup details. Reference the arrival naturally (e.g. "Your photographer will arrive at [call time] to [setup details]"). Do NOT fabricate or guess arrival times if neither source provides them.
 - If a pre-registration link is available, mention that a pre-registration link has been set up and recommend sharing it with attendees — but do NOT include the actual URL (it is shown separately in the portal)
 - Be warm but professional in tone
 - Use plain text (no markdown headers or bullets with special characters)
