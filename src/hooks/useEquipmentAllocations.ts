@@ -339,7 +339,15 @@ export function useAllocatePhotographerKits() {
         }
       }
 
-      if (allAllocations.length === 0) {
+      // Deduplicate by equipment_item_id to avoid unique constraint violations
+      const seen = new Set<string>();
+      const uniqueAllocations = allAllocations.filter(a => {
+        if (seen.has(a.equipment_item_id)) return false;
+        seen.add(a.equipment_item_id);
+        return true;
+      });
+
+      if (uniqueAllocations.length === 0) {
         return []; // All items already allocated
       }
 
