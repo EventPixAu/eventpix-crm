@@ -341,7 +341,7 @@ export default function StaffDetail() {
           .eq('id', actualUserId)
           .maybeSingle();
         if (error) throw error;
-        return (data?.photography_equipment_json as unknown) as PhotographyEquipment | null;
+        return (data?.photography_equipment_json as unknown) as StoredEquipment | null;
       }
     },
     enabled: !!id && !!profile,
