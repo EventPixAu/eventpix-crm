@@ -61,6 +61,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: roles = [] } = useStaffRoles();
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
+  const { data: sessions = [] } = useEventSessions(eventId);
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
   const sendNotification = useSendNotification();
