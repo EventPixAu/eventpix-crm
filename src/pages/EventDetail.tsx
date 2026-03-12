@@ -932,7 +932,7 @@ export default function EventDetail() {
                         className="flex-1 justify-start"
                         buttonSize="default"
                       />
-                      {emailStatuses && emailStatuses.portal_link.status !== 'not_sent' && (
+                      {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 shrink-0', getActionStatusDisplay(emailStatuses.portal_link.status).className)}>
                           {getActionStatusDisplay(emailStatuses.portal_link.status).label}
                         </Badge>
