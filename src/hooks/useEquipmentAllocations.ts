@@ -107,13 +107,14 @@ export function useAllocateEquipment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ eventId, equipmentItemId, userId }: { eventId: string; equipmentItemId: string; userId?: string }) => {
+    mutationFn: async ({ eventId, equipmentItemId, userId, sessionId }: { eventId: string; equipmentItemId: string; userId?: string; sessionId?: string }) => {
       const { data, error } = await supabase
         .from('equipment_allocations')
         .insert({
           event_id: eventId,
           equipment_item_id: equipmentItemId,
           user_id: userId || null,
+          session_id: sessionId || null,
           status: 'allocated',
         })
         .select()
