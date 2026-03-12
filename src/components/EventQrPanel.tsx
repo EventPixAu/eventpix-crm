@@ -112,7 +112,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['event', eventId] });
       setEditingLink(false);
-      toast.success(value ? 'Pre-registration link saved' : 'Pre-registration link removed');
+      toast.success(value ? 'Registration link saved' : 'Registration link removed');
     } catch {
       toast.error('Failed to save link');
     } finally {
@@ -136,7 +136,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <QrCode className="h-4 w-4" />
-            QR & Pre-Registration
+            QR & Registration
           </CardTitle>
           {isAdmin && (
             <>
@@ -196,7 +196,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium flex items-center gap-1.5">
               <Link2 className="h-3.5 w-3.5" />
-              Pre-Registration Link
+              Registration & Live Feed Link
             </p>
             {isAdmin && !editingLink && (
               <Button
@@ -255,7 +255,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No pre-registration link set.</p>
+            <p className="text-sm text-muted-foreground">No registration link set.</p>
           )}
         </div>
       </CardContent>
