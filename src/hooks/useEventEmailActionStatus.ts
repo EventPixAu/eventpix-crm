@@ -59,9 +59,10 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         // Only keep the "best" status (most recent with highest priority)
         const current = result[actionType];
         if (current.status === 'not_sent') {
-          const s = log.status as EmailActionStatus['status'];
+          const rawStatus = log.status || 'sent';
+          const s = (rawStatus === 'pending' ? 'sent' : rawStatus) as EmailActionStatus['status'];
           result[actionType] = {
-            status: s === 'pending' ? 'sent' : (s || 'sent'),
+            status: s,
             sentAt: log.sent_at,
           };
         }
