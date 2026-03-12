@@ -44,7 +44,8 @@ export function useEventAllocations(eventId: string | undefined) {
           *,
           equipment_item:equipment_items(*),
           profile:profiles(full_name, email),
-          equipment_kit:equipment_kits(id, name, other_items)
+          equipment_kit:equipment_kits(id, name, other_items),
+          session:event_sessions(id, session_date, label, start_time, end_time)
         `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
