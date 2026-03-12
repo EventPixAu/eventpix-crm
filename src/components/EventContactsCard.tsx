@@ -38,8 +38,17 @@ interface EventContactsCardProps {
   };
 }
 
-export function EventContactsCard({ eventId, clientName, clientDetails, onsiteContact }: EventContactsCardProps) {
+export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact }: EventContactsCardProps) {
   const { data: contacts = [], isLoading } = useEventContacts(eventId);
+  const createContact = useCreateEventContact();
+  const deleteContact = useDeleteEventContact();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
+  const [contactType, setContactType] = useState<ContactType>('primary');
+  const [notes, setNotes] = useState('');
 
   const getContactTypeLabel = (type: string) => {
     return CONTACT_TYPES.find(t => t.value === type)?.label || type;
