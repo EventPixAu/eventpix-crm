@@ -409,12 +409,56 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           </motion.div>
         )}
 
+        {/* QR Code & Pre-Registration */}
+        {(data.qr_signed_url || data.pre_registration_link) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
+          >
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-cyan-400" />
+              QR Code
+            </h2>
+            {data.qr_signed_url && (
+              <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5">
+                <div className="flex items-center gap-3">
+                  <QrCode className="h-5 w-5 text-cyan-400" />
+                  <p className="text-white text-sm font-medium">{data.qr_file_name || 'QR Code'}</p>
+                </div>
+                <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
+                  <a href={data.qr_signed_url} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
+            )}
+            {data.pre_registration_link && (
+              <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/5">
+                <p className="text-white/60 text-xs mb-1.5 flex items-center gap-1">
+                  <Link2 className="h-3 w-3" />
+                  Pre-Registration Link
+                </p>
+                <a
+                  href={data.pre_registration_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:text-cyan-300 text-sm underline break-all"
+                >
+                  {data.pre_registration_link}
+                </a>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Contracts */}
         {(data.contracts?.length ?? 0) > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
+            transition={{ delay: 0.4 }}
             className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -459,7 +503,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.45 }}
             className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -504,50 +548,6 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                 </div>
               ))}
             </div>
-          </motion.div>
-        )}
-
-        {/* QR Code & Pre-Registration */}
-        {(data.qr_signed_url || data.pre_registration_link) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-            className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
-          >
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <QrCode className="h-5 w-5 text-cyan-400" />
-              QR Code
-            </h2>
-            {data.qr_signed_url && (
-              <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5">
-                <div className="flex items-center gap-3">
-                  <QrCode className="h-5 w-5 text-cyan-400" />
-                  <p className="text-white text-sm font-medium">{data.qr_file_name || 'QR Code'}</p>
-                </div>
-                <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
-                  <a href={data.qr_signed_url} target="_blank" rel="noopener noreferrer">
-                    <Download className="h-4 w-4" />
-                  </a>
-                </Button>
-              </div>
-            )}
-            {data.pre_registration_link && (
-              <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/5">
-                <p className="text-white/60 text-xs mb-1.5 flex items-center gap-1">
-                  <Link2 className="h-3 w-3" />
-                  Pre-Registration Link
-                </p>
-                <a
-                  href={data.pre_registration_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyan-400 hover:text-cyan-300 text-sm underline break-all"
-                >
-                  {data.pre_registration_link}
-                </a>
-              </div>
-            )}
           </motion.div>
         )}
 
