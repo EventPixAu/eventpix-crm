@@ -12,6 +12,7 @@ import {
   Download,
   FileCheck2,
   FileText,
+  Link2,
   Loader2,
   MapPin,
   Phone,
@@ -90,6 +91,7 @@ interface PortalData {
   quotes: PortalQuote[];
   qr_file_name: string | null;
   qr_signed_url: string | null;
+  pre_registration_link: string | null;
 }
 
 function formatTime(time: string | null): string {
@@ -505,8 +507,8 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           </motion.div>
         )}
 
-        {/* QR Code */}
-        {data.qr_signed_url && (
+        {/* QR Code & Pre-Registration */}
+        {(data.qr_signed_url || data.pre_registration_link) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -517,17 +519,35 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
               <QrCode className="h-5 w-5 text-cyan-400" />
               QR Code
             </h2>
-            <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5">
-              <div className="flex items-center gap-3">
-                <QrCode className="h-5 w-5 text-cyan-400" />
-                <p className="text-white text-sm font-medium">{data.qr_file_name || 'QR Code'}</p>
+            {data.qr_signed_url && (
+              <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5">
+                <div className="flex items-center gap-3">
+                  <QrCode className="h-5 w-5 text-cyan-400" />
+                  <p className="text-white text-sm font-medium">{data.qr_file_name || 'QR Code'}</p>
+                </div>
+                <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
+                  <a href={data.qr_signed_url} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4" />
+                  </a>
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" asChild className="text-white/60 hover:text-white">
-                <a href={data.qr_signed_url} target="_blank" rel="noopener noreferrer">
-                  <Download className="h-4 w-4" />
+            )}
+            {data.pre_registration_link && (
+              <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/5">
+                <p className="text-white/60 text-xs mb-1.5 flex items-center gap-1">
+                  <Link2 className="h-3 w-3" />
+                  Pre-Registration Link
+                </p>
+                <a
+                  href={data.pre_registration_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:text-cyan-300 text-sm underline break-all"
+                >
+                  {data.pre_registration_link}
                 </a>
-              </Button>
-            </div>
+              </div>
+            )}
           </motion.div>
         )}
 
