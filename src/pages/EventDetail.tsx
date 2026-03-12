@@ -90,6 +90,7 @@ export default function EventDetail() {
   const { isAdmin } = useAuth();
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
+  const { data: eventSessions = [] } = useEventSessions(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: auditLog = [] } = useAuditLog(id);
