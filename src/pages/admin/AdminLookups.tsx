@@ -432,6 +432,11 @@ export default function AdminLookups() {
   const createLeadStatus = useCreateLeadStatus();
   const updateLeadStatus = useUpdateLeadStatus();
 
+  // Ops Statuses
+  const { data: opsStatuses = [], isLoading: opsStatusesLoading } = useAllOpsStatuses();
+  const createOpsStatus = useCreateOpsStatus();
+  const updateOpsStatus = useUpdateOpsStatus();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
