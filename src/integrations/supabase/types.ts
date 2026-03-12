@@ -3748,6 +3748,36 @@ export type Database = {
           },
         ]
       }
+      ops_statuses: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          label: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          label: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          label?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       package_items: {
         Row: {
           created_at: string | null

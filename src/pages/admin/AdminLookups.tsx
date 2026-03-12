@@ -24,6 +24,7 @@ import {
   FileCheck,
   Building2,
   CircleDot,
+  ClipboardList,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
@@ -105,6 +106,11 @@ import {
   useCreateCompanyCategory,
   useUpdateCompanyCategory,
 } from '@/hooks/useCompanyCategories';
+import {
+  useAllOpsStatuses,
+  useCreateOpsStatus,
+  useUpdateOpsStatus,
+} from '@/hooks/useOpsStatuses';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
@@ -426,6 +432,11 @@ export default function AdminLookups() {
   const createLeadStatus = useCreateLeadStatus();
   const updateLeadStatus = useUpdateLeadStatus();
 
+  // Ops Statuses
+  const { data: opsStatuses = [], isLoading: opsStatusesLoading } = useAllOpsStatuses();
+  const createOpsStatus = useCreateOpsStatus();
+  const updateOpsStatus = useUpdateOpsStatus();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -496,6 +507,13 @@ export default function AdminLookups() {
               >
                 <CircleDot className="h-4 w-4 mr-2" />
                 Lead Statuses
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ops-statuses"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Ops Status
               </TabsTrigger>
               <TabsTrigger 
                 value="lost-reasons"
@@ -674,6 +692,23 @@ export default function AdminLookups() {
                 createPending={createLeadStatus.isPending}
                 updatePending={updateLeadStatus.isPending}
                 itemLabel="Lead Status"
+              />
+            </TabsContent>
+
+            <TabsContent value="ops-statuses" className="m-0">
+              <LookupTable
+                items={opsStatuses.map(s => ({ 
+                  id: s.id, 
+                  name: s.label, 
+                  is_active: s.is_active, 
+                  sort_order: s.sort_order 
+                }))}
+                isLoading={opsStatusesLoading}
+                onCreate={async (name) => { await createOpsStatus.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateOpsStatus.mutateAsync({ id, ...updates }); }}
+                createPending={createOpsStatus.isPending}
+                updatePending={updateOpsStatus.isPending}
+                itemLabel="Operations Status"
               />
             </TabsContent>
 
