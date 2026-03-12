@@ -42,6 +42,18 @@ interface StaffAssignmentDialogProps {
 
 const MAX_STAFF_DEFAULT = 8;
 
+function formatTime12(timeStr: string): string {
+  try {
+    const [h, m] = timeStr.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+}
+
 export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STAFF_DEFAULT }: StaffAssignmentDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
