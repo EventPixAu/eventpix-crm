@@ -112,7 +112,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['event', eventId] });
       setEditingLink(false);
-      toast.success(value ? 'Pre-registration link saved' : 'Pre-registration link removed');
+      toast.success(value ? 'Registration link saved' : 'Registration link removed');
     } catch {
       toast.error('Failed to save link');
     } finally {
