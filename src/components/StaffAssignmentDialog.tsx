@@ -23,6 +23,7 @@ import {
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLookups';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useCheckConflicts } from '@/hooks/useCalendar';
 import { useCheckAssignmentConflicts, useStaffAvailabilityByDate, AssignmentWarning } from '@/hooks/useStaffAvailability';
