@@ -7,6 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const OFFSITE_ROLES = ["editor", "retoucher", "post-production", "post production"];
+
 serve(async (req) => {
   if (req.method === "OPTIONS")
     return new Response(null, { headers: corsHeaders });
@@ -38,19 +40,6 @@ serve(async (req) => {
 
     if (eventError || !event) throw new Error("Event not found");
 
-    // Fetch sessions
-    const { data: sessions } = await supabase
-      .from("event_sessions")
-      .select("*")
-      .eq("event_id", eventId)
-      .order("session_date");
-
-    // Fetch contacts
-    const { data: contacts } = await supabase
-      .from("event_contacts")
-      .select("*")
-      .eq("event_id", eventId);
-
     // Fetch assignments with profiles
     const { data: assignments } = await supabase
       .from("event_assignments")
@@ -63,40 +52,29 @@ serve(async (req) => {
       .eq("event_id", eventId)
       .eq("confirmation_status", "confirmed");
 
+    // Filter to onsite crew only
+    const onsiteCrew = (assignments || []).filter((a: any) => {
+      const role = (a.staff_roles?.name || a.role_on_event || "").toLowerCase();
+      return !OFFSITE_ROLES.some((offsite) => role.includes(offsite));
+    });
+
     // Build context
     const client = (event as any).clients;
     const eventContext = {
       event_name: event.lead_name || event.event_name || "Untitled Event",
       event_type: event.event_type,
-      event_date: event.event_date,
-      start_time: event.start_time,
-      end_time: event.end_time,
-      venue_name: event.venue_name,
-      venue_address: event.venue_address,
       client_name: client?.business_name,
       contact_name: client?.primary_contact_name,
-      sessions: sessions?.map((s: any) => ({
-        date: s.session_date,
-        start: s.start_time,
-        end: s.end_time,
-        location: s.location,
-        notes: s.notes,
-      })),
-      contacts: contacts?.map((c: any) => ({
-        name: c.contact_name,
-        type: c.contact_type,
-        phone: c.contact_phone,
-        email: c.contact_email,
-      })),
-      crew: assignments?.map((a: any) => ({
+      onsite_crew: onsiteCrew.map((a: any) => ({
         name: a.profiles?.full_name,
         role: a.staff_roles?.name || a.role_on_event,
       })),
-      crew_count: assignments?.length || 0,
-      notes: event.notes,
+      onsite_crew_count: onsiteCrew.length,
       coverage_hours: event.coverage_hours,
       photographers_count: event.photographers_count,
       pre_registration_link: event.pre_registration_link,
+      team_brief: event.brief_content || null,
+      notes: event.notes,
     };
 
     const systemPrompt = `You are a professional event photography company writing a brief for a client. 
@@ -104,14 +82,15 @@ Write a clear, friendly, and professional event brief that the client will see i
 The brief should:
 - Do NOT repeat event details like date, time, or venue — those are shown separately in the portal
 - Mention the photography coverage they're getting (hours, number of photographers)
-- Include photographer name(s) from the crew list if available
-- Include any logistics or arrival info
+- Only mention ONSITE crew members (photographers, assistants, etc.) — do NOT mention editors, retouchers, or any offsite/post-production roles
+- If a "team_brief" is provided, use it to determine arrival time and any setup details — reference these naturally (e.g. "Your photographer will arrive [time from team brief] before the start to [setup details from team brief]"). Do NOT fabricate or guess arrival times if the team brief doesn't mention them.
 - If a pre-registration link is available, mention that a pre-registration link has been set up and recommend sharing it with attendees — but do NOT include the actual URL (it is shown separately in the portal)
 - Be warm but professional in tone
 - Use plain text (no markdown headers or bullets with special characters)
 - Keep it concise — around 150-250 words
 - Do NOT start with a salutation or greeting (no "Dear...", "Hi...", etc.) — jump straight into the content
-Do NOT include internal notes.`;
+- Do NOT include any internal notes, internal logistics, or information meant only for the team
+- The "team_brief" is INTERNAL — extract relevant client-facing details (like arrival time) but do NOT copy internal instructions verbatim`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
