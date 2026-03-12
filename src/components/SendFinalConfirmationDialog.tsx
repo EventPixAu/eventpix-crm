@@ -25,6 +25,7 @@ import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
+import { getPublicBaseUrl } from '@/lib/utils';
 
 interface Recipient {
   id: string;
