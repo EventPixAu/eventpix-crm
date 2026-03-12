@@ -40,6 +40,7 @@ export function SendPortalLinkButton({
   contactEmail,
   contactName,
   contacts: contactsProp,
+  eventId,
   className,
   buttonSize = 'sm',
 }: SendPortalLinkButtonProps) {
