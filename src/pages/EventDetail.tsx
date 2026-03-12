@@ -543,11 +543,6 @@ export default function EventDetail() {
                 </div>
               )}
               
-              {/* Event Documents */}
-              {id && (
-                <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
-              )}
-
               {/* QR for this Event */}
               {id && (
                 <EventQrPanel
@@ -704,6 +699,11 @@ export default function EventDetail() {
               {/* Budget (Quote) Panel */}
               {isAdmin && (event as any).quote_id && (
                 <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
+              )}
+
+              {/* Event Documents */}
+              {id && (
+                <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
               )}
 
               {/* Contracts Panel */}
