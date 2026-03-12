@@ -215,8 +215,8 @@ export function AllocatePhotographerKitDialog({
     });
   }, [allAssignedStaff, photographerData, staffUserLinks]);
 
-  const toggleKit = (photographerId: string, category: string) => {
-    const key = `${photographerId}:${category}`;
+  const toggleKit = (photographerId: string, kitId: string) => {
+    const key = `${photographerId}:${kitId}`;
     setSelectedKits(prev => {
       const next = new Set(prev);
       if (next.has(key)) {
