@@ -85,11 +85,11 @@ function buildConfirmationBody(
     ? format(parseISO(eventData.event_date), 'EEEE, d MMMM yyyy')
     : 'TBC';
 
-  // Find lead photographer
-  const leadAssignment = assignments.find((a: any) => {
+  // Find lead photographer from onsite crew
+  const leadAssignment = onsiteAssignments.find((a: any) => {
     const role = a.staff_role?.name?.toLowerCase() || a.role_on_event?.toLowerCase() || '';
     return role.includes('lead') || role.includes('photographer');
-  }) || assignments[0];
+  }) || onsiteAssignments[0];
 
   const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
   const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
