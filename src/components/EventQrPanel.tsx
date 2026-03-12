@@ -255,7 +255,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No pre-registration link set.</p>
+            <p className="text-sm text-muted-foreground">No registration link set.</p>
           )}
         </div>
       </CardContent>
