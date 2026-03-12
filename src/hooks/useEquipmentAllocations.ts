@@ -30,6 +30,13 @@ export interface EquipmentAllocationWithDetails extends EquipmentAllocation {
     name: string;
     other_items: string[] | null;
   } | null;
+  session?: {
+    id: string;
+    session_date: string;
+    label: string | null;
+    start_time: string | null;
+    end_time: string | null;
+  } | null;
 }
 
 export function useEventAllocations(eventId: string | undefined) {
