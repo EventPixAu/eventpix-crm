@@ -68,6 +68,21 @@ function formatTime12h(time?: string | null): string {
   }
 }
 
+function formatTimeOffset(time?: string | null, offsetMinutes = 0): string {
+  if (!time) return 'TBC';
+  try {
+    const [h, m] = time.split(':').map(Number);
+    const total = h * 60 + m + offsetMinutes;
+    const newH = Math.floor(((total % 1440) + 1440) % 1440 / 60);
+    const newM = ((total % 60) + 60) % 60;
+    const ampm = newH >= 12 ? 'PM' : 'AM';
+    const hour12 = newH % 12 || 12;
+    return `${hour12}:${newM.toString().padStart(2, '0')} ${ampm}`;
+  } catch {
+    return time;
+  }
+}
+
 const OFFSITE_ROLES = ['editor', 'retoucher', 'post-production'];
 
 function isOnsiteAssignment(a: any): boolean {
