@@ -1164,6 +1164,7 @@ export default function EventDetail() {
             primary_contact_name: primaryContactName,
             primary_contact_phone: primaryContactEmail,
             delivery_method: getDeliveryMethodName(),
+            arrival_time: eventSessions[0]?.arrival_time || null,
             client_brief_content: (event as any).client_brief_content,
           }}
           recipients={emailRecipients}
