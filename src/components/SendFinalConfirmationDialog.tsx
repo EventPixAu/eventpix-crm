@@ -122,7 +122,7 @@ function buildConfirmationBody(
 
   lines.push('');
   lines.push('─────────────────────────────');
-  lines.push('YOUR PHOTOGRAPHER');
+  lines.push('YOUR TEAM');
   lines.push('─────────────────────────────');
   lines.push('');
   lines.push(`${leadRole}: ${leadName}`);
@@ -137,7 +137,11 @@ function buildConfirmationBody(
     otherAssignments.forEach((a: any) => {
       const name = a.profile?.full_name || a.staff?.name || 'TBC';
       const role = a.staff_role?.name || a.role_on_event || 'Team Member';
+      const phone = a.profile?.phone || a.staff?.phone || '';
       lines.push(`${role}: ${name}`);
+      if (phone) {
+        lines.push(`Mobile: ${phone}`);
+      }
     });
   }
 
