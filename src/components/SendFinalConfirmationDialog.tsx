@@ -68,6 +68,21 @@ function formatTime12h(time?: string | null): string {
   }
 }
 
+function formatTimeOffset(time?: string | null, offsetMinutes = 0): string {
+  if (!time) return 'TBC';
+  try {
+    const [h, m] = time.split(':').map(Number);
+    const total = h * 60 + m + offsetMinutes;
+    const newH = Math.floor(((total % 1440) + 1440) % 1440 / 60);
+    const newM = ((total % 60) + 60) % 60;
+    const ampm = newH >= 12 ? 'PM' : 'AM';
+    const hour12 = newH % 12 || 12;
+    return `${hour12}:${newM.toString().padStart(2, '0')} ${ampm}`;
+  } catch {
+    return time;
+  }
+}
+
 const OFFSITE_ROLES = ['editor', 'retoucher', 'post-production'];
 
 function isOnsiteAssignment(a: any): boolean {
@@ -107,7 +122,8 @@ function buildConfirmationBody(
   lines.push('─────────────────────────────');
   lines.push('');
   lines.push(`Date: ${eventDate}`);
-  lines.push(`Time: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
+  lines.push(`Setup: ${formatTimeOffset(eventData.start_time, -30)}`);
+  lines.push(`Activation: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
   
   if (eventData.venue_name) {
     lines.push(`Venue: ${eventData.venue_name}`);
