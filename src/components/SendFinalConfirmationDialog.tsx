@@ -107,7 +107,8 @@ function buildConfirmationBody(
   lines.push('─────────────────────────────');
   lines.push('');
   lines.push(`Date: ${eventDate}`);
-  lines.push(`Time: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
+  lines.push(`Setup: ${formatTimeOffset(eventData.start_time, -30)}`);
+  lines.push(`Activation: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
   
   if (eventData.venue_name) {
     lines.push(`Venue: ${eventData.venue_name}`);
