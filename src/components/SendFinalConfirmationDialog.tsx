@@ -50,6 +50,7 @@ interface SendFinalConfirmationDialogProps {
     primary_contact_name?: string | null;
     primary_contact_phone?: string | null;
     delivery_method?: string;
+    arrival_time?: string | null;
     client_brief_content?: string | null;
   };
   recipients: Recipient[];
@@ -122,7 +123,9 @@ function buildConfirmationBody(
   lines.push('─────────────────────────────');
   lines.push('');
   lines.push(`Date: ${eventDate}`);
-  lines.push(`Setup: ${formatTimeOffset(eventData.start_time, -30)}`);
+  if (eventData.arrival_time) {
+    lines.push(`Setup: ${formatTime12h(eventData.arrival_time)}`);
+  }
   lines.push(`Activation: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
   
   if (eventData.venue_name) {
