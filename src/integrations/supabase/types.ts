@@ -2690,6 +2690,7 @@ export type Database = {
           delivery_method_guests_id: string | null
           delivery_method_id: string | null
           dress_code: string | null
+          editing_instructions: string | null
           end_at: string | null
           end_time: string | null
           enquiry_source: string | null
@@ -2758,6 +2759,7 @@ export type Database = {
           delivery_method_guests_id?: string | null
           delivery_method_id?: string | null
           dress_code?: string | null
+          editing_instructions?: string | null
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
@@ -2826,6 +2828,7 @@ export type Database = {
           delivery_method_guests_id?: string | null
           delivery_method_id?: string | null
           dress_code?: string | null
+          editing_instructions?: string | null
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
