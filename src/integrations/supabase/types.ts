@@ -2687,6 +2687,7 @@ export type Database = {
           date_status: string | null
           delivery_deadline: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
+          delivery_method_guests_id: string | null
           delivery_method_id: string | null
           dress_code: string | null
           end_at: string | null
@@ -2754,6 +2755,7 @@ export type Database = {
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
+          delivery_method_guests_id?: string | null
           delivery_method_id?: string | null
           dress_code?: string | null
           end_at?: string | null
@@ -2821,6 +2823,7 @@ export type Database = {
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
+          delivery_method_guests_id?: string | null
           delivery_method_id?: string | null
           dress_code?: string | null
           end_at?: string | null
@@ -2892,6 +2895,13 @@ export type Database = {
             columns: ["coverage_package_id"]
             isOneToOne: false
             referencedRelation: "coverage_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_delivery_method_guests_id_fkey"
+            columns: ["delivery_method_guests_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_methods_lookup"
             referencedColumns: ["id"]
           },
           {

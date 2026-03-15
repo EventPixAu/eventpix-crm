@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS delivery_method_guests_id uuid REFERENCES public.delivery_methods_lookup(id);
