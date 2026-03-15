@@ -77,7 +77,7 @@ import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
 import CompanyInsurance from "./pages/admin/CompanyInsurance";
-import { CompanyList, ContactList, CrmEmails, PromotionsDashboard } from "./pages/crm";
+import { CompanyList, ContactList, CrmEmails, PromotionsDashboard, CrmLookups } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
 import ResetPassword from "./pages/ResetPassword";
 import SalesDashboard from "./pages/sales/SalesDashboard";
