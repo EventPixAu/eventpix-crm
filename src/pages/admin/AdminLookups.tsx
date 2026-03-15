@@ -12,14 +12,12 @@ import {
   Truck,
   Box,
   Beaker,
-  Users,
   Target,
   Briefcase,
   XCircle,
   Heart,
   ShoppingBag,
   Package,
-  FolderOpen,
   MapPin,
   FileCheck,
   Building2,
@@ -51,11 +49,6 @@ import {
   useUpdateLocation,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
-import {
-  useAllContactRoles,
-  useCreateContactRole,
-  useUpdateContactRole,
-} from '@/hooks/useContactRoles';
 import {
   useAllLeadSources,
   useCreateLeadSource,
@@ -92,25 +85,15 @@ import {
   useUpdateProductCategory,
 } from '@/hooks/useAdminProductCategories';
 import {
-  useAllCompanyStatuses,
-  useCreateCompanyStatus,
-  useUpdateCompanyStatus,
-} from '@/hooks/useCompanyStatuses';
+  useAllOpsStatuses,
+  useCreateOpsStatus,
+  useUpdateOpsStatus,
+} from '@/hooks/useOpsStatuses';
 import {
   useAllLeadStatuses,
   useCreateLeadStatus,
   useUpdateLeadStatus,
 } from '@/hooks/useLeadStatuses';
-import {
-  useAllCompanyCategories,
-  useCreateCompanyCategory,
-  useUpdateCompanyCategory,
-} from '@/hooks/useCompanyCategories';
-import {
-  useAllOpsStatuses,
-  useCreateOpsStatus,
-  useUpdateOpsStatus,
-} from '@/hooks/useOpsStatuses';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
@@ -372,10 +355,6 @@ export default function AdminLookups() {
   const createCategory = useCreateEquipmentCategory();
   const updateCategory = useUpdateEquipmentCategory();
 
-  // Contact Roles
-  const { data: contactRoles = [], isLoading: contactRolesLoading } = useAllContactRoles();
-  const createContactRole = useCreateContactRole();
-  const updateContactRole = useUpdateContactRole();
 
   // Lead Sources
   const { data: leadSources = [], isLoading: leadSourcesLoading } = useAllLeadSources();
@@ -417,15 +396,6 @@ export default function AdminLookups() {
   const createProductCategory = useCreateProductCategory();
   const updateProductCategory = useUpdateProductCategory();
 
-  // Company Statuses
-  const { data: companyStatuses = [], isLoading: companyStatusesLoading } = useAllCompanyStatuses();
-  const createCompanyStatus = useCreateCompanyStatus();
-  const updateCompanyStatus = useUpdateCompanyStatus();
-
-  // Company Categories
-  const { data: companyCategories = [], isLoading: companyCategoriesLoading } = useAllCompanyCategories();
-  const createCompanyCategory = useCreateCompanyCategory();
-  const updateCompanyCategory = useUpdateCompanyCategory();
 
   // Lead Statuses
   const { data: leadStatuses = [], isLoading: leadStatusesLoading } = useAllLeadStatuses();
@@ -479,13 +449,6 @@ export default function AdminLookups() {
               >
                 <Briefcase className="h-4 w-4 mr-2" />
                 Staff Roles
-              </TabsTrigger>
-              <TabsTrigger 
-                value="contact-roles"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Contact Roles
               </TabsTrigger>
               <TabsTrigger 
                 value="relationship-types"
@@ -549,20 +512,6 @@ export default function AdminLookups() {
               >
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 Product Categories
-              </TabsTrigger>
-              <TabsTrigger 
-                value="company-statuses"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <CircleDot className="h-4 w-4 mr-2" />
-                Company Status
-              </TabsTrigger>
-              <TabsTrigger 
-                value="company-categories"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Categories
               </TabsTrigger>
               <TabsTrigger
                 value="training-tools"
@@ -630,17 +579,6 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
-            <TabsContent value="contact-roles" className="m-0">
-              <LookupTable
-                items={contactRoles}
-                isLoading={contactRolesLoading}
-                onCreate={async (name) => { await createContactRole.mutateAsync(name); }}
-                onUpdate={async (id, updates) => { await updateContactRole.mutateAsync({ id, ...updates }); }}
-                createPending={createContactRole.isPending}
-                updatePending={updateContactRole.isPending}
-                itemLabel="Contact Role"
-              />
-            </TabsContent>
 
             <TabsContent value="relationship-types" className="m-0">
               <LookupTable
@@ -780,39 +718,6 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
-            <TabsContent value="company-statuses" className="m-0">
-              <LookupTable
-                items={companyStatuses.map(s => ({ 
-                  id: s.id, 
-                  name: s.label, 
-                  is_active: s.is_active, 
-                  sort_order: s.sort_order 
-                }))}
-                isLoading={companyStatusesLoading}
-                onCreate={async (name) => { await createCompanyStatus.mutateAsync(name); }}
-                onUpdate={async (id, updates) => { await updateCompanyStatus.mutateAsync({ id, ...updates }); }}
-                createPending={createCompanyStatus.isPending}
-                updatePending={updateCompanyStatus.isPending}
-                itemLabel="Company Status"
-              />
-            </TabsContent>
-
-            <TabsContent value="company-categories" className="m-0">
-              <LookupTable
-                items={companyCategories.map(c => ({ 
-                  id: c.id, 
-                  name: c.name, 
-                  is_active: c.is_active, 
-                  sort_order: c.sort_order 
-                }))}
-                isLoading={companyCategoriesLoading}
-                onCreate={async (name) => { await createCompanyCategory.mutateAsync(name); }}
-                onUpdate={async (id, updates) => { await updateCompanyCategory.mutateAsync({ id, ...updates }); }}
-                createPending={createCompanyCategory.isPending}
-                updatePending={updateCompanyCategory.isPending}
-                itemLabel="Company Category"
-              />
-            </TabsContent>
 
             <TabsContent value="training-tools" className="m-0">
               <AdminTrainingTools />
