@@ -65,6 +65,7 @@ const crmItems: NavItem[] = [
   { href: '/crm/companies', label: 'Companies', icon: Building2 },
   { href: '/crm/contacts', label: 'Contacts', icon: User },
   { href: '/crm/emails', label: 'Emails', icon: Mail },
+  { href: '/crm/lookups', label: 'Lookups', icon: Settings },
 ];
 
 // ===== KNOWLEDGE BASE (Cross-functional) =====
