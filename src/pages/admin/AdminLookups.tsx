@@ -352,10 +352,6 @@ export default function AdminLookups() {
   const createCategory = useCreateEquipmentCategory();
   const updateCategory = useUpdateEquipmentCategory();
 
-  // Contact Roles
-  const { data: contactRoles = [], isLoading: contactRolesLoading } = useAllContactRoles();
-  const createContactRole = useCreateContactRole();
-  const updateContactRole = useUpdateContactRole();
 
   // Lead Sources
   const { data: leadSources = [], isLoading: leadSourcesLoading } = useAllLeadSources();
