@@ -332,9 +332,9 @@ export default function EventDetail() {
   // Helper to get delivery method name
   const getDeliveryMethodName = (field: 'delivery_method_id' | 'delivery_method_guests_id' = 'delivery_method_id') => {
     if (!event) return '';
-    const id = (event as any)[field];
-    if (id && deliveryMethodMap[id]) {
-      return deliveryMethodMap[id];
+    const fieldId = event[field];
+    if (fieldId && deliveryMethodMap[fieldId]) {
+      return deliveryMethodMap[fieldId];
     }
     if (field === 'delivery_method_id') {
       return event.delivery_method?.replace('_', ' ') || '';
