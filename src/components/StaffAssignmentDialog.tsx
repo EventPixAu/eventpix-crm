@@ -388,13 +388,18 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sessions (General)</SelectItem>
-                {sessions.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.session_date ? format(parseISO(s.session_date), 'EEE, d MMM') : 'No date'}
-                    {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
-                    {s.label ? ` – ${s.label}` : ''}
-                  </SelectItem>
-                ))}
+                {sessions.map((s) => {
+                  const isPost = (s as any).session_type === 'post_production';
+                  return (
+                    <SelectItem key={s.id} value={s.id}>
+                      {isPost ? '🎬 ' : ''}
+                      {s.session_date ? format(parseISO(s.session_date), 'EEE, d MMM') : 'No date'}
+                      {s.start_time ? ` • ${formatTime12(s.start_time)}` : ''}
+                      {s.label ? ` – ${s.label}` : ''}
+                      {isPost ? ' (Post)' : ''}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           )}

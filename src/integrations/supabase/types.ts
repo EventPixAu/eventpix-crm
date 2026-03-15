@@ -2428,6 +2428,7 @@ export type Database = {
           lead_id: string | null
           notes: string | null
           session_date: string
+          session_type: string
           sort_order: number | null
           start_time: string | null
           timezone: string | null
@@ -2445,6 +2446,7 @@ export type Database = {
           lead_id?: string | null
           notes?: string | null
           session_date: string
+          session_type?: string
           sort_order?: number | null
           start_time?: string | null
           timezone?: string | null
@@ -2462,6 +2464,7 @@ export type Database = {
           lead_id?: string | null
           notes?: string | null
           session_date?: string
+          session_type?: string
           sort_order?: number | null
           start_time?: string | null
           timezone?: string | null

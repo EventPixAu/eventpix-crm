@@ -77,6 +77,11 @@ export function SessionsDisplay({ eventId, compact = false, className }: Session
                     {session.label && (
                       <span className="font-medium">{session.label}</span>
                     )}
+                    {(session as any).session_type === 'post_production' && (
+                      <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">
+                        Post-Production
+                      </Badge>
+                    )}
                     <span className="text-sm text-muted-foreground">
                       {format(new Date(session.session_date), 'EEEE, MMMM d, yyyy')}
                     </span>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe } from 'lucide-react';
+import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe, Film } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,13 @@ interface SessionFormData {
   venue_address: string;
   notes: string;
   timezone: string;
+  session_type: string;
 }
+
+const SESSION_TYPES = [
+  { value: 'live', label: 'Live (On-site)' },
+  { value: 'post_production', label: 'Post-Production' },
+];
 
 const emptySession: SessionFormData = {
   session_date: '',
@@ -51,6 +58,7 @@ const emptySession: SessionFormData = {
   venue_address: '',
   notes: '',
   timezone: 'Australia/Sydney',
+  session_type: 'live',
 };
 
 interface EventSessionsEditorProps {
@@ -91,6 +99,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
       venue_address: session.venue_address || '',
       notes: session.notes || '',
       timezone: (session as any).timezone || 'Australia/Sydney',
+      session_type: (session as any).session_type || 'live',
     });
     setIsDialogOpen(true);
   };
@@ -108,6 +117,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
       venue_address: formData.venue_address || null,
       notes: formData.notes || null,
       timezone: formData.timezone || 'Australia/Sydney',
+      session_type: formData.session_type || 'live',
     };
 
     if (editingSession) {
@@ -177,6 +187,12 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
                     <div className="flex items-center gap-2 mb-1">
                       {session.label && (
                         <span className="font-medium text-sm">{session.label}</span>
+                      )}
+                      {(session as any).session_type === 'post_production' && (
+                        <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">
+                          <Film className="h-3 w-3 mr-1" />
+                          Post
+                        </Badge>
                       )}
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
@@ -264,6 +280,24 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Session Type */}
+            <div className="space-y-2">
+              <Label>Session Type</Label>
+              <Select 
+                value={formData.session_type} 
+                onValueChange={(v) => setFormData({ ...formData, session_type: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SESSION_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="session_date">Date *</Label>
@@ -280,7 +314,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
                   id="label"
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                  placeholder="e.g., Ceremony, Reception"
+                  placeholder={formData.session_type === 'post_production' ? 'e.g., Photo Editing, Video Edit' : 'e.g., Ceremony, Reception'}
                 />
               </div>
             </div>
