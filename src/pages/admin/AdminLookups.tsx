@@ -393,15 +393,6 @@ export default function AdminLookups() {
   const createProductCategory = useCreateProductCategory();
   const updateProductCategory = useUpdateProductCategory();
 
-  // Company Statuses
-  const { data: companyStatuses = [], isLoading: companyStatusesLoading } = useAllCompanyStatuses();
-  const createCompanyStatus = useCreateCompanyStatus();
-  const updateCompanyStatus = useUpdateCompanyStatus();
-
-  // Company Categories
-  const { data: companyCategories = [], isLoading: companyCategoriesLoading } = useAllCompanyCategories();
-  const createCompanyCategory = useCreateCompanyCategory();
-  const updateCompanyCategory = useUpdateCompanyCategory();
 
   // Lead Statuses
   const { data: leadStatuses = [], isLoading: leadStatusesLoading } = useAllLeadStatuses();
