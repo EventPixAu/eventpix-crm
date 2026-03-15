@@ -91,6 +91,11 @@ import {
   useCreateOpsStatus,
   useUpdateOpsStatus,
 } from '@/hooks/useOpsStatuses';
+import {
+  useAllLeadStatuses,
+  useCreateLeadStatus,
+  useUpdateLeadStatus,
+} from '@/hooks/useLeadStatuses';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
 
 interface LookupTableProps {
