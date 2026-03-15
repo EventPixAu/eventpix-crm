@@ -332,9 +332,9 @@ export default function EventDetail() {
   // Helper to get delivery method name
   const getDeliveryMethodName = (field: 'delivery_method_id' | 'delivery_method_guests_id' = 'delivery_method_id') => {
     if (!event) return '';
-    const id = (event as any)[field];
-    if (id && deliveryMethodMap[id]) {
-      return deliveryMethodMap[id];
+    const fieldId = event[field];
+    if (fieldId && deliveryMethodMap[fieldId]) {
+      return deliveryMethodMap[fieldId];
     }
     if (field === 'delivery_method_id') {
       return event.delivery_method?.replace('_', ' ') || '';
@@ -566,13 +566,13 @@ export default function EventDetail() {
                       <p className="text-sm text-muted-foreground">Delivery Method - Guests</p>
                       {isAdmin ? (
                         <Select
-                          value={(event as any).delivery_method_guests_id || ''}
+                          value={event.delivery_method_guests_id || ''}
                           onValueChange={async (value) => {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
                               delivery_method_guests_id: value,
-                            } as any);
+                            });
                             setIsUpdatingStatus(false);
                           }}
                           disabled={isUpdatingStatus}
