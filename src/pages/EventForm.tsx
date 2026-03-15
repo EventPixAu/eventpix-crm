@@ -292,6 +292,7 @@ export default function EventForm() {
       coverage_details: values.coverage_details || null,
       photography_brief: values.photography_instructions || null,
       delivery_method_id: values.delivery_method_id || null,
+      delivery_method_guests_id: values.delivery_method_guests_id || null,
       delivery_deadline: values.delivery_deadline || null,
       notes: values.notes || null,
     };
