@@ -133,9 +133,9 @@ function RoleBasedDashboard() {
     );
   }
 
-   // Admin and Operations default to Calendar
+   // Admin and Operations default to Operations Dashboard
    if (isAdmin || role === 'operations') {
-     return <Navigate to="/calendar" replace />;
+     return <Navigate to="/operations" replace />;
    }
   
   // Sales users get sales dashboard
