@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe } from 'lucide-react';
+import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe, Film } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
