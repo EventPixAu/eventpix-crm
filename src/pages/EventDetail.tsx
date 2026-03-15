@@ -330,12 +330,16 @@ export default function EventDetail() {
   };
 
   // Helper to get delivery method name
-  const getDeliveryMethodName = () => {
+  const getDeliveryMethodName = (field: 'delivery_method_id' | 'delivery_method_guests_id' = 'delivery_method_id') => {
     if (!event) return '';
-    if (event.delivery_method_id && deliveryMethodMap[event.delivery_method_id]) {
-      return deliveryMethodMap[event.delivery_method_id];
+    const id = (event as any)[field];
+    if (id && deliveryMethodMap[id]) {
+      return deliveryMethodMap[id];
     }
-    return event.delivery_method?.replace('_', ' ') || '';
+    if (field === 'delivery_method_id') {
+      return event.delivery_method?.replace('_', ' ') || '';
+    }
+    return '';
   };
 
   const handleDelete = async () => {
