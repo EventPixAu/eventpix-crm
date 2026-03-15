@@ -39,7 +39,13 @@ interface SessionFormData {
   venue_address: string;
   notes: string;
   timezone: string;
+  session_type: string;
 }
+
+const SESSION_TYPES = [
+  { value: 'live', label: 'Live (On-site)' },
+  { value: 'post_production', label: 'Post-Production' },
+];
 
 const emptySession: SessionFormData = {
   session_date: '',
@@ -51,6 +57,7 @@ const emptySession: SessionFormData = {
   venue_address: '',
   notes: '',
   timezone: 'Australia/Sydney',
+  session_type: 'live',
 };
 
 interface EventSessionsEditorProps {
