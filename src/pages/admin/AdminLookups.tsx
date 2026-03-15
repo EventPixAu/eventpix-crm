@@ -87,21 +87,6 @@ import {
   useUpdateProductCategory,
 } from '@/hooks/useAdminProductCategories';
 import {
-  useAllCompanyStatuses,
-  useCreateCompanyStatus,
-  useUpdateCompanyStatus,
-} from '@/hooks/useCompanyStatuses';
-import {
-  useAllLeadStatuses,
-  useCreateLeadStatus,
-  useUpdateLeadStatus,
-} from '@/hooks/useLeadStatuses';
-import {
-  useAllCompanyCategories,
-  useCreateCompanyCategory,
-  useUpdateCompanyCategory,
-} from '@/hooks/useCompanyCategories';
-import {
   useAllOpsStatuses,
   useCreateOpsStatus,
   useUpdateOpsStatus,
