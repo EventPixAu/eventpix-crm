@@ -116,6 +116,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
       venue_address: formData.venue_address || null,
       notes: formData.notes || null,
       timezone: formData.timezone || 'Australia/Sydney',
+      session_type: formData.session_type || 'live',
     };
 
     if (editingSession) {
