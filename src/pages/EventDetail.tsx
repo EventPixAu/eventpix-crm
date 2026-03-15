@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -95,6 +95,63 @@ function formatSessionTime(timeStr: string): string {
   } catch {
     return timeStr;
   }
+}
+
+function EditingInstructionsPanel({ value, onSave }: { value: string; onSave: (val: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(text);
+      setEditing(false);
+      toast({ title: 'Editing instructions saved' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to save' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Edit className="h-5 w-5 text-muted-foreground" />
+          <h3 className="font-display font-semibold">Editing Instructions</h3>
+          <Badge variant="outline" className="text-xs">Internal</Badge>
+        </div>
+        {!editing && (
+          <Button variant="ghost" size="sm" onClick={() => { setText(value); setEditing(true); }}>
+            <Edit className="h-4 w-4 mr-1" /> Edit
+          </Button>
+        )}
+      </div>
+      {editing ? (
+        <div className="space-y-2">
+          <textarea
+            className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Enter editing instructions for the post-production team..."
+          />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+          {value || 'No editing instructions set.'}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
@@ -1023,6 +1080,17 @@ export default function EventDetail() {
                   </div>
                   <JobWorkflowRail eventId={id} isAdmin={isAdmin} />
                 </div>
+              )}
+
+              {/* Editing Instructions - Internal Only */}
+              {isAdmin && id && (
+                <EditingInstructionsPanel
+                  value={(event as any)?.editing_instructions || ''}
+                  onSave={async (val: string) => {
+                    await supabase.from('events').update({ editing_instructions: val } as any).eq('id', id);
+                    queryClient.invalidateQueries({ queryKey: ['events', id] });
+                  }}
+                />
               )}
 
               {/* Setup Tasks */}
