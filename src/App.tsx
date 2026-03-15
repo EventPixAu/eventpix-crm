@@ -133,10 +133,10 @@ function RoleBasedDashboard() {
     );
   }
 
-  // Admin and Operations default to CRM Emails inbox
-  if (isAdmin || role === 'operations') {
-    return <Navigate to="/crm/emails" replace />;
-  }
+   // Admin and Operations default to Calendar
+   if (isAdmin || role === 'operations') {
+     return <Navigate to="/calendar" replace />;
+   }
   
   // Sales users get sales dashboard
   if (role === 'sales') {
