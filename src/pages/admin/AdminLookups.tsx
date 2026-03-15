@@ -510,20 +510,6 @@ export default function AdminLookups() {
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 Product Categories
               </TabsTrigger>
-              <TabsTrigger 
-                value="company-statuses"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <CircleDot className="h-4 w-4 mr-2" />
-                Company Status
-              </TabsTrigger>
-              <TabsTrigger 
-                value="company-categories"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-              >
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Categories
-              </TabsTrigger>
               <TabsTrigger
                 value="training-tools"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
