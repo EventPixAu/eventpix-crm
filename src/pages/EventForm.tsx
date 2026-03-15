@@ -126,6 +126,7 @@ export default function EventForm() {
       coverage_details: '',
       photography_instructions: '',
       delivery_method_id: null,
+      delivery_method_guests_id: null,
       delivery_deadline: '',
       notes: '',
     },
