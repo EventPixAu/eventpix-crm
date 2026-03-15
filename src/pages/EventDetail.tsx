@@ -566,13 +566,13 @@ export default function EventDetail() {
                       <p className="text-sm text-muted-foreground">Delivery Method - Guests</p>
                       {isAdmin ? (
                         <Select
-                          value={(event as any).delivery_method_guests_id || ''}
+                          value={event.delivery_method_guests_id || ''}
                           onValueChange={async (value) => {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
                               delivery_method_guests_id: value,
-                            } as any);
+                            });
                             setIsUpdatingStatus(false);
                           }}
                           disabled={isUpdatingStatus}
