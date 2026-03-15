@@ -188,6 +188,12 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
                       {session.label && (
                         <span className="font-medium text-sm">{session.label}</span>
                       )}
+                      {(session as any).session_type === 'post_production' && (
+                        <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">
+                          <Film className="h-3 w-3 mr-1" />
+                          Post
+                        </Badge>
+                      )}
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
                         {format(new Date(session.session_date), 'EEE, MMM d, yyyy')}
