@@ -98,6 +98,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
       venue_address: session.venue_address || '',
       notes: session.notes || '',
       timezone: (session as any).timezone || 'Australia/Sydney',
+      session_type: (session as any).session_type || 'live',
     });
     setIsDialogOpen(true);
   };
