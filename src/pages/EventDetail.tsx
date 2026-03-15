@@ -158,11 +158,27 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [editingRole, setEditingRole] = useState(false);
+  const { data: staffRoles = [] } = useStaffRoles();
 
   const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
   const initial = name.charAt(0).toUpperCase();
   const confirmationStatus = assignment.confirmation_status || 'pending';
+
+  const handleRoleChange = async (newRoleId: string) => {
+    const { error } = await supabase
+      .from('event_assignments')
+      .update({ staff_role_id: newRoleId })
+      .eq('id', assignment.id);
+    if (error) {
+      toast({ title: 'Failed to update role', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+      toast({ title: 'Role updated' });
+    }
+    setEditingRole(false);
+  };
 
   return (
     <div className="flex flex-col p-4 bg-muted/50 rounded-lg">
@@ -182,7 +198,30 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground capitalize">{role}</p>
+          {isAdmin && editingRole ? (
+            <Select
+              defaultValue={assignment.staff_role_id || ''}
+              onValueChange={handleRoleChange}
+              onOpenChange={(open) => { if (!open) setEditingRole(false); }}
+            >
+              <SelectTrigger className="h-7 w-48 text-xs mt-0.5">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                {staffRoles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p
+              className={`text-sm text-muted-foreground capitalize ${isAdmin ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+              onClick={() => isAdmin && setEditingRole(true)}
+              title={isAdmin ? 'Click to change role' : undefined}
+            >
+              {role}
+            </p>
+          )}
           {assignment.assignment_notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
           )}
