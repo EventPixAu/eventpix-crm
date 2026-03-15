@@ -576,17 +576,6 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
-            <TabsContent value="contact-roles" className="m-0">
-              <LookupTable
-                items={contactRoles}
-                isLoading={contactRolesLoading}
-                onCreate={async (name) => { await createContactRole.mutateAsync(name); }}
-                onUpdate={async (id, updates) => { await updateContactRole.mutateAsync({ id, ...updates }); }}
-                createPending={createContactRole.isPending}
-                updatePending={updateContactRole.isPending}
-                itemLabel="Contact Role"
-              />
-            </TabsContent>
 
             <TabsContent value="relationship-types" className="m-0">
               <LookupTable
