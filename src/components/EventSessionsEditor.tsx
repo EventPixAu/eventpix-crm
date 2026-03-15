@@ -280,6 +280,24 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {/* Session Type */}
+            <div className="space-y-2">
+              <Label>Session Type</Label>
+              <Select 
+                value={formData.session_type} 
+                onValueChange={(v) => setFormData({ ...formData, session_type: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SESSION_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="session_date">Date *</Label>
@@ -296,7 +314,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
                   id="label"
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                  placeholder="e.g., Ceremony, Reception"
+                  placeholder={formData.session_type === 'post_production' ? 'e.g., Photo Editing, Video Edit' : 'e.g., Ceremony, Reception'}
                 />
               </div>
             </div>
