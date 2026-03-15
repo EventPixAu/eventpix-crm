@@ -55,6 +55,7 @@ const eventSchema = z.object({
   coverage_details: z.string().optional(),
   photography_instructions: z.string().optional(),
   delivery_method_id: z.string().optional().nullable(),
+  delivery_method_guests_id: z.string().optional().nullable(),
   delivery_deadline: z.string().optional(),
   notes: z.string().optional(),
 });
