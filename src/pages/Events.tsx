@@ -189,7 +189,7 @@ export default function Events() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="upcoming">Upcoming</SelectItem>
+            <SelectItem value="current">Current</SelectItem>
             <SelectItem value="past">Past</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
