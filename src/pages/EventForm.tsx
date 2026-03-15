@@ -220,6 +220,7 @@ export default function EventForm() {
         coverage_details: event.coverage_details || '',
         photography_instructions: (event as any).photography_brief || '',
         delivery_method_id: deliveryMethodId,
+        delivery_method_guests_id: (event as any).delivery_method_guests_id || null,
         delivery_deadline: event.delivery_deadline || '',
         notes: event.notes || '',
       });
