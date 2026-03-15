@@ -259,6 +259,7 @@ export default function EventForm() {
         coverage_details: (sourceLead as any).requirements_summary || '',
         photography_instructions: '',
         delivery_method_id: null,
+        delivery_method_guests_id: null,
         delivery_deadline: deliveryDeadline,
         notes: sourceLead.notes || '',
       });
