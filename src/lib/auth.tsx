@@ -20,11 +20,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Dev bypass: skip auth entirely in development
+const DEV_BYPASS = import.meta.env.DEV;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<AppRole | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [role, setRole] = useState<AppRole | null>(DEV_BYPASS ? 'admin' : null);
+  const [authLoading, setAuthLoading] = useState(DEV_BYPASS ? false : true);
   const [roleLoading, setRoleLoading] = useState(false);
 
   const loading = useMemo(() => authLoading || roleLoading, [authLoading, roleLoading]);
