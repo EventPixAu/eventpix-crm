@@ -715,39 +715,6 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
-            <TabsContent value="company-statuses" className="m-0">
-              <LookupTable
-                items={companyStatuses.map(s => ({ 
-                  id: s.id, 
-                  name: s.label, 
-                  is_active: s.is_active, 
-                  sort_order: s.sort_order 
-                }))}
-                isLoading={companyStatusesLoading}
-                onCreate={async (name) => { await createCompanyStatus.mutateAsync(name); }}
-                onUpdate={async (id, updates) => { await updateCompanyStatus.mutateAsync({ id, ...updates }); }}
-                createPending={createCompanyStatus.isPending}
-                updatePending={updateCompanyStatus.isPending}
-                itemLabel="Company Status"
-              />
-            </TabsContent>
-
-            <TabsContent value="company-categories" className="m-0">
-              <LookupTable
-                items={companyCategories.map(c => ({ 
-                  id: c.id, 
-                  name: c.name, 
-                  is_active: c.is_active, 
-                  sort_order: c.sort_order 
-                }))}
-                isLoading={companyCategoriesLoading}
-                onCreate={async (name) => { await createCompanyCategory.mutateAsync(name); }}
-                onUpdate={async (id, updates) => { await updateCompanyCategory.mutateAsync({ id, ...updates }); }}
-                createPending={createCompanyCategory.isPending}
-                updatePending={updateCompanyCategory.isPending}
-                itemLabel="Company Category"
-              />
-            </TabsContent>
 
             <TabsContent value="training-tools" className="m-0">
               <AdminTrainingTools />
