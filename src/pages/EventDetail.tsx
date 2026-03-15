@@ -1025,6 +1025,17 @@ export default function EventDetail() {
                 </div>
               )}
 
+              {/* Editing Instructions - Internal Only */}
+              {isAdmin && id && (
+                <EditingInstructionsPanel
+                  value={(event as any)?.editing_instructions || ''}
+                  onSave={async (val: string) => {
+                    await supabase.from('events').update({ editing_instructions: val } as any).eq('id', id);
+                    queryClient.invalidateQueries({ queryKey: ['events', id] });
+                  }}
+                />
+              )}
+
               {/* Setup Tasks */}
               {isAdmin && id && <EventTasksCard eventId={id} />}
 
