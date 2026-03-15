@@ -639,7 +639,32 @@ export default function EventForm() {
                   name="delivery_method_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Delivery Method</FormLabel>
+                      <FormLabel>Delivery Method - Client</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-secondary">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {deliveryMethods.map((method) => (
+                            <SelectItem key={method.id} value={method.id}>
+                              {method.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="delivery_method_guests_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Method - Guests</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
                           <SelectTrigger className="bg-secondary">
