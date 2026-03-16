@@ -831,7 +831,7 @@ export default function EventDetail() {
               className="space-y-6"
             >
               {/* Status */}
-              {isAdmin && (
+              {(isAdmin || canSeeSection('status')) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <h2 className="text-lg font-display font-semibold mb-4">Status</h2>
                   <div className="space-y-4">
