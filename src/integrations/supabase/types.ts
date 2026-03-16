@@ -1407,6 +1407,39 @@ export type Database = {
           },
         ]
       }
+      editing_instruction_templates: {
+        Row: {
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           body_override: string | null
@@ -2706,6 +2739,7 @@ export type Database = {
           delivery_method_id: string | null
           dress_code: string | null
           editing_instructions: string | null
+          editing_instructions_template_id: string | null
           end_at: string | null
           end_time: string | null
           enquiry_source: string | null
@@ -2776,6 +2810,7 @@ export type Database = {
           delivery_method_id?: string | null
           dress_code?: string | null
           editing_instructions?: string | null
+          editing_instructions_template_id?: string | null
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
@@ -2846,6 +2881,7 @@ export type Database = {
           delivery_method_id?: string | null
           dress_code?: string | null
           editing_instructions?: string | null
+          editing_instructions_template_id?: string | null
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
@@ -2930,6 +2966,13 @@ export type Database = {
             columns: ["delivery_method_id"]
             isOneToOne: false
             referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_editing_instructions_template_id_fkey"
+            columns: ["editing_instructions_template_id"]
+            isOneToOne: false
+            referencedRelation: "editing_instruction_templates"
             referencedColumns: ["id"]
           },
           {
