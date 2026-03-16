@@ -363,32 +363,7 @@ export function EventBriefTemplatesManager() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="content">Brief Content</Label>
-                <div>
-                  <input
-                    ref={createFileRef}
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handlePdfUpload(file);
-                      e.target.value = '';
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => createFileRef.current?.click()}
-                    disabled={pdfLoading}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    {pdfLoading ? 'Extracting...' : 'Upload PDF'}
-                  </Button>
-                </div>
-              </div>
+              <Label htmlFor="content">Brief Content</Label>
               <Textarea
                 id="content"
                 value={formData.content}
@@ -398,6 +373,39 @@ export function EventBriefTemplatesManager() {
                 placeholder="Enter the full brief content here..."
                 rows={8}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Attach PDF (optional)</Label>
+              <input
+                ref={createFileRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setPdfFile(file);
+                  e.target.value = '';
+                }}
+              />
+              {pdfFile ? (
+                <div className="flex items-center gap-2 p-2 rounded border border-border bg-muted/30 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 truncate">{pdfFile.name}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPdfFile(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => createFileRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Choose PDF
+                </Button>
+              )}
             </div>
           </div>
           <DialogFooter>
