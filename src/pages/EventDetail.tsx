@@ -1137,7 +1137,7 @@ export default function EventDetail() {
               })()}
 
               {/* Editing Instructions - Internal Only */}
-              {isAdmin && id && (
+              {(isAdmin || canSeeSection('editing_instructions')) && id && (
                 <EditingInstructionsPanel
                   value={(event as any)?.editing_instructions || ''}
                   onSave={async (val: string) => {
