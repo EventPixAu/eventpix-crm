@@ -935,7 +935,7 @@ export default function EventDetail() {
               )}
 
               {/* Mail History */}
-              {isAdmin && id && (
+              {(isAdmin || canSeeSection('mail_history')) && id && (
                 <MailHistoryPanel eventId={id} maxItems={5} />
               )}
 
