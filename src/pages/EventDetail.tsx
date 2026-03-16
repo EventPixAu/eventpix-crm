@@ -1167,8 +1167,11 @@ export default function EventDetail() {
               {(isAdmin || canSeeSection('editing_instructions')) && id && (
                 <EditingInstructionsPanel
                   value={(event as any)?.editing_instructions || ''}
-                  onSave={async (val: string) => {
-                    await supabase.from('events').update({ editing_instructions: val } as any).eq('id', id);
+                  templateId={(event as any)?.editing_instructions_template_id}
+                  onSave={async (val: string, tid?: string | null) => {
+                    const updateData: any = { editing_instructions: val };
+                    if (tid !== undefined) updateData.editing_instructions_template_id = tid;
+                    await supabase.from('events').update(updateData).eq('id', id);
                     queryClient.invalidateQueries({ queryKey: ['events', id] });
                   }}
                 />
