@@ -1144,6 +1144,26 @@ export default function WorkflowsAdmin() {
               </div>
 
               <div>
+                <Label>Default Assignment</Label>
+                <Select
+                  value={editingStep.default_staff_role_id || ''}
+                  onValueChange={v => setEditingStep({ ...editingStep, default_staff_role_id: v || null })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select default role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffRoles.filter(r => r.is_active).map(role => (
+                      <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Role assigned by default when this step is initialized
+                </p>
+              </div>
+
+              <div>
                 <Label>Help Text</Label>
                 <Input
                   value={editingStep.help_text ?? ''}
