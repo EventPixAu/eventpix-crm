@@ -9,6 +9,8 @@ interface EventBriefTemplate {
   content: string;
   is_active: boolean;
   sort_order: number;
+  pdf_file_name: string | null;
+  pdf_file_path: string | null;
   created_at: string;
   updated_at: string;
 }
