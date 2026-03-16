@@ -1027,7 +1027,7 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
-                  {isAdmin && (
+                  {(isAdmin || isOperations) && (
                     <Button
                       variant="outline"
                       className="w-full justify-start"
