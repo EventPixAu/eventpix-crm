@@ -940,7 +940,7 @@ export default function EventDetail() {
               )}
 
               {/* Event Financials - above Contracts */}
-              {isAdmin && id && (
+              {(isAdmin || canSeeSection('financials')) && id && (
                 <EventFinancialsCard eventId={id} />
               )}
 
