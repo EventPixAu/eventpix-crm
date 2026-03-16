@@ -91,6 +91,8 @@ export function useCompleteWorkflowStep() {
     },
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['next-task-per-event'] });
+      queryClient.invalidateQueries({ queryKey: ['job-tasks-with-due-dates'] });
       toast.success('Step completed');
     },
     onError: (error) => {
