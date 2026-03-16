@@ -447,21 +447,23 @@ Deno.serve(async (req) => {
           if (report) {
             console.log(`Report: ${report.ReportName}, rows: ${report.Rows?.length}`);
             
-            // Parse the P&L report rows to extract expense accounts
-            // P&L report structure: Rows -> Section (Header: "Expenses") -> Rows -> individual accounts
+            // Parse the P&L report rows to extract expense accounts and income
+            // P&L report structure: Rows -> Section (Header: "Income"/"Expenses") -> Rows -> individual accounts
+            let totalIncome = 0;
+            
             for (const section of report.Rows || []) {
-              // We want expense sections (not income/revenue)
               const sectionTitle = section.Title || '';
-              const isExpenseSection = sectionTitle.toLowerCase().includes('expense') || 
-                                       sectionTitle.toLowerCase().includes('cost') ||
-                                       sectionTitle.toLowerCase().includes('overhead') ||
-                                       sectionTitle.toLowerCase().includes('direct');
+              const sectionTitleLower = sectionTitle.toLowerCase();
+              const isExpenseSection = sectionTitleLower.includes('expense') || 
+                                       sectionTitleLower.includes('cost') ||
+                                       sectionTitleLower.includes('overhead') ||
+                                       sectionTitleLower.includes('direct');
+              const isIncomeSection = sectionTitleLower.includes('income') || 
+                                      sectionTitleLower.includes('revenue') ||
+                                      sectionTitleLower.includes('sales') ||
+                                      sectionTitleLower.includes('trading');
               
-              // Also check if this is a "Less" section (expenses in P&L)
               if (section.RowType === 'Section') {
-                // Only process expense sections - skip income, summary, etc.
-                if (!isExpenseSection) continue;
-                
                 for (const row of section.Rows || []) {
                   if (row.RowType !== 'Row') continue;
                   
@@ -477,6 +479,16 @@ Deno.serve(async (req) => {
                   const acctNameLower = accountName.toLowerCase();
                   if (acctNameLower.includes('net profit') || acctNameLower.includes('total') || 
                       acctNameLower.includes('gross profit') || acctNameLower.includes('net loss')) continue;
+                  
+                  // Extract income
+                  if (isIncomeSection) {
+                    totalIncome += Math.abs(amount);
+                    console.log(`Income account: ${accountName} = $${Math.abs(amount)}`);
+                    continue;
+                  }
+                  
+                  // Only process expense sections
+                  if (!isExpenseSection) continue;
                   
                   // Categorise based on account name
                   const acctLower = accountName.toLowerCase();
@@ -502,13 +514,22 @@ Deno.serve(async (req) => {
                     expense_category: category,
                     description: accountName,
                     amount: Math.abs(amount),
-                    expense_date: null, // Report gives totals, not individual dates
+                    expense_date: null,
                     xero_line_id: null,
                     xero_invoice_id: `report-${trackingOptionID}`,
                     synced_at: new Date().toISOString()
                   });
                 }
               }
+            }
+            
+            // Store income from P&L report on the event
+            if (totalIncome > 0) {
+              console.log(`Total income from P&L: $${totalIncome}`);
+              await supabase
+                .from('events')
+                .update({ invoice_amount: totalIncome })
+                .eq('id', eventId);
             }
           }
         }
