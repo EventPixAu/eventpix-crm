@@ -102,6 +102,11 @@ function SortableTemplateItem({
             {template.description}
           </p>
         )}
+        {template.pdf_file_name && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+            <Upload className="h-3 w-3" /> {template.pdf_file_name}
+          </p>
+        )}
       </div>
       {!template.is_active && (
         <Badge variant="secondary" className="text-xs">
