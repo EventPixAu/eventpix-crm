@@ -138,6 +138,8 @@ interface ChecklistItem {
   sort_order: number;
 }
 
+type CrewPhase = 'pre_event' | 'event' | 'post_event';
+
 interface CrewChecklistTemplate {
   id: string;
   name: string;
@@ -145,8 +147,15 @@ interface CrewChecklistTemplate {
   items: ChecklistItem[];
   is_active: boolean;
   staff_role_id: string | null;
+  phase: CrewPhase;
   created_at: string | null;
 }
+
+const PHASE_CONFIG = [
+  { key: 'pre_event' as CrewPhase, label: 'Pre-Event', color: 'text-info' },
+  { key: 'event' as CrewPhase, label: 'Event', color: 'text-warning' },
+  { key: 'post_event' as CrewPhase, label: 'Post-Event', color: 'text-success' },
+] as const;
 
 interface StaffRole {
   id: string;
