@@ -934,10 +934,6 @@ export default function EventDetail() {
                 </div>
               )}
 
-              {/* Mail History */}
-              {(isAdmin || canSeeSection('mail_history')) && id && (
-                <MailHistoryPanel eventId={id} maxItems={5} />
-              )}
 
               {/* Event Financials - above Contracts */}
               {(isAdmin || canSeeSection('financials')) && id && (
