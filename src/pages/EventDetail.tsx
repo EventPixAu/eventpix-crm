@@ -1231,8 +1231,8 @@ export default function EventDetail() {
           </div>
         </TabsContent>
 
-        {/* Equipment Tab (Admin Only) */}
-        {isAdmin && id && (
+        {/* Equipment Tab */}
+        {(isAdmin || canSeeSection('equipment_tab')) && id && (
           <TabsContent value="equipment">
             <EventEquipmentPanel eventId={id} assignments={assignments} />
           </TabsContent>
