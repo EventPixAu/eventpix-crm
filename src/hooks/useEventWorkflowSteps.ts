@@ -586,6 +586,7 @@ export function useUpdateWorkflowStep() {
       stepLabel?: string;
       dueDate?: string | null;
       notes?: string | null;
+      assignedTo?: string | null;
     }) => {
       const updates: Record<string, unknown> = {};
       if (stepLabel !== undefined) updates.step_label = stepLabel;
