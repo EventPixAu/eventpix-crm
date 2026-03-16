@@ -240,18 +240,34 @@ export function EventBriefTemplatesManager() {
   const handleUpdate = async () => {
     if (!editingTemplate || !formData.name.trim() || !formData.content.trim())
       return;
-
-    await updateTemplate.mutateAsync({
-      id: editingTemplate.id,
-      name: formData.name.trim(),
-      description: formData.description.trim() || null,
-      content: formData.content.trim(),
-      is_active: formData.is_active,
-    });
-
-    setEditDialog(false);
-    setEditingTemplate(null);
-    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfUploading(true);
+    try {
+      let pdfData: { pdf_file_name?: string | null; pdf_file_path?: string | null } = {};
+      if (pdfFile) {
+        const { fileName, filePath } = await uploadPdfToStorage(pdfFile);
+        pdfData = { pdf_file_name: fileName, pdf_file_path: filePath };
+      } else if (!existingPdf && editingTemplate.pdf_file_path) {
+        // PDF was removed
+        pdfData = { pdf_file_name: null, pdf_file_path: null };
+      }
+      await updateTemplate.mutateAsync({
+        id: editingTemplate.id,
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        content: formData.content.trim(),
+        is_active: formData.is_active,
+        ...pdfData,
+      });
+      setEditDialog(false);
+      setEditingTemplate(null);
+      setFormData({ name: '', description: '', content: '', is_active: true });
+      setPdfFile(null);
+      setExistingPdf(null);
+    } catch (e: any) {
+      toast.error('Failed to update template: ' + e.message);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
