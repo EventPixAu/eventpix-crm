@@ -199,15 +199,27 @@ export function EventBriefTemplatesManager() {
 
   const handleCreate = async () => {
     if (!formData.name.trim() || !formData.content.trim()) return;
-
-    await createTemplate.mutateAsync({
-      name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
-      content: formData.content.trim(),
-    });
-
-    setNewDialog(false);
-    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfUploading(true);
+    try {
+      let pdfData: { pdf_file_name?: string; pdf_file_path?: string } = {};
+      if (pdfFile) {
+        const { fileName, filePath } = await uploadPdfToStorage(pdfFile);
+        pdfData = { pdf_file_name: fileName, pdf_file_path: filePath };
+      }
+      await createTemplate.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        content: formData.content.trim(),
+        ...pdfData,
+      });
+      setNewDialog(false);
+      setFormData({ name: '', description: '', content: '', is_active: true });
+      setPdfFile(null);
+    } catch (e: any) {
+      toast.error('Failed to create template: ' + e.message);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleEdit = (template: BriefTemplate) => {
