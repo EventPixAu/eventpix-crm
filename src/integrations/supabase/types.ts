@@ -1236,6 +1236,7 @@ export type Database = {
           is_active: boolean
           items: Json
           name: string
+          phase: string
           staff_role_id: string | null
           updated_at: string | null
         }
@@ -1246,6 +1247,7 @@ export type Database = {
           is_active?: boolean
           items?: Json
           name: string
+          phase?: string
           staff_role_id?: string | null
           updated_at?: string | null
         }
@@ -1256,6 +1258,7 @@ export type Database = {
           is_active?: boolean
           items?: Json
           name?: string
+          phase?: string
           staff_role_id?: string | null
           updated_at?: string | null
         }

@@ -138,6 +138,8 @@ interface ChecklistItem {
   sort_order: number;
 }
 
+type CrewPhase = 'pre_event' | 'event' | 'post_event';
+
 interface CrewChecklistTemplate {
   id: string;
   name: string;
@@ -145,8 +147,15 @@ interface CrewChecklistTemplate {
   items: ChecklistItem[];
   is_active: boolean;
   staff_role_id: string | null;
+  phase: CrewPhase;
   created_at: string | null;
 }
+
+const PHASE_CONFIG = [
+  { key: 'pre_event' as CrewPhase, label: 'Pre-Event', color: 'text-info' },
+  { key: 'event' as CrewPhase, label: 'Event', color: 'text-warning' },
+  { key: 'post_event' as CrewPhase, label: 'Post-Event', color: 'text-success' },
+] as const;
 
 interface StaffRole {
   id: string;
@@ -165,6 +174,7 @@ export function CrewChecklistTemplatesManager() {
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formRoleId, setFormRoleId] = useState<string>('');
+  const [formPhase, setFormPhase] = useState<CrewPhase>('pre_event');
   const [formIsActive, setFormIsActive] = useState(true);
   const [formItems, setFormItems] = useState<ChecklistItem[]>([]);
 
@@ -207,6 +217,7 @@ export function CrewChecklistTemplatesManager() {
       items: ChecklistItem[];
       is_active: boolean;
       staff_role_id: string | null;
+      phase: CrewPhase;
     }) => {
       if (data.id) {
         const { error } = await supabase
@@ -217,6 +228,7 @@ export function CrewChecklistTemplatesManager() {
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
+            phase: data.phase,
             updated_at: new Date().toISOString(),
           })
           .eq('id', data.id);
@@ -230,6 +242,7 @@ export function CrewChecklistTemplatesManager() {
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
+            phase: data.phase,
           });
         if (error) throw error;
       }
@@ -294,6 +307,7 @@ export function CrewChecklistTemplatesManager() {
     setFormName('');
     setFormDescription('');
     setFormRoleId('');
+    setFormPhase('pre_event');
     setFormIsActive(true);
     setFormItems([{ item_text: '', sort_order: 1 }]);
     setEditingTemplate({} as CrewChecklistTemplate);
@@ -304,6 +318,7 @@ export function CrewChecklistTemplatesManager() {
     setFormName(template.name);
     setFormDescription(template.description || '');
     setFormRoleId(template.staff_role_id || '');
+    setFormPhase(template.phase || 'pre_event');
     setFormIsActive(template.is_active);
     setFormItems(template.items.length > 0 ? template.items : [{ item_text: '', sort_order: 1 }]);
     setEditingTemplate(template);
@@ -336,6 +351,7 @@ export function CrewChecklistTemplatesManager() {
       items: validItems,
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
+      phase: formPhase,
     });
   };
 
@@ -410,100 +426,112 @@ export function CrewChecklistTemplatesManager() {
             New Template
           </Button>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-6">
           {templates.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               No checklist templates yet. Create one to get started.
             </p>
           ) : (
-            templates.map((template) => (
-              <Collapsible
-                key={template.id}
-                open={expandedTemplates.has(template.id)}
-                onOpenChange={() => toggleExpanded(template.id)}
-              >
-                <div className="border border-border rounded-lg">
-                  <CollapsibleTrigger asChild>
-                    <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
-                      <div className="flex items-center gap-3">
-                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <span className="font-medium">{template.name}</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              <Users className="h-3 w-3 mr-1" />
-                              {getRoleName(template.staff_role_id)}
-                            </Badge>
-                            <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
-                              {template.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {template.items.length} items
-                            </span>
+            PHASE_CONFIG.map((phase) => {
+              const phaseTemplates = templates.filter((t) => (t.phase || 'pre_event') === phase.key);
+              if (phaseTemplates.length === 0) return null;
+
+              return (
+                <div key={phase.key} className="space-y-3">
+                  <h3 className={`text-sm font-semibold uppercase tracking-wider ${phase.color}`}>
+                    {phase.label}
+                  </h3>
+                  {phaseTemplates.map((template) => (
+                    <Collapsible
+                      key={template.id}
+                      open={expandedTemplates.has(template.id)}
+                      onOpenChange={() => toggleExpanded(template.id)}
+                    >
+                      <div className="border border-border rounded-lg">
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
+                            <div className="flex items-center gap-3">
+                              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <span className="font-medium">{template.name}</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {getRoleName(template.staff_role_id)}
+                                  </Badge>
+                                  <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
+                                    {template.is_active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {template.items.length} items
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Duplicate"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  duplicateMutation.mutate(template);
+                                }}
+                                disabled={duplicateMutation.isPending}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Edit"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit(template);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(template.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                              {expandedTemplates.has(template.id) ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="px-4 pb-4 pt-2 border-t border-border">
+                            {template.description && (
+                              <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
+                            )}
+                            <div className="space-y-2">
+                              {template.items.map((item, index) => (
+                                <div key={index} className="flex items-center gap-2 text-sm">
+                                  <span className="text-muted-foreground w-6">{index + 1}.</span>
+                                  <span>{item.item_text}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        </CollapsibleContent>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Duplicate"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            duplicateMutation.mutate(template);
-                          }}
-                          disabled={duplicateMutation.isPending}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEdit(template);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmId(template.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        {expandedTemplates.has(template.id) ? (
-                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="px-4 pb-4 pt-2 border-t border-border">
-                      {template.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                      )}
-                      <div className="space-y-2">
-                        {template.items.map((item, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground w-6">{index + 1}.</span>
-                            <span>{item.item_text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleContent>
+                    </Collapsible>
+                  ))}
                 </div>
-              </Collapsible>
-            ))
+              );
+            })
           )}
         </CardContent>
       </Card>
@@ -516,7 +544,7 @@ export function CrewChecklistTemplatesManager() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Template Name *</Label>
                 <Input
@@ -525,6 +553,19 @@ export function CrewChecklistTemplatesManager() {
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Lead Photographer Checklist"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phase">Phase *</Label>
+                <Select value={formPhase} onValueChange={(val) => setFormPhase(val as CrewPhase)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PHASE_CONFIG.map((p) => (
+                      <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Assigned Role</Label>
