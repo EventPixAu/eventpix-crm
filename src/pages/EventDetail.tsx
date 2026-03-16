@@ -761,7 +761,7 @@ export default function EventDetail() {
                 />
               )}
               {/* Coverage, Photography Instructions & Notes */}
-              {(event.coverage_details || (event as any).photography_brief || event.notes) && (
+              {canSeeSection('additional_details') && (event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-display font-semibold">Additional Details</h2>
