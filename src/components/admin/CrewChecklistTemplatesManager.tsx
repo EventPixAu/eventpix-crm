@@ -304,6 +304,7 @@ export function CrewChecklistTemplatesManager() {
     setFormName('');
     setFormDescription('');
     setFormRoleId('');
+    setFormPhase('pre_event');
     setFormIsActive(true);
     setFormItems([{ item_text: '', sort_order: 1 }]);
     setEditingTemplate({} as CrewChecklistTemplate);
@@ -314,6 +315,7 @@ export function CrewChecklistTemplatesManager() {
     setFormName(template.name);
     setFormDescription(template.description || '');
     setFormRoleId(template.staff_role_id || '');
+    setFormPhase(template.phase || 'pre_event');
     setFormIsActive(template.is_active);
     setFormItems(template.items.length > 0 ? template.items : [{ item_text: '', sort_order: 1 }]);
     setEditingTemplate(template);
