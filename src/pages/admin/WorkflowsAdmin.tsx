@@ -391,6 +391,9 @@ export default function WorkflowsAdmin() {
       .filter(s => s.phase === newStep.phase)
       .reduce((max, s) => Math.max(max, s.sort_order), -1);
     
+    // Find Admin role as default
+    const adminRole = staffRoles.find(r => r.name === 'Admin');
+    
     const createdStep = await createStep.mutateAsync({
       label: newStep.label.trim(),
       phase: newStep.phase || 'pre_event',
@@ -401,6 +404,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: newStep.date_offset_reference || null,
       help_text: newStep.help_text || null,
       is_active: true,
+      default_staff_role_id: newStep.default_staff_role_id ?? adminRole?.id ?? null,
     });
     
     // If we're in Event Types tab with a selected event type, add this step to selection
