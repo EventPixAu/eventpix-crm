@@ -6,7 +6,12 @@ import { toast } from 'sonner';
 type EventWorkflowStep = Database['public']['Tables']['event_workflow_steps']['Row'];
 
 export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
+  assigned_to: string | null;
   completed_by_profile?: {
+    full_name: string | null;
+    email: string;
+  } | null;
+  assigned_to_profile?: {
     full_name: string | null;
     email: string;
   } | null;
