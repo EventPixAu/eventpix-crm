@@ -1,0 +1,1 @@
+ALTER TABLE public.crew_checklist_templates ADD COLUMN phase text NOT NULL DEFAULT 'pre_event';
