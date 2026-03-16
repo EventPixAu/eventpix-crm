@@ -889,6 +889,11 @@ export default function WorkflowsAdmin() {
         <TabsContent value="event-briefs">
           <ClientBriefTemplatesManager />
         </TabsContent>
+
+        {/* Editing Instructions Tab */}
+        <TabsContent value="editing-instructions">
+          <EditingInstructionTemplatesManager />
+        </TabsContent>
       </Tabs>
 
       {/* New Step Dialog */}
