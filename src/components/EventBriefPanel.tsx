@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FileText, Pencil, Check, X, ChevronDown } from 'lucide-react';
+import { FileText, Pencil, Check, X, ChevronDown, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
