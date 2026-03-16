@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { FileText, Plus, Pencil, Trash2, GripVertical, Upload } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
+import 'pdfjs-dist/build/pdf.worker.mjs';
 import {
   DndContext,
   closestCenter,
