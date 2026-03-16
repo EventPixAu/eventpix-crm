@@ -109,11 +109,13 @@ function formatDateOffset(step: WorkflowMasterStep): string | null {
 function SortableStepItem({ 
   step, 
   onEdit, 
-  onDelete 
+  onDelete,
+  roleName,
 }: { 
   step: WorkflowMasterStep; 
   onEdit: (step: WorkflowMasterStep) => void;
   onDelete: (id: string) => void;
+  roleName?: string;
 }) {
   const {
     attributes,
@@ -150,6 +152,9 @@ function SortableStepItem({
       </button>
       <ClipboardList className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1">{step.label}</span>
+      {roleName && (
+        <Badge variant="outline" className="text-xs">{roleName}</Badge>
+      )}
       {dateOffsetText && (
         <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
           {dateOffsetText}
