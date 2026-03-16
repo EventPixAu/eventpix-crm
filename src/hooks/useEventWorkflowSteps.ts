@@ -28,8 +28,7 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         .from('event_workflow_steps')
         .select(`
           *,
-          completed_by_profile:profiles!event_workflow_steps_completed_by_fkey(full_name, email),
-          assigned_to_profile:profiles!event_workflow_steps_assigned_to_fkey(full_name, email)
+          completed_by_profile:profiles!event_workflow_steps_completed_by_fkey(full_name, email)
         `)
         .eq('event_id', eventId)
         .order('step_order');
