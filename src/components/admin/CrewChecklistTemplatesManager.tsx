@@ -351,6 +351,7 @@ export function CrewChecklistTemplatesManager() {
       items: validItems,
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
+      phase: formPhase,
     });
   };
 
