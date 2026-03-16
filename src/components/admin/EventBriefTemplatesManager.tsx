@@ -2,7 +2,11 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Plus, Pencil, Trash2, GripVertical, Upload } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import 'pdfjs-dist/build/pdf.worker.mjs';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).toString();
 import {
   DndContext,
   closestCenter,
