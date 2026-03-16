@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Switch } from '@/components/ui/switch';
@@ -8,16 +9,18 @@ import { toast } from 'sonner';
 
 const CONFIGURABLE_ROLES = [
   { key: 'operations', label: 'Operations' },
+  { key: 'photographer', label: 'Photographers' },
+  { key: 'assistant', label: 'Assistants' },
 ] as const;
 
 export default function RoleVisibility() {
-  const activeRole = CONFIGURABLE_ROLES[0].key;
+  const [activeRole, setActiveRole] = useState<string>(CONFIGURABLE_ROLES[0].key);
   const { data: rules = [], isLoading } = useRoleSectionVisibility(activeRole);
   const toggleMutation = useToggleSectionVisibility();
 
   const isVisible = (sectionKey: string) => {
     const rule = rules.find(r => r.section_key === sectionKey);
-    return rule ? rule.is_visible : true; // default visible
+    return rule ? rule.is_visible : true;
   };
 
   const handleToggle = (sectionKey: string, currentValue: boolean) => {
@@ -40,7 +43,18 @@ export default function RoleVisibility() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-6 flex items-center gap-3">
           <span className="text-sm font-medium text-muted-foreground">Configuring for:</span>
-          <Badge variant="default" className="text-sm px-3 py-1 capitalize">{activeRole}</Badge>
+          <div className="flex gap-2">
+            {CONFIGURABLE_ROLES.map((role) => (
+              <Badge
+                key={role.key}
+                variant={activeRole === role.key ? 'default' : 'outline'}
+                className="text-sm px-3 py-1 cursor-pointer capitalize"
+                onClick={() => setActiveRole(role.key)}
+              >
+                {role.label}
+              </Badge>
+            ))}
+          </div>
         </div>
 
         <div className="bg-card border border-border rounded-xl shadow-card divide-y divide-border">
