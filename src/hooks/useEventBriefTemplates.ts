@@ -77,6 +77,8 @@ export function useCreateEventBriefTemplate() {
       name: string;
       description?: string;
       content: string;
+      pdf_file_name?: string;
+      pdf_file_path?: string;
     }) => {
       // Get max sort order
       const { data: existing } = await supabase
