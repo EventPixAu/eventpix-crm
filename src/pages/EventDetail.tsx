@@ -1143,6 +1143,11 @@ export default function EventDetail() {
                 />
               )}
 
+              {/* Mail History */}
+              {(isAdmin || canSeeSection('mail_history')) && id && (
+                <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
+
               {/* Setup Tasks */}
               {(isAdmin || canSeeSection('tasks')) && id && <EventTasksCard eventId={id} />}
 
