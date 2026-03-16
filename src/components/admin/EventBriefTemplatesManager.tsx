@@ -524,9 +524,9 @@ export function EventBriefTemplatesManager() {
             </Button>
             <Button
               onClick={handleUpdate}
-              disabled={!formData.name.trim() || !formData.content.trim()}
+              disabled={!formData.name.trim() || !formData.content.trim() || pdfUploading}
             >
-              Save Changes
+              {pdfUploading ? 'Uploading...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
