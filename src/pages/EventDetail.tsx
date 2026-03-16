@@ -1148,7 +1148,7 @@ export default function EventDetail() {
               )}
 
               {/* Setup Tasks */}
-              {isAdmin && id && <EventTasksCard eventId={id} />}
+              {(isAdmin || canSeeSection('tasks')) && id && <EventTasksCard eventId={id} />}
 
             </motion.div>
           </div>
