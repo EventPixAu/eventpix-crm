@@ -955,7 +955,7 @@ export default function EventDetail() {
               )}
 
               {/* Contracts Panel */}
-              {isAdmin && id && event.client_id && (
+              {(isAdmin || canSeeSection('contracts')) && id && event.client_id && (
                 <ContractsPanel
                   eventId={id}
                   clientId={event.client_id}
