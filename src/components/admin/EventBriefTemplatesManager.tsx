@@ -136,6 +136,31 @@ export function EventBriefTemplatesManager() {
     content: '',
     is_active: true,
   });
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const createFileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const handlePdfUpload = async (file: File) => {
+    setPdfLoading(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item: any) => item.str)
+          .join(' ');
+        text += (i > 1 ? '\n\n' : '') + pageText;
+      }
+      setFormData((prev) => ({ ...prev, content: text.trim() }));
+    } catch {
+      alert('Failed to extract text from PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
