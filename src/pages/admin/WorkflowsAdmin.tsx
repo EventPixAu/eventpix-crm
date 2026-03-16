@@ -567,6 +567,7 @@ export default function WorkflowsAdmin() {
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
           <TabsTrigger value="briefs">Team Briefs</TabsTrigger>
           <TabsTrigger value="event-briefs">Event Briefs</TabsTrigger>
+          <TabsTrigger value="editing-instructions">Editing Instructions</TabsTrigger>
         </TabsList>
 
         {/* Operations Master Steps Tab */}
