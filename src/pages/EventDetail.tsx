@@ -748,16 +748,18 @@ export default function EventDetail() {
               )}
 
               {/* Event Contacts from CRM */}
-              <EventContactsCard
-                eventId={id!}
-                clientId={event?.client_id || (clientByName as any)?.id || null}
-                clientName={event.client_name}
-                clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
-                onsiteContact={{
-                name: event.onsite_contact_name,
-                phone: event.onsite_contact_phone,
-                }}
-              />
+              {canSeeSection('contacts') && (
+                <EventContactsCard
+                  eventId={id!}
+                  clientId={event?.client_id || (clientByName as any)?.id || null}
+                  clientName={event.client_name}
+                  clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
+                  onsiteContact={{
+                  name: event.onsite_contact_name,
+                  phone: event.onsite_contact_phone,
+                  }}
+                />
+              )}
               {/* Coverage, Photography Instructions & Notes */}
               {(event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
