@@ -277,9 +277,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           </div>
         )}
       </div>
-      {isAdmin && (
-        <AssignmentChecklistPanel eventId={eventId} assignment={assignment} />
-      )}
+      <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );
 }
