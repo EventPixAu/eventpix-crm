@@ -579,6 +579,7 @@ export function useUpdateWorkflowStep() {
       stepLabel,
       dueDate,
       notes,
+      assignedTo,
     }: { 
       stepId: string; 
       eventId: string;
