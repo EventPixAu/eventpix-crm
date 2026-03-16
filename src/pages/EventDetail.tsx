@@ -285,7 +285,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSales, isOperations, isCrew, user } = useAuth();
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
   const { data: eventSessions = [] } = useEventSessions(id);
