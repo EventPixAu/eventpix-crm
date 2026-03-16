@@ -1,0 +1,1 @@
+ALTER TABLE public.event_workflow_steps ADD COLUMN assigned_to uuid REFERENCES auth.users(id) ON DELETE SET NULL;
