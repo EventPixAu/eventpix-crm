@@ -75,6 +75,7 @@ import {
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplatesManager';
 import { ClientBriefTemplatesManager } from '@/components/admin/ClientBriefTemplatesManager';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
 // Helper to format date offset display
 function formatDateOffset(step: WorkflowMasterStep): string | null {
@@ -108,11 +109,13 @@ function formatDateOffset(step: WorkflowMasterStep): string | null {
 function SortableStepItem({ 
   step, 
   onEdit, 
-  onDelete 
+  onDelete,
+  roleName,
 }: { 
   step: WorkflowMasterStep; 
   onEdit: (step: WorkflowMasterStep) => void;
   onDelete: (id: string) => void;
+  roleName?: string;
 }) {
   const {
     attributes,
@@ -149,6 +152,9 @@ function SortableStepItem({
       </button>
       <ClipboardList className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1">{step.label}</span>
+      {roleName && (
+        <Badge variant="outline" className="text-xs">{roleName}</Badge>
+      )}
       {dateOffsetText && (
         <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
           {dateOffsetText}
@@ -295,6 +301,7 @@ export default function WorkflowsAdmin() {
   const { data: masterSteps = [], isLoading: stepsLoading } = useWorkflowMasterSteps();
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
   const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
+  const { data: staffRoles = [] } = useAllStaffRoles();
   
   const setDefaults = useSetEventTypeStepDefaults();
   const createStep = useCreateMasterStep();
@@ -389,6 +396,9 @@ export default function WorkflowsAdmin() {
       .filter(s => s.phase === newStep.phase)
       .reduce((max, s) => Math.max(max, s.sort_order), -1);
     
+    // Find Admin role as default
+    const adminRole = staffRoles.find(r => r.name === 'Admin');
+    
     const createdStep = await createStep.mutateAsync({
       label: newStep.label.trim(),
       phase: newStep.phase || 'pre_event',
@@ -399,6 +409,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: newStep.date_offset_reference || null,
       help_text: newStep.help_text || null,
       is_active: true,
+      default_staff_role_id: newStep.default_staff_role_id ?? adminRole?.id ?? null,
     });
     
     // If we're in Event Types tab with a selected event type, add this step to selection
@@ -429,6 +440,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: editingStep.date_offset_reference,
       help_text: editingStep.help_text,
       is_active: editingStep.is_active,
+      default_staff_role_id: editingStep.default_staff_role_id,
     });
     
     setEditingStep(null);
@@ -601,6 +613,7 @@ export default function WorkflowsAdmin() {
                                 step={step}
                                 onEdit={setEditingStep}
                                 onDelete={handleDeleteStep}
+                                roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name}
                               />
                             ))}
                           </div>
@@ -988,6 +1001,26 @@ export default function WorkflowsAdmin() {
             </div>
 
             <div>
+              <Label>Default Assignment</Label>
+              <Select
+                value={newStep.default_staff_role_id || staffRoles.find(r => r.name === 'Admin')?.id || ''}
+                onValueChange={v => setNewStep({ ...newStep, default_staff_role_id: v || null })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select default role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffRoles.filter(r => r.is_active).map(role => (
+                    <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Role assigned by default when this step is initialized
+              </p>
+            </div>
+
+            <div>
               <Label>Help Text</Label>
               <Input
                 value={newStep.help_text ?? ''}
@@ -1114,6 +1147,26 @@ export default function WorkflowsAdmin() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div>
+                <Label>Default Assignment</Label>
+                <Select
+                  value={editingStep.default_staff_role_id || ''}
+                  onValueChange={v => setEditingStep({ ...editingStep, default_staff_role_id: v || null })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select default role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffRoles.filter(r => r.is_active).map(role => (
+                      <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Role assigned by default when this step is initialized
+                </p>
               </div>
 
               <div>

@@ -5523,6 +5523,7 @@ export type Database = {
           created_at: string
           date_offset_days: number | null
           date_offset_reference: string | null
+          default_staff_role_id: string | null
           help_text: string | null
           id: string
           is_active: boolean
@@ -5537,6 +5538,7 @@ export type Database = {
           created_at?: string
           date_offset_days?: number | null
           date_offset_reference?: string | null
+          default_staff_role_id?: string | null
           help_text?: string | null
           id?: string
           is_active?: boolean
@@ -5551,6 +5553,7 @@ export type Database = {
           created_at?: string
           date_offset_days?: number | null
           date_offset_reference?: string | null
+          default_staff_role_id?: string | null
           help_text?: string | null
           id?: string
           is_active?: boolean
@@ -5559,7 +5562,15 @@ export type Database = {
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workflow_master_steps_default_staff_role_id_fkey"
+            columns: ["default_staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workflow_template_items: {
         Row: {

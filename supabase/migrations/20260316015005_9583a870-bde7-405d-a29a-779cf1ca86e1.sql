@@ -1,0 +1,1 @@
+INSERT INTO public.staff_roles (name, sort_order, is_active) VALUES ('Admin', 0, true) ON CONFLICT DO NOTHING;
