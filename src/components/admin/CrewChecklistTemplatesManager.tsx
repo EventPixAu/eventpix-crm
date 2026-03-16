@@ -174,6 +174,7 @@ export function CrewChecklistTemplatesManager() {
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formRoleId, setFormRoleId] = useState<string>('');
+  const [formPhase, setFormPhase] = useState<CrewPhase>('pre_event');
   const [formIsActive, setFormIsActive] = useState(true);
   const [formItems, setFormItems] = useState<ChecklistItem[]>([]);
 
