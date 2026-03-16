@@ -1,12 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Pencil, Trash2, GripVertical, Upload } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+import { FileText, Plus, Pencil, Trash2, GripVertical, Upload, Download, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
