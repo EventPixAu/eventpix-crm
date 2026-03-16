@@ -285,7 +285,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSales, isOperations, isCrew, user } = useAuth();
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
   const { data: eventSessions = [] } = useEventSessions(id);
@@ -1107,18 +1107,30 @@ export default function EventDetail() {
                 </div>
               </div>
 
-              {/* Workflow Rail - Admin/Ops Only */}
-              {isAdmin && id && (
+              {/* Workflow Rail - Admin/Sales/Ops see full rail; Crew see their own tasks */}
+              {(isAdmin || isSales || isOperations) && id && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <InitializeWorkflowDialog 
-                      eventId={id} 
-                      currentTemplateId={(event as any).workflow_template_id}
-                    />
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center justify-between">
+                      <InitializeWorkflowDialog 
+                        eventId={id} 
+                        currentTemplateId={(event as any).workflow_template_id}
+                      />
+                    </div>
+                  )}
                   <JobWorkflowRail eventId={id} isAdmin={isAdmin} />
                 </div>
               )}
+              {isCrew && !isAdmin && !isSales && !isOperations && id && user && (() => {
+                const myAssignment = assignments.find(a => a.user_id === user.id);
+                if (!myAssignment) return null;
+                return (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold">My Workflow</h3>
+                    <StaffWorkflowPanel eventId={id} assignment={myAssignment} />
+                  </div>
+                );
+              })()}
 
               {/* Editing Instructions - Internal Only */}
               {isAdmin && id && (
