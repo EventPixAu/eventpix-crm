@@ -67,9 +67,9 @@ export function useEventFinancials(eventId: string | undefined) {
       
       if (expenseError) throw expenseError;
       
-      // Calculate income
+      // Calculate income - use quote total if available, otherwise invoice_amount from Xero
       const quote = event.quotes as any;
-      const quotedTotal = quote?.total_estimate || quote?.subtotal || 0;
+      const quotedTotal = quote?.total_estimate || quote?.subtotal || (event as any).invoice_amount || 0;
       const isPaid = event.invoice_status === 'paid';
       
       // Calculate staff costs from assignments
