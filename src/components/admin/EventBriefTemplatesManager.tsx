@@ -143,30 +143,32 @@ export function EventBriefTemplatesManager() {
     content: '',
     is_active: true,
   });
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [existingPdf, setExistingPdf] = useState<{ name: string; path: string } | null>(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
   const createFileRef = useRef<HTMLInputElement>(null);
   const editFileRef = useRef<HTMLInputElement>(null);
 
-  const handlePdfUpload = async (file: File) => {
-    setPdfLoading(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let text = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item: any) => item.str)
-          .join(' ');
-        text += (i > 1 ? '\n\n' : '') + pageText;
-      }
-      setFormData((prev) => ({ ...prev, content: text.trim() }));
-    } catch {
-      alert('Failed to extract text from PDF');
-    } finally {
-      setPdfLoading(false);
-    }
+  const uploadPdfToStorage = async (file: File): Promise<{ fileName: string; filePath: string }> => {
+    const filePath = `${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage
+      .from('brief-template-files')
+      .upload(filePath, file, { contentType: file.type });
+    if (error) throw error;
+    return { fileName: file.name, filePath };
+  };
+
+  const downloadPdf = async (filePath: string, fileName: string) => {
+    const { data, error } = await supabase.storage
+      .from('brief-template-files')
+      .download(filePath);
+    if (error) { toast.error('Failed to download PDF'); return; }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const sensors = useSensors(
