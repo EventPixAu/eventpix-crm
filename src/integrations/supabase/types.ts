@@ -4438,6 +4438,33 @@ export type Database = {
           },
         ]
       }
+      role_section_visibility: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          role: string
+          section_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          role: string
+          section_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          role?: string
+          section_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_workflow_templates: {
         Row: {
           archived_at: string | null

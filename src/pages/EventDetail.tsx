@@ -75,6 +75,7 @@ import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { StaffWorkflowPanel } from '@/components/StaffWorkflowPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
+import { useEventSectionVisibility } from '@/hooks/useRoleSectionVisibility';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
@@ -286,6 +287,7 @@ export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin, isSales, isOperations, isCrew, user } = useAuth();
+  const { canSeeSection } = useEventSectionVisibility();
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
   const { data: eventSessions = [] } = useEventSessions(id);
@@ -547,13 +549,13 @@ export default function EventDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          {isAdmin && (
+          {(isAdmin || canSeeSection('equipment_tab')) && (
             <TabsTrigger value="equipment">
               <Package className="h-4 w-4 mr-1" />
               Equipment
             </TabsTrigger>
           )}
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          {canSeeSection('activity_tab') && <TabsTrigger value="activity">Activity</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview">
@@ -726,7 +728,7 @@ export default function EventDetail() {
 
 
               {/* Sessions / Multiple Dates */}
-              {id && (
+              {id && canSeeSection('sessions') && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-display font-semibold">Sessions / Time Blocks</h2>
@@ -746,18 +748,20 @@ export default function EventDetail() {
               )}
 
               {/* Event Contacts from CRM */}
-              <EventContactsCard
-                eventId={id!}
-                clientId={event?.client_id || (clientByName as any)?.id || null}
-                clientName={event.client_name}
-                clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
-                onsiteContact={{
-                name: event.onsite_contact_name,
-                phone: event.onsite_contact_phone,
-                }}
-              />
+              {canSeeSection('contacts') && (
+                <EventContactsCard
+                  eventId={id!}
+                  clientId={event?.client_id || (clientByName as any)?.id || null}
+                  clientName={event.client_name}
+                  clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
+                  onsiteContact={{
+                  name: event.onsite_contact_name,
+                  phone: event.onsite_contact_phone,
+                  }}
+                />
+              )}
               {/* Coverage, Photography Instructions & Notes */}
-              {(event.coverage_details || (event as any).photography_brief || event.notes) && (
+              {canSeeSection('additional_details') && (event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-display font-semibold">Additional Details</h2>
@@ -788,7 +792,7 @@ export default function EventDetail() {
               )}
               
               {/* QR for this Event */}
-              {id && (
+              {id && canSeeSection('qr_panel') && (
                 <EventQrPanel
                   eventId={id}
                   qrFilePath={(event as any).qr_file_path || null}
@@ -799,7 +803,7 @@ export default function EventDetail() {
               )}
               
               {/* Team Brief (internal) */}
-              {id && (
+              {id && canSeeSection('team_brief') && (
                 <EventBriefPanel
                   eventId={id}
                   briefTemplateId={(event as any).brief_template_id}
@@ -809,7 +813,7 @@ export default function EventDetail() {
               )}
 
               {/* Event Brief (shared with client) */}
-              {id && (
+              {id && canSeeSection('client_brief') && (
                 <ClientBriefPanel
                   eventId={id}
                   clientBriefContent={(event as any).client_brief_content}
@@ -827,7 +831,7 @@ export default function EventDetail() {
               className="space-y-6"
             >
               {/* Status */}
-              {isAdmin && (
+              {(isAdmin || canSeeSection('status')) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <h2 className="text-lg font-display font-semibold mb-4">Status</h2>
                   <div className="space-y-4">
@@ -931,17 +935,17 @@ export default function EventDetail() {
               )}
 
               {/* Mail History */}
-              {isAdmin && id && (
+              {(isAdmin || canSeeSection('mail_history')) && id && (
                 <MailHistoryPanel eventId={id} maxItems={5} />
               )}
 
               {/* Event Financials - above Contracts */}
-              {isAdmin && id && (
+              {(isAdmin || canSeeSection('financials')) && id && (
                 <EventFinancialsCard eventId={id} />
               )}
 
               {/* Budget (Quote) Panel */}
-              {isAdmin && (event as any).quote_id && (
+              {(isAdmin || canSeeSection('budget')) && (event as any).quote_id && (
                 <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
               )}
 
@@ -951,7 +955,7 @@ export default function EventDetail() {
               )}
 
               {/* Contracts Panel */}
-              {isAdmin && id && event.client_id && (
+              {(isAdmin || canSeeSection('contracts')) && id && event.client_id && (
                 <ContractsPanel
                   eventId={id}
                   clientId={event.client_id}
@@ -965,7 +969,7 @@ export default function EventDetail() {
               )}
 
               {/* Quotes Panel */}
-              {isAdmin && (
+              {(isAdmin || canSeeSection('quotes')) && (
                 <EventQuotesPanel
                   eventId={id!}
                   quoteId={(event as any).quote_id}
@@ -982,7 +986,7 @@ export default function EventDetail() {
               className="space-y-6"
             >
               {/* Quick Actions */}
-              <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+              {canSeeSection('quick_actions') && <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                 <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
                 <div className="space-y-2">
                   <Link to={`/events/${id}/day-of`} className="block">
@@ -1105,10 +1109,10 @@ export default function EventDetail() {
                     </Button>
                   )}
                 </div>
-              </div>
+              </div>}
 
               {/* Workflow Rail - Admin/Sales/Ops see full rail; Crew see their own tasks */}
-              {(isAdmin || isSales || isOperations) && id && (
+              {canSeeSection('workflow') && (isAdmin || isSales || isOperations) && id && (
                 <div className="space-y-2">
                   {isAdmin && (
                     <div className="flex items-center justify-between">
@@ -1133,7 +1137,7 @@ export default function EventDetail() {
               })()}
 
               {/* Editing Instructions - Internal Only */}
-              {isAdmin && id && (
+              {(isAdmin || canSeeSection('editing_instructions')) && id && (
                 <EditingInstructionsPanel
                   value={(event as any)?.editing_instructions || ''}
                   onSave={async (val: string) => {
@@ -1144,7 +1148,7 @@ export default function EventDetail() {
               )}
 
               {/* Setup Tasks */}
-              {isAdmin && id && <EventTasksCard eventId={id} />}
+              {(isAdmin || canSeeSection('tasks')) && id && <EventTasksCard eventId={id} />}
 
             </motion.div>
           </div>
@@ -1227,8 +1231,8 @@ export default function EventDetail() {
           </div>
         </TabsContent>
 
-        {/* Equipment Tab (Admin Only) */}
-        {isAdmin && id && (
+        {/* Equipment Tab */}
+        {(isAdmin || canSeeSection('equipment_tab')) && id && (
           <TabsContent value="equipment">
             <EventEquipmentPanel eventId={id} assignments={assignments} />
           </TabsContent>

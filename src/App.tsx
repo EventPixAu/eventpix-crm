@@ -76,6 +76,7 @@ import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
+import RoleVisibility from "./pages/admin/RoleVisibility";
 import CompanyInsurance from "./pages/admin/CompanyInsurance";
 import { CompanyList, ContactList, CrmEmails, PromotionsDashboard, CrmLookups } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
@@ -242,6 +243,7 @@ function AppRoutes() {
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/insurance" element={<ProtectedRoute><AdminGuard><CompanyInsurance /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/role-visibility" element={<ProtectedRoute><AdminGuard><RoleVisibility /></AdminGuard></ProtectedRoute>} />
       
       {/* CRM routes - admin + sales */}
       <Route path="/crm/promotions" element={<ProtectedRoute><SalesGuard><PromotionsDashboard /></SalesGuard></ProtectedRoute>} />
