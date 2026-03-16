@@ -217,6 +217,7 @@ export function CrewChecklistTemplatesManager() {
       items: ChecklistItem[];
       is_active: boolean;
       staff_role_id: string | null;
+      phase: CrewPhase;
     }) => {
       if (data.id) {
         const { error } = await supabase
@@ -227,6 +228,7 @@ export function CrewChecklistTemplatesManager() {
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
+            phase: data.phase,
             updated_at: new Date().toISOString(),
           })
           .eq('id', data.id);
@@ -240,6 +242,7 @@ export function CrewChecklistTemplatesManager() {
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
+            phase: data.phase,
           });
         if (error) throw error;
       }
