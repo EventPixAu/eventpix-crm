@@ -1079,7 +1079,7 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
-                  {isAdmin && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
+                  {(isAdmin || isOperations) && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <div className="flex items-center gap-2">
                       <SendPortalLinkButton
                         clientId={event.client_id}
