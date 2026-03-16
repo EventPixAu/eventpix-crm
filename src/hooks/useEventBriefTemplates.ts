@@ -124,6 +124,8 @@ export function useUpdateEventBriefTemplate() {
       content?: string;
       is_active?: boolean;
       sort_order?: number;
+      pdf_file_name?: string | null;
+      pdf_file_path?: string | null;
     }) => {
       const { error } = await supabase
         .from('event_brief_templates')
