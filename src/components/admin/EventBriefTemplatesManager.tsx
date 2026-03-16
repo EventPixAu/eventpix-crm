@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { FileText, Plus, Pencil, Trash2, GripVertical, Upload } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).toString();
 import {
   DndContext,
   closestCenter,
@@ -134,6 +140,31 @@ export function EventBriefTemplatesManager() {
     content: '',
     is_active: true,
   });
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const createFileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const handlePdfUpload = async (file: File) => {
+    setPdfLoading(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item: any) => item.str)
+          .join(' ');
+        text += (i > 1 ? '\n\n' : '') + pageText;
+      }
+      setFormData((prev) => ({ ...prev, content: text.trim() }));
+    } catch {
+      alert('Failed to extract text from PDF');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -295,7 +326,32 @@ export function EventBriefTemplatesManager() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="content">Brief Content</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="content">Brief Content</Label>
+                <div>
+                  <input
+                    ref={createFileRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePdfUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => createFileRef.current?.click()}
+                    disabled={pdfLoading}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    {pdfLoading ? 'Extracting...' : 'Upload PDF'}
+                  </Button>
+                </div>
+              </div>
               <Textarea
                 id="content"
                 value={formData.content}
@@ -352,7 +408,32 @@ export function EventBriefTemplatesManager() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-content">Brief Content</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-content">Brief Content</Label>
+                <div>
+                  <input
+                    ref={editFileRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePdfUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editFileRef.current?.click()}
+                    disabled={pdfLoading}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    {pdfLoading ? 'Extracting...' : 'Upload PDF'}
+                  </Button>
+                </div>
+              </div>
               <Textarea
                 id="edit-content"
                 value={formData.content}
