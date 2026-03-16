@@ -1027,7 +1027,7 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
-                  {isAdmin && (
+                  {(isAdmin || isOperations) && (
                     <Button
                       variant="outline"
                       className="w-full justify-start"
@@ -1045,7 +1045,7 @@ export default function EventDetail() {
                       View as Client
                     </Button>
                   )}
-                  {isAdmin && event?.quote_id && (
+                  {(isAdmin || isOperations) && event?.quote_id && (
                     <Link to={`/sales/quotes/${event.quote_id}`} className="block">
                       <Button variant="outline" className="w-full justify-start">
                         <DollarSign className="h-4 w-4 mr-2" />
@@ -1053,7 +1053,7 @@ export default function EventDetail() {
                       </Button>
                     </Link>
                   )}
-                  {isAdmin && (
+                  {(isAdmin || isOperations) && (
                     <Button variant="outline" className="w-full justify-between" onClick={() => setSendEmailOpen(true)}>
                       <span className="flex items-center">
                         <Mail className="h-4 w-4 mr-2" />
@@ -1066,7 +1066,7 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
-                  {isAdmin && (
+                  {(isAdmin || isOperations) && (
                     <Button variant="outline" className="w-full justify-between" onClick={() => setFinalConfirmOpen(true)}>
                       <span className="flex items-center">
                         <CheckCircle className="h-4 w-4 mr-2" />
@@ -1079,7 +1079,7 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
-                  {isAdmin && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
+                  {(isAdmin || isOperations) && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <div className="flex items-center gap-2">
                       <SendPortalLinkButton
                         clientId={event.client_id}
@@ -1107,7 +1107,7 @@ export default function EventDetail() {
                       )}
                     </div>
                   )}
-                  {isAdmin && assignments.length > 0 && (
+                  {(isAdmin || isOperations) && assignments.length > 0 && (
                     <Button 
                       variant="outline" 
                       className="w-full justify-between" 
