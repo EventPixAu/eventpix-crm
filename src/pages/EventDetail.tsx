@@ -969,7 +969,7 @@ export default function EventDetail() {
               )}
 
               {/* Quotes Panel */}
-              {isAdmin && (
+              {(isAdmin || canSeeSection('quotes')) && (
                 <EventQuotesPanel
                   eventId={id!}
                   quoteId={(event as any).quote_id}
