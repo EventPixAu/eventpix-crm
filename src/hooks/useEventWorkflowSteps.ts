@@ -592,6 +592,7 @@ export function useUpdateWorkflowStep() {
       if (stepLabel !== undefined) updates.step_label = stepLabel;
       if (dueDate !== undefined) updates.due_date = dueDate;
       if (notes !== undefined) updates.notes = notes;
+      if (assignedTo !== undefined) updates.assigned_to = assignedTo;
       
       const { error } = await supabase
         .from('event_workflow_steps')
