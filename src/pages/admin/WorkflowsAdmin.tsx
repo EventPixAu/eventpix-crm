@@ -296,6 +296,7 @@ export default function WorkflowsAdmin() {
   const { data: masterSteps = [], isLoading: stepsLoading } = useWorkflowMasterSteps();
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
   const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
+  const { data: staffRoles = [] } = useAllStaffRoles();
   
   const setDefaults = useSetEventTypeStepDefaults();
   const createStep = useCreateMasterStep();
