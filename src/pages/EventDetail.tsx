@@ -792,7 +792,7 @@ export default function EventDetail() {
               )}
               
               {/* QR for this Event */}
-              {id && (
+              {id && canSeeSection('qr_panel') && (
                 <EventQrPanel
                   eventId={id}
                   qrFilePath={(event as any).qr_file_path || null}
