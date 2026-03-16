@@ -99,11 +99,27 @@ function formatSessionTime(timeStr: string): string {
   }
 }
 
-function EditingInstructionsPanel({ value, onSave }: { value: string; onSave: (val: string) => Promise<void> }) {
+function EditingInstructionsPanel({ value, templateId, onSave }: { value: string; templateId?: string | null; onSave: (val: string, templateId?: string | null) => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { data: templates = [] } = useEditingInstructionTemplates();
+
+  const handleTemplateChange = async (tid: string) => {
+    const template = templates.find((t) => t.id === tid);
+    if (!template) return;
+    setText(template.content);
+    setSaving(true);
+    try {
+      await onSave(template.content, tid);
+      toast({ title: 'Editing instructions applied from template' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to apply template' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -132,6 +148,20 @@ function EditingInstructionsPanel({ value, onSave }: { value: string; onSave: (v
           </Button>
         )}
       </div>
+      {!editing && templates.length > 0 && (
+        <div className="mb-3">
+          <Select value={templateId || ''} onValueChange={handleTemplateChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Apply a template..." />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {editing ? (
         <div className="space-y-2">
           <textarea
