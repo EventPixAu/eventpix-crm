@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 
 const CONFIGURABLE_ROLES = [
   { key: 'operations', label: 'Operations' },
+  { key: 'photographer', label: 'Photographers' },
+  { key: 'assistant', label: 'Assistants' },
 ] as const;
 
 export default function RoleVisibility() {
