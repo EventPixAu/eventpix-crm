@@ -73,7 +73,7 @@ import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
-import { AssignmentChecklistPanel } from '@/components/AssignmentChecklistPanel';
+import { StaffWorkflowPanel } from '@/components/StaffWorkflowPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
@@ -277,9 +277,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           </div>
         )}
       </div>
-      {isAdmin && (
-        <AssignmentChecklistPanel eventId={eventId} assignment={assignment} />
-      )}
+      <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );
 }
