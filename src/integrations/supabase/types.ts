@@ -2593,6 +2593,7 @@ export type Database = {
       }
       event_workflow_steps: {
         Row: {
+          assigned_to: string | null
           auto_trigger_event: string | null
           completed_at: string | null
           completed_by: string | null
@@ -2609,6 +2610,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          assigned_to?: string | null
           auto_trigger_event?: string | null
           completed_at?: string | null
           completed_by?: string | null
@@ -2625,6 +2627,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          assigned_to?: string | null
           auto_trigger_event?: string | null
           completed_at?: string | null
           completed_by?: string | null

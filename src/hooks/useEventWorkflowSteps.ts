@@ -6,7 +6,12 @@ import { toast } from 'sonner';
 type EventWorkflowStep = Database['public']['Tables']['event_workflow_steps']['Row'];
 
 export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
+  assigned_to: string | null;
   completed_by_profile?: {
+    full_name: string | null;
+    email: string;
+  } | null;
+  assigned_to_profile?: {
     full_name: string | null;
     email: string;
   } | null;
@@ -29,7 +34,27 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         .order('step_order');
       
       if (error) throw error;
-      return data as EventWorkflowStepWithProfile[];
+
+      // Fetch assigned_to profiles separately (FK may not be in generated types yet)
+      const assignedIds = (data || [])
+        .map((s: any) => s.assigned_to)
+        .filter((id: string | null): id is string => !!id);
+      
+      let profileMap: Record<string, { full_name: string | null; email: string }> = {};
+      if (assignedIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', [...new Set(assignedIds)]);
+        if (profiles) {
+          profiles.forEach(p => { profileMap[p.id] = { full_name: p.full_name, email: p.email }; });
+        }
+      }
+
+      return (data || []).map((s: any) => ({
+        ...s,
+        assigned_to_profile: s.assigned_to ? profileMap[s.assigned_to] || null : null,
+      })) as EventWorkflowStepWithProfile[];
     },
     enabled: !!eventId,
   });
@@ -574,17 +599,20 @@ export function useUpdateWorkflowStep() {
       stepLabel,
       dueDate,
       notes,
+      assignedTo,
     }: { 
       stepId: string; 
       eventId: string;
       stepLabel?: string;
       dueDate?: string | null;
       notes?: string | null;
+      assignedTo?: string | null;
     }) => {
       const updates: Record<string, unknown> = {};
       if (stepLabel !== undefined) updates.step_label = stepLabel;
       if (dueDate !== undefined) updates.due_date = dueDate;
       if (notes !== undefined) updates.notes = notes;
+      if (assignedTo !== undefined) updates.assigned_to = assignedTo;
       
       const { error } = await supabase
         .from('event_workflow_steps')

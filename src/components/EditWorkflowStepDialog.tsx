@@ -17,8 +17,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useUpdateWorkflowStep, EventWorkflowStepWithProfile } from '@/hooks/useEventWorkflowSteps';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EditWorkflowStepDialogProps {
   step: EventWorkflowStepWithProfile | null;
@@ -36,14 +45,57 @@ export function EditWorkflowStepDialog({
   const [label, setLabel] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState('');
+  const [assignedTo, setAssignedTo] = useState<string>('management');
   
   const updateStep = useUpdateWorkflowStep();
+
+  // Fetch staff assigned to this event
+  const { data: eventStaff = [] } = useQuery({
+    queryKey: ['event-assignments-staff', eventId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_assignments')
+        .select(`
+          id,
+          user_id,
+          staff_id,
+          role_on_event,
+          staff_role:staff_roles!event_assignments_staff_role_id_fkey(name),
+          profile:profiles!event_assignments_user_id_fkey(id, full_name, email)
+        `)
+        .eq('event_id', eventId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!eventId,
+  });
+
+  // Build unique staff options from assignments
+  const staffOptions = (() => {
+    const seen = new Set<string>();
+    const options: { value: string; label: string }[] = [];
+
+    eventStaff.forEach((a: any) => {
+      const userId = a.user_id || a.profile?.id;
+      if (!userId || seen.has(userId)) return;
+      seen.add(userId);
+      const name = a.profile?.full_name || a.profile?.email || 'Unknown';
+      const role = a.staff_role?.name || a.role_on_event || '';
+      options.push({
+        value: userId,
+        label: role ? `${name} (${role})` : name,
+      });
+    });
+
+    return options;
+  })();
   
   useEffect(() => {
     if (step) {
       setLabel(step.step_label);
       setDueDate(step.due_date ? parseISO(step.due_date) : undefined);
       setNotes(step.notes || '');
+      setAssignedTo(step.assigned_to || 'management');
     }
   }, [step]);
   
@@ -56,6 +108,7 @@ export function EditWorkflowStepDialog({
       stepLabel: label,
       dueDate: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
       notes: notes || null,
+      assignedTo: assignedTo === 'management' ? null : assignedTo,
     });
     
     onOpenChange(false);
@@ -86,6 +139,23 @@ export function EditWorkflowStepDialog({
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Enter step label"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Assigned To</Label>
+            <Select value={assignedTo} onValueChange={setAssignedTo}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="management">Management</SelectItem>
+                {staffOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-2">
