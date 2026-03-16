@@ -945,7 +945,7 @@ export default function EventDetail() {
               )}
 
               {/* Budget (Quote) Panel */}
-              {isAdmin && (event as any).quote_id && (
+              {(isAdmin || canSeeSection('budget')) && (event as any).quote_id && (
                 <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
               )}
 
