@@ -803,7 +803,7 @@ export default function EventDetail() {
               )}
               
               {/* Team Brief (internal) */}
-              {id && (
+              {id && canSeeSection('team_brief') && (
                 <EventBriefPanel
                   eventId={id}
                   briefTemplateId={(event as any).brief_template_id}
