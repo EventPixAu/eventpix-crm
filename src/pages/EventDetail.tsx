@@ -1107,7 +1107,7 @@ export default function EventDetail() {
                       )}
                     </div>
                   )}
-                  {isAdmin && assignments.length > 0 && (
+                  {(isAdmin || isOperations) && assignments.length > 0 && (
                     <Button 
                       variant="outline" 
                       className="w-full justify-between" 
