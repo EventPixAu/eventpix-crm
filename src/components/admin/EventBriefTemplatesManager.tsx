@@ -414,9 +414,9 @@ export function EventBriefTemplatesManager() {
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={!formData.name.trim() || !formData.content.trim()}
+              disabled={!formData.name.trim() || !formData.content.trim() || pdfUploading}
             >
-              Create Template
+              {pdfUploading ? 'Uploading...' : 'Create Template'}
             </Button>
           </DialogFooter>
         </DialogContent>
