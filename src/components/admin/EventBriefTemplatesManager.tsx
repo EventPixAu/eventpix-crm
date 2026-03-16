@@ -1,12 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Pencil, Trash2, GripVertical, Upload } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+import { FileText, Plus, Pencil, Trash2, GripVertical, Upload, Download, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -52,6 +48,8 @@ interface BriefTemplate {
   content: string;
   is_active: boolean;
   sort_order: number;
+  pdf_file_name: string | null;
+  pdf_file_path: string | null;
 }
 
 function SortableTemplateItem({
@@ -104,6 +102,11 @@ function SortableTemplateItem({
             {template.description}
           </p>
         )}
+        {template.pdf_file_name && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+            <Upload className="h-3 w-3" /> {template.pdf_file_name}
+          </p>
+        )}
       </div>
       {!template.is_active && (
         <Badge variant="secondary" className="text-xs">
@@ -140,30 +143,32 @@ export function EventBriefTemplatesManager() {
     content: '',
     is_active: true,
   });
-  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [existingPdf, setExistingPdf] = useState<{ name: string; path: string } | null>(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
   const createFileRef = useRef<HTMLInputElement>(null);
   const editFileRef = useRef<HTMLInputElement>(null);
 
-  const handlePdfUpload = async (file: File) => {
-    setPdfLoading(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let text = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item: any) => item.str)
-          .join(' ');
-        text += (i > 1 ? '\n\n' : '') + pageText;
-      }
-      setFormData((prev) => ({ ...prev, content: text.trim() }));
-    } catch {
-      alert('Failed to extract text from PDF');
-    } finally {
-      setPdfLoading(false);
-    }
+  const uploadPdfToStorage = async (file: File): Promise<{ fileName: string; filePath: string }> => {
+    const filePath = `${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage
+      .from('brief-template-files')
+      .upload(filePath, file, { contentType: file.type });
+    if (error) throw error;
+    return { fileName: file.name, filePath };
+  };
+
+  const downloadPdf = async (filePath: string, fileName: string) => {
+    const { data, error } = await supabase.storage
+      .from('brief-template-files')
+      .download(filePath);
+    if (error) { toast.error('Failed to download PDF'); return; }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const sensors = useSensors(
@@ -194,15 +199,27 @@ export function EventBriefTemplatesManager() {
 
   const handleCreate = async () => {
     if (!formData.name.trim() || !formData.content.trim()) return;
-
-    await createTemplate.mutateAsync({
-      name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
-      content: formData.content.trim(),
-    });
-
-    setNewDialog(false);
-    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfUploading(true);
+    try {
+      let pdfData: { pdf_file_name?: string; pdf_file_path?: string } = {};
+      if (pdfFile) {
+        const { fileName, filePath } = await uploadPdfToStorage(pdfFile);
+        pdfData = { pdf_file_name: fileName, pdf_file_path: filePath };
+      }
+      await createTemplate.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        content: formData.content.trim(),
+        ...pdfData,
+      });
+      setNewDialog(false);
+      setFormData({ name: '', description: '', content: '', is_active: true });
+      setPdfFile(null);
+    } catch (e: any) {
+      toast.error('Failed to create template: ' + e.message);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleEdit = (template: BriefTemplate) => {
@@ -213,24 +230,44 @@ export function EventBriefTemplatesManager() {
       content: template.content,
       is_active: template.is_active,
     });
+    setPdfFile(null);
+    setExistingPdf(template.pdf_file_name && template.pdf_file_path
+      ? { name: template.pdf_file_name, path: template.pdf_file_path }
+      : null);
     setEditDialog(true);
   };
 
   const handleUpdate = async () => {
     if (!editingTemplate || !formData.name.trim() || !formData.content.trim())
       return;
-
-    await updateTemplate.mutateAsync({
-      id: editingTemplate.id,
-      name: formData.name.trim(),
-      description: formData.description.trim() || null,
-      content: formData.content.trim(),
-      is_active: formData.is_active,
-    });
-
-    setEditDialog(false);
-    setEditingTemplate(null);
-    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfUploading(true);
+    try {
+      let pdfData: { pdf_file_name?: string | null; pdf_file_path?: string | null } = {};
+      if (pdfFile) {
+        const { fileName, filePath } = await uploadPdfToStorage(pdfFile);
+        pdfData = { pdf_file_name: fileName, pdf_file_path: filePath };
+      } else if (!existingPdf && editingTemplate.pdf_file_path) {
+        // PDF was removed
+        pdfData = { pdf_file_name: null, pdf_file_path: null };
+      }
+      await updateTemplate.mutateAsync({
+        id: editingTemplate.id,
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        content: formData.content.trim(),
+        is_active: formData.is_active,
+        ...pdfData,
+      });
+      setEditDialog(false);
+      setEditingTemplate(null);
+      setFormData({ name: '', description: '', content: '', is_active: true });
+      setPdfFile(null);
+      setExistingPdf(null);
+    } catch (e: any) {
+      toast.error('Failed to update template: ' + e.message);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -326,32 +363,7 @@ export function EventBriefTemplatesManager() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="content">Brief Content</Label>
-                <div>
-                  <input
-                    ref={createFileRef}
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handlePdfUpload(file);
-                      e.target.value = '';
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => createFileRef.current?.click()}
-                    disabled={pdfLoading}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    {pdfLoading ? 'Extracting...' : 'Upload PDF'}
-                  </Button>
-                </div>
-              </div>
+              <Label htmlFor="content">Brief Content</Label>
               <Textarea
                 id="content"
                 value={formData.content}
@@ -362,6 +374,39 @@ export function EventBriefTemplatesManager() {
                 rows={8}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Attach PDF (optional)</Label>
+              <input
+                ref={createFileRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setPdfFile(file);
+                  e.target.value = '';
+                }}
+              />
+              {pdfFile ? (
+                <div className="flex items-center gap-2 p-2 rounded border border-border bg-muted/30 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 truncate">{pdfFile.name}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPdfFile(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => createFileRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Choose PDF
+                </Button>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewDialog(false)}>
@@ -369,9 +414,9 @@ export function EventBriefTemplatesManager() {
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={!formData.name.trim() || !formData.content.trim()}
+              disabled={!formData.name.trim() || !formData.content.trim() || pdfUploading}
             >
-              Create Template
+              {pdfUploading ? 'Uploading...' : 'Create Template'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -408,32 +453,7 @@ export function EventBriefTemplatesManager() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="edit-content">Brief Content</Label>
-                <div>
-                  <input
-                    ref={editFileRef}
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handlePdfUpload(file);
-                      e.target.value = '';
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => editFileRef.current?.click()}
-                    disabled={pdfLoading}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    {pdfLoading ? 'Extracting...' : 'Upload PDF'}
-                  </Button>
-                </div>
-              </div>
+              <Label htmlFor="edit-content">Brief Content</Label>
               <Textarea
                 id="edit-content"
                 value={formData.content}
@@ -442,6 +462,50 @@ export function EventBriefTemplatesManager() {
                 }
                 rows={8}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Attach PDF (optional)</Label>
+              <input
+                ref={editFileRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) { setPdfFile(file); setExistingPdf(null); }
+                  e.target.value = '';
+                }}
+              />
+              {pdfFile ? (
+                <div className="flex items-center gap-2 p-2 rounded border border-border bg-muted/30 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 truncate">{pdfFile.name}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPdfFile(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : existingPdf ? (
+                <div className="flex items-center gap-2 p-2 rounded border border-border bg-muted/30 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 truncate">{existingPdf.name}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => downloadPdf(existingPdf.path, existingPdf.name)}>
+                    <Download className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setExistingPdf(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editFileRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Choose PDF
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Switch
@@ -460,9 +524,9 @@ export function EventBriefTemplatesManager() {
             </Button>
             <Button
               onClick={handleUpdate}
-              disabled={!formData.name.trim() || !formData.content.trim()}
+              disabled={!formData.name.trim() || !formData.content.trim() || pdfUploading}
             >
-              Save Changes
+              {pdfUploading ? 'Uploading...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

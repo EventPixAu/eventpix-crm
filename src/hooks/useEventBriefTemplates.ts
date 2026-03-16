@@ -9,6 +9,8 @@ interface EventBriefTemplate {
   content: string;
   is_active: boolean;
   sort_order: number;
+  pdf_file_name: string | null;
+  pdf_file_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +77,8 @@ export function useCreateEventBriefTemplate() {
       name: string;
       description?: string;
       content: string;
+      pdf_file_name?: string;
+      pdf_file_path?: string;
     }) => {
       // Get max sort order
       const { data: existing } = await supabase
@@ -120,6 +124,8 @@ export function useUpdateEventBriefTemplate() {
       content?: string;
       is_active?: boolean;
       sort_order?: number;
+      pdf_file_name?: string | null;
+      pdf_file_path?: string | null;
     }) => {
       const { error } = await supabase
         .from('event_brief_templates')
