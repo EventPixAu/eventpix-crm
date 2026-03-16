@@ -342,14 +342,15 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   useEffect(() => {
     if (firstIncompleteRef.current && scrollAreaRef.current) {
       const timer = setTimeout(() => {
-        const container = scrollAreaRef.current;
+        // ScrollArea uses a nested viewport element for actual scrolling
+        const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
         const target = firstIncompleteRef.current;
-        if (container && target) {
-          const containerRect = container.getBoundingClientRect();
+        if (viewport && target) {
+          const viewportRect = viewport.getBoundingClientRect();
           const targetRect = target.getBoundingClientRect();
-          container.scrollTop += targetRect.top - containerRect.top;
+          viewport.scrollTop += targetRect.top - viewportRect.top;
         }
-      }, 100);
+      }, 150);
       return () => clearTimeout(timer);
     }
   }, [steps]);
