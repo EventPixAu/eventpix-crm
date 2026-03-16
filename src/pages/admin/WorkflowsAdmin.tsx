@@ -435,6 +435,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: editingStep.date_offset_reference,
       help_text: editingStep.help_text,
       is_active: editingStep.is_active,
+      default_staff_role_id: editingStep.default_staff_role_id,
     });
     
     setEditingStep(null);
