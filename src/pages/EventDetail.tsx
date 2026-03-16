@@ -1066,7 +1066,7 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
-                  {isAdmin && (
+                  {(isAdmin || isOperations) && (
                     <Button variant="outline" className="w-full justify-between" onClick={() => setFinalConfirmOpen(true)}>
                       <span className="flex items-center">
                         <CheckCircle className="h-4 w-4 mr-2" />
