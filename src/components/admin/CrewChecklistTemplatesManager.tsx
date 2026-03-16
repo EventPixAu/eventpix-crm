@@ -544,7 +544,7 @@ export function CrewChecklistTemplatesManager() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Template Name *</Label>
                 <Input
@@ -553,6 +553,19 @@ export function CrewChecklistTemplatesManager() {
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Lead Photographer Checklist"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phase">Phase *</Label>
+                <Select value={formPhase} onValueChange={(val) => setFormPhase(val as CrewPhase)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PHASE_CONFIG.map((p) => (
+                      <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Assigned Role</Label>
