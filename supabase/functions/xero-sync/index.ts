@@ -257,15 +257,20 @@ Deno.serve(async (req) => {
                   newStatus = invoice.Status.toLowerCase();
               }
 
-              // Update event if status changed
-              if (newStatus !== event.invoice_status) {
+              // Update event if status changed or amount needs updating
+              const invoiceAmount = invoice.Total || invoice.SubTotal || null;
+              if (newStatus !== event.invoice_status || invoiceAmount) {
+                const updateData: any = {
+                  invoice_status: newStatus,
+                  invoice_paid_at: paidAt,
+                  updated_at: new Date().toISOString()
+                };
+                if (invoiceAmount) {
+                  updateData.invoice_amount = invoiceAmount;
+                }
                 await supabase
                   .from('events')
-                  .update({
-                    invoice_status: newStatus,
-                    invoice_paid_at: paidAt,
-                    updated_at: new Date().toISOString()
-                  })
+                  .update(updateData)
                   .eq('id', event.id);
 
                 results.push({
