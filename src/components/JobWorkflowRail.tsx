@@ -222,6 +222,12 @@ function StepItem({
                     </span>
                   )}
                   
+                  {step.assigned_to && step.assigned_to_profile && (
+                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                      {step.assigned_to_profile.full_name || step.assigned_to_profile.email}
+                    </span>
+                  )}
+
                   {step.is_completed && step.completed_at && (
                     <span className="text-xs text-muted-foreground">
                       Completed {format(parseISO(step.completed_at), 'MMM d, h:mm a')}
