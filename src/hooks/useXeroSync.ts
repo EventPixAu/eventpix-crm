@@ -235,6 +235,7 @@ export function useSyncInvoiceStatus() {
       queryClient.invalidateQueries({ queryKey: ['xero-sync-logs'] });
       queryClient.invalidateQueries({ queryKey: ['events-with-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event-financials'] });
       toast({ 
         title: 'Invoice sync completed', 
         description: `Updated ${data.synced} invoice statuses from Xero.` 

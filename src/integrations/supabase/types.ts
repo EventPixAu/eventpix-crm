@@ -2715,6 +2715,7 @@ export type Database = {
           event_type: Database["public"]["Enums"]["event_type"]
           event_type_id: string | null
           id: string
+          invoice_amount: number | null
           invoice_paid_at: string | null
           invoice_reference: string | null
           invoice_status: string | null
@@ -2784,6 +2785,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
+          invoice_amount?: number | null
           invoice_paid_at?: string | null
           invoice_reference?: string | null
           invoice_status?: string | null
@@ -2853,6 +2855,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           id?: string
+          invoice_amount?: number | null
           invoice_paid_at?: string | null
           invoice_reference?: string | null
           invoice_status?: string | null
