@@ -1053,7 +1053,7 @@ export default function EventDetail() {
                       </Button>
                     </Link>
                   )}
-                  {isAdmin && (
+                  {(isAdmin || isOperations) && (
                     <Button variant="outline" className="w-full justify-between" onClick={() => setSendEmailOpen(true)}>
                       <span className="flex items-center">
                         <Mail className="h-4 w-4 mr-2" />
