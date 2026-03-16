@@ -15,6 +15,7 @@ export interface WorkflowMasterStep {
   date_offset_reference: 'lead_created' | 'job_accepted' | 'event_date' | 'delivery_deadline' | 'previous_step' | null;
   help_text: string | null;
   is_active: boolean;
+  default_staff_role_id: string | null;
   created_at: string;
   updated_at: string;
 }
