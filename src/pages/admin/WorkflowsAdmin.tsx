@@ -338,6 +338,7 @@ export default function WorkflowsAdmin() {
     phase: 'pre_event',
     completion_type: 'manual',
     is_active: true,
+    date_offset_reference: 'event_date',
   });
 
   // Sales Workflow Editor State
@@ -424,6 +425,7 @@ export default function WorkflowsAdmin() {
       phase: 'pre_event',
       completion_type: 'manual',
       is_active: true,
+      date_offset_reference: 'event_date',
     });
   };
 
