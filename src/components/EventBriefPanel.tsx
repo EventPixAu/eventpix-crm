@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { FileText, Pencil, Check, X, ChevronDown } from 'lucide-react';
+import { FileText, Pencil, Check, X, ChevronDown, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -179,8 +180,25 @@ export function EventBriefPanel({
                 </div>
               </div>
             ) : hasContent ? (
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <p className="whitespace-pre-wrap text-sm">{briefContent}</p>
+              <div className="space-y-3">
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <p className="whitespace-pre-wrap text-sm">{briefContent}</p>
+                </div>
+                {currentTemplate?.pdf_file_path && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const { data } = await supabase.storage
+                        .from('brief-template-files')
+                        .createSignedUrl(currentTemplate.pdf_file_path!, 3600);
+                      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    {currentTemplate.pdf_file_name || 'Download PDF'}
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground">
