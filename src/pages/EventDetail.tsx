@@ -1109,7 +1109,7 @@ export default function EventDetail() {
                     </Button>
                   )}
                 </div>
-              </div>
+              </div>}
 
               {/* Workflow Rail - Admin/Sales/Ops see full rail; Crew see their own tasks */}
               {(isAdmin || isSales || isOperations) && id && (
