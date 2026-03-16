@@ -406,7 +406,7 @@ export default function WorkflowsAdmin() {
       sort_order: maxOrder + 1,
       completion_type: newStep.completion_type || 'manual',
       auto_trigger_event: newStep.auto_trigger_event || null,
-      date_offset_days: newStep.date_offset_days || null,
+      date_offset_days: newStep.date_offset_days ?? null,
       date_offset_reference: newStep.date_offset_reference || null,
       help_text: newStep.help_text || null,
       is_active: true,
