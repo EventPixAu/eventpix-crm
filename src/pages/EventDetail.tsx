@@ -87,6 +87,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useStaffRoles } from '@/hooks/useStaff';
+import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -99,11 +100,27 @@ function formatSessionTime(timeStr: string): string {
   }
 }
 
-function EditingInstructionsPanel({ value, onSave }: { value: string; onSave: (val: string) => Promise<void> }) {
+function EditingInstructionsPanel({ value, templateId, onSave }: { value: string; templateId?: string | null; onSave: (val: string, templateId?: string | null) => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { data: templates = [] } = useEditingInstructionTemplates();
+
+  const handleTemplateChange = async (tid: string) => {
+    const template = templates.find((t) => t.id === tid);
+    if (!template) return;
+    setText(template.content);
+    setSaving(true);
+    try {
+      await onSave(template.content, tid);
+      toast({ title: 'Editing instructions applied from template' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to apply template' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -132,6 +149,20 @@ function EditingInstructionsPanel({ value, onSave }: { value: string; onSave: (v
           </Button>
         )}
       </div>
+      {!editing && templates.length > 0 && (
+        <div className="mb-3">
+          <Select value={templateId || ''} onValueChange={handleTemplateChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Apply a template..." />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {editing ? (
         <div className="space-y-2">
           <textarea
@@ -1136,8 +1167,11 @@ export default function EventDetail() {
               {(isAdmin || canSeeSection('editing_instructions')) && id && (
                 <EditingInstructionsPanel
                   value={(event as any)?.editing_instructions || ''}
-                  onSave={async (val: string) => {
-                    await supabase.from('events').update({ editing_instructions: val } as any).eq('id', id);
+                  templateId={(event as any)?.editing_instructions_template_id}
+                  onSave={async (val: string, tid?: string | null) => {
+                    const updateData: any = { editing_instructions: val };
+                    if (tid !== undefined) updateData.editing_instructions_template_id = tid;
+                    await supabase.from('events').update(updateData).eq('id', id);
                     queryClient.invalidateQueries({ queryKey: ['events', id] });
                   }}
                 />
