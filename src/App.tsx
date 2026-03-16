@@ -243,6 +243,7 @@ function AppRoutes() {
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/insurance" element={<ProtectedRoute><AdminGuard><CompanyInsurance /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/role-visibility" element={<ProtectedRoute><AdminGuard><RoleVisibility /></AdminGuard></ProtectedRoute>} />
       
       {/* CRM routes - admin + sales */}
       <Route path="/crm/promotions" element={<ProtectedRoute><SalesGuard><PromotionsDashboard /></SalesGuard></ProtectedRoute>} />
