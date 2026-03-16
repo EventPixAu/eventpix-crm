@@ -1112,7 +1112,7 @@ export default function EventDetail() {
               </div>}
 
               {/* Workflow Rail - Admin/Sales/Ops see full rail; Crew see their own tasks */}
-              {(isAdmin || isSales || isOperations) && id && (
+              {canSeeSection('workflow') && (isAdmin || isSales || isOperations) && id && (
                 <div className="space-y-2">
                   {isAdmin && (
                     <div className="flex items-center justify-between">
