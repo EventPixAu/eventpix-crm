@@ -426,100 +426,112 @@ export function CrewChecklistTemplatesManager() {
             New Template
           </Button>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-6">
           {templates.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               No checklist templates yet. Create one to get started.
             </p>
           ) : (
-            templates.map((template) => (
-              <Collapsible
-                key={template.id}
-                open={expandedTemplates.has(template.id)}
-                onOpenChange={() => toggleExpanded(template.id)}
-              >
-                <div className="border border-border rounded-lg">
-                  <CollapsibleTrigger asChild>
-                    <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
-                      <div className="flex items-center gap-3">
-                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <span className="font-medium">{template.name}</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              <Users className="h-3 w-3 mr-1" />
-                              {getRoleName(template.staff_role_id)}
-                            </Badge>
-                            <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
-                              {template.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {template.items.length} items
-                            </span>
+            PHASE_CONFIG.map((phase) => {
+              const phaseTemplates = templates.filter((t) => (t.phase || 'pre_event') === phase.key);
+              if (phaseTemplates.length === 0) return null;
+
+              return (
+                <div key={phase.key} className="space-y-3">
+                  <h3 className={`text-sm font-semibold uppercase tracking-wider ${phase.color}`}>
+                    {phase.label}
+                  </h3>
+                  {phaseTemplates.map((template) => (
+                    <Collapsible
+                      key={template.id}
+                      open={expandedTemplates.has(template.id)}
+                      onOpenChange={() => toggleExpanded(template.id)}
+                    >
+                      <div className="border border-border rounded-lg">
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
+                            <div className="flex items-center gap-3">
+                              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <span className="font-medium">{template.name}</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {getRoleName(template.staff_role_id)}
+                                  </Badge>
+                                  <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
+                                    {template.is_active ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {template.items.length} items
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Duplicate"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  duplicateMutation.mutate(template);
+                                }}
+                                disabled={duplicateMutation.isPending}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Edit"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit(template);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Delete"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(template.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                              {expandedTemplates.has(template.id) ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="px-4 pb-4 pt-2 border-t border-border">
+                            {template.description && (
+                              <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
+                            )}
+                            <div className="space-y-2">
+                              {template.items.map((item, index) => (
+                                <div key={index} className="flex items-center gap-2 text-sm">
+                                  <span className="text-muted-foreground w-6">{index + 1}.</span>
+                                  <span>{item.item_text}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        </CollapsibleContent>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Duplicate"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            duplicateMutation.mutate(template);
-                          }}
-                          disabled={duplicateMutation.isPending}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEdit(template);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmId(template.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        {expandedTemplates.has(template.id) ? (
-                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="px-4 pb-4 pt-2 border-t border-border">
-                      {template.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                      )}
-                      <div className="space-y-2">
-                        {template.items.map((item, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground w-6">{index + 1}.</span>
-                            <span>{item.item_text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleContent>
+                    </Collapsible>
+                  ))}
                 </div>
-              </Collapsible>
-            ))
+              );
+            })
           )}
         </CardContent>
       </Card>
