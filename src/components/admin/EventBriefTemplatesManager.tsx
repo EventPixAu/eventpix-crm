@@ -230,6 +230,10 @@ export function EventBriefTemplatesManager() {
       content: template.content,
       is_active: template.is_active,
     });
+    setPdfFile(null);
+    setExistingPdf(template.pdf_file_name && template.pdf_file_path
+      ? { name: template.pdf_file_name, path: template.pdf_file_path }
+      : null);
     setEditDialog(true);
   };
 
