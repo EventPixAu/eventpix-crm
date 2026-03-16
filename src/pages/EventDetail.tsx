@@ -75,6 +75,7 @@ import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { StaffWorkflowPanel } from '@/components/StaffWorkflowPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
+import { useEventSectionVisibility } from '@/hooks/useRoleSectionVisibility';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
