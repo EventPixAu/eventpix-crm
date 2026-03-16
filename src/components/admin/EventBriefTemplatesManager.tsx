@@ -322,7 +322,32 @@ export function EventBriefTemplatesManager() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="content">Brief Content</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="content">Brief Content</Label>
+                <div>
+                  <input
+                    ref={createFileRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handlePdfUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => createFileRef.current?.click()}
+                    disabled={pdfLoading}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    {pdfLoading ? 'Extracting...' : 'Upload PDF'}
+                  </Button>
+                </div>
+              </div>
               <Textarea
                 id="content"
                 value={formData.content}
