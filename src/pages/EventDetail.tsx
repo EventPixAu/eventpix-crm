@@ -728,7 +728,7 @@ export default function EventDetail() {
 
 
               {/* Sessions / Multiple Dates */}
-              {id && (
+              {id && canSeeSection('sessions') && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-display font-semibold">Sessions / Time Blocks</h2>
