@@ -813,7 +813,7 @@ export default function EventDetail() {
               )}
 
               {/* Event Brief (shared with client) */}
-              {id && (
+              {id && canSeeSection('client_brief') && (
                 <ClientBriefPanel
                   eventId={id}
                   clientBriefContent={(event as any).client_brief_content}
