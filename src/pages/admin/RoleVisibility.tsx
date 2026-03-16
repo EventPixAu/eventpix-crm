@@ -34,7 +34,7 @@ export default function RoleVisibility() {
     <AppLayout>
       <PageHeader
         title="Event Page Visibility"
-        subtitle="Control which sections of the Event page are visible to each role. Admins always see all sections."
+        description="Control which sections of the Event page are visible to each role. Admins always see all sections."
       />
 
       <div className="max-w-3xl mx-auto">
