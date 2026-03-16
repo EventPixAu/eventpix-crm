@@ -319,7 +319,7 @@ export function EventBriefTemplatesManager() {
                 {templates.map((template) => (
                   <SortableTemplateItem
                     key={template.id}
-                    template={template as BriefTemplate}
+                    template={template}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                   />
