@@ -75,6 +75,7 @@ import {
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplatesManager';
 import { ClientBriefTemplatesManager } from '@/components/admin/ClientBriefTemplatesManager';
+import { EditingInstructionTemplatesManager } from '@/components/admin/EditingInstructionTemplatesManager';
 import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
 // Helper to format date offset display
