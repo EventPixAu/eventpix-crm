@@ -549,13 +549,13 @@ export default function EventDetail() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          {isAdmin && (
+          {(isAdmin || canSeeSection('equipment_tab')) && (
             <TabsTrigger value="equipment">
               <Package className="h-4 w-4 mr-1" />
               Equipment
             </TabsTrigger>
           )}
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          {canSeeSection('activity_tab') && <TabsTrigger value="activity">Activity</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview">
