@@ -444,27 +444,6 @@ Deno.serve(async (req) => {
           return records;
         };
 
-        const mapInvoiceStatus = (invoice: any) => {
-          switch (invoice.Status) {
-            case 'PAID':
-              return {
-                invoice_status: 'paid',
-                invoice_paid_at: invoice.FullyPaidOnDate || new Date().toISOString(),
-              };
-            case 'AUTHORISED':
-              return {
-                invoice_status: new Date(invoice.DueDate) < new Date() ? 'overdue' : 'sent',
-                invoice_paid_at: null,
-              };
-            case 'DRAFT':
-              return { invoice_status: 'draft', invoice_paid_at: null };
-            case 'VOIDED':
-              return { invoice_status: 'void', invoice_paid_at: null };
-            default:
-              return { invoice_status: String(invoice.Status || '').toLowerCase() || null, invoice_paid_at: null };
-          }
-        };
-
         let syncedIncome = 0;
         if (event.invoice_reference) {
           const invoiceWhere = encodeURIComponent(`InvoiceNumber=="${event.invoice_reference.replaceAll('"', '\\"')}"`);
