@@ -138,6 +138,25 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSaveGenericLink = async (column: string, value: string, setSaving: (b: boolean) => void, setEditing: (b: boolean) => void, label: string) => {
+    setSaving(true);
+    try {
+      const v = value.trim() || null;
+      const { error } = await supabase
+        .from('events')
+        .update({ [column]: v } as any)
+        .eq('id', eventId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      setEditing(false);
+      toast.success(v ? `${label} saved` : `${label} removed`);
+    } catch {
+      toast.error(`Failed to save ${label.toLowerCase()}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const isPdf = qrFileName?.toLowerCase().endsWith('.pdf');
 
   return (
