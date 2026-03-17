@@ -287,7 +287,130 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
             <p className="text-sm text-muted-foreground">No registration link set.</p>
           )}
         </div>
+
+        {/* Dropbox Link */}
+        <LinkField
+          label="Dropbox Link"
+          icon={<Droplets className="h-3.5 w-3.5" />}
+          currentValue={dropboxLink}
+          editValue={dropboxValue}
+          setEditValue={setDropboxValue}
+          editing={editingDropbox}
+          setEditing={setEditingDropbox}
+          saving={savingDropbox}
+          copied={copiedDropbox}
+          setCopied={setCopiedDropbox}
+          isAdmin={isAdmin}
+          placeholder="https://www.dropbox.com/..."
+          onSave={() => handleSaveGenericLink('dropbox_link', dropboxValue, setSavingDropbox, setEditingDropbox, 'Dropbox link')}
+        />
+
+        {/* SmugMug Link */}
+        <LinkField
+          label="SmugMug Link"
+          icon={<Camera className="h-3.5 w-3.5" />}
+          currentValue={smugmugLink}
+          editValue={smugmugValue}
+          setEditValue={setSmugmugValue}
+          editing={editingSmugmug}
+          setEditing={setEditingSmugmug}
+          saving={savingSmugmug}
+          copied={copiedSmugmug}
+          setCopied={setCopiedSmugmug}
+          isAdmin={isAdmin}
+          placeholder="https://www.smugmug.com/..."
+          onSave={() => handleSaveGenericLink('smugmug_link', smugmugValue, setSavingSmugmug, setEditingSmugmug, 'SmugMug link')}
+        />
       </CardContent>
     </Card>
+  );
+}
+
+/** Reusable inline link field */
+function LinkField({ label, icon, currentValue, editValue, setEditValue, editing, setEditing, saving, copied, setCopied, isAdmin, placeholder, onSave }: {
+  label: string;
+  icon: React.ReactNode;
+  currentValue?: string | null;
+  editValue: string;
+  setEditValue: (v: string) => void;
+  editing: boolean;
+  setEditing: (v: boolean) => void;
+  saving: boolean;
+  copied: boolean;
+  setCopied: (v: boolean) => void;
+  isAdmin: boolean;
+  placeholder: string;
+  onSave: () => void;
+}) {
+  const handleCopy = () => {
+    if (!currentValue) return;
+    navigator.clipboard.writeText(currentValue);
+    setCopied(true);
+    toast.success('Link copied');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium flex items-center gap-1.5">
+          {icon}
+          {label}
+        </p>
+        {isAdmin && !editing && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            onClick={() => {
+              setEditValue(currentValue || '');
+              setEditing(true);
+            }}
+          >
+            <Pencil className="h-3 w-3 mr-1" />
+            {currentValue ? 'Edit' : 'Add'}
+          </Button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="flex gap-2">
+          <Input
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            placeholder={placeholder}
+            className="text-sm"
+          />
+          <Button size="sm" onClick={onSave} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+            Cancel
+          </Button>
+        </div>
+      ) : currentValue ? (
+        <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+          <Link2 className="h-4 w-4 text-primary shrink-0" />
+          <a
+            href={currentValue}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline truncate flex-1"
+          >
+            {currentValue}
+          </a>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCopy}>
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => window.open(currentValue, '_blank')}>
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No {label.toLowerCase()} set.</p>
+      )}
+    </div>
   );
 }
