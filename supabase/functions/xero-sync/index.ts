@@ -315,10 +315,10 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Get event with xero tag
+        // Get event with Xero details
         const { data: event } = await supabase
           .from('events')
-          .select('id, event_name, xero_tag')
+          .select('id, event_name, xero_tag, invoice_reference')
           .eq('id', eventId)
           .single();
 
@@ -329,6 +329,9 @@ Deno.serve(async (req) => {
           );
         }
 
+        const normalise = (value: string | null | undefined) => (value ?? '').trim().toLowerCase();
+        const tagNeedle = normalise(event.xero_tag);
+
         // Helper to categorize expense lines
         const categoriseLine = (desc: string): 'staff' | 'travel' | 'accommodation' | 'sundry' => {
           const d = desc.toLowerCase();
@@ -336,205 +339,205 @@ Deno.serve(async (req) => {
             return 'travel';
           } else if (d.includes('hotel') || d.includes('accommodation') || d.includes('lodging') || d.includes('airbnb')) {
             return 'accommodation';
-          } else if (d.includes('staff') || d.includes('wage') || d.includes('salary') || d.includes('contractor')) {
+          } else if (d.includes('staff') || d.includes('wage') || d.includes('salary') || d.includes('contractor') || d.includes('subcontract')) {
             return 'staff';
           }
           return 'sundry';
         };
 
-        // Helper to check if a transaction matches the event tag
-        const matchesEventTag = (item: any, tag: string): boolean => {
-          return (
-            item.Reference?.includes(tag) ||
-            item.LineItems?.some((line: any) =>
-              line.Description?.includes(tag) ||
-              line.Tracking?.some((t: any) => t.Option?.includes(tag))
-            )
-          );
+        const matchesEventTag = (item: any, needle: string): boolean => {
+          const values = [
+            item.Reference,
+            item.InvoiceNumber,
+            item.PurchaseOrderNumber,
+            item.Contact?.Name,
+            item.Contact?.ContactName,
+            ...(item.LineItems || []).flatMap((line: any) => [
+              line.Description,
+              line.ItemCode,
+              ...(line.Tracking || []).flatMap((tracking: any) => [
+                tracking.Name,
+                tracking.Option,
+                tracking.OptionName,
+              ]),
+            ]),
+          ];
+
+          return values.some((value) => normalise(value).includes(needle));
         };
 
-        // Helper to extract expense lines from a matched transaction
-        const extractLines = (txn: any, tag: string, idField: string) => {
-          const lines: any[] = [];
-          for (const line of txn.LineItems || []) {
-            // Check if this specific line matches the tag via tracking
-            const lineMatchesTag = line.Tracking?.some((t: any) => t.Option?.includes(tag));
-            // If the whole transaction matches by Reference, include all lines
-            // If only some lines match by tracking, include only those
-            const txnMatchesByRef = txn.Reference?.includes(tag);
-            if (!txnMatchesByRef && !lineMatchesTag) continue;
+        const extractLines = (txn: any, idField: string) => {
+          const transactionMatches = matchesEventTag({ ...txn, LineItems: [] }, tagNeedle) || matchesEventTag(txn, tagNeedle);
+          const lineItems = Array.isArray(txn.LineItems) && txn.LineItems.length > 0
+            ? txn.LineItems
+            : [{
+                Description: txn.Reference || txn.Contact?.Name || 'Xero expense',
+                LineAmount: txn.Total ?? txn.SubTotal ?? 0,
+                Tracking: [],
+              }];
 
-            // Use tracking category name or account name to help categorise
-            const accountName = (line.AccountCode || '').toLowerCase();
-            const trackingName = line.Tracking?.map((t: any) => t.Name || '').join(' ').toLowerCase() || '';
-            const descForCat = `${line.Description || ''} ${accountName} ${trackingName}`;
+          return lineItems.flatMap((line: any, index: number) => {
+            const lineMatches = [
+              line.Description,
+              line.ItemCode,
+              ...(line.Tracking || []).flatMap((tracking: any) => [
+                tracking.Name,
+                tracking.Option,
+                tracking.OptionName,
+              ]),
+            ].some((value) => normalise(value).includes(tagNeedle));
 
-            lines.push({
+            if (!transactionMatches && !lineMatches) {
+              return [];
+            }
+
+            const amount = Math.abs(Number(line.LineAmount ?? line.UnitAmount ?? txn.Total ?? txn.SubTotal ?? 0));
+            if (!Number.isFinite(amount) || amount === 0) {
+              return [];
+            }
+
+            const description = line.Description || txn.Reference || txn.Contact?.Name || 'Xero expense';
+            const categorisationInput = `${description} ${line.AccountCode || ''} ${txn.Type || ''}`;
+
+            return [{
               event_id: eventId,
-              expense_category: categoriseLine(descForCat),
-              description: line.Description || txn.Reference || 'Xero expense',
-              amount: Math.abs(line.LineAmount || 0),
-              expense_date: txn.Date || txn.DateString || null,
-              xero_line_id: line.LineItemID,
-              xero_invoice_id: txn[idField],
-              synced_at: new Date().toISOString()
-            });
-          }
-          return lines;
+              expense_category: categoriseLine(categorisationInput),
+              description,
+              amount,
+              expense_date: txn.DateString || txn.Date || null,
+              xero_line_id: line.LineItemID || `${txn[idField] || 'txn'}-${index}`,
+              xero_invoice_id: txn[idField] || null,
+              synced_at: new Date().toISOString(),
+            }];
+          });
         };
 
-        const expenses: any[] = [];
-        console.log(`Searching for expenses with tag: "${event.xero_tag}"`);
+        const fetchPagedRecords = async (endpoint: string, resultKey: string, maxPages = 10) => {
+          const records: any[] = [];
 
-        // Step 1: Find the tracking category and option that matches the event tag
-        const tcResponse = await xeroFetch(`${XERO_API_URL}/TrackingCategories`);
-        if (!tcResponse.ok) {
-          const errorText = await tcResponse.text();
-          console.error('Failed to fetch tracking categories:', errorText);
-          return new Response(
-            JSON.stringify({ error: 'Failed to fetch tracking categories from Xero', details: errorText }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+          for (let page = 1; page <= maxPages; page++) {
+            const separator = endpoint.includes('?') ? '&' : '?';
+            const response = await xeroFetch(`${XERO_API_URL}/${endpoint}${separator}page=${page}`);
 
-        const tcData = await tcResponse.json();
-        let trackingCategoryID: string | null = null;
-        let trackingOptionID: string | null = null;
-        let trackingCategoryName: string | null = null;
+            if (!response.ok) {
+              console.error(`Failed to fetch ${resultKey} page ${page}:`, await response.text());
+              break;
+            }
 
-        for (const category of tcData.TrackingCategories || []) {
-          for (const option of category.Options || []) {
-            if (option.Name === event.xero_tag) {
-              trackingCategoryID = category.TrackingCategoryID;
-              trackingOptionID = option.TrackingOptionID;
-              trackingCategoryName = category.Name;
+            const payload = await response.json();
+            const pageRecords = Array.isArray(payload[resultKey]) ? payload[resultKey] : [];
+            records.push(...pageRecords);
+
+            if (pageRecords.length < 100) {
               break;
             }
           }
-          if (trackingCategoryID) break;
-        }
 
-        if (!trackingCategoryID || !trackingOptionID) {
-          console.log(`No tracking option found for tag "${event.xero_tag}". Available categories:`, 
-            (tcData.TrackingCategories || []).map((c: any) => `${c.Name}: ${(c.Options || []).map((o: any) => o.Name).join(', ')}`).join(' | ')
-          );
-          return new Response(
-            JSON.stringify({ 
-              synced: 0, 
-              message: `No tracking option found in Xero matching "${event.xero_tag}". Check that the Xero Tag matches a tracking category option exactly.` 
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+          return records;
+        };
 
-        console.log(`Found tracking: "${trackingCategoryName}" > "${event.xero_tag}" (${trackingCategoryID}/${trackingOptionID})`);
+        const mapInvoiceStatus = (invoice: any) => {
+          switch (invoice.Status) {
+            case 'PAID':
+              return {
+                invoice_status: 'paid',
+                invoice_paid_at: invoice.FullyPaidOnDate || new Date().toISOString(),
+              };
+            case 'AUTHORISED':
+              return {
+                invoice_status: new Date(invoice.DueDate) < new Date() ? 'overdue' : 'sent',
+                invoice_paid_at: null,
+              };
+            case 'DRAFT':
+              return { invoice_status: 'draft', invoice_paid_at: null };
+            case 'VOIDED':
+              return { invoice_status: 'void', invoice_paid_at: null };
+            default:
+              return { invoice_status: String(invoice.Status || '').toLowerCase() || null, invoice_paid_at: null };
+          }
+        };
 
-        // Step 2: Use Xero Reports API to get expense totals for this tracking option
-        // This is efficient - just 1 API call instead of thousands of individual fetches
-        const reportUrl = `${XERO_API_URL}/Reports/ProfitAndLoss?trackingCategoryID=${trackingCategoryID}&trackingOptionID=${trackingOptionID}&standardLayout=true`;
-        console.log(`Fetching P&L report for tracking option`);
-        
-        const reportResponse = await xeroFetch(reportUrl);
-        if (!reportResponse.ok) {
-          const errorText = await reportResponse.text();
-          console.error('Failed to fetch P&L report:', errorText);
-          // Fall back to empty result rather than error
-          console.log('P&L report unavailable, trying alternative approach...');
-        } else {
-          const reportData = await reportResponse.json();
-          const report = reportData.Reports?.[0];
-          
-          if (report) {
-            console.log(`Report: ${report.ReportName}, rows: ${report.Rows?.length}`);
-            
-            // Parse the P&L report rows to extract expense accounts and income
-            // P&L report structure: Rows -> Section (Header: "Income"/"Expenses") -> Rows -> individual accounts
-            let totalIncome = 0;
-            
-            for (const section of report.Rows || []) {
-              const sectionTitle = section.Title || '';
-              const sectionTitleLower = sectionTitle.toLowerCase();
-              const isExpenseSection = sectionTitleLower.includes('expense') || 
-                                       sectionTitleLower.includes('cost') ||
-                                       sectionTitleLower.includes('overhead') ||
-                                       sectionTitleLower.includes('direct');
-              const isIncomeSection = sectionTitleLower.includes('income') || 
-                                      sectionTitleLower.includes('revenue') ||
-                                      sectionTitleLower.includes('sales') ||
-                                      sectionTitleLower.includes('trading');
-              
-              if (section.RowType === 'Section') {
-                for (const row of section.Rows || []) {
-                  if (row.RowType !== 'Row') continue;
-                  
-                  const cells = row.Cells || [];
-                  if (cells.length < 2) continue;
-                  
-                  const accountName = cells[0]?.Value || '';
-                  const amount = parseFloat(cells[1]?.Value || '0');
-                  
-                  if (amount === 0) continue;
-                  
-                  // Skip summary/total rows
-                  const acctNameLower = accountName.toLowerCase();
-                  if (acctNameLower.includes('net profit') || acctNameLower.includes('total') || 
-                      acctNameLower.includes('gross profit') || acctNameLower.includes('net loss')) continue;
-                  
-                  // Extract income
-                  if (isIncomeSection) {
-                    totalIncome += Math.abs(amount);
-                    console.log(`Income account: ${accountName} = $${Math.abs(amount)}`);
-                    continue;
-                  }
-                  
-                  // Only process expense sections
-                  if (!isExpenseSection) continue;
-                  
-                  // Categorise based on account name
-                  const acctLower = accountName.toLowerCase();
-                  let category: 'staff' | 'travel' | 'accommodation' | 'sundry' = 'sundry';
-                  
-                  if (acctLower.includes('travel') || acctLower.includes('fuel') || 
-                      acctLower.includes('transport') || acctLower.includes('motor') ||
-                      acctLower.includes('accommodation & meals') || acctLower.includes('airfare')) {
-                    category = 'travel';
-                  } else if (acctLower.includes('hotel') || acctLower.includes('accommodation') || 
-                             acctLower.includes('lodging')) {
-                    category = 'accommodation';
-                  } else if (acctLower.includes('staff') || acctLower.includes('wage') || 
-                             acctLower.includes('salary') || acctLower.includes('contractor') ||
-                             acctLower.includes('subcontract')) {
-                    category = 'staff';
-                  }
-                  
-                  console.log(`Expense account: ${accountName} = $${Math.abs(amount)} (${category})`);
-                  
-                  expenses.push({
-                    event_id: eventId,
-                    expense_category: category,
-                    description: accountName,
-                    amount: Math.abs(amount),
-                    expense_date: null,
-                    xero_line_id: null,
-                    xero_invoice_id: `report-${trackingOptionID}`,
-                    synced_at: new Date().toISOString()
-                  });
-                }
-              }
-            }
-            
-            // Store income from P&L report on the event
-            if (totalIncome > 0) {
-              console.log(`Total income from P&L: $${totalIncome}`);
+        let syncedIncome = 0;
+        if (event.invoice_reference) {
+          const invoiceWhere = encodeURIComponent(`InvoiceNumber=="${event.invoice_reference.replaceAll('"', '\\"')}"`);
+          const invoiceResponse = await xeroFetch(`${XERO_API_URL}/Invoices?where=${invoiceWhere}`);
+
+          if (invoiceResponse.ok) {
+            const invoicePayload = await invoiceResponse.json();
+            const invoice = invoicePayload.Invoices?.[0];
+
+            if (invoice) {
+              syncedIncome = Number(invoice.Total || invoice.SubTotal || 0);
+              const mappedStatus = mapInvoiceStatus(invoice);
               await supabase
                 .from('events')
-                .update({ invoice_amount: totalIncome })
+                .update({
+                  invoice_amount: syncedIncome || null,
+                  invoice_status: mappedStatus.invoice_status,
+                  invoice_paid_at: mappedStatus.invoice_paid_at,
+                  updated_at: new Date().toISOString(),
+                })
                 .eq('id', eventId);
+
+              console.log(`Synced invoice ${event.invoice_reference}: $${syncedIncome}`);
             }
+          } else {
+            console.error(`Failed to fetch invoice ${event.invoice_reference}:`, await invoiceResponse.text());
           }
         }
-        
-        console.log(`Found ${expenses.length} expense entries from report`);
+
+        console.log(`Searching for expenses with tag: "${event.xero_tag}"`);
+
+        // Try to find tracking for logging/debugging, but do not require it.
+        const tcResponse = await xeroFetch(`${XERO_API_URL}/TrackingCategories`);
+        if (tcResponse.ok) {
+          const tcData = await tcResponse.json();
+          let trackingCategoryID: string | null = null;
+          let trackingOptionID: string | null = null;
+          let trackingCategoryName: string | null = null;
+
+          for (const category of tcData.TrackingCategories || []) {
+            for (const option of category.Options || []) {
+              if (normalise(option.Name) === tagNeedle) {
+                trackingCategoryID = category.TrackingCategoryID;
+                trackingOptionID = option.TrackingOptionID;
+                trackingCategoryName = category.Name;
+                break;
+              }
+            }
+            if (trackingCategoryID) break;
+          }
+
+          if (trackingCategoryID && trackingOptionID) {
+            console.log(`Found tracking: "${trackingCategoryName}" > "${event.xero_tag}" (${trackingCategoryID}/${trackingOptionID})`);
+          } else {
+            console.log(`No exact tracking option found for tag "${event.xero_tag}", falling back to transaction text matching`);
+          }
+        }
+
+        const billWhere = encodeURIComponent('Type=="ACCPAY"');
+        const bills = await fetchPagedRecords(`Invoices?where=${billWhere}`, 'Invoices');
+        let expenses = bills.flatMap((bill: any) => extractLines(bill, 'InvoiceID'));
+        console.log(`Matched ${expenses.length} expense lines from bills`);
+
+        // Fallback to spend transactions when no tagged bills are found.
+        if (expenses.length === 0) {
+          const bankTransactions = await fetchPagedRecords('BankTransactions', 'BankTransactions');
+          expenses = bankTransactions
+            .filter((txn: any) => ['SPEND', 'SPEND-PREPAYMENT', 'SPEND-OVERPAYMENT'].includes(String(txn.Type || '')))
+            .flatMap((txn: any) => extractLines(txn, 'BankTransactionID'));
+          console.log(`Matched ${expenses.length} expense lines from bank transactions`);
+        }
+
+        const dedupedExpenses = Array.from(
+          new Map(expenses.map((expense: any) => [
+            expense.xero_line_id || `${expense.xero_invoice_id}-${expense.description}-${expense.amount}`,
+            expense,
+          ])).values(),
+        );
+
+        expenses = dedupedExpenses;
+        console.log(`Found ${expenses.length} expense entries to sync`);
 
         // Clear existing synced expenses and insert new ones
         await supabase
