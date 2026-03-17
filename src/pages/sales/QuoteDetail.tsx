@@ -455,7 +455,7 @@ export default function QuoteDetail() {
       {/* Header with Back + Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/sales/quotes')}>
+          <Button variant="ghost" size="icon" onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/sales/quotes')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
