@@ -345,29 +345,26 @@ Deno.serve(async (req) => {
           return 'sundry';
         };
 
-        const matchesEventTag = (item: any, needle: string): boolean => {
-          const values = [
-            item.Reference,
-            item.InvoiceNumber,
-            item.PurchaseOrderNumber,
-            item.Contact?.Name,
-            item.Contact?.ContactName,
-            ...(item.LineItems || []).flatMap((line: any) => [
-              line.Description,
-              line.ItemCode,
-              ...(line.Tracking || []).flatMap((tracking: any) => [
-                tracking.Name,
-                tracking.Option,
-                tracking.OptionName,
-              ]),
-            ]),
-          ];
+        const collectSearchStrings = (value: any): string[] => {
+          if (value == null) return [];
+          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            return [String(value)];
+          }
+          if (Array.isArray(value)) {
+            return value.flatMap(collectSearchStrings);
+          }
+          if (typeof value === 'object') {
+            return Object.values(value).flatMap(collectSearchStrings);
+          }
+          return [];
+        };
 
-          return values.some((value) => normalise(value).includes(needle));
+        const matchesEventTag = (item: any, needle: string): boolean => {
+          return collectSearchStrings(item).some((value) => normalise(value).includes(needle));
         };
 
         const extractLines = (txn: any, idField: string) => {
-          const transactionMatches = matchesEventTag({ ...txn, LineItems: [] }, tagNeedle) || matchesEventTag(txn, tagNeedle);
+          const transactionMatches = matchesEventTag(txn, tagNeedle);
           const lineItems = Array.isArray(txn.LineItems) && txn.LineItems.length > 0
             ? txn.LineItems
             : [{
@@ -377,15 +374,7 @@ Deno.serve(async (req) => {
               }];
 
           return lineItems.flatMap((line: any, index: number) => {
-            const lineMatches = [
-              line.Description,
-              line.ItemCode,
-              ...(line.Tracking || []).flatMap((tracking: any) => [
-                tracking.Name,
-                tracking.Option,
-                tracking.OptionName,
-              ]),
-            ].some((value) => normalise(value).includes(tagNeedle));
+            const lineMatches = matchesEventTag(line, tagNeedle);
 
             if (!transactionMatches && !lineMatches) {
               return [];
