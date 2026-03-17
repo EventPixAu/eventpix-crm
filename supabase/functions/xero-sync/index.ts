@@ -499,6 +499,69 @@ Deno.serve(async (req) => {
 
           if (trackingCategoryID && trackingOptionID) {
             console.log(`Found tracking: "${trackingCategoryName}" > "${event.xero_tag}" (${trackingCategoryID}/${trackingOptionID})`);
+
+            const eventDate = event.event_date ? new Date(`${event.event_date}T00:00:00`) : new Date();
+            const fromDate = `${eventDate.getFullYear()}-01-01`;
+            const toDate = `${eventDate.getFullYear()}-12-31`;
+            const reportUrl = `${XERO_API_URL}/Reports/ProfitAndLoss?trackingCategoryID=${trackingCategoryID}&trackingOptionID=${trackingOptionID}&fromDate=${fromDate}&toDate=${toDate}&standardLayout=true`;
+            console.log(`Fetching P&L report for tracking option between ${fromDate} and ${toDate}`);
+
+            const reportResponse = await xeroFetch(reportUrl);
+            if (reportResponse.ok) {
+              const reportData = await reportResponse.json();
+              const report = reportData.Reports?.[0];
+
+              if (report) {
+                console.log(`Report: ${report.ReportName}, rows: ${report.Rows?.length}`);
+
+                for (const section of report.Rows || []) {
+                  const sectionTitleLower = String(section.Title || '').toLowerCase();
+                  const isExpenseSection = sectionTitleLower.includes('expense') ||
+                    sectionTitleLower.includes('cost') ||
+                    sectionTitleLower.includes('overhead') ||
+                    sectionTitleLower.includes('direct');
+
+                  if (section.RowType !== 'Section' || !isExpenseSection) continue;
+
+                  for (const row of section.Rows || []) {
+                    if (row.RowType !== 'Row') continue;
+
+                    const cells = row.Cells || [];
+                    if (cells.length < 2) continue;
+
+                    const accountName = cells[0]?.Value || '';
+                    const amount = parseFloat(cells[1]?.Value || '0');
+                    const acctNameLower = String(accountName).toLowerCase();
+
+                    if (!amount || acctNameLower.includes('net profit') || acctNameLower.includes('total') || acctNameLower.includes('gross profit') || acctNameLower.includes('net loss')) {
+                      continue;
+                    }
+
+                    let category: 'staff' | 'travel' | 'accommodation' | 'sundry' = 'sundry';
+                    if (acctNameLower.includes('travel') || acctNameLower.includes('fuel') || acctNameLower.includes('transport') || acctNameLower.includes('motor') || acctNameLower.includes('accommodation & meals') || acctNameLower.includes('airfare')) {
+                      category = 'travel';
+                    } else if (acctNameLower.includes('hotel') || acctNameLower.includes('accommodation') || acctNameLower.includes('lodging')) {
+                      category = 'accommodation';
+                    } else if (acctNameLower.includes('staff') || acctNameLower.includes('wage') || acctNameLower.includes('salary') || acctNameLower.includes('contractor') || acctNameLower.includes('subcontract')) {
+                      category = 'staff';
+                    }
+
+                    expenses.push({
+                      event_id: eventId,
+                      expense_category: category,
+                      description: accountName,
+                      amount: Math.abs(amount),
+                      expense_date: event.event_date || null,
+                      xero_line_id: `report-${trackingOptionID}-${accountName}`,
+                      xero_invoice_id: `report-${trackingOptionID}`,
+                      synced_at: new Date().toISOString(),
+                    });
+                  }
+                }
+              }
+            } else {
+              console.error('Failed to fetch P&L report:', await reportResponse.text());
+            }
           } else {
             console.log(`No exact tracking option found for tag "${event.xero_tag}", falling back to transaction text matching`);
           }
