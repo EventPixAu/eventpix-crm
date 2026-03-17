@@ -2738,6 +2738,7 @@ export type Database = {
           delivery_method_guests_id: string | null
           delivery_method_id: string | null
           dress_code: string | null
+          dropbox_link: string | null
           editing_instructions: string | null
           editing_instructions_template_id: string | null
           end_at: string | null
@@ -2768,6 +2769,7 @@ export type Database = {
           quote_id: string | null
           recommended_kit_id: string | null
           run_sheet_url: string | null
+          smugmug_link: string | null
           special_instructions: string | null
           start_at: string | null
           start_time: string | null
@@ -2809,6 +2811,7 @@ export type Database = {
           delivery_method_guests_id?: string | null
           delivery_method_id?: string | null
           dress_code?: string | null
+          dropbox_link?: string | null
           editing_instructions?: string | null
           editing_instructions_template_id?: string | null
           end_at?: string | null
@@ -2839,6 +2842,7 @@ export type Database = {
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
+          smugmug_link?: string | null
           special_instructions?: string | null
           start_at?: string | null
           start_time?: string | null
@@ -2880,6 +2884,7 @@ export type Database = {
           delivery_method_guests_id?: string | null
           delivery_method_id?: string | null
           dress_code?: string | null
+          dropbox_link?: string | null
           editing_instructions?: string | null
           editing_instructions_template_id?: string | null
           end_at?: string | null
@@ -2910,6 +2915,7 @@ export type Database = {
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
+          smugmug_link?: string | null
           special_instructions?: string | null
           start_at?: string | null
           start_time?: string | null
