@@ -28,6 +28,14 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   const [linkValue, setLinkValue] = useState(preRegistrationLink || '');
   const [savingLink, setSavingLink] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editingDropbox, setEditingDropbox] = useState(false);
+  const [dropboxValue, setDropboxValue] = useState(dropboxLink || '');
+  const [savingDropbox, setSavingDropbox] = useState(false);
+  const [copiedDropbox, setCopiedDropbox] = useState(false);
+  const [editingSmugmug, setEditingSmugmug] = useState(false);
+  const [smugmugValue, setSmugmugValue] = useState(smugmugLink || '');
+  const [savingSmugmug, setSavingSmugmug] = useState(false);
+  const [copiedSmugmug, setCopiedSmugmug] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
