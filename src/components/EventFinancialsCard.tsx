@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
 import { useEvent } from '@/hooks/useEvents';
-import { useSyncEventExpenses as useXeroSyncEventExpenses } from '@/hooks/useXeroSync';
+import { useSyncEventExpenses as useXeroSyncEventExpenses, useSyncInvoiceStatus } from '@/hooks/useXeroSync';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +35,7 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
   const { data: event } = useEvent(eventId);
   const { isAdmin } = useAuth();
   const syncExpenses = useXeroSyncEventExpenses();
+  const syncInvoices = useSyncInvoiceStatus();
   
   if (isLoading) {
     return (
@@ -168,11 +169,20 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
             variant="outline" 
             size="sm" 
             className="w-full gap-2"
-            onClick={() => syncExpenses.mutate(eventId)}
-            disabled={syncExpenses.isPending}
+            onClick={async () => {
+              try {
+                await Promise.all([
+                  syncExpenses.mutateAsync(eventId),
+                  syncInvoices.mutateAsync(),
+                ]);
+              } catch {
+                // Individual mutations handle their own error toasts
+              }
+            }}
+            disabled={syncExpenses.isPending || syncInvoices.isPending}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending ? 'animate-spin' : ''}`} />
-            {syncExpenses.isPending ? 'Syncing Expenses…' : 'Sync Expenses from Xero'}
+            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending || syncInvoices.isPending ? 'animate-spin' : ''}`} />
+            {syncExpenses.isPending || syncInvoices.isPending ? 'Syncing with Xero…' : 'Sync with Xero'}
           </Button>
         )}
         {event?.quote_id && (
