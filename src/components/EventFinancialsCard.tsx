@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
 import { useEvent } from '@/hooks/useEvents';
-import { useSyncEventExpenses as useXeroSyncEventExpenses } from '@/hooks/useXeroSync';
+import { useSyncEventExpenses as useXeroSyncEventExpenses, useSyncInvoiceStatus } from '@/hooks/useXeroSync';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
