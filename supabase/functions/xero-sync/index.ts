@@ -190,9 +190,45 @@ Deno.serve(async (req) => {
       return response;
     };
 
+    const parseXeroDate = (value: string | null | undefined): string | null => {
+      if (!value) return null;
+
+      const xeroMatch = String(value).match(/\/Date\((\d+)(?:[+-]\d+)?\)\//);
+      if (xeroMatch) {
+        const timestamp = Number(xeroMatch[1]);
+        return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
+      }
+
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    };
+
+    const mapInvoiceStatus = (invoice: any) => {
+      switch (invoice.Status) {
+        case 'PAID':
+          return {
+            invoice_status: 'paid',
+            invoice_paid_at: parseXeroDate(invoice.FullyPaidOnDate) || new Date().toISOString(),
+          };
+        case 'AUTHORISED':
+          return {
+            invoice_status: new Date(invoice.DueDate) < new Date() ? 'overdue' : 'sent',
+            invoice_paid_at: null,
+          };
+        case 'DRAFT':
+          return { invoice_status: 'draft', invoice_paid_at: null };
+        case 'VOIDED':
+          return { invoice_status: 'void', invoice_paid_at: null };
+        default:
+          return {
+            invoice_status: String(invoice.Status || '').toLowerCase() || null,
+            invoice_paid_at: null,
+          };
+      }
+    };
+
     switch (path) {
       case 'invoices': {
-        // Get events with invoice references
         const { data: events } = await supabase
           .from('events')
           .select('id, event_name, invoice_reference, invoice_status, xero_tag')
@@ -205,7 +241,6 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Create sync log
         const { data: logEntry } = await supabase
           .from('xero_sync_log')
           .insert({
@@ -221,7 +256,6 @@ Deno.serve(async (req) => {
 
         for (const event of events) {
           try {
-            // Search for invoice by reference number
             const searchUrl = `${XERO_API_URL}/Invoices?where=InvoiceNumber=="${event.invoice_reference}"`;
             const response = await xeroFetch(searchUrl);
 
@@ -234,51 +268,37 @@ Deno.serve(async (req) => {
             const invoice = data.Invoices?.[0];
 
             if (invoice) {
-              // Map Xero status to our status
-              let newStatus: string;
-              let paidAt: string | null = null;
+              const mappedStatus = mapInvoiceStatus(invoice);
+              const invoiceAmount = Number(invoice.Total ?? invoice.SubTotal ?? 0) || null;
+              const shouldUpdate = mappedStatus.invoice_status !== event.invoice_status || invoiceAmount !== null;
 
-              switch (invoice.Status) {
-                case 'PAID':
-                  newStatus = 'paid';
-                  paidAt = invoice.FullyPaidOnDate || new Date().toISOString();
-                  break;
-                case 'AUTHORISED':
-                  // Check if overdue
-                  newStatus = new Date(invoice.DueDate) < new Date() ? 'overdue' : 'sent';
-                  break;
-                case 'DRAFT':
-                  newStatus = 'draft';
-                  break;
-                case 'VOIDED':
-                  newStatus = 'void';
-                  break;
-                default:
-                  newStatus = invoice.Status.toLowerCase();
-              }
-
-              // Update event if status changed or amount needs updating
-              const invoiceAmount = invoice.Total || invoice.SubTotal || null;
-              if (newStatus !== event.invoice_status || invoiceAmount) {
+              if (shouldUpdate) {
                 const updateData: any = {
-                  invoice_status: newStatus,
-                  invoice_paid_at: paidAt,
+                  invoice_status: mappedStatus.invoice_status,
+                  invoice_paid_at: mappedStatus.invoice_paid_at,
                   updated_at: new Date().toISOString()
                 };
-                if (invoiceAmount) {
+
+                if (invoiceAmount !== null) {
                   updateData.invoice_amount = invoiceAmount;
                 }
-                await supabase
+
+                const { error: updateError } = await supabase
                   .from('events')
                   .update(updateData)
                   .eq('id', event.id);
+
+                if (updateError) {
+                  console.error(`Failed to update event ${event.id} from invoice ${event.invoice_reference}:`, updateError);
+                  continue;
+                }
 
                 results.push({
                   eventId: event.id,
                   eventName: event.event_name,
                   oldStatus: event.invoice_status,
-                  newStatus,
-                  paidAt
+                  newStatus: mappedStatus.invoice_status,
+                  paidAt: mappedStatus.invoice_paid_at
                 });
                 synced++;
               }
@@ -288,7 +308,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Update sync log
         await supabase
           .from('xero_sync_log')
           .update({
