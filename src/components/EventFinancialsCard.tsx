@@ -35,6 +35,7 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
   const { data: event } = useEvent(eventId);
   const { isAdmin } = useAuth();
   const syncExpenses = useXeroSyncEventExpenses();
+  const syncInvoices = useSyncInvoiceStatus();
   
   if (isLoading) {
     return (
