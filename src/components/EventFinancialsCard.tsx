@@ -168,11 +168,20 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
             variant="outline" 
             size="sm" 
             className="w-full gap-2"
-            onClick={() => syncExpenses.mutate(eventId)}
-            disabled={syncExpenses.isPending}
+            onClick={async () => {
+              try {
+                await Promise.all([
+                  syncExpenses.mutateAsync(eventId),
+                  syncInvoices.mutateAsync(),
+                ]);
+              } catch {
+                // Individual mutations handle their own error toasts
+              }
+            }}
+            disabled={syncExpenses.isPending || syncInvoices.isPending}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending ? 'animate-spin' : ''}`} />
-            {syncExpenses.isPending ? 'Syncing Expenses…' : 'Sync Expenses from Xero'}
+            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending || syncInvoices.isPending ? 'animate-spin' : ''}`} />
+            {syncExpenses.isPending || syncInvoices.isPending ? 'Syncing with Xero…' : 'Sync with Xero'}
           </Button>
         )}
         {event?.quote_id && (
