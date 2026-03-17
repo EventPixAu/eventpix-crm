@@ -829,6 +829,8 @@ export default function EventDetail() {
                   qrFilePath={(event as any).qr_file_path || null}
                   qrFileName={(event as any).qr_file_name || null}
                   preRegistrationLink={(event as any).pre_registration_link || null}
+                  dropboxLink={(event as any).dropbox_link || null}
+                  smugmugLink={(event as any).smugmug_link || null}
                   isAdmin={isAdmin}
                 />
               )}
