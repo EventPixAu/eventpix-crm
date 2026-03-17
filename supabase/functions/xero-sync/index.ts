@@ -477,6 +477,8 @@ Deno.serve(async (req) => {
 
         console.log(`Searching for expenses with tag: "${event.xero_tag}"`);
 
+        let expenses: any[] = [];
+
         // Try to find tracking for logging/debugging, but do not require it.
         const tcResponse = await xeroFetch(`${XERO_API_URL}/TrackingCategories`);
         if (tcResponse.ok) {
@@ -569,7 +571,9 @@ Deno.serve(async (req) => {
 
         const billWhere = encodeURIComponent('Type=="ACCPAY"');
         const bills = await fetchPagedRecords(`Invoices?where=${billWhere}`, 'Invoices');
-        let expenses = bills.flatMap((bill: any) => extractLines(bill, 'InvoiceID'));
+        if (expenses.length === 0) {
+          expenses = bills.flatMap((bill: any) => extractLines(bill, 'InvoiceID'));
+        }
         console.log(`Matched ${expenses.length} expense lines from bills`);
 
         // Fallback to spend transactions when no tagged bills are found.
