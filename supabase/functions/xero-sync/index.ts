@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
         // Get event with Xero details
         const { data: event } = await supabase
           .from('events')
-          .select('id, event_name, xero_tag, invoice_reference')
+          .select('id, event_name, event_date, xero_tag, invoice_reference')
           .eq('id', eventId)
           .single();
 
