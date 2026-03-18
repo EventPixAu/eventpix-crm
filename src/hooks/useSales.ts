@@ -390,6 +390,35 @@ export function useUpdateQuote() {
   });
 }
 
+export function useDeleteQuote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Delete quote items first, then the quote
+      const { error: itemsError } = await supabase
+        .from('quote_items')
+        .delete()
+        .eq('quote_id', id);
+      if (itemsError) throw itemsError;
+
+      const { error } = await supabase
+        .from('quotes')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast({ title: 'Budget deleted' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to delete budget', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 // =============================================================
 // CONVERSION: Quote Accepted → Event Creation
 // =============================================================

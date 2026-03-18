@@ -25,6 +25,7 @@ import {
   ExternalLink,
   ArrowRightCircle,
   XCircle,
+  Trash2,
   MoreHorizontal,
 } from 'lucide-react';
 import {
@@ -33,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUpdateQuote } from '@/hooks/useSales';
+import { useUpdateQuote, useDeleteQuote } from '@/hooks/useSales';
 import { useToast } from '@/hooks/use-toast';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -97,6 +98,7 @@ export default function LeadDetail(): JSX.Element {
   const { data: lead, isLoading } = useLead(isCreateMode ? undefined : id);
   const updateLead = useUpdateLead();
   const updateQuote = useUpdateQuote();
+  const deleteQuote = useDeleteQuote();
   
   // Workflow state
   const { data: workflowItems = [] } = useLeadWorkflowItems(isCreateMode ? undefined : id);
@@ -442,8 +444,20 @@ export default function LeadDetail(): JSX.Element {
                             }}
                             className="text-destructive focus:text-destructive"
                           >
-                            <XCircle className="h-4 w-4 mr-2" />
+                             <XCircle className="h-4 w-4 mr-2" />
                             Mark as Rejected
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              if (confirm('Delete this budget? This cannot be undone.')) {
+                                await deleteQuote.mutateAsync(quote.id);
+                              }
+                            }}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Budget
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
