@@ -43,8 +43,8 @@ export function useEscalations() {
           event_sessions(id),
           delivery_records(id, delivery_link, delivered_at)
         `)
-        .gte('event_date', today.toISOString().split('T')[0])
-        .lte('event_date', addDays(now, 2).toISOString().split('T')[0])
+        .gte('event_date', format(today, 'yyyy-MM-dd'))
+        .lte('event_date', format(addDays(now, 2), 'yyyy-MM-dd'))
         .order('event_date', { ascending: true });
       
       if (error) throw error;
