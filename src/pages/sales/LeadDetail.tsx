@@ -201,8 +201,62 @@ export default function LeadDetail(): JSX.Element {
   };
 
   const handleDelete = async () => {
-    // Navigate back - actual deletion would require additional mutation
     navigate('/sales/leads');
+  };
+
+  const handleSendBudgets = async () => {
+    if (!quotes.length) return;
+    setIsSendingBudgets(true);
+    try {
+      const baseUrl = getPublicBaseUrl();
+      const budgetLinks: { name: string; link: string; total: string }[] = [];
+      
+      for (const quote of quotes) {
+        if (quote.status === 'accepted' || quote.status === 'rejected') continue;
+        
+        let token = (quote as any).public_token;
+        
+        // Mark draft quotes as sent
+        if (quote.status === 'draft') {
+          const { data, error } = await supabase.rpc('mark_quote_as_sent', { p_quote_id: quote.id });
+          if (error) throw error;
+          const result = typeof data === 'string' ? JSON.parse(data) : data;
+          if (!result.success) throw new Error(result.error || 'Failed to send');
+          token = result.public_token;
+        }
+        
+        const name = (quote as any).quote_name || quote.quote_number || 'Budget';
+        const total = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(quote.total_estimate || 0);
+        budgetLinks.push({ name, link: `${baseUrl}/accept/${token}`, total });
+      }
+      
+      if (budgetLinks.length === 0) {
+        toast({ title: 'No budgets to send', variant: 'destructive' });
+        setIsSendingBudgets(false);
+        return;
+      }
+      
+      const leadName = lead.lead_name || 'your project';
+      const clientFirstName = client?.primary_contact_name?.split(' ')[0] || 'there';
+      
+      const linksHtml = budgetLinks.map(b => 
+        `<li style="margin-bottom:12px;"><strong>${b.name}</strong> — ${b.total}<br/><a href="${b.link}" style="color:#0891b2;">${b.link}</a></li>`
+      ).join('');
+      
+      setSendBudgetsSubject(`Your budget options for ${leadName}`);
+      setSendBudgetsBody(
+        `<p>Hi ${clientFirstName},</p>` +
+        `<p>Please find below the budget options for <strong>${leadName}</strong>. Please review and accept your preferred option:</p>` +
+        `<ul>${linksHtml}</ul>` +
+        `<p>Simply click the link for your preferred option to review and accept online.</p>` +
+        `<p>Please don't hesitate to reach out if you have any questions.</p>`
+      );
+      setIsSendBudgetsOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Failed to prepare budgets', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSendingBudgets(false);
+    }
   };
 
   const completedCount = workflowItems.filter(i => i.is_done).length;
