@@ -87,17 +87,20 @@ export function SendOpsEmailDialog({
   const [linkSelectionRange, setLinkSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Default-select the client recipient when opening.
+  // Default-select the client recipient and apply initial values when opening.
   useEffect(() => {
     if (!open) return;
     setShowPreview(false);
+
+    if (initialSubject) setSubject(initialSubject);
+    if (initialBody) setBody(initialBody);
 
     setSelectedRecipients((prev) => {
       if (prev.length > 0) return prev;
       const preferredClient = recipients.find((r) => r.type === 'client');
       return preferredClient ? [preferredClient.id] : prev;
     });
-  }, [open, recipients]);
+  }, [open, recipients, initialSubject, initialBody]);
 
   // Group recipients by type
   const groupedRecipients = useMemo(() => {
