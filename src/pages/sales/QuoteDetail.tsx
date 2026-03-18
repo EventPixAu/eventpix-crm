@@ -608,7 +608,7 @@ export default function QuoteDetail() {
                   </Select>
                 </div>
               )}
-              {!isLocked && (quote as any).quote_name === '__custom__' || (!isLocked && customBudgetName !== null) ? (
+              {!isLocked && customBudgetName !== null ? (
                 <Input
                   value={customBudgetName ?? ''}
                   onChange={(e) => setCustomBudgetName(e.target.value)}
