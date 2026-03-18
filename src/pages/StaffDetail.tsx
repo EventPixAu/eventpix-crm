@@ -92,6 +92,7 @@ interface Assignment {
   id: string;
   event_id: string;
   role_on_event: string | null;
+  session_id: string | null;
   created_at: string;
   events: {
     event_name: string;
@@ -99,6 +100,10 @@ interface Assignment {
     client_name: string;
     ops_status: string | null;
   };
+  event_sessions: {
+    session_date: string;
+    label: string | null;
+  } | null;
 }
 
 export default function StaffDetail() {
