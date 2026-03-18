@@ -573,13 +573,56 @@ export default function QuoteDetail() {
               />
             </div>
             <div className="space-y-2">
-              <Label>PO Number</Label>
-              <Input 
-                value={(quote as any).po_number || '-'}
-                readOnly={isLocked}
-                placeholder="-"
-                className={isLocked ? 'bg-muted' : ''}
-              />
+              <Label>Budget Name</Label>
+              {isLocked ? (
+                <Input 
+                  value={(quote as any).quote_name || 'Budget'}
+                  readOnly
+                  className="bg-muted"
+                />
+              ) : (
+                <div className="flex gap-2">
+                  <Select
+                    value={(quote as any).quote_name || ''}
+                    onValueChange={async (val) => {
+                      if (val === '__custom__') return;
+                      await updateQuote.mutateAsync({ id: id!, quote_name: val } as any);
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select or type a name" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover">
+                      <SelectItem value="Photo 1">Photo 1</SelectItem>
+                      <SelectItem value="Photo 2">Photo 2</SelectItem>
+                      <SelectItem value="Video 1">Video 1</SelectItem>
+                      <SelectItem value="Video 2">Video 2</SelectItem>
+                      <SelectItem value="Photo + Video">Photo + Video</SelectItem>
+                      <SelectItem value="__custom__">Custom...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {!isLocked && (quote as any).quote_name === '__custom__' || (!isLocked && customBudgetName !== null) ? (
+                <Input
+                  value={customBudgetName ?? ''}
+                  onChange={(e) => setCustomBudgetName(e.target.value)}
+                  onBlur={async () => {
+                    if (customBudgetName && customBudgetName.trim()) {
+                      await updateQuote.mutateAsync({ id: id!, quote_name: customBudgetName.trim() } as any);
+                      setCustomBudgetName(null);
+                    }
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && customBudgetName && customBudgetName.trim()) {
+                      await updateQuote.mutateAsync({ id: id!, quote_name: customBudgetName.trim() } as any);
+                      setCustomBudgetName(null);
+                    }
+                  }}
+                  placeholder="Enter custom name..."
+                  autoFocus
+                />
+              ) : null}
             </div>
           </div>
 
