@@ -98,7 +98,7 @@ export function useEscalations() {
           severity: 'warning',
           title: `${eventsWithoutVenue.length} event${eventsWithoutVenue.length > 1 ? 's' : ''} tomorrow without venue address`,
           count: eventsWithoutVenue.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutVenue.map(e => e.id),
         });
       }
