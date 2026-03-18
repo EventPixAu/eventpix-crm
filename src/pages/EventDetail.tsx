@@ -84,6 +84,7 @@ import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationD
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
+import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -339,6 +340,8 @@ export default function EventDetail() {
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
+  const [isSendingDropbox, setIsSendingDropbox] = useState(false);
+  const sendCrmEmail = useSendCrmEmail();
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -1090,6 +1093,52 @@ export default function EventDetail() {
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.live_access.status).className)}>
                           {getActionStatusDisplay(emailStatuses.live_access.status).label}
+                        </Badge>
+                      )}
+                    </Button>
+                  )}
+                  {(isAdmin || isOperations) && (event as any).dropbox_link && primaryContactEmail && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      disabled={isSendingDropbox}
+                      onClick={async () => {
+                        setIsSendingDropbox(true);
+                        try {
+                          const eventName = (event as any).event_name || 'your event';
+                          const dropboxLink = (event as any).dropbox_link;
+                          const smugmugLink = (event as any).smugmug_link;
+                          const firstName = primaryContactName?.split(' ')[0] || '';
+                          
+                          let bodyHtml = `<p>Hi${firstName ? ` ${firstName}` : ''},</p>`;
+                          bodyHtml += `<p>Thank you for having EventPix cover your event – <strong>${eventName}</strong> – the files have now been edited and uploaded to Dropbox: <a href="${dropboxLink}">${dropboxLink}</a>.</p>`;
+                          
+                          if (smugmugLink) {
+                            bodyHtml += `<p>We have also created a gallery for your guests to access: <a href="${smugmugLink}">${smugmugLink}</a></p>`;
+                          }
+
+                          await sendCrmEmail.mutateAsync({
+                            recipientEmail: primaryContactEmail!,
+                            recipientName: primaryContactName || undefined,
+                            subject: `Your photos are ready – ${eventName}`,
+                            bodyHtml,
+                            eventId: id,
+                            clientId: event?.client_id || undefined,
+                          });
+                        } catch {
+                          // error handled by hook
+                        } finally {
+                          setIsSendingDropbox(false);
+                        }
+                      }}
+                    >
+                      <span className="flex items-center">
+                        <Package className="h-4 w-4 mr-2" />
+                        {isSendingDropbox ? 'Sending...' : 'Send Dropbox Link'}
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.dropbox_delivery.status).label}
                         </Badge>
                       )}
                     </Button>
