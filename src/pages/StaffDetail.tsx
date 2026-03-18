@@ -627,7 +627,7 @@ export default function StaffDetail() {
       </Card>
 
       {/* Tabs for detailed info */}
-      <Tabs defaultValue="profile" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-secondary/50">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
