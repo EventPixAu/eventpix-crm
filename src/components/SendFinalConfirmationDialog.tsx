@@ -62,6 +62,7 @@ interface SendFinalConfirmationDialogProps {
     primary_contact_name?: string | null;
     primary_contact_phone?: string | null;
     delivery_method?: string;
+    delivery_method_guests?: string;
     arrival_time?: string | null;
     client_brief_content?: string | null;
   };
