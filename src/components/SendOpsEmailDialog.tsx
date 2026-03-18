@@ -7,7 +7,7 @@
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import { Mail, Send, Eye, Users, Link } from 'lucide-react';
+import { Mail, Send, Eye, Users, Link, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
