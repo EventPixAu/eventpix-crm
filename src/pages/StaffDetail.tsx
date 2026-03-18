@@ -440,12 +440,14 @@ export default function StaffDetail() {
    const isAssistant = isAssistantRole(staffRoleName);
 
   // Group assignments by status
-  const upcomingAssignments = assignments?.filter(a => 
-    new Date(a.events.event_date) >= new Date()
-  ) || [];
-  const pastAssignments = assignments?.filter(a => 
-    new Date(a.events.event_date) < new Date()
-  ) || [];
+  const upcomingAssignments = assignments?.filter(a => {
+    const date = a.event_sessions?.session_date || a.events.event_date;
+    return new Date(date) >= new Date();
+  }) || [];
+  const pastAssignments = assignments?.filter(a => {
+    const date = a.event_sessions?.session_date || a.events.event_date;
+    return new Date(date) < new Date();
+  }) || [];
 
   return (
     <AppLayout>
