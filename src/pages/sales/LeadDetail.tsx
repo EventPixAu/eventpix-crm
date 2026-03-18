@@ -428,6 +428,33 @@ export default function LeadDetail(): JSX.Element {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
+                          {quote.status === 'draft' && (
+                            <DropdownMenuItem
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                try {
+                                  const { data, error } = await supabase.rpc('mark_quote_as_sent', {
+                                    p_quote_id: quote.id,
+                                  });
+                                  if (error) throw error;
+                                  const result = typeof data === 'string' ? JSON.parse(data) : data;
+                                  if (!result.success) throw new Error(result.error || 'Failed to send');
+                                  const token = result.public_token;
+                                  const baseUrl = getPublicBaseUrl();
+                                  const link = `${baseUrl}/accept/${token}`;
+                                  await navigator.clipboard.writeText(link);
+                                  toast({ title: 'Budget marked as sent', description: 'Client link copied to clipboard' });
+                                  // Refresh quotes
+                                  window.location.reload();
+                                } catch (err: any) {
+                                  toast({ title: 'Failed to send budget', description: err.message, variant: 'destructive' });
+                                }
+                              }}
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              Send Budget
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.preventDefault();
@@ -435,7 +462,7 @@ export default function LeadDetail(): JSX.Element {
                             }}
                           >
                             <Eye className="h-4 w-4 mr-2" />
-                            View Quote
+                            View Budget
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={async (e) => {
