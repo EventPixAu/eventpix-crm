@@ -22,6 +22,7 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         portal_link: { status: 'not_sent', sentAt: null },
         team_update: { status: 'not_sent', sentAt: null },
         live_access: { status: 'not_sent', sentAt: null },
+        dropbox_delivery: { status: 'not_sent', sentAt: null },
       };
 
       if (!eventId) return result;
