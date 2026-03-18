@@ -92,6 +92,7 @@ interface Assignment {
   id: string;
   event_id: string;
   role_on_event: string | null;
+  session_id: string | null;
   created_at: string;
   events: {
     event_name: string;
@@ -99,6 +100,10 @@ interface Assignment {
     client_name: string;
     ops_status: string | null;
   };
+  event_sessions: {
+    session_date: string;
+    label: string | null;
+  } | null;
 }
 
 export default function StaffDetail() {
@@ -295,9 +300,12 @@ export default function StaffDetail() {
       const { data, error } = await supabase
         .from('event_assignments')
         .select(`
-          id, event_id, role_on_event, created_at,
+          id, event_id, role_on_event, session_id, created_at,
           events (
             event_name, event_date, client_name, ops_status
+          ),
+          event_sessions (
+            session_date, label
           )
         `)
         .eq('user_id', actualUserId)
@@ -432,12 +440,14 @@ export default function StaffDetail() {
    const isAssistant = isAssistantRole(staffRoleName);
 
   // Group assignments by status
-  const upcomingAssignments = assignments?.filter(a => 
-    new Date(a.events.event_date) >= new Date()
-  ) || [];
-  const pastAssignments = assignments?.filter(a => 
-    new Date(a.events.event_date) < new Date()
-  ) || [];
+  const upcomingAssignments = assignments?.filter(a => {
+    const date = a.event_sessions?.session_date || a.events.event_date;
+    return new Date(date) >= new Date();
+  }) || [];
+  const pastAssignments = assignments?.filter(a => {
+    const date = a.event_sessions?.session_date || a.events.event_date;
+    return new Date(date) < new Date();
+  }) || [];
 
   return (
     <AppLayout>
@@ -1027,7 +1037,9 @@ export default function StaffDetail() {
 }
 
 function AssignmentRow({ assignment }: { assignment: Assignment }) {
-  const eventDate = parseISO(assignment.events.event_date);
+  // Use session date if available, otherwise fall back to event date
+  const displayDate = assignment.event_sessions?.session_date || assignment.events.event_date;
+  const eventDate = parseISO(displayDate);
   const isPast = eventDate < new Date();
 
   return (
@@ -1046,7 +1058,14 @@ function AssignmentRow({ assignment }: { assignment: Assignment }) {
           </div>
         </div>
         <div>
-          <p className="font-medium">{assignment.events.event_name}</p>
+          <p className="font-medium">
+            {assignment.events.event_name}
+            {assignment.event_sessions?.label && (
+              <span className="text-muted-foreground font-normal text-sm ml-1.5">
+                – {assignment.event_sessions.label}
+              </span>
+            )}
+          </p>
           <p className="text-xs text-muted-foreground">
             {assignment.events.client_name}
             {assignment.role_on_event && ` • ${assignment.role_on_event}`}
