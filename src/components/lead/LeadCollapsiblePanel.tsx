@@ -65,6 +65,7 @@ export function LeadCollapsiblePanel({
         </div>
         
         <div className="flex items-center gap-2">
+          {extraActions}
           {onAdd && (
             <Button 
               variant="default" 
