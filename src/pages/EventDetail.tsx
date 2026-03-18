@@ -1462,9 +1462,9 @@ export default function EventDetail() {
             const dropboxLink = (event as any).dropbox_link;
             const smugmugLink = (event as any).smugmug_link;
             let body = `<p>Hi {{client_name}},</p>` +
-              `<p>Thank you for having EventPix cover your event – <strong>${event.event_name}</strong> – the files have now been edited and uploaded to Dropbox: <a href="${dropboxLink}">${dropboxLink}</a>.</p>`;
+              `<p>Thank you for having EventPix cover your event – <strong>${event.event_name}</strong> – the files have now been edited and uploaded to <a href="${dropboxLink}">Dropbox</a>.</p>`;
             if (smugmugLink) {
-              body += `<p>We have also created a gallery for your guests to access: <a href="${smugmugLink}">${smugmugLink}</a></p>`;
+              body += `<p>We have also created a <a href="${smugmugLink}">gallery</a> for your guests to access.</p>`;
             }
             body += `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
               `<p>Kind regards,<br/>The Eventpix Team</p>`;
