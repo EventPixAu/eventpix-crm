@@ -146,6 +146,7 @@ export default function QuoteDetail() {
   // Editable intro text state
   const [introText, setIntroText] = useState('');
   const [introLoaded, setIntroLoaded] = useState(false);
+  const [customBudgetName, setCustomBudgetName] = useState<string | null>(null);
 
   // Handle new quote creation with pre-filled data from URL params
   useEffect(() => {
