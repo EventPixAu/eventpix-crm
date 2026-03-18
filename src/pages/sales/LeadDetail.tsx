@@ -133,6 +133,10 @@ export default function LeadDetail(): JSX.Element {
   const [applyMode, setApplyMode] = useState<'append' | 'replace'>('append');
   const mailTabsRef = useRef<HTMLDivElement>(null);
   const [forceMailTab, setForceMailTab] = useState<string | undefined>(undefined);
+  const [isSendBudgetsOpen, setIsSendBudgetsOpen] = useState(false);
+  const [sendBudgetsSubject, setSendBudgetsSubject] = useState('');
+  const [sendBudgetsBody, setSendBudgetsBody] = useState('');
+  const [isSendingBudgets, setIsSendingBudgets] = useState(false);
 
   if (isLoading && !isCreateMode) {
     return (
