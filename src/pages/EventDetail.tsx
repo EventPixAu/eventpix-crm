@@ -1394,7 +1394,8 @@ export default function EventDetail() {
             client_id: event.client_id,
             primary_contact_name: primaryContactName,
             primary_contact_phone: primaryContactEmail,
-            delivery_method: getDeliveryMethodName(),
+            delivery_method: getDeliveryMethodName('delivery_method_id'),
+            delivery_method_guests: getDeliveryMethodName('delivery_method_guests_id'),
             arrival_time: eventSessions[0]?.arrival_time || null,
             client_brief_content: (event as any).client_brief_content,
           }}
