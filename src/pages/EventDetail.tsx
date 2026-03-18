@@ -1400,6 +1400,7 @@ export default function EventDetail() {
           }}
           recipients={emailRecipients}
           assignments={assignments}
+          sessions={eventSessions}
         />
       )}
 

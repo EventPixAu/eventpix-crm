@@ -34,6 +34,18 @@ interface Recipient {
   type: 'client' | 'photographer' | 'assistant';
 }
 
+interface SessionData {
+  id: string;
+  session_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  arrival_time?: string | null;
+  label?: string | null;
+  session_type?: string;
+  venue_name?: string | null;
+  venue_address?: string | null;
+}
+
 interface SendFinalConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +67,7 @@ interface SendFinalConfirmationDialogProps {
   };
   recipients: Recipient[];
   assignments: any[];
+  sessions?: SessionData[];
 }
 
 function formatTime12h(time?: string | null): string {
@@ -95,23 +108,9 @@ function buildConfirmationBody(
   eventData: SendFinalConfirmationDialogProps['eventData'],
   assignments: any[],
   primaryContactName: string,
+  sessions: SessionData[] = [],
 ): string {
-  // Filter to onsite crew only
   const onsiteAssignments = assignments.filter(isOnsiteAssignment);
-  const eventDate = eventData.event_date
-    ? format(parseISO(eventData.event_date), 'EEEE, d MMMM yyyy')
-    : 'TBC';
-
-  // Find lead photographer from onsite crew
-  const leadAssignment = onsiteAssignments.find((a: any) => {
-    const role = a.staff_role?.name?.toLowerCase() || a.role_on_event?.toLowerCase() || '';
-    return role.includes('lead') || role.includes('photographer');
-  }) || onsiteAssignments[0];
-
-  const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
-  const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
-  const leadRole = leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer';
-
   const lines: string[] = [];
   
   lines.push(`Hi ${primaryContactName.split(' ')[0]},`);
@@ -122,56 +121,93 @@ function buildConfirmationBody(
   lines.push('EVENT DETAILS');
   lines.push('─────────────────────────────');
   lines.push('');
-  lines.push(`Date: ${eventDate}`);
-  if (eventData.arrival_time) {
-    lines.push(`Setup: ${formatTime12h(eventData.arrival_time)}`);
-  }
-  lines.push(`Activation: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
+  lines.push(`Event Name: ${eventData.event_name}`);
   
   if (eventData.venue_name) {
-    lines.push(`Venue: ${eventData.venue_name}`);
-    if (eventData.venue_address) {
-      lines.push(`Address: ${eventData.venue_address}`);
-    }
+    const venueStr = eventData.venue_address
+      ? `${eventData.venue_name}, ${eventData.venue_address}`
+      : eventData.venue_name;
+    lines.push(`Venue: ${venueStr}`);
   }
 
   if (eventData.delivery_method) {
     lines.push(`Delivery Method: ${eventData.delivery_method}`);
   }
 
-  lines.push('');
-  lines.push('─────────────────────────────');
-  lines.push('YOUR TEAM');
-  lines.push('─────────────────────────────');
-  lines.push('');
-  lines.push(`${leadRole}: ${leadName}`);
-  if (leadPhone) {
-    lines.push(`Mobile: ${leadPhone}`);
-  }
+  // Multi-session layout: group schedule + crew per day
+  const liveSessions = sessions.filter(s => s.session_type !== 'post-production');
 
-  // List additional onsite team members if any
-  const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
-  if (otherAssignments.length > 0) {
+  if (liveSessions.length > 1) {
     lines.push('');
-    otherAssignments.forEach((a: any) => {
-      const name = a.profile?.full_name || a.staff?.name || 'TBC';
-      const role = a.staff_role?.name || a.role_on_event || 'Team Member';
-      const phone = a.profile?.phone || a.staff?.phone || '';
-      lines.push(`${role}: ${name}`);
-      if (phone) {
-        lines.push(`Mobile: ${phone}`);
+    lines.push('Schedule');
+
+    for (const session of liveSessions) {
+      const sessionDate = format(parseISO(session.session_date), 'EEEE, d MMMM yyyy');
+      lines.push('');
+      lines.push(`Date: ${sessionDate}`);
+
+      const setupStr = formatTime12h(session.arrival_time);
+      const activationStr = `${formatTime12h(session.start_time)} – ${formatTime12h(session.end_time)}`;
+      lines.push(`Setup: ${setupStr}            Activation: ${activationStr}`);
+
+      // Find onsite crew assigned to this session
+      const sessionCrew = onsiteAssignments.filter(a => a.session_id === session.id);
+      for (const a of sessionCrew) {
+        const name = a.profile?.full_name || a.staff?.name || 'TBC';
+        const role = a.staff_role?.name || a.role_on_event || 'Photographer';
+        const phone = a.profile?.phone || a.staff?.phone || '';
+        lines.push(`${role}: ${name}${phone ? `   Mobile: ${phone}` : ''}`);
       }
-    });
+    }
+  } else {
+    // Single-day fallback
+    const eventDate = eventData.event_date
+      ? format(parseISO(eventData.event_date), 'EEEE, d MMMM yyyy')
+      : 'TBC';
+    lines.push(`Date: ${eventDate}`);
+    if (eventData.arrival_time) {
+      lines.push(`Setup: ${formatTime12h(eventData.arrival_time)}`);
+    }
+    lines.push(`Activation: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
+
+    // YOUR TEAM section for single-day
+    lines.push('');
+    lines.push('─────────────────────────────');
+    lines.push('YOUR TEAM');
+    lines.push('─────────────────────────────');
+    lines.push('');
+
+    const leadAssignment = onsiteAssignments.find((a: any) => {
+      const role = a.staff_role?.name?.toLowerCase() || a.role_on_event?.toLowerCase() || '';
+      return role.includes('lead') || role.includes('photographer');
+    }) || onsiteAssignments[0];
+
+    if (leadAssignment) {
+      const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
+      const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
+      const leadRole = leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer';
+      lines.push(`${leadRole}: ${leadName}`);
+      if (leadPhone) lines.push(`Mobile: ${leadPhone}`);
+
+      const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
+      for (const a of otherAssignments) {
+        const name = a.profile?.full_name || a.staff?.name || 'TBC';
+        const role = a.staff_role?.name || a.role_on_event || 'Team Member';
+        const phone = a.profile?.phone || a.staff?.phone || '';
+        lines.push('');
+        lines.push(`${role}: ${name}`);
+        if (phone) lines.push(`Mobile: ${phone}`);
+      }
+    }
   }
 
-  // Add client brief content if available
+  // Client brief
   if (eventData.client_brief_content) {
     lines.push('');
     lines.push('─────────────────────────────');
     lines.push('EVENT OVERVIEW');
     lines.push('─────────────────────────────');
     lines.push('');
-    // Strip HTML tags from brief if any, keeping text
     const briefText = eventData.client_brief_content
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
@@ -200,6 +236,7 @@ export function SendFinalConfirmationDialog({
   eventData,
   recipients,
   assignments,
+  sessions = [],
 }: SendFinalConfirmationDialogProps) {
   const { toast } = useToast();
   const sendEmail = useSendCrmEmail();
@@ -213,8 +250,8 @@ export function SendFinalConfirmationDialog({
     clientRecipients[0]?.name || eventData.client_name;
 
   const defaultBody = useMemo(
-    () => buildConfirmationBody(eventData, assignments, primaryContactName),
-    [eventData, assignments, primaryContactName]
+    () => buildConfirmationBody(eventData, assignments, primaryContactName, sessions),
+    [eventData, assignments, primaryContactName, sessions]
   );
 
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
