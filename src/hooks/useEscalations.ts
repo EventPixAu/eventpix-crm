@@ -68,7 +68,7 @@ export function useEscalations() {
           severity: 'critical',
           title: `${eventsWithoutLeadPhoto.length} event${eventsWithoutLeadPhoto.length > 1 ? 's' : ''} tomorrow missing lead photographer`,
           count: eventsWithoutLeadPhoto.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutLeadPhoto.map(e => e.id),
         });
       }
