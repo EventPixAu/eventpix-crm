@@ -477,6 +477,17 @@ export function SendOpsEmailDialog({
               </p>
             </div>
 
+            {/* Attachments indicator */}
+            {storageAttachments && storageAttachments.length > 0 && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg border bg-muted/30 text-sm">
+                <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Attached:</span>
+                {storageAttachments.map((sa, i) => (
+                  <span key={i} className="font-medium">{sa.fileName}</span>
+                ))}
+              </div>
+            )}
+
             {/* Email info notice */}
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-muted-foreground">
               Emails will be sent from <strong>pix@eventpix.com.au</strong> with your standard footer.
