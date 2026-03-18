@@ -112,7 +112,7 @@ export function useEscalations() {
           severity: 'warning',
           title: `${eventsWithoutDelivery.length} event${eventsWithoutDelivery.length > 1 ? 's' : ''} tomorrow without delivery method`,
           count: eventsWithoutDelivery.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutDelivery.map(e => e.id),
         });
       }
