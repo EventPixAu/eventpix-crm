@@ -146,6 +146,7 @@ export default function QuoteDetail() {
   // Editable intro text state
   const [introText, setIntroText] = useState('');
   const [introLoaded, setIntroLoaded] = useState(false);
+  const [customBudgetName, setCustomBudgetName] = useState<string | null>(null);
 
   // Handle new quote creation with pre-filled data from URL params
   useEffect(() => {
@@ -460,7 +461,7 @@ export default function QuoteDetail() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{quote.quote_number || `Budget ${quote.id.slice(0, 8)}`}</h1>
+              <h1 className="text-2xl font-bold">{(quote as any).quote_name || quote.quote_number || `Budget ${quote.id.slice(0, 8)}`}</h1>
               <Badge variant={statusConfig.variant}>
                 {statusConfig.label}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
               </Badge>
@@ -573,13 +574,60 @@ export default function QuoteDetail() {
               />
             </div>
             <div className="space-y-2">
-              <Label>PO Number</Label>
-              <Input 
-                value={(quote as any).po_number || '-'}
-                readOnly={isLocked}
-                placeholder="-"
-                className={isLocked ? 'bg-muted' : ''}
-              />
+              <Label>Budget Name</Label>
+              {isLocked ? (
+                <Input 
+                  value={(quote as any).quote_name || 'Budget'}
+                  readOnly
+                  className="bg-muted"
+                />
+              ) : (
+                <div className="flex gap-2">
+                  <Select
+                    value={(quote as any).quote_name || ''}
+                    onValueChange={async (val) => {
+                      if (val === '__custom__') {
+                        setCustomBudgetName('');
+                        return;
+                      }
+                      setCustomBudgetName(null);
+                      await updateQuote.mutateAsync({ id: id!, quote_name: val } as any);
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a name" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover">
+                      <SelectItem value="Photo 1">Photo 1</SelectItem>
+                      <SelectItem value="Photo 2">Photo 2</SelectItem>
+                      <SelectItem value="Video 1">Video 1</SelectItem>
+                      <SelectItem value="Video 2">Video 2</SelectItem>
+                      <SelectItem value="Photo + Video">Photo + Video</SelectItem>
+                      <SelectItem value="__custom__">Custom...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {!isLocked && customBudgetName !== null ? (
+                <Input
+                  value={customBudgetName ?? ''}
+                  onChange={(e) => setCustomBudgetName(e.target.value)}
+                  onBlur={async () => {
+                    if (customBudgetName && customBudgetName.trim()) {
+                      await updateQuote.mutateAsync({ id: id!, quote_name: customBudgetName.trim() } as any);
+                      setCustomBudgetName(null);
+                    }
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && customBudgetName && customBudgetName.trim()) {
+                      await updateQuote.mutateAsync({ id: id!, quote_name: customBudgetName.trim() } as any);
+                      setCustomBudgetName(null);
+                    }
+                  }}
+                  placeholder="Enter custom name..."
+                  autoFocus
+                />
+              ) : null}
             </div>
           </div>
 

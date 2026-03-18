@@ -162,7 +162,7 @@ export default function QuoteList() {
                           className="font-medium hover:underline flex items-center gap-2"
                         >
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          {quote.quote_number || `Q-${quote.id.slice(0, 8)}`}
+                          {(quote as any).quote_name || quote.quote_number || `Q-${quote.id.slice(0, 8)}`}
                         </Link>
                       </TableCell>
                       <TableCell>

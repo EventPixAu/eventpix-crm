@@ -29,7 +29,7 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
       if (quoteId) {
         const { data, error } = await supabase
           .from('quotes')
-          .select('id, quote_number, status, subtotal, total_estimate, created_at, is_locked')
+          .select('id, quote_number, quote_name, status, subtotal, total_estimate, created_at, is_locked')
           .eq('id', quoteId)
           .single();
         if (!error && data) {
@@ -42,7 +42,7 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
       if (leadId) {
         const { data, error } = await supabase
           .from('quotes')
-          .select('id, quote_number, status, subtotal, total_estimate, created_at, is_locked')
+          .select('id, quote_number, quote_name, status, subtotal, total_estimate, created_at, is_locked')
           .eq('lead_id', leadId)
           .order('created_at', { ascending: false });
         if (!error && data) {
@@ -110,7 +110,7 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {quote.quote_number || 'Budget'}
+                  {quote.quote_name || quote.quote_number || 'Budget'}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {formatCurrency(quote.total_estimate)}
