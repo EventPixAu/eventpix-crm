@@ -71,6 +71,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { ContractsPanel } from '@/components/ContractsPanel';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
   SalesWorkflowRail,
