@@ -428,6 +428,21 @@ export default function LeadDetail(): JSX.Element {
             icon={FileText}
             title="Budgets"
             count={quotes.length}
+            extraActions={quotes.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7"
+                disabled={isSendingBudgets}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendBudgets();
+                }}
+              >
+                <Send className="h-3.5 w-3.5 mr-1.5" />
+                {isSendingBudgets ? 'Preparing...' : 'Send Budgets'}
+              </Button>
+            ) : undefined}
             onAdd={() => {
               // Pass lead context to quote creation
               const params = new URLSearchParams();
