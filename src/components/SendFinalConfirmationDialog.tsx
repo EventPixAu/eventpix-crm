@@ -168,7 +168,7 @@ function buildConfirmationBody(
       const sessionCrew = onsiteAssignments.filter(a => a.session_id === session.id);
       for (const a of sessionCrew) {
         const name = a.profile?.full_name || a.staff?.name || 'TBC';
-        const role = a.staff_role?.name || a.role_on_event || 'Photographer';
+        const role = cleanRoleName(a.staff_role?.name || a.role_on_event || 'Photographer');
         const phone = a.profile?.phone || a.staff?.phone || '';
         lines.push(`${role}: ${name}${phone ? `   Mobile: ${phone}` : ''}`);
       }
