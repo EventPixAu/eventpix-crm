@@ -67,6 +67,8 @@ export function SendOpsEmailDialog({
   eventId,
   eventData,
   recipients,
+  initialSubject,
+  initialBody,
 }: SendOpsEmailDialogProps) {
   const { toast } = useToast();
   const { data: templates } = useActiveEmailTemplates();
