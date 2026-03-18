@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
@@ -103,6 +104,7 @@ interface Assignment {
 export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, user } = useAuth();
+  const [activeTab, setActiveTab] = useState('profile');
   
   // First try to find a profile with this ID
   const { data: profileData, isLoading: profileLoading, error: profileError } = useQuery({
@@ -554,12 +556,18 @@ export default function StaffDetail() {
 
             {/* Stats */}
             <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+              <div 
+                className="bg-secondary/50 rounded-lg p-4 text-center cursor-pointer hover:bg-secondary/80 transition-colors"
+                onClick={() => setActiveTab('assignments')}
+              >
                 <Briefcase className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                 <p className="text-2xl font-bold">{assignments?.length || 0}</p>
                 <p className="text-xs text-muted-foreground">Total Events</p>
               </div>
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+              <div 
+                className="bg-secondary/50 rounded-lg p-4 text-center cursor-pointer hover:bg-secondary/80 transition-colors"
+                onClick={() => setActiveTab('assignments')}
+              >
                 <Calendar className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                 <p className="text-2xl font-bold">{upcomingAssignments.length}</p>
                 <p className="text-xs text-muted-foreground">Upcoming</p>
@@ -626,7 +634,7 @@ export default function StaffDetail() {
       </Card>
 
       {/* Tabs for detailed info */}
-      <Tabs defaultValue="profile" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-secondary/50">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
