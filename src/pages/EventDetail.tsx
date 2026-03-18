@@ -84,7 +84,6 @@ import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationD
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
-import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -340,8 +339,7 @@ export default function EventDetail() {
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
-  const [isSendingDropbox, setIsSendingDropbox] = useState(false);
-  const sendCrmEmail = useSendCrmEmail();
+  const [dropboxEmailOpen, setDropboxEmailOpen] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -1101,40 +1099,11 @@ export default function EventDetail() {
                     <Button
                       variant="outline"
                       className="w-full justify-between"
-                      disabled={isSendingDropbox}
-                      onClick={async () => {
-                        setIsSendingDropbox(true);
-                        try {
-                          const eventName = (event as any).event_name || 'your event';
-                          const dropboxLink = (event as any).dropbox_link;
-                          const smugmugLink = (event as any).smugmug_link;
-                          const firstName = primaryContactName?.split(' ')[0] || '';
-                          
-                          let bodyHtml = `<p>Hi${firstName ? ` ${firstName}` : ''},</p>`;
-                          bodyHtml += `<p>Thank you for having EventPix cover your event – <strong>${eventName}</strong> – the files have now been edited and uploaded to Dropbox: <a href="${dropboxLink}">${dropboxLink}</a>.</p>`;
-                          
-                          if (smugmugLink) {
-                            bodyHtml += `<p>We have also created a gallery for your guests to access: <a href="${smugmugLink}">${smugmugLink}</a></p>`;
-                          }
-
-                          await sendCrmEmail.mutateAsync({
-                            recipientEmail: primaryContactEmail!,
-                            recipientName: primaryContactName || undefined,
-                            subject: `Your photos are ready – ${eventName}`,
-                            bodyHtml,
-                            eventId: id,
-                            clientId: event?.client_id || undefined,
-                          });
-                        } catch {
-                          // error handled by hook
-                        } finally {
-                          setIsSendingDropbox(false);
-                        }
-                      }}
+                      onClick={() => setDropboxEmailOpen(true)}
                     >
                       <span className="flex items-center">
                         <Package className="h-4 w-4 mr-2" />
-                        {isSendingDropbox ? 'Sending...' : 'Send Dropbox Link'}
+                        Send Dropbox Link
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status).className)}>
@@ -1468,6 +1437,39 @@ export default function EventDetail() {
               ? [{ bucket: 'event-documents', path: (event as any).qr_file_path, fileName: (event as any).qr_file_name || 'QR-Code.pdf' }]
               : undefined
           }
+        />
+      )}
+
+      {/* Send Dropbox Link Dialog */}
+      {id && event && (event as any).dropbox_link && (
+        <SendOpsEmailDialog
+          open={dropboxEmailOpen}
+          onOpenChange={setDropboxEmailOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+          }}
+          recipients={emailRecipients}
+          initialSubject={`Your photos are ready – ${event.event_name}`}
+          initialBody={(() => {
+            const dropboxLink = (event as any).dropbox_link;
+            const smugmugLink = (event as any).smugmug_link;
+            let body = `<p>Hi {{client_name}},</p>` +
+              `<p>Thank you for having EventPix cover your event – <strong>${event.event_name}</strong> – the files have now been edited and uploaded to Dropbox: <a href="${dropboxLink}">${dropboxLink}</a>.</p>`;
+            if (smugmugLink) {
+              body += `<p>We have also created a gallery for your guests to access: <a href="${smugmugLink}">${smugmugLink}</a></p>`;
+            }
+            body += `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
+              `<p>Kind regards,<br/>The Eventpix Team</p>`;
+            return body;
+          })()}
         />
       )}
     </AppLayout>
