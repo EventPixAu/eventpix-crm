@@ -100,6 +100,11 @@ function formatTimeOffset(time?: string | null, offsetMinutes = 0): string {
 
 const OFFSITE_ROLES = ['editor', 'retoucher', 'post-production'];
 
+/** Strip technical suffixes (e.g. "-Zno live", "-SMP") from role names for client-facing emails */
+function cleanRoleName(role: string): string {
+  return role.replace(/\s*-\s*(zno\s*\w*|smp|realtime|real\s*time)\s*/gi, '').trim() || role;
+}
+
 function isOnsiteAssignment(a: any): boolean {
   const role = (a.staff_role?.name || a.role_on_event || '').toLowerCase();
   return !OFFSITE_ROLES.some(offsite => role.includes(offsite));
