@@ -34,6 +34,18 @@ interface Recipient {
   type: 'client' | 'photographer' | 'assistant';
 }
 
+interface SessionData {
+  id: string;
+  session_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  arrival_time?: string | null;
+  label?: string | null;
+  session_type?: string;
+  venue_name?: string | null;
+  venue_address?: string | null;
+}
+
 interface SendFinalConfirmationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +67,7 @@ interface SendFinalConfirmationDialogProps {
   };
   recipients: Recipient[];
   assignments: any[];
+  sessions?: SessionData[];
 }
 
 function formatTime12h(time?: string | null): string {
