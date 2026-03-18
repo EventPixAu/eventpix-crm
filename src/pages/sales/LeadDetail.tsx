@@ -245,7 +245,7 @@ export default function LeadDetail(): JSX.Element {
       
       setSendBudgetsSubject(`Your budget options for ${leadName}`);
       setSendBudgetsBody(
-        `<p>Hi ${clientFirstName},</p>` +
+        `<p>Hi {{client_name}},</p>` +
         `<p>Please find below the budget options for <strong>${leadName}</strong>. Please review and accept your preferred option:</p>` +
         `<ul>${linksHtml}</ul>` +
         `<p>Simply click the link for your preferred option to review and accept online.</p>` +
