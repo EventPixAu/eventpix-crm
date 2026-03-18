@@ -4319,6 +4319,7 @@ export type Database = {
           notes_internal: string | null
           po_number: string | null
           public_token: string | null
+          quote_name: string | null
           quote_number: string | null
           quote_status: string | null
           quote_version: number
@@ -4357,6 +4358,7 @@ export type Database = {
           notes_internal?: string | null
           po_number?: string | null
           public_token?: string | null
+          quote_name?: string | null
           quote_number?: string | null
           quote_status?: string | null
           quote_version?: number
@@ -4395,6 +4397,7 @@ export type Database = {
           notes_internal?: string | null
           po_number?: string | null
           public_token?: string | null
+          quote_name?: string | null
           quote_number?: string | null
           quote_status?: string | null
           quote_version?: number
