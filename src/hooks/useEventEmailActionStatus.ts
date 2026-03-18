@@ -5,7 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type EmailActionType = 'send_email' | 'final_confirmation' | 'portal_link' | 'team_update';
+export type EmailActionType = 'send_email' | 'final_confirmation' | 'portal_link' | 'team_update' | 'live_access';
 
 export interface EmailActionStatus {
   status: 'not_sent' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
@@ -21,6 +21,7 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         final_confirmation: { status: 'not_sent', sentAt: null },
         portal_link: { status: 'not_sent', sentAt: null },
         team_update: { status: 'not_sent', sentAt: null },
+        live_access: { status: 'not_sent', sentAt: null },
       };
 
       if (!eventId) return result;
@@ -45,7 +46,9 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         } else if (log.email_type === 'crm_manual') {
           // Distinguish by subject pattern
           const subject = (log.subject || '').toLowerCase();
-          if (subject.includes('event confirmation') || subject.includes('final confirmation')) {
+          if (subject.includes('live access')) {
+            actionType = 'live_access';
+          } else if (subject.includes('event confirmation') || subject.includes('final confirmation')) {
             actionType = 'final_confirmation';
           } else if (subject.includes('portal') || subject.includes('client portal')) {
             actionType = 'portal_link';

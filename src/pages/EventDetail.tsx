@@ -1086,7 +1086,12 @@ export default function EventDetail() {
                   {(isAdmin || isOperations) && (event as any).pre_registration_link && (
                     <Button variant="outline" className="w-full justify-start" onClick={() => setLiveAccessOpen(true)}>
                       <QrCode className="h-4 w-4 mr-2" />
-                      Send Live Access
+                      <span className="flex-1 text-left">Send Live Access</span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.live_access.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.live_access.status).label}
+                        </Badge>
+                      )}
                     </Button>
                   )}
                   {(isAdmin || isOperations) && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
