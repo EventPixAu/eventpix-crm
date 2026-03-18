@@ -57,6 +57,8 @@ interface SendOpsEmailDialogProps {
     primary_contact_name?: string | null;
   };
   recipients: Recipient[];
+  initialSubject?: string;
+  initialBody?: string;
 }
 
 export function SendOpsEmailDialog({
