@@ -71,6 +71,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { ContractsPanel } from '@/components/ContractsPanel';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
   SalesWorkflowRail,
@@ -132,6 +133,10 @@ export default function LeadDetail(): JSX.Element {
   const [applyMode, setApplyMode] = useState<'append' | 'replace'>('append');
   const mailTabsRef = useRef<HTMLDivElement>(null);
   const [forceMailTab, setForceMailTab] = useState<string | undefined>(undefined);
+  const [isSendBudgetsOpen, setIsSendBudgetsOpen] = useState(false);
+  const [sendBudgetsSubject, setSendBudgetsSubject] = useState('');
+  const [sendBudgetsBody, setSendBudgetsBody] = useState('');
+  const [isSendingBudgets, setIsSendingBudgets] = useState(false);
 
   if (isLoading && !isCreateMode) {
     return (
@@ -196,8 +201,62 @@ export default function LeadDetail(): JSX.Element {
   };
 
   const handleDelete = async () => {
-    // Navigate back - actual deletion would require additional mutation
     navigate('/sales/leads');
+  };
+
+  const handleSendBudgets = async () => {
+    if (!quotes.length) return;
+    setIsSendingBudgets(true);
+    try {
+      const baseUrl = getPublicBaseUrl();
+      const budgetLinks: { name: string; link: string; total: string }[] = [];
+      
+      for (const quote of quotes) {
+        if (quote.status === 'accepted' || quote.status === 'rejected') continue;
+        
+        let token = (quote as any).public_token;
+        
+        // Mark draft quotes as sent
+        if (quote.status === 'draft') {
+          const { data, error } = await supabase.rpc('mark_quote_as_sent', { p_quote_id: quote.id });
+          if (error) throw error;
+          const result = typeof data === 'string' ? JSON.parse(data) : data;
+          if (!result.success) throw new Error(result.error || 'Failed to send');
+          token = result.public_token;
+        }
+        
+        const name = (quote as any).quote_name || quote.quote_number || 'Budget';
+        const total = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(quote.total_estimate || 0);
+        budgetLinks.push({ name, link: `${baseUrl}/accept/${token}`, total });
+      }
+      
+      if (budgetLinks.length === 0) {
+        toast({ title: 'No budgets to send', variant: 'destructive' });
+        setIsSendingBudgets(false);
+        return;
+      }
+      
+      const leadName = lead.lead_name || 'your project';
+      const clientFirstName = client?.primary_contact_name?.split(' ')[0] || 'there';
+      
+      const linksHtml = budgetLinks.map(b => 
+        `<li style="margin-bottom:12px;"><strong>${b.name}</strong> — ${b.total}<br/><a href="${b.link}" style="color:#0891b2;">${b.link}</a></li>`
+      ).join('');
+      
+      setSendBudgetsSubject(`Your budget options for ${leadName}`);
+      setSendBudgetsBody(
+        `<p>Hi ${clientFirstName},</p>` +
+        `<p>Please find below the budget options for <strong>${leadName}</strong>. Please review and accept your preferred option:</p>` +
+        `<ul>${linksHtml}</ul>` +
+        `<p>Simply click the link for your preferred option to review and accept online.</p>` +
+        `<p>Please don't hesitate to reach out if you have any questions.</p>`
+      );
+      setIsSendBudgetsOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Failed to prepare budgets', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSendingBudgets(false);
+    }
   };
 
   const completedCount = workflowItems.filter(i => i.is_done).length;
@@ -369,6 +428,21 @@ export default function LeadDetail(): JSX.Element {
             icon={FileText}
             title="Budgets"
             count={quotes.length}
+            extraActions={quotes.length > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7"
+                disabled={isSendingBudgets}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendBudgets();
+                }}
+              >
+                <Send className="h-3.5 w-3.5 mr-1.5" />
+                {isSendingBudgets ? 'Preparing...' : 'Send Budgets'}
+              </Button>
+            ) : undefined}
             onAdd={() => {
               // Pass lead context to quote creation
               const params = new URLSearchParams();
@@ -428,33 +502,6 @@ export default function LeadDetail(): JSX.Element {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
-                          {quote.status === 'draft' && (
-                            <DropdownMenuItem
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                try {
-                                  const { data, error } = await supabase.rpc('mark_quote_as_sent', {
-                                    p_quote_id: quote.id,
-                                  });
-                                  if (error) throw error;
-                                  const result = typeof data === 'string' ? JSON.parse(data) : data;
-                                  if (!result.success) throw new Error(result.error || 'Failed to send');
-                                  const token = result.public_token;
-                                  const baseUrl = getPublicBaseUrl();
-                                  const link = `${baseUrl}/accept/${token}`;
-                                  await navigator.clipboard.writeText(link);
-                                  toast({ title: 'Budget marked as sent', description: 'Client link copied to clipboard' });
-                                  // Refresh quotes
-                                  window.location.reload();
-                                } catch (err: any) {
-                                  toast({ title: 'Failed to send budget', description: err.message, variant: 'destructive' });
-                                }
-                              }}
-                            >
-                              <Send className="h-4 w-4 mr-2" />
-                              Send Budget
-                            </DropdownMenuItem>
-                          )}
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.preventDefault();
@@ -641,6 +688,22 @@ export default function LeadDetail(): JSX.Element {
         entityType="lead"
         entityId={id!}
         mainShootAt={mainShootStart}
+      />
+
+      {/* Send Budgets Email Dialog */}
+      <SendEmailDialog
+        open={isSendBudgetsOpen}
+        onOpenChange={setIsSendBudgetsOpen}
+        clientId={client?.id || ''}
+        clientEmail={client?.primary_contact_email}
+        clientName={client?.primary_contact_name}
+        defaultSubject={sendBudgetsSubject}
+        defaultBody={sendBudgetsBody}
+        context="quote"
+        mergeContext={{
+          leadName: lead.lead_name,
+          eventDate: sessions[0]?.session_date,
+        }}
       />
     </AppLayout>
   );

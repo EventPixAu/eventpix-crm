@@ -20,6 +20,7 @@ interface LeadCollapsiblePanelProps {
   badge?: string;
   onAdd?: () => void;
   addLabel?: string;
+  extraActions?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
   emptyMessage?: string;
@@ -33,6 +34,7 @@ export function LeadCollapsiblePanel({
   badge,
   onAdd,
   addLabel = 'Add',
+  extraActions,
   children,
   defaultOpen = false,
   emptyMessage = 'No items yet',
@@ -63,6 +65,7 @@ export function LeadCollapsiblePanel({
         </div>
         
         <div className="flex items-center gap-2">
+          {extraActions}
           {onAdd && (
             <Button 
               variant="default" 
