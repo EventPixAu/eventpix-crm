@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { parseISO, addHours, isWithinInterval, startOfDay, endOfDay, addDays, isBefore } from 'date-fns';
+import { parseISO, addHours, isWithinInterval, startOfDay, endOfDay, addDays, isBefore, format } from 'date-fns';
 
 export interface EscalationItem {
   type: 'staffing' | 'readiness' | 'delivery' | 'conflict';
