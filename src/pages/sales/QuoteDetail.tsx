@@ -586,12 +586,16 @@ export default function QuoteDetail() {
                   <Select
                     value={(quote as any).quote_name || ''}
                     onValueChange={async (val) => {
-                      if (val === '__custom__') return;
+                      if (val === '__custom__') {
+                        setCustomBudgetName('');
+                        return;
+                      }
+                      setCustomBudgetName(null);
                       await updateQuote.mutateAsync({ id: id!, quote_name: val } as any);
                     }}
                   >
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select or type a name" />
+                      <SelectValue placeholder="Select a name" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover">
                       <SelectItem value="Photo 1">Photo 1</SelectItem>
