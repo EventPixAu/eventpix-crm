@@ -110,7 +110,7 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {quote.quote_number || 'Budget'}
+                  {quote.quote_name || quote.quote_number || 'Budget'}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {formatCurrency(quote.total_estimate)}

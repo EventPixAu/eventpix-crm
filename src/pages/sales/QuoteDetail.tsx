@@ -460,7 +460,7 @@ export default function QuoteDetail() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{quote.quote_number || `Budget ${quote.id.slice(0, 8)}`}</h1>
+              <h1 className="text-2xl font-bold">{(quote as any).quote_name || quote.quote_number || `Budget ${quote.id.slice(0, 8)}`}</h1>
               <Badge variant={statusConfig.variant}>
                 {statusConfig.label}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
               </Badge>
