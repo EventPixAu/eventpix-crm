@@ -1097,6 +1097,52 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
+                  {(isAdmin || isOperations) && (event as any).dropbox_link && primaryContactEmail && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      disabled={isSendingDropbox}
+                      onClick={async () => {
+                        setIsSendingDropbox(true);
+                        try {
+                          const eventName = (event as any).event_name || 'your event';
+                          const dropboxLink = (event as any).dropbox_link;
+                          const smugmugLink = (event as any).smugmug_link;
+                          const firstName = primaryContactName?.split(' ')[0] || '';
+                          
+                          let bodyHtml = `<p>Hi${firstName ? ` ${firstName}` : ''},</p>`;
+                          bodyHtml += `<p>Thank you for having EventPix cover your event – <strong>${eventName}</strong> – the files have now been edited and uploaded to Dropbox: <a href="${dropboxLink}">${dropboxLink}</a>.</p>`;
+                          
+                          if (smugmugLink) {
+                            bodyHtml += `<p>We have also created a gallery for your guests to access: <a href="${smugmugLink}">${smugmugLink}</a></p>`;
+                          }
+
+                          await sendCrmEmail.mutateAsync({
+                            recipientEmail: primaryContactEmail!,
+                            recipientName: primaryContactName || undefined,
+                            subject: `Your photos are ready – ${eventName}`,
+                            bodyHtml,
+                            eventId: id,
+                            clientId: event?.client_id || undefined,
+                          });
+                        } catch {
+                          // error handled by hook
+                        } finally {
+                          setIsSendingDropbox(false);
+                        }
+                      }}
+                    >
+                      <span className="flex items-center">
+                        <Package className="h-4 w-4 mr-2" />
+                        {isSendingDropbox ? 'Sending...' : 'Send Dropbox Link'}
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.dropbox_delivery.status).label}
+                        </Badge>
+                      )}
+                    </Button>
+                  )}
                   {(isAdmin || isOperations) && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <div className="flex items-center gap-2">
                       <SendPortalLinkButton
