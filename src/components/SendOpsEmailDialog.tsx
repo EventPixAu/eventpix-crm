@@ -41,6 +41,12 @@ interface Recipient {
   contactId?: string; // CRM contact ID if available
 }
 
+interface StorageAttachment {
+  bucket: string;
+  path: string;
+  fileName: string;
+}
+
 interface SendOpsEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -59,6 +65,7 @@ interface SendOpsEmailDialogProps {
   recipients: Recipient[];
   initialSubject?: string;
   initialBody?: string;
+  storageAttachments?: StorageAttachment[];
 }
 
 export function SendOpsEmailDialog({
