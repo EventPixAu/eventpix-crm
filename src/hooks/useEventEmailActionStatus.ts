@@ -21,6 +21,7 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         final_confirmation: { status: 'not_sent', sentAt: null },
         portal_link: { status: 'not_sent', sentAt: null },
         team_update: { status: 'not_sent', sentAt: null },
+        live_access: { status: 'not_sent', sentAt: null },
       };
 
       if (!eventId) return result;
