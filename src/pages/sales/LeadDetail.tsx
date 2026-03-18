@@ -689,6 +689,23 @@ export default function LeadDetail(): JSX.Element {
         entityId={id!}
         mainShootAt={mainShootStart}
       />
+
+      {/* Send Budgets Email Dialog */}
+      <SendEmailDialog
+        open={isSendBudgetsOpen}
+        onOpenChange={setIsSendBudgetsOpen}
+        clientId={client?.id || ''}
+        clientEmail={client?.primary_contact_email}
+        clientName={client?.primary_contact_name}
+        defaultSubject={sendBudgetsSubject}
+        defaultBody={sendBudgetsBody}
+        context="quote"
+        leadId={id}
+        mergeContext={{
+          leadName: lead.lead_name,
+          eventDate: sessions[0]?.session_date,
+        }}
+      />
     </AppLayout>
   );
 }
