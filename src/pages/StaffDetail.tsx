@@ -1035,7 +1035,9 @@ export default function StaffDetail() {
 }
 
 function AssignmentRow({ assignment }: { assignment: Assignment }) {
-  const eventDate = parseISO(assignment.events.event_date);
+  // Use session date if available, otherwise fall back to event date
+  const displayDate = assignment.event_sessions?.session_date || assignment.events.event_date;
+  const eventDate = parseISO(displayDate);
   const isPast = eventDate < new Date();
 
   return (
@@ -1054,7 +1056,14 @@ function AssignmentRow({ assignment }: { assignment: Assignment }) {
           </div>
         </div>
         <div>
-          <p className="font-medium">{assignment.events.event_name}</p>
+          <p className="font-medium">
+            {assignment.events.event_name}
+            {assignment.event_sessions?.label && (
+              <span className="text-muted-foreground font-normal text-sm ml-1.5">
+                – {assignment.event_sessions.label}
+              </span>
+            )}
+          </p>
           <p className="text-xs text-muted-foreground">
             {assignment.events.client_name}
             {assignment.role_on_event && ` • ${assignment.role_on_event}`}
