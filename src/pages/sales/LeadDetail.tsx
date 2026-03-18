@@ -700,7 +700,6 @@ export default function LeadDetail(): JSX.Element {
         defaultSubject={sendBudgetsSubject}
         defaultBody={sendBudgetsBody}
         context="quote"
-        leadId={id}
         mergeContext={{
           leadName: lead.lead_name,
           eventDate: sessions[0]?.session_date,
