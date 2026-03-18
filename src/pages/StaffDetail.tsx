@@ -555,12 +555,18 @@ export default function StaffDetail() {
 
             {/* Stats */}
             <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+              <div 
+                className="bg-secondary/50 rounded-lg p-4 text-center cursor-pointer hover:bg-secondary/80 transition-colors"
+                onClick={() => setActiveTab('assignments')}
+              >
                 <Briefcase className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                 <p className="text-2xl font-bold">{assignments?.length || 0}</p>
                 <p className="text-xs text-muted-foreground">Total Events</p>
               </div>
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
+              <div 
+                className="bg-secondary/50 rounded-lg p-4 text-center cursor-pointer hover:bg-secondary/80 transition-colors"
+                onClick={() => setActiveTab('assignments')}
+              >
                 <Calendar className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
                 <p className="text-2xl font-bold">{upcomingAssignments.length}</p>
                 <p className="text-xs text-muted-foreground">Upcoming</p>
