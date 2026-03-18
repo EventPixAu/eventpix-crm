@@ -27,6 +27,7 @@ import {
   XCircle,
   Trash2,
   MoreHorizontal,
+  Send,
 } from 'lucide-react';
 import {
   DropdownMenu,
