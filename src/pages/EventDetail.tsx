@@ -1440,6 +1440,39 @@ export default function EventDetail() {
           }
         />
       )}
+
+      {/* Send Dropbox Link Dialog */}
+      {id && event && (event as any).dropbox_link && (
+        <SendOpsEmailDialog
+          open={dropboxEmailOpen}
+          onOpenChange={setDropboxEmailOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+          }}
+          recipients={emailRecipients}
+          initialSubject={`Your photos are ready – ${event.event_name}`}
+          initialBody={(() => {
+            const dropboxLink = (event as any).dropbox_link;
+            const smugmugLink = (event as any).smugmug_link;
+            let body = `<p>Hi {{client_name}},</p>` +
+              `<p>Thank you for having EventPix cover your event – <strong>${event.event_name}</strong> – the files have now been edited and uploaded to Dropbox: <a href="${dropboxLink}">${dropboxLink}</a>.</p>`;
+            if (smugmugLink) {
+              body += `<p>We have also created a gallery for your guests to access: <a href="${smugmugLink}">${smugmugLink}</a></p>`;
+            }
+            body += `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
+              `<p>Kind regards,<br/>The Eventpix Team</p>`;
+            return body;
+          })()}
+        />
+      )}
     </AppLayout>
   );
 }
