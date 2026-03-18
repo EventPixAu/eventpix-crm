@@ -34,6 +34,7 @@ export function LeadCollapsiblePanel({
   badge,
   onAdd,
   addLabel = 'Add',
+  extraActions,
   children,
   defaultOpen = false,
   emptyMessage = 'No items yet',
