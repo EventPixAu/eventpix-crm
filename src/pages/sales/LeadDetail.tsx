@@ -511,7 +511,6 @@ export default function LeadDetail(): JSX.Element {
                             <Eye className="h-4 w-4 mr-2" />
                             View Budget
                           </DropdownMenuItem>
-                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={async (e) => {
                               e.preventDefault();
