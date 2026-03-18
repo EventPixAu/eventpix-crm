@@ -15,6 +15,7 @@ import {
   Package,
   Phone,
   Play,
+  QrCode,
   Send,
   Trash2,
   User,
@@ -337,6 +338,7 @@ export default function EventDetail() {
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
+  const [liveAccessOpen, setLiveAccessOpen] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -1081,6 +1083,12 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
+                  {(isAdmin || isOperations) && (event as any).pre_registration_link && (
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setLiveAccessOpen(true)}>
+                      <QrCode className="h-4 w-4 mr-2" />
+                      Send Live Access
+                    </Button>
+                  )}
                   {(isAdmin || isOperations) && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <div className="flex items-center gap-2">
                       <SendPortalLinkButton
@@ -1369,6 +1377,36 @@ export default function EventDetail() {
           }}
           recipients={emailRecipients}
           assignments={assignments}
+        />
+      )}
+
+      {/* Send Live Access Dialog */}
+      {id && event && (
+        <SendOpsEmailDialog
+          open={liveAccessOpen}
+          onOpenChange={setLiveAccessOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+          }}
+          recipients={emailRecipients}
+          initialSubject={`Live Access Details – ${event.event_name} – ${event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : ''}`}
+          initialBody={(() => {
+            const regLink = (event as any).pre_registration_link || '';
+            return `<p>Hi {{client_name}},</p>` +
+              `<p>Here are your links to access photos via RealTime delivery for ${event.event_name}.</p>` +
+              `<p>The QR code (attached/provided separately) can be printed and displayed at the event so your guests can scan it to register and access their photos instantly.</p>` +
+              (regLink ? `<p>This link can be used by your social media manager or team to access all photos during the event:<br/><a href="${regLink}">${regLink}</a></p>` : '') +
+              `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
+              `<p>Kind regards,<br/>The Eventpix Team</p>`;
+          })()}
         />
       )}
     </AppLayout>
