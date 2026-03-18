@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { parseISO, addHours, isWithinInterval, startOfDay, endOfDay, addDays, isBefore } from 'date-fns';
+import { parseISO, addHours, isWithinInterval, startOfDay, endOfDay, addDays, isBefore, format } from 'date-fns';
 
 export interface EscalationItem {
   type: 'staffing' | 'readiness' | 'delivery' | 'conflict';
@@ -43,8 +43,8 @@ export function useEscalations() {
           event_sessions(id),
           delivery_records(id, delivery_link, delivered_at)
         `)
-        .gte('event_date', today.toISOString().split('T')[0])
-        .lte('event_date', addDays(now, 2).toISOString().split('T')[0])
+        .gte('event_date', format(today, 'yyyy-MM-dd'))
+        .lte('event_date', format(addDays(now, 2), 'yyyy-MM-dd'))
         .order('event_date', { ascending: true });
       
       if (error) throw error;
@@ -68,7 +68,7 @@ export function useEscalations() {
           severity: 'critical',
           title: `${eventsWithoutLeadPhoto.length} event${eventsWithoutLeadPhoto.length > 1 ? 's' : ''} tomorrow missing lead photographer`,
           count: eventsWithoutLeadPhoto.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutLeadPhoto.map(e => e.id),
         });
       }
@@ -84,7 +84,7 @@ export function useEscalations() {
           severity: 'warning',
           title: `${eventsWithoutSessions.length} event${eventsWithoutSessions.length > 1 ? 's' : ''} tomorrow without sessions defined`,
           count: eventsWithoutSessions.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutSessions.map(e => e.id),
         });
       }
@@ -98,7 +98,7 @@ export function useEscalations() {
           severity: 'warning',
           title: `${eventsWithoutVenue.length} event${eventsWithoutVenue.length > 1 ? 's' : ''} tomorrow without venue address`,
           count: eventsWithoutVenue.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutVenue.map(e => e.id),
         });
       }
@@ -112,7 +112,7 @@ export function useEscalations() {
           severity: 'warning',
           title: `${eventsWithoutDelivery.length} event${eventsWithoutDelivery.length > 1 ? 's' : ''} tomorrow without delivery method`,
           count: eventsWithoutDelivery.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutDelivery.map(e => e.id),
         });
       }
@@ -172,7 +172,7 @@ export function useEscalations() {
           severity: 'critical',
           title: `${conflictCount} overlapping staff assignment${conflictCount > 1 ? 's' : ''} today`,
           count: conflictCount,
-          filterUrl: `/admin/day-load?date=${today.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(today, 'yyyy-MM-dd')}&filter=warnings`,
         });
       }
       
