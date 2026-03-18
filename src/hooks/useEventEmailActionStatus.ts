@@ -49,6 +49,8 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
           const subject = (log.subject || '').toLowerCase();
           if (subject.includes('live access')) {
             actionType = 'live_access';
+          } else if (subject.includes('edited and uploaded') || subject.includes('dropbox')) {
+            actionType = 'dropbox_delivery';
           } else if (subject.includes('event confirmation') || subject.includes('final confirmation')) {
             actionType = 'final_confirmation';
           } else if (subject.includes('portal') || subject.includes('client portal')) {
