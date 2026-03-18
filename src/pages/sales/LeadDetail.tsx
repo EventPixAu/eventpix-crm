@@ -25,6 +25,7 @@ import {
   ExternalLink,
   ArrowRightCircle,
   XCircle,
+  Trash2,
   MoreHorizontal,
 } from 'lucide-react';
 import {
