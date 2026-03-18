@@ -42,7 +42,7 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
       if (leadId) {
         const { data, error } = await supabase
           .from('quotes')
-          .select('id, quote_number, status, subtotal, total_estimate, created_at, is_locked')
+          .select('id, quote_number, quote_name, status, subtotal, total_estimate, created_at, is_locked')
           .eq('lead_id', leadId)
           .order('created_at', { ascending: false });
         if (!error && data) {
