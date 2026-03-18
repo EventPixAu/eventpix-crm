@@ -46,7 +46,9 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         } else if (log.email_type === 'crm_manual') {
           // Distinguish by subject pattern
           const subject = (log.subject || '').toLowerCase();
-          if (subject.includes('event confirmation') || subject.includes('final confirmation')) {
+          if (subject.includes('live access')) {
+            actionType = 'live_access';
+          } else if (subject.includes('event confirmation') || subject.includes('final confirmation')) {
             actionType = 'final_confirmation';
           } else if (subject.includes('portal') || subject.includes('client portal')) {
             actionType = 'portal_link';
