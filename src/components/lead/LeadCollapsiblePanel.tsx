@@ -20,6 +20,7 @@ interface LeadCollapsiblePanelProps {
   badge?: string;
   onAdd?: () => void;
   addLabel?: string;
+  extraActions?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
   emptyMessage?: string;
