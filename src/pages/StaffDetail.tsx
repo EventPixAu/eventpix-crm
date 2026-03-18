@@ -300,9 +300,12 @@ export default function StaffDetail() {
       const { data, error } = await supabase
         .from('event_assignments')
         .select(`
-          id, event_id, role_on_event, created_at,
+          id, event_id, role_on_event, session_id, created_at,
           events (
             event_name, event_date, client_name, ops_status
+          ),
+          event_sessions (
+            session_date, label
           )
         `)
         .eq('user_id', actualUserId)
