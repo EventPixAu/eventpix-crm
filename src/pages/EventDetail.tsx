@@ -1083,6 +1083,12 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
+                  {(isAdmin || isOperations) && (event as any).pre_registration_link && (
+                    <Button variant="outline" className="w-full justify-start" onClick={() => setLiveAccessOpen(true)}>
+                      <QrCode className="h-4 w-4 mr-2" />
+                      Send Live Access
+                    </Button>
+                  )}
                   {(isAdmin || isOperations) && event?.client_id && (primaryContactEmail || eventContacts.length > 0) && (
                     <div className="flex items-center gap-2">
                       <SendPortalLinkButton
