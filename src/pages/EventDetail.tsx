@@ -340,6 +340,8 @@ export default function EventDetail() {
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
+  const [isSendingDropbox, setIsSendingDropbox] = useState(false);
+  const sendCrmEmail = useSendCrmEmail();
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
