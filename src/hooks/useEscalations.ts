@@ -172,7 +172,7 @@ export function useEscalations() {
           severity: 'critical',
           title: `${conflictCount} overlapping staff assignment${conflictCount > 1 ? 's' : ''} today`,
           count: conflictCount,
-          filterUrl: `/admin/day-load?date=${today.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(today, 'yyyy-MM-dd')}&filter=warnings`,
         });
       }
       
