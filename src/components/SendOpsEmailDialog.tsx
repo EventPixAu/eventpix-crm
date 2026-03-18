@@ -79,6 +79,7 @@ export function SendOpsEmailDialog({
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
+  const [editingPlainText, setEditingPlainText] = useState(false);
   
   // Link insertion state
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
