@@ -131,8 +131,16 @@ function buildConfirmationBody(
     lines.push(`Venue: ${venueStr}`);
   }
 
+  // Build delivery method string: guests (during event) first, then client (post event)
+  const deliveryParts: string[] = [];
+  if (eventData.delivery_method_guests) {
+    deliveryParts.push(`${eventData.delivery_method_guests} (during event)`);
+  }
   if (eventData.delivery_method) {
-    lines.push(`Delivery Method: ${eventData.delivery_method}`);
+    deliveryParts.push(`${eventData.delivery_method} (post event)`);
+  }
+  if (deliveryParts.length > 0) {
+    lines.push(`Delivery Method: ${deliveryParts.join(' + ')}`);
   }
 
   // Multi-session layout: group schedule + crew per day
