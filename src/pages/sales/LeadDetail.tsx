@@ -444,8 +444,20 @@ export default function LeadDetail(): JSX.Element {
                             }}
                             className="text-destructive focus:text-destructive"
                           >
-                            <XCircle className="h-4 w-4 mr-2" />
+                             <XCircle className="h-4 w-4 mr-2" />
                             Mark as Rejected
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              if (confirm('Delete this budget? This cannot be undone.')) {
+                                await deleteQuote.mutateAsync(quote.id);
+                              }
+                            }}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Budget
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
