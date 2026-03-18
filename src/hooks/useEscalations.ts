@@ -84,7 +84,7 @@ export function useEscalations() {
           severity: 'warning',
           title: `${eventsWithoutSessions.length} event${eventsWithoutSessions.length > 1 ? 's' : ''} tomorrow without sessions defined`,
           count: eventsWithoutSessions.length,
-          filterUrl: `/admin/day-load?date=${tomorrow.toISOString().split('T')[0]}&filter=warnings`,
+          filterUrl: `/admin/day-load?date=${format(tomorrow, 'yyyy-MM-dd')}&filter=warnings`,
           eventIds: eventsWithoutSessions.map(e => e.id),
         });
       }
