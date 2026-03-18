@@ -221,6 +221,33 @@ export function SendOpsEmailDialog({
 
     setSending(true);
     try {
+      // Fetch storage attachments (e.g. QR file) and convert to base64
+      const resolvedAttachments: { filename: string; content: string; contentType?: string }[] = [];
+      if (storageAttachments && storageAttachments.length > 0) {
+        for (const sa of storageAttachments) {
+          try {
+            const { data: blob, error: dlError } = await supabase.storage
+              .from(sa.bucket)
+              .download(sa.path);
+            if (dlError || !blob) continue;
+            const arrayBuffer = await blob.arrayBuffer();
+            const bytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
+            resolvedAttachments.push({
+              filename: sa.fileName,
+              content: base64,
+              contentType: blob.type || 'application/octet-stream',
+            });
+          } catch {
+            console.warn('Failed to fetch attachment:', sa.fileName);
+          }
+        }
+      }
+
       const selectedRecipientData = recipients.filter(r => selectedRecipients.includes(r.id));
       
       // Send emails to each recipient via edge function
@@ -248,6 +275,7 @@ export function SendOpsEmailDialog({
             recipientName: recipient.name,
             subject,
             bodyHtml: personalizedBody,
+            attachments: resolvedAttachments.length > 0 ? resolvedAttachments : undefined,
             contactId,
             clientId: eventData.client_id,
             eventId,
