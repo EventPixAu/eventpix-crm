@@ -79,6 +79,7 @@ export function SendOpsEmailDialog({
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
+  const [editingPlainText, setEditingPlainText] = useState(false);
   
   // Link insertion state
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -275,6 +276,7 @@ export function SendOpsEmailDialog({
       setSubject('');
       setBody('');
       setShowPreview(false);
+      setEditingPlainText(false);
       onOpenChange(false);
     } catch (err: any) {
       toast({ 
@@ -385,25 +387,55 @@ export function SendOpsEmailDialog({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="body">Message</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleInsertLink}
-                  className="h-7 text-xs"
-                >
-                  <Link className="h-3 w-3 mr-1" />
-                  Insert Link
-                </Button>
+                <div className="flex items-center gap-1">
+                  {!editingPlainText && /<[a-z][\s\S]*>/i.test(body) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        const plain = body
+                          .replace(/<br\s*\/?>/gi, '\n')
+                          .replace(/<\/p>/gi, '\n')
+                          .replace(/<[^>]+>/g, '')
+                          .replace(/&nbsp;/g, ' ')
+                          .replace(/\n{3,}/g, '\n\n')
+                          .trim();
+                        setBody(plain);
+                        setEditingPlainText(true);
+                      }}
+                    >
+                      Edit as plain text
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleInsertLink}
+                    className="h-7 text-xs"
+                  >
+                    <Link className="h-3 w-3 mr-1" />
+                    Insert Link
+                  </Button>
+                </div>
               </div>
-              <Textarea
-                ref={bodyTextareaRef}
-                id="body"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Enter your email message here..."
-                rows={8}
-              />
+              {!editingPlainText && /<[a-z][\s\S]*>/i.test(body) ? (
+                <div
+                  className="rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[160px] prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
+                />
+              ) : (
+                <Textarea
+                  ref={bodyTextareaRef}
+                  id="body"
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Enter your email message here..."
+                  rows={8}
+                />
+              )}
               <p className="text-xs text-muted-foreground">
                 Available merge fields: {'{{event_name}}'}, {'{{event_date}}'}, {'{{start_time}}'}, {'{{end_time}}'}, {'{{venue_name}}'}, {'{{venue_address}}'}, {'{{client_name}}'}, {'{{photographer_name}}'}
               </p>
