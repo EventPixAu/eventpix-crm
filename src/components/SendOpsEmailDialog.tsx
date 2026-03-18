@@ -7,7 +7,7 @@
  */
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import { Mail, Send, Eye, Users, Link } from 'lucide-react';
+import { Mail, Send, Eye, Users, Link, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,12 @@ interface Recipient {
   contactId?: string; // CRM contact ID if available
 }
 
+interface StorageAttachment {
+  bucket: string;
+  path: string;
+  fileName: string;
+}
+
 interface SendOpsEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -59,6 +65,7 @@ interface SendOpsEmailDialogProps {
   recipients: Recipient[];
   initialSubject?: string;
   initialBody?: string;
+  storageAttachments?: StorageAttachment[];
 }
 
 export function SendOpsEmailDialog({
@@ -69,6 +76,7 @@ export function SendOpsEmailDialog({
   recipients,
   initialSubject,
   initialBody,
+  storageAttachments,
 }: SendOpsEmailDialogProps) {
   const { toast } = useToast();
   const { data: templates } = useActiveEmailTemplates();
@@ -213,6 +221,33 @@ export function SendOpsEmailDialog({
 
     setSending(true);
     try {
+      // Fetch storage attachments (e.g. QR file) and convert to base64
+      const resolvedAttachments: { filename: string; content: string; contentType?: string }[] = [];
+      if (storageAttachments && storageAttachments.length > 0) {
+        for (const sa of storageAttachments) {
+          try {
+            const { data: blob, error: dlError } = await supabase.storage
+              .from(sa.bucket)
+              .download(sa.path);
+            if (dlError || !blob) continue;
+            const arrayBuffer = await blob.arrayBuffer();
+            const bytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
+            resolvedAttachments.push({
+              filename: sa.fileName,
+              content: base64,
+              contentType: blob.type || 'application/octet-stream',
+            });
+          } catch {
+            console.warn('Failed to fetch attachment:', sa.fileName);
+          }
+        }
+      }
+
       const selectedRecipientData = recipients.filter(r => selectedRecipients.includes(r.id));
       
       // Send emails to each recipient via edge function
@@ -240,6 +275,7 @@ export function SendOpsEmailDialog({
             recipientName: recipient.name,
             subject,
             bodyHtml: personalizedBody,
+            attachments: resolvedAttachments.length > 0 ? resolvedAttachments : undefined,
             contactId,
             clientId: eventData.client_id,
             eventId,
@@ -440,6 +476,17 @@ export function SendOpsEmailDialog({
                 Available merge fields: {'{{event_name}}'}, {'{{event_date}}'}, {'{{start_time}}'}, {'{{end_time}}'}, {'{{venue_name}}'}, {'{{venue_address}}'}, {'{{client_name}}'}, {'{{photographer_name}}'}
               </p>
             </div>
+
+            {/* Attachments indicator */}
+            {storageAttachments && storageAttachments.length > 0 && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg border bg-muted/30 text-sm">
+                <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Attached:</span>
+                {storageAttachments.map((sa, i) => (
+                  <span key={i} className="font-medium">{sa.fileName}</span>
+                ))}
+              </div>
+            )}
 
             {/* Email info notice */}
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-muted-foreground">
