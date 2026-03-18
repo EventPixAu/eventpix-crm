@@ -1402,11 +1402,18 @@ export default function EventDetail() {
             const regLink = (event as any).pre_registration_link || '';
             return `<p>Hi {{client_name}},</p>` +
               `<p>Here are your links to access photos via RealTime delivery for ${event.event_name}.</p>` +
-              `<p>The QR code (attached/provided separately) can be printed and displayed at the event so your guests can scan it to register and access their photos instantly.</p>` +
+              ((event as any).qr_file_path
+                ? `<p>The QR code (attached) can be printed and displayed at the event so your guests can scan it to register and access their photos instantly.</p>`
+                : `<p>The QR code (provided separately) can be printed and displayed at the event so your guests can scan it to register and access their photos instantly.</p>`) +
               (regLink ? `<p>This link can be used by your social media manager or team to access all photos during the event:<br/><a href="${regLink}">${regLink}</a></p>` : '') +
               `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
               `<p>Kind regards,<br/>The Eventpix Team</p>`;
           })()}
+          storageAttachments={
+            (event as any).qr_file_path
+              ? [{ bucket: 'event-documents', path: (event as any).qr_file_path, fileName: (event as any).qr_file_name || 'QR-Code.pdf' }]
+              : undefined
+          }
         />
       )}
     </AppLayout>
