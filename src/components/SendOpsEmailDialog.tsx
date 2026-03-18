@@ -276,6 +276,7 @@ export function SendOpsEmailDialog({
       setSubject('');
       setBody('');
       setShowPreview(false);
+      setEditingPlainText(false);
       onOpenChange(false);
     } catch (err: any) {
       toast({ 
