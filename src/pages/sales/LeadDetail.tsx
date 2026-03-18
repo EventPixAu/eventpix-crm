@@ -440,7 +440,7 @@ export default function LeadDetail(): JSX.Element {
                 }}
               >
                 <Send className="h-3.5 w-3.5 mr-1.5" />
-                {isSendingBudgets ? 'Preparing...' : 'Send Budgets'}
+                {isSendingBudgets ? 'Preparing...' : quotes.length === 1 ? 'Send Budget' : 'Send Budgets'}
               </Button>
             ) : undefined}
             onAdd={() => {
