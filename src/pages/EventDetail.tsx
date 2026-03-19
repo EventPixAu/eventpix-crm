@@ -340,6 +340,7 @@ export default function EventDetail() {
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
   const [dropboxEmailOpen, setDropboxEmailOpen] = useState(false);
+  const [requestFilesOpen, setRequestFilesOpen] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);

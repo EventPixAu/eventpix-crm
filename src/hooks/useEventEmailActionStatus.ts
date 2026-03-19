@@ -56,6 +56,8 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
             actionType = 'final_confirmation';
           } else if (subject.includes('portal') || subject.includes('client portal')) {
             actionType = 'portal_link';
+          } else if (subject.includes('request') && (subject.includes('upload') || subject.includes('file'))) {
+            actionType = 'request_files';
           } else {
             actionType = 'send_email';
           }
