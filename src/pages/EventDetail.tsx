@@ -1180,7 +1180,7 @@ export default function EventDetail() {
                         <Upload className="h-4 w-4 mr-2" />
                         Request Files
                       </span>
-                      {emailStatuses && (
+                      {emailStatuses?.request_files && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.request_files.status).className)}>
                           {getActionStatusDisplay(emailStatuses.request_files.status).label}
                         </Badge>
