@@ -1493,6 +1493,37 @@ export default function EventDetail() {
           })()}
         />
       )}
+
+      {/* Request Files Dialog */}
+      {id && event && assignments.length > 0 && (
+        <SendOpsEmailDialog
+          open={requestFilesOpen}
+          onOpenChange={setRequestFilesOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+          }}
+          recipients={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant')}
+          defaultRecipientIds={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant').map(r => r.id)}
+          initialSubject={`Request to upload files – ${event.event_name}`}
+          initialBody={(() => {
+            const eventDate = event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : '';
+            return `<p>Hi,</p>` +
+              `<p>Thank you for shooting <strong>${event.event_name}</strong>${eventDate ? ` on ${eventDate}` : ''}.</p>` +
+              `<p>Please upload the event files to our portal at your earliest convenience:</p>` +
+              `<p><a href="https://trevorsteam-portal-6373224367.portal.massive.io/"><strong>Upload Files Here</strong></a></p>` +
+              `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
+              `<p>Kind regards,<br/>The EventPix Team</p>`;
+          })()}
+        />
+      )}
     </AppLayout>
   );
 }
