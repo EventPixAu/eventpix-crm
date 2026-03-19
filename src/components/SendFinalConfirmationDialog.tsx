@@ -206,7 +206,7 @@ function buildConfirmationBody(
       const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
       for (const a of otherAssignments) {
         const name = a.profile?.full_name || a.staff?.name || 'TBC';
-        const role = a.staff_role?.name || a.role_on_event || 'Team Member';
+        const role = cleanRoleName(a.staff_role?.name || a.role_on_event || 'Team Member');
         const phone = a.profile?.phone || a.staff?.phone || '';
         lines.push('');
         lines.push(`${role}: ${name}`);
