@@ -1511,7 +1511,7 @@ export default function EventDetail() {
             client_id: event.client_id,
           }}
           recipients={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant')}
-          defaultRecipientIds={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant').map(r => r.id)}
+          
           initialSubject={`Request to upload files – ${event.event_name}`}
           initialBody={(() => {
             const eventDate = event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : '';
