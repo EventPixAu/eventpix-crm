@@ -1169,6 +1169,23 @@ export default function EventDetail() {
                         </Badge>
                       )}
                     </Button>
+                    )}
+                  {(isAdmin || isOperations) && assignments.length > 0 && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      onClick={() => setRequestFilesOpen(true)}
+                    >
+                      <span className="flex items-center">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Request Files
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.request_files.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.request_files.status).label}
+                        </Badge>
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>}
