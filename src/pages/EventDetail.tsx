@@ -23,6 +23,7 @@ import {
   Wand2,
   ExternalLink,
   Users,
+  Upload,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -340,6 +341,7 @@ export default function EventDetail() {
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
   const [dropboxEmailOpen, setDropboxEmailOpen] = useState(false);
+  const [requestFilesOpen, setRequestFilesOpen] = useState(false);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -1167,6 +1169,23 @@ export default function EventDetail() {
                         </Badge>
                       )}
                     </Button>
+                    )}
+                  {(isAdmin || isOperations) && assignments.length > 0 && (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                      onClick={() => setRequestFilesOpen(true)}
+                    >
+                      <span className="flex items-center">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Request Files
+                      </span>
+                      {emailStatuses && (
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.request_files.status).className)}>
+                          {getActionStatusDisplay(emailStatuses.request_files.status).label}
+                        </Badge>
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>}
@@ -1471,6 +1490,37 @@ export default function EventDetail() {
             body += `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
               `<p>Kind regards,<br/>The Eventpix Team</p>`;
             return body;
+          })()}
+        />
+      )}
+
+      {/* Request Files Dialog */}
+      {id && event && assignments.length > 0 && (
+        <SendOpsEmailDialog
+          open={requestFilesOpen}
+          onOpenChange={setRequestFilesOpen}
+          eventId={id}
+          eventData={{
+            event_name: event.event_name,
+            event_date: event.event_date,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            venue_name: event.venue_name,
+            venue_address: event.venue_address,
+            client_name: event.client_name,
+            client_id: event.client_id,
+          }}
+          recipients={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant')}
+          
+          initialSubject={`Request to upload files – ${event.event_name}`}
+          initialBody={(() => {
+            const eventDate = event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : '';
+            return `<p>Hi,</p>` +
+              `<p>Thank you for shooting <strong>${event.event_name}</strong>${eventDate ? ` on ${eventDate}` : ''}.</p>` +
+              `<p>Please upload the event files to our portal at your earliest convenience:</p>` +
+              `<p><a href="https://trevorsteam-portal-6373224367.portal.massive.io/"><strong>Upload Files Here</strong></a></p>` +
+              `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
+              `<p>Kind regards,<br/>The EventPix Team</p>`;
           })()}
         />
       )}
