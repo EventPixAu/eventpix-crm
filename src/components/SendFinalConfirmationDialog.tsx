@@ -199,7 +199,7 @@ function buildConfirmationBody(
     if (leadAssignment) {
       const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
       const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
-      const leadRole = leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer';
+      const leadRole = cleanRoleName(leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer');
       lines.push(`${leadRole}: ${leadName}`);
       if (leadPhone) lines.push(`Mobile: ${leadPhone}`);
 
