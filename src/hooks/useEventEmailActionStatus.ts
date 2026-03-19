@@ -23,6 +23,7 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
         team_update: { status: 'not_sent', sentAt: null },
         live_access: { status: 'not_sent', sentAt: null },
         dropbox_delivery: { status: 'not_sent', sentAt: null },
+        request_files: { status: 'not_sent', sentAt: null },
       };
 
       if (!eventId) return result;
