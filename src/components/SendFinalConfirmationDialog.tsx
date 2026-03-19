@@ -100,6 +100,11 @@ function formatTimeOffset(time?: string | null, offsetMinutes = 0): string {
 
 const OFFSITE_ROLES = ['editor', 'retoucher', 'post-production'];
 
+/** Strip technical suffixes (e.g. "-Zno live", "-SMP") from role names for client-facing emails */
+function cleanRoleName(role: string): string {
+  return role.replace(/\s*-\s*(zno\s*\w*|smp|realtime|real\s*time)\s*/gi, '').trim() || role;
+}
+
 function isOnsiteAssignment(a: any): boolean {
   const role = (a.staff_role?.name || a.role_on_event || '').toLowerCase();
   return !OFFSITE_ROLES.some(offsite => role.includes(offsite));
@@ -163,7 +168,7 @@ function buildConfirmationBody(
       const sessionCrew = onsiteAssignments.filter(a => a.session_id === session.id);
       for (const a of sessionCrew) {
         const name = a.profile?.full_name || a.staff?.name || 'TBC';
-        const role = a.staff_role?.name || a.role_on_event || 'Photographer';
+        const role = cleanRoleName(a.staff_role?.name || a.role_on_event || 'Photographer');
         const phone = a.profile?.phone || a.staff?.phone || '';
         lines.push(`${role}: ${name}${phone ? `   Mobile: ${phone}` : ''}`);
       }
@@ -194,14 +199,14 @@ function buildConfirmationBody(
     if (leadAssignment) {
       const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
       const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
-      const leadRole = leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer';
+      const leadRole = cleanRoleName(leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer');
       lines.push(`${leadRole}: ${leadName}`);
       if (leadPhone) lines.push(`Mobile: ${leadPhone}`);
 
       const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
       for (const a of otherAssignments) {
         const name = a.profile?.full_name || a.staff?.name || 'TBC';
-        const role = a.staff_role?.name || a.role_on_event || 'Team Member';
+        const role = cleanRoleName(a.staff_role?.name || a.role_on_event || 'Team Member');
         const phone = a.profile?.phone || a.staff?.phone || '';
         lines.push('');
         lines.push(`${role}: ${name}`);
