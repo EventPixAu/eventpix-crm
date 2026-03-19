@@ -23,6 +23,7 @@ import {
   Wand2,
   ExternalLink,
   Users,
+  Upload,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
