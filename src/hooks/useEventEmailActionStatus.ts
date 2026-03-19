@@ -5,7 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type EmailActionType = 'send_email' | 'final_confirmation' | 'portal_link' | 'team_update' | 'live_access' | 'dropbox_delivery';
+export type EmailActionType = 'send_email' | 'final_confirmation' | 'portal_link' | 'team_update' | 'live_access' | 'dropbox_delivery' | 'request_files';
 
 export interface EmailActionStatus {
   status: 'not_sent' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
