@@ -131,9 +131,10 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
       <div className="bg-card border border-border rounded-xl p-5 shadow-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-display font-semibold">Contacts</h2>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {isEditing && (
               <Button
+                type="button"
                 variant="default"
                 size="icon"
                 className="h-8 w-8 rounded-full bg-success hover:bg-success/90"
@@ -143,13 +144,17 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
               </Button>
             )}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
-              onClick={() => { setIsEditing(!isEditing); setEditingContactId(null); }}
+              onClick={() => {
+                setIsEditing((prev) => !prev);
+                setEditingContactId(null);
+              }}
               className="text-xs gap-1"
             >
               <Pencil className="h-3.5 w-3.5" />
-              {isEditing ? 'Done' : 'Edit'}
+              {isEditing ? 'Done' : 'Manage'}
             </Button>
           </div>
         </div>
