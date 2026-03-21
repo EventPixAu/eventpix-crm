@@ -91,6 +91,7 @@ export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   
   const { data: series, isLoading } = useEventSeriesDetail(id);
   const { data: events = [] } = useSeriesEvents(id);
