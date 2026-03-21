@@ -120,13 +120,30 @@ export function BulkEventCreationDialog({
         import('@/integrations/supabase/client').then(({ supabase }) => {
           supabase
             .from('client_contacts')
-            .select('contact_name, phone, phone_mobile, phone_office')
+            .select('contact_name, phone, phone_mobile, phone_office, client_id, client:clients(business_name)')
             .eq('id', seriesDefaultContactId)
             .single()
-            .then(({ data }) => {
+            .then(async ({ data }) => {
               if (data) {
                 const phone = data.phone_mobile || data.phone_office || data.phone || '';
                 setDefaultContactInfo({ name: data.contact_name || '', phone });
+                
+                // Resolve company name from direct client link or associations
+                let companyName = (data as any).client?.business_name;
+                if (!companyName) {
+                  const { data: assoc } = await supabase
+                    .from('contact_company_associations')
+                    .select('company:clients(business_name)')
+                    .eq('contact_id', seriesDefaultContactId)
+                    .eq('is_active', true)
+                    .order('is_primary', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                  companyName = (assoc as any)?.company?.business_name;
+                }
+                if (companyName) {
+                  setClientName(companyName);
+                }
               }
             });
         });
