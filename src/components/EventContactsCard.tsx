@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Phone, Mail, User, Building2, Plus, Trash2, Pencil } from 'lucide-react';
-import { useEventContacts, useCreateEventContact, useDeleteEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
+import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,12 +36,14 @@ interface EventContactsCardProps {
     name?: string | null;
     phone?: string | null;
   };
+  onClearOnsiteContact?: () => void;
 }
 
-export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact }: EventContactsCardProps) {
+export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact }: EventContactsCardProps) {
   const { data: contacts = [], isLoading } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
+  const updateContact = useUpdateEventContact();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -49,6 +51,10 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
   const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [contactType, setContactType] = useState<ContactType>('primary');
   const [notes, setNotes] = useState('');
+  
+  // Edit existing contact state
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editContactType, setEditContactType] = useState<ContactType>('primary');
 
   const getContactTypeLabel = (type: string) => {
     return CONTACT_TYPES.find(t => t.value === type)?.label || type;
@@ -106,6 +112,20 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
     await deleteContact.mutateAsync({ id: contactId, eventId });
   };
 
+  const handleStartEditType = (contact: typeof contacts[0]) => {
+    setEditingContactId(contact.id);
+    setEditContactType(contact.contact_type as ContactType);
+  };
+
+  const handleSaveEditType = async (contact: typeof contacts[0]) => {
+    await updateContact.mutateAsync({
+      id: contact.id,
+      eventId,
+      contact_type: editContactType,
+    });
+    setEditingContactId(null);
+  };
+
   return (
     <>
       <div className="bg-card border border-border rounded-xl p-5 shadow-card">
@@ -125,7 +145,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={() => { setIsEditing(!isEditing); setEditingContactId(null); }}
               className="text-xs gap-1"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -140,13 +160,11 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
             <div className="p-2 bg-muted rounded-lg">
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-sm text-muted-foreground">Client</p>
               <p className="font-medium">{clientDetails?.business_name || clientName}</p>
 
               {(() => {
-                // Use onsite contact if available, otherwise fall back to company primary contact
-                // Also resolve phone from event_contacts if onsite phone is missing
                 const onsiteName = onsiteContact?.name;
                 let onsitePhone = onsiteContact?.phone;
                 
@@ -213,6 +231,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
               const email = contact.contact_email || contact.client_contact?.email;
               const name = contact.contact_name || contact.client_contact?.contact_name;
               const role = contact.client_contact?.role_title || contact.client_contact?.role;
+              const isEditingThis = editingContactId === contact.id;
               
               return (
                 <div key={contact.id} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
@@ -223,9 +242,38 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-medium">{name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {getContactTypeLabel(contact.contact_type)}
-                      </Badge>
+                      {isEditingThis ? (
+                        <div className="flex items-center gap-1">
+                          <Select value={editContactType} onValueChange={(v) => setEditContactType(v as ContactType)}>
+                            <SelectTrigger className="h-6 text-xs w-auto min-w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CONTACT_TYPES.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs px-2"
+                            onClick={() => handleSaveEditType(contact)}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${isEditing ? 'cursor-pointer hover:bg-accent' : ''}`}
+                          onClick={isEditing ? () => handleStartEditType(contact) : undefined}
+                        >
+                          {getContactTypeLabel(contact.contact_type)}
+                        </Badge>
+                      )}
                       {role && (
                         <span className="text-xs text-muted-foreground">{role}</span>
                       )}
@@ -294,6 +342,17 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     </a>
                   )}
                 </div>
+
+                {isEditing && onClearOnsiteContact && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={onClearOnsiteContact}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
             )}
           </div>

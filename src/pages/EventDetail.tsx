@@ -791,8 +791,15 @@ export default function EventDetail() {
                   clientName={event.client_name}
                   clientDetails={(event?.client_id ? (event as any).clients : clientByName) as any}
                   onsiteContact={{
-                  name: event.onsite_contact_name,
-                  phone: event.onsite_contact_phone,
+                    name: event.onsite_contact_name,
+                    phone: event.onsite_contact_phone,
+                  }}
+                  onClearOnsiteContact={async () => {
+                    await supabase
+                      .from('events')
+                      .update({ onsite_contact_name: null, onsite_contact_phone: null })
+                      .eq('id', id!);
+                    queryClient.invalidateQueries({ queryKey: ['event', id] });
                   }}
                 />
               )}
