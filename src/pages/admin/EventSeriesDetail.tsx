@@ -167,7 +167,7 @@ export default function EventSeriesDetail() {
       setEditStartTime((series as any).default_start_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
-      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
+      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
     }
   }, [series]);
