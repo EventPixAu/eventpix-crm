@@ -146,9 +146,22 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
 
               {(() => {
                 // Use onsite contact if available, otherwise fall back to company primary contact
-                const displayName = onsiteContact?.name || clientDetails?.primary_contact_name;
-                const displayPhone = onsiteContact?.phone || clientDetails?.primary_contact_phone;
-                const displayEmail = !onsiteContact?.name ? clientDetails?.primary_contact_email : null;
+                // Also resolve phone from event_contacts if onsite phone is missing
+                const onsiteName = onsiteContact?.name;
+                let onsitePhone = onsiteContact?.phone;
+                
+                if (onsiteName && !onsitePhone) {
+                  const matchingContact = contacts.find(c => 
+                    c.contact_name === onsiteName || c.client_contact?.contact_name === onsiteName
+                  );
+                  if (matchingContact) {
+                    onsitePhone = getDisplayPhone(matchingContact) || undefined;
+                  }
+                }
+                
+                const displayName = onsiteName || clientDetails?.primary_contact_name;
+                const displayPhone = onsitePhone || clientDetails?.primary_contact_phone;
+                const displayEmail = !onsiteName ? clientDetails?.primary_contact_email : null;
                 
                 if (!displayName && !displayEmail && !displayPhone) return null;
                 
