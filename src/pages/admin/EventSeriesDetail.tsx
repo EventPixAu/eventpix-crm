@@ -136,6 +136,8 @@ export default function EventSeriesDetail() {
       setEditVenueCity((series as any).default_venue_city || '');
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
+      setEditStartTime((series as any).default_start_time || '');
+      setEditEndTime((series as any).default_end_time || '');
     }
   });
   
