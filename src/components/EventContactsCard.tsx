@@ -248,9 +248,9 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-medium">{name}</span>
                       {isEditingThis ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Select value={editContactType} onValueChange={(v) => setEditContactType(v as ContactType)}>
-                            <SelectTrigger className="h-6 text-xs w-auto min-w-[120px]">
+                            <SelectTrigger className="h-8 text-xs w-[170px]">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -262,20 +262,27 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                             </SelectContent>
                           </Select>
                           <Button
-                            variant="ghost"
+                            type="button"
+                            variant="secondary"
                             size="sm"
-                            className="h-6 text-xs px-2"
+                            className="h-8 text-xs px-3"
                             onClick={() => handleSaveEditType(contact)}
+                            disabled={updateContact.isPending}
                           >
                             Save
                           </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs px-2"
+                            onClick={() => setEditingContactId(null)}
+                          >
+                            Cancel
+                          </Button>
                         </div>
                       ) : (
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${isEditing ? 'cursor-pointer hover:bg-accent' : ''}`}
-                          onClick={isEditing ? () => handleStartEditType(contact) : undefined}
-                        >
+                        <Badge variant="outline" className="text-xs">
                           {getContactTypeLabel(contact.contact_type)}
                         </Badge>
                       )}
@@ -308,19 +315,33 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     {contact.notes && (
                       <p className="text-xs text-muted-foreground mt-1">{contact.notes}</p>
                     )}
-                  </div>
 
-                  {isEditing && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
-                      onClick={() => handleDelete(contact.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
+                    {isEditing && !isEditingThis && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() => handleStartEditType(contact)}
+                        >
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          Edit Type
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(contact.id)}
+                          disabled={deleteContact.isPending}
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
               );
             })}
 
