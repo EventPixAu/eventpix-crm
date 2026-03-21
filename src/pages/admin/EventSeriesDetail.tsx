@@ -97,6 +97,7 @@ export default function EventSeriesDetail() {
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
+  const { data: opsStatuses = [] } = useOpsStatuses();
   
   const updateSeries = useUpdateEventSeries();
   
