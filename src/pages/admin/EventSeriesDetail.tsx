@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
@@ -89,6 +91,7 @@ export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   
   const { data: series, isLoading } = useEventSeriesDetail(id);
   const { data: events = [] } = useSeriesEvents(id);
@@ -174,28 +177,32 @@ export default function EventSeriesDetail() {
   
   const handleSaveSettings = async () => {
     if (!id) return;
-    await updateSeries.mutateAsync({
-      id,
-      name: editName,
-      event_type_id: editEventTypeId || null,
-      default_delivery_method_id: editDeliveryMethodId || null,
-      default_delivery_deadline_days: parseInt(editDeadlineDays) || 5,
-      default_coverage_details: editCoverage || null,
-      notes: editNotes || null,
-    } as any);
-    // Save time fields separately since they may not be in the typed interface yet
-    if (id) {
-      const { error } = await supabase
-        .from('event_series')
-        .update({
-          default_start_time: editStartTime || null,
-          default_end_time: editEndTime || null,
-          default_ops_status: editDefaultOpsStatus || 'confirmed',
-          default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
-          default_contact_id: editDefaultContactId || null,
-        } as any)
-        .eq('id', id);
-      if (error) console.error('Failed to save times:', error);
+    const { error } = await supabase
+      .from('event_series')
+      .update({
+        name: editName,
+        event_type_id: editEventTypeId || null,
+        default_delivery_method_id: editDeliveryMethodId || null,
+        default_delivery_deadline_days: parseInt(editDeadlineDays) || 5,
+        default_coverage_details: editCoverage || null,
+        notes: editNotes || null,
+        default_venue_city: editVenueCity || null,
+        default_notes_public: editNotesPublic || null,
+        default_notes_internal: editNotesInternal || null,
+        default_start_time: editStartTime || null,
+        default_end_time: editEndTime || null,
+        default_ops_status: editDefaultOpsStatus || 'confirmed',
+        default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
+        default_contact_id: editDefaultContactId || null,
+      } as any)
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to save settings');
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['event-series'] });
+      toast.success('Settings saved');
     }
   };
   
