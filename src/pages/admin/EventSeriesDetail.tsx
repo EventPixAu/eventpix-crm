@@ -147,7 +147,7 @@ export default function EventSeriesDetail() {
       setEditStartTime((series as any).default_start_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
-      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
+      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
     }
   });
@@ -167,7 +167,7 @@ export default function EventSeriesDetail() {
       setEditStartTime((series as any).default_start_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
-      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
+      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
     }
   }, [series]);
@@ -191,7 +191,7 @@ export default function EventSeriesDetail() {
           default_start_time: editStartTime || null,
           default_end_time: editEndTime || null,
           default_ops_status: editDefaultOpsStatus || 'confirmed',
-          default_delivery_method_guests_id: editDefaultGuestDeliveryId || null,
+          default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
           default_contact_id: editDefaultContactId || null,
         } as any)
         .eq('id', id);
@@ -894,7 +894,7 @@ export default function EventSeriesDetail() {
                       <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {deliveryMethods.map(method => (
                         <SelectItem key={method.id} value={method.id}>
                           {method.name}
