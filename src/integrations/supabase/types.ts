@@ -2383,11 +2383,13 @@ export type Database = {
           default_coverage_details: string | null
           default_delivery_deadline_days: number | null
           default_delivery_method_id: string | null
+          default_end_time: string | null
           default_kit_id: string | null
           default_notes_internal: string | null
           default_notes_public: string | null
           default_photographers_required: number | null
           default_roles_json: Json | null
+          default_start_time: string | null
           default_venue_city: string | null
           default_workflow_step_ids: string[] | null
           event_type_id: string | null
@@ -2402,11 +2404,13 @@ export type Database = {
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
+          default_end_time?: string | null
           default_kit_id?: string | null
           default_notes_internal?: string | null
           default_notes_public?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
+          default_start_time?: string | null
           default_venue_city?: string | null
           default_workflow_step_ids?: string[] | null
           event_type_id?: string | null
@@ -2421,11 +2425,13 @@ export type Database = {
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_id?: string | null
+          default_end_time?: string | null
           default_kit_id?: string | null
           default_notes_internal?: string | null
           default_notes_public?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
+          default_start_time?: string | null
           default_venue_city?: string | null
           default_workflow_step_ids?: string[] | null
           event_type_id?: string | null
