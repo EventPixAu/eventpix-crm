@@ -112,6 +112,21 @@ export function ContactSelector({
   // Fetch company contacts to show first when companyId is set
   const { data: companyContacts = [] } = useClientContacts(companyId);
 
+  // Fetch company name for display fallback
+  const { data: companyName } = useQuery({
+    queryKey: ['company-name', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from('clients')
+        .select('business_name')
+        .eq('id', companyId)
+        .maybeSingle();
+      return data?.business_name || null;
+    },
+    enabled: !!companyId,
+  });
+
   // Create contact mutation
   const createContact = useCreateCrmContact();
 
