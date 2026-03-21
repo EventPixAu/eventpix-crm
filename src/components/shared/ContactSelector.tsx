@@ -8,6 +8,7 @@
  * - Returns contact_id reference
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Search, User, Building2, Phone, Mail, Plus, X, Loader2, Check, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
