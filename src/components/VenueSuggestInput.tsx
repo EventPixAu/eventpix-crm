@@ -2,10 +2,10 @@
  * VENUE SUGGEST INPUT
  * 
  * An input field that shows venue suggestions from the database as you type.
- * Displays venue name and address, allows free-text entry.
+ * Falls back to Google Places API for venues not in the database.
  */
-import { useState, useRef, useEffect } from 'react';
-import { MapPin } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { MapPin, Globe, Database } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Popover,
@@ -13,12 +13,23 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useActiveVenues, type Venue } from '@/hooks/useVenues';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+
+interface GooglePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting?: {
+    main_text: string;
+    secondary_text: string;
+  };
+}
 
 interface VenueSuggestInputProps {
   value: string;
   onChange: (value: string) => void;
   onVenueSelect?: (venue: Venue) => void;
+  onGooglePlaceSelect?: (details: { name: string; address: string }) => void;
   placeholder?: string;
   className?: string;
   showIcon?: boolean;
@@ -28,17 +39,21 @@ export function VenueSuggestInput({
   value,
   onChange,
   onVenueSelect,
-  placeholder = "Venue name or address",
+  onGooglePlaceSelect,
+  placeholder = "Start typing to search venues...",
   className,
   showIcon = false,
 }: VenueSuggestInputProps) {
   const [open, setOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [googlePredictions, setGooglePredictions] = useState<GooglePrediction[]>([]);
+  const [sessionToken] = useState(() => crypto.randomUUID());
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   
   const { data: venues = [] } = useActiveVenues();
   
-  // Filter venues based on input
+  // Filter local venues based on input
   const filteredVenues = value.trim().length >= 2
     ? venues.filter(venue => {
         const searchTerm = value.toLowerCase();
@@ -49,19 +64,70 @@ export function VenueSuggestInput({
           venue.state,
         ].filter(Boolean).join(' ').toLowerCase().includes(searchTerm);
         return nameMatch || addressMatch;
-      }).slice(0, 6) // Limit to 6 suggestions
+      }).slice(0, 4)
     : [];
-  
-  // Show popover when we have matches and input is focused
+
+  // Google Places search (debounced, only when few local results)
+  const searchGooglePlaces = useCallback(async (query: string) => {
+    if (query.length < 3 || filteredVenues.length >= 3) {
+      setGooglePredictions([]);
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('google-places-autocomplete', {
+        body: { input: query, sessionToken },
+      });
+      if (!error && data?.predictions) {
+        setGooglePredictions(data.predictions.slice(0, 4));
+      }
+    } catch {
+      setGooglePredictions([]);
+    }
+  }, [filteredVenues.length, sessionToken]);
+
   useEffect(() => {
-    setOpen(inputFocused && filteredVenues.length > 0);
-  }, [inputFocused, filteredVenues.length]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (value.trim().length >= 3 && inputFocused) {
+      debounceRef.current = setTimeout(() => searchGooglePlaces(value), 400);
+    } else {
+      setGooglePredictions([]);
+    }
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [value, inputFocused, searchGooglePlaces]);
+
+  const hasResults = filteredVenues.length > 0 || googlePredictions.length > 0;
+  
+  useEffect(() => {
+    setOpen(inputFocused && hasResults);
+  }, [inputFocused, hasResults]);
   
   const handleVenueSelect = (venue: Venue) => {
-    // Set the venue name as the value
     onChange(venue.name);
     onVenueSelect?.(venue);
     setOpen(false);
+    setGooglePredictions([]);
+    inputRef.current?.blur();
+  };
+
+  const handleGoogleSelect = async (prediction: GooglePrediction) => {
+    onChange(prediction.structured_formatting?.main_text || prediction.description);
+    setOpen(false);
+    setGooglePredictions([]);
+    
+    // Fetch place details for the full address
+    try {
+      const { data, error } = await supabase.functions.invoke('google-places-details', {
+        body: { placeId: prediction.place_id, sessionToken },
+      });
+      if (!error && data) {
+        onGooglePlaceSelect?.({
+          name: data.name || prediction.structured_formatting?.main_text || '',
+          address: data.formatted_address || '',
+        });
+      }
+    } catch {
+      // Still set the name even if details fail
+    }
     inputRef.current?.blur();
   };
   
@@ -87,10 +153,9 @@ export function VenueSuggestInput({
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => setInputFocused(true)}
             onBlur={() => {
-              // Delay to allow click on suggestion
               setTimeout(() => setInputFocused(false), 200);
             }}
-            className={cn(!showIcon && "flex-1")}
+            className={cn(!showIcon && "flex-1", "bg-secondary")}
           />
         </div>
       </PopoverTrigger>
@@ -99,27 +164,63 @@ export function VenueSuggestInput({
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="max-h-[200px] overflow-y-auto">
-          {filteredVenues.map((venue) => (
-            <button
-              key={venue.id}
-              type="button"
-              onClick={() => handleVenueSelect(venue)}
-              className="w-full px-3 py-2 text-left hover:bg-muted transition-colors border-b last:border-b-0"
-            >
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{venue.name}</p>
-                  {formatAddress(venue) && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {formatAddress(venue)}
-                    </p>
-                  )}
-                </div>
+        <div className="max-h-[280px] overflow-y-auto">
+          {filteredVenues.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-xs text-muted-foreground font-medium flex items-center gap-1.5 bg-muted/50">
+                <Database className="h-3 w-3" /> Your Venues
               </div>
-            </button>
-          ))}
+              {filteredVenues.map((venue) => (
+                <button
+                  key={venue.id}
+                  type="button"
+                  onClick={() => handleVenueSelect(venue)}
+                  className="w-full px-3 py-2 text-left hover:bg-muted transition-colors border-b last:border-b-0"
+                >
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{venue.name}</p>
+                      {formatAddress(venue) && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {formatAddress(venue)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
+          {googlePredictions.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 text-xs text-muted-foreground font-medium flex items-center gap-1.5 bg-muted/50">
+                <Globe className="h-3 w-3" /> Google Places
+              </div>
+              {googlePredictions.map((prediction) => (
+                <button
+                  key={prediction.place_id}
+                  type="button"
+                  onClick={() => handleGoogleSelect(prediction)}
+                  className="w-full px-3 py-2 text-left hover:bg-muted transition-colors border-b last:border-b-0"
+                >
+                  <div className="flex items-start gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">
+                        {prediction.structured_formatting?.main_text || prediction.description}
+                      </p>
+                      {prediction.structured_formatting?.secondary_text && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {prediction.structured_formatting.secondary_text}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       </PopoverContent>
     </Popover>
