@@ -486,6 +486,7 @@ export default function EventForm() {
                         value={field.value || ''}
                         onChange={field.onChange}
                         onVenueSelect={handleVenueSelect}
+                        onGooglePlaceSelect={handleGooglePlaceSelect}
                         placeholder="Start typing to search venues..."
                         className="bg-secondary"
                       />
