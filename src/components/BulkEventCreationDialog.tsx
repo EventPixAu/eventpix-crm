@@ -97,6 +97,7 @@ export function BulkEventCreationDialog({
   // Series default times
   const seriesStartTime = (series as any).default_start_time || '18:00';
   const seriesEndTime = (series as any).default_end_time || '22:00';
+  const seriesDefaultContactId = (series as any).default_contact_id || null;
   
   const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime })]);
   const [clientName, setClientName] = useState('');
@@ -110,11 +111,28 @@ export function BulkEventCreationDialog({
     if (open) {
       setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime })]);
       setClientName(series.name);
-      setDefaultContactId(null);
+      setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
       setUseDefaultContact(true);
+      
+      // Fetch contact details if series has a default contact
+      if (seriesDefaultContactId) {
+        import('@/integrations/supabase/client').then(({ supabase }) => {
+          supabase
+            .from('client_contacts')
+            .select('contact_name, phone, phone_mobile, phone_office')
+            .eq('id', seriesDefaultContactId)
+            .single()
+            .then(({ data }) => {
+              if (data) {
+                const phone = data.phone_mobile || data.phone_office || data.phone || '';
+                setDefaultContactInfo({ name: data.contact_name || '', phone });
+              }
+            });
+        });
+      }
     }
-  }, [open, series.name, seriesStartTime, seriesEndTime]);
+  }, [open, series.name, seriesStartTime, seriesEndTime, seriesDefaultContactId]);
   
   const validRows = rows.filter(r => r.event_date && (r.city || r.venue_name));
   
