@@ -213,7 +213,8 @@ export function ContactSelector({
   const getContactDisplay = (contact: CrmContact) => {
     const company = contact.client?.business_name || 
       contact.companies?.find(c => c.is_primary)?.company?.business_name ||
-      contact.companies?.[0]?.company?.business_name;
+      contact.companies?.[0]?.company?.business_name ||
+      companyName || undefined;
     const jobTitle = contact.job_title?.name || contact.role_title;
     const phone = contact.phone_mobile || contact.phone_office || contact.phone;
 
