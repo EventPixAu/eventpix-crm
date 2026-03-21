@@ -8,6 +8,7 @@
  * - Returns contact_id reference
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Search, User, Building2, Phone, Mail, Plus, X, Loader2, Check, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/select';
 
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import {
   useContactSearch,
   useContactById,
@@ -109,6 +111,21 @@ export function ContactSelector({
 
   // Fetch company contacts to show first when companyId is set
   const { data: companyContacts = [] } = useClientContacts(companyId);
+
+  // Fetch company name for display fallback
+  const { data: companyName } = useQuery({
+    queryKey: ['company-name', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from('clients')
+        .select('business_name')
+        .eq('id', companyId)
+        .maybeSingle();
+      return data?.business_name || null;
+    },
+    enabled: !!companyId,
+  });
 
   // Create contact mutation
   const createContact = useCreateCrmContact();
@@ -196,7 +213,8 @@ export function ContactSelector({
   const getContactDisplay = (contact: CrmContact) => {
     const company = contact.client?.business_name || 
       contact.companies?.find(c => c.is_primary)?.company?.business_name ||
-      contact.companies?.[0]?.company?.business_name;
+      contact.companies?.[0]?.company?.business_name ||
+      companyName || undefined;
     const jobTitle = contact.job_title?.name || contact.role_title;
     const phone = contact.phone_mobile || contact.phone_office || contact.phone;
 
