@@ -1010,6 +1010,89 @@ export default function EventSeriesDetail() {
                   <Save className="h-4 w-4 mr-2" />
                   Save Settings
                 </Button>
+                
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    if (!id || !series) return;
+                    const eventIds = events.map(e => e.id);
+                    if (eventIds.length === 0) {
+                      toast.info('No events in this series');
+                      return;
+                    }
+                    
+                    const confirmed = window.confirm(
+                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, ops status, times, and default contact.`
+                    );
+                    if (!confirmed) return;
+                    
+                    try {
+                      // Update event fields from series defaults
+                      const { error: updateError } = await supabase
+                        .from('events')
+                        .update({
+                          event_type_id: editEventTypeId || null,
+                          delivery_method_id: editDeliveryMethodId || null,
+                          delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
+                          ops_status: editDefaultOpsStatus || 'confirmed',
+                          start_time: editStartTime || null,
+                          end_time: editEndTime || null,
+                          coverage_details: editCoverage || null,
+                          special_instructions: editNotesPublic || null,
+                          city: editVenueCity || null,
+                        } as any)
+                        .eq('event_series_id', id);
+                      
+                      if (updateError) throw updateError;
+                      
+                      // Sync default contact to all events
+                      if (editDefaultContactId) {
+                        // Fetch the contact details
+                        const { data: contactData } = await supabase
+                          .from('client_contacts')
+                          .select('id, contact_name, email, phone, phone_mobile, phone_office')
+                          .eq('id', editDefaultContactId)
+                          .single();
+                        
+                        if (contactData) {
+                          for (const eventId of eventIds) {
+                            // Check if contact already linked
+                            const { data: existing } = await supabase
+                              .from('event_contacts')
+                              .select('id')
+                              .eq('event_id', eventId)
+                              .eq('client_contact_id', contactData.id)
+                              .maybeSingle();
+                            
+                            if (!existing) {
+                              await supabase
+                                .from('event_contacts')
+                                .insert({
+                                  event_id: eventId,
+                                  client_contact_id: contactData.id,
+                                  contact_type: 'primary',
+                                  contact_name: contactData.contact_name,
+                                  contact_email: contactData.email,
+                                  contact_phone: contactData.phone_mobile || contactData.phone || contactData.phone_office,
+                                });
+                            }
+                          }
+                        }
+                      }
+                      
+                      queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                      queryClient.invalidateQueries({ queryKey: ['events'] });
+                      queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+                      toast.success(`Settings applied to ${eventIds.length} events`);
+                    } catch (err: any) {
+                      toast.error('Failed to apply settings: ' + err.message);
+                    }
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Apply Settings to All Events
+                </Button>
               </CardContent>
             </Card>
 
