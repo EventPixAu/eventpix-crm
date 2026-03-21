@@ -218,6 +218,12 @@ export function ContactSelector({
                   <User className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
+                  {getContactDisplay(selectedContact).company && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Building2 className="h-3 w-3" />
+                      {getContactDisplay(selectedContact).company}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <span className="font-medium truncate">{selectedContact.contact_name}</span>
                     {getContactDisplay(selectedContact).jobTitle && (
@@ -226,23 +232,17 @@ export function ContactSelector({
                       </span>
                     )}
                   </div>
-                  {getContactDisplay(selectedContact).company && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Building2 className="h-3 w-3" />
-                      {getContactDisplay(selectedContact).company}
-                    </div>
-                  )}
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    {selectedContact.email && (
-                      <span className="flex items-center gap-1 truncate">
-                        <Mail className="h-3 w-3" />
-                        {selectedContact.email}
-                      </span>
-                    )}
                     {getContactDisplay(selectedContact).phone && (
                       <span className="flex items-center gap-1">
                         <Phone className="h-3 w-3" />
                         {getContactDisplay(selectedContact).phone}
+                      </span>
+                    )}
+                    {selectedContact.email && (
+                      <span className="flex items-center gap-1 truncate">
+                        <Mail className="h-3 w-3" />
+                        {selectedContact.email}
                       </span>
                     )}
                   </div>
