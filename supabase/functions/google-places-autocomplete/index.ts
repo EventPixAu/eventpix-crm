@@ -25,32 +25,48 @@ serve(async (req) => {
       });
     }
 
-    // Use Places Autocomplete API
-    const params = new URLSearchParams({
+    // Use Places API (New) - Autocomplete endpoint
+    const body: any = {
       input,
-      types: 'establishment',
-      components: 'country:au',
-      key: GOOGLE_PLACES_API_KEY,
-    });
-    if (sessionToken) params.set('sessiontoken', sessionToken);
+      includedPrimaryTypes: ['establishment'],
+      includedRegionCodes: ['au'],
+    };
+    if (sessionToken) body.sessionToken = sessionToken;
 
     const autocompleteRes = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?${params}`
+      'https://places.googleapis.com/v1/places:autocomplete',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+        },
+        body: JSON.stringify(body),
+      }
     );
     const autocompleteData = await autocompleteRes.json();
 
-    if (autocompleteData.status !== 'OK' && autocompleteData.status !== 'ZERO_RESULTS') {
+    if (!autocompleteRes.ok) {
       console.error('Places Autocomplete error:', autocompleteData);
-      return new Response(JSON.stringify({ predictions: [], error: autocompleteData.status }), {
+      return new Response(JSON.stringify({ predictions: [], error: autocompleteData.error?.message || 'API error' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const predictions = (autocompleteData.predictions || []).map((p: any) => ({
-      place_id: p.place_id,
-      description: p.description,
-      structured_formatting: p.structured_formatting,
-    }));
+    // Map new API response format to our expected format
+    const predictions = (autocompleteData.suggestions || [])
+      .filter((s: any) => s.placePrediction)
+      .map((s: any) => {
+        const p = s.placePrediction;
+        return {
+          place_id: p.placeId || p.place?.split('/').pop(),
+          description: p.text?.text || '',
+          structured_formatting: {
+            main_text: p.structuredFormat?.mainText?.text || '',
+            secondary_text: p.structuredFormat?.secondaryText?.text || '',
+          },
+        };
+      });
 
     return new Response(JSON.stringify({ predictions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
