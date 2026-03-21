@@ -276,6 +276,10 @@ export default function EventForm() {
     if (venue.parking_notes) form.setValue('venue_parking_notes', venue.parking_notes);
   }, [form]);
 
+  const handleGooglePlaceSelect = useCallback((details: { name: string; address: string }) => {
+    form.setValue('venue_address', details.address);
+  }, [form]);
+
   const handleRequestUnlock = () => {
     setShowOverrideDialog(true);
   };
