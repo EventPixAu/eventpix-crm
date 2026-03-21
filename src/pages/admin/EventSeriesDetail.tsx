@@ -168,7 +168,18 @@ export default function EventSeriesDetail() {
       default_delivery_deadline_days: parseInt(editDeadlineDays) || 5,
       default_coverage_details: editCoverage || null,
       notes: editNotes || null,
-    });
+    } as any);
+    // Save time fields separately since they may not be in the typed interface yet
+    if (id) {
+      const { error } = await supabase
+        .from('event_series')
+        .update({
+          default_start_time: editStartTime || null,
+          default_end_time: editEndTime || null,
+        } as any)
+        .eq('id', id);
+      if (error) console.error('Failed to save times:', error);
+    }
   };
   
   const handleToggleEventSelection = (eventId: string) => {
