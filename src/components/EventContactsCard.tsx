@@ -342,6 +342,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                       </div>
                     )}
                   </div>
+                </div>
               );
             })}
 
