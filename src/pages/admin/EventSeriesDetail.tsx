@@ -926,6 +926,7 @@ export default function EventSeriesDetail() {
                     value={editDefaultContactId}
                     onChange={(contactId) => setEditDefaultContactId(contactId)}
                     placeholder="Search for a contact..."
+                    companyId={events?.[0]?.client_id || null}
                   />
                 </div>
                 
