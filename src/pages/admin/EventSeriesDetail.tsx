@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
@@ -49,6 +49,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ContactSelector } from '@/components/shared/ContactSelector';
+import type { CrmContact } from '@/hooks/useContactSearch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,6 +120,7 @@ export default function EventSeriesDetail() {
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
+  const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
@@ -145,6 +148,7 @@ export default function EventSeriesDetail() {
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
+      setEditDefaultContactId((series as any).default_contact_id || null);
     }
   });
   
@@ -164,6 +168,7 @@ export default function EventSeriesDetail() {
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
+      setEditDefaultContactId((series as any).default_contact_id || null);
     }
   }, [series]);
   
@@ -187,6 +192,7 @@ export default function EventSeriesDetail() {
           default_end_time: editEndTime || null,
           default_ops_status: editDefaultOpsStatus || 'confirmed',
           default_delivery_method_guests_id: editDefaultGuestDeliveryId || null,
+          default_contact_id: editDefaultContactId || null,
         } as any)
         .eq('id', id);
       if (error) console.error('Failed to save times:', error);
@@ -912,6 +918,15 @@ export default function EventSeriesDetail() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Default Contact</Label>
+                  <ContactSelector
+                    value={editDefaultContactId}
+                    onChange={(contactId) => setEditDefaultContactId(contactId)}
+                    placeholder="Search for a contact..."
+                  />
                 </div>
                 
                 <div className="space-y-2">
