@@ -269,6 +269,13 @@ export default function EventForm() {
     }
   }, [isConvertingFromLead, sourceLead, leadSessions, eventTypes, form, isEditing]);
 
+  const handleVenueSelect = useCallback((venue: Venue) => {
+    const addressParts = [venue.address_line_1, venue.address_line_2, venue.suburb, venue.state, venue.postcode].filter(Boolean);
+    form.setValue('venue_address', addressParts.join(', '));
+    if (venue.access_notes) form.setValue('venue_access_notes', venue.access_notes);
+    if (venue.parking_notes) form.setValue('venue_parking_notes', venue.parking_notes);
+  }, [form]);
+
   const handleRequestUnlock = () => {
     setShowOverrideDialog(true);
   };
