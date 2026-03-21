@@ -478,7 +478,13 @@ export default function EventForm() {
                   <FormItem>
                     <FormLabel>Venue Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., Grand Ballroom" className="bg-secondary" />
+                      <VenueSuggestInput
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onVenueSelect={handleVenueSelect}
+                        placeholder="Start typing to search venues..."
+                        className="bg-secondary"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
