@@ -323,7 +323,7 @@ export function EquipmentInventory() {
                   placeholder="Any notes about this item..."
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              {editingItem && <AllocationInfo equipmentItemId={editingItem.id} />}
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
                 </Button>
