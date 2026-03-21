@@ -26,6 +26,56 @@ import {
 import { useEquipmentCategories } from '@/hooks/useLookups';
 import { useStaffDirectory } from '@/hooks/useStaff';
 
+function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
+  const { data: allocations, isLoading } = useQuery({
+    queryKey: ['equipment-item-allocations', equipmentItemId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipment_allocations')
+        .select(`
+          id, status, allocated_at, returned_at,
+          event:events(id, event_name, event_date),
+          user:profiles!equipment_allocations_user_id_fkey(full_name)
+        `)
+        .eq('equipment_item_id', equipmentItemId)
+        .neq('status', 'returned')
+        .order('allocated_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (isLoading) return null;
+  if (!allocations || allocations.length === 0) {
+    return (
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Current Allocation</Label>
+        <p className="text-sm text-muted-foreground italic">Not currently allocated</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Current Allocation</Label>
+      <div className="space-y-1.5">
+        {allocations.map((a: any) => (
+          <div key={a.id} className="flex items-center justify-between rounded-md bg-muted/50 p-2 text-sm">
+            <div>
+              <p className="font-medium">{a.event?.event_name || 'Unknown event'}</p>
+              <p className="text-xs text-muted-foreground">
+                {a.event?.event_date ? format(new Date(a.event.event_date), 'dd MMM yyyy') : '—'}
+                {a.user?.full_name ? ` · ${a.user.full_name}` : ''}
+              </p>
+            </div>
+            <Badge variant="outline" className="text-[10px] capitalize">{a.status}</Badge>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function EquipmentInventory() {
   const { data: items, isLoading } = useEquipmentItems();
   const { data: categories = [] } = useEquipmentCategories();
