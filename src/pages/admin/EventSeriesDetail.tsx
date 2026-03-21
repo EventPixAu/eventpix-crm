@@ -912,6 +912,7 @@ export default function EventSeriesDetail() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
                 
                 <div className="space-y-2">
                   <Label>Deadline Days (after event)</Label>
