@@ -2380,6 +2380,7 @@ export type Database = {
       event_series: {
         Row: {
           created_at: string | null
+          default_contact_id: string | null
           default_coverage_details: string | null
           default_delivery_deadline_days: number | null
           default_delivery_method_guests_id: string | null
@@ -2403,6 +2404,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          default_contact_id?: string | null
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_guests_id?: string | null
@@ -2426,6 +2428,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          default_contact_id?: string | null
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
           default_delivery_method_guests_id?: string | null
@@ -2448,6 +2451,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "event_series_default_contact_id_fkey"
+            columns: ["default_contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "event_series_default_delivery_method_guests_id_fkey"
             columns: ["default_delivery_method_guests_id"]
