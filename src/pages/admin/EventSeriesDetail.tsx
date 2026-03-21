@@ -69,6 +69,7 @@ import {
   useSeriesNeedsAttention,
 } from '@/hooks/useSeriesControlCentre';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
+import { useOpsStatuses } from '@/hooks/useOpsStatuses';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
 import { StaffingForecast } from '@/components/StaffingForecast';
@@ -96,6 +97,7 @@ export default function EventSeriesDetail() {
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
+  const { data: opsStatuses = [] } = useOpsStatuses();
   
   const updateSeries = useUpdateEventSeries();
   
@@ -114,6 +116,8 @@ export default function EventSeriesDetail() {
   const [editNotesInternal, setEditNotesInternal] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+  const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
+  const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
@@ -139,6 +143,8 @@ export default function EventSeriesDetail() {
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
       setEditEndTime((series as any).default_end_time || '');
+      setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
+      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
     }
   });
   
@@ -156,6 +162,8 @@ export default function EventSeriesDetail() {
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
       setEditEndTime((series as any).default_end_time || '');
+      setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
+      setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
     }
   }, [series]);
   
@@ -177,6 +185,8 @@ export default function EventSeriesDetail() {
         .update({
           default_start_time: editStartTime || null,
           default_end_time: editEndTime || null,
+          default_ops_status: editDefaultOpsStatus || 'confirmed',
+          default_delivery_method_guests_id: editDefaultGuestDeliveryId || null,
         } as any)
         .eq('id', id);
       if (error) console.error('Failed to save times:', error);
@@ -865,6 +875,39 @@ export default function EventSeriesDetail() {
                       {deliveryMethods.map(method => (
                         <SelectItem key={method.id} value={method.id}>
                           {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Delivery Method - Guests</Label>
+                  <Select value={editDefaultGuestDeliveryId} onValueChange={setEditDefaultGuestDeliveryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {deliveryMethods.map(method => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Default Operations Status</Label>
+                  <Select value={editDefaultOpsStatus} onValueChange={setEditDefaultOpsStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {opsStatuses.map(status => (
+                        <SelectItem key={status.id} value={status.name}>
+                          {status.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
