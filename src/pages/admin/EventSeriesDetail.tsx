@@ -882,6 +882,38 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label>Delivery Method - Guests</Label>
+                  <Select value={editDefaultGuestDeliveryId} onValueChange={setEditDefaultGuestDeliveryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {deliveryMethods.map(method => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Default Operations Status</Label>
+                  <Select value={editDefaultOpsStatus} onValueChange={setEditDefaultOpsStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {opsStatuses.map(status => (
+                        <SelectItem key={status.id} value={status.name}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                
+                <div className="space-y-2">
                   <Label>Deadline Days (after event)</Label>
                   <Input
                     type="number"
