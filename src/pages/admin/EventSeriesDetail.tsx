@@ -120,6 +120,7 @@ export default function EventSeriesDetail() {
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
+  const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
