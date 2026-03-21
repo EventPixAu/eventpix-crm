@@ -148,6 +148,7 @@ export default function EventSeriesDetail() {
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '');
+      setEditDefaultContactId((series as any).default_contact_id || null);
     }
   });
   
