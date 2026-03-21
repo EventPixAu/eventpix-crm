@@ -226,6 +226,12 @@ export function ContactSelector({
                       </span>
                     )}
                   </div>
+                  {getContactDisplay(selectedContact).company && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Building2 className="h-3 w-3" />
+                      {getContactDisplay(selectedContact).company}
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     {selectedContact.email && (
                       <span className="flex items-center gap-1 truncate">
