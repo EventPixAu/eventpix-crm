@@ -134,7 +134,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
           </div>
         </div>
         
-        {/* Client Info */}
+        {/* Client Info - prefer onsite contact over company primary contact */}
         {(clientName || clientDetails?.business_name) && (
           <div className="flex items-start gap-3 mb-4 pb-4 border-b border-border">
             <div className="p-2 bg-muted rounded-lg">
@@ -144,33 +144,42 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
               <p className="text-sm text-muted-foreground">Client</p>
               <p className="font-medium">{clientDetails?.business_name || clientName}</p>
 
-              {(clientDetails?.primary_contact_name || clientDetails?.primary_contact_email || clientDetails?.primary_contact_phone) && (
-                <div className="mt-1 space-y-1">
-                  {clientDetails?.primary_contact_name && (
-                    <p className="text-sm text-muted-foreground">{clientDetails.primary_contact_name}</p>
-                  )}
-                  <div className="flex flex-wrap gap-3 text-sm">
-                    {clientDetails?.primary_contact_phone && (
-                      <a
-                        href={`tel:${clientDetails.primary_contact_phone}`}
-                        className="flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <Phone className="h-3.5 w-3.5" />
-                        {clientDetails.primary_contact_phone}
-                      </a>
+              {(() => {
+                // Use onsite contact if available, otherwise fall back to company primary contact
+                const displayName = onsiteContact?.name || clientDetails?.primary_contact_name;
+                const displayPhone = onsiteContact?.phone || clientDetails?.primary_contact_phone;
+                const displayEmail = !onsiteContact?.name ? clientDetails?.primary_contact_email : null;
+                
+                if (!displayName && !displayEmail && !displayPhone) return null;
+                
+                return (
+                  <div className="mt-1 space-y-1">
+                    {displayName && (
+                      <p className="text-sm text-muted-foreground">{displayName}</p>
                     )}
-                    {clientDetails?.primary_contact_email && (
-                      <a
-                        href={`mailto:${clientDetails.primary_contact_email}`}
-                        className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <Mail className="h-3.5 w-3.5" />
-                        {clientDetails.primary_contact_email}
-                      </a>
-                    )}
+                    <div className="flex flex-wrap gap-3 text-sm">
+                      {displayPhone && (
+                        <a
+                          href={`tel:${displayPhone}`}
+                          className="flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <Phone className="h-3.5 w-3.5" />
+                          {displayPhone}
+                        </a>
+                      )}
+                      {displayEmail && (
+                        <a
+                          href={`mailto:${displayEmail}`}
+                          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          {displayEmail}
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         )}
