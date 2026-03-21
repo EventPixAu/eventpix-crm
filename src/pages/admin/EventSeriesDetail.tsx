@@ -23,6 +23,7 @@ import {
   BarChart3,
   ChevronRight,
   Eye,
+  RefreshCw,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
