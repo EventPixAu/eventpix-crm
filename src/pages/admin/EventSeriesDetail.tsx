@@ -894,7 +894,7 @@ export default function EventSeriesDetail() {
                       <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {deliveryMethods.map(method => (
                         <SelectItem key={method.id} value={method.id}>
                           {method.name}
