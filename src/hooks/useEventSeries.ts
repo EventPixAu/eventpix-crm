@@ -329,17 +329,25 @@ export function useBulkCreateEvents() {
       // Insert events one by one to trigger worksheets creation
       for (const event of events) {
         try {
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('events')
-            .insert(event);
+            .insert(event)
+            .select('id')
+            .single();
           
           if (error) {
+            console.error('Bulk create event error:', event.event_name, error);
             results.failed++;
             results.errors.push(`${event.event_name}: ${error.message}`);
+          } else if (!data) {
+            console.error('Bulk create event: no data returned (RLS block?)', event.event_name);
+            results.failed++;
+            results.errors.push(`${event.event_name}: Insert returned no data`);
           } else {
             results.created++;
           }
         } catch (err: any) {
+          console.error('Bulk create event exception:', event.event_name, err);
           results.failed++;
           results.errors.push(`${event.event_name}: ${err.message}`);
         }
