@@ -185,6 +185,8 @@ export default function EventSeriesDetail() {
         .update({
           default_start_time: editStartTime || null,
           default_end_time: editEndTime || null,
+          default_ops_status: editDefaultOpsStatus || 'confirmed',
+          default_delivery_method_guests_id: editDefaultGuestDeliveryId || null,
         } as any)
         .eq('id', id);
       if (error) console.error('Failed to save times:', error);
