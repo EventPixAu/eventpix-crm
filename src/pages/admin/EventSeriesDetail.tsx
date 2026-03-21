@@ -111,6 +111,8 @@ export default function EventSeriesDetail() {
   const [editVenueCity, setEditVenueCity] = useState('');
   const [editNotesPublic, setEditNotesPublic] = useState('');
   const [editNotesInternal, setEditNotesInternal] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
