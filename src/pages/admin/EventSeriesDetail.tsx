@@ -420,36 +420,86 @@ export default function EventSeriesDetail() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Staffing Forecast */}
-            <StaffingForecast 
-              seriesId={id!} 
-              defaultPhotographersRequired={series.default_photographers_required || 1}
-            />
+            {/* Events List - spans 2 columns */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Booked Events
+                    {overview?.dateRange.start && (
+                      <span className="text-sm font-normal text-muted-foreground ml-2">
+                        {format(parseISO(overview.dateRange.start), 'MMM d, yyyy')}
+                        {' — '}
+                        {overview.dateRange.end && format(parseISO(overview.dateRange.end), 'MMM d, yyyy')}
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {events.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No events yet</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Event</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Venue</TableHead>
+                          <TableHead>Staff</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="w-10"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...events]
+                          .sort((a, b) => a.event_date.localeCompare(b.event_date))
+                          .map(event => (
+                            <TableRow key={event.id}>
+                              <TableCell className="font-medium">{event.event_name}</TableCell>
+                              <TableCell>{format(parseISO(event.event_date), 'EEE, MMM d, yyyy')}</TableCell>
+                              <TableCell className="text-muted-foreground">{event.venue_name || '-'}</TableCell>
+                              <TableCell>
+                                <Badge variant={(event.event_assignments?.length || 0) === 0 ? 'destructive' : 'secondary'}>
+                                  {event.event_assignments?.length || 0} assigned
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">
+                                  {(event.ops_status || 'pending').replace(/_/g, ' ')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" asChild>
+                                  <Link to={`/events/${event.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-            {/* Cost Summary (Admin only) */}
-            {isAdmin && events.length > 0 && (
-              <SeriesCostSummary 
+            {/* Column 3: Staffing + Cost */}
+            <div className="space-y-6">
+              <StaffingForecast 
                 seriesId={id!} 
-                eventIds={events.map(e => e.id)}
+                defaultPhotographersRequired={series.default_photographers_required || 1}
               />
-            )}
-          </div>
 
-          {/* Date Range */}
-          {overview?.dateRange.start && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Date Range</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">
-                  {format(parseISO(overview.dateRange.start), 'MMMM d, yyyy')}
-                  {' '} — {' '}
-                  {overview.dateRange.end && format(parseISO(overview.dateRange.end), 'MMMM d, yyyy')}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+              {isAdmin && events.length > 0 && (
+                <SeriesCostSummary 
+                  seriesId={id!} 
+                  eventIds={events.map(e => e.id)}
+                />
+              )}
+            </div>
+          </div>
         </TabsContent>
 
          {/* Assignments Tab */}
