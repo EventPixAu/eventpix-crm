@@ -212,6 +212,8 @@ export function BulkEventCreationDialog({
         event_series_id: series.id,
         coverage_details: series.default_coverage_details || undefined,
         delivery_method_id: series.default_delivery_method_id || undefined,
+        delivery_method_guests_id: (series as any).default_delivery_method_guests_id || undefined,
+        ops_status: (series as any).default_ops_status || 'confirmed',
         delivery_deadline: row.event_date 
           ? format(addDays(parseISO(row.event_date), series.default_delivery_deadline_days || 5), 'yyyy-MM-dd')
           : undefined,
