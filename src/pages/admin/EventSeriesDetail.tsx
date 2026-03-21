@@ -831,6 +831,25 @@ export default function EventSeriesDetail() {
                   />
                 </div>
                 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Default Start Time</Label>
+                    <Input
+                      type="time"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Default End Time</Label>
+                    <Input
+                      type="time"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
                   <Label>Default City</Label>
                   <Input
