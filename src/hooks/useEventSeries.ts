@@ -317,6 +317,8 @@ export function useBulkCreateEvents() {
       event_series_id?: string;
       coverage_details?: string;
       delivery_method_id?: string;
+      delivery_method_guests_id?: string;
+      ops_status?: string;
       delivery_deadline?: string;
       notes?: string;
     }>) => {
