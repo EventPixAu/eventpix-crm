@@ -921,6 +921,15 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label>Default Contact</Label>
+                  <ContactSelector
+                    value={editDefaultContactId}
+                    onChange={(contactId) => setEditDefaultContactId(contactId)}
+                    placeholder="Search for a contact..."
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label>Deadline Days (after event)</Label>
                   <Input
                     type="number"
