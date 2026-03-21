@@ -148,8 +148,8 @@ export function BulkEventCreationDialog({
   
   const handleAddRow = () => {
     setRows([...rows, createEmptyRow({
-      start_time: rows[rows.length - 1]?.start_time || '18:00',
-      end_time: rows[rows.length - 1]?.end_time || '22:00',
+      start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
+      end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
       onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
       onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
