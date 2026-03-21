@@ -51,8 +51,6 @@ import {
 } from '@/components/ui/table';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
-// Rest of imports handled below
-} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
