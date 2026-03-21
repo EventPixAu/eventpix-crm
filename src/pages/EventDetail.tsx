@@ -517,11 +517,11 @@ export default function EventDetail() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <Link
-            to="/events"
+            to={event.event_series_id ? `/admin/series/${event.event_series_id}` : "/events"}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Events
+            {event.event_series_id ? 'Back to Series' : 'Back to Events'}
           </Link>
           <div className="flex items-center gap-3 mb-2 flex-wrap">
             <h1 className="text-2xl lg:text-3xl font-display font-bold">
