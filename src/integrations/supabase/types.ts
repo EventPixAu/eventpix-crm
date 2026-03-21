@@ -2382,11 +2382,13 @@ export type Database = {
           created_at: string | null
           default_coverage_details: string | null
           default_delivery_deadline_days: number | null
+          default_delivery_method_guests_id: string | null
           default_delivery_method_id: string | null
           default_end_time: string | null
           default_kit_id: string | null
           default_notes_internal: string | null
           default_notes_public: string | null
+          default_ops_status: string | null
           default_photographers_required: number | null
           default_roles_json: Json | null
           default_start_time: string | null
@@ -2403,11 +2405,13 @@ export type Database = {
           created_at?: string | null
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
+          default_delivery_method_guests_id?: string | null
           default_delivery_method_id?: string | null
           default_end_time?: string | null
           default_kit_id?: string | null
           default_notes_internal?: string | null
           default_notes_public?: string | null
+          default_ops_status?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           default_start_time?: string | null
@@ -2424,11 +2428,13 @@ export type Database = {
           created_at?: string | null
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
+          default_delivery_method_guests_id?: string | null
           default_delivery_method_id?: string | null
           default_end_time?: string | null
           default_kit_id?: string | null
           default_notes_internal?: string | null
           default_notes_public?: string | null
+          default_ops_status?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           default_start_time?: string | null
@@ -2442,6 +2448,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "event_series_default_delivery_method_guests_id_fkey"
+            columns: ["default_delivery_method_guests_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_methods_lookup"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "event_series_default_delivery_method_id_fkey"
             columns: ["default_delivery_method_id"]
