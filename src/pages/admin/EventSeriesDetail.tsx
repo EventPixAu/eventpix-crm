@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { 
@@ -111,6 +112,8 @@ export default function EventSeriesDetail() {
   const [editVenueCity, setEditVenueCity] = useState('');
   const [editNotesPublic, setEditNotesPublic] = useState('');
   const [editNotesInternal, setEditNotesInternal] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
@@ -134,6 +137,8 @@ export default function EventSeriesDetail() {
       setEditVenueCity((series as any).default_venue_city || '');
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
+      setEditStartTime((series as any).default_start_time || '');
+      setEditEndTime((series as any).default_end_time || '');
     }
   });
   
@@ -149,6 +154,8 @@ export default function EventSeriesDetail() {
       setEditVenueCity((series as any).default_venue_city || '');
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
+      setEditStartTime((series as any).default_start_time || '');
+      setEditEndTime((series as any).default_end_time || '');
     }
   }, [series]);
   
@@ -162,7 +169,18 @@ export default function EventSeriesDetail() {
       default_delivery_deadline_days: parseInt(editDeadlineDays) || 5,
       default_coverage_details: editCoverage || null,
       notes: editNotes || null,
-    });
+    } as any);
+    // Save time fields separately since they may not be in the typed interface yet
+    if (id) {
+      const { error } = await supabase
+        .from('event_series')
+        .update({
+          default_start_time: editStartTime || null,
+          default_end_time: editEndTime || null,
+        } as any)
+        .eq('id', id);
+      if (error) console.error('Failed to save times:', error);
+    }
   };
   
   const handleToggleEventSelection = (eventId: string) => {
@@ -812,6 +830,25 @@ export default function EventSeriesDetail() {
                     min="1"
                     max="30"
                   />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Default Start Time</Label>
+                    <Input
+                      type="time"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Default End Time</Label>
+                    <Input
+                      type="time"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
