@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,6 +38,8 @@ import { useLeadSessions } from '@/hooks/useEventSessions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
+import { VenueSuggestInput } from '@/components/VenueSuggestInput';
+import type { Venue } from '@/hooks/useVenues';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -267,6 +269,13 @@ export default function EventForm() {
     }
   }, [isConvertingFromLead, sourceLead, leadSessions, eventTypes, form, isEditing]);
 
+  const handleVenueSelect = useCallback((venue: Venue) => {
+    const addressParts = [venue.address_line_1, venue.address_line_2, venue.suburb, venue.state, venue.postcode].filter(Boolean);
+    form.setValue('venue_address', addressParts.join(', '));
+    if (venue.access_notes) form.setValue('venue_access_notes', venue.access_notes);
+    if (venue.parking_notes) form.setValue('venue_parking_notes', venue.parking_notes);
+  }, [form]);
+
   const handleRequestUnlock = () => {
     setShowOverrideDialog(true);
   };
@@ -469,7 +478,13 @@ export default function EventForm() {
                   <FormItem>
                     <FormLabel>Venue Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., Grand Ballroom" className="bg-secondary" />
+                      <VenueSuggestInput
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onVenueSelect={handleVenueSelect}
+                        placeholder="Start typing to search venues..."
+                        className="bg-secondary"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
