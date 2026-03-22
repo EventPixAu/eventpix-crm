@@ -977,11 +977,11 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Default City</Label>
+                  <Label>Default Venue</Label>
                   <Input
                     value={editVenueCity}
                     onChange={(e) => setEditVenueCity(e.target.value)}
-                    placeholder="e.g., Sydney"
+                    placeholder="e.g., Hilton Sydney"
                   />
                 </div>
                 
