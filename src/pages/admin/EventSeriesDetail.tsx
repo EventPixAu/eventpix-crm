@@ -627,9 +627,6 @@ export default function EventSeriesDetail() {
                               {item.assignmentCount === 0 && (
                                 <Badge variant="destructive" className="text-xs">No staff</Badge>
                               )}
-                              {!item.hasLead && item.assignmentCount > 0 && (
-                                <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">No lead</Badge>
-                              )}
                               {item.staffOnSameDay.length > 0 && (
                                 <Badge variant="outline" className="text-xs">Multi-day</Badge>
                               )}
