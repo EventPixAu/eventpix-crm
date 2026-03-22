@@ -59,14 +59,14 @@ type ViewMode = 'month' | 'week' | 'list';
 
 // Generate consistent colors for series based on their ID
 const SERIES_COLORS = [
-  { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-400' },
-  { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-400' },
-  { bg: 'bg-purple-500/20', border: 'border-purple-500', text: 'text-purple-400' },
-  { bg: 'bg-amber-500/20', border: 'border-amber-500', text: 'text-amber-400' },
-  { bg: 'bg-pink-500/20', border: 'border-pink-500', text: 'text-pink-400' },
-  { bg: 'bg-cyan-500/20', border: 'border-cyan-500', text: 'text-cyan-400' },
-  { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-400' },
-  { bg: 'bg-indigo-500/20', border: 'border-indigo-500', text: 'text-indigo-400' },
+  { bg: 'bg-blue-100 dark:bg-blue-500/40', border: 'border-blue-500', text: 'text-blue-700 dark:text-blue-200' },
+  { bg: 'bg-emerald-100 dark:bg-emerald-500/40', border: 'border-emerald-500', text: 'text-emerald-700 dark:text-emerald-200' },
+  { bg: 'bg-purple-100 dark:bg-purple-500/40', border: 'border-purple-500', text: 'text-purple-700 dark:text-purple-200' },
+  { bg: 'bg-amber-100 dark:bg-amber-500/40', border: 'border-amber-500', text: 'text-amber-700 dark:text-amber-200' },
+  { bg: 'bg-pink-100 dark:bg-pink-500/40', border: 'border-pink-500', text: 'text-pink-700 dark:text-pink-200' },
+  { bg: 'bg-cyan-100 dark:bg-cyan-500/40', border: 'border-cyan-500', text: 'text-cyan-700 dark:text-cyan-200' },
+  { bg: 'bg-rose-100 dark:bg-rose-500/40', border: 'border-rose-500', text: 'text-rose-700 dark:text-rose-200' },
+  { bg: 'bg-indigo-100 dark:bg-indigo-500/40', border: 'border-indigo-500', text: 'text-indigo-700 dark:text-indigo-200' },
 ];
 
 function getSeriesColor(seriesId: string | null, seriesColorMap: Map<string, number>) {
@@ -115,8 +115,8 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
           <Clock className="h-3 w-3 text-amber-600 shrink-0" />
         )}
       </div>
-      <span className="text-gray-900 block truncate font-medium">{event.event_name}</span>
-      <div className="flex items-center gap-1 text-gray-600">
+      <span className="text-gray-900 dark:text-gray-100 block truncate font-medium">{event.event_name}</span>
+      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
         {suburb && (
           <span className="truncate">{suburb}</span>
         )}
@@ -140,8 +140,8 @@ function LeadTile({ lead }: { lead: CalendarLead }) {
       <div className="flex items-center gap-1">
         <span className="text-[10px] font-medium text-violet-700 uppercase shrink-0">Lead</span>
       </div>
-      <span className="text-gray-900 block truncate font-medium">{lead.lead_name}</span>
-      <div className="text-gray-600 truncate">
+      <span className="text-gray-900 dark:text-gray-100 block truncate font-medium">{lead.lead_name}</span>
+      <div className="text-gray-600 dark:text-gray-300 truncate">
         {lead.client_name}
       </div>
     </Link>
