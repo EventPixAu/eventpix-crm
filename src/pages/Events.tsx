@@ -113,9 +113,8 @@ export default function Events() {
 
   const getEventStatus = (dateStr: string, event?: any) => {
     if (event?.ops_status === 'archived') return 'archived';
-    const date = parseISO(dateStr);
-    if (isToday(date) || isFuture(date)) return 'upcoming';
-    return 'past';
+    if (event?.ops_status === 'completed') return 'completed';
+    return 'upcoming';
   };
 
   // Get display name for event type
