@@ -91,7 +91,6 @@ export default function Events() {
         : event.delivery_method?.replace('_', ' ').toLowerCase();
       const matchesDelivery = deliveryFilter === 'all' || deliveryMethodName === deliveryFilter.toLowerCase();
 
-      const date = parseISO(event.event_date);
       const opsStatus = (event as any).ops_status;
       const isArchived = opsStatus === 'archived';
       const isCompleted = opsStatus === 'completed';
@@ -99,14 +98,13 @@ export default function Events() {
       let filterCategory: string;
       if (isArchived) {
         filterCategory = 'archived';
-      } else if (isCompleted || (!isFuture(date) && !isToday(date))) {
-        filterCategory = 'past';
+      } else if (isCompleted) {
+        filterCategory = 'completed';
       } else {
+        // Events stay "current" until explicitly marked completed/archived
         filterCategory = 'current';
       }
       
-      // "Current" includes all ops statuses up to and including Delivered
-      // (i.e. not Completed or Archived), AND the date is today or future
       const matchesStatus = statusFilter === 'all' || filterCategory === statusFilter;
 
       return matchesSearch && matchesType && matchesStatus && matchesDelivery;
@@ -115,9 +113,8 @@ export default function Events() {
 
   const getEventStatus = (dateStr: string, event?: any) => {
     if (event?.ops_status === 'archived') return 'archived';
-    const date = parseISO(dateStr);
-    if (isToday(date) || isFuture(date)) return 'upcoming';
-    return 'past';
+    if (event?.ops_status === 'completed') return 'completed';
+    return 'upcoming';
   };
 
   // Get display name for event type
@@ -190,7 +187,7 @@ export default function Events() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="current">Current</SelectItem>
-            <SelectItem value="past">Past</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
