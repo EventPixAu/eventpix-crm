@@ -187,7 +187,7 @@ export default function Events() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="current">Current</SelectItem>
-            <SelectItem value="past">Past</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
