@@ -89,8 +89,8 @@ export function useRoleSectionVisibility(role?: string, pageKey?: string) {
   return useQuery({
     queryKey: ['role-section-visibility', role, pageKey],
     queryFn: async () => {
-      let query = supabase
-        .from('role_section_visibility')
+      let query = (supabase
+        .from('role_section_visibility') as any)
         .select('*');
       
       if (role) {
