@@ -98,8 +98,9 @@ export function BulkEventCreationDialog({
   const seriesStartTime = (series as any).default_start_time || '18:00';
   const seriesEndTime = (series as any).default_end_time || '22:00';
   const seriesDefaultContactId = (series as any).default_contact_id || null;
+  const seriesDefaultVenue = (series as any).default_venue_city || '';
   
-  const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime })]);
+  const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
   const [clientName, setClientName] = useState('');
   const [defaultContactId, setDefaultContactId] = useState<string | null>(null);
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
@@ -109,7 +110,7 @@ export function BulkEventCreationDialog({
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime })]);
+      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
       setClientName(series.name);
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
@@ -185,6 +186,7 @@ export function BulkEventCreationDialog({
     setRows([...rows, createEmptyRow({
       start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
       end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
+      venue_name: seriesDefaultVenue,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
       onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
       onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
