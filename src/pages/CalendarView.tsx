@@ -140,8 +140,8 @@ function LeadTile({ lead }: { lead: CalendarLead }) {
       <div className="flex items-center gap-1">
         <span className="text-[10px] font-medium text-violet-700 uppercase shrink-0">Lead</span>
       </div>
-      <span className="text-gray-900 block truncate font-medium">{lead.lead_name}</span>
-      <div className="text-gray-600 truncate">
+      <span className="text-gray-900 dark:text-gray-100 block truncate font-medium">{lead.lead_name}</span>
+      <div className="text-gray-600 dark:text-gray-300 truncate">
         {lead.client_name}
       </div>
     </Link>
