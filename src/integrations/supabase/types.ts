@@ -4533,6 +4533,7 @@ export type Database = {
           created_at: string
           id: string
           is_visible: boolean
+          page_key: string
           role: string
           section_key: string
           updated_at: string
@@ -4541,6 +4542,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_visible?: boolean
+          page_key?: string
           role: string
           section_key: string
           updated_at?: string
@@ -4549,6 +4551,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_visible?: boolean
+          page_key?: string
           role?: string
           section_key?: string
           updated_at?: string
