@@ -592,7 +592,7 @@ export default function EventSeriesDetail() {
                       <TableHead className="w-10">
                         <Checkbox 
                           checked={selectedEventIds.length > 0}
-                          onCheckedChange={() => handleSelectAllEvents(coverage.filter(c => c.assignmentCount === 0 || !c.hasLead))}
+                          onCheckedChange={() => handleSelectAllEvents(coverage.filter(c => c.assignmentCount === 0))}
                         />
                       </TableHead>
                       <TableHead>Event</TableHead>
@@ -605,7 +605,7 @@ export default function EventSeriesDetail() {
                   </TableHeader>
                   <TableBody>
                     {coverage
-                      .filter(c => c.assignmentCount === 0 || !c.hasLead || c.staffOnSameDay.length > 0)
+                      .filter(c => c.assignmentCount === 0 || c.staffOnSameDay.length > 0)
                       .map(item => (
                         <TableRow key={item.eventId}>
                           <TableCell>
@@ -626,9 +626,6 @@ export default function EventSeriesDetail() {
                             <div className="flex flex-wrap gap-1">
                               {item.assignmentCount === 0 && (
                                 <Badge variant="destructive" className="text-xs">No staff</Badge>
-                              )}
-                              {!item.hasLead && item.assignmentCount > 0 && (
-                                <Badge variant="outline" className="text-xs border-amber-500 text-amber-700">No lead</Badge>
                               )}
                               {item.staffOnSameDay.length > 0 && (
                                 <Badge variant="outline" className="text-xs">Multi-day</Badge>
