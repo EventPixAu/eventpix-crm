@@ -605,7 +605,7 @@ export default function EventSeriesDetail() {
                   </TableHeader>
                   <TableBody>
                     {coverage
-                      .filter(c => c.assignmentCount === 0 || !c.hasLead || c.staffOnSameDay.length > 0)
+                      .filter(c => c.assignmentCount === 0 || c.staffOnSameDay.length > 0)
                       .map(item => (
                         <TableRow key={item.eventId}>
                           <TableCell>
