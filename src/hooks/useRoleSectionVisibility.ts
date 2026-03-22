@@ -112,8 +112,8 @@ export function useToggleSectionVisibility() {
 
   return useMutation({
     mutationFn: async ({ role, sectionKey, isVisible, pageKey = 'event_detail' }: { role: string; sectionKey: string; isVisible: boolean; pageKey?: string }) => {
-      const { data, error } = await supabase
-        .from('role_section_visibility')
+      const { data, error } = await (supabase
+        .from('role_section_visibility') as any)
         .upsert(
           { role, section_key: sectionKey, is_visible: isVisible, page_key: pageKey, updated_at: new Date().toISOString() },
           { onConflict: 'role,section_key' }
