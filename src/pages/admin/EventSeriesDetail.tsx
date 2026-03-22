@@ -592,7 +592,7 @@ export default function EventSeriesDetail() {
                       <TableHead className="w-10">
                         <Checkbox 
                           checked={selectedEventIds.length > 0}
-                          onCheckedChange={() => handleSelectAllEvents(coverage.filter(c => c.assignmentCount === 0 || !c.hasLead))}
+                          onCheckedChange={() => handleSelectAllEvents(coverage.filter(c => c.assignmentCount === 0))}
                         />
                       </TableHead>
                       <TableHead>Event</TableHead>
