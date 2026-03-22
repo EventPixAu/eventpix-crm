@@ -91,7 +91,6 @@ export default function Events() {
         : event.delivery_method?.replace('_', ' ').toLowerCase();
       const matchesDelivery = deliveryFilter === 'all' || deliveryMethodName === deliveryFilter.toLowerCase();
 
-      const date = parseISO(event.event_date);
       const opsStatus = (event as any).ops_status;
       const isArchived = opsStatus === 'archived';
       const isCompleted = opsStatus === 'completed';
@@ -99,14 +98,13 @@ export default function Events() {
       let filterCategory: string;
       if (isArchived) {
         filterCategory = 'archived';
-      } else if (isCompleted || (!isFuture(date) && !isToday(date))) {
-        filterCategory = 'past';
+      } else if (isCompleted) {
+        filterCategory = 'completed';
       } else {
+        // Events stay "current" until explicitly marked completed/archived
         filterCategory = 'current';
       }
       
-      // "Current" includes all ops statuses up to and including Delivered
-      // (i.e. not Completed or Archived), AND the date is today or future
       const matchesStatus = statusFilter === 'all' || filterCategory === statusFilter;
 
       return matchesSearch && matchesType && matchesStatus && matchesDelivery;
