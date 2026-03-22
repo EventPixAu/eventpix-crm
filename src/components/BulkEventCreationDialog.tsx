@@ -98,6 +98,7 @@ export function BulkEventCreationDialog({
   const seriesStartTime = (series as any).default_start_time || '18:00';
   const seriesEndTime = (series as any).default_end_time || '22:00';
   const seriesDefaultContactId = (series as any).default_contact_id || null;
+  const seriesDefaultVenue = (series as any).default_venue_city || '';
   
   const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime })]);
   const [clientName, setClientName] = useState('');
