@@ -115,8 +115,8 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
           <Clock className="h-3 w-3 text-amber-600 shrink-0" />
         )}
       </div>
-      <span className="text-gray-900 block truncate font-medium">{event.event_name}</span>
-      <div className="flex items-center gap-1 text-gray-600">
+      <span className="text-gray-900 dark:text-gray-100 block truncate font-medium">{event.event_name}</span>
+      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
         {suburb && (
           <span className="truncate">{suburb}</span>
         )}
