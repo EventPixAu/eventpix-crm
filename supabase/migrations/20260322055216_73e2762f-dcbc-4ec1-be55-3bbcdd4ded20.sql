@@ -1,0 +1,2 @@
+UPDATE event_sessions SET session_date = '2026-09-18' WHERE event_id = '7a922ad8-a181-4e79-b83b-c462929926cb';
+UPDATE event_sessions SET session_date = '2026-09-19' WHERE event_id = '9d9dc731-0c01-46c3-bf5c-76e9724302f8';
