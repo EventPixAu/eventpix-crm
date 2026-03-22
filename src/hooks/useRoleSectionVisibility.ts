@@ -116,7 +116,7 @@ export function useToggleSectionVisibility() {
         .from('role_section_visibility') as any)
         .upsert(
           { role, section_key: sectionKey, is_visible: isVisible, page_key: pageKey, updated_at: new Date().toISOString() },
-          { onConflict: 'role,section_key' }
+          { onConflict: 'role,section_key,page_key' }
         )
         .select()
         .single();
