@@ -186,6 +186,7 @@ export function BulkEventCreationDialog({
     setRows([...rows, createEmptyRow({
       start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
       end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
+      venue_name: seriesDefaultVenue,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
       onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
       onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
