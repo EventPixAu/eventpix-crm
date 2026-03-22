@@ -1131,6 +1131,50 @@ export default function EventSeriesDetail() {
                     placeholder="General series notes..."
                   />
                 </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    if (!id) return;
+                    const eventIds = events.map(e => e.id);
+                    if (eventIds.length === 0) {
+                      toast.info('No events in this series');
+                      return;
+                    }
+                    
+                    const confirmed = window.confirm(
+                      `Push default notes to all ${eventIds.length} events?\n\nPublic Notes → Special Instructions\nInternal Notes → Event Notes\n\nThis will overwrite existing values on all events.`
+                    );
+                    if (!confirmed) return;
+                    
+                    try {
+                      const updatePayload: Record<string, string | null> = {};
+                      if (editNotesPublic !== undefined) {
+                        updatePayload.special_instructions = editNotesPublic || null;
+                      }
+                      if (editNotesInternal !== undefined) {
+                        updatePayload.notes = editNotesInternal || null;
+                      }
+                      
+                      const { error: updateError } = await supabase
+                        .from('events')
+                        .update(updatePayload)
+                        .eq('event_series_id', id);
+                      
+                      if (updateError) throw updateError;
+                      
+                      queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                      queryClient.invalidateQueries({ queryKey: ['events'] });
+                      toast.success(`Notes pushed to ${eventIds.length} events`);
+                    } catch (err: any) {
+                      toast.error('Failed to push notes: ' + err.message);
+                    }
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Push Notes to All Events
+                </Button>
               </CardContent>
             </Card>
           </div>
