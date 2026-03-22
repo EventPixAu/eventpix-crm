@@ -110,7 +110,7 @@ export function BulkEventCreationDialog({
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime })]);
+      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
       setClientName(series.name);
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
