@@ -89,6 +89,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useStaffRoles } from '@/hooks/useStaff';
+import { useActiveStaffRate, calculateEstimatedCost } from '@/hooks/useStaffRates';
 import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
 function formatSessionTime(timeStr: string): string {
   try {
