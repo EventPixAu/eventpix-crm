@@ -301,7 +301,7 @@ export function SendOpsEmailDialog({
             recipientName: recipient.name,
             subject,
             bodyHtml: personalizedBody,
-            attachments: resolvedAttachments.length > 0 ? resolvedAttachments : undefined,
+            attachments: [...resolvedAttachments, ...userAttachments].length > 0 ? [...resolvedAttachments, ...userAttachments] : undefined,
             contactId,
             clientId: eventData.client_id,
             eventId,
