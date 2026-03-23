@@ -50,7 +50,7 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
           const subject = (log.subject || '').toLowerCase();
           if (subject.includes('live access')) {
             actionType = 'live_access';
-          } else if (subject.includes('edited and uploaded') || subject.includes('dropbox')) {
+          } else if (subject.includes('edited and uploaded') || subject.includes('dropbox') || subject.includes('photos are ready')) {
             actionType = 'dropbox_delivery';
           } else if (subject.includes('event confirmation') || subject.includes('final confirmation')) {
             actionType = 'final_confirmation';
