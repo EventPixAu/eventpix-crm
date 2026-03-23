@@ -503,16 +503,57 @@ export function SendOpsEmailDialog({
               </p>
             </div>
 
-            {/* Attachments indicator */}
-            {storageAttachments && storageAttachments.length > 0 && (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg border bg-muted/30 text-sm">
-                <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Attached:</span>
-                {storageAttachments.map((sa, i) => (
-                  <span key={i} className="font-medium">{sa.fileName}</span>
-                ))}
+            {/* Attachments */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                  className="hidden"
+                  onChange={handleFileAttach}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-4 w-4 mr-1.5" />
+                  Attach File
+                </Button>
+                <span className="text-xs text-muted-foreground">Max 10 MB per file</span>
               </div>
-            )}
+
+              {/* Storage attachments (e.g. QR) */}
+              {storageAttachments && storageAttachments.length > 0 && (
+                <div className="flex items-center gap-2 p-2.5 rounded-lg border bg-muted/30 text-sm">
+                  <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">Attached:</span>
+                  {storageAttachments.map((sa, i) => (
+                    <span key={i} className="font-medium">{sa.fileName}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* User-uploaded attachments */}
+              {userAttachments.map((att, i) => (
+                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg border bg-muted/30 text-sm">
+                  <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="font-medium flex-1">{att.filename}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeUserAttachment(i)}
+                  >
+                    ×
+                  </Button>
+                </div>
+              ))}
+            </div>
 
             {/* Email info notice */}
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-muted-foreground">
