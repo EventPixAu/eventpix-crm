@@ -62,32 +62,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchUserRole = async (userId: string): Promise<AppRole | null> => {
-    try {
-      const { data: currentRole, error: currentRoleError } = await supabase.rpc('current_user_role');
+    const { data: { session: activeSession } } = await supabase.auth.getSession();
 
-      if (!currentRoleError) {
-        const normalizedCurrentRole = normalizeRole(currentRole);
-        if (normalizedCurrentRole) return normalizedCurrentRole;
-      } else {
-        console.error('Error fetching current role:', currentRoleError);
-      }
-
-      // NOTE: A user can technically have multiple roles; we pick the highest priority.
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching role:', error);
-        return null;
-      }
-
-      return resolveRoleFromRows(data as Array<{ role: string }> | null);
-    } catch (err) {
-      console.error('Error in fetchUserRole:', err);
-      return null;
+    if (!activeSession?.user?.id) {
+      throw new Error('No active session while resolving role');
     }
+
+    const { data: currentRole, error: currentRoleError } = await supabase.rpc('current_user_role');
+
+    if (!currentRoleError) {
+      const normalizedCurrentRole = normalizeRole(currentRole);
+      if (normalizedCurrentRole) return normalizedCurrentRole;
+    } else {
+      console.error('Error fetching current role:', currentRoleError);
+    }
+
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    return resolveRoleFromRows(data as Array<{ role: string }> | null);
   };
 
   useEffect(() => {
