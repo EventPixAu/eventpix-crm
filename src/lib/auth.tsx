@@ -149,23 +149,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoleLoading(true);
 
     void (async () => {
-      // Retry up to 3 times with increasing delays to handle transient RLS/network issues
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const nextRole = await withTimeout(fetchUserRole(user.id), 8000);
-          if (!cancelled) {
-            setRole(nextRole);
-            setRoleLoading(false);
+
+          if (nextRole) {
+            if (!cancelled) {
+              setRole(nextRole);
+              setRoleLoading(false);
+            }
+            return;
           }
-          return; // success — exit
+
+          console.warn(`Role fetch attempt ${attempt + 1} returned no role for user ${user.id}`);
         } catch (error) {
           console.error(`Role fetch attempt ${attempt + 1} failed:`, error);
-          if (attempt < 2 && !cancelled) {
-            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-          }
+        }
+
+        if (attempt < 2 && !cancelled) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
         }
       }
-      // All retries exhausted
+
       if (!cancelled) {
         setRole(null);
         setRoleLoading(false);
