@@ -41,6 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
   };
 
+  const normalizeRole = (value: string | null | undefined): AppRole | null => {
+    if (!value) return null;
+
+    const roleValue = value.toLowerCase();
+    if (roleValue === 'admin') return 'admin';
+    if (roleValue === 'operations') return 'operations';
+    if (roleValue === 'sales') return 'sales';
+    if (roleValue === 'crew' || roleValue === 'photographer' || roleValue === 'assistant') return 'crew';
+    return null;
+  };
+
   const resolveRoleFromRows = (rows: Array<{ role: string }> | null | undefined): AppRole | null => {
     const roles = new Set((rows ?? []).map(r => r.role));
     if (roles.has('admin')) return 'admin';
@@ -52,6 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserRole = async (userId: string): Promise<AppRole | null> => {
     try {
+      const { data: currentRole, error: currentRoleError } = await supabase.rpc('current_user_role');
+
+      if (!currentRoleError) {
+        const normalizedCurrentRole = normalizeRole(currentRole);
+        if (normalizedCurrentRole) return normalizedCurrentRole;
+      } else {
+        console.error('Error fetching current role:', currentRoleError);
+      }
+
       // NOTE: A user can technically have multiple roles; we pick the highest priority.
       const { data, error } = await supabase
         .from('user_roles')
