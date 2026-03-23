@@ -24,6 +24,7 @@ function ScrollToTop() {
 
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import OperationsDashboard from "./pages/OperationsDashboard";
 import PhotographerDashboard from "./pages/PhotographerDashboard";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
@@ -198,7 +199,7 @@ function AppRoutes() {
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
       <Route path="/" element={<ProtectedRoute><RoleBasedDashboard /></ProtectedRoute>} />
-      <Route path="/operations" element={<ProtectedRoute><OpsGuard><Dashboard /></OpsGuard></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute><OpsGuard><OperationsDashboard /></OpsGuard></ProtectedRoute>} />
       
       {/* Operations routes - Admin + Operations */}
       <Route path="/events" element={<ProtectedRoute><OpsGuard><Events /></OpsGuard></ProtectedRoute>} />
