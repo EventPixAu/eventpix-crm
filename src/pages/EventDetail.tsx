@@ -544,7 +544,7 @@ export default function EventDetail() {
             {getEventTypeName()} • {event.client_name}
           </p>
         </div>
-        {isAdmin && (
+        {(isAdmin || isOperations) && (
           <div className="flex items-center gap-2">
             <Link to={`/events/${id}/edit`}>
               <Button variant="outline">
