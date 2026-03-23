@@ -62,32 +62,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchUserRole = async (userId: string): Promise<AppRole | null> => {
-    try {
-      const { data: currentRole, error: currentRoleError } = await supabase.rpc('current_user_role');
+    const { data: { session: activeSession } } = await supabase.auth.getSession();
 
-      if (!currentRoleError) {
-        const normalizedCurrentRole = normalizeRole(currentRole);
-        if (normalizedCurrentRole) return normalizedCurrentRole;
-      } else {
-        console.error('Error fetching current role:', currentRoleError);
-      }
-
-      // NOTE: A user can technically have multiple roles; we pick the highest priority.
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching role:', error);
-        return null;
-      }
-
-      return resolveRoleFromRows(data as Array<{ role: string }> | null);
-    } catch (err) {
-      console.error('Error in fetchUserRole:', err);
-      return null;
+    if (!activeSession?.user?.id) {
+      throw new Error('No active session while resolving role');
     }
+
+    const { data: currentRole, error: currentRoleError } = await supabase.rpc('current_user_role');
+
+    if (!currentRoleError) {
+      const normalizedCurrentRole = normalizeRole(currentRole);
+      if (normalizedCurrentRole) return normalizedCurrentRole;
+    } else {
+      console.error('Error fetching current role:', currentRoleError);
+    }
+
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    return resolveRoleFromRows(data as Array<{ role: string }> | null);
   };
 
   useEffect(() => {
@@ -150,23 +149,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoleLoading(true);
 
     void (async () => {
-      // Retry up to 3 times with increasing delays to handle transient RLS/network issues
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const nextRole = await withTimeout(fetchUserRole(user.id), 8000);
-          if (!cancelled) {
-            setRole(nextRole);
-            setRoleLoading(false);
+
+          if (nextRole) {
+            if (!cancelled) {
+              setRole(nextRole);
+              setRoleLoading(false);
+            }
+            return;
           }
-          return; // success — exit
+
+          console.warn(`Role fetch attempt ${attempt + 1} returned no role for user ${user.id}`);
         } catch (error) {
           console.error(`Role fetch attempt ${attempt + 1} failed:`, error);
-          if (attempt < 2 && !cancelled) {
-            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-          }
+        }
+
+        if (attempt < 2 && !cancelled) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
         }
       }
-      // All retries exhausted
+
       if (!cancelled) {
         setRole(null);
         setRoleLoading(false);
