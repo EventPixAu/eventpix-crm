@@ -88,6 +88,8 @@ export function SendOpsEmailDialog({
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
   const [editingPlainText, setEditingPlainText] = useState(false);
+  const [userAttachments, setUserAttachments] = useState<{ filename: string; content: string; contentType: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Link insertion state
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
