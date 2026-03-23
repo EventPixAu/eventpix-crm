@@ -134,16 +134,16 @@ export function useToggleSectionVisibility() {
  * Returns a function to check if a section is visible for the current user's role.
  * Admins always see everything. Only non-admin roles are restricted.
  */
-export function useEventSectionVisibility() {
+export function useEventSectionVisibility(pageKey: string = 'event_detail') {
   const { role, isAdmin } = useAuth();
-  const { data: visibilityRules = [] } = useRoleSectionVisibility(isAdmin ? undefined : role || undefined);
+  const { data: visibilityRules = [] } = useRoleSectionVisibility(isAdmin ? undefined : role || undefined, isAdmin ? undefined : pageKey);
 
   const canSeeSection = (sectionKey: SectionKey): boolean => {
     // Admins always see everything
     if (isAdmin) return true;
     
-    // If no rules exist for this role/section, default to visible
-    const rule = visibilityRules.find(r => r.role === role && r.section_key === sectionKey);
+    // Check for rule matching this page and section
+    const rule = visibilityRules.find(r => r.role === role && r.section_key === sectionKey && (r.page_key === pageKey || !r.page_key));
     return rule ? rule.is_visible : true;
   };
 
