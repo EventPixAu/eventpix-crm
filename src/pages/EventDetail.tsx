@@ -544,7 +544,7 @@ export default function EventDetail() {
             {getEventTypeName()} • {event.client_name}
           </p>
         </div>
-        {(isAdmin || isOperations) && (
+        {(isAdmin || isOperations || isSales) && (
           <div className="flex items-center gap-2">
             <Link to={`/events/${id}/edit`}>
               <Button variant="outline">
@@ -845,7 +845,7 @@ export default function EventDetail() {
                   preRegistrationLink={(event as any).pre_registration_link || null}
                   dropboxLink={(event as any).dropbox_link || null}
                   smugmugLink={(event as any).smugmug_link || null}
-                  isAdmin={isAdmin || isOperations}
+                  isAdmin={isAdmin || isOperations || isSales}
                 />
               )}
               
