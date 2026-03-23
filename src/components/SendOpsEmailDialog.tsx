@@ -98,10 +98,34 @@ export function SendOpsEmailDialog({
   const [linkSelectionRange, setLinkSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Handle file attachment
+  const handleFileAttach = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: 'File too large', description: `${file.name} exceeds 10 MB limit.`, variant: 'destructive' });
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        setUserAttachments(prev => [...prev, { filename: file.name, content: base64, contentType: file.type || 'application/octet-stream' }]);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [toast]);
+
+  const removeUserAttachment = useCallback((index: number) => {
+    setUserAttachments(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
   // Default-select the client recipient and apply initial values when opening.
   useEffect(() => {
     if (!open) return;
     setShowPreview(false);
+    setUserAttachments([]);
 
     if (initialSubject) setSubject(initialSubject);
     if (initialBody) setBody(initialBody);
