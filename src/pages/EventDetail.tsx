@@ -89,6 +89,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useStaffRoles } from '@/hooks/useStaff';
+import { useActiveStaffRate, calculateEstimatedCost } from '@/hooks/useStaffRates';
 import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
 function formatSessionTime(timeStr: string): string {
   try {
@@ -184,6 +185,34 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">
           {value || 'No editing instructions set.'}
         </p>
+      )}
+    </div>
+  );
+}
+
+function AssignmentBudgetLine({ assignment, isAdmin }: { assignment: EventAssignment; isAdmin: boolean }) {
+  const userId = assignment.user_id || undefined;
+  const { data: activeRate, isLoading } = useActiveStaffRate(userId);
+
+  if (isLoading || !activeRate) return null;
+
+  const estimatedCost = (assignment as any).estimated_cost ?? calculateEstimatedCost(activeRate, null);
+
+  const formatRate = () => {
+    const typeLabel = activeRate.rate_type.replace('_', ' ');
+    return `$${activeRate.base_rate.toFixed(2)} (${typeLabel})`;
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="text-xs text-muted-foreground">
+        Pay: <span className="font-medium text-foreground">{formatRate()}</span>
+      </span>
+      {estimatedCost !== null && isAdmin && (
+        <span className="text-xs text-muted-foreground ml-auto">
+          Est: <span className="font-medium text-foreground">${estimatedCost.toFixed(2)}</span>
+        </span>
       )}
     </div>
   );
@@ -311,6 +340,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           </div>
         )}
       </div>
+      <AssignmentBudgetLine assignment={assignment} isAdmin={isAdmin} />
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );
