@@ -98,6 +98,11 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
               <span className="flex items-center gap-2 text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
                 Team
+                {!financials.hasXeroStaffCost && financials.expectedStaffCost > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-amber-500 border-amber-500/30">
+                    Expected
+                  </Badge>
+                )}
               </span>
               <span>{formatCurrency(financials.staffCost)}</span>
             </div>
