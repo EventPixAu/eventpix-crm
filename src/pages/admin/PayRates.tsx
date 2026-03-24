@@ -60,7 +60,7 @@ export default function PayRates() {
   return (
     <AppLayout>
       <div className="p-6 space-y-6 max-w-5xl mx-auto">
-        <PageHeader title="Pay Rates" subtitle="Manage global rate card and pay calculation rules" />
+        <PageHeader title="Pay Rates" description="Manage global rate card and pay calculation rules" />
 
         {/* Formula explanation */}
         <Card className="border-primary/20 bg-primary/5">
