@@ -191,27 +191,42 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
 }
 
 function AssignmentBudgetLine({ assignment, isAdmin }: { assignment: EventAssignment; isAdmin: boolean }) {
-  const userId = assignment.user_id || undefined;
-  const { data: activeRate, isLoading } = useActiveStaffRate(userId);
+  const { data: rateCard = [], isLoading } = usePayRateCard();
 
-  if (isLoading || !activeRate) return null;
+  const roleId = assignment.staff_role_id;
+  const rateEntry = rateCard.find(r => r.staff_role_id === roleId);
 
-  const estimatedCost = (assignment as any).estimated_cost ?? calculateEstimatedCost(activeRate, null);
+  if (isLoading || !rateEntry) return null;
 
-  const formatRate = () => {
-    const typeLabel = activeRate.rate_type.replace('_', ' ');
-    return `$${activeRate.base_rate.toFixed(2)} (${typeLabel})`;
-  };
+  // Calculate session duration in hours
+  const session = (assignment as any).session;
+  let sessionHours: number | null = null;
+  if (session?.start_time && session?.end_time) {
+    const [sh, sm] = session.start_time.split(':').map(Number);
+    const [eh, em] = session.end_time.split(':').map(Number);
+    sessionHours = (eh * 60 + em - (sh * 60 + sm)) / 60;
+    if (sessionHours <= 0) sessionHours = null;
+  }
+
+  const totalPay = sessionHours
+    ? calculatePayFromRateCard(rateEntry.hourly_rate, rateEntry.minimum_paid_hours, sessionHours)
+    : rateEntry.hourly_rate * rateEntry.minimum_paid_hours;
+
+  const paidHours = sessionHours
+    ? Math.max(sessionHours, rateEntry.minimum_paid_hours)
+    : rateEntry.minimum_paid_hours;
 
   return (
     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
       <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
       <span className="text-xs text-muted-foreground">
-        Pay: <span className="font-medium text-foreground">{formatRate()}</span>
+        Pay: <span className="font-medium text-foreground">
+          ${rateEntry.hourly_rate.toFixed(2)}/hr × {paidHours}hrs = ${totalPay.toFixed(2)}
+        </span>
       </span>
-      {estimatedCost !== null && isAdmin && (
+      {sessionHours && sessionHours < rateEntry.minimum_paid_hours && (
         <span className="text-xs text-muted-foreground ml-auto">
-          Est: <span className="font-medium text-foreground">${estimatedCost.toFixed(2)}</span>
+          (min {rateEntry.minimum_paid_hours}hrs)
         </span>
       )}
     </div>
