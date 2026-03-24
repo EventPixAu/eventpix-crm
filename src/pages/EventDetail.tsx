@@ -15,6 +15,7 @@ import {
   Package,
   Phone,
   Play,
+  Plus,
   QrCode,
   Send,
   Trash2,
@@ -86,10 +87,10 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useStaffRoles } from '@/hooks/useStaff';
-import { usePayRateCard, calculatePayFromRateCard } from '@/hooks/usePayRateCard';
+import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
 function formatSessionTime(timeStr: string): string {
   try {
@@ -190,8 +191,25 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
   );
 }
 
-function AssignmentBudgetLine({ assignment, isAdmin }: { assignment: EventAssignment; isAdmin: boolean }) {
+function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
   const { data: rateCard = [], isLoading } = usePayRateCard();
+  const { data: allAllowances = [] } = usePayAllowances();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [addingExtra, setAddingExtra] = useState(false);
+
+  // Fetch assignment allowances
+  const { data: assignmentAllowances = [] } = useQuery({
+    queryKey: ['assignment-allowances', assignment.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('assignment_allowances')
+        .select('*, pay_allowances:allowance_id(id, name, amount, unit)')
+        .eq('assignment_id', assignment.id);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
 
   const roleId = assignment.staff_role_id;
   const rateEntry = rateCard.find(r => r.staff_role_id === roleId);
@@ -208,26 +226,107 @@ function AssignmentBudgetLine({ assignment, isAdmin }: { assignment: EventAssign
     if (sessionHours <= 0) sessionHours = null;
   }
 
-  const totalPay = sessionHours
+  const callHours = sessionHours ? Math.ceil(sessionHours) : rateEntry.minimum_paid_hours;
+  const basePay = sessionHours
     ? calculatePayFromRateCard(rateEntry.hourly_rate, rateEntry.minimum_paid_hours, sessionHours)
-    : rateEntry.hourly_rate * rateEntry.minimum_paid_hours;
+    : rateEntry.hourly_rate * (rateEntry.minimum_paid_hours + 1);
 
-  const paidHours = sessionHours
-    ? Math.max(sessionHours, rateEntry.minimum_paid_hours)
-    : rateEntry.minimum_paid_hours;
+  // Calculate extras total
+  const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
+    const amt = aa.override_amount ?? aa.pay_allowances?.amount ?? 0;
+    const qty = aa.quantity || 1;
+    return sum + amt * qty;
+  }, 0);
+
+  const totalWithExtras = basePay + extrasTotal;
+
+  const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
+  const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
+
+  const handleAddExtra = async (allowanceId: string) => {
+    const { error } = await supabase.from('assignment_allowances').insert({
+      assignment_id: assignment.id,
+      allowance_id: allowanceId,
+      quantity: 1,
+    });
+    if (error) {
+      toast({ title: 'Failed to add extra', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
+    }
+    setAddingExtra(false);
+  };
+
+  const handleRemoveExtra = async (id: string) => {
+    const { error } = await supabase.from('assignment_allowances').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Failed to remove', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
+    }
+  };
 
   return (
-    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
-      <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-      <span className="text-xs text-muted-foreground">
-        Pay: <span className="font-medium text-foreground">
-          ${rateEntry.hourly_rate.toFixed(2)}/hr × {paidHours}hrs = ${totalPay.toFixed(2)}
+    <div className="mt-2 pt-2 border-t border-border space-y-1">
+      <div className="flex items-center gap-2">
+        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">
+          Pay: <span className="font-medium text-foreground">
+            ${rateEntry.hourly_rate.toFixed(2)}/hr × {callHours + 1}hrs = ${basePay.toFixed(2)}
+          </span>
         </span>
-      </span>
-      {sessionHours && sessionHours < rateEntry.minimum_paid_hours && (
-        <span className="text-xs text-muted-foreground ml-auto">
-          (min {rateEntry.minimum_paid_hours}hrs)
-        </span>
+      </div>
+
+      {/* Extras */}
+      {assignmentAllowances.map((aa: any) => {
+        const name = aa.pay_allowances?.name || 'Extra';
+        const amt = aa.override_amount ?? aa.pay_allowances?.amount ?? 0;
+        return (
+          <div key={aa.id} className="flex items-center gap-2 pl-5">
+            <span className="text-xs text-muted-foreground">
+              + {name}: <span className="font-medium text-foreground">${(amt * (aa.quantity || 1)).toFixed(2)}</span>
+            </span>
+            {isAdmin && (
+              <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveExtra(aa.id)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Add extras button */}
+      {isAdmin && availableExtras.length > 0 && (
+        addingExtra ? (
+          <div className="pl-5">
+            <Select onValueChange={handleAddExtra}>
+              <SelectTrigger className="h-7 text-xs w-48">
+                <SelectValue placeholder="Select extra..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableExtras.map(a => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name} (${a.amount.toFixed(2)}{a.unit === 'per_hour' ? '/hr' : ''})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <button className="text-xs text-primary hover:underline pl-5 flex items-center gap-1" onClick={() => setAddingExtra(true)}>
+            <Plus className="h-3 w-3" /> Add extra
+          </button>
+        )
+      )}
+
+      {/* Total with extras */}
+      {extrasTotal > 0 && isAdmin && (
+        <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">
+            Total: ${totalWithExtras.toFixed(2)}
+          </span>
+        </div>
       )}
     </div>
   );
@@ -355,7 +454,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           </div>
         )}
       </div>
-      <AssignmentBudgetLine assignment={assignment} isAdmin={isAdmin} />
+      <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} />
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );

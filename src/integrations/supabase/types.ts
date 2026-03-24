@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_allowances: {
+        Row: {
+          allowance_id: string
+          assignment_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          override_amount: number | null
+          quantity: number
+        }
+        Insert: {
+          allowance_id: string
+          assignment_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          override_amount?: number | null
+          quantity?: number
+        }
+        Update: {
+          allowance_id?: string
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          override_amount?: number | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_allowances_allowance_id_fkey"
+            columns: ["allowance_id"]
+            isOneToOne: false
+            referencedRelation: "pay_allowances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_allowances_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "event_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignment_drafts: {
         Row: {
           created_at: string | null
