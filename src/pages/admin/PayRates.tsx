@@ -65,6 +65,21 @@ export default function PayRates() {
     upsertRate.mutate(editEntry, { onSuccess: () => setDialogOpen(false) });
   };
 
+  const openAddAllowance = () => {
+    setEditAllowance({ name: '', amount: 0, unit: 'flat', notes: '' });
+    setAllowanceDialogOpen(true);
+  };
+
+  const openEditAllowance = (a: typeof allowances[number]) => {
+    setEditAllowance({ id: a.id, name: a.name, amount: a.amount, unit: a.unit, notes: a.notes || '' });
+    setAllowanceDialogOpen(true);
+  };
+
+  const handleSaveAllowance = () => {
+    if (!editAllowance || !editAllowance.name) return;
+    upsertAllowance.mutate(editAllowance, { onSuccess: () => setAllowanceDialogOpen(false) });
+  };
+
   // Example calculations for the info section
   const exampleHourlyRate = rateCard.length > 0 ? rateCard[0].hourly_rate : 75;
   const exampleMinHours = rateCard.length > 0 ? rateCard[0].minimum_paid_hours : 3;
