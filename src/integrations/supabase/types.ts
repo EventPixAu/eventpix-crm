@@ -6390,6 +6390,10 @@ export type Database = {
         }
         Returns: string
       }
+      map_lead_role_to_event_contact_type: {
+        Args: { p_role: string }
+        Returns: string
+      }
       mark_contract_as_sent: { Args: { p_contract_id: string }; Returns: Json }
       mark_invitation_emailed: {
         Args: { p_auth_user_id: string; p_invitation_id: string }
