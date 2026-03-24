@@ -56,6 +56,9 @@ export function useEventFinancials(eventId: string | undefined) {
           invoice_status,
           invoice_paid_at,
           invoice_amount,
+          invoice_reference,
+          quote_id,
+          event_series_id,
           quote_id,
           event_series_id,
           quotes:quote_id (
