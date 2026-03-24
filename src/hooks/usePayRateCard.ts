@@ -198,6 +198,7 @@ export function calculatePayFromRateCard(
   minimumPaidHours: number,
   sessionDurationHours: number
 ): number {
-  const paidHours = Math.max(sessionDurationHours, minimumPaidHours);
+  const roundedHours = Math.ceil(sessionDurationHours);
+  const paidHours = Math.max(roundedHours, minimumPaidHours);
   return hourlyRate * paidHours;
 }
