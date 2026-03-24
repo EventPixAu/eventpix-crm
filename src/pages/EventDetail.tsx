@@ -197,6 +197,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [addingExtra, setAddingExtra] = useState(false);
+  const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState('');
 
   // Fetch assignment allowances
   const { data: assignmentAllowances = [] } = useQuery({
