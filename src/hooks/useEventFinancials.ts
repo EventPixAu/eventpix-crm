@@ -2,6 +2,8 @@
  * EVENT FINANCIALS HOOKS
  * 
  * Provides combined income and expense data for events.
+ * Expected team cost is calculated from rate card + allowances.
+ * When Xero expenses are synced, they override the expected values.
  * Access: Admin only
  */
 import { useQuery } from '@tanstack/react-query';
@@ -16,6 +18,8 @@ export interface EventFinancials {
   
   // Expenses by category
   staffCost: number;
+  expectedStaffCost: number;
+  hasXeroStaffCost: boolean;
   travelAccommodationCost: number;
   sundryCost: number;
   
@@ -25,13 +29,23 @@ export interface EventFinancials {
   profitMargin: number;
 }
 
+/**
+ * Calculate session duration in hours from time strings (HH:MM:SS).
+ */
+function calcSessionHours(startTime: string | null, endTime: string | null): number {
+  if (!startTime || !endTime) return 0;
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  return (eh * 60 + em - (sh * 60 + sm)) / 60;
+}
+
 export function useEventFinancials(eventId: string | undefined) {
   return useQuery({
     queryKey: ['event-financials', eventId],
     queryFn: async (): Promise<EventFinancials> => {
       if (!eventId) throw new Error('Event ID required');
       
-      // Fetch event with quote and invoice status
+      // Fetch event with quote, invoice status and series info
       const { data: event, error: eventError } = await supabase
         .from('events')
         .select(`
@@ -40,6 +54,7 @@ export function useEventFinancials(eventId: string | undefined) {
           invoice_paid_at,
           invoice_amount,
           quote_id,
+          event_series_id,
           quotes:quote_id (
             total_estimate,
             subtotal,
@@ -51,15 +66,51 @@ export function useEventFinancials(eventId: string | undefined) {
       
       if (eventError) throw eventError;
       
-      // Fetch staff costs from assignments
+      // Fetch assignments with session times for pay calculation
       const { data: assignments, error: assignError } = await supabase
         .from('event_assignments')
-        .select('estimated_cost')
+        .select(`
+          id,
+          user_id,
+          staff_role_id,
+          estimated_cost,
+          session_id,
+          event_sessions:session_id (
+            start_time,
+            end_time
+          )
+        `)
         .eq('event_id', eventId);
       
       if (assignError) throw assignError;
       
-      // Fetch expenses from event_expenses table
+      // Fetch rate card entries
+      const { data: rateCard } = await supabase
+        .from('pay_rate_card')
+        .select('staff_role_id, hourly_rate, minimum_paid_hours');
+      
+      // Fetch series fixed rates if applicable
+      let seriesRates: { staff_role_id: string; fixed_rate: number }[] = [];
+      if (event.event_series_id) {
+        const { data } = await supabase
+          .from('series_fixed_rates')
+          .select('staff_role_id, fixed_rate')
+          .eq('series_id', event.event_series_id);
+        seriesRates = data || [];
+      }
+      
+      // Fetch all allowances for these assignments
+      const assignmentIds = (assignments || []).map(a => a.id);
+      let allowances: { assignment_id: string; override_amount: number | null; quantity: number; allowance_id: string }[] = [];
+      if (assignmentIds.length > 0) {
+        const { data } = await supabase
+          .from('assignment_allowances')
+          .select('assignment_id, override_amount, quantity, allowance_id, pay_allowances:allowance_id(amount)')
+          .in('assignment_id', assignmentIds);
+        allowances = (data || []) as any;
+      }
+      
+      // Fetch expenses from event_expenses table (Xero-synced)
       const { data: expenses, error: expenseError } = await supabase
         .from('event_expenses')
         .select('expense_category, amount')
@@ -67,15 +118,52 @@ export function useEventFinancials(eventId: string | undefined) {
       
       if (expenseError) throw expenseError;
       
-      // Calculate income - use quote total if available, otherwise invoice_amount from Xero
+      // Calculate income
       const quote = event.quotes as any;
       const quotedTotal = quote?.total_estimate || quote?.subtotal || (event as any).invoice_amount || 0;
       const isPaid = event.invoice_status === 'paid';
       
-      // Calculate staff costs from assignments
-      const staffCost = (assignments || []).reduce((sum, a) => sum + (a.estimated_cost || 0), 0);
+      // Build rate card lookup by staff_role_id
+      const rateMap = new Map<string, { hourly_rate: number; minimum_paid_hours: number }>();
+      (rateCard || []).forEach(r => rateMap.set(r.staff_role_id, r));
       
-      // Calculate expense totals by category
+      const seriesRateMap = new Map<string, number>();
+      seriesRates.forEach(r => seriesRateMap.set(r.staff_role_id, r.fixed_rate));
+      
+      // Calculate expected staff cost from rate card
+      let expectedStaffCost = 0;
+      for (const assignment of assignments || []) {
+        const roleId = assignment.staff_role_id;
+        if (!roleId) continue;
+        
+        // Check for series fixed rate first
+        const fixedRate = seriesRateMap.get(roleId);
+        if (fixedRate !== undefined) {
+          expectedStaffCost += fixedRate;
+          continue;
+        }
+        
+        // Otherwise use rate card
+        const rate = rateMap.get(roleId);
+        if (!rate) continue;
+        
+        const session = assignment.event_sessions as any;
+        const sessionHours = calcSessionHours(session?.start_time, session?.end_time);
+        if (sessionHours <= 0) continue;
+        
+        // Formula: hourly_rate × (ceil(session_hours) + 1)
+        const callHours = Math.ceil(sessionHours);
+        const basePay = rate.hourly_rate * (callHours + 1);
+        expectedStaffCost += basePay;
+      }
+      
+      // Add allowances/extras to expected cost
+      for (const al of allowances) {
+        const amount = al.override_amount ?? (al as any).pay_allowances?.amount ?? 0;
+        expectedStaffCost += amount * (al.quantity || 1);
+      }
+      
+      // Calculate Xero-synced expense totals by category
       let travelAccommodationCost = 0;
       let sundryCost = 0;
       
@@ -89,8 +177,6 @@ export function useEventFinancials(eventId: string | undefined) {
           case 'sundry':
             sundryCost += amount;
             break;
-          case 'staff':
-            break;
         }
       });
       
@@ -98,8 +184,11 @@ export function useEventFinancials(eventId: string | undefined) {
         .filter((e) => e.expense_category === 'staff')
         .reduce((sum, e) => sum + (e.amount || 0), 0);
       
-      const totalStaffCost = staffCost + xeroStaffCost;
-      const totalExpenses = totalStaffCost + travelAccommodationCost + sundryCost;
+      // Use Xero staff cost if available, otherwise expected
+      const hasXeroStaffCost = xeroStaffCost > 0;
+      const staffCost = hasXeroStaffCost ? xeroStaffCost : expectedStaffCost;
+      
+      const totalExpenses = staffCost + travelAccommodationCost + sundryCost;
       const profit = quotedTotal - totalExpenses;
       const profitMargin = quotedTotal > 0 ? (profit / quotedTotal) * 100 : 0;
       
@@ -108,7 +197,9 @@ export function useEventFinancials(eventId: string | undefined) {
         invoiceStatus: event.invoice_status,
         invoicePaidAt: event.invoice_paid_at,
         isPaid,
-        staffCost: totalStaffCost,
+        staffCost,
+        expectedStaffCost,
+        hasXeroStaffCost,
         travelAccommodationCost,
         sundryCost,
         totalExpenses,
