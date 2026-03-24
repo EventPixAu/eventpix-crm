@@ -3939,6 +3939,42 @@ export type Database = {
           },
         ]
       }
+      pay_allowances: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          sort_order: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pay_rate_card: {
         Row: {
           created_at: string
