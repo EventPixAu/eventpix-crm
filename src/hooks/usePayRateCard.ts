@@ -118,6 +118,74 @@ export function useUpsertSeriesFixedRate() {
   });
 }
 
+export interface PayAllowance {
+  id: string;
+  name: string;
+  amount: number;
+  unit: 'flat' | 'per_hour';
+  is_active: boolean;
+  sort_order: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function usePayAllowances() {
+  return useQuery({
+    queryKey: ['pay-allowances'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pay_allowances')
+        .select('*')
+        .order('sort_order');
+      if (error) throw error;
+      return data as PayAllowance[];
+    },
+  });
+}
+
+export function useUpsertPayAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: { id?: string; name: string; amount: number; unit: string; notes?: string | null; is_active?: boolean; sort_order?: number }) => {
+      if (entry.id) {
+        const { error } = await supabase.from('pay_allowances').update({
+          name: entry.name,
+          amount: entry.amount,
+          unit: entry.unit,
+          notes: entry.notes ?? null,
+          is_active: entry.is_active ?? true,
+          updated_at: new Date().toISOString(),
+        }).eq('id', entry.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('pay_allowances').insert({
+          name: entry.name,
+          amount: entry.amount,
+          unit: entry.unit,
+          notes: entry.notes ?? null,
+          sort_order: entry.sort_order ?? 0,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pay-allowances'] }); toast.success('Allowance saved'); },
+    onError: (e) => toast.error('Failed: ' + e.message),
+  });
+}
+
+export function useDeletePayAllowance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('pay_allowances').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pay-allowances'] }); toast.success('Allowance removed'); },
+    onError: (e) => toast.error('Failed: ' + e.message),
+  });
+}
+
 /**
  * Calculate pay for an assignment based on rate card + session duration.
  * Formula: minimum_paid_hours applies first (e.g. 3hrs min for a 2hr session),
