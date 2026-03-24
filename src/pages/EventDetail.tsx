@@ -454,7 +454,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           </div>
         )}
       </div>
-      <AssignmentBudgetLine assignment={assignment} isAdmin={isAdmin} />
+      <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} />
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );
