@@ -19,6 +19,9 @@ export default function PayRates() {
   const { data: staffRoles = [] } = useStaffRoles();
   const upsertRate = useUpsertPayRate();
   const deleteRate = useDeletePayRate();
+  const { data: allowances = [], isLoading: allowancesLoading } = usePayAllowances();
+  const upsertAllowance = useUpsertPayAllowance();
+  const deleteAllowance = useDeletePayAllowance();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<{
@@ -26,6 +29,15 @@ export default function PayRates() {
     staff_role_id: string;
     hourly_rate: number;
     minimum_paid_hours: number;
+    notes: string;
+  } | null>(null);
+
+  const [allowanceDialogOpen, setAllowanceDialogOpen] = useState(false);
+  const [editAllowance, setEditAllowance] = useState<{
+    id?: string;
+    name: string;
+    amount: number;
+    unit: string;
     notes: string;
   } | null>(null);
 
