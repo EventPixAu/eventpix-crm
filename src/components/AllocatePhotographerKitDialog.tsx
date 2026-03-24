@@ -69,32 +69,36 @@ export function AllocatePhotographerKitDialog({
 
   // Extract all assigned staff (both profile-linked and legacy)
   const allAssignedStaff = useMemo(() => {
-    const seen = new Map<string, { ownerId: string; profileUserId: string | null; name: string; hasProfile: boolean; roleName: string }>();
+    // Use a Set to track all IDs (user_id and staff_id) we've already processed
+    const seenIds = new Set<string>();
+    const result: { ownerId: string; profileUserId: string | null; name: string; hasProfile: boolean; roleName: string }[] = [];
+    
     for (const a of assignments) {
-      let entry: typeof seen extends Map<string, infer V> ? V : never;
       if (a.user_id && a.profile) {
-        if (seen.has(a.user_id)) continue;
-        entry = {
+        if (seenIds.has(a.user_id)) continue;
+        seenIds.add(a.user_id);
+        // Also mark the staff_id if present to prevent duplicate from legacy record
+        if (a.staff_id) seenIds.add(a.staff_id);
+        result.push({
           ownerId: a.user_id,
           profileUserId: a.user_id,
           name: a.profile.full_name || a.profile.email,
           hasProfile: true,
           roleName: a.staff_role?.name || 'Staff',
-        };
-        seen.set(a.user_id, entry);
+        });
       } else if (a.staff_id && a.staff) {
-        if (seen.has(a.staff_id)) continue;
-        entry = {
+        if (seenIds.has(a.staff_id)) continue;
+        seenIds.add(a.staff_id);
+        result.push({
           ownerId: a.staff_id,
           profileUserId: null,
           name: a.staff.name,
           hasProfile: false,
           roleName: a.staff_role?.name || 'Staff',
-        };
-        seen.set(a.staff_id, entry);
+        });
       }
     }
-    return Array.from(seen.values());
+    return result;
   }, [assignments]);
 
   // Collect all staff IDs to check which ones have linked profiles
