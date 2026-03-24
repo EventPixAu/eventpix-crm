@@ -234,6 +234,7 @@ function AppRoutes() {
       <Route path="/admin/invoices" element={<ProtectedRoute><AdminGuard><InvoiceSync /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/margins" element={<ProtectedRoute><AdminGuard><MarginReport /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/lookups" element={<ProtectedRoute><AdminGuard><AdminLookups /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/pay-rates" element={<ProtectedRoute><AdminGuard><PayRates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/day-load" element={<ProtectedRoute><OpsGuard><DayLoadView /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/delivery-metrics" element={<ProtectedRoute><OpsGuard><DeliveryMetrics /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/photographer-trends" element={<ProtectedRoute><AdminGuard><PhotographerTrends /></AdminGuard></ProtectedRoute>} />
