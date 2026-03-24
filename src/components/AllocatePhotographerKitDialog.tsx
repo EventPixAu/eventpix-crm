@@ -69,26 +69,32 @@ export function AllocatePhotographerKitDialog({
 
   // Extract all assigned staff (both profile-linked and legacy)
   const allAssignedStaff = useMemo(() => {
-    return assignments.map(a => {
+    const seen = new Map<string, { ownerId: string; profileUserId: string | null; name: string; hasProfile: boolean; roleName: string }>();
+    for (const a of assignments) {
+      let entry: typeof seen extends Map<string, infer V> ? V : never;
       if (a.user_id && a.profile) {
-        return {
+        if (seen.has(a.user_id)) continue;
+        entry = {
           ownerId: a.user_id,
           profileUserId: a.user_id,
           name: a.profile.full_name || a.profile.email,
           hasProfile: true,
           roleName: a.staff_role?.name || 'Staff',
         };
+        seen.set(a.user_id, entry);
       } else if (a.staff_id && a.staff) {
-        return {
+        if (seen.has(a.staff_id)) continue;
+        entry = {
           ownerId: a.staff_id,
           profileUserId: null,
           name: a.staff.name,
           hasProfile: false,
           roleName: a.staff_role?.name || 'Staff',
         };
+        seen.set(a.staff_id, entry);
       }
-      return null;
-    }).filter((s): s is { ownerId: string; profileUserId: string | null; name: string; hasProfile: boolean; roleName: string } => s !== null);
+    }
+    return Array.from(seen.values());
   }, [assignments]);
 
   // Collect all staff IDs to check which ones have linked profiles
