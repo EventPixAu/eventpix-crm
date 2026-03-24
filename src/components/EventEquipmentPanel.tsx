@@ -500,8 +500,92 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
         />
       </CardHeader>
       <CardContent>
-        {kitGroups.length > 0 ? (
+        {(kitGroups.length > 0 || photographerKitList.length > 0) ? (
           <div className="space-y-6">
+            {/* Photographer Kits - collapsed summary */}
+            {photographerKitList.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <Camera className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Photographer Kits</span>
+                  <Badge variant="secondary" className="text-xs">{photographerAllocations.length} items</Badge>
+                </div>
+                <div className="space-y-1">
+                  {photographerKitList.map((pg) => {
+                    const key = `${pg.ownerId}__${pg.category}`;
+                    const isExpanded = expandedPhotographerKits.has(key);
+                    const categoryLabel = pg.category.charAt(0).toUpperCase() + pg.category.slice(1);
+                    return (
+                      <div key={key}>
+                        <button
+                          onClick={() => togglePhotographerKit(key)}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm font-medium">{pg.ownerName}</span>
+                            <span className="text-xs text-muted-foreground">— {categoryLabel} Kit</span>
+                            <Badge variant="outline" className="text-xs">{pg.allocations.length} items</Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(pg.allocations[0].status)}
+                            <span className="text-xs text-muted-foreground">{isExpanded ? '▲' : '▼'}</span>
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Item</TableHead>
+                                <TableHead>Category</TableHead>
+                                {hasSessions && <TableHead>Session</TableHead>}
+                                <TableHead>Status</TableHead>
+                                {isAdmin && <TableHead className="w-[100px]"></TableHead>}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {pg.allocations.map((alloc) => (
+                                <TableRow key={alloc.id}>
+                                  <TableCell className="font-medium">{alloc.equipment_item.name}</TableCell>
+                                  <TableCell className="capitalize">{alloc.equipment_item.category}</TableCell>
+                                  {hasSessions && (
+                                    <TableCell>
+                                      {alloc.session ? (
+                                        <span className="flex items-center gap-1 text-xs">
+                                          <Calendar className="h-3 w-3 text-primary" />
+                                          {format(parseISO(alloc.session.session_date), 'EEE, d MMM')}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">All</span>
+                                      )}
+                                    </TableCell>
+                                  )}
+                                  <TableCell>{getStatusBadge(alloc.status)}</TableCell>
+                                  {isAdmin && (
+                                    <TableCell>
+                                      <div className="flex gap-1">
+                                        <Button size="icon" variant="ghost" onClick={() => openStatusDialog(alloc.id, alloc.status, alloc.user_id)} title="Update status">
+                                          <ArrowLeftRight className="h-4 w-4" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={() => handleRemove(alloc.id)} title="Remove">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* EventPix Kits & Individual Items */}
             {kitGroups.map((group) => (
               <div key={group.kitId || 'individual'} className="space-y-2">
                 {/* Kit Header */}
