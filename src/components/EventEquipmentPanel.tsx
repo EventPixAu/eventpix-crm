@@ -206,8 +206,29 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   const activeAllocations = allocations?.filter(a => a.status !== 'returned') || [];
   const returnedAllocations = allocations?.filter(a => a.status === 'returned') || [];
 
-  // Group allocations by kit for display
-  const groupedAllocations = activeAllocations.reduce((acc, alloc) => {
+  // Separate photographer-owned items from EventPix/individual items
+  const photographerAllocations = activeAllocations.filter(a => (a.equipment_item as any)?.owner_user_id);
+  const nonPhotographerAllocations = activeAllocations.filter(a => !(a.equipment_item as any)?.owner_user_id);
+
+  // Group photographer allocations by owner + category as collapsed kits
+  const photographerKitGroups = photographerAllocations.reduce((acc, alloc) => {
+    const ownerId = (alloc.equipment_item as any).owner_user_id as string;
+    const category = alloc.equipment_item.category || 'other';
+    const key = `${ownerId}__${category}`;
+    if (!acc[key]) {
+      acc[key] = {
+        ownerId,
+        ownerName: alloc.profile?.full_name || alloc.profile?.email || 'Unknown',
+        category,
+        allocations: [],
+      };
+    }
+    acc[key].allocations.push(alloc);
+    return acc;
+  }, {} as Record<string, { ownerId: string; ownerName: string; category: string; allocations: typeof activeAllocations }>);
+
+  // Group non-photographer allocations by kit for display
+  const groupedAllocations = nonPhotographerAllocations.reduce((acc, alloc) => {
     const kitId = alloc.kit_id || 'individual';
     if (!acc[kitId]) {
       acc[kitId] = {
@@ -227,6 +248,20 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
     if (!a.kitName && b.kitName) return 1;
     return (a.kitName || '').localeCompare(b.kitName || '');
   });
+
+  const photographerKitList = Object.values(photographerKitGroups).sort((a, b) => 
+    a.ownerName.localeCompare(b.ownerName) || a.category.localeCompare(b.category)
+  );
+
+  const [expandedPhotographerKits, setExpandedPhotographerKits] = useState<Set<string>>(new Set());
+  const togglePhotographerKit = (key: string) => {
+    setExpandedPhotographerKits(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   if (isLoading) {
     return (
