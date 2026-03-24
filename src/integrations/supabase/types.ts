@@ -3939,6 +3939,44 @@ export type Database = {
           },
         ]
       }
+      pay_rate_card: {
+        Row: {
+          created_at: string
+          hourly_rate: number
+          id: string
+          minimum_paid_hours: number
+          notes: string | null
+          staff_role_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hourly_rate?: number
+          id?: string
+          minimum_paid_hours?: number
+          notes?: string | null
+          staff_role_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hourly_rate?: number
+          id?: string
+          minimum_paid_hours?: number
+          notes?: string | null
+          staff_role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_rate_card_staff_role_id_fkey"
+            columns: ["staff_role_id"]
+            isOneToOne: true
+            referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           created_at: string | null
@@ -4803,6 +4841,51 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      series_fixed_rates: {
+        Row: {
+          created_at: string
+          fixed_rate: number
+          id: string
+          notes: string | null
+          series_id: string
+          staff_role_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fixed_rate?: number
+          id?: string
+          notes?: string | null
+          series_id: string
+          staff_role_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fixed_rate?: number
+          id?: string
+          notes?: string | null
+          series_id?: string
+          staff_role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_fixed_rates_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_fixed_rates_staff_role_id_fkey"
+            columns: ["staff_role_id"]
+            isOneToOne: false
+            referencedRelation: "staff_roles"
             referencedColumns: ["id"]
           },
         ]
