@@ -197,6 +197,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [addingExtra, setAddingExtra] = useState(false);
+  const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState('');
 
   // Fetch assignment allowances
   const { data: assignmentAllowances = [] } = useQuery({
@@ -266,6 +268,31 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
     }
   };
 
+  const handleUpdateAmount = async (aaId: string, newAmount: number) => {
+    const { error } = await supabase
+      .from('assignment_allowances')
+      .update({ override_amount: newAmount })
+      .eq('id', aaId);
+    if (error) {
+      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
+    }
+    setEditingAllowanceId(null);
+  };
+
+  const handleUpdateNotes = async (aaId: string, notes: string) => {
+    const { error } = await supabase
+      .from('assignment_allowances')
+      .update({ notes })
+      .eq('id', aaId);
+    if (error) {
+      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
+    }
+  };
+
   return (
     <div className="mt-2 pt-2 border-t border-border space-y-1">
       <div className="flex items-center gap-2">
@@ -281,15 +308,66 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
       {assignmentAllowances.map((aa: any) => {
         const name = aa.pay_allowances?.name || 'Extra';
         const amt = aa.override_amount ?? aa.pay_allowances?.amount ?? 0;
+        const isEditing = editingAllowanceId === aa.id;
         return (
-          <div key={aa.id} className="flex items-center gap-2 pl-5">
-            <span className="text-xs text-muted-foreground">
-              + {name}: <span className="font-medium text-foreground">${(amt * (aa.quantity || 1)).toFixed(2)}</span>
-            </span>
-            {isAdmin && (
-              <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveExtra(aa.id)}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
+          <div key={aa.id} className="space-y-1">
+            <div className="flex items-center gap-2 pl-5">
+              <span className="text-xs text-muted-foreground">
+                + {name}:{' '}
+                {isAdmin && isEditing ? (
+                  <span className="inline-flex items-center gap-1">
+                    $<input
+                      type="number"
+                      step="0.01"
+                      className="w-20 h-5 text-xs bg-background border border-border rounded px-1 text-foreground"
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleUpdateAmount(aa.id, parseFloat(editAmount) || 0);
+                        if (e.key === 'Escape') setEditingAllowanceId(null);
+                      }}
+                      onBlur={() => handleUpdateAmount(aa.id, parseFloat(editAmount) || 0)}
+                      autoFocus
+                    />
+                  </span>
+                ) : (
+                  <button
+                    className={`font-medium text-foreground ${isAdmin ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
+                    onClick={() => {
+                      if (!isAdmin) return;
+                      setEditingAllowanceId(aa.id);
+                      setEditAmount(String(amt));
+                    }}
+                    disabled={!isAdmin}
+                  >
+                    ${(amt * (aa.quantity || 1)).toFixed(2)}
+                  </button>
+                )}
+              </span>
+              {isAdmin && (
+                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveExtra(aa.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            {/* Notes for this allowance */}
+            {isAdmin && isEditing && (
+              <div className="pl-5">
+                <input
+                  type="text"
+                  className="w-full h-6 text-xs bg-background border border-border rounded px-2 text-muted-foreground"
+                  placeholder="Notes..."
+                  defaultValue={aa.notes || ''}
+                  onBlur={(e) => {
+                    if (e.target.value !== (aa.notes || '')) {
+                      handleUpdateNotes(aa.id, e.target.value);
+                    }
+                  }}
+                />
+              </div>
+            )}
+            {aa.notes && !isEditing && (
+              <div className="pl-5 text-xs text-muted-foreground italic">{aa.notes}</div>
             )}
           </div>
         );
