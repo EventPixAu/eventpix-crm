@@ -15,6 +15,7 @@ import {
   Package,
   Phone,
   Play,
+  Plus,
   QrCode,
   Send,
   Trash2,
