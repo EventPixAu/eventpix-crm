@@ -79,6 +79,25 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
             <span className="text-sm text-muted-foreground">Income</span>
             <span className="font-semibold text-lg">{formatCurrency(financials.quotedTotal)}</span>
           </div>
+          <div className="flex items-center justify-between mt-0.5">
+            {financials.invoiceReference ? (
+              <p className="text-xs text-muted-foreground">
+                {financials.invoiceReference}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">From quote</p>
+            )}
+            {financials.incomeSource === 'invoice' && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-500/30">
+                Invoiced
+              </Badge>
+            )}
+            {financials.incomeSource === 'quote' && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-amber-500 border-amber-500/30">
+                Expected
+              </Badge>
+            )}
+          </div>
           {!financials.isPaid && financials.invoiceStatus && (
             <p className="text-xs text-muted-foreground mt-0.5">
               Invoice status: {financials.invoiceStatus}

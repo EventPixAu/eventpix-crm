@@ -12,9 +12,12 @@ import { supabase } from '@/integrations/supabase/client';
 export interface EventFinancials {
   // Income
   quotedTotal: number;
+  invoiceAmount: number | null;
+  invoiceReference: string | null;
   invoiceStatus: string | null;
   invoicePaidAt: string | null;
   isPaid: boolean;
+  incomeSource: 'invoice' | 'quote';
   
   // Expenses by category
   staffCost: number;
@@ -53,6 +56,9 @@ export function useEventFinancials(eventId: string | undefined) {
           invoice_status,
           invoice_paid_at,
           invoice_amount,
+          invoice_reference,
+          quote_id,
+          event_series_id,
           quote_id,
           event_series_id,
           quotes:quote_id (
@@ -118,9 +124,13 @@ export function useEventFinancials(eventId: string | undefined) {
       
       if (expenseError) throw expenseError;
       
-      // Calculate income
+      // Calculate income - prefer invoice amount over quote
       const quote = event.quotes as any;
-      const quotedTotal = quote?.total_estimate || quote?.subtotal || (event as any).invoice_amount || 0;
+      const invoiceAmount = (event as any).invoice_amount || null;
+      const invoiceReference = (event as any).invoice_reference || null;
+      const quoteTotal = quote?.total_estimate || quote?.subtotal || 0;
+      const incomeSource: 'invoice' | 'quote' = invoiceAmount ? 'invoice' : 'quote';
+      const quotedTotal = invoiceAmount || quoteTotal || 0;
       const isPaid = event.invoice_status === 'paid';
       
       // Build rate card lookup by staff_role_id
@@ -194,9 +204,12 @@ export function useEventFinancials(eventId: string | undefined) {
       
       return {
         quotedTotal,
+        invoiceAmount,
+        invoiceReference,
         invoiceStatus: event.invoice_status,
         invoicePaidAt: event.invoice_paid_at,
         isPaid,
+        incomeSource,
         staffCost,
         expectedStaffCost,
         hasXeroStaffCost,
