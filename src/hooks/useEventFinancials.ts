@@ -204,9 +204,12 @@ export function useEventFinancials(eventId: string | undefined) {
       
       return {
         quotedTotal,
+        invoiceAmount,
+        invoiceReference,
         invoiceStatus: event.invoice_status,
         invoicePaidAt: event.invoice_paid_at,
         isPaid,
+        incomeSource,
         staffCost,
         expectedStaffCost,
         hasXeroStaffCost,
