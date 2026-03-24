@@ -79,6 +79,7 @@ import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
 import RoleVisibility from "./pages/admin/RoleVisibility";
 import CompanyInsurance from "./pages/admin/CompanyInsurance";
+import PayRates from "./pages/admin/PayRates";
 import { CompanyList, ContactList, CrmEmails, PromotionsDashboard, CrmLookups } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
 import ResetPassword from "./pages/ResetPassword";
