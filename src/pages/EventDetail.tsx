@@ -872,41 +872,6 @@ export default function EventDetail() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Package className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Delivery Method - Guests</p>
-                      {isAdmin ? (
-                        <Select
-                          value={event.delivery_method_guests_id || ''}
-                          onValueChange={async (value) => {
-                            setIsUpdatingStatus(true);
-                            await updateEvent.mutateAsync({
-                              id: event.id,
-                              delivery_method_guests_id: value,
-                            });
-                            setIsUpdatingStatus(false);
-                          }}
-                          disabled={isUpdatingStatus}
-                        >
-                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {deliveryMethods.map((method) => (
-                              <SelectItem key={method.id} value={method.id}>
-                                {method.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="font-medium capitalize">{getDeliveryMethodName('delivery_method_guests_id') || 'Not set'}</p>
-                      )}
-                    </div>
-                  </div>
 
                   {event.venue_name && (
                     <div className="flex items-start gap-3">
