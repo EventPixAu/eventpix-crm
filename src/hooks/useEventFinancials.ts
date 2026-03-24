@@ -12,9 +12,12 @@ import { supabase } from '@/integrations/supabase/client';
 export interface EventFinancials {
   // Income
   quotedTotal: number;
+  invoiceAmount: number | null;
+  invoiceReference: string | null;
   invoiceStatus: string | null;
   invoicePaidAt: string | null;
   isPaid: boolean;
+  incomeSource: 'invoice' | 'quote';
   
   // Expenses by category
   staffCost: number;
