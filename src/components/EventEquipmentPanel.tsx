@@ -364,7 +364,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                     </SelectContent>
                   </Select>
                   {selectedUserId && selectedUserId !== 'unassigned' && (
-                    <StaffEquipmentPreview userId={selectedUserId} />
+                    <StaffEquipmentPreview
+                      userId={selectedUserId}
+                      eventId={eventId}
+                      sessionId={selectedSessionId && selectedSessionId !== 'all' ? selectedSessionId : undefined}
+                    />
                   )}
                 </div>
 
@@ -393,7 +397,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                   <div className="flex items-center justify-between mb-2">
                     <Label className="flex items-center gap-2">
                       <Layers className="h-4 w-4" />
-                      Allocate Kit
+                      Allocate EventPix Kit
                     </Label>
                     <Link to="/equipment?tab=kits" className="text-xs text-primary hover:underline flex items-center gap-1">
                       <Settings2 className="h-3 w-3" />
