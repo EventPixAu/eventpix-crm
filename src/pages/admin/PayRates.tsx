@@ -263,6 +263,132 @@ export default function PayRates() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Allowances & Surcharges */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Car className="h-5 w-5" />
+                Allowances & Surcharges
+              </CardTitle>
+              <CardDescription>Travel, equipment, and other add-on charges (all ex GST)</CardDescription>
+            </div>
+            <Button onClick={openAddAllowance} size="sm" className="gap-1">
+              <Plus className="h-4 w-4" /> Add Allowance
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {allowancesLoading ? (
+              <p className="text-muted-foreground text-sm">Loading...</p>
+            ) : allowances.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-8">No allowances configured yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="text-right">Amount (ex GST)</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="w-[100px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allowances.map(a => (
+                    <TableRow key={a.id}>
+                      <TableCell className="font-medium">{a.name}</TableCell>
+                      <TableCell className="text-right">${a.amount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {a.unit === 'per_hour' ? 'Per Hour' : 'Flat Rate'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">
+                        {a.notes || '—'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-end">
+                          <Button variant="ghost" size="icon" onClick={() => openEditAllowance(a)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => { if (confirm('Remove this allowance?')) deleteAllowance.mutate(a.id); }}>
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Allowance Add/Edit Dialog */}
+        <Dialog open={allowanceDialogOpen} onOpenChange={setAllowanceDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editAllowance?.id ? 'Edit Allowance' : 'Add Allowance'}</DialogTitle>
+            </DialogHeader>
+            {editAllowance && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input
+                    value={editAllowance.name}
+                    onChange={e => setEditAllowance({ ...editAllowance, name: e.target.value })}
+                    placeholder="e.g. Travel Allowance, Studio Lighting Kit..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Amount ($ ex GST)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={editAllowance.amount || ''}
+                      onChange={e => setEditAllowance({ ...editAllowance, amount: parseFloat(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Charge Type</Label>
+                    <Select
+                      value={editAllowance.unit}
+                      onValueChange={v => setEditAllowance({ ...editAllowance, unit: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="flat">Flat Rate (per assignment)</SelectItem>
+                        <SelectItem value="per_hour">Per Hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes (optional)</Label>
+                  <Textarea
+                    value={editAllowance.notes}
+                    onChange={e => setEditAllowance({ ...editAllowance, notes: e.target.value })}
+                    placeholder="e.g. Includes delivery and setup..."
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAllowanceDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveAllowance} disabled={upsertAllowance.isPending || !editAllowance?.name}>
+                {editAllowance?.id ? 'Save Changes' : 'Add Allowance'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <p className="text-xs text-muted-foreground text-center">All rates are ex GST</p>
       </div>
     </AppLayout>
   );
