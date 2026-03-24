@@ -364,7 +364,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                     </SelectContent>
                   </Select>
                   {selectedUserId && selectedUserId !== 'unassigned' && (
-                    <StaffEquipmentPreview userId={selectedUserId} />
+                    <StaffEquipmentPreview
+                      userId={selectedUserId}
+                      eventId={eventId}
+                      sessionId={selectedSessionId && selectedSessionId !== 'all' ? selectedSessionId : undefined}
+                    />
                   )}
                 </div>
 
