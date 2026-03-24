@@ -86,10 +86,10 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useStaffRoles } from '@/hooks/useStaff';
-import { usePayRateCard, calculatePayFromRateCard } from '@/hooks/usePayRateCard';
+import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
 function formatSessionTime(timeStr: string): string {
   try {
