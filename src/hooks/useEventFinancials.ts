@@ -124,9 +124,13 @@ export function useEventFinancials(eventId: string | undefined) {
       
       if (expenseError) throw expenseError;
       
-      // Calculate income
+      // Calculate income - prefer invoice amount over quote
       const quote = event.quotes as any;
-      const quotedTotal = quote?.total_estimate || quote?.subtotal || (event as any).invoice_amount || 0;
+      const invoiceAmount = (event as any).invoice_amount || null;
+      const invoiceReference = (event as any).invoice_reference || null;
+      const quoteTotal = quote?.total_estimate || quote?.subtotal || 0;
+      const incomeSource: 'invoice' | 'quote' = invoiceAmount ? 'invoice' : 'quote';
+      const quotedTotal = invoiceAmount || quoteTotal || 0;
       const isPaid = event.invoice_status === 'paid';
       
       // Build rate card lookup by staff_role_id
