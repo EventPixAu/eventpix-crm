@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import {
   type StoredEquipment,
   type PhotographyEquipmentV2,
-  type EquipmentKitV2,
+  
   migrateToV2,
   CATEGORY_CONFIG,
 } from './PhotographyEquipmentEditor';
