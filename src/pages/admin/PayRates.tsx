@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Plus, Pencil, Trash2, Info } from 'lucide-react';
-import { usePayRateCard, useUpsertPayRate, useDeletePayRate, calculatePayFromRateCard } from '@/hooks/usePayRateCard';
+import { DollarSign, Plus, Pencil, Trash2, Info, Car, Wrench } from 'lucide-react';
+import { usePayRateCard, useUpsertPayRate, useDeletePayRate, calculatePayFromRateCard, usePayAllowances, useUpsertPayAllowance, useDeletePayAllowance } from '@/hooks/usePayRateCard';
 import { useStaffRoles } from '@/hooks/useStaff';
 
 export default function PayRates() {
