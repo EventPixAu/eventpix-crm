@@ -68,18 +68,15 @@ export function useConvertToEvent() {
 
   return useMutation({
     mutationFn: async (params: ConvertToEventInput): Promise<ConvertToEventResult> => {
-      // Use the simple p_lead_id version which handles all data transfer
-      const { data, error } = await supabase.rpc('convert_enquiry_to_event', {
-        p_lead_id: params.enquiry_id,
-      } as any);
+      const { data, error } = await supabase.rpc('convert_enquiry_to_event', params as any);
 
       if (error) throw error;
-      
+
       const result = data as unknown as ConvertToEventResult;
       if (!result.success) {
         throw new Error(result.error || 'Conversion failed');
       }
-      
+
       return result;
     },
     onSuccess: (result) => {
