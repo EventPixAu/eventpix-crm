@@ -188,17 +188,17 @@ export function useDeletePayAllowance() {
 
 /**
  * Calculate pay for an assignment based on rate card + session duration.
- * Formula: minimum_paid_hours applies first (e.g. 3hrs min for a 2hr session),
- * then hourly rate × max(actual_hours, minimum_paid_hours).
+ * Formula: (call_hours × rate) + (1 × rate) = (call_hours + 1) × rate
+ * The extra hour covers setup, travel, pack-down.
+ * Session duration is rounded UP to the next whole hour.
  * 
  * For series with fixed rates, the fixed rate overrides the calculation.
  */
 export function calculatePayFromRateCard(
   hourlyRate: number,
-  minimumPaidHours: number,
+  _minimumPaidHours: number,
   sessionDurationHours: number
 ): number {
-  const roundedHours = Math.ceil(sessionDurationHours);
-  const paidHours = Math.max(roundedHours, minimumPaidHours);
-  return hourlyRate * paidHours;
+  const callHours = Math.ceil(sessionDurationHours);
+  return hourlyRate * (callHours + 1);
 }
