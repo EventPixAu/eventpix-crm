@@ -649,6 +649,7 @@ export default function WorkflowsAdmin() {
                                 step={step}
                                 onEdit={setEditingStep}
                                 onDelete={handleDeleteStep}
+                                onDuplicate={handleDuplicateStep}
                                 roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name}
                               />
                             ))}
