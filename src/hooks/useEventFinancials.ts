@@ -88,6 +88,12 @@ export function useEventFinancials(eventId: string | undefined) {
         `)
         .eq('event_id', eventId);
       
+      // Fetch event sessions as fallback for assignments without a session_id
+      const { data: eventSessions } = await supabase
+        .from('event_sessions')
+        .select('start_time, end_time')
+        .eq('event_id', eventId);
+      
       if (assignError) throw assignError;
       
       // Fetch rate card entries
