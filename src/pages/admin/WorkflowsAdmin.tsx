@@ -9,6 +9,7 @@ import {
   Trash2,
   GripVertical,
   Pencil,
+  Copy,
 } from 'lucide-react';
 import {
   DndContext,
