@@ -172,13 +172,23 @@ function SortableStepItem({
         variant="ghost"
         size="icon"
         onClick={() => onEdit({ ...step })}
+        title="Edit"
       >
         <Pencil className="h-4 w-4" />
       </Button>
       <Button
         variant="ghost"
         size="icon"
+        onClick={() => onDuplicate(step)}
+        title="Duplicate"
+      >
+        <Copy className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => onDelete(step.id)}
+        title="Delete"
       >
         <Trash2 className="h-4 w-4 text-destructive" />
       </Button>
