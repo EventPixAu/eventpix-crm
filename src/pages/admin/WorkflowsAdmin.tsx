@@ -467,6 +467,25 @@ export default function WorkflowsAdmin() {
     await deleteStep.mutateAsync(stepId);
   };
 
+  const handleDuplicateStep = async (step: WorkflowMasterStep) => {
+    const maxOrder = masterSteps
+      .filter(s => s.phase === step.phase)
+      .reduce((max, s) => Math.max(max, s.sort_order), -1);
+
+    await createStep.mutateAsync({
+      label: `${step.label} (copy)`,
+      phase: step.phase,
+      sort_order: maxOrder + 1,
+      completion_type: step.completion_type,
+      auto_trigger_event: step.auto_trigger_event,
+      date_offset_days: step.date_offset_days,
+      date_offset_reference: step.date_offset_reference,
+      help_text: step.help_text,
+      is_active: step.is_active,
+      default_staff_role_id: step.default_staff_role_id,
+    });
+  };
+
   const handleDragEnd = (event: DragEndEvent, phase: WorkflowPhase) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
