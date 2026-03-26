@@ -88,6 +88,12 @@ export function useEventFinancials(eventId: string | undefined) {
         `)
         .eq('event_id', eventId);
       
+      // Fetch event sessions as fallback for assignments without a session_id
+      const { data: eventSessions } = await supabase
+        .from('event_sessions')
+        .select('start_time, end_time')
+        .eq('event_id', eventId);
+      
       if (assignError) throw assignError;
       
       // Fetch rate card entries
@@ -140,6 +146,13 @@ export function useEventFinancials(eventId: string | undefined) {
       const seriesRateMap = new Map<string, number>();
       seriesRates.forEach(r => seriesRateMap.set(r.staff_role_id, r.fixed_rate));
       
+      // Calculate fallback session hours from event sessions
+      let fallbackHours = 0;
+      if (eventSessions && eventSessions.length > 0) {
+        // Use the longest session as fallback
+        fallbackHours = Math.max(...eventSessions.map(s => calcSessionHours(s.start_time, s.end_time)));
+      }
+      
       // Calculate expected staff cost from rate card
       let expectedStaffCost = 0;
       for (const assignment of assignments || []) {
@@ -158,7 +171,7 @@ export function useEventFinancials(eventId: string | undefined) {
         if (!rate) continue;
         
         const session = assignment.event_sessions as any;
-        const sessionHours = calcSessionHours(session?.start_time, session?.end_time);
+        const sessionHours = calcSessionHours(session?.start_time, session?.end_time) || fallbackHours;
         if (sessionHours <= 0) continue;
         
         // Formula: hourly_rate × (ceil(session_hours) + 1)
