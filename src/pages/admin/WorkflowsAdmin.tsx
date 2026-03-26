@@ -112,11 +112,13 @@ function SortableStepItem({
   step, 
   onEdit, 
   onDelete,
+  onDuplicate,
   roleName,
 }: { 
   step: WorkflowMasterStep; 
   onEdit: (step: WorkflowMasterStep) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (step: WorkflowMasterStep) => void;
   roleName?: string;
 }) {
   const {
