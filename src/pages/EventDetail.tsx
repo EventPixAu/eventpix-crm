@@ -1704,8 +1704,8 @@ export default function EventDetail() {
         />
       )}
 
-      {/* Send Dropbox Link Dialog */}
-      {id && event && (event as any).dropbox_link && (
+      {/* Send Dropbox/SmugMug Link Dialog */}
+      {id && event && ((event as any).dropbox_link || (event as any).smugmug_link) && (
         <SendOpsEmailDialog
           open={dropboxEmailOpen}
           onOpenChange={setDropboxEmailOpen}
@@ -1725,11 +1725,21 @@ export default function EventDetail() {
           initialBody={(() => {
             const dropboxLink = (event as any).dropbox_link;
             const smugmugLink = (event as any).smugmug_link;
+            const hasDropbox = !!dropboxLink;
+            const hasSmugMug = !!smugmugLink;
+
             let body = `<p>Hi {{client_name}},</p>` +
-              `<p>Thank you for having EventPix cover your event – <strong>${event.event_name}</strong> – the files have now been edited and uploaded to <a href="${dropboxLink}"><strong>Dropbox</strong></a>.</p>`;
-            if (smugmugLink) {
+              `<p>Thank you for having EventPix cover your event – <strong>${event.event_name}</strong> – the files have now been edited and uploaded`;
+
+            if (hasDropbox && hasSmugMug) {
+              body += ` to <a href="${dropboxLink}"><strong>Dropbox</strong></a>.</p>`;
               body += `<p>We have also created a <a href="${smugmugLink}"><strong>gallery</strong></a> for your guests to access.</p>`;
+            } else if (hasDropbox) {
+              body += ` to <a href="${dropboxLink}"><strong>Dropbox</strong></a>.</p>`;
+            } else {
+              body += `.</p><p>Your <a href="${smugmugLink}"><strong>gallery</strong></a> is now ready for you and your guests to access.</p>`;
             }
+
             body += `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
               `<p>Kind regards,<br/>The Eventpix Team</p>`;
             return body;
