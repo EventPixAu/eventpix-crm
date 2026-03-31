@@ -1320,7 +1320,7 @@ export default function EventDetail() {
                     <Button variant="outline" className="w-full justify-between" onClick={() => setFinalConfirmOpen(true)}>
                       <span className="flex items-center">
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Send Final Confirmation
+                        Send Final Confirmation (Client & Team)
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.final_confirmation.status).className)}>
