@@ -1348,7 +1348,7 @@ export default function EventDetail() {
                     >
                       <span className="flex items-center">
                         <Package className="h-4 w-4 mr-2" />
-                        Send Dropbox Link
+                        Send Dropbox/SmugMug Link (Client)
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status).className)}>
