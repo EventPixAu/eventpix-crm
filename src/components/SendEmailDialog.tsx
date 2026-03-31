@@ -400,7 +400,7 @@ export function SendEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
@@ -520,42 +520,14 @@ export function SendEmailDialog({
             {/* Body */}
             <div className="space-y-2">
               <Label htmlFor="body">Message</Label>
-              {body && /<[a-z][\s\S]*>/i.test(body) ? (
-                <div className="space-y-2">
-                  <div 
-                    className="border rounded-md p-3 bg-background min-h-[200px] max-h-[300px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const plain = body
-                        .replace(/<br\s*\/?>/gi, '\n')
-                        .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
-                        .replace(/<\/li>/gi, '\n')
-                        .replace(/<[^>]+>/g, '')
-                        .replace(/&amp;/g, '&')
-                        .replace(/&lt;/g, '<')
-                        .replace(/&gt;/g, '>')
-                        .replace(/&nbsp;/g, ' ')
-                        .trim();
-                      setBody(plain);
-                    }}
-                  >
-                    Edit as plain text
-                  </Button>
-                </div>
-              ) : (
-                <Textarea
-                  id="body"
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="Enter your email message here..."
-                  rows={8}
-                />
-              )}
+              <Textarea
+                id="body"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Enter your email message here..."
+                rows={10}
+                className="font-mono text-sm"
+              />
               <p className="text-xs text-muted-foreground">
                 Use {'{{client_name}}'} for first name. Merge fields are personalised per recipient.
               </p>
