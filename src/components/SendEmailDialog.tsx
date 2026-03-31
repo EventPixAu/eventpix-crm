@@ -101,6 +101,7 @@ export function SendEmailDialog({
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [showPlainText, setShowPlainText] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
   const [attachProposalPdf, setAttachProposalPdf] = useState(context === 'quote');
   const [attachContractPdf, setAttachContractPdf] = useState(context === 'contract');
