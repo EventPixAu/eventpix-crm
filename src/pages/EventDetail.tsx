@@ -1320,7 +1320,7 @@ export default function EventDetail() {
                     <Button variant="outline" className="w-full justify-between" onClick={() => setFinalConfirmOpen(true)}>
                       <span className="flex items-center">
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Send Final Confirmation
+                        Send Final Confirmation (Client & Team)
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.final_confirmation.status).className)}>
@@ -1332,7 +1332,7 @@ export default function EventDetail() {
                   {(isAdmin || isOperations) && (event as any).pre_registration_link && (
                     <Button variant="outline" className="w-full justify-start" onClick={() => setLiveAccessOpen(true)}>
                       <QrCode className="h-4 w-4 mr-2" />
-                      <span className="flex-1 text-left">Send Live Access</span>
+                      <span className="flex-1 text-left">Send Live Access (Client & Team)</span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.live_access.status).className)}>
                           {getActionStatusDisplay(emailStatuses.live_access.status).label}
@@ -1348,7 +1348,7 @@ export default function EventDetail() {
                     >
                       <span className="flex items-center">
                         <Package className="h-4 w-4 mr-2" />
-                        Send Dropbox Link
+                        Send Dropbox/SmugMug Link (Client)
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status).className)}>
@@ -1421,7 +1421,7 @@ export default function EventDetail() {
                     >
                       <span className="flex items-center">
                         <Upload className="h-4 w-4 mr-2" />
-                        Request Files
+                        Request Files from Photographer
                       </span>
                       {emailStatuses?.request_files && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.request_files.status).className)}>
