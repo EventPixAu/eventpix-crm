@@ -144,7 +144,7 @@ export function SendPortalLinkButton({
     <>
       <Button variant="outline" size={buttonSize} className={className} onClick={handleOpen}>
         <ExternalLink className="h-4 w-4 mr-1.5" />
-        Send Portal Link
+        Send Client Portal Link
       </Button>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
