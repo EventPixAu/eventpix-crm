@@ -185,8 +185,10 @@ const handler = async (req: Request): Promise<Response> => {
     let icsContent: string;
 
     if (type === "assignment") {
-      const { data: profile, error: profileError } = await supabase.from("profiles").select("email, full_name").eq("id", user_id).single();
-      if (profileError || !profile) throw new Error(`Profile not found: ${profileError?.message}`);
+      if (!user_id) throw new Error("user_id is required for assignment notifications");
+      const { data: profile, error: profileError } = await supabase.from("profiles").select("email, full_name").eq("id", user_id).maybeSingle();
+      if (profileError) throw new Error(`Profile lookup failed: ${profileError.message}`);
+      if (!profile) throw new Error(`No profile found for user_id: ${user_id}`);
 
       recipientEmail = profile.email;
       recipientName = profile.full_name || profile.email;
