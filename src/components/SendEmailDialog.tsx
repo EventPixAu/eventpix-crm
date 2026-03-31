@@ -152,6 +152,7 @@ export function SendEmailDialog({
       setSubject(defaultSubject);
       setBody('');
       setShowPreview(false);
+      setShowPlainText(false);
       setAttachments([]);
       setAttachProposalPdf(context === 'quote');
       setAttachContractPdf(context === 'contract');
