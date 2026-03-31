@@ -1,0 +1,1 @@
+DELETE FROM profiles WHERE id IN ('3caf2c60-1cc5-4bba-bd70-1a84639c9a8c', '5b4943ef-a589-4adf-bee9-d04b63702f36');
