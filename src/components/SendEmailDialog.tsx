@@ -101,6 +101,7 @@ export function SendEmailDialog({
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [showPlainText, setShowPlainText] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
   const [attachProposalPdf, setAttachProposalPdf] = useState(context === 'quote');
   const [attachContractPdf, setAttachContractPdf] = useState(context === 'contract');
@@ -151,6 +152,7 @@ export function SendEmailDialog({
       setSubject(defaultSubject);
       setBody('');
       setShowPreview(false);
+      setShowPlainText(false);
       setAttachments([]);
       setAttachProposalPdf(context === 'quote');
       setAttachContractPdf(context === 'contract');
@@ -520,14 +522,46 @@ export function SendEmailDialog({
             {/* Body */}
             <div className="space-y-2">
               <Label htmlFor="body">Message</Label>
-              <Textarea
-                id="body"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Enter your email message here..."
-                rows={10}
-                className="font-mono text-sm"
-              />
+              {body && /<[a-z][\s\S]*>/i.test(body) && !showPlainText ? (
+                <div className="space-y-2">
+                  <div
+                    className="border rounded-md p-3 bg-background min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary [&_a]:break-all"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setBody(e.currentTarget.innerHTML)}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPlainText(true)}
+                  >
+                    Edit as plain text
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Textarea
+                    id="body"
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Enter your email message here..."
+                    rows={10}
+                    className="font-mono text-sm"
+                  />
+                  {showPlainText && /<[a-z][\s\S]*>/i.test(body) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPlainText(false)}
+                    >
+                      Show rich preview
+                    </Button>
+                  )}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 Use {'{{client_name}}'} for first name. Merge fields are personalised per recipient.
               </p>
