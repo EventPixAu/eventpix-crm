@@ -214,12 +214,13 @@ export function EquipmentKitManager() {
                     </Label>
                     {allItems && allItems.length > 0 ? (
                       <>
+                        <OwnerFilter items={allItems} value={ownerFilter} onChange={setOwnerFilter} />
                         <Select onValueChange={addPendingItem} value="">
                           <SelectTrigger>
                             <SelectValue placeholder="Select equipment to add..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {allItems.filter(item => !pendingInventoryItems.includes(item.id)).map((item) => (
+                            {filterByOwner(allItems, ownerFilter).filter(item => !pendingInventoryItems.includes(item.id)).map((item) => (
                               <SelectItem key={item.id} value={item.id}>
                                 {item.name} ({item.category})
                               </SelectItem>
