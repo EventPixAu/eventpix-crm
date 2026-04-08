@@ -149,6 +149,13 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
   const [selectedSession, setSelectedSession] = useState('all');
   const [notes, setNotes] = useState('');
 
+  // Auto-select session when there's only one
+  useEffect(() => {
+    if (sessions.length === 1 && selectedSession === 'all') {
+      setSelectedSession(sessions[0].id);
+    }
+  }, [sessions, selectedSession]);
+
   const hasSessions = sessions.length > 0;
 
   // Group assignments by session
