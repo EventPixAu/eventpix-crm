@@ -3,6 +3,8 @@ import { Phone, Mail, User, Building2, Plus, Trash2, Pencil, Camera } from 'luci
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
 import type { EventAssignment } from '@/hooks/useEvents';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,6 +69,23 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
     const cc = contact.client_contact;
     return cc?.phone_mobile || cc?.phone_office || cc?.phone || null;
   };
+
+  // Look up on-site contact details from client_contacts by name
+  const { data: onsiteContactDetails } = useQuery({
+    queryKey: ['onsite-contact-lookup', clientId, onsiteContact?.name],
+    queryFn: async () => {
+      if (!onsiteContact?.name || !clientId) return null;
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('contact_name, email, phone_mobile, phone_office, phone')
+        .eq('client_id', clientId)
+        .ilike('contact_name', onsiteContact.name)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!onsiteContact?.name && !!clientId,
+  });
 
   // Combine legacy onsite contact with new contacts
   const hasLegacyContact = onsiteContact?.name && !contacts.some(c => 
@@ -177,6 +196,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                 let onsiteEmail: string | null | undefined = null;
                 
                 if (onsiteName) {
+                  // Try event_contacts first
                   const matchingContact = contacts.find(c => 
                     c.contact_name === onsiteName || c.client_contact?.contact_name === onsiteName
                   );
@@ -185,6 +205,13 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                       onsitePhone = getDisplayPhone(matchingContact) || undefined;
                     }
                     onsiteEmail = matchingContact.contact_email || matchingContact.client_contact?.email;
+                  }
+                  // Fall back to client_contacts lookup
+                  if (!onsitePhone && onsiteContactDetails) {
+                    onsitePhone = onsiteContactDetails.phone_mobile || onsiteContactDetails.phone_office || onsiteContactDetails.phone || undefined;
+                  }
+                  if (!onsiteEmail && onsiteContactDetails?.email) {
+                    onsiteEmail = onsiteContactDetails.email;
                   }
                 }
                 
@@ -369,8 +396,11 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     const matchingContact = contacts.find(c => 
                       c.contact_name === onsiteContact?.name || c.client_contact?.contact_name === onsiteContact?.name
                     );
-                    const phone = onsiteContact?.phone || (matchingContact ? getDisplayPhone(matchingContact) : null);
-                    const email = matchingContact?.contact_email || matchingContact?.client_contact?.email;
+                    const phone = onsiteContact?.phone 
+                      || (matchingContact ? getDisplayPhone(matchingContact) : null)
+                      || onsiteContactDetails?.phone_mobile || onsiteContactDetails?.phone_office || onsiteContactDetails?.phone || null;
+                    const email = matchingContact?.contact_email || matchingContact?.client_contact?.email
+                      || onsiteContactDetails?.email || null;
                     
                     return (
                       <div className="space-y-1">
