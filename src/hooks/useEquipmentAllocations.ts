@@ -341,37 +341,34 @@ export function useAllocatePhotographerKits() {
             equipmentItemId = newItem.id;
           }
 
-          // For photographer-owned gear, first return any prior active allocation
-          // so the unique index allows re-allocation to this event
+          // Check if already allocated to this event+session
           const { data: existing } = await supabase
             .from('equipment_allocations')
-            .select('id, event_id')
+            .select('id, event_id, session_id')
             .eq('equipment_item_id', equipmentItemId)
             .is('returned_at', null)
-            .not('status', 'in', '("returned","missing")')
-            .maybeSingle();
+            .not('status', 'in', '("returned","missing")');
 
-          if (existing && existing.event_id === eventId) {
-            // Already allocated to this event — skip
+          // Skip if already allocated to this exact event (any session - photographer gear is personal)
+          const alreadyOnThisEvent = (existing || []).some(e => e.event_id === eventId);
+          if (alreadyOnThisEvent) {
             continue;
           }
 
-          if (existing) {
-            // Return the prior allocation so we can re-allocate to this event
+          // Return prior allocations to OTHER events so we can re-allocate
+          for (const prior of (existing || [])) {
             await supabase
               .from('equipment_allocations')
               .update({ status: 'returned', returned_at: new Date().toISOString() })
-              .eq('id', existing.id);
+              .eq('id', prior.id);
           }
 
-          if (!existing) {
-            allAllocations.push({
-              event_id: eventId,
-              equipment_item_id: equipmentItemId,
-              user_id: kit.userId,
-              status: 'allocated',
-            });
-          }
+          allAllocations.push({
+            event_id: eventId,
+            equipment_item_id: equipmentItemId,
+            user_id: kit.userId,
+            status: 'allocated',
+          });
         }
       }
 
