@@ -1037,6 +1037,7 @@ export default function EventDetail() {
                       .eq('id', id!);
                     queryClient.invalidateQueries({ queryKey: ['event', id] });
                   }}
+                  assignments={assignments}
                 />
               )}
               {/* Coverage, Photography Instructions & Notes */}
@@ -1068,19 +1069,6 @@ export default function EventDetail() {
                     </div>
                   )}
                 </div>
-              )}
-              
-              {/* QR for this Event */}
-              {id && canSeeSection('qr_panel') && (
-                <EventQrPanel
-                  eventId={id}
-                  qrFilePath={(event as any).qr_file_path || null}
-                  qrFileName={(event as any).qr_file_name || null}
-                  preRegistrationLink={(event as any).pre_registration_link || null}
-                  dropboxLink={(event as any).dropbox_link || null}
-                  smugmugLink={(event as any).smugmug_link || null}
-                  isAdmin={isAdmin || isOperations || isSales}
-                />
               )}
               
               {/* Team Brief (internal) */}
@@ -1228,6 +1216,19 @@ export default function EventDetail() {
               {/* Budget (Quote) Panel */}
               {(isAdmin || canSeeSection('budget')) && (event as any).quote_id && (
                 <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
+              )}
+
+              {/* QR & Registration */}
+              {id && canSeeSection('qr_panel') && (
+                <EventQrPanel
+                  eventId={id}
+                  qrFilePath={(event as any).qr_file_path || null}
+                  qrFileName={(event as any).qr_file_name || null}
+                  preRegistrationLink={(event as any).pre_registration_link || null}
+                  dropboxLink={(event as any).dropbox_link || null}
+                  smugmugLink={(event as any).smugmug_link || null}
+                  isAdmin={isAdmin || isOperations || isSales}
+                />
               )}
 
               {/* Event Documents */}
