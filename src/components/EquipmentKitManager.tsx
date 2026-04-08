@@ -468,8 +468,9 @@ function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: Equipmen
     return <div className="text-muted-foreground">Loading kit items...</div>;
   }
 
-  const availableItems = allItems.filter(
-    (item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)
+  const availableItems = filterByOwner(
+    allItems.filter((item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)),
+    ownerFilter
   );
 
   return (
@@ -481,6 +482,7 @@ function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: Equipmen
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <OwnerFilter items={allItems} value={ownerFilter} onChange={setOwnerFilter} />
         <div className="flex gap-2">
           <Select value={selectedItemId} onValueChange={setSelectedItemId}>
             <SelectTrigger className="flex-1">
