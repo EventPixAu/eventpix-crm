@@ -365,15 +365,30 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     <Badge variant="outline" className="text-xs">On-Site Contact</Badge>
                   </div>
                   
-                  {onsiteContact?.phone && (
-                    <a
-                      href={`tel:${onsiteContact.phone}`}
-                      className="flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      <Phone className="h-3.5 w-3.5" />
-                      {onsiteContact.phone}
-                    </a>
-                  )}
+                  {(() => {
+                    const matchingContact = contacts.find(c => 
+                      c.contact_name === onsiteContact?.name || c.client_contact?.contact_name === onsiteContact?.name
+                    );
+                    const phone = onsiteContact?.phone || (matchingContact ? getDisplayPhone(matchingContact) : null);
+                    const email = matchingContact?.contact_email || matchingContact?.client_contact?.email;
+                    
+                    return (
+                      <div className="space-y-1">
+                        {phone && (
+                          <a href={`tel:${phone}`} className="flex items-center gap-1 text-sm text-primary hover:underline">
+                            <Phone className="h-3.5 w-3.5" />
+                            {phone}
+                          </a>
+                        )}
+                        {email && (
+                          <a href={`mailto:${email}`} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                            <Mail className="h-3.5 w-3.5" />
+                            {email}
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {isEditing && onClearOnsiteContact && (
