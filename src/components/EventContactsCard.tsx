@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Phone, Mail, User, Building2, Plus, Trash2, Pencil } from 'lucide-react';
+import { Phone, Mail, User, Building2, Plus, Trash2, Pencil, Camera } from 'lucide-react';
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
+import type { EventAssignment } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,9 +38,10 @@ interface EventContactsCardProps {
     phone?: string | null;
   };
   onClearOnsiteContact?: () => void;
+  assignments?: EventAssignment[];
 }
 
-export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact }: EventContactsCardProps) {
+export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact, assignments = [] }: EventContactsCardProps) {
   const { data: contacts = [], isLoading } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
