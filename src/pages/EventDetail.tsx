@@ -840,7 +840,7 @@ export default function EventDetail() {
             >
               {/* Event Details */}
               <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-                <h2 className="text-lg font-display font-semibold mb-4">Event Details</h2>
+                <h2 className="text-lg font-display font-semibold mb-4">{event?.event_name || 'Event Details'}</h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
