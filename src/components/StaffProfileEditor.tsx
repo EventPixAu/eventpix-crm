@@ -447,9 +447,9 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Role & Status</h3>
             <div className="grid grid-cols-2 gap-4">
-              {sourceTable !== 'staff' && (
+               {sourceTable !== 'staff' && (
                 <div>
-                  <Label htmlFor="default_role_id">Default Role</Label>
+                  <Label htmlFor="default_role_id">Role</Label>
                   <Select
                     value={formData.default_role_id}
                     onValueChange={(value) => setFormData({ ...formData, default_role_id: value })}
@@ -458,11 +458,15 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
+                      {roles
+                        .filter((role) => ['photographer', 'videographer', 'assistant'].some(
+                          broad => role.name.toLowerCase().includes(broad)
+                        ))
+                        .map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
