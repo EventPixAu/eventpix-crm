@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Phone, Mail, User, Building2, Plus, Trash2, Pencil, Camera } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Mail, Phone, User, Building2, Plus, Trash2, Pencil, Camera, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
 import type { EventAssignment } from '@/hooks/useEvents';
@@ -77,7 +78,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
       if (!onsiteContact?.name || !clientId) return null;
       const { data } = await supabase
         .from('client_contacts')
-        .select('contact_name, email, phone_mobile, phone_office, phone')
+        .select('id, contact_name, email, phone_mobile, phone_office, phone')
         .eq('client_id', clientId)
         .ilike('contact_name', onsiteContact.name)
         .limit(1)
@@ -86,6 +87,14 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
     },
     enabled: !!onsiteContact?.name && !!clientId,
   });
+
+  const linkedOnsiteContactId = useMemo(() => {
+    if (!onsiteContact?.name) return null;
+    const linkedEventContact = contacts.find(
+      (c) => c.contact_name === onsiteContact.name || c.client_contact?.contact_name === onsiteContact.name
+    );
+    return linkedEventContact?.client_contact?.id || onsiteContactDetails?.id || null;
+  }, [contacts, onsiteContact?.name, onsiteContactDetails?.id]);
 
   // Combine legacy onsite contact with new contacts
   const hasLegacyContact = onsiteContact?.name && !contacts.some(c => 
@@ -279,7 +288,14 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="font-medium">{name}</span>
+                      {contact.client_contact?.id ? (
+                        <Link to={`/crm/contacts/${contact.client_contact.id}`} className="font-medium hover:text-primary inline-flex items-center gap-1">
+                          {name}
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{name}</span>
+                      )}
                       {isEditingThis ? (
                         <div className="flex items-center gap-2 flex-wrap">
                           <Select value={editContactType} onValueChange={(v) => setEditContactType(v as ContactType)}>
@@ -388,7 +404,14 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-medium">{onsiteContact?.name}</span>
+                    {linkedOnsiteContactId ? (
+                      <Link to={`/crm/contacts/${linkedOnsiteContactId}`} className="font-medium hover:text-primary inline-flex items-center gap-1">
+                        {onsiteContact?.name}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{onsiteContact?.name}</span>
+                    )}
                     <Badge variant="outline" className="text-xs">On-Site Contact</Badge>
                   </div>
                   
