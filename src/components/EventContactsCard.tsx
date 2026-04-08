@@ -288,7 +288,14 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="font-medium">{name}</span>
+                      {contact.client_contact?.id ? (
+                        <Link to={`/crm/contacts/${contact.client_contact.id}`} className="font-medium hover:text-primary inline-flex items-center gap-1">
+                          {name}
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{name}</span>
+                      )}
                       {isEditingThis ? (
                         <div className="flex items-center gap-2 flex-wrap">
                           <Select value={editContactType} onValueChange={(v) => setEditContactType(v as ContactType)}>
@@ -397,7 +404,14 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-medium">{onsiteContact?.name}</span>
+                    {linkedOnsiteContactId ? (
+                      <Link to={`/crm/contacts/${linkedOnsiteContactId}`} className="font-medium hover:text-primary inline-flex items-center gap-1">
+                        {onsiteContact?.name}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{onsiteContact?.name}</span>
+                    )}
                     <Badge variant="outline" className="text-xs">On-Site Contact</Badge>
                   </div>
                   
