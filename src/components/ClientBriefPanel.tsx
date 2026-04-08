@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FileText, Pencil, Check, X, ChevronDown, Sparkles, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { FileText, Pencil, Check, X, ChevronDown, Sparkles, Loader2, Upload, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useClientBriefTemplates, useApplyClientBriefToEvent } from '@/hooks/useClientBriefTemplates';
 
@@ -23,6 +23,8 @@ interface ClientBriefPanelProps {
   eventId: string;
   clientBriefContent: string | null;
   clientBriefTemplateId?: string | null;
+  clientBriefFileName?: string | null;
+  clientBriefFilePath?: string | null;
   isAdmin: boolean;
 }
 
@@ -30,17 +32,21 @@ export function ClientBriefPanel({
   eventId,
   clientBriefContent,
   clientBriefTemplateId,
+  clientBriefFileName,
+  clientBriefFilePath,
   isAdmin,
 }: ClientBriefPanelProps) {
   const queryClient = useQueryClient();
   const { data: templates = [] } = useClientBriefTemplates();
   const applyBrief = useApplyClientBriefToEvent();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(clientBriefContent || '');
   const [selectedTemplateId, setSelectedTemplateId] = useState(clientBriefTemplateId || '');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const currentTemplate = templates.find((t) => t.id === clientBriefTemplateId);
 
@@ -112,6 +118,72 @@ export function ClientBriefPanel({
     });
     setSelectedTemplateId('');
     setEditContent('');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `client-briefs/${eventId}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('event-documents')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({
+          client_brief_file_name: file.name,
+          client_brief_file_path: filePath,
+        } as any)
+        .eq('id', eventId);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Brief document uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed: ' + err.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownloadFile = async () => {
+    if (!clientBriefFilePath) return;
+    const { data } = await supabase.storage
+      .from('event-documents')
+      .createSignedUrl(clientBriefFilePath, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  const handleRemoveFile = async () => {
+    if (!clientBriefFilePath || !confirm('Remove the uploaded document?')) return;
+
+    try {
+      await supabase.storage.from('event-documents').remove([clientBriefFilePath]);
+      const { error } = await supabase
+        .from('events')
+        .update({
+          client_brief_file_name: null,
+          client_brief_file_path: null,
+        } as any)
+        .eq('id', eventId);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Document removed');
+    } catch (err: any) {
+      toast.error('Failed to remove document: ' + err.message);
+    }
   };
 
   const hasContent = clientBriefContent?.trim();
@@ -253,6 +325,65 @@ export function ClientBriefPanel({
                       Generate with AI
                     </Button>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Uploaded document section */}
+            {isAdmin && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg"
+                  onChange={handleFileUpload}
+                />
+                {clientBriefFilePath ? (
+                  <div className="flex items-center justify-between gap-2 p-2 bg-muted/50 rounded-lg">
+                    <button
+                      onClick={handleDownloadFile}
+                      className="flex items-center gap-2 text-sm text-primary hover:underline truncate min-w-0"
+                    >
+                      <Download className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{clientBriefFileName || 'Document'}</span>
+                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        title="Replace document"
+                      >
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleRemoveFile}
+                        title="Remove document"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-1" />
+                    )}
+                    Upload Brief Document
+                  </Button>
                 )}
               </div>
             )}
