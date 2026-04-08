@@ -406,7 +406,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                         <span className="font-medium">{name}</span>
                         <Badge variant="secondary" className="text-xs">{roleName}</Badge>
                         {assignment.confirmation_status === 'confirmed' && (
-                          <Badge variant="outline" className="text-xs text-green-500 border-green-500/30">Confirmed</Badge>
+                          <Badge variant="outline" className="text-xs text-success border-success/30">Confirmed</Badge>
                         )}
                       </div>
                       {email && (
