@@ -196,6 +196,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                 let onsiteEmail: string | null | undefined = null;
                 
                 if (onsiteName) {
+                  // Try event_contacts first
                   const matchingContact = contacts.find(c => 
                     c.contact_name === onsiteName || c.client_contact?.contact_name === onsiteName
                   );
@@ -204,6 +205,13 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                       onsitePhone = getDisplayPhone(matchingContact) || undefined;
                     }
                     onsiteEmail = matchingContact.contact_email || matchingContact.client_contact?.email;
+                  }
+                  // Fall back to client_contacts lookup
+                  if (!onsitePhone && onsiteContactDetails) {
+                    onsitePhone = onsiteContactDetails.phone_mobile || onsiteContactDetails.phone_office || onsiteContactDetails.phone || undefined;
+                  }
+                  if (!onsiteEmail && onsiteContactDetails?.email) {
+                    onsiteEmail = onsiteContactDetails.email;
                   }
                 }
                 
@@ -388,8 +396,11 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     const matchingContact = contacts.find(c => 
                       c.contact_name === onsiteContact?.name || c.client_contact?.contact_name === onsiteContact?.name
                     );
-                    const phone = onsiteContact?.phone || (matchingContact ? getDisplayPhone(matchingContact) : null);
-                    const email = matchingContact?.contact_email || matchingContact?.client_contact?.email;
+                    const phone = onsiteContact?.phone 
+                      || (matchingContact ? getDisplayPhone(matchingContact) : null)
+                      || onsiteContactDetails?.phone_mobile || onsiteContactDetails?.phone_office || onsiteContactDetails?.phone || null;
+                    const email = matchingContact?.contact_email || matchingContact?.client_contact?.email
+                      || onsiteContactDetails?.email || null;
                     
                     return (
                       <div className="space-y-1">
