@@ -60,14 +60,6 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedSession, setSelectedSession] = useState('all');
-  
-  // Auto-select session when there's only one
-  const sessionsRef = sessions;
-  React.useEffect(() => {
-    if (sessionsRef.length === 1 && selectedSession === 'all') {
-      setSelectedSession(sessionsRef[0].id);
-    }
-  }, [sessionsRef, selectedSession]);
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
