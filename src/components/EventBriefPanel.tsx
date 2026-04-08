@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { FileText, Pencil, Check, X, ChevronDown, Download } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { FileText, Pencil, Check, X, ChevronDown, Download, Upload, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,11 +19,15 @@ import {
   useEventBriefTemplates,
   useApplyBriefToEvent,
 } from '@/hooks/useEventBriefTemplates';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 interface EventBriefPanelProps {
   eventId: string;
   briefTemplateId: string | null;
   briefContent: string | null;
+  briefFileName?: string | null;
+  briefFilePath?: string | null;
   isAdmin: boolean;
 }
 
@@ -32,15 +35,20 @@ export function EventBriefPanel({
   eventId,
   briefTemplateId,
   briefContent,
+  briefFileName,
+  briefFilePath,
   isAdmin,
 }: EventBriefPanelProps) {
+  const queryClient = useQueryClient();
   const { data: templates = [] } = useEventBriefTemplates();
   const applyBrief = useApplyBriefToEvent();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(briefContent || '');
   const [selectedTemplateId, setSelectedTemplateId] = useState(briefTemplateId || '');
+  const [isUploading, setIsUploading] = useState(false);
 
   const currentTemplate = templates.find((t) => t.id === briefTemplateId);
 
@@ -82,6 +90,72 @@ export function EventBriefPanel({
     });
     setSelectedTemplateId('');
     setEditContent('');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `team-briefs/${eventId}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('event-documents')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from('events')
+        .update({
+          brief_file_name: file.name,
+          brief_file_path: filePath,
+        } as any)
+        .eq('id', eventId);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Brief document uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed: ' + err.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownloadFile = async () => {
+    if (!briefFilePath) return;
+    const { data } = await supabase.storage
+      .from('event-documents')
+      .createSignedUrl(briefFilePath, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  const handleRemoveFile = async () => {
+    if (!briefFilePath || !confirm('Remove the uploaded document?')) return;
+
+    try {
+      await supabase.storage.from('event-documents').remove([briefFilePath]);
+      const { error } = await supabase
+        .from('events')
+        .update({
+          brief_file_name: null,
+          brief_file_path: null,
+        } as any)
+        .eq('id', eventId);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Document removed');
+    } catch (err: any) {
+      toast.error('Failed to remove document: ' + err.message);
+    }
   };
 
   const hasContent = briefContent?.trim();
@@ -208,6 +282,65 @@ export function EventBriefPanel({
                   <p className="text-xs mt-1">
                     Select a template above to add a brief
                   </p>
+                )}
+              </div>
+            )}
+
+            {/* Uploaded document section */}
+            {isAdmin && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg"
+                  onChange={handleFileUpload}
+                />
+                {briefFilePath ? (
+                  <div className="flex items-center justify-between gap-2 p-2 bg-muted/50 rounded-lg">
+                    <button
+                      onClick={handleDownloadFile}
+                      className="flex items-center gap-2 text-sm text-primary hover:underline truncate min-w-0"
+                    >
+                      <Download className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{briefFileName || 'Document'}</span>
+                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        title="Replace document"
+                      >
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleRemoveFile}
+                        title="Remove document"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-1" />
+                    )}
+                    Upload Brief Document
+                  </Button>
                 )}
               </div>
             )}
