@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Phone, Mail, User, Building2, Plus, Trash2, Pencil } from 'lucide-react';
+import { Phone, Mail, User, Building2, Plus, Trash2, Pencil, Camera } from 'lucide-react';
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
+import type { EventAssignment } from '@/hooks/useEvents';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,9 +38,10 @@ interface EventContactsCardProps {
     phone?: string | null;
   };
   onClearOnsiteContact?: () => void;
+  assignments?: EventAssignment[];
 }
 
-export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact }: EventContactsCardProps) {
+export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact, assignments = [] }: EventContactsCardProps) {
   const { data: contacts = [], isLoading } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
@@ -380,9 +382,50 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 )}
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Assigned Team Members */}
+        {assignments.length > 0 && (
+          <>
+            <div className="border-t border-border my-4" />
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Team</p>
+            <div className="space-y-3">
+              {assignments.map((assignment) => {
+                const name = assignment.profile?.full_name || assignment.staff?.name || 'Unassigned';
+                const email = assignment.profile?.email || assignment.staff?.email;
+                const roleName = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Team';
+
+                return (
+                  <div key={assignment.id} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div className="p-2 bg-background rounded-lg shrink-0">
+                      <Camera className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="font-medium">{name}</span>
+                        <Badge variant="secondary" className="text-xs">{roleName}</Badge>
+                        {assignment.confirmation_status === 'confirmed' && (
+                          <Badge variant="outline" className="text-xs text-success border-success/30">Confirmed</Badge>
+                        )}
+                      </div>
+                      {email && (
+                        <a
+                          href={`mailto:${email}`}
+                          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          {email}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
         )}
       </div>
 
