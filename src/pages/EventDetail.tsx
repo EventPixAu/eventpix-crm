@@ -1089,6 +1089,8 @@ export default function EventDetail() {
                   eventId={id}
                   briefTemplateId={(event as any).brief_template_id}
                   briefContent={(event as any).brief_content}
+                  briefFileName={(event as any).brief_file_name}
+                  briefFilePath={(event as any).brief_file_path}
                   isAdmin={isAdmin}
                 />
               )}
@@ -1099,6 +1101,8 @@ export default function EventDetail() {
                   eventId={id}
                   clientBriefContent={(event as any).client_brief_content}
                   clientBriefTemplateId={(event as any).client_brief_template_id}
+                  clientBriefFileName={(event as any).client_brief_file_name}
+                  clientBriefFilePath={(event as any).client_brief_file_path}
                   isAdmin={isAdmin}
                 />
               )}
