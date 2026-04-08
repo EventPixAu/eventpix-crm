@@ -136,8 +136,8 @@ export function useAllocateEquipment() {
       toast.success('Equipment allocated');
     },
     onError: (error) => {
-      if (error.message.includes('unique')) {
-        toast.error('This item is already allocated to another event');
+      if (error.message.includes('unique') || error.message.includes('duplicate')) {
+        toast.error('This item is already allocated to this session');
       } else {
         toast.error('Failed to allocate: ' + error.message);
       }
@@ -158,12 +158,39 @@ export function useAllocateKit() {
 
       if (kitError) throw kitError;
 
-      // Allocate each item with kit_id reference
-      const allocations = kitItems.map((item) => ({
+      // Check which items are already allocated for this event+session
+      const targetSessionId = sessionId || null;
+      const { data: existingAllocations } = await supabase
+        .from('equipment_allocations')
+        .select('equipment_item_id, session_id')
+        .eq('event_id', eventId)
+        .in('equipment_item_id', kitItems.map(i => i.equipment_item_id))
+        .is('returned_at', null)
+        .not('status', 'in', '("returned","missing")');
+
+      // Filter out items already allocated to this specific session
+      const alreadyAllocatedIds = new Set(
+        (existingAllocations || [])
+          .filter(a => a.session_id === targetSessionId)
+          .map(a => a.equipment_item_id)
+      );
+
+      const newItems = kitItems.filter(i => !alreadyAllocatedIds.has(i.equipment_item_id));
+
+      // Note how many were on other sessions
+      const onOtherSessions = (existingAllocations || [])
+        .filter(a => a.session_id !== targetSessionId)
+        .length;
+
+      if (newItems.length === 0) {
+        return { inserted: [], skippedSameSession: alreadyAllocatedIds.size, onOtherSessions };
+      }
+
+      const allocations = newItems.map((item) => ({
         event_id: eventId,
         equipment_item_id: item.equipment_item_id,
         user_id: userId || null,
-        session_id: sessionId || null,
+        session_id: targetSessionId,
         kit_id: kitId,
         status: 'allocated' as const,
       }));
@@ -174,19 +201,28 @@ export function useAllocateKit() {
         .select();
 
       if (error) throw error;
-      return data;
+      return { inserted: data, skippedSameSession: alreadyAllocatedIds.size, onOtherSessions };
     },
-    onSuccess: (_, { eventId }) => {
+    onSuccess: (result, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-allocations', eventId] });
       queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
-      toast.success('Kit allocated to event');
+      
+      const { inserted, skippedSameSession, onOtherSessions } = result;
+      if (inserted.length === 0 && skippedSameSession > 0) {
+        toast.info('All items already allocated to this session');
+      } else {
+        let msg = `${inserted.length} item(s) allocated`;
+        if (onOtherSessions > 0) {
+          msg += ` (also allocated on ${onOtherSessions} other session(s))`;
+        }
+        if (skippedSameSession > 0) {
+          msg += ` — ${skippedSameSession} already on this session`;
+        }
+        toast.success(msg);
+      }
     },
     onError: (error) => {
-      if (error.message.includes('unique')) {
-        toast.error('Some items in this kit are already allocated');
-      } else {
-        toast.error('Failed to allocate kit: ' + error.message);
-      }
+      toast.error('Failed to allocate kit: ' + error.message);
     },
   });
 }
@@ -305,37 +341,34 @@ export function useAllocatePhotographerKits() {
             equipmentItemId = newItem.id;
           }
 
-          // For photographer-owned gear, first return any prior active allocation
-          // so the unique index allows re-allocation to this event
+          // Check if already allocated to this event+session
           const { data: existing } = await supabase
             .from('equipment_allocations')
-            .select('id, event_id')
+            .select('id, event_id, session_id')
             .eq('equipment_item_id', equipmentItemId)
             .is('returned_at', null)
-            .not('status', 'in', '("returned","missing")')
-            .maybeSingle();
+            .not('status', 'in', '("returned","missing")');
 
-          if (existing && existing.event_id === eventId) {
-            // Already allocated to this event — skip
+          // Skip if already allocated to this exact event (any session - photographer gear is personal)
+          const alreadyOnThisEvent = (existing || []).some(e => e.event_id === eventId);
+          if (alreadyOnThisEvent) {
             continue;
           }
 
-          if (existing) {
-            // Return the prior allocation so we can re-allocate to this event
+          // Return prior allocations to OTHER events so we can re-allocate
+          for (const prior of (existing || [])) {
             await supabase
               .from('equipment_allocations')
               .update({ status: 'returned', returned_at: new Date().toISOString() })
-              .eq('id', existing.id);
+              .eq('id', prior.id);
           }
 
-          if (!existing) {
-            allAllocations.push({
-              event_id: eventId,
-              equipment_item_id: equipmentItemId,
-              user_id: kit.userId,
-              status: 'allocated',
-            });
-          }
+          allAllocations.push({
+            event_id: eventId,
+            equipment_item_id: equipmentItemId,
+            user_id: kit.userId,
+            status: 'allocated',
+          });
         }
       }
 
