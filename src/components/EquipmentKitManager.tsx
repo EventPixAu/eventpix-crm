@@ -18,7 +18,48 @@ import {
   useRemoveKitItem,
   EquipmentKit
 } from '@/hooks/useEquipmentKits';
-import { useEquipmentItems } from '@/hooks/useEquipment';
+import { useEquipmentItems, type EquipmentItemWithOwner } from '@/hooks/useEquipment';
+
+function OwnerFilter({ items, value, onChange }: { items: EquipmentItemWithOwner[]; value: string; onChange: (v: string) => void }) {
+  const owners = useMemo(() => {
+    const map = new Map<string, string>();
+    items.forEach(item => {
+      if (item.owner_user_id && item.owner) {
+        map.set(item.owner_user_id, item.owner.full_name || 'Unknown');
+      }
+    });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [items]);
+
+  if (owners.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <User className="h-3 w-3" />
+        Filter by Owner
+      </Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-8 text-sm">
+          <SelectValue placeholder="All owners" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All owners</SelectItem>
+          <SelectItem value="company">Company-owned</SelectItem>
+          {owners.map(([id, name]) => (
+            <SelectItem key={id} value={id}>{name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function filterByOwner(items: EquipmentItemWithOwner[], ownerFilter: string) {
+  if (ownerFilter === 'all') return items;
+  if (ownerFilter === 'company') return items.filter(i => !i.owner_user_id);
+  return items.filter(i => i.owner_user_id === ownerFilter);
+}
 
 export function EquipmentKitManager() {
   const { data: kits, isLoading } = useEquipmentKits();
