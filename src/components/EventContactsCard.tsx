@@ -3,6 +3,8 @@ import { Phone, Mail, User, Building2, Plus, Trash2, Pencil, Camera } from 'luci
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
 import type { EventAssignment } from '@/hooks/useEvents';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
