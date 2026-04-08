@@ -85,6 +85,7 @@ export function EquipmentKitManager() {
     setEditingKit(null);
     setNewOtherItem('');
     setPendingInventoryItems([]);
+    setOwnerFilter('all');
   };
 
   const addOtherItem = () => {
