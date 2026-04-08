@@ -174,19 +174,23 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
               {(() => {
                 const onsiteName = onsiteContact?.name;
                 let onsitePhone = onsiteContact?.phone;
+                let onsiteEmail: string | null | undefined = null;
                 
-                if (onsiteName && !onsitePhone) {
+                if (onsiteName) {
                   const matchingContact = contacts.find(c => 
                     c.contact_name === onsiteName || c.client_contact?.contact_name === onsiteName
                   );
                   if (matchingContact) {
-                    onsitePhone = getDisplayPhone(matchingContact) || undefined;
+                    if (!onsitePhone) {
+                      onsitePhone = getDisplayPhone(matchingContact) || undefined;
+                    }
+                    onsiteEmail = matchingContact.contact_email || matchingContact.client_contact?.email;
                   }
                 }
                 
                 const displayName = onsiteName || clientDetails?.primary_contact_name;
                 const displayPhone = onsitePhone || clientDetails?.primary_contact_phone;
-                const displayEmail = !onsiteName ? clientDetails?.primary_contact_email : null;
+                const displayEmail = onsiteEmail || clientDetails?.primary_contact_email;
                 
                 if (!displayName && !displayEmail && !displayPhone) return null;
                 
