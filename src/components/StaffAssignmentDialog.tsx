@@ -74,6 +74,14 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
   const { data: sessions = [] } = useEventSessions(eventId);
+  
+  // Auto-select session when there's only one
+  useEffect(() => {
+    if (sessions.length === 1 && selectedSession === 'all') {
+      setSelectedSession(sessions[0].id);
+    }
+  }, [sessions, selectedSession]);
+  
   const createAssignment = useCreateAssignment();
   const deleteAssignment = useDeleteAssignment();
   const sendNotification = useSendNotification();

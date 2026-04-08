@@ -4,7 +4,7 @@
  * Shows staff assigned to a lead, grouped by session for multi-day events.
  * Allows adding/removing staff per session or as general assignments.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Clock, UserPlus, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -148,6 +148,13 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedSession, setSelectedSession] = useState('all');
   const [notes, setNotes] = useState('');
+
+  // Auto-select session when there's only one
+  useEffect(() => {
+    if (sessions.length === 1 && selectedSession === 'all') {
+      setSelectedSession(sessions[0].id);
+    }
+  }, [sessions, selectedSession]);
 
   const hasSessions = sessions.length > 0;
 
