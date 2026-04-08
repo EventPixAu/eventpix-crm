@@ -840,7 +840,17 @@ export default function EventDetail() {
             >
               {/* Event Details */}
               <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-                <h2 className="text-lg font-display font-semibold mb-4">{event?.event_name || 'Event Details'}</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-display font-semibold">{event?.event_name || 'Event Details'}</h2>
+                  {isAdmin && (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/events/${id}/edit`}>
+                        <Edit className="h-3.5 w-3.5 mr-1" />
+                        Edit
+                      </Link>
+                    </Button>
+                  )}
+                </div>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
