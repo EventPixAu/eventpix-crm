@@ -70,6 +70,23 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
     return cc?.phone_mobile || cc?.phone_office || cc?.phone || null;
   };
 
+  // Look up on-site contact details from client_contacts by name
+  const { data: onsiteContactDetails } = useQuery({
+    queryKey: ['onsite-contact-lookup', clientId, onsiteContact?.name],
+    queryFn: async () => {
+      if (!onsiteContact?.name || !clientId) return null;
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('contact_name, email, phone_mobile, phone_office, phone')
+        .eq('client_id', clientId)
+        .ilike('contact_name', onsiteContact.name)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!onsiteContact?.name && !!clientId,
+  });
+
   // Combine legacy onsite contact with new contacts
   const hasLegacyContact = onsiteContact?.name && !contacts.some(c => 
     c.contact_name === onsiteContact.name || c.client_contact?.contact_name === onsiteContact.name
