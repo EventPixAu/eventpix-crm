@@ -1231,10 +1231,6 @@ export default function EventDetail() {
                 />
               )}
 
-              {/* Event Documents */}
-              {id && (
-                <EventDocumentsPanel eventId={id} isAdmin={isAdmin} />
-              )}
 
               {/* Contracts Panel */}
               {(isAdmin || canSeeSection('contracts')) && id && event.client_id && (
