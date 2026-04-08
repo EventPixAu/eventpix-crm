@@ -845,7 +845,7 @@ export default function EventDetail() {
                   {isAdmin && (
                     <Button size="sm" variant="outline" asChild>
                       <Link to={`/events/${id}/edit`}>
-                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        <Edit className="h-3.5 w-3.5 mr-1" />
                         Edit
                       </Link>
                     </Button>
