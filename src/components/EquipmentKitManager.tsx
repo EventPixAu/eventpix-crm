@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Layers, Package, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, Package, X, User } from 'lucide-react';
 import { 
   useEquipmentKits, 
   useEquipmentKit,
@@ -18,7 +18,48 @@ import {
   useRemoveKitItem,
   EquipmentKit
 } from '@/hooks/useEquipmentKits';
-import { useEquipmentItems } from '@/hooks/useEquipment';
+import { useEquipmentItems, type EquipmentItemWithOwner } from '@/hooks/useEquipment';
+
+function OwnerFilter({ items, value, onChange }: { items: EquipmentItemWithOwner[]; value: string; onChange: (v: string) => void }) {
+  const owners = useMemo(() => {
+    const map = new Map<string, string>();
+    items.forEach(item => {
+      if (item.owner_user_id && item.owner) {
+        map.set(item.owner_user_id, item.owner.full_name || 'Unknown');
+      }
+    });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [items]);
+
+  if (owners.length === 0) return null;
+
+  return (
+    <div className="space-y-1">
+      <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <User className="h-3 w-3" />
+        Filter by Owner
+      </Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-8 text-sm">
+          <SelectValue placeholder="All owners" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All owners</SelectItem>
+          <SelectItem value="company">Company-owned</SelectItem>
+          {owners.map(([id, name]) => (
+            <SelectItem key={id} value={id}>{name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function filterByOwner(items: EquipmentItemWithOwner[], ownerFilter: string) {
+  if (ownerFilter === 'all') return items;
+  if (ownerFilter === 'company') return items.filter(i => !i.owner_user_id);
+  return items.filter(i => i.owner_user_id === ownerFilter);
+}
 
 export function EquipmentKitManager() {
   const { data: kits, isLoading } = useEquipmentKits();
@@ -37,12 +78,14 @@ export function EquipmentKitManager() {
   });
   const [newOtherItem, setNewOtherItem] = useState('');
   const [pendingInventoryItems, setPendingInventoryItems] = useState<string[]>([]);
+  const [ownerFilter, setOwnerFilter] = useState('all');
 
   const resetForm = () => {
     setFormData({ name: '', description: '', other_items: [], is_active: true });
     setEditingKit(null);
     setNewOtherItem('');
     setPendingInventoryItems([]);
+    setOwnerFilter('all');
   };
 
   const addOtherItem = () => {
@@ -171,12 +214,13 @@ export function EquipmentKitManager() {
                     </Label>
                     {allItems && allItems.length > 0 ? (
                       <>
+                        <OwnerFilter items={allItems} value={ownerFilter} onChange={setOwnerFilter} />
                         <Select onValueChange={addPendingItem} value="">
                           <SelectTrigger>
                             <SelectValue placeholder="Select equipment to add..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {allItems.filter(item => !pendingInventoryItems.includes(item.id)).map((item) => (
+                            {filterByOwner(allItems, ownerFilter).filter(item => !pendingInventoryItems.includes(item.id)).map((item) => (
                               <SelectItem key={item.id} value={item.id}>
                                 {item.name} ({item.category})
                               </SelectItem>
@@ -303,11 +347,12 @@ export function EquipmentKitManager() {
 }
 
 // Inline version for use within the dialog
-function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: string; name: string; category: string }[] }) {
+function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: EquipmentItemWithOwner[] }) {
   const { data: kit, isLoading } = useEquipmentKit(kitId);
   const addItem = useAddKitItem();
   const removeItem = useRemoveKitItem();
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('all');
 
   const handleAddItem = async () => {
     if (!selectedItemId) return;
@@ -323,8 +368,9 @@ function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { 
     return <div className="text-muted-foreground text-sm">Loading kit items...</div>;
   }
 
-  const availableItems = allItems.filter(
-    (item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)
+  const availableItems = filterByOwner(
+    allItems.filter((item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)),
+    ownerFilter
   );
 
   return (
@@ -334,6 +380,8 @@ function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { 
         Equipment Items in Kit
       </Label>
       
+      <OwnerFilter items={allItems} value={ownerFilter} onChange={setOwnerFilter} />
+
       {availableItems.length > 0 ? (
         <div className="flex gap-2">
           <Select value={selectedItemId} onValueChange={setSelectedItemId}>
@@ -399,11 +447,12 @@ function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { 
   );
 }
 
-function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: string; name: string; category: string }[] }) {
+function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: EquipmentItemWithOwner[] }) {
   const { data: kit, isLoading } = useEquipmentKit(kitId);
   const addItem = useAddKitItem();
   const removeItem = useRemoveKitItem();
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('all');
 
   const handleAddItem = async () => {
     if (!selectedItemId) return;
@@ -419,8 +468,9 @@ function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: st
     return <div className="text-muted-foreground">Loading kit items...</div>;
   }
 
-  const availableItems = allItems.filter(
-    (item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)
+  const availableItems = filterByOwner(
+    allItems.filter((item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)),
+    ownerFilter
   );
 
   return (
@@ -432,6 +482,7 @@ function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: st
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <OwnerFilter items={allItems} value={ownerFilter} onChange={setOwnerFilter} />
         <div className="flex gap-2">
           <Select value={selectedItemId} onValueChange={setSelectedItemId}>
             <SelectTrigger className="flex-1">
