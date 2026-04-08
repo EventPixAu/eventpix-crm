@@ -136,8 +136,8 @@ export function useAllocateEquipment() {
       toast.success('Equipment allocated');
     },
     onError: (error) => {
-      if (error.message.includes('unique')) {
-        toast.error('This item is already allocated to another event');
+      if (error.message.includes('unique') || error.message.includes('duplicate')) {
+        toast.error('This item is already allocated to this session');
       } else {
         toast.error('Failed to allocate: ' + error.message);
       }
