@@ -4,7 +4,7 @@
  * Shows staff assigned to a lead, grouped by session for multi-day events.
  * Allows adding/removing staff per session or as general assignments.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Clock, UserPlus, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
