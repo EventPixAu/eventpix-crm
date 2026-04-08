@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Phone, Mail, User, Building2, Plus, Trash2, Pencil, Camera } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Mail, Phone, User, Building2, Plus, Trash2, Pencil, Camera, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
 import type { EventAssignment } from '@/hooks/useEvents';
@@ -77,7 +78,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
       if (!onsiteContact?.name || !clientId) return null;
       const { data } = await supabase
         .from('client_contacts')
-        .select('contact_name, email, phone_mobile, phone_office, phone')
+        .select('id, contact_name, email, phone_mobile, phone_office, phone')
         .eq('client_id', clientId)
         .ilike('contact_name', onsiteContact.name)
         .limit(1)
@@ -86,6 +87,14 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
     },
     enabled: !!onsiteContact?.name && !!clientId,
   });
+
+  const linkedOnsiteContactId = useMemo(() => {
+    if (!onsiteContact?.name) return null;
+    const linkedEventContact = contacts.find(
+      (c) => c.contact_name === onsiteContact.name || c.client_contact?.contact_name === onsiteContact.name
+    );
+    return linkedEventContact?.client_contact?.id || onsiteContactDetails?.id || null;
+  }, [contacts, onsiteContact?.name, onsiteContactDetails?.id]);
 
   // Combine legacy onsite contact with new contacts
   const hasLegacyContact = onsiteContact?.name && !contacts.some(c => 
