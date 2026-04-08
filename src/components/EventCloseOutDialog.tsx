@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { useUpdateEvent } from '@/hooks/useEvents';
+import { supabase } from '@/integrations/supabase/client';
 import { useCreateFeedback, useEventFeedback } from '@/hooks/useStaffFeedback';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,9 @@ export function EventCloseOutDialog({ eventId, eventName, assignedStaff, trigger
         id: eventId,
         ops_status: 'completed',
       });
+
+      // Return all equipment allocations for this event
+      await supabase.rpc('return_event_equipment', { p_event_id: eventId });
 
       // Submit feedback for each staff member
       for (const [userId, feedback] of Object.entries(staffFeedback)) {

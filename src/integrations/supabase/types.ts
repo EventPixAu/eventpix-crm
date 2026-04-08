@@ -6433,6 +6433,7 @@ export type Database = {
         Returns: Json
       }
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
+      return_event_equipment: { Args: { p_event_id: string }; Returns: number }
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: Json }
       search_contacts_by_tag: {
         Args: { search_term: string }

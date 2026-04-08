@@ -27,6 +27,7 @@ import { useEquipmentCategories } from '@/hooks/useLookups';
 import { useStaffDirectory } from '@/hooks/useStaff';
 
 function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
+  // Fetch ALL allocations (current + history)
   const { data: allocations, isLoading } = useQuery({
     queryKey: ['equipment-item-allocations', equipmentItemId],
     queryFn: async () => {
@@ -38,8 +39,8 @@ function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
           user:profiles!equipment_allocations_user_id_fkey(full_name)
         `)
         .eq('equipment_item_id', equipmentItemId)
-        .neq('status', 'returned')
-        .order('allocated_at', { ascending: false });
+        .order('allocated_at', { ascending: false })
+        .limit(10);
       if (error) throw error;
       return data;
     },
@@ -49,29 +50,58 @@ function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
   if (!allocations || allocations.length === 0) {
     return (
       <div className="space-y-2">
-        <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Current Allocation</Label>
-        <p className="text-sm text-muted-foreground italic">Not currently allocated</p>
+        <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Allocation History</Label>
+        <p className="text-sm text-muted-foreground italic">No allocation history</p>
       </div>
     );
   }
 
+  const active = allocations.filter((a: any) => a.status !== 'returned' && !a.returned_at);
+  const history = allocations.filter((a: any) => a.status === 'returned' || a.returned_at);
+
   return (
-    <div className="space-y-2">
-      <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Current Allocation</Label>
-      <div className="space-y-1.5">
-        {allocations.map((a: any) => (
-          <div key={a.id} className="flex items-center justify-between rounded-md bg-muted/50 p-2 text-sm">
-            <div>
-              <p className="font-medium">{a.event?.event_name || 'Unknown event'}</p>
-              <p className="text-xs text-muted-foreground">
-                {a.event?.event_date ? format(new Date(a.event.event_date), 'dd MMM yyyy') : '—'}
-                {a.user?.full_name ? ` · ${a.user.full_name}` : ''}
-              </p>
-            </div>
-            <Badge variant="outline" className="text-[10px] capitalize">{a.status}</Badge>
+    <div className="space-y-3">
+      {/* Current allocation */}
+      {active.length > 0 && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Current Allocation</Label>
+          <div className="space-y-1.5">
+            {active.map((a: any) => (
+              <div key={a.id} className="flex items-center justify-between rounded-md bg-muted/50 p-2 text-sm">
+                <div>
+                  <p className="font-medium">{a.event?.event_name || 'Unknown event'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {a.event?.event_date ? format(new Date(a.event.event_date), 'dd MMM yyyy') : '—'}
+                    {a.user?.full_name ? ` · ${a.user.full_name}` : ''}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[10px] capitalize">{a.status}</Badge>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* History */}
+      {history.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Past Allocations</Label>
+          <div className="space-y-1">
+            {history.map((a: any) => (
+              <div key={a.id} className="flex items-center justify-between rounded-md bg-muted/30 p-2 text-sm opacity-70">
+                <div>
+                  <p className="text-sm">{a.event?.event_name || 'Unknown event'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {a.event?.event_date ? format(new Date(a.event.event_date), 'dd MMM yyyy') : '—'}
+                    {a.user?.full_name ? ` · ${a.user.full_name}` : ''}
+                  </p>
+                </div>
+                <span className="text-[10px] text-muted-foreground">Returned</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
