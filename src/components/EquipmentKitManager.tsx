@@ -347,11 +347,12 @@ export function EquipmentKitManager() {
 }
 
 // Inline version for use within the dialog
-function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: string; name: string; category: string }[] }) {
+function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: EquipmentItemWithOwner[] }) {
   const { data: kit, isLoading } = useEquipmentKit(kitId);
   const addItem = useAddKitItem();
   const removeItem = useRemoveKitItem();
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('all');
 
   const handleAddItem = async () => {
     if (!selectedItemId) return;
@@ -367,8 +368,9 @@ function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { 
     return <div className="text-muted-foreground text-sm">Loading kit items...</div>;
   }
 
-  const availableItems = allItems.filter(
-    (item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)
+  const availableItems = filterByOwner(
+    allItems.filter((item) => !kit?.items.some((ki) => ki.equipment_item_id === item.id)),
+    ownerFilter
   );
 
   return (
@@ -378,6 +380,8 @@ function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { 
         Equipment Items in Kit
       </Label>
       
+      <OwnerFilter items={allItems} value={ownerFilter} onChange={setOwnerFilter} />
+
       {availableItems.length > 0 ? (
         <div className="flex gap-2">
           <Select value={selectedItemId} onValueChange={setSelectedItemId}>
@@ -443,11 +447,12 @@ function InlineKitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { 
   );
 }
 
-function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: { id: string; name: string; category: string }[] }) {
+function KitItemsEditor({ kitId, allItems }: { kitId: string; allItems: EquipmentItemWithOwner[] }) {
   const { data: kit, isLoading } = useEquipmentKit(kitId);
   const addItem = useAddKitItem();
   const removeItem = useRemoveKitItem();
   const [selectedItemId, setSelectedItemId] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('all');
 
   const handleAddItem = async () => {
     if (!selectedItemId) return;
