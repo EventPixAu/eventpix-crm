@@ -158,12 +158,39 @@ export function useAllocateKit() {
 
       if (kitError) throw kitError;
 
-      // Allocate each item with kit_id reference
-      const allocations = kitItems.map((item) => ({
+      // Check which items are already allocated for this event+session
+      const targetSessionId = sessionId || null;
+      const { data: existingAllocations } = await supabase
+        .from('equipment_allocations')
+        .select('equipment_item_id, session_id')
+        .eq('event_id', eventId)
+        .in('equipment_item_id', kitItems.map(i => i.equipment_item_id))
+        .is('returned_at', null)
+        .not('status', 'in', '("returned","missing")');
+
+      // Filter out items already allocated to this specific session
+      const alreadyAllocatedIds = new Set(
+        (existingAllocations || [])
+          .filter(a => a.session_id === targetSessionId)
+          .map(a => a.equipment_item_id)
+      );
+
+      const newItems = kitItems.filter(i => !alreadyAllocatedIds.has(i.equipment_item_id));
+
+      // Note how many were on other sessions
+      const onOtherSessions = (existingAllocations || [])
+        .filter(a => a.session_id !== targetSessionId)
+        .length;
+
+      if (newItems.length === 0) {
+        return { inserted: [], skippedSameSession: alreadyAllocatedIds.size, onOtherSessions };
+      }
+
+      const allocations = newItems.map((item) => ({
         event_id: eventId,
         equipment_item_id: item.equipment_item_id,
         user_id: userId || null,
-        session_id: sessionId || null,
+        session_id: targetSessionId,
         kit_id: kitId,
         status: 'allocated' as const,
       }));
@@ -174,19 +201,28 @@ export function useAllocateKit() {
         .select();
 
       if (error) throw error;
-      return data;
+      return { inserted: data, skippedSameSession: alreadyAllocatedIds.size, onOtherSessions };
     },
-    onSuccess: (_, { eventId }) => {
+    onSuccess: (result, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-allocations', eventId] });
       queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
-      toast.success('Kit allocated to event');
+      
+      const { inserted, skippedSameSession, onOtherSessions } = result;
+      if (inserted.length === 0 && skippedSameSession > 0) {
+        toast.info('All items already allocated to this session');
+      } else {
+        let msg = `${inserted.length} item(s) allocated`;
+        if (onOtherSessions > 0) {
+          msg += ` (also allocated on ${onOtherSessions} other session(s))`;
+        }
+        if (skippedSameSession > 0) {
+          msg += ` — ${skippedSameSession} already on this session`;
+        }
+        toast.success(msg);
+      }
     },
     onError: (error) => {
-      if (error.message.includes('unique')) {
-        toast.error('Some items in this kit are already allocated');
-      } else {
-        toast.error('Failed to allocate kit: ' + error.message);
-      }
+      toast.error('Failed to allocate kit: ' + error.message);
     },
   });
 }
