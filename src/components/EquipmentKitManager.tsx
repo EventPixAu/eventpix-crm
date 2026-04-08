@@ -78,6 +78,7 @@ export function EquipmentKitManager() {
   });
   const [newOtherItem, setNewOtherItem] = useState('');
   const [pendingInventoryItems, setPendingInventoryItems] = useState<string[]>([]);
+  const [ownerFilter, setOwnerFilter] = useState('all');
 
   const resetForm = () => {
     setFormData({ name: '', description: '', other_items: [], is_active: true });
