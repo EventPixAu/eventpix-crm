@@ -2791,12 +2791,16 @@ export type Database = {
         Row: {
           booking_date: string | null
           brief_content: string | null
+          brief_file_name: string | null
+          brief_file_path: string | null
           brief_template_id: string | null
           brief_updated_at: string | null
           calendar_sequence: number
           camera_settings: string | null
           city: string | null
           client_brief_content: string | null
+          client_brief_file_name: string | null
+          client_brief_file_path: string | null
           client_brief_template_id: string | null
           client_id: string | null
           client_name: string
@@ -2862,12 +2866,16 @@ export type Database = {
         Insert: {
           booking_date?: string | null
           brief_content?: string | null
+          brief_file_name?: string | null
+          brief_file_path?: string | null
           brief_template_id?: string | null
           brief_updated_at?: string | null
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
           client_brief_content?: string | null
+          client_brief_file_name?: string | null
+          client_brief_file_path?: string | null
           client_brief_template_id?: string | null
           client_id?: string | null
           client_name: string
@@ -2935,12 +2943,16 @@ export type Database = {
         Update: {
           booking_date?: string | null
           brief_content?: string | null
+          brief_file_name?: string | null
+          brief_file_path?: string | null
           brief_template_id?: string | null
           brief_updated_at?: string | null
           calendar_sequence?: number
           camera_settings?: string | null
           city?: string | null
           client_brief_content?: string | null
+          client_brief_file_name?: string | null
+          client_brief_file_path?: string | null
           client_brief_template_id?: string | null
           client_id?: string | null
           client_name?: string
