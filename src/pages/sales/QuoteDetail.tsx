@@ -484,13 +484,13 @@ export default function QuoteDetail() {
           {!isLocked && (
             <Button variant="outline" onClick={() => setIsEmailDialogOpen(true)}>
               <Mail className="h-4 w-4 mr-2" />
-              Send Email
+              Send Budget
             </Button>
           )}
           {!isLocked && quote.status === 'draft' && (
             <Button onClick={() => setIsSendQuoteOpen(true)}>
-              <Send className="h-4 w-4 mr-2" />
-              Send Quote
+              <Link2 className="h-4 w-4 mr-2" />
+              Show Link
             </Button>
           )}
           {!isLocked && quote.status === 'sent' && quote.public_token && (
