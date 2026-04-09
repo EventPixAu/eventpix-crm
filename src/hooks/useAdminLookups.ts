@@ -27,7 +27,6 @@ export function useAllEventTypes() {
       const { data, error } = await supabase
         .from('event_types')
         .select('*')
-        .order('sort_order')
         .order('name');
       
       if (error) throw error;

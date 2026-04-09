@@ -36,7 +36,6 @@ export function useEventTypes() {
         .from('event_types')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order')
         .order('name');
       
       if (error) throw error;
