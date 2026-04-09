@@ -17,7 +17,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
-  Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon,
+  Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon, Link2,
   Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -484,13 +484,13 @@ export default function QuoteDetail() {
           {!isLocked && (
             <Button variant="outline" onClick={() => setIsEmailDialogOpen(true)}>
               <Mail className="h-4 w-4 mr-2" />
-              Send Email
+              Send Budget
             </Button>
           )}
           {!isLocked && quote.status === 'draft' && (
             <Button onClick={() => setIsSendQuoteOpen(true)}>
-              <Send className="h-4 w-4 mr-2" />
-              Send Quote
+              <Link2 className="h-4 w-4 mr-2" />
+              Show Link
             </Button>
           )}
           {!isLocked && quote.status === 'sent' && quote.public_token && (
