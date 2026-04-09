@@ -17,7 +17,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
-  Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon,
+  Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon, Link2,
   Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
