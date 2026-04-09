@@ -1133,6 +1133,14 @@ export default function QuoteDetail() {
         clientName={primaryContactName || clientName}
         relatedQuoteId={quote.id}
         defaultSubject={`Budget: ${quote.quote_number || quote.id.slice(0, 8)}`}
+        defaultBody={
+          `<p>Hi {{client_name}},</p>` +
+          `<p>Thank you for considering me as your photographer! Please find attached the budget for <strong>${leadData?.lead_name || quote.quote_number || ''}</strong>.</p>` +
+          (quote.public_token 
+            ? `<p>You can review and accept this budget online here: <a href="${getPublicBaseUrl()}/accept/${quote.public_token}">${getPublicBaseUrl()}/accept/${quote.public_token}</a></p>` 
+            : '') +
+          `<p>Please don't hesitate to contact me if you have any questions.</p>`
+        }
         context="quote"
         mergeContext={{
           eventName: leadData?.lead_name || quote.quote_number,
