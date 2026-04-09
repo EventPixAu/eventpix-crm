@@ -1134,7 +1134,7 @@ export default function QuoteDetail() {
         relatedQuoteId={quote.id}
         defaultSubject={`Your budget from Eventpix for ${leadData?.lead_name || quote.quote_number || ''}`}
         defaultBody={
-          `<p>Hi {{client.primary_contact_name}}</p>` +
+          `<p>Hi {{client_name}}</p>` +
           `<p>A budget has been prepared for your event on {{event.event_date}}<br/>We are looking forward to working with you</p>` +
           `<p>{{budget.button}}</p>` +
           `<p>Regards</p>`
