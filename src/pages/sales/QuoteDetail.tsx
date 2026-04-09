@@ -482,21 +482,15 @@ export default function QuoteDetail() {
             </Button>
           </Link>
           {!isLocked && (
-            <Button variant="outline" onClick={() => setIsEmailDialogOpen(true)}>
+            <Button onClick={() => setIsEmailDialogOpen(true)}>
               <Mail className="h-4 w-4 mr-2" />
               Send Budget
             </Button>
           )}
           {!isLocked && quote.status === 'draft' && (
-            <Button onClick={() => setIsSendQuoteOpen(true)}>
+            <Button variant="outline" onClick={() => setIsSendQuoteOpen(true)}>
               <Link2 className="h-4 w-4 mr-2" />
               Show Link
-            </Button>
-          )}
-          {!isLocked && quote.status === 'sent' && quote.public_token && (
-            <Button variant="outline" onClick={handleRegenerateToken} disabled={regeneratingToken}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingToken ? 'animate-spin' : ''}`} />
-              Regenerate Link
             </Button>
           )}
           {!isLocked && isAdmin && (
