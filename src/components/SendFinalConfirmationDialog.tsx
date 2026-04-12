@@ -174,15 +174,21 @@ function buildConfirmationBody(
       }
     }
   } else {
-    // Single-day fallback
-    const eventDate = eventData.event_date
-      ? format(parseISO(eventData.event_date), 'EEEE, d MMMM yyyy')
+    // Single-day fallback — prefer session times over event-level times
+    const singleSession = liveSessions[0];
+    const eventDate = (singleSession?.session_date || eventData.event_date)
+      ? format(parseISO(singleSession?.session_date || eventData.event_date), 'EEEE, d MMMM yyyy')
       : 'TBC';
     lines.push(`Date: ${eventDate}`);
-    if (eventData.arrival_time) {
-      lines.push(`Setup: ${formatTime12h(eventData.arrival_time)}`);
+    
+    const arrivalTime = singleSession?.arrival_time || eventData.arrival_time;
+    const startTime = singleSession?.start_time || eventData.start_time;
+    const endTime = singleSession?.end_time || eventData.end_time;
+    
+    if (arrivalTime) {
+      lines.push(`Setup: ${formatTime12h(arrivalTime)}`);
     }
-    lines.push(`Activation: ${formatTime12h(eventData.start_time)} – ${formatTime12h(eventData.end_time)}`);
+    lines.push(`Activation: ${formatTime12h(startTime)} – ${formatTime12h(endTime)}`);
 
     // YOUR TEAM section for single-day
     lines.push('');
