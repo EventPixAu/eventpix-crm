@@ -83,6 +83,7 @@ import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
+import { SendTeamUpdateDialog } from '@/components/SendTeamUpdateDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
@@ -572,6 +573,7 @@ export default function EventDetail() {
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
+  const [teamUpdateDialogOpen, setTeamUpdateDialogOpen] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
   const [dropboxEmailOpen, setDropboxEmailOpen] = useState(false);
@@ -1400,22 +1402,11 @@ export default function EventDetail() {
                     <Button 
                       variant="outline" 
                       className="w-full justify-between" 
-                      disabled={isSendingTeamUpdate}
-                      onClick={async () => {
-                        setIsSendingTeamUpdate(true);
-                        try {
-                          await sendNotification.mutateAsync({
-                            type: 'event_update',
-                            event_id: id!,
-                          });
-                        } finally {
-                          setIsSendingTeamUpdate(false);
-                        }
-                      }}
+                      onClick={() => setTeamUpdateDialogOpen(true)}
                     >
                       <span className="flex items-center">
                         <Users className="h-4 w-4 mr-2" />
-                        {isSendingTeamUpdate ? 'Sending...' : 'Send Updated Details to Team'}
+                        Send Updated Details to Team
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.team_update.status).className)}>
@@ -1678,7 +1669,15 @@ export default function EventDetail() {
         />
       )}
 
-      {/* Send Live Access Dialog */}
+      {id && event && (
+        <SendTeamUpdateDialog
+          open={teamUpdateDialogOpen}
+          onOpenChange={setTeamUpdateDialogOpen}
+          eventId={id}
+          eventName={event.event_name}
+          assignments={assignments}
+        />
+      )}
       {id && event && (
         <SendOpsEmailDialog
           open={liveAccessOpen}
