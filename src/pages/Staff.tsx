@@ -568,6 +568,39 @@ export default function Staff() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
+                                  {!member.user_id && member.email && (
+                                    <InviteStaffToAccountDialog
+                                      staff={{ id: member.id, name: member.name, email: member.email, role: member.role }}
+                                      trigger={
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                          <UserPlus className="h-4 w-4 mr-2" />
+                                          Send Invitation
+                                        </DropdownMenuItem>
+                                      }
+                                    />
+                                  )}
+                                  {member.user_id && member.email && (() => {
+                                    const onboardingStatus = profileStatusMap.get(member.user_id!) as OnboardingStatus | undefined;
+                                    return onboardingStatus !== 'active' ? (
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          supabase.functions.invoke('admin-create-user', {
+                                            body: { resend_access_for_user_id: member.user_id, email: member.email },
+                                          }).then(({ data, error }) => {
+                                            if (error || !data?.success) {
+                                              toast({ title: 'Failed to send', description: error?.message || data?.error, variant: 'destructive' });
+                                            } else {
+                                              toast({ title: 'Access email sent', description: `Password setup email sent to ${member.email}` });
+                                            }
+                                          });
+                                        }}
+                                      >
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Resend Access Email
+                                      </DropdownMenuItem>
+                                    ) : null;
+                                  })()}
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={(e) => {
