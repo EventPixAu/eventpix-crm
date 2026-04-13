@@ -1402,22 +1402,11 @@ export default function EventDetail() {
                     <Button 
                       variant="outline" 
                       className="w-full justify-between" 
-                      disabled={isSendingTeamUpdate}
-                      onClick={async () => {
-                        setIsSendingTeamUpdate(true);
-                        try {
-                          await sendNotification.mutateAsync({
-                            type: 'event_update',
-                            event_id: id!,
-                          });
-                        } finally {
-                          setIsSendingTeamUpdate(false);
-                        }
-                      }}
+                      onClick={() => setTeamUpdateDialogOpen(true)}
                     >
                       <span className="flex items-center">
                         <Users className="h-4 w-4 mr-2" />
-                        {isSendingTeamUpdate ? 'Sending...' : 'Send Updated Details to Team'}
+                        Send Updated Details to Team
                       </span>
                       {emailStatuses && (
                         <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.team_update.status).className)}>
