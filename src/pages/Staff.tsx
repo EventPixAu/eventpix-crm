@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronRight, FileCheck, Mail, MapPin, MoreVertical, Phone, Plus, Search, Trash2, UserCircle, Users, X } from 'lucide-react';
+import { Check, ChevronRight, FileCheck, Mail, MapPin, MoreVertical, Phone, Plus, Search, Send, Trash2, UserCircle, UserPlus, Users, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -62,6 +62,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
+import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
 
 // Unified team member type that works for both profiles and legacy staff
 interface UnifiedTeamMember {
