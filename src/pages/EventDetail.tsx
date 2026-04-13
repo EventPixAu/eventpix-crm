@@ -1669,7 +1669,15 @@ export default function EventDetail() {
         />
       )}
 
-      {/* Send Live Access Dialog */}
+      {id && event && (
+        <SendTeamUpdateDialog
+          open={teamUpdateDialogOpen}
+          onOpenChange={setTeamUpdateDialogOpen}
+          eventId={id}
+          eventName={event.event_name}
+          assignments={assignments}
+        />
+      )}
       {id && event && (
         <SendOpsEmailDialog
           open={liveAccessOpen}
