@@ -83,6 +83,7 @@ import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
+import { SendTeamUpdateDialog } from '@/components/SendTeamUpdateDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
@@ -572,6 +573,7 @@ export default function EventDetail() {
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
   const [isSendingTeamUpdate, setIsSendingTeamUpdate] = useState(false);
+  const [teamUpdateDialogOpen, setTeamUpdateDialogOpen] = useState(false);
   const [finalConfirmOpen, setFinalConfirmOpen] = useState(false);
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
   const [dropboxEmailOpen, setDropboxEmailOpen] = useState(false);
