@@ -90,6 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Dev bypass: skip all Supabase auth to avoid overriding the mock admin state
+    if (DEV_BYPASS) return;
+
     let mounted = true;
 
     setAuthLoading(true);
