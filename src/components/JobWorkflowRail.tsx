@@ -40,6 +40,7 @@ import {
   EventWorkflowStepWithProfile,
 } from '@/hooks/useEventWorkflowSteps';
 import { EditWorkflowStepDialog } from '@/components/EditWorkflowStepDialog';
+import { RoleAbbrevBadge } from '@/components/shared/RoleAbbrevBadge';
 
 interface JobWorkflowRailProps {
   eventId: string;

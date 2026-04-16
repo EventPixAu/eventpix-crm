@@ -30,6 +30,8 @@ import {
   type WorkflowMasterStep,
 } from '@/hooks/useWorkflowMasterSteps';
 import { useInitializeWorkflowFromEventType } from '@/hooks/useEventWorkflowSteps';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
+import { RoleAbbrevBadge } from '@/components/shared/RoleAbbrevBadge';
 import { cn } from '@/lib/utils';
 
 interface InitializeWorkflowDialogProps {
