@@ -363,8 +363,8 @@ export function InitializeWorkflowDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-      {currentTemplateName && (
-        <span className="text-sm text-muted-foreground">{currentTemplateName}</span>
+      {workflowLabel && (
+        <span className="text-sm text-muted-foreground">{workflowLabel}</span>
       )}
     </div>
   );
