@@ -38,8 +38,17 @@ export default function EventRunSheet() {
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
-  const crewChecklistEventId = isAdmin ? undefined : id;
-  const { data: myCrewChecklist } = useMyCrewChecklist(crewChecklistEventId);
+  // For crew: get their assigned workflow steps instead of old crew checklists
+  const { data: allWorkflowSteps = [] } = useEventWorkflowSteps(id);
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user-id'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user?.id || null;
+    },
+    staleTime: Infinity,
+  });
+  const myWorkflowSteps = allWorkflowSteps.filter(s => s.assigned_to === currentUser);
   
   // Filter documents to only show crew-visible ones for non-admin users
   const crewDocuments = useMemo(() => {
