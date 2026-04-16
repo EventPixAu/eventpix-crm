@@ -314,17 +314,17 @@ export default function EventRunSheet() {
         <section className="mb-6 print-section">
           <h2 className="text-lg font-semibold mb-3 border-b pb-1">Checklist</h2>
           {!isAdmin ? (
-            myCrewChecklist?.items?.length ? (
+            myWorkflowSteps.length > 0 ? (
               <div className="space-y-2">
-                {myCrewChecklist.items.map((item) => (
-                  <div key={item.id} className="checklist-item flex items-start gap-2 py-1">
-                    <span className="inline-block w-4 h-4 border border-black mt-0.5 shrink-0" />
-                    <span className="text-sm">{item.item_text}</span>
+                {myWorkflowSteps.map((step) => (
+                  <div key={step.id} className="checklist-item flex items-start gap-2 py-1">
+                    <span className={`inline-block w-4 h-4 border border-black mt-0.5 shrink-0 ${step.is_completed ? 'bg-black' : ''}`} />
+                    <span className="text-sm">{step.step_label}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No crew checklist</p>
+              <p className="text-muted-foreground">No checklist steps assigned</p>
             )
           ) : worksheets.length === 0 ? (
             <p className="text-muted-foreground">No worksheets</p>
