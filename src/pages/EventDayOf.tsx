@@ -495,28 +495,40 @@ export default function EventDayOf() {
                 </Link>
               )}
             </div>
-            <h1 className="text-xl font-display font-bold mb-1">{displayEvent.event_name}</h1>
-            <div className="flex items-center gap-2 text-muted-foreground mt-1">
-              <Calendar className="h-5 w-5" />
-              <span className="text-base font-medium">{eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}</span>
-            </div>
-            {/* Session times */}
-            {(displayTimes.startTime || displayTimes.arrivalTime) && (
-              <div className="flex items-center gap-2 text-muted-foreground mt-1">
-                <Clock className="h-5 w-5" />
-                <span className="text-base font-medium">
-                  {displayTimes.arrivalTime && (
-                    <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
-                  )}
-                  {displayTimes.startTime && (
-                    <>
-                      {safeFormatTime(displayTimes.startTime)}
-                      {displayTimes.endTime && ` – ${safeFormatTime(displayTimes.endTime)}`}
-                    </>
-                  )}
-                </span>
+            <h1 className="text-xl font-display font-bold mb-3">{displayEvent.event_name}</h1>
+          </div>
+
+          {/* Date & Time Card */}
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                <Calendar className="h-5 w-5 text-primary" />
               </div>
-            )}
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold mb-1">Date & Time</h3>
+                <p className="font-medium">{eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}</p>
+                {(displayTimes.startTime || displayTimes.arrivalTime) && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {displayTimes.arrivalTime && (
+                      <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
+                    )}
+                    {displayTimes.startTime && (
+                      <>
+                        {safeFormatTime(displayTimes.startTime)}
+                        {displayTimes.endTime && ` – ${safeFormatTime(displayTimes.endTime)}`}
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.section>
+
+          <div className="px-4">
             {statusBadges.length > 0 && (
               <div className="flex gap-2 mt-2">
                 {statusBadges.map((badge) => (
