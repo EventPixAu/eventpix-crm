@@ -20,8 +20,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dev bypass: skip auth entirely in development
-const DEV_BYPASS = import.meta.env.DEV;
+// No dev bypass — always use real auth to ensure RLS works correctly
+const DEV_BYPASS = false;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
