@@ -309,6 +309,7 @@ export function InitializeWorkflowDialog({
                                     onCheckedChange={() => handleItemToggle(step.id)}
                                     className="mt-0.5"
                                   />
+                                  <RoleAbbrevBadge roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name} />
                                   <div className="flex-1 min-w-0">
                                     <p className={cn(
                                       'text-sm font-medium',
