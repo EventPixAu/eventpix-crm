@@ -336,6 +336,7 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [editingStep, setEditingStep] = useState<EventWorkflowStepWithProfile | null>(null);
   const { total, completed, percentage, overdue, steps } = useWorkflowProgress(eventId);
+  const { data: assignments = [] } = useEventAssignments(eventId);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const firstIncompleteRef = useRef<HTMLDivElement>(null);
   
