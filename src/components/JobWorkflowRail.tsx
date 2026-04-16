@@ -41,6 +41,7 @@ import {
 } from '@/hooks/useEventWorkflowSteps';
 import { EditWorkflowStepDialog } from '@/components/EditWorkflowStepDialog';
 import { RoleAbbrevBadge } from '@/components/shared/RoleAbbrevBadge';
+import { useEventAssignments } from '@/hooks/useEvents';
 
 interface JobWorkflowRailProps {
   eventId: string;
