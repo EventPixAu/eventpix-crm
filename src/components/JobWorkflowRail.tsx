@@ -431,6 +431,7 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
                         expandedStep === step.id ? null : step.id
                       )}
                       onEdit={(step) => setEditingStep(step)}
+                      userRoleMap={userRoleMap}
                     />
                   </div>
                 );
