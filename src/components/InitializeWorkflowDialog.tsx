@@ -38,28 +38,16 @@ interface InitializeWorkflowDialogProps {
   eventId: string;
   currentTemplateId?: string | null;
   currentEventTypeId?: string | null;
+  workflowLabel?: string | null;
   trigger?: React.ReactNode;
 }
 
 export function InitializeWorkflowDialog({
   eventId,
   currentTemplateId,
+  workflowLabel,
   trigger,
 }: InitializeWorkflowDialogProps) {
-  // Fetch current workflow template name
-  const { data: currentTemplateName } = useQuery({
-    queryKey: ['workflow-template-name', currentTemplateId],
-    queryFn: async () => {
-      if (!currentTemplateId) return null;
-      const { data } = await supabase
-        .from('workflow_templates')
-        .select('template_name')
-        .eq('id', currentTemplateId)
-        .maybeSingle();
-      return data?.template_name || null;
-    },
-    enabled: !!currentTemplateId,
-  });
 
   const [open, setOpen] = useState(false);
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
