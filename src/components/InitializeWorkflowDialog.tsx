@@ -185,10 +185,15 @@ export function InitializeWorkflowDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm">
-            <ListChecks className="h-4 w-4 mr-2" />
-            {currentTemplateId ? 'Change Workflow' : 'Assign Workflow'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <ListChecks className="h-4 w-4 mr-2" />
+              {currentTemplateId ? 'Change Workflow' : 'Assign Workflow'}
+            </Button>
+            {currentTemplateName && (
+              <span className="text-sm text-muted-foreground">{currentTemplateName}</span>
+            )}
+          </div>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
