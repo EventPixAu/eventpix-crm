@@ -497,6 +497,15 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
         </div>
         {isAdmin && (
           <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8"
+              onClick={() => window.open(`/events/${eventId}/day-of`, '_blank')}
+              title="Preview crew job sheet"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             {confirmationStatus !== 'confirmed' && (
               <Button
                 variant="outline"
