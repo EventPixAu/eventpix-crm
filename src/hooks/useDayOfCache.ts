@@ -47,7 +47,8 @@ export function useDayOfCache(eventId: string | undefined) {
     
     try {
       localStorage.setItem(`${CACHE_KEY_PREFIX}${eventId}`, JSON.stringify(cacheData));
-      setCachedData(cacheData);
+      // Only update state if we don't already have cached data to avoid infinite re-render loops
+      setCachedData(prev => prev ? prev : cacheData);
     } catch (e) {
       console.error('Failed to save to cache:', e);
     }
