@@ -129,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // When user changes, immediately mark role as loading to prevent
   // a flash where loading=false but role=null (causes wrong redirect).
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (user?.id && !authLoading) {
       setRoleLoading(true);
     }
