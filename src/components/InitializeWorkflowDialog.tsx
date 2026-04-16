@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { ListChecks, Loader2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -38,28 +36,16 @@ interface InitializeWorkflowDialogProps {
   eventId: string;
   currentTemplateId?: string | null;
   currentEventTypeId?: string | null;
+  workflowLabel?: string | null;
   trigger?: React.ReactNode;
 }
 
 export function InitializeWorkflowDialog({
   eventId,
   currentTemplateId,
+  workflowLabel,
   trigger,
 }: InitializeWorkflowDialogProps) {
-  // Fetch current workflow template name
-  const { data: currentTemplateName } = useQuery({
-    queryKey: ['workflow-template-name', currentTemplateId],
-    queryFn: async () => {
-      if (!currentTemplateId) return null;
-      const { data } = await supabase
-        .from('workflow_templates')
-        .select('template_name')
-        .eq('id', currentTemplateId)
-        .maybeSingle();
-      return data?.template_name || null;
-    },
-    enabled: !!currentTemplateId,
-  });
 
   const [open, setOpen] = useState(false);
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
@@ -182,20 +168,16 @@ export function InitializeWorkflowDialog({
   const isLoading = eventTypesLoading || stepsLoading;
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {trigger || (
             <Button variant="outline" size="sm">
               <ListChecks className="h-4 w-4 mr-2" />
               {currentTemplateId ? 'Change Workflow' : 'Assign Workflow'}
             </Button>
-            {currentTemplateName && (
-              <span className="text-sm text-muted-foreground">{currentTemplateName}</span>
-            )}
-          </div>
-        )}
-      </DialogTrigger>
+          )}
+        </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
@@ -379,5 +361,9 @@ export function InitializeWorkflowDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+      {workflowLabel && (
+        <span className="text-sm text-muted-foreground">{workflowLabel}</span>
+      )}
+    </div>
   );
 }
