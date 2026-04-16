@@ -499,6 +499,23 @@ export default function EventDayOf() {
               <Calendar className="h-4 w-4" />
               {eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}
             </div>
+            {/* Session times */}
+            {(displayTimes.startTime || displayTimes.arrivalTime) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {displayTimes.arrivalTime && (
+                    <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
+                  )}
+                  {displayTimes.startTime && (
+                    <>
+                      {safeFormatTime(displayTimes.startTime)}
+                      {displayTimes.endTime && ` – ${safeFormatTime(displayTimes.endTime)}`}
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
             {statusBadges.length > 0 && (
               <div className="flex gap-2 mt-2">
                 {statusBadges.map((badge) => (
