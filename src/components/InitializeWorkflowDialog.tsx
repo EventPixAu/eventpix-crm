@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ListChecks, Loader2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -44,6 +46,21 @@ export function InitializeWorkflowDialog({
   currentTemplateId,
   trigger,
 }: InitializeWorkflowDialogProps) {
+  // Fetch current workflow template name
+  const { data: currentTemplateName } = useQuery({
+    queryKey: ['workflow-template-name', currentTemplateId],
+    queryFn: async () => {
+      if (!currentTemplateId) return null;
+      const { data } = await supabase
+        .from('workflow_templates')
+        .select('template_name')
+        .eq('id', currentTemplateId)
+        .maybeSingle();
+      return data?.template_name || null;
+    },
+    enabled: !!currentTemplateId,
+  });
+
   const [open, setOpen] = useState(false);
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
   const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
@@ -168,10 +185,15 @@ export function InitializeWorkflowDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm">
-            <ListChecks className="h-4 w-4 mr-2" />
-            {currentTemplateId ? 'Change Workflow' : 'Assign Workflow'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <ListChecks className="h-4 w-4 mr-2" />
+              {currentTemplateId ? 'Change Workflow' : 'Assign Workflow'}
+            </Button>
+            {currentTemplateName && (
+              <span className="text-sm text-muted-foreground">{currentTemplateName}</span>
+            )}
+          </div>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
