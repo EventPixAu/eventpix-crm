@@ -123,6 +123,7 @@ export default function EventDayOf() {
   // Data fetching
   const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id);
   const { data: assignments = [], isLoading: assignmentsLoading } = useEventAssignments(id);
+  const { data: eventSessions = [] } = useEventSessions(id);
   const { data: worksheets = [] } = useEventWorksheets(id);
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: staffRoles = [] } = useStaffRoles();
