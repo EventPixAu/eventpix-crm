@@ -496,15 +496,15 @@ export default function EventDayOf() {
               )}
             </div>
             <h1 className="text-xl font-display font-bold mb-1">{displayEvent.event_name}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              {eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}
+            <div className="flex items-center gap-2 text-muted-foreground mt-1">
+              <Calendar className="h-5 w-5" />
+              <span className="text-base font-medium">{eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}</span>
             </div>
             {/* Session times */}
             {(displayTimes.startTime || displayTimes.arrivalTime) && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <Clock className="h-4 w-4" />
-                <span>
+              <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                <Clock className="h-5 w-5" />
+                <span className="text-base font-medium">
                   {displayTimes.arrivalTime && (
                     <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
                   )}
