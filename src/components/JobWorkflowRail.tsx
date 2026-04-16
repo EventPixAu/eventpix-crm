@@ -106,6 +106,7 @@ function StepItem({
   isExpanded,
   onToggle,
   onEdit,
+  userRoleMap,
 }: {
   step: EventWorkflowStepWithProfile;
   eventId: string;
@@ -113,6 +114,7 @@ function StepItem({
   isExpanded: boolean;
   onToggle: () => void;
   onEdit: (step: EventWorkflowStepWithProfile) => void;
+  userRoleMap: Record<string, string>;
 }) {
   const [notes, setNotes] = useState(step.notes || '');
   const completeStep = useCompleteWorkflowStep();
