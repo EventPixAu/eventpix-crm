@@ -1,143 +1,135 @@
 /**
- * PhotographerChecklist - Personal checklist for photographers organized by phase
+ * PhotographerChecklist - Shows event workflow steps assigned to the current user
  * 
- * Phases:
- * - Pre-Event: Tasks before leaving for the event
- * - On the Day: Tasks at the venue
- * - Post-Event: Tasks after the event
- * 
- * This is separate from admin workflows - it's for individual crew tracking.
+ * Pulls from event_workflow_steps (the same data admins see in the main workflow rail),
+ * filtered to only show steps assigned to the logged-in photographer.
+ * Grouped by phase: Pre-Event, On the Day, Post-Event.
  */
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format, parseISO, isPast, isToday } from 'date-fns';
 import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
   ClipboardList,
-  MessageSquare,
-  Plus,
+  Clock,
+  AlertTriangle,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
-  useMyCrewChecklist,
-  useInitializeCrewChecklist,
-  useToggleCrewChecklistItem,
-  useUpdateCrewChecklistItemNote,
-} from '@/hooks/useCrewChecklists';
+  useEventWorkflowSteps,
+  useCompleteWorkflowStep,
+  useUncompleteWorkflowStep,
+  type EventWorkflowStepWithProfile,
+} from '@/hooks/useEventWorkflowSteps';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface PhotographerChecklistProps {
   eventId: string;
-  staffRoleId?: string; // Role ID from event_assignments to select correct template
+  staffRoleId?: string;
 }
 
-// Phase configuration
 const PHASES = [
-  {
-    key: 'pre_event',
-    label: 'Pre-Event',
-    description: 'Before leaving for the event',
-    defaultOpen: true,
-  },
-  {
-    key: 'on_the_day',
-    label: 'On the Day',
-    description: 'At the venue',
-    defaultOpen: true,
-  },
-  {
-    key: 'post_event',
-    label: 'Post-Event',
-    description: 'After the event',
-    defaultOpen: false,
-  },
+  { key: 'pre_event', label: 'Pre-Event', defaultOpen: true },
+  { key: 'day_of', label: 'On the Day', defaultOpen: true },
+  { key: 'post_event', label: 'Post-Event', defaultOpen: false },
 ] as const;
 
-export function PhotographerChecklist({ eventId, staffRoleId }: PhotographerChecklistProps) {
-  const { data: checklist, isLoading } = useMyCrewChecklist(eventId);
-  const initializeChecklist = useInitializeCrewChecklist();
-  const toggleItem = useToggleCrewChecklistItem();
-  const updateNote = useUpdateCrewChecklistItemNote();
+type PhaseKey = typeof PHASES[number]['key'];
+
+export function PhotographerChecklist({ eventId }: PhotographerChecklistProps) {
+  const { data: allSteps = [], isLoading } = useEventWorkflowSteps(eventId);
+  const completeStep = useCompleteWorkflowStep();
+  const uncompleteStep = useUncompleteWorkflowStep();
+
+  // Get current user
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user-id'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user?.id || null;
+    },
+    staleTime: Infinity,
+  });
+
+  // Get master steps for phase info
+  const { data: masterSteps = [] } = useQuery({
+    queryKey: ['workflow-master-steps-phases'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workflow_master_steps')
+        .select('id, label, phase')
+        .eq('is_active', true);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const [expandedPhases, setExpandedPhases] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    PHASES.forEach((p) => {
-      initial[p.key] = p.defaultOpen;
-    });
+    PHASES.forEach((p) => { initial[p.key] = p.defaultOpen; });
     return initial;
   });
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
-  const [noteValue, setNoteValue] = useState('');
 
-  // Group items by phase (using sort_order to determine phase)
-  // Items 0-3: pre_event, 4-7: on_the_day, 8+: post_event
-  const itemsByPhase = useMemo(() => {
-    if (!checklist?.items) return {};
+  // Filter steps assigned to this user
+  const mySteps = useMemo(() => {
+    if (!currentUser) return [];
+    return allSteps.filter(s => s.assigned_to === currentUser);
+  }, [allSteps, currentUser]);
 
-    const grouped: Record<string, typeof checklist.items> = {
+  // Build label→phase lookup from master steps
+  const phaseLookup = useMemo(() => {
+    const map: Record<string, string> = {};
+    // By template_item_id
+    masterSteps.forEach(ms => { map[ms.id] = ms.phase; });
+    // By label for fallback
+    const labelMap: Record<string, string> = {};
+    masterSteps.forEach(ms => { labelMap[ms.label.toLowerCase().trim()] = ms.phase; });
+    return { byId: map, byLabel: labelMap };
+  }, [masterSteps]);
+
+  // Group steps by phase
+  const stepsByPhase = useMemo(() => {
+    const grouped: Record<PhaseKey, EventWorkflowStepWithProfile[]> = {
       pre_event: [],
-      on_the_day: [],
+      day_of: [],
       post_event: [],
     };
 
-    checklist.items.forEach((item, index) => {
-      // Simple phase assignment based on item text keywords or position
-      const text = item.item_text.toLowerCase();
-      if (
-        text.includes('pre-event') ||
-        text.includes('battery') ||
-        text.includes('format') ||
-        text.includes('pack') ||
-        text.includes('charge') ||
-        text.includes('test') ||
-        index < 4
-      ) {
-        grouped.pre_event.push(item);
-      } else if (
-        text.includes('post') ||
-        text.includes('backup') ||
-        text.includes('upload') ||
-        text.includes('deliver') ||
-        text.includes('return')
-      ) {
-        grouped.post_event.push(item);
+    mySteps.forEach(step => {
+      // Try template_item_id first, then label match
+      let phase: string | undefined;
+      if (step.template_item_id && phaseLookup.byId[step.template_item_id]) {
+        phase = phaseLookup.byId[step.template_item_id];
       } else {
-        grouped.on_the_day.push(item);
+        phase = phaseLookup.byLabel[step.step_label.toLowerCase().trim()];
       }
+
+      const key = (phase === 'pre_event' || phase === 'day_of' || phase === 'post_event')
+        ? phase as PhaseKey
+        : 'pre_event'; // default fallback
+
+      grouped[key].push(step);
     });
 
     return grouped;
-  }, [checklist?.items]);
+  }, [mySteps, phaseLookup]);
 
-  const handleInitialize = () => {
-    initializeChecklist.mutate({ eventId, staffRoleId });
-  };
-
-  const handleToggle = (itemId: string, currentValue: boolean) => {
-    toggleItem.mutate({ itemId, isDone: !currentValue, eventId });
-  };
-
-  const handleOpenNote = (itemId: string, currentNotes: string | null) => {
-    setExpandedItem(itemId);
-    setNoteValue(currentNotes || '');
-  };
-
-  const handleSaveNote = (itemId: string) => {
-    updateNote.mutate(
-      { itemId, notes: noteValue, eventId },
-      {
-        onSuccess: () => {
-          setExpandedItem(null);
-          setNoteValue('');
-        },
-      }
-    );
+  const handleToggle = (step: EventWorkflowStepWithProfile) => {
+    if (step.completion_type === 'auto') return;
+    if (step.is_completed) {
+      uncompleteStep.mutate({ stepId: step.id, eventId });
+    } else {
+      completeStep.mutate({ stepId: step.id, eventId, notes: '' });
+    }
   };
 
   if (isLoading) {
@@ -152,36 +144,13 @@ export function PhotographerChecklist({ eventId, staffRoleId }: PhotographerChec
     );
   }
 
-  // No checklist yet - show initialize button
-  if (!checklist) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" />
-            My Checklist
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Start your personal checklist to track pre-event, on-the-day, and post-event tasks.
-          </p>
-          <Button
-            onClick={handleInitialize}
-            disabled={initializeChecklist.isPending}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {initializeChecklist.isPending ? 'Setting up...' : 'Start Checklist'}
-          </Button>
-        </CardContent>
-      </Card>
-    );
+  if (mySteps.length === 0) {
+    return null; // No steps assigned to this user
   }
 
-  const totalItems = checklist.items.length;
-  const completedItems = checklist.items.filter((i) => i.is_done).length;
-  const allDone = totalItems > 0 && completedItems === totalItems;
+  const completedCount = mySteps.filter(s => s.is_completed).length;
+  const totalCount = mySteps.length;
+  const allDone = totalCount > 0 && completedCount === totalCount;
 
   return (
     <Card>
@@ -195,17 +164,17 @@ export function PhotographerChecklist({ eventId, staffRoleId }: PhotographerChec
             variant={allDone ? 'default' : 'secondary'}
             className={cn(allDone && 'bg-green-600')}
           >
-            {completedItems}/{totalItems}
+            {completedCount}/{totalCount}
             {allDone && <CheckCircle className="h-3 w-3 ml-1" />}
           </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {PHASES.map((phase) => {
-          const phaseItems = itemsByPhase[phase.key] || [];
+          const phaseItems = stepsByPhase[phase.key] || [];
           if (phaseItems.length === 0) return null;
 
-          const phaseCompleted = phaseItems.filter((i) => i.is_done).length;
+          const phaseCompleted = phaseItems.filter(s => s.is_completed).length;
           const phaseTotal = phaseItems.length;
           const phaseAllDone = phaseTotal > 0 && phaseCompleted === phaseTotal;
 
@@ -237,91 +206,76 @@ export function PhotographerChecklist({ eventId, staffRoleId }: PhotographerChec
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2 space-y-2">
                 <AnimatePresence>
-                  {phaseItems.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{ delay: index * 0.03 }}
-                    >
-                      <div
-                        className={cn(
-                          'p-3 rounded-lg border border-border bg-card transition-colors',
-                          item.is_done && 'bg-muted/50 opacity-70'
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={item.is_done}
-                            onCheckedChange={() => handleToggle(item.id, item.is_done)}
-                            disabled={toggleItem.isPending}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={cn(
-                                'text-sm',
-                                item.is_done && 'line-through text-muted-foreground'
-                              )}
-                            >
-                              {item.item_text}
-                            </p>
-                            {item.notes && (
-                              <p className="text-xs text-muted-foreground mt-1 italic">
-                                {item.notes}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => handleOpenNote(item.id, item.notes)}
-                            className="p-1 text-muted-foreground hover:text-foreground shrink-0"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </button>
-                        </div>
+                  {phaseItems.map((step, index) => {
+                    const isAuto = step.completion_type === 'auto';
+                    const isOverdue = step.due_date && !step.is_completed &&
+                      isPast(parseISO(step.due_date)) && !isToday(parseISO(step.due_date));
+                    const isDueToday = step.due_date && isToday(parseISO(step.due_date));
 
-                        {/* Note input */}
-                        <AnimatePresence>
-                          {expandedItem === item.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="mt-3 pt-3 border-t border-border"
-                            >
-                              <Textarea
-                                placeholder="Add a note..."
-                                value={noteValue}
-                                onChange={(e) => setNoteValue(e.target.value)}
-                                className="min-h-[60px] text-sm resize-none"
-                                autoFocus
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setExpandedItem(null);
-                                    setNoteValue('');
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveNote(item.id)}
-                                  disabled={updateNote.isPending}
-                                >
-                                  {updateNote.isPending ? 'Saving...' : 'Save'}
-                                </Button>
-                              </div>
-                            </motion.div>
+                    return (
+                      <motion.div
+                        key={step.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ delay: index * 0.03 }}
+                      >
+                        <div
+                          className={cn(
+                            'p-3 rounded-lg border border-border bg-card transition-colors',
+                            step.is_completed && 'bg-muted/50 opacity-70',
+                            isOverdue && !step.is_completed && 'border-destructive/50 bg-destructive/5',
+                            isDueToday && !step.is_completed && 'border-warning/50 bg-warning/5',
                           )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
-                  ))}
+                        >
+                          <div className="flex items-start gap-3">
+                            {isAuto ? (
+                              <div className="mt-0.5 w-4 h-4 flex items-center justify-center shrink-0">
+                                <Zap className={cn(
+                                  'h-3.5 w-3.5',
+                                  step.is_completed ? 'text-info' : 'text-muted-foreground'
+                                )} />
+                              </div>
+                            ) : (
+                              <Checkbox
+                                checked={step.is_completed}
+                                onCheckedChange={() => handleToggle(step)}
+                                disabled={completeStep.isPending || uncompleteStep.isPending}
+                                className="mt-0.5"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className={cn(
+                                'text-sm',
+                                step.is_completed && 'line-through text-muted-foreground'
+                              )}>
+                                {step.step_label}
+                              </p>
+                              {step.due_date && !step.is_completed && (
+                                <div className={cn(
+                                  'flex items-center gap-1 mt-1 text-xs',
+                                  isOverdue ? 'text-destructive' : isDueToday ? 'text-warning' : 'text-muted-foreground',
+                                )}>
+                                  {isOverdue ? (
+                                    <AlertTriangle className="h-3 w-3" />
+                                  ) : (
+                                    <Clock className="h-3 w-3" />
+                                  )}
+                                  Due {format(parseISO(step.due_date), 'MMM d')}
+                                </div>
+                              )}
+                              {step.is_completed && step.completed_at && (
+                                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                  <CheckCircle className="h-3 w-3" />
+                                  Done {format(parseISO(step.completed_at), 'MMM d')}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </CollapsibleContent>
             </Collapsible>
