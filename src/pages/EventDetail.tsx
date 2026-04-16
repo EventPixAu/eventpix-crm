@@ -456,7 +456,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           <span className="text-lg font-medium text-primary">{initial}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link to={`/staff/${assignment.user_id || assignment.staff_id}`} className="font-medium truncate hover:underline text-primary">
               {name}
             </Link>
@@ -495,65 +495,68 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
             <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
           )}
         </div>
-        {isAdmin && (
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8"
-              onClick={() => window.open(`/events/${eventId}/day-of`, '_blank')}
-              title="Preview crew job sheet"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            {confirmationStatus !== 'confirmed' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={async () => {
-                  const { data: updated, error } = await supabase
-                    .from('event_assignments')
-                    .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
-                    .eq('id', assignment.id)
-                    .select();
-                  if (error) {
-                    toast({ title: 'Failed to confirm', description: error.message, variant: 'destructive' });
-                  } else if (!updated || updated.length === 0) {
-                    toast({ title: 'Failed to confirm', description: 'No rows updated. Check permissions.', variant: 'destructive' });
-                  } else {
-                    queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-                    toast({ title: 'Marked as confirmed' });
-                  }
-                }}
-                title="Mark as confirmed"
-              >
-                <CheckCircle className="h-4 w-4" />
-              </Button>
-            )}
+      </div>
+      {isAdmin && (
+        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/50">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1.5"
+            onClick={() => window.open(`/events/${eventId}/day-of`, '_blank')}
+            title="Preview crew job sheet"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Preview
+          </Button>
+          <div className="flex-1" />
+          {confirmationStatus !== 'confirmed' && (
             <Button
               variant="outline"
               size="sm"
-              className="h-8"
-              onClick={() => {
-                const userId = assignment.user_id || assignment.staff?.id;
-                if (!userId) return;
-                sendNotification.mutate({
-                  type: 'assignment',
-                  event_id: eventId,
-                  user_id: userId,
-                  assignment_id: assignment.id,
-                });
+              className="h-7 text-xs"
+              onClick={async () => {
+                const { data: updated, error } = await supabase
+                  .from('event_assignments')
+                  .update({ confirmation_status: 'confirmed', confirmed_at: new Date().toISOString() })
+                  .eq('id', assignment.id)
+                  .select();
+                if (error) {
+                  toast({ title: 'Failed to confirm', description: error.message, variant: 'destructive' });
+                } else if (!updated || updated.length === 0) {
+                  toast({ title: 'Failed to confirm', description: 'No rows updated. Check permissions.', variant: 'destructive' });
+                } else {
+                  queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+                  toast({ title: 'Marked as confirmed' });
+                }
               }}
-              disabled={sendNotification.isPending}
-              title="Resend notification email"
+              title="Mark as confirmed"
             >
-              <Send className="h-4 w-4 mr-2" />
-              Resend
+              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+              Confirm
             </Button>
-          </div>
-        )}
-      </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              const userId = assignment.user_id || assignment.staff?.id;
+              if (!userId) return;
+              sendNotification.mutate({
+                type: 'assignment',
+                event_id: eventId,
+                user_id: userId,
+                assignment_id: assignment.id,
+              });
+            }}
+            disabled={sendNotification.isPending}
+            title="Resend notification email"
+          >
+            <Send className="h-3.5 w-3.5 mr-1" />
+            Resend
+          </Button>
+        </div>
+      )}
       <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} />
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
