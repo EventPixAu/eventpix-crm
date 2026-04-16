@@ -339,6 +339,18 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const { total, completed, percentage, overdue, steps } = useWorkflowProgress(eventId);
   const { data: assignments = [] } = useEventAssignments(eventId);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Map user IDs to role names for badge display
+  const userRoleMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    assignments.forEach((a: any) => {
+      if (a.user_id && a.staff_role?.name) {
+        map[a.user_id] = a.staff_role.name;
+      }
+    });
+    return map;
+  }, [assignments]);
+
   const firstIncompleteRef = useRef<HTMLDivElement>(null);
   
   // Scroll to first incomplete step within the scroll area only (not the whole page)
