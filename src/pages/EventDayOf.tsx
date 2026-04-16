@@ -39,6 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
 import { useStaffRoles } from '@/hooks/useLookups';
 import { useDayOfCache } from '@/hooks/useDayOfCache';
