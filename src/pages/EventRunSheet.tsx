@@ -11,7 +11,9 @@ import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems } from '@/hooks/useWorksheets';
-import { useMyCrewChecklist } from '@/hooks/useCrewChecklists';
+import { useEventWorkflowSteps } from '@/hooks/useEventWorkflowSteps';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 import { useEventDocuments } from '@/hooks/useEventDocuments';
 
@@ -36,8 +38,17 @@ export default function EventRunSheet() {
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
-  const crewChecklistEventId = isAdmin ? undefined : id;
-  const { data: myCrewChecklist } = useMyCrewChecklist(crewChecklistEventId);
+  // For crew: get their assigned workflow steps instead of old crew checklists
+  const { data: allWorkflowSteps = [] } = useEventWorkflowSteps(id);
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user-id'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user?.id || null;
+    },
+    staleTime: Infinity,
+  });
+  const myWorkflowSteps = allWorkflowSteps.filter(s => s.assigned_to === currentUser);
   
   // Filter documents to only show crew-visible ones for non-admin users
   const crewDocuments = useMemo(() => {
@@ -303,17 +314,17 @@ export default function EventRunSheet() {
         <section className="mb-6 print-section">
           <h2 className="text-lg font-semibold mb-3 border-b pb-1">Checklist</h2>
           {!isAdmin ? (
-            myCrewChecklist?.items?.length ? (
+            myWorkflowSteps.length > 0 ? (
               <div className="space-y-2">
-                {myCrewChecklist.items.map((item) => (
-                  <div key={item.id} className="checklist-item flex items-start gap-2 py-1">
-                    <span className="inline-block w-4 h-4 border border-black mt-0.5 shrink-0" />
-                    <span className="text-sm">{item.item_text}</span>
+                {myWorkflowSteps.map((step) => (
+                  <div key={step.id} className="checklist-item flex items-start gap-2 py-1">
+                    <span className={`inline-block w-4 h-4 border border-black mt-0.5 shrink-0 ${step.is_completed ? 'bg-black' : ''}`} />
+                    <span className="text-sm">{step.step_label}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No crew checklist</p>
+              <p className="text-muted-foreground">No checklist steps assigned</p>
             )
           ) : worksheets.length === 0 ? (
             <p className="text-muted-foreground">No worksheets</p>
