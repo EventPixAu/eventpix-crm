@@ -53,10 +53,10 @@ export function InitializeWorkflowDialog({
       if (!currentTemplateId) return null;
       const { data } = await supabase
         .from('workflow_templates')
-        .select('name')
+        .select('template_name')
         .eq('id', currentTemplateId)
         .maybeSingle();
-      return data?.name || null;
+      return data?.template_name || null;
     },
     enabled: !!currentTemplateId,
   });
