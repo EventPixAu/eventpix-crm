@@ -973,7 +973,7 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
-        {/* Personal Crew Checklist - Role-specific tasks for this team member */}
+        {/* Personal Workflow Checklist - steps assigned to this team member */}
         {id && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
@@ -982,6 +982,21 @@ export default function EventDayOf() {
             className="mx-4 mb-4"
           >
             <PhotographerChecklist 
+              eventId={id} 
+              staffRoleId={myAssignment?.staff_role_id || undefined} 
+            />
+          </motion.section>
+        )}
+
+        {/* Fallback Crew Checklist - from crew_checklists table */}
+        {id && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.23 }}
+            className="mx-4 mb-4"
+          >
+            <CrewChecklist 
               eventId={id} 
               staffRoleId={myAssignment?.staff_role_id || undefined} 
             />
