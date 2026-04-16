@@ -64,6 +64,7 @@ export function InitializeWorkflowDialog({
   // Fetch step defaults for all event types
   const { data: allStepDefaults = [] } = useAllEventTypeStepDefaults();
   
+  const { data: staffRoles = [] } = useAllStaffRoles();
   const initializeSteps = useInitializeWorkflowFromEventType();
   
   // Calculate step counts for each event type (for badge display)
