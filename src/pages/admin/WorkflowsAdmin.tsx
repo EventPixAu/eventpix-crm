@@ -221,11 +221,13 @@ function SortableEventTypeStep({
   isChecked,
   onToggle,
   onEdit,
+  roleName,
 }: { 
   step: WorkflowMasterStep; 
   isChecked: boolean;
   onToggle: () => void;
   onEdit: (step: WorkflowMasterStep) => void;
+  roleName?: string;
 }) {
   const {
     attributes,
@@ -264,7 +266,7 @@ function SortableEventTypeStep({
         checked={isChecked}
         onCheckedChange={onToggle}
       />
-      <ClipboardList className="h-4 w-4 text-muted-foreground" />
+      <RoleAbbrevBadge roleName={roleName} />
       <span className="flex-1">{step.label}</span>
       <Button
         variant="ghost"
