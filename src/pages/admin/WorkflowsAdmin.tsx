@@ -819,6 +819,7 @@ export default function WorkflowsAdmin() {
                                       isChecked={selectedSteps.includes(step.id)}
                                       onToggle={() => handleStepToggle(step.id)}
                                       onEdit={setEditingStep}
+                                      roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name}
                                     />
                                   ))}
                                 </div>
