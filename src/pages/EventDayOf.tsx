@@ -338,8 +338,8 @@ export default function EventDayOf() {
       description: displayEvent.coverage_details || '',
       location: displayEvent.venue_address || displayEvent.venue_name || '',
       startDate: displayEvent.event_date,
-      startTime: displayEvent.start_time || undefined,
-      endTime: displayEvent.end_time || undefined,
+      startTime: displayTimes.startTime || undefined,
+      endTime: displayTimes.endTime || undefined,
       eventId: displayEvent.id,
     });
     toast({ title: 'Calendar invite downloaded' });
