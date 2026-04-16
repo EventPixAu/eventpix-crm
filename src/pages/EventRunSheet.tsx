@@ -11,7 +11,9 @@ import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems } from '@/hooks/useWorksheets';
-import { useMyCrewChecklist } from '@/hooks/useCrewChecklists';
+import { useEventWorkflowSteps } from '@/hooks/useEventWorkflowSteps';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 import { useEventDocuments } from '@/hooks/useEventDocuments';
 
