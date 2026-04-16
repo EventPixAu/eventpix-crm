@@ -60,6 +60,7 @@ export function useMyJobSheets() {
           id,
           event_id,
           confirmation_status,
+          call_time_at,
           events!inner(
             id,
             event_name,
@@ -120,8 +121,8 @@ export function useMyJobSheets() {
         const sessions = (event.event_sessions || []) as any[];
         const matchingSession = sessions.find((s: any) => s.session_date === event.event_date) || sessions[0];
         
-        // Prioritize session-level data over event-level
-        const arrivalTime = matchingSession?.arrival_time || null;
+        // Prioritize: assignment call_time_at > session arrival_time
+        const arrivalTime = (a as any).call_time_at || matchingSession?.arrival_time || null;
         const startTime = matchingSession?.start_time || event.start_time;
         const endTime = matchingSession?.end_time || event.end_time;
         const venueName = matchingSession?.venue_name || event.venue_name;

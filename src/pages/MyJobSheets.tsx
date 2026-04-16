@@ -120,7 +120,15 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground truncate">{job.event_name}</h3>
                 
-                {/* Time */}
+                {/* Call time */}
+                {job.arrival_time && (
+                  <div className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span>Call: {format(new Date(`2000-01-01T${job.arrival_time}`), 'h:mm a')}</span>
+                  </div>
+                )}
+                
+                {/* Event time */}
                 {job.start_time && (
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                     <Clock className="h-3.5 w-3.5 shrink-0" />
