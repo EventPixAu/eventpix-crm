@@ -30,6 +30,8 @@ import {
   type WorkflowMasterStep,
 } from '@/hooks/useWorkflowMasterSteps';
 import { useInitializeWorkflowFromEventType } from '@/hooks/useEventWorkflowSteps';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
+import { RoleAbbrevBadge } from '@/components/shared/RoleAbbrevBadge';
 import { cn } from '@/lib/utils';
 
 interface InitializeWorkflowDialogProps {
@@ -62,6 +64,7 @@ export function InitializeWorkflowDialog({
   // Fetch step defaults for all event types
   const { data: allStepDefaults = [] } = useAllEventTypeStepDefaults();
   
+  const { data: staffRoles = [] } = useAllStaffRoles();
   const initializeSteps = useInitializeWorkflowFromEventType();
   
   // Calculate step counts for each event type (for badge display)
@@ -306,6 +309,7 @@ export function InitializeWorkflowDialog({
                                     onCheckedChange={() => handleItemToggle(step.id)}
                                     className="mt-0.5"
                                   />
+                                  <RoleAbbrevBadge roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name} />
                                   <div className="flex-1 min-w-0">
                                     <p className={cn(
                                       'text-sm font-medium',

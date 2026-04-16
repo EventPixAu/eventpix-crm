@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { format, parseISO, isPast, isToday } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -40,6 +40,8 @@ import {
   EventWorkflowStepWithProfile,
 } from '@/hooks/useEventWorkflowSteps';
 import { EditWorkflowStepDialog } from '@/components/EditWorkflowStepDialog';
+import { RoleAbbrevBadge } from '@/components/shared/RoleAbbrevBadge';
+import { useEventAssignments } from '@/hooks/useEvents';
 
 interface JobWorkflowRailProps {
   eventId: string;
@@ -104,6 +106,7 @@ function StepItem({
   isExpanded,
   onToggle,
   onEdit,
+  userRoleMap,
 }: {
   step: EventWorkflowStepWithProfile;
   eventId: string;
@@ -111,6 +114,7 @@ function StepItem({
   isExpanded: boolean;
   onToggle: () => void;
   onEdit: (step: EventWorkflowStepWithProfile) => void;
+  userRoleMap: Record<string, string>;
 }) {
   const [notes, setNotes] = useState(step.notes || '');
   const completeStep = useCompleteWorkflowStep();
@@ -182,7 +186,8 @@ function StepItem({
           
           <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                <RoleAbbrevBadge roleName={step.assigned_to ? userRoleMap[step.assigned_to] : undefined} />
                 {isAdmin ? (
                   <button
                     onClick={() => onEdit(step)}
@@ -335,7 +340,20 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [editingStep, setEditingStep] = useState<EventWorkflowStepWithProfile | null>(null);
   const { total, completed, percentage, overdue, steps } = useWorkflowProgress(eventId);
+  const { data: assignments = [] } = useEventAssignments(eventId);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Map user IDs to role names for badge display
+  const userRoleMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    assignments.forEach((a: any) => {
+      if (a.user_id && a.staff_role?.name) {
+        map[a.user_id] = a.staff_role.name;
+      }
+    });
+    return map;
+  }, [assignments]);
+
   const firstIncompleteRef = useRef<HTMLDivElement>(null);
   
   // Scroll to first incomplete step within the scroll area only (not the whole page)
@@ -413,6 +431,7 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
                         expandedStep === step.id ? null : step.id
                       )}
                       onEdit={(step) => setEditingStep(step)}
+                      userRoleMap={userRoleMap}
                     />
                   </div>
                 );
