@@ -90,6 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Dev bypass: skip all Supabase auth to avoid overriding the mock admin state
+    if (DEV_BYPASS) return;
+
     let mounted = true;
 
     setAuthLoading(true);
@@ -126,12 +129,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // When user changes, immediately mark role as loading to prevent
   // a flash where loading=false but role=null (causes wrong redirect).
   useEffect(() => {
+    if (DEV_BYPASS) return;
     if (user?.id && !authLoading) {
       setRoleLoading(true);
     }
   }, [user?.id, authLoading]);
 
   useEffect(() => {
+    if (DEV_BYPASS) return;
     let cancelled = false;
 
     // No user => no role. But only clear once authLoading is done to avoid premature null.
