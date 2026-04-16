@@ -261,6 +261,16 @@ export default function EventDayOf() {
     return displayAssignments.find((a) => a.user_id === user.id);
   }, [displayAssignments, user]);
 
+  // Compute display times from sessions (prioritized) or event-level
+  const displayTimes = useMemo(() => {
+    const liveSessions = eventSessions.filter((s: any) => s.session_type !== 'post-production');
+    const singleSession = liveSessions.find((s: any) => s.session_date === displayEvent?.event_date) || liveSessions[0];
+    const arrivalTime = singleSession?.arrival_time || (displayEvent as any)?.arrival_time;
+    const startTime = singleSession?.start_time || displayEvent?.start_time;
+    const endTime = singleSession?.end_time || displayEvent?.end_time;
+    return { arrivalTime, startTime, endTime };
+  }, [eventSessions, displayEvent]);
+
   // Get my role name
   const myRoleName = useMemo(() => {
     if (!myAssignment) return null;
