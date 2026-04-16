@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Clock,
   Copy,
   Download,
   FileText,
@@ -39,6 +40,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
 import { useStaffRoles } from '@/hooks/useLookups';
 import { useDayOfCache } from '@/hooks/useDayOfCache';
@@ -122,6 +124,7 @@ export default function EventDayOf() {
   // Data fetching
   const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id);
   const { data: assignments = [], isLoading: assignmentsLoading } = useEventAssignments(id);
+  const { data: eventSessions = [] } = useEventSessions(id);
   const { data: worksheets = [] } = useEventWorksheets(id);
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: staffRoles = [] } = useStaffRoles();
@@ -259,6 +262,16 @@ export default function EventDayOf() {
     return displayAssignments.find((a) => a.user_id === user.id);
   }, [displayAssignments, user]);
 
+  // Compute display times from sessions (prioritized) or event-level
+  const displayTimes = useMemo(() => {
+    const liveSessions = eventSessions.filter((s: any) => s.session_type !== 'post-production');
+    const singleSession = liveSessions.find((s: any) => s.session_date === displayEvent?.event_date) || liveSessions[0];
+    const arrivalTime = singleSession?.arrival_time || (displayEvent as any)?.arrival_time;
+    const startTime = singleSession?.start_time || displayEvent?.start_time;
+    const endTime = singleSession?.end_time || displayEvent?.end_time;
+    return { arrivalTime, startTime, endTime };
+  }, [eventSessions, displayEvent]);
+
   // Get my role name
   const myRoleName = useMemo(() => {
     if (!myAssignment) return null;
@@ -325,8 +338,8 @@ export default function EventDayOf() {
       description: displayEvent.coverage_details || '',
       location: displayEvent.venue_address || displayEvent.venue_name || '',
       startDate: displayEvent.event_date,
-      startTime: displayEvent.start_time || undefined,
-      endTime: displayEvent.end_time || undefined,
+      startTime: displayTimes.startTime || undefined,
+      endTime: displayTimes.endTime || undefined,
       eventId: displayEvent.id,
     });
     toast({ title: 'Calendar invite downloaded' });
@@ -487,6 +500,23 @@ export default function EventDayOf() {
               <Calendar className="h-4 w-4" />
               {eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}
             </div>
+            {/* Session times */}
+            {(displayTimes.startTime || displayTimes.arrivalTime) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {displayTimes.arrivalTime && (
+                    <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
+                  )}
+                  {displayTimes.startTime && (
+                    <>
+                      {safeFormatTime(displayTimes.startTime)}
+                      {displayTimes.endTime && ` – ${safeFormatTime(displayTimes.endTime)}`}
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
             {statusBadges.length > 0 && (
               <div className="flex gap-2 mt-2">
                 {statusBadges.map((badge) => (
