@@ -107,6 +107,26 @@ function formatDateOffset(step: WorkflowMasterStep): string | null {
   }
 }
 
+// Role abbreviation mapping
+const ROLE_ABBREV: Record<string, { abbr: string; className: string }> = {
+  admin: { abbr: 'Ad', className: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+  photographer: { abbr: 'Ph', className: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  assistant: { abbr: 'As', className: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  editor: { abbr: 'Ed', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  videographer: { abbr: 'Vi', className: 'bg-rose-500/20 text-rose-400 border-rose-500/30' },
+};
+
+function RoleAbbrevBadge({ roleName }: { roleName?: string }) {
+  if (!roleName) return null;
+  const key = roleName.toLowerCase();
+  const config = ROLE_ABBREV[key] || { abbr: roleName.slice(0, 2), className: 'bg-muted text-muted-foreground border-border' };
+  return (
+    <span className={`inline-flex items-center justify-center text-[10px] font-bold rounded border px-1.5 py-0.5 leading-none ${config.className}`}>
+      {config.abbr}
+    </span>
+  );
+}
+
 // Sortable Step Item Component for Operations Steps tab
 function SortableStepItem({ 
   step, 
@@ -154,11 +174,8 @@ function SortableStepItem({
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </button>
-      <ClipboardList className="h-4 w-4 text-muted-foreground" />
+      <RoleAbbrevBadge roleName={roleName} />
       <span className="flex-1">{step.label}</span>
-      {roleName && (
-        <Badge variant="outline" className="text-xs">{roleName}</Badge>
-      )}
       {dateOffsetText && (
         <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
           {dateOffsetText}
@@ -204,11 +221,13 @@ function SortableEventTypeStep({
   isChecked,
   onToggle,
   onEdit,
+  roleName,
 }: { 
   step: WorkflowMasterStep; 
   isChecked: boolean;
   onToggle: () => void;
   onEdit: (step: WorkflowMasterStep) => void;
+  roleName?: string;
 }) {
   const {
     attributes,
@@ -247,7 +266,7 @@ function SortableEventTypeStep({
         checked={isChecked}
         onCheckedChange={onToggle}
       />
-      <ClipboardList className="h-4 w-4 text-muted-foreground" />
+      <RoleAbbrevBadge roleName={roleName} />
       <span className="flex-1">{step.label}</span>
       <Button
         variant="ghost"
@@ -800,6 +819,7 @@ export default function WorkflowsAdmin() {
                                       isChecked={selectedSteps.includes(step.id)}
                                       onToggle={() => handleStepToggle(step.id)}
                                       onEdit={setEditingStep}
+                                      roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name}
                                     />
                                   ))}
                                 </div>
