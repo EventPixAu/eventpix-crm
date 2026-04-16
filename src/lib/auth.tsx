@@ -136,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.id, authLoading]);
 
   useEffect(() => {
+    if (DEV_BYPASS) return;
     let cancelled = false;
 
     // No user => no role. But only clear once authLoading is done to avoid premature null.
