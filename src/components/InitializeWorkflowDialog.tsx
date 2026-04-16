@@ -46,6 +46,21 @@ export function InitializeWorkflowDialog({
   currentTemplateId,
   trigger,
 }: InitializeWorkflowDialogProps) {
+  // Fetch current workflow template name
+  const { data: currentTemplateName } = useQuery({
+    queryKey: ['workflow-template-name', currentTemplateId],
+    queryFn: async () => {
+      if (!currentTemplateId) return null;
+      const { data } = await supabase
+        .from('workflow_templates')
+        .select('name')
+        .eq('id', currentTemplateId)
+        .maybeSingle();
+      return data?.name || null;
+    },
+    enabled: !!currentTemplateId,
+  });
+
   const [open, setOpen] = useState(false);
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
   const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
