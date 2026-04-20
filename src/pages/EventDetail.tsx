@@ -556,6 +556,47 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
             <Send className="h-3.5 w-3.5 mr-1" />
             Resend
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                title="Remove from event"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Remove
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove {name} from this event?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will unassign them from the event. Any equipment allocations or workflow progress tied to this assignment will also be removed. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive hover:bg-destructive/90"
+                  onClick={async () => {
+                    const { error } = await supabase
+                      .from('event_assignments')
+                      .delete()
+                      .eq('id', assignment.id);
+                    if (error) {
+                      toast({ title: 'Failed to remove', description: error.message, variant: 'destructive' });
+                    } else {
+                      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+                      toast({ title: `${name} removed from event` });
+                    }
+                  }}
+                >
+                  Remove
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
       <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} />
