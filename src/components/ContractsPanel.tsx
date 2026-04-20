@@ -4,7 +4,7 @@
  * Studio Ninja-style contracts panel for Lead and Job detail pages.
  * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate, Delete.
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
