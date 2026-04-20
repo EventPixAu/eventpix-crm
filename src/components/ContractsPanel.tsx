@@ -5,6 +5,7 @@
  * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate, Delete.
  */
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
@@ -116,6 +117,7 @@ export function ContractsPanel({
 }: ContractsPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // Data hooks
   const { data: leadContracts = [] } = useLeadContracts(leadId);
@@ -233,7 +235,7 @@ export function ContractsPanel({
     }
     
     try {
-      await generateContract.mutateAsync({
+      const created = await generateContract.mutateAsync({
         templateId: selectedTemplateId,
         clientId,
         leadId: leadId || null,
@@ -252,6 +254,11 @@ export function ContractsPanel({
       }
       if (eventId) {
         queryClient.invalidateQueries({ queryKey: ['contracts', 'event', eventId] });
+      }
+
+      // Open the new contract for review and sending
+      if (created?.id) {
+        navigate(`/sales/contracts/${created.id}`);
       }
     } catch (error) {
       // Error handled by hook
