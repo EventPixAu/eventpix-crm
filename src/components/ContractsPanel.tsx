@@ -4,7 +4,7 @@
  * Studio Ninja-style contracts panel for Lead and Job detail pages.
  * Shows contracts list with actions: Create, Preview, Send, Sign, Duplicate, Delete.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
@@ -434,6 +434,13 @@ export function ContractsPanel({
                   className="h-8 w-8 rounded-full bg-emerald-500 hover:bg-emerald-600"
                   onClick={(e) => {
                     e.stopPropagation();
+                    const subject = eventName || leadName;
+                    if (subject) {
+                      const datePart = eventDate
+                        ? ` on ${format(new Date(eventDate), 'PP')}`
+                        : '';
+                      setContractTitle(`Agreement for ${subject}${datePart}`);
+                    }
                     setIsCreateOpen(true);
                   }}
                 >
