@@ -434,6 +434,13 @@ export function ContractsPanel({
                   className="h-8 w-8 rounded-full bg-emerald-500 hover:bg-emerald-600"
                   onClick={(e) => {
                     e.stopPropagation();
+                    const subject = eventName || leadName;
+                    if (subject) {
+                      const datePart = eventDate
+                        ? ` on ${format(new Date(eventDate), 'PP')}`
+                        : '';
+                      setContractTitle(`Agreement for ${subject}${datePart}`);
+                    }
                     setIsCreateOpen(true);
                   }}
                 >
