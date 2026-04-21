@@ -59,21 +59,9 @@ export default function PublicAcceptContract() {
     }
 
     try {
-      // Fetch contract by public token - only get safe fields
-      const { data: contractData, error: contractError } = await supabase
-        .from('contracts')
-        .select(`
-          id,
-          title,
-          status,
-          file_url,
-          rendered_html,
-          signed_at,
-          signed_by_name,
-          signature_data
-        `)
-        .eq('public_token', token)
-        .maybeSingle();
+      // Fetch contract via secure RPC that only returns the row matching the exact token
+      const { data: rows, error: contractError } = await supabase
+        .rpc('get_contract_by_public_token', { p_token: token });
 
       if (contractError) {
         setError('Failed to load contract');
@@ -81,13 +69,14 @@ export default function PublicAcceptContract() {
         return;
       }
 
+      const contractData = Array.isArray(rows) ? rows[0] : rows;
       if (!contractData) {
         setError('Contract not found or link has expired');
         setLoading(false);
         return;
       }
 
-      setContract(contractData);
+      setContract(contractData as PublicContractData);
 
       if (contractData.status === 'signed') {
         setSigned(true);

@@ -213,10 +213,8 @@ export function useUploadComplianceDocument() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('compliance-documents')
-        .getPublicUrl(filePath);
+      // Bucket is private — store the storage path; consumers create signed URLs on read
+      const urlData = { publicUrl: `compliance-documents/${filePath}` };
 
       // Check if document already exists for this type
       const { data: existing } = await supabase
