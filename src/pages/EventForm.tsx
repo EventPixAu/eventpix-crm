@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Loader2, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import { EventSessionsEditor } from '@/components/EventSessionsEditor';
 import { EventContactsEditor } from '@/components/EventContactsEditor';
 import { EventClientLookup } from '@/components/EventClientLookup';
 import { useLead } from '@/hooks/useSales';
-import { useLeadSessions } from '@/hooks/useEventSessions';
+import { useLeadSessions, useEventSessions } from '@/hooks/useEventSessions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
