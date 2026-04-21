@@ -27,21 +27,11 @@ export function useDeliveryRecordByToken(qrToken: string | undefined) {
     queryKey: ['delivery-record-token', qrToken],
     queryFn: async () => {
       if (!qrToken) return null;
-      const { data, error } = await supabase
-        .from('delivery_records')
-        .select(`
-          id,
-          delivery_link,
-          delivery_method,
-          delivery_method_id,
-          qr_enabled,
-          event_id
-        `)
-        .eq('qr_token', qrToken)
-        .eq('qr_enabled', true)
-        .maybeSingle();
+      const { data, error } = await (supabase as any)
+        .rpc('get_delivery_by_qr_token', { p_token: qrToken });
       if (error) throw error;
-      return data;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ?? null;
     },
     enabled: !!qrToken,
   });
