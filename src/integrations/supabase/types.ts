@@ -6348,6 +6348,19 @@ export type Database = {
       gen_random_bytes: { Args: { len: number }; Returns: string }
       gen_random_uuid: { Args: never; Returns: string }
       get_client_portal_data: { Args: never; Returns: Json }
+      get_contract_by_public_token: {
+        Args: { p_token: string }
+        Returns: {
+          file_url: string
+          id: string
+          rendered_html: string
+          signature_data: string
+          signed_at: string
+          signed_by_name: string
+          status: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
