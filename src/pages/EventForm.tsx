@@ -471,6 +471,25 @@ export default function EventForm() {
                   )}
                 />
               </div>
+
+              {(() => {
+                const eventDate = form.watch('event_date');
+                if (!isEditing || !eventDate || eventSessions.length === 0) return null;
+                const sessionDates = eventSessions.map((s: any) => s.session_date).filter(Boolean);
+                if (sessionDates.length === 0) return null;
+                const matches = sessionDates.includes(eventDate);
+                if (matches) return null;
+                return (
+                  <Alert variant="destructive" className="border-destructive/50">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Date mismatch:</strong> The Start Date ({eventDate}) doesn't match any session date
+                      {sessionDates.length === 1 ? ` (${sessionDates[0]})` : `s (${sessionDates.join(', ')})`}.
+                      Update the session below or revert the Start Date to keep them in sync.
+                    </AlertDescription>
+                  </Alert>
+                );
+              })()}
             </div>
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
