@@ -6384,6 +6384,31 @@ export type Database = {
           qr_enabled: boolean
         }[]
       }
+      get_quote_by_public_token: {
+        Args: { p_token: string }
+        Returns: {
+          accepted_at: string
+          id: string
+          quote_number: string
+          status: string
+          subtotal: number
+          tax_total: number
+          terms_text: string
+          total_estimate: number
+          valid_until: string
+        }[]
+      }
+      get_quote_items_by_public_token: {
+        Args: { p_token: string }
+        Returns: {
+          description: string
+          group_label: string
+          line_total: number
+          quantity: number
+          sort_order: number
+          unit_price: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

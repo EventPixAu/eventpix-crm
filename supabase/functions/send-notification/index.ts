@@ -174,6 +174,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Server-side role check: only admin, operations, or sales may trigger notifications
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    const allowedRoles = new Set(["admin", "operations", "sales"]);
+    if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const { type, event_id, user_id, assignment_id }: NotificationRequest = await req.json();
 
     const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).single();

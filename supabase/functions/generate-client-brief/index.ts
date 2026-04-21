@@ -47,6 +47,19 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // Server-side role check: only admin, operations, or sales may generate briefs
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+    const allowedRoles = new Set(["admin", "operations", "sales"]);
+    if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Fetch event with client info
     const { data: event, error: eventError } = await supabase
       .from("events")

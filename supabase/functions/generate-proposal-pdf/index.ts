@@ -62,6 +62,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Server-side role check
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+    const allowedRoles = new Set(["admin", "operations", "sales"]);
+    if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const body: GeneratePdfRequest = await req.json();
     const { quoteId } = body;
 
