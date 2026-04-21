@@ -6361,6 +6361,29 @@ export type Database = {
           title: string
         }[]
       }
+      get_crew_visible_staff: {
+        Args: never
+        Returns: {
+          email: string
+          id: string
+          location: string
+          name: string
+          phone: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_delivery_by_qr_token: {
+        Args: { p_token: string }
+        Returns: {
+          delivery_link: string
+          delivery_method: string
+          delivery_method_id: string
+          event_id: string
+          id: string
+          qr_enabled: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
