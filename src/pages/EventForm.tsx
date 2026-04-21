@@ -82,6 +82,7 @@ export default function EventForm() {
   // Fetch lead data if converting
   const { data: sourceLead, isLoading: leadLoading } = useLead(leadIdFromQuery || undefined);
   const { data: leadSessions = [] } = useLeadSessions(leadIdFromQuery || undefined);
+  const { data: eventSessions = [] } = useEventSessions(isEditing ? id : undefined);
   
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
