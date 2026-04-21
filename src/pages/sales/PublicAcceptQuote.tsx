@@ -62,39 +62,23 @@ export default function PublicAcceptQuote() {
     }
 
     try {
-      // Fetch quote by public token - only get safe fields
-      const { data: quoteData, error: quoteError } = await supabase
-        .from('quotes')
-        .select(`
-          id,
-          quote_number,
-          status,
-          total_estimate,
-          subtotal,
-          tax_total,
-          valid_until,
-          terms_text,
-          accepted_at
-        `)
-        .eq('public_token', token)
-        .maybeSingle();
+      // Use secure RPC that validates the token server-side
+      const { data: quoteRows, error: quoteError } = await (supabase as any)
+        .rpc('get_quote_by_public_token', { p_token: token });
 
+      const quoteData = Array.isArray(quoteRows) ? quoteRows[0] : null;
       if (quoteError || !quoteData) {
         setError('Budget not found or link has expired');
         setLoading(false);
         return;
       }
 
-      // Fetch items separately - only safe fields
-      const { data: itemsData } = await supabase
-        .from('quote_items')
-        .select('description, quantity, unit_price, line_total, group_label')
-        .eq('quote_id', quoteData.id)
-        .order('sort_order');
+      const { data: itemsData } = await (supabase as any)
+        .rpc('get_quote_items_by_public_token', { p_token: token });
 
       setQuote({
         ...quoteData,
-        items: itemsData || [],
+        items: (itemsData as any[]) || [],
       });
 
       if (quoteData.status === 'accepted') {
