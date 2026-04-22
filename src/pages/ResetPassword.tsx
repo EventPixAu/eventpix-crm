@@ -15,15 +15,40 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  
+  const [isReady, setIsReady] = useState(false);
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have a valid session from the reset link
-    const checkSession = async () => {
+    let cancelled = false;
+    let resolved = false;
+
+    // Listen for PASSWORD_RECOVERY (fired when Supabase parses the recovery token from the URL)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        resolved = true;
+        setIsReady(true);
+      }
+    });
+
+    // Fallback: if a session already exists (page refresh, tokens already exchanged), proceed
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session) {
+        resolved = true;
+        setIsReady(true);
+      }
+    });
+
+    // Give Supabase up to 5s to process the URL hash before declaring the link invalid
+    const timeout = setTimeout(async () => {
+      if (cancelled || resolved) return;
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (session) {
+        setIsReady(true);
+      } else {
         toast({
           variant: 'destructive',
           title: 'Invalid or expired link',
@@ -31,9 +56,25 @@ export default function ResetPassword() {
         });
         navigate('/auth');
       }
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
     };
-    checkSession();
   }, [navigate, toast]);
+
+  if (!isReady && !isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Verifying reset link…</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
