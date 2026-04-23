@@ -459,7 +459,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                     </SelectTrigger>
                     <SelectContent>
                       {roles
-                        .filter((role) => ['Photographer', 'Videographer', 'Assistant'].includes(role.name))
+                        .filter((role) => ['Photographer', 'Videographer', 'Photographer + Videographer', 'Assistant'].includes(role.name))
                         .map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}
