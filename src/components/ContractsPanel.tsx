@@ -706,7 +706,7 @@ export function ContractsPanel({
                       Use **bold**, *italic*, ~~underline~~, and [link text](url) for formatting.
                     </p>
                     <Textarea
-                      value={editContractPlainText}
+                      value={editContractPlain}
                       onChange={(e) => handlePlainTextChange(e.target.value)}
                       placeholder="Contract content..."
                       className="flex-1 min-h-[350px] text-sm resize-none"
