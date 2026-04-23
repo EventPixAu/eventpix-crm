@@ -51,6 +51,8 @@ export default function ContractDetail() {
   
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedHtml, setEditedHtml] = useState('');
 
   const isLocked = contract?.status === 'signed' || contract?.status === 'cancelled';
   const clientData = contract?.client as any;
