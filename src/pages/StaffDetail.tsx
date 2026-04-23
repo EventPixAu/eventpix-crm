@@ -933,7 +933,7 @@ export default function StaffDetail() {
           </TabsContent>
         )}
 
-        {/* Equipment Tab - Photography or Videography (Team member's own gear) */}
+        {/* Equipment Tab - Photography Equipment (Team member's own gear) */}
         {!isAssistant && (
           <TabsContent value="equipment" className="space-y-6">
             {equipmentLoading ? (
@@ -941,7 +941,7 @@ export default function StaffDetail() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Camera className="h-4 w-4" />
-                    {isVideographer ? 'Videography Equipment' : 'Photography Equipment'}
+                    Photography Equipment
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -950,16 +950,10 @@ export default function StaffDetail() {
                   </div>
                 </CardContent>
               </Card>
-            ) : isVideographer ? (
-              <VideographyEquipmentEditor
-                initialData={videographyEquipment || undefined}
-                onSave={(equipment) => updateEquipmentMutation.mutateAsync({ equipment, kind: 'video' })}
-                isSaving={updateEquipmentMutation.isPending}
-              />
             ) : (
               <PhotographyEquipmentEditor
                 initialData={photographyEquipment || undefined}
-                onSave={(equipment) => updateEquipmentMutation.mutateAsync({ equipment, kind: 'photo' })}
+                onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
                 isSaving={updateEquipmentMutation.isPending}
               />
             )}
