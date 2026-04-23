@@ -98,7 +98,9 @@ function buildMimeMessage(
 }
 
 function base64UrlEncode(str: string): string {
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  // UTF-8 safe: btoa only accepts Latin1, so encode UTF-8 bytes first
+  const utf8 = unescape(encodeURIComponent(str));
+  return btoa(utf8).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 async function sendViaGmailApi(
