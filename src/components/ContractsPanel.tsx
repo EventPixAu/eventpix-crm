@@ -215,16 +215,12 @@ export function ContractsPanel({
     return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">${html}</div>`;
   };
   
-  // Derived plain text for editing
-  const editContractPlainText = useMemo(() => {
-    return htmlToPlainText(editContractHtml);
-  }, [editContractHtml]);
-  
-  // Handle plain text changes - convert to HTML
+  // Handle plain text changes - keep plain text as source of truth while editing
   const handlePlainTextChange = (plainText: string) => {
+    setEditContractPlain(plainText);
     setEditContractHtml(plainTextToHtml(plainText));
   };
-  
+
   // Combine contracts from lead and event
   const contracts = leadId ? leadContracts : eventContracts;
 
