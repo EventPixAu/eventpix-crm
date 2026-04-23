@@ -221,13 +221,73 @@ export default function ContractDetail() {
           {/* Contract Content */}
           <Card>
             <CardHeader>
-              <CardTitle>Contract Document</CardTitle>
-              <CardDescription>
-                {(contract as any).rendered_html ? 'Generated from template' : 'Upload or view the contract document'}
-              </CardDescription>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle>Contract Document</CardTitle>
+                  <CardDescription>
+                    {(contract as any).rendered_html ? 'Generated from template' : 'Upload or view the contract document'}
+                  </CardDescription>
+                </div>
+                {(contract as any).rendered_html && !isLocked && !isEditing && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditedHtml((contract as any).rendered_html || '');
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
+                {isEditing && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditing(false)}
+                      disabled={updateContract.isPending}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!id) return;
+                        await updateContract.mutateAsync({ id, rendered_html: editedHtml } as any);
+                        setIsEditing(false);
+                      }}
+                      disabled={updateContract.isPending}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {updateContract.isPending ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              {(contract as any).rendered_html ? (
+              {isEditing ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Edit the contract HTML below. Use standard HTML tags (e.g. &lt;p&gt;, &lt;strong&gt;, &lt;h2&gt;, &lt;ul&gt;&lt;li&gt;).
+                  </p>
+                  <Textarea
+                    value={editedHtml}
+                    onChange={(e) => setEditedHtml(e.target.value)}
+                    className="font-mono text-xs min-h-[400px] bg-white text-gray-900"
+                  />
+                  <div className="border rounded-lg p-4 bg-white text-gray-900 max-h-[300px] overflow-y-auto">
+                    <p className="text-xs text-muted-foreground mb-2 font-sans">Preview:</p>
+                    <div
+                      className="prose prose-sm max-w-none prose-gray"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editedHtml) }}
+                    />
+                  </div>
+                </div>
+              ) : (contract as any).rendered_html ? (
                 <div className="border rounded-lg p-6 bg-white text-gray-900 max-h-[500px] overflow-y-auto">
                   <div 
                     className="prose prose-sm max-w-none prose-gray"
