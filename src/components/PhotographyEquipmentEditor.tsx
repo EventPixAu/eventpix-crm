@@ -68,6 +68,7 @@ export function migrateToV2(data: StoredEquipment): PhotographyEquipmentV2 {
   const normalized: PhotographyEquipment = {
     camera: legacy.camera || (legacy as any).cameras || [],
     lighting: legacy.lighting || (legacy as any).lights || [],
+    audio: (legacy as any).audio || [],
     backdrop: legacy.backdrop || (legacy as any).backdrops || [],
     other: legacy.other || (legacy as any).lenses || [],
   };
