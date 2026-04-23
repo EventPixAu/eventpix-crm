@@ -33,7 +33,24 @@ export function getPublicBaseUrl(): string {
   * Check if a staff role is an assistant-type role (doesn't require equipment)
   * Matches role names containing "assistant" (case-insensitive)
   */
- export function isAssistantRole(roleName: string | null | undefined): boolean {
+  export function isAssistantRole(roleName: string | null | undefined): boolean {
    if (!roleName) return false;
    return roleName.toLowerCase().includes('assistant');
  }
+
+/**
+ * Check if a role is a videographer-type role.
+ */
+export function isVideographerRole(roleName: string | null | undefined): boolean {
+  if (!roleName) return false;
+  return roleName.toLowerCase().includes('video');
+}
+
+/**
+ * Check if a role is a photographer-type role.
+ */
+export function isPhotographerRole(roleName: string | null | undefined): boolean {
+  if (!roleName) return false;
+  const r = roleName.toLowerCase();
+  return r.includes('photograph');
+}

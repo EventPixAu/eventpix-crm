@@ -35,10 +35,11 @@ import { AvatarUpload } from '@/components/AvatarUpload';
 
 import { NotificationPreferencesPanel } from '@/components/NotificationPreferencesPanel';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
+import { VideographyEquipmentEditor } from '@/components/VideographyEquipmentEditor';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
- import { isAssistantRole } from '@/lib/utils';
+ import { isAssistantRole, isVideographerRole } from '@/lib/utils';
 
 const AUSTRALIAN_STATES = [
   { value: 'NSW', label: 'New South Wales' },
@@ -68,6 +69,7 @@ interface ProfileData {
     in_app_notifications: boolean;
   } | null;
   photography_equipment_json: StoredEquipment | null;
+  videography_equipment_json: StoredEquipment | null;
   // Additional editable fields
   business_name: string | null;
   abn: string | null;
@@ -107,7 +109,7 @@ function useMyProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, photography_equipment_json, business_name, abn, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements, default_role_id, default_role:staff_roles(name)')
+        .select('*, photography_equipment_json, videography_equipment_json, business_name, abn, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements, default_role_id, default_role:staff_roles(name)')
         .eq('id', user.id)
         .single();
       
@@ -123,12 +125,12 @@ function useUpdateMyEquipment() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (equipment: PhotographyEquipmentV2) => {
+    mutationFn: async ({ equipment, kind }: { equipment: PhotographyEquipmentV2; kind: 'photo' | 'video' }) => {
       if (!user?.id) throw new Error('Not authenticated');
-      
+      const column = kind === 'video' ? 'videography_equipment_json' : 'photography_equipment_json';
       const { error } = await supabase
         .from('profiles')
-        .update({ photography_equipment_json: equipment as any })
+        .update({ [column]: equipment as any })
         .eq('id', user.id);
       
       if (error) throw error;
@@ -192,7 +194,7 @@ function useUpdateMyProfile() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (updates: Omit<Partial<ProfileData>, 'photography_equipment_json'>) => {
+    mutationFn: async (updates: Omit<Partial<ProfileData>, 'photography_equipment_json' | 'videography_equipment_json'>) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       const { error } = await supabase
@@ -219,7 +221,7 @@ export default function StaffMe() {
   const updateProfile = useUpdateMyProfile();
   const updateEquipment = useUpdateMyEquipment();
   
-  const [formData, setFormData] = useState<Omit<Partial<ProfileData>, 'photography_equipment_json'>>({});
+  const [formData, setFormData] = useState<Omit<Partial<ProfileData>, 'photography_equipment_json' | 'videography_equipment_json'>>({});
   const [hasChanges, setHasChanges] = useState(false);
   
   // Initialize form data when profile loads
@@ -293,9 +295,10 @@ export default function StaffMe() {
   
   const multiJobDates = Object.entries(eventsByDate).filter(([_, events]) => events.length > 1);
    
-   // Determine if user is an assistant (equipment not required)
+   // Determine role flags for equipment tab visibility
    const userRoleName = profile?.default_role?.name;
    const isAssistant = isAssistantRole(userRoleName);
+   const isVideographer = isVideographerRole(userRoleName);
   
   return (
     <AppLayout>
@@ -708,13 +711,23 @@ export default function StaffMe() {
         {!isAssistant && (
           <TabsContent value="equipment">
             <div className="max-w-2xl">
-              <PhotographyEquipmentEditor
-                initialData={profile.photography_equipment_json}
-                onSave={async (data) => {
-                  await updateEquipment.mutateAsync(data);
-                }}
-                isSaving={updateEquipment.isPending}
-              />
+              {isVideographer ? (
+                <VideographyEquipmentEditor
+                  initialData={profile.videography_equipment_json}
+                  onSave={async (data) => {
+                    await updateEquipment.mutateAsync({ equipment: data, kind: 'video' });
+                  }}
+                  isSaving={updateEquipment.isPending}
+                />
+              ) : (
+                <PhotographyEquipmentEditor
+                  initialData={profile.photography_equipment_json}
+                  onSave={async (data) => {
+                    await updateEquipment.mutateAsync({ equipment: data, kind: 'photo' });
+                  }}
+                  isSaving={updateEquipment.isPending}
+                />
+              )}
             </div>
           </TabsContent>
         )}
