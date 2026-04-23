@@ -381,10 +381,12 @@ export function ContractsPanel({
   const openEditDialog = (contract: Contract) => {
     setSelectedContract(contract);
     setEditContractTitle(contract.title);
-    setEditContractHtml(contract.rendered_html || '');
+    const html = contract.rendered_html || '';
+    setEditContractHtml(html);
+    setEditContractPlain(htmlToPlainText(html));
     setIsEditOpen(true);
   };
-  
+
   // Handle saving edited contract content
   const handleSaveContract = async () => {
     if (!selectedContract || !editContractTitle) {
