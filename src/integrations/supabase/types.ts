@@ -4195,7 +4195,6 @@ export type Database = {
           updated_at: string | null
           vehicle_make_model: string | null
           vehicle_registration: string | null
-          videography_equipment_json: Json | null
         }
         Insert: {
           abn?: string | null
@@ -4241,7 +4240,6 @@ export type Database = {
           updated_at?: string | null
           vehicle_make_model?: string | null
           vehicle_registration?: string | null
-          videography_equipment_json?: Json | null
         }
         Update: {
           abn?: string | null
@@ -4287,7 +4285,6 @@ export type Database = {
           updated_at?: string | null
           vehicle_make_model?: string | null
           vehicle_registration?: string | null
-          videography_equipment_json?: Json | null
         }
         Relationships: [
           {
@@ -5060,7 +5057,6 @@ export type Database = {
           user_id: string | null
           vehicle_make_model: string | null
           vehicle_registration: string | null
-          videography_equipment_json: Json | null
         }
         Insert: {
           abn?: string | null
@@ -5090,7 +5086,6 @@ export type Database = {
           user_id?: string | null
           vehicle_make_model?: string | null
           vehicle_registration?: string | null
-          videography_equipment_json?: Json | null
         }
         Update: {
           abn?: string | null
@@ -5120,7 +5115,6 @@ export type Database = {
           user_id?: string | null
           vehicle_make_model?: string | null
           vehicle_registration?: string | null
-          videography_equipment_json?: Json | null
         }
         Relationships: []
       }

@@ -45,11 +45,10 @@ import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
-import { VideographyEquipmentEditor } from '@/components/VideographyEquipmentEditor';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
- import { isAssistantRole, isVideographerRole } from '@/lib/utils';
+ import { isAssistantRole } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface StaffProfile {
@@ -329,64 +328,54 @@ export default function StaffDetail() {
   // Equipment allocations
   const { data: allocations, isLoading: allocationsLoading } = useUserAllocations(actualUserId);
 
-  // Photography & Videography equipment (structured JSON)
+  // Photography equipment (structured JSON)
   const queryClient = useQueryClient();
   
-  const { data: equipmentData, isLoading: equipmentLoading } = useQuery({
-    queryKey: ['staff-equipment', id, sourceTable],
+  const { data: photographyEquipment, isLoading: equipmentLoading } = useQuery({
+    queryKey: ['photography-equipment', id, sourceTable],
     queryFn: async () => {
-      if (!id) return { photo: null, video: null };
+      if (!id) return null;
       
       if (sourceTable === 'staff' && staffId) {
         const { data, error } = await supabase
           .from('staff')
-          .select('photography_equipment_json, videography_equipment_json')
+          .select('photography_equipment_json')
           .eq('id', staffId)
           .maybeSingle();
         if (error) throw error;
-        return {
-          photo: (data?.photography_equipment_json as unknown) as StoredEquipment | null,
-          video: (data?.videography_equipment_json as unknown) as StoredEquipment | null,
-        };
+        return (data?.photography_equipment_json as unknown) as StoredEquipment | null;
       } else {
         const { data, error } = await supabase
           .from('profiles')
-          .select('photography_equipment_json, videography_equipment_json')
+          .select('photography_equipment_json')
           .eq('id', actualUserId)
           .maybeSingle();
         if (error) throw error;
-        return {
-          photo: (data?.photography_equipment_json as unknown) as StoredEquipment | null,
-          video: (data?.videography_equipment_json as unknown) as StoredEquipment | null,
-        };
+        return (data?.photography_equipment_json as unknown) as StoredEquipment | null;
       }
     },
     enabled: !!id && !!profile,
   });
 
-  const photographyEquipment = equipmentData?.photo ?? null;
-  const videographyEquipment = equipmentData?.video ?? null;
-
   const updateEquipmentMutation = useMutation({
-    mutationFn: async ({ equipment, kind }: { equipment: PhotographyEquipmentV2; kind: 'photo' | 'video' }) => {
-      const column = kind === 'video' ? 'videography_equipment_json' : 'photography_equipment_json';
+    mutationFn: async (equipment: PhotographyEquipmentV2) => {
       if (sourceTable === 'staff' && staffId) {
         const { error } = await supabase
           .from('staff')
-          .update({ [column]: equipment as any })
+          .update({ photography_equipment_json: equipment as any })
           .eq('id', staffId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('profiles')
-          .update({ [column]: equipment as any })
+          .update({ photography_equipment_json: equipment as any })
           .eq('id', actualUserId);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success('Equipment updated');
-      queryClient.invalidateQueries({ queryKey: ['staff-equipment', id, sourceTable] });
+      queryClient.invalidateQueries({ queryKey: ['photography-equipment', id, sourceTable] });
       queryClient.invalidateQueries({ queryKey: ['staff-profile', id] });
     },
     onError: (error: Error) => {
@@ -446,10 +435,9 @@ export default function StaffDetail() {
   const onboardingStatus = profile.onboarding_status as OnboardingStatus;
   const onboardingConfig = ONBOARDING_STATUS_CONFIG[onboardingStatus] || ONBOARDING_STATUS_CONFIG.incomplete;
  
-   // Determine role flags for equipment tab visibility
+   // Determine if this staff member is an assistant (equipment not required)
    const staffRoleName = profile.default_role?.name;
    const isAssistant = isAssistantRole(staffRoleName);
-   const isVideographer = isVideographerRole(staffRoleName);
 
   // Group assignments by status
   const upcomingAssignments = assignments?.filter(a => {
@@ -945,7 +933,7 @@ export default function StaffDetail() {
           </TabsContent>
         )}
 
-        {/* Equipment Tab - Photography or Videography (Team member's own gear) */}
+        {/* Equipment Tab - Photography Equipment (Team member's own gear) */}
         {!isAssistant && (
           <TabsContent value="equipment" className="space-y-6">
             {equipmentLoading ? (
@@ -953,7 +941,7 @@ export default function StaffDetail() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Camera className="h-4 w-4" />
-                    {isVideographer ? 'Videography Equipment' : 'Photography Equipment'}
+                    Photography Equipment
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -962,16 +950,10 @@ export default function StaffDetail() {
                   </div>
                 </CardContent>
               </Card>
-            ) : isVideographer ? (
-              <VideographyEquipmentEditor
-                initialData={videographyEquipment || undefined}
-                onSave={(equipment) => updateEquipmentMutation.mutateAsync({ equipment, kind: 'video' })}
-                isSaving={updateEquipmentMutation.isPending}
-              />
             ) : (
               <PhotographyEquipmentEditor
                 initialData={photographyEquipment || undefined}
-                onSave={(equipment) => updateEquipmentMutation.mutateAsync({ equipment, kind: 'photo' })}
+                onSave={(equipment) => updateEquipmentMutation.mutateAsync(equipment)}
                 isSaving={updateEquipmentMutation.isPending}
               />
             )}

@@ -21,7 +21,7 @@ import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './Photograph
 
 interface PhotographerKit {
   kitId: string;
-  category: 'camera' | 'lighting' | 'backdrop' | 'other';
+  category: 'camera' | 'lighting' | 'audio' | 'backdrop' | 'other';
   label: string;
   icon: typeof Camera;
   items: Array<{ id: string; brand: string; name: string; notes?: string }>;
