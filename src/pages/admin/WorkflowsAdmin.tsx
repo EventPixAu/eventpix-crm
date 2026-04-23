@@ -790,6 +790,16 @@ export default function WorkflowsAdmin() {
                           <Plus className="h-4 w-4 mr-1" />
                           Add Step
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSyncToUpcoming}
+                          disabled={isSyncing || hasChanges}
+                          title={hasChanges ? 'Save changes first' : 'Apply current defaults to all upcoming events of this event type'}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                          Apply to upcoming events
+                        </Button>
                         {hasChanges && (
                           <Button onClick={handleSaveDefaults} disabled={setDefaults.isPending}>
                             <Save className="h-4 w-4 mr-2" />
