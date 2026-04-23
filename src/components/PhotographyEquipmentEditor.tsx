@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Camera, Aperture, Lightbulb, Image, Loader2, Save, Pencil } from 'lucide-react';
+import { Plus, Trash2, Camera, Aperture, Lightbulb, Image, Mic, Loader2, Save, Pencil } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,11 +27,12 @@ export interface EquipmentItem {
 export interface PhotographyEquipment {
   camera: EquipmentItem[];
   lighting: EquipmentItem[];
+  audio: EquipmentItem[];
   backdrop: EquipmentItem[];
   other: EquipmentItem[];
 }
 
-export type KitCategory = 'camera' | 'lighting' | 'backdrop' | 'other';
+export type KitCategory = 'camera' | 'lighting' | 'audio' | 'backdrop' | 'other';
 
 export interface EquipmentKit {
   id: string;
@@ -50,6 +51,7 @@ export type StoredEquipment = PhotographyEquipment | PhotographyEquipmentV2;
 export const CATEGORY_CONFIG = [
   { key: 'camera' as const, label: 'Camera Kit', icon: Camera, placeholder: 'e.g., Canon EOS R5, RF 24-70mm f/2.8L' },
   { key: 'lighting' as const, label: 'Lighting Kit', icon: Lightbulb, placeholder: 'e.g., Godox AD600 Pro, Softbox' },
+  { key: 'audio' as const, label: 'Audio Kit', icon: Mic, placeholder: 'e.g., RØDE Wireless Pro, Sennheiser MKH 416' },
   { key: 'backdrop' as const, label: 'Backdrop Kit', icon: Image, placeholder: 'e.g., Grey Muslin 3x6m, C-Stand' },
   { key: 'other' as const, label: 'Other', icon: Aperture, placeholder: 'e.g., Memory cards, Batteries' },
 ] as const;
