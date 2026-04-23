@@ -718,9 +718,6 @@ export default function StaffMe() {
             </div>
           </TabsContent>
         )}
-            </div>
-          </TabsContent>
-        )}
         
         
         <TabsContent value="notifications">
