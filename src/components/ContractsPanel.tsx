@@ -144,6 +144,7 @@ export function ContractsPanel({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [contractTitle, setContractTitle] = useState('');
   const [editContractHtml, setEditContractHtml] = useState('');
+  const [editContractPlain, setEditContractPlain] = useState('');
   const [editContractTitle, setEditContractTitle] = useState('');
   const [editMode, setEditMode] = useState<'plain' | 'html'>('plain');
   const [signedByName, setSignedByName] = useState('');
