@@ -4,7 +4,7 @@
  * Displays contract details with actions for sending, signing, and managing.
  * Access: Admin, Sales roles only (enforced via RLS)
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -12,11 +12,12 @@ import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, Mail, Upload, ExternalLink, 
   CheckCircle, Clock, XCircle, FileSignature, Copy, RefreshCw,
-  Link as LinkIcon, User
+  Link as LinkIcon, User, Pencil, Save, X
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
