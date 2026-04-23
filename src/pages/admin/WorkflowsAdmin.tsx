@@ -10,7 +10,10 @@ import {
   GripVertical,
   Pencil,
   Copy,
+  RefreshCw,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DndContext,
   closestCenter,
@@ -391,6 +394,8 @@ export default function WorkflowsAdmin() {
     setHasChanges(true);
   };
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const handleSaveDefaults = async () => {
     if (!selectedEventType) return;
     
@@ -400,6 +405,31 @@ export default function WorkflowsAdmin() {
     });
     
     setHasChanges(false);
+  };
+
+  const handleSyncToUpcoming = async () => {
+    if (!selectedEventType) return;
+    const typeName = eventTypes.find(t => t.id === selectedEventType)?.name ?? 'this event type';
+    if (!confirm(
+      `Apply current step defaults to all upcoming events of "${typeName}"?\n\n` +
+      `Completed steps will be preserved. Steps no longer applicable (and not yet completed) will be removed. Missing steps will be added.`
+    )) return;
+
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.rpc('sync_event_type_workflow_to_upcoming' as any, {
+        p_event_type_id: selectedEventType,
+      });
+      if (error) throw error;
+      const result = data as any;
+      toast.success(
+        `Synced ${result?.events_updated ?? 0} upcoming event(s). ${result?.steps_added ?? 0} step(s) added.`
+      );
+    } catch (e: any) {
+      toast.error('Failed to sync: ' + e.message);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const getDefaultCount = (eventTypeId: string) => {
@@ -759,6 +789,16 @@ export default function WorkflowsAdmin() {
                         >
                           <Plus className="h-4 w-4 mr-1" />
                           Add Step
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSyncToUpcoming}
+                          disabled={isSyncing || hasChanges}
+                          title={hasChanges ? 'Save changes first' : 'Apply current defaults to all upcoming events of this event type'}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                          Apply to upcoming events
                         </Button>
                         {hasChanges && (
                           <Button onClick={handleSaveDefaults} disabled={setDefaults.isPending}>

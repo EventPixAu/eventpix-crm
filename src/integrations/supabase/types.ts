@@ -6518,6 +6518,10 @@ export type Database = {
         }
         Returns: Json
       }
+      sync_event_type_workflow_to_upcoming: {
+        Args: { p_event_type_id: string }
+        Returns: Json
+      }
       track_email_click: {
         Args: { p_email_log_id: string }
         Returns: undefined
