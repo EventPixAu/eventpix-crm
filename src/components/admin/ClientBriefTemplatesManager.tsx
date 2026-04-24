@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { FileText, Plus, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { FileText, Plus, Pencil, Trash2, GripVertical, Upload, Download, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -38,6 +40,8 @@ import {
   useDeleteClientBriefTemplate,
 } from '@/hooks/useClientBriefTemplates';
 
+const BUCKET = 'client-brief-template-files';
+
 interface BriefTemplate {
   id: string;
   name: string;
@@ -45,6 +49,8 @@ interface BriefTemplate {
   content: string;
   is_active: boolean;
   sort_order: number;
+  pdf_file_name: string | null;
+  pdf_file_path: string | null;
 }
 
 function SortableTemplateItem({
@@ -79,6 +85,11 @@ function SortableTemplateItem({
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{template.name}</p>
         {template.description && <p className="text-sm text-muted-foreground truncate">{template.description}</p>}
+        {template.pdf_file_name && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+            <Upload className="h-3 w-3" /> {template.pdf_file_name}
+          </p>
+        )}
       </div>
       {!template.is_active && <Badge variant="secondary" className="text-xs">Inactive</Badge>}
       <Button variant="ghost" size="icon" onClick={() => onEdit(template)}><Pencil className="h-4 w-4" /></Button>
@@ -97,6 +108,29 @@ export function ClientBriefTemplatesManager() {
   const [editDialog, setEditDialog] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<BriefTemplate | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '', content: '', is_active: true });
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [existingPdf, setExistingPdf] = useState<{ name: string; path: string } | null>(null);
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const createFileRef = useRef<HTMLInputElement>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const uploadPdfToStorage = async (file: File): Promise<{ fileName: string; filePath: string }> => {
+    const filePath = `${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, { contentType: file.type });
+    if (error) throw error;
+    return { fileName: file.name, filePath };
+  };
+
+  const downloadPdf = async (filePath: string, fileName: string) => {
+    const { data, error } = await supabase.storage.from(BUCKET).download(filePath);
+    if (error) { toast.error('Failed to download PDF'); return; }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -115,35 +149,73 @@ export function ClientBriefTemplatesManager() {
     });
   };
 
+  const resetForm = () => {
+    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfFile(null);
+    setExistingPdf(null);
+  };
+
   const handleCreate = async () => {
     if (!formData.name.trim() || !formData.content.trim()) return;
-    await createTemplate.mutateAsync({
-      name: formData.name.trim(),
-      description: formData.description.trim() || undefined,
-      content: formData.content.trim(),
-    });
-    setNewDialog(false);
-    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfUploading(true);
+    try {
+      let pdfData: { pdf_file_name?: string; pdf_file_path?: string } = {};
+      if (pdfFile) {
+        const { fileName, filePath } = await uploadPdfToStorage(pdfFile);
+        pdfData = { pdf_file_name: fileName, pdf_file_path: filePath };
+      }
+      await createTemplate.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        content: formData.content.trim(),
+        ...pdfData,
+      });
+      setNewDialog(false);
+      resetForm();
+    } catch (e: any) {
+      toast.error('Failed to create template: ' + e.message);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleEdit = (template: BriefTemplate) => {
     setEditingTemplate(template);
     setFormData({ name: template.name, description: template.description || '', content: template.content, is_active: template.is_active });
+    setPdfFile(null);
+    setExistingPdf(template.pdf_file_name && template.pdf_file_path
+      ? { name: template.pdf_file_name, path: template.pdf_file_path }
+      : null);
     setEditDialog(true);
   };
 
   const handleUpdate = async () => {
     if (!editingTemplate || !formData.name.trim() || !formData.content.trim()) return;
-    await updateTemplate.mutateAsync({
-      id: editingTemplate.id,
-      name: formData.name.trim(),
-      description: formData.description.trim() || null,
-      content: formData.content.trim(),
-      is_active: formData.is_active,
-    });
-    setEditDialog(false);
-    setEditingTemplate(null);
-    setFormData({ name: '', description: '', content: '', is_active: true });
+    setPdfUploading(true);
+    try {
+      let pdfData: { pdf_file_name?: string | null; pdf_file_path?: string | null } = {};
+      if (pdfFile) {
+        const { fileName, filePath } = await uploadPdfToStorage(pdfFile);
+        pdfData = { pdf_file_name: fileName, pdf_file_path: filePath };
+      } else if (!existingPdf && editingTemplate.pdf_file_path) {
+        pdfData = { pdf_file_name: null, pdf_file_path: null };
+      }
+      await updateTemplate.mutateAsync({
+        id: editingTemplate.id,
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        content: formData.content.trim(),
+        is_active: formData.is_active,
+        ...pdfData,
+      });
+      setEditDialog(false);
+      setEditingTemplate(null);
+      resetForm();
+    } catch (e: any) {
+      toast.error('Failed to update template: ' + e.message);
+    } finally {
+      setPdfUploading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -155,6 +227,48 @@ export function ClientBriefTemplatesManager() {
     return <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">Loading event brief templates...</div>;
   }
 
+  const renderPdfPicker = (fileRef: React.RefObject<HTMLInputElement>) => (
+    <div className="space-y-2">
+      <Label>Attach PDF (optional)</Label>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".pdf"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) { setPdfFile(file); setExistingPdf(null); }
+          e.target.value = '';
+        }}
+      />
+      {pdfFile ? (
+        <div className="flex items-center gap-2 p-2 rounded border border-border bg-muted/30 text-sm">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 truncate">{pdfFile.name}</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setPdfFile(null)}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ) : existingPdf ? (
+        <div className="flex items-center gap-2 p-2 rounded border border-border bg-muted/30 text-sm">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 truncate">{existingPdf.name}</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => downloadPdf(existingPdf.path, existingPdf.name)}>
+            <Download className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setExistingPdf(null)}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+          <Upload className="h-4 w-4 mr-1" />
+          Choose PDF
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="bg-card border border-border rounded-xl">
       <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
@@ -162,7 +276,7 @@ export function ClientBriefTemplatesManager() {
           <h2 className="font-semibold">Event Brief Templates</h2>
           <p className="text-sm text-muted-foreground">Client-facing briefs shared via the Client Portal</p>
         </div>
-        <Button onClick={() => setNewDialog(true)}><Plus className="h-4 w-4 mr-2" />Add Template</Button>
+        <Button onClick={() => { resetForm(); setNewDialog(true); }}><Plus className="h-4 w-4 mr-2" />Add Template</Button>
       </div>
 
       <div className="p-4">
@@ -204,10 +318,13 @@ export function ClientBriefTemplatesManager() {
               <Label>Brief Content</Label>
               <Textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} placeholder="Enter the client-facing brief content..." rows={8} />
             </div>
+            {renderPdfPicker(createFileRef)}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewDialog(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={!formData.name.trim() || !formData.content.trim()}>Create Template</Button>
+            <Button onClick={handleCreate} disabled={!formData.name.trim() || !formData.content.trim() || pdfUploading}>
+              {pdfUploading ? 'Uploading...' : 'Create Template'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -231,6 +348,7 @@ export function ClientBriefTemplatesManager() {
               <Label>Brief Content</Label>
               <Textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} rows={8} />
             </div>
+            {renderPdfPicker(editFileRef)}
             <div className="flex items-center gap-2">
               <Switch id="is-active" checked={formData.is_active} onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })} />
               <Label htmlFor="is-active">Active</Label>
@@ -238,7 +356,9 @@ export function ClientBriefTemplatesManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialog(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} disabled={!formData.name.trim() || !formData.content.trim()}>Save Changes</Button>
+            <Button onClick={handleUpdate} disabled={!formData.name.trim() || !formData.content.trim() || pdfUploading}>
+              {pdfUploading ? 'Uploading...' : 'Save Changes'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
