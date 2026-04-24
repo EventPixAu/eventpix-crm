@@ -63,6 +63,8 @@ interface PortalData {
   special_instructions: string | null;
   photography_brief: string | null;
   brief_content: string | null;
+  brief_attachment_name: string | null;
+  brief_attachment_url: string | null;
   main_shoot_date: string | null;
   sessions: Array<{
     id: string;
@@ -384,7 +386,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
         )}
 
         {/* Event Brief */}
-        {data.brief_content && (
+        {(data.brief_content || data.brief_attachment_url) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -392,7 +394,19 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
             className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
           >
             <h2 className="text-lg font-semibold text-white mb-3">Event Brief</h2>
-            <p className="text-white/70 text-sm whitespace-pre-wrap">{data.brief_content}</p>
+            {data.brief_content && (
+              <p className="text-white/70 text-sm whitespace-pre-wrap">{data.brief_content}</p>
+            )}
+            {data.brief_attachment_url && (
+              <div className="mt-4">
+                <Button variant="secondary" asChild className="bg-white/10 text-white hover:bg-white/15 border border-white/10">
+                  <a href={data.brief_attachment_url} target="_blank" rel="noreferrer" download>
+                    <Download className="h-4 w-4" />
+                    {data.brief_attachment_name || 'Download Event Brief PDF'}
+                  </a>
+                </Button>
+              </div>
+            )}
           </motion.div>
         )}
 
