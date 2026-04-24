@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useEffect, useMemo, useState, forwardRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,16 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
   function SidebarNavGroup({ label, icon: Icon, items, defaultOpen = false, onItemClick, collapsed = false }, ref) {
     const location = useLocation();
     const hasActiveChild = items.some(item => location.pathname === item.href);
-    const [isOpen, setIsOpen] = useState(defaultOpen || hasActiveChild);
+    const storageKey = useMemo(() => `eventpixii-sidebar-group-${label.toLowerCase().replace(/\s+/g, '-')}`, [label]);
+    const [isOpen, setIsOpen] = useState(() => {
+      if (typeof window === 'undefined') return defaultOpen || hasActiveChild;
+      const saved = window.localStorage.getItem(storageKey);
+      return saved === null ? defaultOpen || hasActiveChild : saved === 'true';
+    });
+
+    useEffect(() => {
+      window.localStorage.setItem(storageKey, String(isOpen));
+    }, [isOpen, storageKey]);
 
     // Collapsed mode: show icons only with tooltips
     if (collapsed) {
