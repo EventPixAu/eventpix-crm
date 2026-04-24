@@ -311,6 +311,8 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          pdf_file_name: string | null
+          pdf_file_path: string | null
           sort_order: number
           updated_at: string
         }
@@ -321,6 +323,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          pdf_file_name?: string | null
+          pdf_file_path?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -331,6 +335,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          pdf_file_name?: string | null
+          pdf_file_path?: string | null
           sort_order?: number
           updated_at?: string
         }

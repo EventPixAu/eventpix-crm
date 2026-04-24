@@ -9,6 +9,8 @@ interface ClientBriefTemplate {
   content: string;
   is_active: boolean;
   sort_order: number;
+  pdf_file_name: string | null;
+  pdf_file_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -45,7 +47,7 @@ export function useAllClientBriefTemplates() {
 export function useCreateClientBriefTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string; content: string }) => {
+    mutationFn: async (data: { name: string; description?: string; content: string; pdf_file_name?: string; pdf_file_path?: string }) => {
       const { data: existing } = await supabase
         .from('client_brief_templates')
         .select('sort_order')
@@ -79,6 +81,8 @@ export function useUpdateClientBriefTemplate() {
       content?: string;
       is_active?: boolean;
       sort_order?: number;
+      pdf_file_name?: string | null;
+      pdf_file_path?: string | null;
     }) => {
       const { error } = await supabase
         .from('client_brief_templates')
