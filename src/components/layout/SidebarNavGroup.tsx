@@ -35,6 +35,12 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       window.localStorage.setItem(storageKey, String(isOpen));
     }, [isOpen, storageKey]);
 
+    useEffect(() => {
+      if (hasActiveChild) {
+        setIsOpen(true);
+      }
+    }, [hasActiveChild]);
+
     // Collapsed mode: show icons only with tooltips
     if (collapsed) {
       return (
