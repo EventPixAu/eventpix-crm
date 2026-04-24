@@ -38,6 +38,39 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   cancelled: { label: 'Cancelled', variant: 'destructive', icon: XCircle },
 };
 
+const htmlToEditableText = (html: string) => {
+  if (!html) return '';
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.body.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+  doc.body.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li').forEach((element) => {
+    element.append('\n\n');
+  });
+
+  return (doc.body.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
+const editableTextToHtml = (text: string) => {
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  return text
+    .trim()
+    .split(/\n\s*\n/)
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+};
+
 export default function ContractDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -52,7 +85,7 @@ export default function ContractDetail() {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedHtml, setEditedHtml] = useState('');
+  const [editedText, setEditedText] = useState('');
 
   const isLocked = contract?.status === 'signed' || contract?.status === 'cancelled';
   const clientData = contract?.client as any;
@@ -233,7 +266,7 @@ export default function ContractDetail() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setEditedHtml((contract as any).rendered_html || '');
+                      setEditedText(htmlToEditableText((contract as any).rendered_html || ''));
                       setIsEditing(true);
                     }}
                   >
@@ -256,7 +289,7 @@ export default function ContractDetail() {
                       size="sm"
                       onClick={async () => {
                         if (!id) return;
-                        await updateContract.mutateAsync({ id, rendered_html: editedHtml } as any);
+                        await updateContract.mutateAsync({ id, rendered_html: editableTextToHtml(editedText) } as any);
                         setIsEditing(false);
                       }}
                       disabled={updateContract.isPending}
@@ -272,18 +305,18 @@ export default function ContractDetail() {
               {isEditing ? (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    Edit the contract HTML below. Use standard HTML tags (e.g. &lt;p&gt;, &lt;strong&gt;, &lt;h2&gt;, &lt;ul&gt;&lt;li&gt;).
+                    Edit the contract text below. Blank lines create separate paragraphs.
                   </p>
                   <Textarea
-                    value={editedHtml}
-                    onChange={(e) => setEditedHtml(e.target.value)}
-                    className="font-mono text-xs min-h-[400px] bg-white text-gray-900"
+                    value={editedText}
+                    onChange={(e) => setEditedText(e.target.value)}
+                    className="min-h-[400px] bg-white text-gray-900 leading-relaxed"
                   />
                   <div className="border rounded-lg p-4 bg-white text-gray-900 max-h-[300px] overflow-y-auto">
                     <p className="text-xs text-muted-foreground mb-2 font-sans">Preview:</p>
                     <div
                       className="prose prose-sm max-w-none prose-gray"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editedHtml) }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editableTextToHtml(editedText)) }}
                     />
                   </div>
                 </div>
