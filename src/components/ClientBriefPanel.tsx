@@ -17,7 +17,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useClientBriefTemplates, useApplyClientBriefToEvent } from '@/hooks/useClientBriefTemplates';
+import { useEventBriefTemplates } from '@/hooks/useEventBriefTemplates';
+import { useApplyClientBriefToEvent } from '@/hooks/useClientBriefTemplates';
 
 interface ClientBriefPanelProps {
   eventId: string;
