@@ -37,7 +37,7 @@ export function ClientBriefPanel({
   isAdmin,
 }: ClientBriefPanelProps) {
   const queryClient = useQueryClient();
-  const { data: templates = [] } = useEventBriefTemplates();
+  const { data: templates = [] } = useClientBriefTemplates();
   const applyBrief = useApplyClientBriefToEvent();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
