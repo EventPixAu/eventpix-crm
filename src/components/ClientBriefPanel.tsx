@@ -288,6 +288,20 @@ export function ClientBriefPanel({
             ) : hasContent ? (
               <div className="space-y-3">
                 <p className="whitespace-pre-wrap text-sm">{clientBriefContent}</p>
+                {currentTemplate?.pdf_file_path && (
+                  <button
+                    onClick={async () => {
+                      const { data } = await supabase.storage
+                        .from('client-brief-template-files')
+                        .createSignedUrl(currentTemplate.pdf_file_path!, 3600);
+                      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                    }}
+                    className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg text-sm text-primary hover:underline w-full"
+                  >
+                    <Download className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{currentTemplate.pdf_file_name || 'Template PDF'}</span>
+                  </button>
+                )}
                 {isAdmin && (
                   <Button
                     variant="outline"
