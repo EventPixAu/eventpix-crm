@@ -38,6 +38,39 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
   cancelled: { label: 'Cancelled', variant: 'destructive', icon: XCircle },
 };
 
+const htmlToEditableText = (html: string) => {
+  if (!html) return '';
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.body.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+  doc.body.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li').forEach((element) => {
+    element.append('\n\n');
+  });
+
+  return (doc.body.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
+const editableTextToHtml = (text: string) => {
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  return text
+    .trim()
+    .split(/\n\s*\n/)
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+};
+
 export default function ContractDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -52,7 +85,7 @@ export default function ContractDetail() {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedHtml, setEditedHtml] = useState('');
+  const [editedText, setEditedText] = useState('');
 
   const isLocked = contract?.status === 'signed' || contract?.status === 'cancelled';
   const clientData = contract?.client as any;
