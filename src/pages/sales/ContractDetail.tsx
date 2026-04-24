@@ -266,7 +266,7 @@ export default function ContractDetail() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setEditedHtml((contract as any).rendered_html || '');
+                      setEditedText(htmlToEditableText((contract as any).rendered_html || ''));
                       setIsEditing(true);
                     }}
                   >
@@ -289,7 +289,7 @@ export default function ContractDetail() {
                       size="sm"
                       onClick={async () => {
                         if (!id) return;
-                        await updateContract.mutateAsync({ id, rendered_html: editedHtml } as any);
+                        await updateContract.mutateAsync({ id, rendered_html: editableTextToHtml(editedText) } as any);
                         setIsEditing(false);
                       }}
                       disabled={updateContract.isPending}
@@ -305,18 +305,18 @@ export default function ContractDetail() {
               {isEditing ? (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    Edit the contract HTML below. Use standard HTML tags (e.g. &lt;p&gt;, &lt;strong&gt;, &lt;h2&gt;, &lt;ul&gt;&lt;li&gt;).
+                    Edit the contract text below. Blank lines create separate paragraphs.
                   </p>
                   <Textarea
-                    value={editedHtml}
-                    onChange={(e) => setEditedHtml(e.target.value)}
-                    className="font-mono text-xs min-h-[400px] bg-white text-gray-900"
+                    value={editedText}
+                    onChange={(e) => setEditedText(e.target.value)}
+                    className="min-h-[400px] bg-white text-gray-900 leading-relaxed"
                   />
                   <div className="border rounded-lg p-4 bg-white text-gray-900 max-h-[300px] overflow-y-auto">
                     <p className="text-xs text-muted-foreground mb-2 font-sans">Preview:</p>
                     <div
                       className="prose prose-sm max-w-none prose-gray"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editedHtml) }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editableTextToHtml(editedText)) }}
                     />
                   </div>
                 </div>
