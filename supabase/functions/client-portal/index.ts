@@ -45,6 +45,7 @@ serve(async (req) => {
 
     let templateBriefPdfName: string | null = null;
     let templateBriefPdfPath: string | null = null;
+    // brief attachment support v2
 ...
     // Generate signed URL for QR file
     let qrSignedUrl = null;
