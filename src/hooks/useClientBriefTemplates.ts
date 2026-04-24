@@ -47,7 +47,7 @@ export function useAllClientBriefTemplates() {
 export function useCreateClientBriefTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string; content: string }) => {
+    mutationFn: async (data: { name: string; description?: string; content: string; pdf_file_name?: string; pdf_file_path?: string }) => {
       const { data: existing } = await supabase
         .from('client_brief_templates')
         .select('sort_order')
