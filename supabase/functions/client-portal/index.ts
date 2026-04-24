@@ -28,11 +28,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch event by portal token
     const { data: event, error: eventError } = await supabase
       .from("events")
       .select(`
-        id, event_name, event_date, start_time, end_time, 
+        id, event_name, event_date, start_time, end_time,
         venue_name, venue_id, client_name, event_type_id,
         special_instructions, notes, photography_brief,
         qr_file_path, qr_file_name, pre_registration_link,
@@ -41,14 +40,85 @@ serve(async (req) => {
         client_brief_template_id, client_brief_file_name, client_brief_file_path
       `)
       .eq("client_portal_token", token)
-      .single();
+      .maybeSingle();
 
-    let templateBriefPdfName: string | null = null;
-    let templateBriefPdfPath: string | null = null;
-    // brief attachment support v2
-...
-    // Generate signed URL for QR file
-    let qrSignedUrl = null;
+    if (eventError || !event) {
+      return new Response(JSON.stringify({ error: "Event not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Venue
+    let venue: any = null;
+    if (event.venue_id) {
+      const { data: v } = await supabase
+        .from("venues")
+        .select("id, name, address, city, state, postcode, country")
+        .eq("id", event.venue_id)
+        .maybeSingle();
+      venue = v || null;
+    }
+
+    // Event type name
+    let eventTypeName: string | null = null;
+    if (event.event_type_id) {
+      const { data: et } = await supabase
+        .from("event_types")
+        .select("name")
+        .eq("id", event.event_type_id)
+        .maybeSingle();
+      eventTypeName = et?.name || null;
+    }
+
+    // Sessions
+    const { data: sessions } = await supabase
+      .from("event_sessions")
+      .select("id, session_label, session_date, start_time, end_time, venue_name, notes")
+      .eq("event_id", event.id)
+      .order("session_date", { ascending: true });
+
+    // Team (assignments)
+    const { data: assignments } = await supabase
+      .from("event_assignments")
+      .select(`
+        id, role, status,
+        profiles:profile_id ( first_name, last_name, phone, avatar_url )
+      `)
+      .eq("event_id", event.id);
+
+    const team = (assignments || [])
+      .filter((a: any) => a.profiles)
+      .map((a: any) => ({
+        name: `${a.profiles.first_name || ""} ${a.profiles.last_name || ""}`.trim(),
+        phone: a.profiles.phone || null,
+        avatar_url: a.profiles.avatar_url || null,
+        role: a.role,
+      }));
+
+    // Contacts
+    const { data: rawContacts } = await supabase
+      .from("event_contacts")
+      .select("id, contact_name, contact_email, contact_phone, contact_type, notes")
+      .eq("event_id", event.id);
+    const contacts = rawContacts || [];
+
+    // Contracts
+    const { data: rawContracts } = await supabase
+      .from("contracts")
+      .select("id, title, status, sent_at, signed_at, public_token")
+      .eq("event_id", event.id);
+    const safeContracts = rawContracts || [];
+
+    // Quotes
+    const { data: rawQuotes } = await supabase
+      .from("quotes")
+      .select("id, quote_number, status, total_estimate, public_token")
+      .eq("event_id", event.id);
+    const safeQuotes = rawQuotes || [];
+
+    // QR signed URL
+    let qrSignedUrl: string | null = null;
     if (event.qr_file_path) {
       const { data } = await supabase.storage
         .from("event-documents")
@@ -56,13 +126,15 @@ serve(async (req) => {
       qrSignedUrl = data?.signedUrl || null;
     }
 
+    // Brief attachment (event override OR template PDF)
+    let templateBriefPdfName: string | null = null;
+    let templateBriefPdfPath: string | null = null;
     if (event.client_brief_template_id) {
       const { data: template } = await supabase
         .from("client_brief_templates")
         .select("pdf_file_name, pdf_file_path")
         .eq("id", event.client_brief_template_id)
         .maybeSingle();
-
       templateBriefPdfName = template?.pdf_file_name || null;
       templateBriefPdfPath = template?.pdf_file_path || null;
     }
@@ -70,7 +142,7 @@ serve(async (req) => {
     const briefAttachmentName = event.client_brief_file_name || templateBriefPdfName || null;
     const briefAttachmentPath = event.client_brief_file_path || templateBriefPdfPath || null;
 
-    let briefAttachmentSignedUrl = null;
+    let briefAttachmentSignedUrl: string | null = null;
     if (briefAttachmentPath) {
       const bucket = event.client_brief_file_path ? "event-documents" : "client-brief-template-files";
       const { data } = await supabase.storage
@@ -78,7 +150,7 @@ serve(async (req) => {
         .createSignedUrl(briefAttachmentPath, 3600);
       briefAttachmentSignedUrl = data?.signedUrl || null;
     }
-...
+
     const response = {
       event_name: event.event_name,
       event_date: event.event_date,
