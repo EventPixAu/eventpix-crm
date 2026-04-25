@@ -146,11 +146,12 @@ serve(async (req) => {
     }
 
     let defaultRoleId: string | null = null;
-    if (staffData?.role) {
-      const roleName = staffData.role.toLowerCase();
-      const searchName = roleName === 'assistant' ? 'Assistant' : roleName === 'videographer' ? 'Videographer' : 'Photographer';
+    const sourceRole = staffData?.role || inv.role;
+    if (sourceRole) {
+      const roleName = sourceRole.toLowerCase();
+      const searchName = roleName.includes('assistant') ? 'Assistant' : roleName.includes('video') ? 'Videographer' : 'Photographer';
       const { data: roleRow, error: roleSearchErr } = await admin.from("staff_roles").select("id").eq("name", searchName).maybeSingle();
-      if (roleRow && !roleSearchErr) { defaultRoleId = roleRow.id; console.log(`Mapped staff role '${staffData.role}' to staff_role id: ${defaultRoleId}`); }
+      if (roleRow && !roleSearchErr) { defaultRoleId = roleRow.id; console.log(`Mapped staff role '${sourceRole}' to staff_role id: ${defaultRoleId}`); }
     }
 
     const { error: profErr } = await admin.from("profiles").upsert({
