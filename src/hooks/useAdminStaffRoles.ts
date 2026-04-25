@@ -25,8 +25,8 @@ export function useAllStaffRoles() {
       const { data, error } = await supabase
         .from('staff_roles')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as StaffRoleLookup[];

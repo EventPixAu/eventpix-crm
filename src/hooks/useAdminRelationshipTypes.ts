@@ -25,8 +25,8 @@ export function useAllRelationshipTypes() {
       const { data, error } = await supabase
         .from('contact_relationship_types')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as ContactRelationshipType[];
@@ -43,8 +43,8 @@ export function useActiveRelationshipTypes() {
         .from('contact_relationship_types')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as ContactRelationshipType[];

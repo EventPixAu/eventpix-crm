@@ -26,8 +26,8 @@ export function useCoveragePackages() {
       const { data, error } = await supabase
         .from('coverage_packages')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as CoveragePackage[];
@@ -43,8 +43,8 @@ export function useActiveCoveragePackages() {
         .from('coverage_packages')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as CoveragePackage[];

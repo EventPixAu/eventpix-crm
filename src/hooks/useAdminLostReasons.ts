@@ -25,8 +25,8 @@ export function useAllLostReasons() {
       const { data, error } = await supabase
         .from('lost_reasons')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as LostReasonLookup[];

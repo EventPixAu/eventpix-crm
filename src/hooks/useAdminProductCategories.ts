@@ -20,8 +20,8 @@ export function useAllProductCategories() {
       const { data, error } = await supabase
         .from('product_categories')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as ProductCategory[];

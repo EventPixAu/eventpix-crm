@@ -25,6 +25,7 @@ export function useLeadStatuses() {
         .from('lead_statuses')
         .select('*')
         .eq('is_active', true)
+        .order('label', { ascending: true })
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
@@ -40,6 +41,7 @@ export function useAllLeadStatuses() {
       const { data, error } = await supabase
         .from('lead_statuses')
         .select('*')
+        .order('label', { ascending: true })
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
