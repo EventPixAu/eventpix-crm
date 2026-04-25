@@ -452,29 +452,56 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           
           <div className="space-y-1.5">
             <Label>Team member</Label>
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select team member" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableProfiles.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    {selectedLocation !== 'all' 
-                      ? `No team members in ${selectedLocation}` 
-                      : 'No available team members'}
-                  </SelectItem>
-                ) : (
-                  availableProfiles.map((profile) => (
-                    <SelectItem key={profile.id} value={profile.id}>
-                      <div className="flex items-center gap-2">
-                        <span>{profile.full_name || 'Unnamed Team Member'}</span>
-                        <EligibilityBadge userId={profile.id} />
-                      </div>
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+            <Popover open={teamMemberPopoverOpen} onOpenChange={setTeamMemberPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={teamMemberPopoverOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  <span className={cn('truncate', !selectedUser && 'text-muted-foreground')}>
+                    {selectedUserName || 'Select team member'}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Start typing a name..." />
+                  <CommandList>
+                    <CommandEmpty>
+                      {selectedLocation !== 'all'
+                        ? `No team members in ${selectedLocation}`
+                        : 'No available team members'}
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {availableProfiles.map((profile) => (
+                        <CommandItem
+                          key={profile.id}
+                          value={profile.full_name || 'Unnamed Team Member'}
+                          onSelect={() => {
+                            setSelectedUser(profile.id);
+                            setTeamMemberPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              selectedUser === profile.id ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate">{profile.full_name || 'Unnamed Team Member'}</span>
+                            <EligibilityBadge userId={profile.id} />
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-1.5">
