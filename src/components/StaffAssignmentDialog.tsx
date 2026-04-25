@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send, Calendar } from 'lucide-react';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send, Calendar, Check, ChevronsUpDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
   Dialog,
@@ -20,6 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLookups';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
@@ -33,6 +42,7 @@ import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGu
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useAuth } from '@/lib/auth';
 import { useCreateCrewChecklistForUser } from '@/hooks/useCrewChecklists';
+import { cn } from '@/lib/utils';
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -60,6 +70,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedSession, setSelectedSession] = useState('all');
+  const [teamMemberPopoverOpen, setTeamMemberPopoverOpen] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
@@ -168,6 +179,12 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     
     return filtered;
   }, [profiles, assignedUserIds, selectedLocation]);
+
+  const selectedUserName = useMemo(() => {
+    const selectedProfile = availableProfiles.find((profile) => profile.id === selectedUser)
+      || profiles.find((profile) => profile.id === selectedUser);
+    return selectedProfile?.full_name || '';
+  }, [availableProfiles, profiles, selectedUser]);
   
   // Get unique locations from profiles for the filter dropdown
   const availableLocations = useMemo(() => {
