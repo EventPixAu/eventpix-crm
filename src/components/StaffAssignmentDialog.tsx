@@ -314,7 +314,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
         <DialogHeader>
           <DialogTitle>Manage Staff Assignments</DialogTitle>
           <DialogDescription>
-            Assign photographers and other staff to this event. ({assignments.length}/{maxStaff} slots used)
+            Add team members, then choose their event-specific staff role. ({assignments.length}/{maxStaff} slots used)
           </DialogDescription>
         </DialogHeader>
 
@@ -433,42 +433,51 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </SelectContent>
           </Select>
           
-          <Select value={selectedUser} onValueChange={setSelectedUser}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select team member" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableProfiles.length === 0 ? (
-                <SelectItem value="none" disabled>
-                  {selectedLocation !== 'all' 
-                    ? `No team members in ${selectedLocation}` 
-                    : 'No available team members'}
-                </SelectItem>
-              ) : (
-                availableProfiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{profile.full_name || 'Unnamed Team Member'}</span>
-                      <EligibilityBadge userId={profile.id} />
-                    </div>
+          <div className="space-y-1.5">
+            <Label>Team member</Label>
+            <Select value={selectedUser} onValueChange={setSelectedUser}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select team member" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableProfiles.length === 0 ? (
+                  <SelectItem value="none" disabled>
+                    {selectedLocation !== 'all' 
+                      ? `No team members in ${selectedLocation}` 
+                      : 'No available team members'}
                   </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+                ) : (
+                  availableProfiles.map((profile) => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{profile.full_name || 'Unnamed Team Member'}</span>
+                        <EligibilityBadge userId={profile.id} />
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select role on event" />
-            </SelectTrigger>
-            <SelectContent>
-              {roles.map((role) => (
-                <SelectItem key={role.id} value={role.id}>
-                  {role.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1.5">
+            <Label>Event-specific staff role</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select role for this event" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Edit this list in Admin → Lookups → Staff Roles.
+            </p>
+          </div>
 
           <Textarea
             placeholder="Assignment notes (optional)"

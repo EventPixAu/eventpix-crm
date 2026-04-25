@@ -568,6 +568,12 @@ export default function AdminLookups() {
             </TabsContent>
 
             <TabsContent value="staff-roles" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Event-specific staff roles</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the role dropdown when assigning someone to an event. Team member categories are set separately on each Team profile.
+                </p>
+              </div>
               <LookupTable
                 items={staffRoles}
                 isLoading={staffRolesLoading}

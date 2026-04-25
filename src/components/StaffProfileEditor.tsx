@@ -449,13 +449,13 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             <div className="grid grid-cols-2 gap-4">
                {sourceTable !== 'staff' && (
                 <div>
-                  <Label htmlFor="default_role_id">Role</Label>
+                  <Label htmlFor="default_role_id">Team category</Label>
                   <Select
                     value={formData.default_role_id}
                     onValueChange={(value) => setFormData({ ...formData, default_role_id: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
+                      <SelectValue placeholder="Select team category" />
                     </SelectTrigger>
                     <SelectContent>
                       {roles
