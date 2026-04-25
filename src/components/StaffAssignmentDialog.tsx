@@ -450,56 +450,56 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           
           <div className="space-y-1.5">
             <Label>Team member</Label>
-            <Popover open={teamMemberPopoverOpen} onOpenChange={setTeamMemberPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={teamMemberPopoverOpen}
-                  className="w-full justify-between font-normal"
-                >
-                  <span className={cn('truncate', !selectedUser && 'text-muted-foreground')}>
-                    {selectedUserName || 'Select team member'}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Start typing a name..." />
-                  <CommandList>
-                    <CommandEmpty>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={teamMemberSearch}
+                onChange={(event) => {
+                  setTeamMemberSearch(event.target.value);
+                  setSelectedUser('');
+                }}
+                onFocus={() => setTeamMemberSearchFocused(true)}
+                onBlur={() => setTeamMemberSearchFocused(false)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && matchingProfiles[0]) {
+                    event.preventDefault();
+                    setSelectedUser(matchingProfiles[0].id);
+                    setTeamMemberSearch(matchingProfiles[0].full_name || 'Unnamed Team Member');
+                    setTeamMemberSearchFocused(false);
+                  }
+                }}
+                placeholder="Start typing a team member name"
+                className="pl-9"
+              />
+              {teamMemberSearchFocused && teamMemberSearch.trim() && (
+                <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+                  {matchingProfiles.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
                       {selectedLocation !== 'all'
                         ? `No team members in ${selectedLocation}`
-                        : 'No available team members'}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {availableProfiles.map((profile) => (
-                        <CommandItem
-                          key={profile.id}
-                          value={profile.full_name || 'Unnamed Team Member'}
-                          onSelect={() => {
-                            setSelectedUser(profile.id);
-                            setTeamMemberPopoverOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              selectedUser === profile.id ? 'opacity-100' : 'opacity-0'
-                            )}
-                          />
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="truncate">{profile.full_name || 'Unnamed Team Member'}</span>
-                            <EligibilityBadge userId={profile.id} />
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                        : 'No matching team members'}
+                    </div>
+                  ) : (
+                    matchingProfiles.map((profile) => (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setSelectedUser(profile.id);
+                          setTeamMemberSearch(profile.full_name || 'Unnamed Team Member');
+                          setTeamMemberSearchFocused(false);
+                        }}
+                      >
+                        <span className="min-w-0 flex-1 truncate">{profile.full_name || 'Unnamed Team Member'}</span>
+                        <EligibilityBadge userId={profile.id} />
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-1.5">
