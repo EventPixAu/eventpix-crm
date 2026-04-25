@@ -20,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/command';
+} from '@/components/ui/select';
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
 import { useLocations } from '@/hooks/useLookups';
 import { useCreateAssignment, useDeleteAssignment, useEvent, type EventAssignment } from '@/hooks/useEvents';
@@ -61,7 +61,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedSession, setSelectedSession] = useState('all');
-  const [teamMemberPopoverOpen, setTeamMemberPopoverOpen] = useState(false);
+  const [teamMemberSearch, setTeamMemberSearch] = useState('');
+  const [teamMemberSearchFocused, setTeamMemberSearchFocused] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
@@ -171,11 +172,14 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     return filtered;
   }, [profiles, assignedUserIds, selectedLocation]);
 
-  const selectedUserName = useMemo(() => {
-    const selectedProfile = availableProfiles.find((profile) => profile.id === selectedUser)
-      || profiles.find((profile) => profile.id === selectedUser);
-    return selectedProfile?.full_name || '';
-  }, [availableProfiles, profiles, selectedUser]);
+  const matchingProfiles = useMemo(() => {
+    const query = teamMemberSearch.trim().toLowerCase();
+    if (!query) return [];
+
+    return availableProfiles
+      .filter((profile) => (profile.full_name || 'Unnamed Team Member').toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [availableProfiles, teamMemberSearch]);
   
   // Get unique locations from profiles for the filter dropdown
   const availableLocations = useMemo(() => {
