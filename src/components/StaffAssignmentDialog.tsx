@@ -270,6 +270,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     }
 
     setSelectedUser('');
+    setTeamMemberSearch('');
     setSelectedRole('');
     setAssignmentNotes('');
     // Don't reset selectedSession - keep it for consecutive assignments to same session
@@ -399,6 +400,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             <Select value={selectedSession} onValueChange={(value) => {
               setSelectedSession(value);
               setSelectedUser('');
+              setTeamMemberSearch('');
             }}>
               <SelectTrigger className="h-9">
                 <div className="flex items-center gap-2">
@@ -428,6 +430,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           <Select value={selectedLocation} onValueChange={(value) => {
             setSelectedLocation(value);
             setSelectedUser(''); // Reset user selection when location changes
+            setTeamMemberSearch('');
           }}>
             <SelectTrigger className="h-9">
               <div className="flex items-center gap-2">
