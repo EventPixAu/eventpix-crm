@@ -83,20 +83,19 @@ function generateICS(event: any, sequence: number, appUrl: string): string {
   const uid = `${event.id}@eventpix.com.au`;
   const dtstamp = formatDateToICS(new Date());
   let dtstart: string, dtend: string;
+  const timezone = event.timezone || 'Australia/Sydney';
+  const timezoneBlock = getVTimezone(timezone);
 
   if (event.start_at) {
     dtstart = formatDateToICS(new Date(event.start_at));
     dtend = event.end_at ? formatDateToICS(new Date(event.end_at))
       : formatDateToICS(new Date(new Date(event.start_at).getTime() + 2 * 3600000));
   } else {
-    const startDate = new Date(event.event_date);
-    if (event.start_time) { const [h, m] = event.start_time.split(':'); startDate.setHours(+h, +m); }
-    dtstart = formatDateToICS(startDate);
+    dtstart = formatLocalDateTimeToICS(event.event_date, event.start_time || '09:00:00');
     if (event.end_time) {
-      const endDate = new Date(event.event_date);
-      const [h, m] = event.end_time.split(':'); endDate.setHours(+h, +m);
-      dtend = formatDateToICS(endDate);
-    } else { dtend = formatDateToICS(new Date(startDate.getTime() + 2 * 3600000)); }
+      const endDate = shouldEndNextDay(event.start_time, event.end_time) ? addDays(event.event_date, 1) : event.event_date;
+      dtend = formatLocalDateTimeToICS(endDate, event.end_time);
+    } else { dtend = formatLocalDateTimeToICS(event.event_date, addHoursToTime(event.start_time || '09:00:00', 2)); }
   }
 
   const location = [event.venue_name, event.venue_address].filter(Boolean).join(", ");
@@ -107,11 +106,46 @@ function generateICS(event: any, sequence: number, appUrl: string): string {
     `View in app: ${appUrl}/events/${event.id}`,
   ].filter(Boolean).join("\\n");
 
-  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Eventpix//Event Management//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART:${dtstart}\r\nDTEND:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Eventpix//Event Management//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:REQUEST\r\n${timezoneBlock ? `${timezoneBlock}\r\n` : ''}BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${timezone}:${dtstart}\r\nDTEND;TZID=${timezone}:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR`;
 }
 
 function formatDateToICS(date: Date): string {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+}
+function formatLocalDateTimeToICS(dateStr: string, timeStr: string): string {
+  const [year, month, day] = dateStr.split('-');
+  const [hour = '00', minute = '00', second = '00'] = timeStr.split(':');
+  return `${year}${month}${day}T${hour.padStart(2, '0')}${minute.padStart(2, '0')}${second.padStart(2, '0')}`;
+}
+function shouldEndNextDay(startTime?: string | null, endTime?: string | null): boolean {
+  if (!startTime || !endTime) return false;
+  return endTime < startTime;
+}
+function addDays(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
+}
+function addHoursToTime(timeStr: string, hoursToAdd: number): string {
+  const [hours = '0', minutes = '0', seconds = '0'] = timeStr.split(':');
+  const totalMinutes = Number(hours) * 60 + Number(minutes) + hoursToAdd * 60;
+  const wrapped = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour = Math.floor(wrapped / 60).toString().padStart(2, '0');
+  const minute = (wrapped % 60).toString().padStart(2, '0');
+  return `${hour}:${minute}:${seconds.padStart(2, '0')}`;
+}
+function getVTimezone(tz: string): string {
+  const defs: Record<string, string> = {
+    'Australia/Sydney': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Sydney\r\nX-LIC-LOCATION:Australia/Sydney\r\nBEGIN:STANDARD\r\nDTSTART:19700405T030000\r\nRRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU\r\nTZOFFSETFROM:+1100\r\nTZOFFSETTO:+1000\r\nTZNAME:AEST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:19701004T020000\r\nRRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU\r\nTZOFFSETFROM:+1000\r\nTZOFFSETTO:+1100\r\nTZNAME:AEDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE',
+    'Australia/Melbourne': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Melbourne\r\nX-LIC-LOCATION:Australia/Melbourne\r\nBEGIN:STANDARD\r\nDTSTART:19700405T030000\r\nRRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU\r\nTZOFFSETFROM:+1100\r\nTZOFFSETTO:+1000\r\nTZNAME:AEST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:19701004T020000\r\nRRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU\r\nTZOFFSETFROM:+1000\r\nTZOFFSETTO:+1100\r\nTZNAME:AEDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE',
+    'Australia/Brisbane': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Brisbane\r\nX-LIC-LOCATION:Australia/Brisbane\r\nBEGIN:STANDARD\r\nDTSTART:19700101T000000\r\nTZOFFSETFROM:+1000\r\nTZOFFSETTO:+1000\r\nTZNAME:AEST\r\nEND:STANDARD\r\nEND:VTIMEZONE',
+    'Australia/Adelaide': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Adelaide\r\nX-LIC-LOCATION:Australia/Adelaide\r\nBEGIN:STANDARD\r\nDTSTART:19700405T030000\r\nRRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU\r\nTZOFFSETFROM:+1030\r\nTZOFFSETTO:+0930\r\nTZNAME:ACST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:19701004T020000\r\nRRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU\r\nTZOFFSETFROM:+0930\r\nTZOFFSETTO:+1030\r\nTZNAME:ACDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE',
+    'Australia/Darwin': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Darwin\r\nX-LIC-LOCATION:Australia/Darwin\r\nBEGIN:STANDARD\r\nDTSTART:19700101T000000\r\nTZOFFSETFROM:+0930\r\nTZOFFSETTO:+0930\r\nTZNAME:ACST\r\nEND:STANDARD\r\nEND:VTIMEZONE',
+    'Australia/Perth': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Perth\r\nX-LIC-LOCATION:Australia/Perth\r\nBEGIN:STANDARD\r\nDTSTART:19700101T000000\r\nTZOFFSETFROM:+0800\r\nTZOFFSETTO:+0800\r\nTZNAME:AWST\r\nEND:STANDARD\r\nEND:VTIMEZONE',
+    'Australia/Hobart': 'BEGIN:VTIMEZONE\r\nTZID:Australia/Hobart\r\nX-LIC-LOCATION:Australia/Hobart\r\nBEGIN:STANDARD\r\nDTSTART:19700405T030000\r\nRRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU\r\nTZOFFSETFROM:+1100\r\nTZOFFSETTO:+1000\r\nTZNAME:AEST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:19701004T020000\r\nRRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU\r\nTZOFFSETFROM:+1000\r\nTZOFFSETTO:+1100\r\nTZNAME:AEDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE',
+    'Pacific/Auckland': 'BEGIN:VTIMEZONE\r\nTZID:Pacific/Auckland\r\nX-LIC-LOCATION:Pacific/Auckland\r\nBEGIN:STANDARD\r\nDTSTART:19700405T030000\r\nRRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU\r\nTZOFFSETFROM:+1300\r\nTZOFFSETTO:+1200\r\nTZNAME:NZST\r\nEND:STANDARD\r\nBEGIN:DAYLIGHT\r\nDTSTART:19700927T020000\r\nRRULE:FREQ=YEARLY;BYMONTH=9;BYDAY=-1SU\r\nTZOFFSETFROM:+1200\r\nTZOFFSETTO:+1300\r\nTZNAME:NZDT\r\nEND:DAYLIGHT\r\nEND:VTIMEZONE',
+  };
+  return defs[tz] || '';
 }
 function escapeICS(str: string): string {
   if (!str) return '';
