@@ -115,6 +115,7 @@ export function useComplianceDocumentTypes() {
       const { data, error } = await supabase
         .from('compliance_document_types')
         .select('*')
+        .order('name')
         .order('sort_order');
 
       if (error) throw error;

@@ -19,6 +19,7 @@ export function useOpsStatuses() {
         .from('ops_statuses' as any)
         .select('*')
         .eq('is_active', true)
+        .order('label', { ascending: true })
         .order('sort_order', { ascending: true });
       if (error) throw error;
       return data as unknown as OpsStatus[];
@@ -33,6 +34,7 @@ export function useAllOpsStatuses() {
       const { data, error } = await supabase
         .from('ops_statuses' as any)
         .select('*')
+        .order('label', { ascending: true })
         .order('sort_order', { ascending: true });
       if (error) throw error;
       return data as unknown as OpsStatus[];

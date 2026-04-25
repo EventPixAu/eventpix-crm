@@ -105,8 +105,8 @@ export function useAllDeliveryMethods() {
       const { data, error } = await supabase
         .from('delivery_methods_lookup')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as DeliveryMethod[];
@@ -183,8 +183,8 @@ export function useAllEquipmentCategories() {
       const { data, error } = await supabase
         .from('equipment_categories')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as EquipmentCategory[];
@@ -200,8 +200,8 @@ export function useActiveEquipmentCategories() {
         .from('equipment_categories')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as EquipmentCategory[];
@@ -280,8 +280,8 @@ export function useAllLocations() {
       const { data, error } = await supabase
         .from('locations')
         .select('*')
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as Location[];
@@ -297,8 +297,8 @@ export function useActiveLocations() {
         .from('locations')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order')
-        .order('name');
+        .order('name')
+        .order('sort_order');
       
       if (error) throw error;
       return data as Location[];
