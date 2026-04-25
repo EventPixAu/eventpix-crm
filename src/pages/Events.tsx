@@ -6,6 +6,7 @@ import {
   Calendar,
   ChevronRight,
   Clock,
+  AlertTriangle,
   MapPin,
   Plus,
   Search,
@@ -41,6 +42,18 @@ export default function Events() {
   const [statusFilter, setStatusFilter] = useState('current');
   const [deliveryFilter, setDeliveryFilter] = useState('all');
 
+  const { data: eventSessions = [] } = useQuery({
+    queryKey: ['event-list-sessions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_sessions')
+        .select('event_id, session_date')
+        .not('event_id', 'is', null);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch assignment counts for all events
   const { data: assignmentCounts = {} } = useQuery({
     queryKey: ['event-assignment-counts'],
@@ -71,6 +84,21 @@ export default function Events() {
       return acc;
     }, {} as Record<string, string>);
   }, [deliveryMethods]);
+
+  const eventsWithDateMismatch = useMemo(() => {
+    const sessionsByEvent = eventSessions.reduce((acc, session) => {
+      if (!session.event_id || !session.session_date) return acc;
+      if (!acc[session.event_id]) acc[session.event_id] = [];
+      acc[session.event_id].push(session.session_date);
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    return events.reduce((acc, event) => {
+      const sessionDates = sessionsByEvent[event.id] || [];
+      acc[event.id] = sessionDates.length > 0 && !sessionDates.includes(event.event_date);
+      return acc;
+    }, {} as Record<string, boolean>);
+  }, [events, eventSessions]);
 
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
@@ -236,6 +264,15 @@ export default function Events() {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium truncate">{event.event_name}</h3>
                       <StatusBadge status={getEventStatus(event.event_date, event)} />
+                      {eventsWithDateMismatch[event.id] && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border border-destructive/50 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
+                          title="Start Date does not match any session date"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          Date mismatch
+                        </span>
+                      )}
                       {isAdmin && (
                         <>
                           <OpsStatusBadge status={(event as any).ops_status} />
