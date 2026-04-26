@@ -241,6 +241,30 @@ export default function Staff() {
     }
   };
 
+  const handleReactivateMember = async (member: UnifiedTeamMember) => {
+    try {
+      if (member.source === 'staff') {
+        const { error } = await supabase
+          .from('staff')
+          .update({ status: 'active' })
+          .eq('id', member.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['staff'] });
+      } else {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ is_active: true, status: 'active' })
+          .eq('id', member.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        queryClient.invalidateQueries({ queryKey: ['staff-directory'] });
+      }
+      toast({ title: 'Team member reactivated' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Failed to reactivate', description: err.message });
+    }
+  };
+
   const handleCreateStaff = async () => {
     if (!newStaff.name || !newStaff.email) {
       toast({ variant: 'destructive', title: 'Name and email are required' });
@@ -270,7 +294,7 @@ export default function Staff() {
     <AppLayout>
       <PageHeader
         title="Team"
-        description={`${unifiedTeamMembers.length} team members`}
+        description={`${activeTeamCount} active team members${inactiveTeamCount ? ` • ${inactiveTeamCount} inactive` : ''}`}
         actions={
           isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
