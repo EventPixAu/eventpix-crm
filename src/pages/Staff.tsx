@@ -440,6 +440,17 @@ export default function Staff() {
                 <SelectItem value="assistant">Assistant</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'active' | 'inactive' | 'all')}>
+              <SelectTrigger className="w-full sm:w-40 bg-card border-border">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
+              </SelectContent>
+            </Select>
             
             {/* Location Filter */}
             <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
@@ -630,6 +641,17 @@ export default function Staff() {
                                       </DropdownMenuItem>
                                     ) : null;
                                   })()}
+                                  {member.status === 'inactive' && (
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleReactivateMember(member);
+                                      }}
+                                    >
+                                      <UserCheck className="h-4 w-4 mr-2" />
+                                      Reactivate
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={(e) => {
