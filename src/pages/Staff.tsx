@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronRight, FileCheck, Mail, MapPin, MoreVertical, Phone, Plus, Search, Send, Trash2, UserCircle, UserPlus, Users, X } from 'lucide-react';
+import { Check, ChevronRight, FileCheck, Mail, MapPin, MoreVertical, Phone, Plus, Search, Send, Trash2, UserCheck, UserCircle, UserPlus, Users, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -103,6 +103,7 @@ export default function Staff() {
   
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
   const [locationFilter, setLocationFilter] = useState('');
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -146,7 +147,7 @@ export default function Staff() {
       phone: p.phone || null,
       location: p.location || null,
       role: (['photographer', 'videographer', 'assistant'].includes(userRolesMap.get(p.id) || '') ? userRolesMap.get(p.id) : 'photographer') as 'photographer' | 'videographer' | 'assistant',
-      status: (p.status === 'inactive' ? 'inactive' : 'active') as 'active' | 'inactive',
+      status: (p.status === 'inactive' || p.is_active === false ? 'inactive' : 'active') as 'active' | 'inactive',
       user_id: p.id, // Profile ID IS the user ID
       source: 'profile' as const,
       notes: null,
@@ -175,7 +176,7 @@ export default function Staff() {
     return [...profileMembers, ...unlinkedStaff].sort((a, b) => 
       a.name.localeCompare(b.name)
     );
-  }, [profiles, staff]);
+  }, [profiles, staff, userRolesMap]);
 
   const filteredStaff = unifiedTeamMembers.filter((member) => {
     const searchLower = search.toLowerCase();
@@ -185,10 +186,14 @@ export default function Staff() {
       (member.phone && member.phone.toLowerCase().includes(searchLower)) ||
       (member.location && member.location.toLowerCase().includes(searchLower));
     const matchesRole = roleFilter === 'all' || member.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
     const matchesLocation = !locationFilter || 
       (member.location && member.location.toLowerCase().includes(locationFilter.toLowerCase()));
-    return matchesSearch && matchesRole && matchesLocation;
+    return matchesSearch && matchesRole && matchesStatus && matchesLocation;
   });
+
+  const activeTeamCount = unifiedTeamMembers.filter((member) => member.status === 'active').length;
+  const inactiveTeamCount = unifiedTeamMembers.filter((member) => member.status === 'inactive').length;
 
   const selectedStaff = unifiedTeamMembers.filter(s => selectedIds.has(s.id));
 
