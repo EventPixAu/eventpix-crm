@@ -1042,6 +1042,44 @@ export default function EventSeriesDetail() {
                         .eq('event_series_id', id);
                       
                       if (updateError) throw updateError;
+
+                      for (const event of events) {
+                        const { data: existingSession } = await supabase
+                          .from('event_sessions')
+                          .select('id')
+                          .eq('event_id', event.id)
+                          .order('sort_order', { ascending: true })
+                          .order('session_date', { ascending: true })
+                          .limit(1)
+                          .maybeSingle();
+
+                        if (existingSession?.id) {
+                          const { error: sessionUpdateError } = await supabase
+                            .from('event_sessions')
+                            .update({
+                              start_time: editStartTime || null,
+                              end_time: editEndTime || null,
+                            } as any)
+                            .eq('id', existingSession.id);
+
+                          if (sessionUpdateError) throw sessionUpdateError;
+                        } else {
+                          const { error: sessionInsertError } = await supabase
+                            .from('event_sessions')
+                            .insert({
+                              event_id: event.id,
+                              session_date: event.event_date,
+                              start_time: editStartTime || null,
+                              end_time: editEndTime || null,
+                              venue_name: event.venue_name || null,
+                              venue_address: event.venue_address || null,
+                              label: 'Main Session',
+                              sort_order: 0,
+                            } as any);
+
+                          if (sessionInsertError) throw sessionInsertError;
+                        }
+                      }
                       
                       // Sync default contact to all events
                       if (editDefaultContactId) {
