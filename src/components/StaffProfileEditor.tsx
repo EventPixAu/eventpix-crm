@@ -81,6 +81,7 @@ function hasBasicProfileInfo(data: Record<string, any>): boolean {
 const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 const SENIORITY_LEVELS = ['junior', 'mid', 'senior', 'lead'];
 const STATUS_OPTIONS = ['active', 'inactive', 'on_leave'];
+const TEAM_CATEGORY_OPTIONS = ['Admin', 'Assistant', 'Photographer', 'Videographer', 'Photog/Video'];
 
 export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId }: StaffProfileEditorProps) {
   const [open, setOpen] = useState(false);
@@ -459,7 +460,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                     </SelectTrigger>
                     <SelectContent>
                       {roles
-                        .filter((role) => ['Photographer', 'Videographer', 'Photographer + Videographer', 'Assistant'].includes(role.name))
+                        .filter((role) => TEAM_CATEGORY_OPTIONS.includes(role.name))
                         .map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}
