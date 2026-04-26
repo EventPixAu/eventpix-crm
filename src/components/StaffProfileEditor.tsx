@@ -32,6 +32,7 @@ interface StaffProfile {
   full_name: string | null;
   email: string;
   phone: string | null;
+  role?: 'photographer' | 'videographer' | 'assistant' | null;
   home_city: string | null;
   home_state: string | null;
   status: string | null;
@@ -81,6 +82,7 @@ function hasBasicProfileInfo(data: Record<string, any>): boolean {
 const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 const SENIORITY_LEVELS = ['junior', 'mid', 'senior', 'lead'];
 const STATUS_OPTIONS = ['active', 'inactive', 'on_leave'];
+const LEGACY_ROLE_OPTIONS = ['photographer', 'videographer', 'assistant'] as const;
 const TEAM_CATEGORY_OPTIONS = ['Admin', 'Assistant', 'Photographer', 'Videographer', 'Photog/Video'];
 
 export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId }: StaffProfileEditorProps) {
@@ -89,6 +91,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
     full_name: profile.full_name || '',
     email: profile.email || '',
     phone: profile.phone || '',
+    role: profile.role || 'photographer',
     home_city: profile.home_city || '',
     home_state: profile.home_state || '',
     status: profile.status || 'active',
@@ -132,6 +135,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             name: data.full_name || null,
             email: data.email || null,
             phone: data.phone || null,
+            role: data.role,
             status: data.status === 'active' ? 'active' : 'inactive',
             notes: data.notes_internal || null,
             location: data.location || null,
@@ -230,6 +234,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         full_name: profile.full_name || '',
         email: profile.email || '',
         phone: profile.phone || '',
+        role: profile.role || 'photographer',
         home_city: profile.home_city || '',
         home_state: profile.home_state || '',
         status: profile.status || 'active',
