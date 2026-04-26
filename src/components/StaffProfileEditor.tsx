@@ -32,6 +32,7 @@ interface StaffProfile {
   full_name: string | null;
   email: string;
   phone: string | null;
+  role?: 'photographer' | 'videographer' | 'assistant' | null;
   home_city: string | null;
   home_state: string | null;
   status: string | null;
@@ -81,6 +82,7 @@ function hasBasicProfileInfo(data: Record<string, any>): boolean {
 const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 const SENIORITY_LEVELS = ['junior', 'mid', 'senior', 'lead'];
 const STATUS_OPTIONS = ['active', 'inactive', 'on_leave'];
+const LEGACY_ROLE_OPTIONS = ['photographer', 'videographer', 'assistant'] as const;
 const TEAM_CATEGORY_OPTIONS = ['Admin', 'Assistant', 'Photographer', 'Videographer', 'Photog/Video'];
 
 export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId }: StaffProfileEditorProps) {
@@ -89,6 +91,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
     full_name: profile.full_name || '',
     email: profile.email || '',
     phone: profile.phone || '',
+    role: profile.role || 'photographer',
     home_city: profile.home_city || '',
     home_state: profile.home_state || '',
     status: profile.status || 'active',
@@ -132,6 +135,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
             name: data.full_name || null,
             email: data.email || null,
             phone: data.phone || null,
+            role: data.role,
             status: data.status === 'active' ? 'active' : 'inactive',
             notes: data.notes_internal || null,
             location: data.location || null,
@@ -230,6 +234,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
         full_name: profile.full_name || '',
         email: profile.email || '',
         phone: profile.phone || '',
+        role: profile.role || 'photographer',
         home_city: profile.home_city || '',
         home_state: profile.home_state || '',
         status: profile.status || 'active',
@@ -448,15 +453,34 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">Role & Status</h3>
             <div className="grid grid-cols-2 gap-4">
-               {sourceTable !== 'staff' && (
+              {sourceTable === 'staff' ? (
                 <div>
-                  <Label htmlFor="default_role_id">Team category</Label>
+                  <Label htmlFor="role">Role</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value: typeof LEGACY_ROLE_OPTIONS[number]) => setFormData({ ...formData, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEGACY_ROLE_OPTIONS.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          <span className="capitalize">{role}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div>
+                  <Label htmlFor="default_role_id">Role</Label>
                   <Select
                     value={formData.default_role_id}
                     onValueChange={(value) => setFormData({ ...formData, default_role_id: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select team category" />
+                      <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       {roles
@@ -470,7 +494,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                   </Select>
                 </div>
               )}
-              <div className={sourceTable === 'staff' ? 'col-span-2' : ''}>
+              <div>
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
