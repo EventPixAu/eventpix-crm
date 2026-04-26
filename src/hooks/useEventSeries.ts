@@ -346,6 +346,23 @@ export function useBulkCreateEvents() {
             results.failed++;
             results.errors.push(`${event.event_name}: Insert returned no data`);
           } else {
+          const { error: sessionError } = await supabase
+            .from('event_sessions')
+            .insert({
+              event_id: data.id,
+              session_date: event.event_date,
+              start_time: event.start_time || null,
+              end_time: event.end_time || null,
+              venue_name: event.venue_name || null,
+              venue_address: event.venue_address || null,
+              label: 'Main Session',
+              sort_order: 0,
+            } as any);
+
+          if (sessionError) {
+            console.error('Bulk create session error:', event.event_name, sessionError);
+            results.errors.push(`${event.event_name}: Event created but session was not created (${sessionError.message})`);
+          }
             results.created++;
           }
         } catch (err: any) {
@@ -361,6 +378,7 @@ export function useBulkCreateEvents() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['series-events'] });
       queryClient.invalidateQueries({ queryKey: ['event-series-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['event-sessions'] });
       
       if (results.created > 0) {
         toast.success(`Created ${results.created} event(s)`);
