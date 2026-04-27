@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import eventpixLogo from '@/assets/eventpix-logo.png';
+import type { Session } from '@supabase/supabase-js';
 
 interface Company {
   id: string;
@@ -79,13 +80,33 @@ export default function ClientPortalDashboard() {
 
   useEffect(() => {
     let mounted = true;
+    let loadedForUserId: string | null = null;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
+    const clearRedirectTimer = () => {
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+        redirectTimer = null;
+      }
+    };
+
+    const scheduleLoginRedirect = () => {
+      clearRedirectTimer();
+      redirectTimer = setTimeout(() => {
+        if (mounted && !loadedForUserId) navigate('/client-login');
+      }, 2500);
+    };
+
+    async function loadPortalData(session: Session | null) {
       if (!session) {
-        navigate('/client-login');
+        scheduleLoginRedirect();
         return;
       }
+
+      clearRedirectTimer();
+
+      if (loadedForUserId === session.user.id) return;
+      loadedForUserId = session.user.id;
 
       setUserEmail(session.user.email ?? null);
 
@@ -113,8 +134,25 @@ export default function ClientPortalDashboard() {
       setLoading(false);
     }
 
-    load();
-    return () => { mounted = false; };
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void loadPortalData(nextSession);
+    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => loadPortalData(session))
+      .catch((sessionError) => {
+        console.error('Portal session error:', sessionError);
+        scheduleLoginRedirect();
+      });
+
+    return () => {
+      mounted = false;
+      clearRedirectTimer();
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSignOut = async () => {
