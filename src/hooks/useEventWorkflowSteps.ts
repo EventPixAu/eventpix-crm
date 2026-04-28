@@ -7,6 +7,10 @@ type EventWorkflowStep = Database['public']['Tables']['event_workflow_steps']['R
 
 export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
   assigned_to: string | null;
+  default_staff_role_id?: string | null;
+  default_staff_role?: {
+    name: string;
+  } | null;
   completed_by_profile?: {
     full_name: string | null;
     email: string;
@@ -51,9 +55,40 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         }
       }
 
+      // Event Type Defaults create instance-only workflow rows, so enrich them
+      // from matching master steps to show the configured default role badge.
+      const stepLabels = [...new Set((data || []).map((s: any) => s.step_label).filter(Boolean))];
+      const masterRoleMap: Record<string, { id: string | null; name: string } | null> = {};
+      if (stepLabels.length > 0) {
+        const { data: masterSteps } = await supabase
+          .from('workflow_master_steps')
+          .select('label, default_staff_role_id')
+          .in('label', stepLabels);
+
+        const roleIds = [...new Set((masterSteps || []).map((s: any) => s.default_staff_role_id).filter(Boolean))];
+        let roleMap: Record<string, string> = {};
+        if (roleIds.length > 0) {
+          const { data: roles } = await supabase
+            .from('staff_roles')
+            .select('id, name')
+            .in('id', roleIds);
+          roleMap = Object.fromEntries((roles || []).map((r: any) => [r.id, r.name]));
+        }
+
+        (masterSteps || []).forEach((s: any) => {
+          masterRoleMap[s.label] = s.default_staff_role_id
+            ? { id: s.default_staff_role_id, name: roleMap[s.default_staff_role_id] || 'Team' }
+            : null;
+        });
+      }
+
       return (data || []).map((s: any) => ({
         ...s,
         assigned_to_profile: s.assigned_to ? profileMap[s.assigned_to] || null : null,
+        default_staff_role_id: masterRoleMap[s.step_label]?.id || null,
+        default_staff_role: masterRoleMap[s.step_label]
+          ? { name: masterRoleMap[s.step_label]!.name }
+          : null,
       })) as EventWorkflowStepWithProfile[];
     },
     enabled: !!eventId,
