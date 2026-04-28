@@ -124,6 +124,9 @@ function StepItem({
   const isAuto = step.completion_type === 'auto';
   const isOverdue = step.due_date && !step.is_completed && isPast(parseISO(step.due_date)) && !isToday(parseISO(step.due_date));
   const isDueToday = step.due_date && isToday(parseISO(step.due_date));
+  const assignedRoleName = step.assigned_to
+    ? userRoleMap[step.assigned_to]
+    : step.default_staff_role?.name;
   
   const handleToggleComplete = () => {
     if (isAuto) return; // Can't manually toggle auto steps
@@ -187,7 +190,7 @@ function StepItem({
           <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2 flex-1 min-w-0">
-                <RoleAbbrevBadge roleName={step.assigned_to ? userRoleMap[step.assigned_to] : undefined} />
+                <RoleAbbrevBadge roleName={assignedRoleName} />
                 {isAdmin ? (
                   <button
                     onClick={() => onEdit(step)}
