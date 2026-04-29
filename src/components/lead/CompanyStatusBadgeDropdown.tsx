@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ChevronDown, Check, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 

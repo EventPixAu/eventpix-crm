@@ -78,7 +78,7 @@ import {
   useBulkApplyTemplate,
 } from '@/hooks/useWorkflowTemplates';
 import { useDeleteWorksheet } from '@/hooks/useWorksheets';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useEventTypes } from '@/hooks/useLookups';
 import { Database } from '@/integrations/supabase/types';
 
