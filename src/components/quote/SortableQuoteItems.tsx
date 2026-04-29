@@ -22,7 +22,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -50,6 +50,7 @@ interface SortableRowProps {
   onEdit: (item: QuoteItem) => void;
   onDelete: (itemId: string) => void;
   onGroupChange: (itemId: string, group: string) => void;
+  isDeleting?: boolean;
 }
 
 function SortableRow({
@@ -60,6 +61,7 @@ function SortableRow({
   onEdit,
   onDelete,
   onGroupChange,
+  isDeleting = false,
 }: SortableRowProps) {
   const {
     attributes,
