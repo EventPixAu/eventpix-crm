@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/eventpix-logo.png';
 
@@ -38,7 +38,6 @@ interface PublicQuoteData {
 
 export default function PublicAcceptQuote() {
   const { token } = useParams<{ token: string }>();
-  const { toast } = useToast();
   
   const [quote, setQuote] = useState<PublicQuoteData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,10 +92,7 @@ export default function PublicAcceptQuote() {
 
   const handleAccept = async () => {
     if (!token || !formData.name.trim() || !formData.email.trim()) {
-      toast({ 
-        title: 'Please fill in all fields', 
-        variant: 'destructive' 
-      });
+      toast.error('Please fill in all fields');
       return;
     }
 
@@ -118,7 +114,7 @@ export default function PublicAcceptQuote() {
       }
 
       setAccepted(true);
-      toast({ title: 'Budget accepted successfully!' });
+      toast.success('Budget accepted successfully!');
 
       // Send confirmation emails (fire and forget - don't block UI)
       if (quote?.id) {
@@ -133,11 +129,7 @@ export default function PublicAcceptQuote() {
         });
       }
     } catch (err: any) {
-      toast({ 
-        title: 'Failed to accept quote', 
-        description: err.message,
-        variant: 'destructive' 
-      });
+      toast.error('Failed to accept quote', { description: err.message });
     } finally {
       setAccepting(false);
     }

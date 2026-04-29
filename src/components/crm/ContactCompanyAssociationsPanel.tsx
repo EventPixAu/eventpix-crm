@@ -41,7 +41,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useJobTitles, useCreateJobTitle } from '@/hooks/useJobTitles';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ContactCompanyAssociationsPanelProps {
   contactId: string;
@@ -64,8 +64,6 @@ export function ContactCompanyAssociationsPanel({
   const [customTitle, setCustomTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
-  
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: associations = [], isLoading } = useContactAssociations(contactId);
@@ -170,9 +168,9 @@ export function ContactCompanyAssociationsPanel({
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       
-      toast({ title: 'Primary company updated' });
+      toast.success('Primary company updated');
     } catch (error) {
-      toast({ title: 'Failed to update primary company', variant: 'destructive' });
+      toast.error('Failed to update primary company');
     }
   };
 

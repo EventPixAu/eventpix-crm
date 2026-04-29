@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SignaturePad } from '@/components/ui/signature-pad';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/eventpix-logo.png';
 
@@ -33,7 +33,6 @@ interface PublicContractData {
 
 export default function PublicAcceptContract() {
   const { token } = useParams<{ token: string }>();
-  const { toast } = useToast();
   
   const [contract, setContract] = useState<PublicContractData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,19 +89,12 @@ export default function PublicAcceptContract() {
 
   const handleSign = async () => {
     if (!token || !formData.name.trim() || !formData.email.trim() || !agreedToTerms) {
-      toast({ 
-        title: 'Please fill in all fields and agree to terms', 
-        variant: 'destructive' 
-      });
+      toast.error('Please fill in all fields and agree to terms');
       return;
     }
 
     if (!signatureData) {
-      toast({ 
-        title: 'Please sign the contract', 
-        description: 'Draw your signature in the signature pad above',
-        variant: 'destructive' 
-      });
+      toast.error('Please sign the contract', { description: 'Draw your signature in the signature pad above' });
       return;
     }
 
@@ -125,13 +117,9 @@ export default function PublicAcceptContract() {
       }
 
       setSigned(true);
-      toast({ title: 'Contract signed successfully!' });
+      toast.success('Contract signed successfully!');
     } catch (err: any) {
-      toast({ 
-        title: 'Failed to sign contract', 
-        description: err.message,
-        variant: 'destructive' 
-      });
+      toast.error('Failed to sign contract', { description: err.message });
     } finally {
       setSigning(false);
     }

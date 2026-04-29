@@ -59,7 +59,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   Contract,
   useLeadContracts,
@@ -115,7 +115,6 @@ export function ContractsPanel({
   eventDate,
   defaultOpen = false,
 }: ContractsPanelProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -227,7 +226,7 @@ export function ContractsPanel({
   
   const handleCreateContract = async () => {
     if (!selectedTemplateId || !contractTitle) {
-      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      toast.error('Please fill in all required fields');
       return;
     }
     
@@ -336,7 +335,7 @@ export function ContractsPanel({
         title: `${contract.title} (Copy)`,
         status: 'draft',
       });
-      toast({ title: 'Contract duplicated' });
+      toast.success('Contract duplicated');
     } catch (error) {
       // Error handled by hook
     }
@@ -356,7 +355,7 @@ export function ContractsPanel({
     if (contract.public_token) {
       const publicUrl = `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`;
       await navigator.clipboard.writeText(publicUrl);
-      toast({ title: 'Signing link copied to clipboard' });
+      toast.success('Signing link copied to clipboard');
     }
   };
   
@@ -390,7 +389,7 @@ export function ContractsPanel({
   // Handle saving edited contract content
   const handleSaveContract = async () => {
     if (!selectedContract || !editContractTitle) {
-      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      toast.error('Please fill in all required fields');
       return;
     }
     
@@ -562,7 +561,7 @@ export function ContractsPanel({
                             size="sm"
                             onClick={async () => {
                               try {
-                                toast({ title: 'Generating PDF...' });
+                                toast.info('Generating PDF...');
                                 const blob = await htmlToPdfBlob(contract.rendered_html!, contract.title);
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
@@ -570,9 +569,9 @@ export function ContractsPanel({
                                 a.download = `${(eventName || leadName || 'Agreement').replace(/[^a-zA-Z0-9 ]/g, '')} Agreement.pdf`;
                                 a.click();
                                 URL.revokeObjectURL(url);
-                                toast({ title: 'PDF downloaded' });
+                                toast.success('PDF downloaded');
                               } catch (err: any) {
-                                toast({ title: 'Failed to generate PDF', description: err.message, variant: 'destructive' });
+                                toast.error('Failed to generate PDF', { description: err.message });
                               }
                             }}
                             title="Download PDF"

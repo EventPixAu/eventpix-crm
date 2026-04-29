@@ -39,7 +39,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -163,7 +163,6 @@ interface StaffRole {
 }
 
 export function CrewChecklistTemplatesManager() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingTemplate, setEditingTemplate] = useState<CrewChecklistTemplate | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
@@ -250,11 +249,11 @@ export function CrewChecklistTemplatesManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates-admin'] });
       queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates'] });
-      toast({ title: isCreateMode ? 'Template created' : 'Template updated' });
+      toast.success(isCreateMode ? 'Template created' : 'Template updated');
       closeDialog();
     },
     onError: (error: Error) => {
-      toast({ title: 'Error saving template', description: error.message, variant: 'destructive' });
+      toast.error('Error saving template', { description: error.message });
     },
   });
 
@@ -270,11 +269,11 @@ export function CrewChecklistTemplatesManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates-admin'] });
       queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates'] });
-      toast({ title: 'Template deleted' });
+      toast.success('Template deleted');
       setDeleteConfirmId(null);
     },
     onError: (error: Error) => {
-      toast({ title: 'Error deleting template', description: error.message, variant: 'destructive' });
+      toast.error('Error deleting template', { description: error.message });
     },
   });
 
@@ -295,10 +294,10 @@ export function CrewChecklistTemplatesManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates-admin'] });
       queryClient.invalidateQueries({ queryKey: ['crew-checklist-templates'] });
-      toast({ title: 'Template duplicated' });
+      toast.success('Template duplicated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Error duplicating template', description: error.message, variant: 'destructive' });
+      toast.error('Error duplicating template', { description: error.message });
     },
   });
 
@@ -331,7 +330,7 @@ export function CrewChecklistTemplatesManager() {
 
   const handleSave = () => {
     if (!formName.trim()) {
-      toast({ title: 'Template name is required', variant: 'destructive' });
+      toast.error('Template name is required');
       return;
     }
 
@@ -340,7 +339,7 @@ export function CrewChecklistTemplatesManager() {
       .map((item, index) => ({ item_text: item.item_text.trim(), sort_order: index + 1 }));
 
     if (validItems.length === 0) {
-      toast({ title: 'At least one checklist item is required', variant: 'destructive' });
+      toast.error('At least one checklist item is required');
       return;
     }
 

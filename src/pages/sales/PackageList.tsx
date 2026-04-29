@@ -49,7 +49,7 @@ import {
 } from '@/hooks/usePackages';
 import { useAtomicProducts, useUpdateProduct, useDeleteProduct, type Product } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface PackageFormData {
   name: string;
@@ -191,7 +191,6 @@ function PackageItemsEditor({
 
 export default function PackageList() {
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
   const { data: packages, isLoading } = usePackages();
   const createPackage = useCreatePackage();
   const updateProduct = useUpdateProduct();
@@ -248,7 +247,7 @@ export default function PackageList() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      toast({ title: 'Package name is required', variant: 'destructive' });
+      toast.error('Package name is required');
       return;
     }
     

@@ -37,7 +37,7 @@ import {
 } from '@/hooks/useWorkflowInstances';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface LeadWorkflowRailV2Props {
   leadId: string;
@@ -294,7 +294,6 @@ export function LeadWorkflowRailV2({
   hasExistingWorkflow = false,
 }: LeadWorkflowRailV2Props) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: instance, isLoading, refetch } = useLeadWorkflowInstance(leadId);
   
@@ -362,10 +361,7 @@ export function LeadWorkflowRailV2({
         (payload) => {
           const newData = payload.new as { converted_job_id?: string };
           if (newData.converted_job_id) {
-            toast({ 
-              title: 'Lead converted to Job!',
-              description: 'Redirecting to the new job...'
-            });
+            toast.success('Lead converted to Job!', { description: 'Redirecting to the new job...' });
             // Small delay to let user see the toast
             setTimeout(() => {
               navigate(`/events/${newData.converted_job_id}`);

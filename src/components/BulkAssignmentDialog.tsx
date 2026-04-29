@@ -27,7 +27,7 @@ import { useCreateAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import type { CalendarEvent } from '@/hooks/useCalendar';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGuardrails';
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
@@ -83,7 +83,6 @@ export function BulkAssignmentDialog({
   const { data: roles = [] } = useStaffRoles();
   const sendNotification = useSendNotification();
   const checkGuardrails = useCheckAssignmentGuardrails();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Check conflicts when users are selected
@@ -273,25 +272,14 @@ export function BulkAssignmentDialog({
       const failCount = newResults.filter((r) => !r.success).length;
 
       if (failCount === 0) {
-        toast({
-          title: 'Bulk assignment complete',
-          description: `Successfully assigned ${selectedUsers.length} staff to ${selectedEvents.length} events`,
-        });
+        toast.success('Bulk assignment complete', { description: `Successfully assigned ${selectedUsers.length} staff to ${selectedEvents.length} events` });
         handleClose();
         onComplete();
       } else {
-        toast({
-          variant: successCount > 0 ? 'default' : 'destructive',
-          title: 'Bulk assignment completed with issues',
-          description: `${successCount} successful, ${failCount} failed`,
-        });
+        toast.success('Bulk assignment completed with issues', { description: `${successCount} successful, ${failCount} failed` });
       }
     } catch (err: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Bulk assignment failed',
-        description: err.message,
-      });
+      toast.error('Bulk assignment failed', { description: err.message });
     } finally {
       setIsAssigning(false);
     }

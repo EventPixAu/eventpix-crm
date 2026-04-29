@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 
 export default function ResetPassword() {
@@ -18,7 +18,6 @@ export default function ResetPassword() {
   const [isReady, setIsReady] = useState(false);
 
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -49,11 +48,7 @@ export default function ResetPassword() {
       if (session) {
         setIsReady(true);
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid or expired link',
-          description: 'Please request a new password reset link.',
-        });
+        toast.error('Invalid or expired link', { description: 'Please request a new password reset link.' });
         navigate('/auth');
       }
     }, 5000);
@@ -80,20 +75,12 @@ export default function ResetPassword() {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast({
-        variant: 'destructive',
-        title: 'Passwords do not match',
-        description: 'Please ensure both passwords are the same.',
-      });
+      toast.error('Passwords do not match', { description: 'Please ensure both passwords are the same.' });
       return;
     }
 
     if (password.length < 6) {
-      toast({
-        variant: 'destructive',
-        title: 'Password too short',
-        description: 'Password must be at least 6 characters.',
-      });
+      toast.error('Password too short', { description: 'Password must be at least 6 characters.' });
       return;
     }
 
@@ -103,17 +90,10 @@ export default function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password });
       
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to reset password',
-          description: error.message,
-        });
+        toast.error('Failed to reset password', { description: error.message });
       } else {
         setIsSuccess(true);
-        toast({
-          title: 'Password updated',
-          description: 'Your password has been successfully reset.',
-        });
+        toast.success('Password updated', { description: 'Your password has been successfully reset.' });
         
         // Redirect to main app after short delay
         setTimeout(() => navigate('/'), 2000);

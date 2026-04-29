@@ -89,7 +89,7 @@ import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/use
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
@@ -109,7 +109,6 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
   const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
   const { data: templates = [] } = useEditingInstructionTemplates();
 
   const handleTemplateChange = async (tid: string) => {
@@ -119,9 +118,9 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
     setSaving(true);
     try {
       await onSave(template.content, tid);
-      toast({ title: 'Editing instructions applied from template' });
+      toast.success('Editing instructions applied from template');
     } catch {
-      toast({ variant: 'destructive', title: 'Failed to apply template' });
+      toast.error('Failed to apply template');
     } finally {
       setSaving(false);
     }
@@ -132,9 +131,9 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
     try {
       await onSave(text);
       setEditing(false);
-      toast({ title: 'Editing instructions saved' });
+      toast.success('Editing instructions saved');
     } catch {
-      toast({ variant: 'destructive', title: 'Failed to save' });
+      toast.error('Failed to save');
     } finally {
       setSaving(false);
     }
@@ -197,7 +196,6 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
   const { data: allAllowances = [] } = usePayAllowances();
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -265,7 +263,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
       quantity: 1,
     });
     if (error) {
-      toast({ title: 'Failed to add extra', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add extra', { description: error.message });
     } else {
       queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
     }
@@ -275,7 +273,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
   const handleRemoveExtra = async (id: string) => {
     const { error } = await supabase.from('assignment_allowances').delete().eq('id', id);
     if (error) {
-      toast({ title: 'Failed to remove', description: error.message, variant: 'destructive' });
+      toast.error('Failed to remove', { description: error.message });
     } else {
       queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
     }
@@ -287,7 +285,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
       .update({ override_amount: newAmount })
       .eq('id', aaId);
     if (error) {
-      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update', { description: error.message });
     } else {
       queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
     }
@@ -300,7 +298,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
       .update({ notes })
       .eq('id', aaId);
     if (error) {
-      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update', { description: error.message });
     } else {
       queryClient.invalidateQueries({ queryKey: ['assignment-allowances', assignment.id] });
     }
@@ -426,7 +424,6 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
 function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [editingRole, setEditingRole] = useState(false);
   const { data: staffRoles = [] } = useStaffRoles();
 
@@ -441,10 +438,10 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
       .update({ staff_role_id: newRoleId })
       .eq('id', assignment.id);
     if (error) {
-      toast({ title: 'Failed to update role', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update role', { description: error.message });
     } else {
       queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-      toast({ title: 'Role updated' });
+      toast.success('Role updated');
     }
     setEditingRole(false);
   };
@@ -522,12 +519,12 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
                   .eq('id', assignment.id)
                   .select();
                 if (error) {
-                  toast({ title: 'Failed to confirm', description: error.message, variant: 'destructive' });
+                  toast.error('Failed to confirm', { description: error.message });
                 } else if (!updated || updated.length === 0) {
-                  toast({ title: 'Failed to confirm', description: 'No rows updated. Check permissions.', variant: 'destructive' });
+                  toast.error('Failed to confirm', { description: 'No rows updated. Check permissions.' });
                 } else {
                   queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-                  toast({ title: 'Marked as confirmed' });
+                  toast.success('Marked as confirmed');
                 }
               }}
               title="Mark as confirmed"
@@ -585,10 +582,10 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
                       .delete()
                       .eq('id', assignment.id);
                     if (error) {
-                      toast({ title: 'Failed to remove', description: error.message, variant: 'destructive' });
+                      toast.error('Failed to remove', { description: error.message });
                     } else {
                       queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-                      toast({ title: `${name} removed from event` });
+                      toast.success(`${name} removed from event`);
                     }
                   }}
                 >
@@ -621,7 +618,6 @@ export default function EventDetail() {
   const updateEvent = useUpdateEvent();
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
@@ -1354,7 +1350,7 @@ export default function EventDetail() {
                           const baseUrl = getPublicBaseUrl();
                           window.open(`${baseUrl}/event/${token}`, '_blank');
                         } else {
-                          toast({ title: 'Portal token not found', description: 'Try refreshing the page.', variant: 'destructive' });
+                          toast.error('Portal token not found', { description: 'Try refreshing the page.' });
                         }
                       }}
                     >

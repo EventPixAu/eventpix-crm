@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 
@@ -22,7 +22,6 @@ export default function Auth() {
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && user) {
@@ -38,36 +37,21 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Sign in failed',
-            description: error.message,
-          });
+          toast.error('Sign in failed', { description: error.message });
         } else {
           navigate('/');
         }
       } else {
         if (!fullName.trim()) {
-          toast({
-            variant: 'destructive',
-            title: 'Name required',
-            description: 'Please enter your full name.',
-          });
+          toast.error('Name required', { description: 'Please enter your full name.' });
           setIsSubmitting(false);
           return;
         }
         const { error } = await signUp(email, password, fullName);
         if (error) {
-          toast({
-            variant: 'destructive',
-            title: 'Sign up failed',
-            description: error.message,
-          });
+          toast.error('Sign up failed', { description: error.message });
         } else {
-          toast({
-            title: 'Account created',
-            description: 'Please contact an admin to assign your role.',
-          });
+          toast.success('Account created', { description: 'Please contact an admin to assign your role.' });
           setIsLogin(true);
         }
       }
@@ -79,11 +63,7 @@ export default function Auth() {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      toast({
-        variant: 'destructive',
-        title: 'Email required',
-        description: 'Please enter your email address.',
-      });
+      toast.error('Email required', { description: 'Please enter your email address.' });
       return;
     }
 
@@ -94,17 +74,10 @@ export default function Auth() {
       });
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to send reset email',
-          description: error.message,
-        });
+        toast.error('Failed to send reset email', { description: error.message });
       } else {
         setResetEmailSent(true);
-        toast({
-          title: 'Reset email sent',
-          description: 'Check your inbox for a password reset link.',
-        });
+        toast.success('Reset email sent', { description: 'Check your inbox for a password reset link.' });
       }
     } finally {
       setIsSubmitting(false);

@@ -43,7 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   useContractTemplates, 
   useCreateContractTemplate, 
@@ -63,7 +63,6 @@ import {
 } from '@/hooks/useTemplateArchive';
 
 export default function ContractTemplates() {
-  const { toast } = useToast();
   const { data: templates, isLoading } = useContractTemplates();
   const createTemplate = useCreateContractTemplate();
   const updateTemplate = useUpdateContractTemplate();
@@ -104,7 +103,7 @@ export default function ContractTemplates() {
 
   const handleCreate = async () => {
     if (!formData.name || !formData.body_text) {
-      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -136,7 +135,7 @@ export default function ContractTemplates() {
 
   const handleUpdate = async () => {
     if (!selectedTemplate || !formData.name || !formData.body_text) {
-      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -169,11 +168,7 @@ export default function ContractTemplates() {
     // Check if template is in use
     const usage = usageMap?.[selectedTemplate.id];
     if (usage?.isInUse) {
-      toast({ 
-        title: 'Cannot delete template', 
-        description: 'This template is in use by contracts. Archive it instead.',
-        variant: 'destructive'
-      });
+      toast.error('Cannot delete template', { description: 'This template is in use by contracts. Archive it instead.' });
       setIsDeleteOpen(false);
       return;
     }
@@ -202,7 +197,7 @@ export default function ContractTemplates() {
       body_html: template.body_html || '',
       is_active: true,
     });
-    toast({ title: 'Template duplicated' });
+    toast.success('Template duplicated');
   };
 
   // Filter templates based on archived status
@@ -233,7 +228,7 @@ export default function ContractTemplates() {
       // Keep original HTML for rollback
     });
 
-    toast({ title: 'Template converted to plain text' });
+    toast.success('Template converted to plain text');
     setIsConvertOpen(false);
     setSelectedTemplate(null);
   };

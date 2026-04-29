@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useDeliveryRecord, useCreateDeliveryRecord, useUpdateDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useDeliveryMethods } from '@/hooks/useLookups';
 import { useDeliveryGuardrails } from '@/hooks/useGuardrails';
@@ -25,7 +25,6 @@ interface DeliveryManagerProps {
 }
 
 export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
-  const { toast } = useToast();
   const { data: record, isLoading } = useDeliveryRecord(eventId);
   const { data: event } = useEvent(eventId);
   const { data: deliveryMethods = [] } = useDeliveryMethods();
@@ -80,11 +79,7 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
     
     // Check guardrail: Cannot mark delivered without a link
     if (!record.delivery_link && !deliveryLink) {
-      toast({
-        variant: 'destructive',
-        title: 'Delivery link required',
-        description: 'You must provide a delivery link before marking as delivered.',
-      });
+      toast.error('Delivery link required', { description: 'You must provide a delivery link before marking as delivered.' });
       return;
     }
     
@@ -93,20 +88,17 @@ export function DeliveryManager({ eventId, isAdmin }: DeliveryManagerProps) {
       delivered_at: new Date().toISOString(),
     });
     
-    toast({
-      title: 'Marked as delivered',
-      description: 'The delivery has been marked as complete.',
-    });
+    toast.success('Marked as delivered', { description: 'The delivery has been marked as complete.' });
   };
 
   const copyToClipboard = async (text: string, type: 'public' | 'delivery') => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedLink(type);
-      toast({ title: 'Copied to clipboard' });
+      toast.success('Copied to clipboard');
       setTimeout(() => setCopiedLink(null), 2000);
     } catch {
-      toast({ title: 'Failed to copy', variant: 'destructive' });
+      toast.error('Failed to copy');
     }
   };
 

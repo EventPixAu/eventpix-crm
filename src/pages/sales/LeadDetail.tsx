@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useUpdateQuote, useDeleteQuote } from '@/hooks/useSales';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,6 @@ import {
 export default function LeadDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   // Don't fetch data for "new" - it's not a valid UUID
   const isCreateMode = id === 'new';
@@ -231,7 +230,7 @@ export default function LeadDetail(): JSX.Element {
       }
       
       if (budgetLinks.length === 0) {
-        toast({ title: 'No budgets to send', variant: 'destructive' });
+        toast.error('No budgets to send');
         setIsSendingBudgets(false);
         return;
       }
@@ -253,7 +252,7 @@ export default function LeadDetail(): JSX.Element {
       );
       setIsSendBudgetsOpen(true);
     } catch (err: any) {
-      toast({ title: 'Failed to prepare budgets', description: err.message, variant: 'destructive' });
+      toast.error('Failed to prepare budgets', { description: err.message });
     } finally {
       setIsSendingBudgets(false);
     }
@@ -296,7 +295,7 @@ export default function LeadDetail(): JSX.Element {
                   if (leadToken) {
                     window.open(`${getPublicBaseUrl()}/lead/${leadToken}`, '_blank');
                   } else {
-                    toast({ title: 'Portal not available', description: 'No portal token found for this lead.' });
+                    toast.success('Portal not available', { description: 'No portal token found for this lead.' });
                   }
                 }
               }}
@@ -315,9 +314,9 @@ export default function LeadDetail(): JSX.Element {
                 if (token) {
                   const url = `${getPublicBaseUrl()}/${eventToken ? 'event' : 'lead'}/${token}`;
                   navigator.clipboard.writeText(url);
-                  toast({ title: 'Link copied', description: 'Portal link copied to clipboard.' });
+                  toast.success('Link copied', { description: 'Portal link copied to clipboard.' });
                 } else {
-                  toast({ title: 'No link available', description: 'No portal token found.' });
+                  toast.error('No link available', { description: 'No portal token found.' });
                 }
               }}
             >
@@ -515,7 +514,7 @@ export default function LeadDetail(): JSX.Element {
                             onClick={async (e) => {
                               e.preventDefault();
                               await updateQuote.mutateAsync({ id: quote.id, status: 'rejected' });
-                              toast({ title: 'Budget marked as rejected' });
+                              toast.success('Budget marked as rejected');
                             }}
                             className="text-destructive focus:text-destructive"
                           >

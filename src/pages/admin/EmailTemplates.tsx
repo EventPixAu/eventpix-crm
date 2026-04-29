@@ -57,7 +57,7 @@ import {
   TemplateFormat
 } from '@/hooks/useEmailTemplates';
 import { PlainTextTemplateEditor, convertHtmlToText, SAMPLE_CONTEXT, renderMergeFields } from '@/components/PlainTextTemplateEditor';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
 import DOMPurify from 'dompurify';
 
@@ -87,7 +87,6 @@ const defaultFormData: FormData = {
 };
 
 export default function EmailTemplates() {
-  const { toast } = useToast();
   const { isAdmin } = useAuth();
   const { data: templates, isLoading } = useEmailTemplates();
   const createTemplate = useCreateEmailTemplate();
@@ -104,7 +103,7 @@ export default function EmailTemplates() {
 
   const handleCreate = async () => {
     if (!formData.name.trim() || !formData.subject.trim()) {
-      toast({ title: 'Name and subject are required', variant: 'destructive' });
+      toast.error('Name and subject are required');
       return;
     }
 
@@ -167,7 +166,7 @@ export default function EmailTemplates() {
       body_text: plainText,
       format: 'text',
     });
-    toast({ title: 'Template converted to plain text' });
+    toast.success('Template converted to plain text');
   };
 
   const handleDelete = async () => {
@@ -185,7 +184,7 @@ export default function EmailTemplates() {
       trigger_type: template.trigger_type,
       format: template.format || 'text',
     });
-    toast({ title: 'Template duplicated' });
+    toast.success('Template duplicated');
   };
 
   const handlePreview = (template: EmailTemplate) => {

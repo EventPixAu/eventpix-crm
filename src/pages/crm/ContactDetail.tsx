@@ -62,7 +62,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
 import { SendContactEmailDialog } from '@/components/crm/SendContactEmailDialog';
@@ -89,7 +89,6 @@ export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   const isCreateMode = !id;
   
@@ -237,11 +236,11 @@ export default function ContactDetail() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
-      toast({ title: 'Contact created successfully' });
+      toast.success('Contact created successfully');
       navigate(`/crm/contacts/${data.id}`);
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create contact', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create contact', { description: error.message });
     },
   });
 
@@ -263,11 +262,11 @@ export default function ContactDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact', id] });
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
-      toast({ title: 'Contact updated successfully' });
+      toast.success('Contact updated successfully');
       setIsEditOpen(false);
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update contact', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update contact', { description: error.message });
     },
   });
 
@@ -281,11 +280,11 @@ export default function ContactDetail() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Contact deleted' });
+      toast.success('Contact deleted');
       navigate('/crm/contacts');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete contact', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete contact', { description: error.message });
     },
   });
 
@@ -317,11 +316,11 @@ export default function ContactDetail() {
 
   const handleCreate = () => {
     if (!formData.first_name.trim() && !formData.last_name.trim()) {
-      toast({ title: 'Please enter a name', variant: 'destructive' });
+      toast.error('Please enter a name');
       return;
     }
     if (!formData.client_id) {
-      toast({ title: 'Please select a company', variant: 'destructive' });
+      toast.error('Please select a company');
       return;
     }
     createContact.mutate({

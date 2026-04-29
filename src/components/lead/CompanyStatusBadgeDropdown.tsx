@@ -79,11 +79,7 @@ export function CompanyStatusBadgeDropdown({
 
   const handleConfirmStatusChange = async () => {
     if (!pendingStatus || reason.trim().length < 10) {
-      toast({
-        title: 'Reason required',
-        description: 'Please provide a reason (at least 10 characters)',
-        variant: 'destructive',
-      });
+      toast.error('Reason required', { description: 'Please provide a reason (at least 10 characters)' });
       return;
     }
 
@@ -115,17 +111,14 @@ export function CompanyStatusBadgeDropdown({
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
 
-      toast({ title: 'Status updated successfully' });
+      toast.success('Status updated successfully');
       setIsReasonDialogOpen(false);
       setPendingStatus(null);
       setReason('');
       onStatusChange?.();
     } catch (error) {
       console.error('Error updating status:', error);
-      toast({
-        title: 'Failed to update status',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update status');
     } finally {
       setIsUpdating(false);
     }
@@ -160,14 +153,11 @@ export function CompanyStatusBadgeDropdown({
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
 
-      toast({ title: 'Override cleared - status will auto-compute' });
+      toast.success('Override cleared - status will auto-compute');
       onStatusChange?.();
     } catch (error) {
       console.error('Error clearing override:', error);
-      toast({
-        title: 'Failed to clear override',
-        variant: 'destructive',
-      });
+      toast.error('Failed to clear override');
     } finally {
       setIsUpdating(false);
     }

@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
 import { getPublicBaseUrl } from '@/lib/utils';
@@ -258,7 +258,6 @@ export function SendFinalConfirmationDialog({
   assignments,
   sessions = [],
 }: SendFinalConfirmationDialogProps) {
-  const { toast } = useToast();
   const sendEmail = useSendCrmEmail();
 
   const clientRecipients = useMemo(
@@ -317,11 +316,7 @@ export function SendFinalConfirmationDialog({
 
   const handleSend = async () => {
     if (selectedRecipients.length === 0 || !subject) {
-      toast({
-        title: 'Missing required fields',
-        description: 'Please select at least one recipient and ensure the subject is set.',
-        variant: 'destructive',
-      });
+      toast.error('Missing required fields', { description: 'Please select at least one recipient and ensure the subject is set.' });
       return;
     }
 
@@ -341,7 +336,7 @@ export function SendFinalConfirmationDialog({
         });
       }
 
-      toast({ title: `Confirmation sent to ${chosen.length} recipient${chosen.length > 1 ? 's' : ''}` });
+      toast.success(`Confirmation sent to ${chosen.length} recipient${chosen.length > 1 ? 's' : ''}`);
       onOpenChange(false);
     } catch (err: any) {
       console.error('Send confirmation error:', err);

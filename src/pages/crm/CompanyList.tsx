@@ -74,7 +74,7 @@ import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
 import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog';
 import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDialog';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
@@ -155,7 +155,6 @@ export default function CompanyList() {
   
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const canBulkEdit = isAdmin; // Only Admin can bulk edit
   const { data: companyStatuses = [] } = useCompanyStatuses();
 
@@ -173,16 +172,12 @@ export default function CompanyList() {
       }
     },
     onSuccess: () => {
-      toast({ title: `${selectedIds.size} ${selectedIds.size === 1 ? 'company' : 'companies'} deleted` });
+      toast.success(`${selectedIds.size} ${selectedIds.size === 1 ? 'company' : 'companies'} deleted`);
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
     },
     onError: (error: Error) => {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Failed to delete companies', 
-        description: error.message 
-      });
+      toast.error('Failed to delete companies', { description: error.message });
     },
   });
 

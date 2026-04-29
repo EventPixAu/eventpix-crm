@@ -45,7 +45,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useLeads, useUpdateLead } from '@/hooks/useSales';
 import { useLostReasons } from '@/hooks/useLostReasons';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Studio Ninja-style pipeline stages
 type LeadStatus = 'new' | 'qualified' | 'quoted' | 'contract_sent' | 'won' | 'accepted' | 'lost';
@@ -116,7 +116,6 @@ export default function PipelineView() {
   const { data: leads, isLoading } = useLeads();
   const { data: lostReasons } = useLostReasons();
   const updateLead = useUpdateLead();
-  const { toast } = useToast();
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<LeadStatus | null>(null);
   const [isLostDialogOpen, setIsLostDialogOpen] = useState(false);
@@ -191,22 +190,14 @@ export default function PipelineView() {
     if (!validTransitions.includes(newStatus)) {
       const currentColumn = COLUMNS.find(c => c.status === currentStatus);
       const targetColumn = COLUMNS.find(c => c.status === newStatus);
-      toast({ 
-        title: 'Invalid transition', 
-        description: `Cannot move from "${currentColumn?.label}" directly to "${targetColumn?.label}".`,
-        variant: 'destructive' 
-      });
+      toast.error('Invalid transition', { description: `Cannot move from "${currentColumn?.label}" directly to "${targetColumn?.label}".` });
       setDraggedLeadId(null);
       return;
     }
 
     // Terminal states can't be modified
     if (currentStatus === 'won' || currentStatus === 'lost') {
-      toast({ 
-        title: 'Cannot move', 
-        description: 'This lead is in a terminal state.',
-        variant: 'destructive' 
-      });
+      toast.error('Cannot move', { description: 'This lead is in a terminal state.' });
       setDraggedLeadId(null);
       return;
     }
@@ -221,11 +212,7 @@ export default function PipelineView() {
 
     // Moving to won requires quote acceptance (handled by workflow)
     if (newStatus === 'won') {
-      toast({ 
-        title: 'Use workflow to close deal', 
-        description: 'Accept the quote and sign the contract to move to Won.',
-        variant: 'default' 
-      });
+      toast.success('Use workflow to close deal', { description: 'Accept the quote and sign the contract to move to Won.' });
       setDraggedLeadId(null);
       return;
     }
@@ -236,7 +223,7 @@ export default function PipelineView() {
         status: newStatus,
       });
       const targetColumn = COLUMNS.find(c => c.status === newStatus);
-      toast({ title: `Lead moved to ${targetColumn?.label || newStatus}` });
+      toast.success(`Lead moved to ${targetColumn?.label || newStatus}`);
     } catch (error) {
       // Error handled by mutation
     }
@@ -253,7 +240,7 @@ export default function PipelineView() {
         status: 'lost',
         lost_reason_id: selectedLostReasonId,
       });
-      toast({ title: 'Lead marked as lost' });
+      toast.success('Lead marked as lost');
     } catch (error) {
       // Error handled by mutation
     }

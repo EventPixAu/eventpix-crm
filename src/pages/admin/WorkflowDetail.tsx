@@ -313,16 +313,9 @@ export default function WorkflowDetail() {
   const handleUnassignWorkflow = async (worksheetId: string, eventName: string) => {
     try {
       await deleteWorksheet.mutateAsync(worksheetId);
-      toast({
-        title: "Workflow unassigned",
-        description: `Removed from "${eventName}"`,
-      });
+      toast.success("Workflow unassigned", { description: `Removed from "${eventName}"` });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to unassign workflow",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to unassign workflow" });
     }
   };
   

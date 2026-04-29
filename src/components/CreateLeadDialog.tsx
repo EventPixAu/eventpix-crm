@@ -55,7 +55,7 @@ import { useSalesWorkflowTemplates } from '@/hooks/useSalesWorkflowTemplates';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import type { CrmContact } from '@/hooks/useContactSearch';
@@ -79,7 +79,6 @@ const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).su
 export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogProps) {
   const navigate = useNavigate();
   const { isAdmin, isSales } = useAuth();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   
   // Data hooks
@@ -276,11 +275,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         
         if (sessionsError) {
           console.error('Failed to create sessions:', sessionsError);
-          toast({
-            title: 'Lead created',
-            description: 'But some proposed dates could not be saved.',
-            variant: 'destructive',
-          });
+          toast.error('Lead created', { description: 'But some proposed dates could not be saved.' });
         }
       }
       
