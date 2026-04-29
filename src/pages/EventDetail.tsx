@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Users,
   Upload,
+  Loader2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -88,7 +89,7 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
@@ -426,6 +427,22 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
   const { data: staffRoles = [] } = useStaffRoles();
+  const removeAssignment = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('event_assignments')
+        .delete()
+        .eq('id', assignment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+      toast.success(`${name} removed from event`);
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to remove', { description: error.message });
+    },
+  });
 
   const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
@@ -560,9 +577,10 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
                 size="sm"
                 className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Remove from event"
+                disabled={removeAssignment.isPending}
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1" />
-                Remove
+                {removeAssignment.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
+                {removeAssignment.isPending ? 'Removing...' : 'Remove'}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -576,20 +594,10 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90"
-                  onClick={async () => {
-                    const { error } = await supabase
-                      .from('event_assignments')
-                      .delete()
-                      .eq('id', assignment.id);
-                    if (error) {
-                      toast.error('Failed to remove', { description: error.message });
-                    } else {
-                      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-                      toast.success(`${name} removed from event`);
-                    }
-                  }}
+                  onClick={() => removeAssignment.mutate()}
+                  disabled={removeAssignment.isPending}
                 >
-                  Remove
+                  {removeAssignment.isPending ? 'Removing...' : 'Remove'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
