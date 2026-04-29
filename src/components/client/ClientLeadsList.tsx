@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 
 interface LeadWithType {
   id: string;
+  updated_at: string;
   lead_name: string;
   status: string | null;
   main_shoot_start?: string | null;
@@ -156,9 +157,9 @@ export function ClientLeadsList({ clientId, onSendEmail }: ClientLeadsListProps)
   const { data: leads = [], isLoading } = useClientLeads(clientId);
   const updateLead = useUpdateLead();
   
-  const handleArchive = async (leadId: string) => {
+  const handleArchive = async (lead: LeadWithType) => {
     try {
-      await updateLead.mutateAsync({ id: leadId, status: 'lost' });
+      await updateLead.mutateAsync({ id: lead.id, updated_at: lead.updated_at, status: 'lost' });
       toast.success('Lead archived');
     } catch (error) {
       toast.error('Failed to archive lead');
@@ -204,8 +205,8 @@ export function ClientLeadsList({ clientId, onSendEmail }: ClientLeadsListProps)
               key={lead.id} 
               lead={lead as LeadWithType}
               onSendEmail={() => onSendEmail?.(lead.id)}
-              onArchive={() => handleArchive(lead.id)}
-              onDelete={() => handleArchive(lead.id)}
+              onArchive={() => handleArchive(lead as LeadWithType)}
+              onDelete={() => handleArchive(lead as LeadWithType)}
             />
           ))
         )}
