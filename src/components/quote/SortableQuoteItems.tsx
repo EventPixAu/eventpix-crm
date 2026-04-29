@@ -135,8 +135,9 @@ function SortableRow({
             variant="ghost" 
             size="icon"
             onClick={() => onDelete(item.id)}
+            disabled={isDeleting}
           >
-            <Trash2 className="h-4 w-4" />
+            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           </Button>
         </TableCell>
       )}
@@ -152,6 +153,7 @@ interface SortableQuoteItemsProps {
   onDelete: (itemId: string) => void;
   onGroupChange: (itemId: string, group: string) => void;
   onReorder: (items: { id: string; sort_order: number }[]) => void;
+  isDeleting?: boolean;
 }
 
 export function SortableQuoteItems({
@@ -162,6 +164,7 @@ export function SortableQuoteItems({
   onDelete,
   onGroupChange,
   onReorder,
+  isDeleting = false,
 }: SortableQuoteItemsProps) {
   const { data: categories = [] } = useProductCategories();
   
