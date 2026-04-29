@@ -1190,6 +1190,7 @@ export default function EventDetail() {
                           setIsUpdatingStatus(true);
                           await updateEvent.mutateAsync({
                             id: event.id,
+                            updated_at: event.updated_at,
                             ops_status: value,
                           });
                           setIsUpdatingStatus(false);
@@ -1218,6 +1219,7 @@ export default function EventDetail() {
                           setIsUpdatingStatus(true);
                           await updateEvent.mutateAsync({
                             id: event.id,
+                            updated_at: event.updated_at,
                             invoice_status: value,
                           });
                           setIsUpdatingStatus(false);
@@ -1246,6 +1248,7 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
+                              updated_at: event.updated_at,
                               invoice_reference: value || null,
                             });
                             setIsUpdatingStatus(false);
@@ -1266,6 +1269,7 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
+                              updated_at: event.updated_at,
                               xero_tag: value || null,
                             });
                             setIsUpdatingStatus(false);
