@@ -6,7 +6,7 @@
  * Also populates lead_workflow_items for tracking step completion.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import type { SalesWorkflowItem } from './useSalesWorkflowTemplates';
 

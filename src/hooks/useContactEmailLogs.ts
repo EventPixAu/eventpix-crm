@@ -6,7 +6,7 @@
  * - Emails where recipient_email matches the contact's email
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface ContactEmailLog {
   id: string;

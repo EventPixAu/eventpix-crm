@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useLeadFiles, useUploadLeadFile, useDeleteLeadFile } from '@/hooks/useLeadFiles';
 import { LeadCollapsiblePanel } from './LeadCollapsiblePanel';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface LeadFilesPanelProps {
   leadId: string;

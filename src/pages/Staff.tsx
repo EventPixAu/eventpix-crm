@@ -58,7 +58,7 @@ import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';

@@ -13,7 +13,7 @@ import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventWorksheets, useAllWorksheetItems } from '@/hooks/useWorksheets';
 import { useEventWorkflowSteps } from '@/hooks/useEventWorkflowSteps';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
 import { useEventDocuments } from '@/hooks/useEventDocuments';
 

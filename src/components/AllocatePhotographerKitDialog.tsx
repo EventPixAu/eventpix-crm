@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Camera, Sun, Image, Package, User, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { FileText, Plus, Pencil, Trash2, GripVertical, Upload, Download, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import {
   DndContext,

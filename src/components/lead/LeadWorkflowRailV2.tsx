@@ -35,7 +35,7 @@ import {
   useToggleWorkflowStep,
   WorkflowInstanceStepWithDetails,
 } from '@/hooks/useWorkflowInstances';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 

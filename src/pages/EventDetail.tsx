@@ -88,7 +88,7 @@ import { SendTeamUpdateDialog } from '@/components/SendTeamUpdateDialog';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';

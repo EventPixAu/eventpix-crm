@@ -34,7 +34,7 @@ import {
   useDeleteTemplateItem,
   useReorderTemplateItems,
 } from '@/hooks/useWorkflowTemplates';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface WorkflowTemplateEditorProps {

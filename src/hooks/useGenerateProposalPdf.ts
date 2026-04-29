@@ -6,7 +6,7 @@
  * then converts to PDF using html2pdf.js in the browser.
  */
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface GeneratePdfResult {
   success: boolean;

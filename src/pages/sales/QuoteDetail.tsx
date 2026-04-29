@@ -55,7 +55,7 @@ import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
 import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, useReorderQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ApplyQuoteTemplateDialog } from '@/components/ApplyQuoteTemplateDialog';
 import { SaveAsTemplateDialog } from '@/components/SaveAsTemplateDialog';

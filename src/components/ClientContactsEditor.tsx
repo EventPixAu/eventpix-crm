@@ -35,7 +35,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useContactRoles, useCreateContactRole } from '@/hooks/useContactRoles';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

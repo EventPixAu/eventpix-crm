@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { useStaffRatesByUser, type StaffRate } from '@/hooks/useStaffRates';
 import { useStaffFeedbackHistory, useStaffPerformanceSummary } from '@/hooks/useStaffFeedback';

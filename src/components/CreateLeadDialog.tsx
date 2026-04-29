@@ -54,7 +54,7 @@ import { useLeadSources } from '@/hooks/useLeadSources';
 import { useSalesWorkflowTemplates } from '@/hooks/useSalesWorkflowTemplates';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';

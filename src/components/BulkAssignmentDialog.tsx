@@ -25,7 +25,7 @@ import {
 import { useStaffDirectory, useStaffRoles } from '@/hooks/useStaff';
 import { useCreateAssignment } from '@/hooks/useEvents';
 import { useSendNotification } from '@/hooks/useNotifications';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { CalendarEvent } from '@/hooks/useCalendar';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';

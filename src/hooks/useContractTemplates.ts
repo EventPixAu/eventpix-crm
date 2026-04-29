@@ -5,7 +5,7 @@
  * Access: Admin can CRUD, Sales can read (enforced via RLS)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 

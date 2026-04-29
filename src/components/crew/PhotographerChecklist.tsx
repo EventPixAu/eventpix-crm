@@ -28,7 +28,7 @@ import {
   type EventWorkflowStepWithProfile,
 } from '@/hooks/useEventWorkflowSteps';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
 interface PhotographerChecklistProps {

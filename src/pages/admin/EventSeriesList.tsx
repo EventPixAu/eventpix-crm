@@ -42,7 +42,7 @@ import {
 } from '@/hooks/useEventSeries';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export default function EventSeriesList() {
   const navigate = useNavigate();

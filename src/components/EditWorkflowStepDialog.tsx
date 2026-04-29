@@ -27,7 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useUpdateWorkflowStep, EventWorkflowStepWithProfile } from '@/hooks/useEventWorkflowSteps';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface EditWorkflowStepDialogProps {
   step: EventWorkflowStepWithProfile | null;

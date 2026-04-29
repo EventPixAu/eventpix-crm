@@ -34,7 +34,7 @@ import {
 import { Edit2, Info, X, Check, Trash2 } from 'lucide-react';
 import { useUpdateClient } from '@/hooks/useSales';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 

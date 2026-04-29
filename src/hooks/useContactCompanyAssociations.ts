@@ -3,7 +3,7 @@
  * Allows contacts to be linked to multiple companies beyond their primary company.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export interface ContactCompanyAssociation {
