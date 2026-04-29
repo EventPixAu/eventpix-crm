@@ -850,7 +850,7 @@ export default function EventDetail() {
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
+                    {deleteEvent.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -866,8 +866,9 @@ export default function EventDetail() {
                     <AlertDialogAction
                       onClick={handleDelete}
                       className="bg-destructive hover:bg-destructive/90"
+                      disabled={deleteEvent.isPending}
                     >
-                      Delete
+                      {deleteEvent.isPending ? 'Deleting...' : 'Delete'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
