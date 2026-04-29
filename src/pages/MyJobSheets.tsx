@@ -43,7 +43,7 @@ import {
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
 import { useMyJobSheets } from '@/hooks/useMyJobSheets';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

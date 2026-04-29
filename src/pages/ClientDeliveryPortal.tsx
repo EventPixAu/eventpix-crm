@@ -19,7 +19,7 @@ import { useDeliveryRecordByToken } from '@/hooks/useDeliveryRecords';
 import { useGalleryAssetsByEventId, getPublicUrl, getThumbnailUrl } from '@/hooks/useGalleryAssets';
 import { useState } from 'react';
 import JSZip from 'jszip';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 
 const deliveryMethodLabels: Record<string, { label: string; action: string }> = {

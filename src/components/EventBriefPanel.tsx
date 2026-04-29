@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { FileText, Pencil, Check, X, ChevronDown, Download, Upload, Trash2, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {

@@ -34,7 +34,7 @@ import {
 } from '@/hooks/useLeadAssignments';
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface LeadAssignmentsPanelProps {
   leadId: string;

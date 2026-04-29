@@ -9,7 +9,7 @@
  import { Separator } from '@/components/ui/separator';
  import { useActiveWorkflowMasterSteps, PHASE_CONFIG, WorkflowPhase } from '@/hooks/useWorkflowMasterSteps';
  import { useEventSeriesDetail, useUpdateEventSeries, useSeriesEvents } from '@/hooks/useEventSeries';
- import { supabase } from '@/integrations/supabase/client';
+ import { supabase } from '@/lib/supabase';
  import { toast } from 'sonner';
  import { cn } from '@/lib/utils';
  

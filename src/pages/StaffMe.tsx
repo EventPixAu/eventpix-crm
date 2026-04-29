@@ -36,7 +36,7 @@ import { AvatarUpload } from '@/components/AvatarUpload';
 import { NotificationPreferencesPanel } from '@/components/NotificationPreferencesPanel';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
  import { isAssistantRole } from '@/lib/utils';
 

@@ -5,7 +5,7 @@
  * across all their leads (Sales) and events (Operations).
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface WorkflowProgressItem {
   entityId: string;

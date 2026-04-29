@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ChevronDown, Check, Info, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';

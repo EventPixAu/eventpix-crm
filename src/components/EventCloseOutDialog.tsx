@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { useUpdateEvent } from '@/hooks/useEvents';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useCreateFeedback, useEventFeedback } from '@/hooks/useStaffFeedback';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';

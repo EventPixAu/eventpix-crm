@@ -4,7 +4,7 @@
  * Provides mutation for sending CRM emails via edge function
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export interface EmailAttachment {

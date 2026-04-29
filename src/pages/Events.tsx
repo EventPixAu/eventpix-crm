@@ -30,7 +30,7 @@ import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export default function Events() {
   const { isAdmin } = useAuth();

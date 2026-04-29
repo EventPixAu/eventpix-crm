@@ -37,7 +37,7 @@ import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
 import { useGenerateProposalPdf, htmlToPdfBlob, blobToBase64 } from '@/hooks/useGenerateProposalPdf';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface MergeFieldContext {

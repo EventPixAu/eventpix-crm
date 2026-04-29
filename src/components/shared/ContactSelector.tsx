@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/select';
 
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import {
   useContactSearch,
   useContactById,

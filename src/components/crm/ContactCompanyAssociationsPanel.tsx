@@ -39,7 +39,7 @@ import {
   ContactCompanyAssociation,
 } from '@/hooks/useContactCompanyAssociations';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useJobTitles, useCreateJobTitle } from '@/hooks/useJobTitles';
 import { toast } from 'sonner';
 

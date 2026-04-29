@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { subMonths, format, parseISO, differenceInDays } from 'date-fns';
 
 export interface PhotographerTrendData {

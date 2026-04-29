@@ -28,7 +28,7 @@ import { useLead } from '@/hooks/useSales';
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { useLeadContacts } from '@/hooks/useLeadContacts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicBaseUrl } from '@/lib/utils';
 
