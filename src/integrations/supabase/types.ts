@@ -6331,6 +6331,7 @@ export type Database = {
       convert_enquiry_to_event:
         | { Args: { p_input: Json }; Returns: Json }
         | { Args: { p_lead_id: string }; Returns: Json }
+      convert_quote_to_event: { Args: { p_input: Json }; Returns: Json }
       create_notification: {
         Args: {
           p_dedupe_hours?: number
