@@ -39,6 +39,7 @@ interface Lead {
   estimated_event_date?: string | null;
   notes?: string | null;
   status: string;
+  updated_at: string;
   source?: string | null;
   venue_text?: string | null;
 }
