@@ -7,6 +7,7 @@ type Props = {
   children: ReactNode;
   title?: string;
   backTo?: string;
+  resetKey?: string;
 };
 
 type State = {
@@ -27,6 +28,12 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // eslint-disable-next-line no-console
     console.error("ErrorBoundary caught:", error, info);
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ error: null });
+    }
   }
 
   render() {
@@ -51,8 +58,11 @@ export class ErrorBoundary extends Component<Props, State> {
           </pre>
 
           <div className="flex flex-wrap gap-2">
+            <Link to="/">
+              <Button>Go to Dashboard</Button>
+            </Link>
             <Link to={backTo}>
-              <Button variant="outline">Back</Button>
+              <Button variant="outline">Go Back</Button>
             </Link>
             <Button
               type="button"
