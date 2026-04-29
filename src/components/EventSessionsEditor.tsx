@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe, Film } from 'lucide-react';
+import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe, Film, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,6 +137,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
   };
 
   const handleDelete = async (sessionId: string) => {
+    if (deleteSession.isPending) return;
     await deleteSession.mutateAsync({ id: sessionId, eventId, leadId });
   };
 
@@ -259,8 +260,9 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: E
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => handleDelete(session.id)}
+                        disabled={deleteSession.isPending}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deleteSession.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </Button>
                     </div>
                   )}
