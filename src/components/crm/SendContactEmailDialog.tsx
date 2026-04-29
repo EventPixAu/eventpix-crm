@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/select';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface SendContactEmailDialogProps {
   open: boolean;
@@ -55,7 +55,6 @@ export function SendContactEmailDialog({
 }: SendContactEmailDialogProps) {
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
-  const { toast } = useToast();
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [subject, setSubject] = useState('');
@@ -128,11 +127,11 @@ export function SendContactEmailDialog({
 
   const handleSend = async () => {
     if (!subject.trim()) {
-      toast({ title: 'Please enter a subject', variant: 'destructive' });
+      toast.error('Please enter a subject');
       return;
     }
     if (!body.trim()) {
-      toast({ title: 'Please enter a message', variant: 'destructive' });
+      toast.error('Please enter a message');
       return;
     }
 

@@ -7,7 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 type WorkflowInstance = Database['public']['Tables']['workflow_instances']['Row'];
 type WorkflowInstanceStep = Database['public']['Tables']['workflow_instance_steps']['Row'];
@@ -111,7 +111,6 @@ export function useJobWorkflowInstance(jobId: string | undefined) {
 // Initialize a workflow instance from a template
 export function useInitializeWorkflow() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({
@@ -137,14 +136,10 @@ export function useInitializeWorkflow() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['workflow-instance', variables.entityType, variables.entityId] });
-      toast({ title: 'Workflow initialized successfully' });
+      toast.success('Workflow initialized successfully');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to initialize workflow', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to initialize workflow', { description: error.message });
     },
   });
 }
@@ -153,7 +148,6 @@ export function useInitializeWorkflow() {
 // Uses RPC for server-side authorization and lock checks
 export function useToggleWorkflowStep() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({
@@ -187,11 +181,7 @@ export function useToggleWorkflowStep() {
       });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to update step', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to update step', { description: error.message });
     },
   });
 }
@@ -199,7 +189,6 @@ export function useToggleWorkflowStep() {
 // Recalculate due dates for a workflow instance
 export function useRecalculateDueDates() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({
@@ -250,14 +239,10 @@ export function useRecalculateDueDates() {
       queryClient.invalidateQueries({ 
         queryKey: ['workflow-instance', variables.entityType, variables.entityId] 
       });
-      toast({ title: 'Due dates recalculated' });
+      toast.success('Due dates recalculated');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to recalculate due dates', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to recalculate due dates', { description: error.message });
     },
   });
 }

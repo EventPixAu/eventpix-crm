@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Product } from '@/hooks/useProducts';
 
 // Types
@@ -75,7 +75,6 @@ export function useQuoteItems(quoteId: string | undefined) {
 
 export function useCreateQuoteItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (item: QuoteItemInsert) => {
@@ -91,17 +90,16 @@ export function useCreateQuoteItem() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quote-items', variables.quote_id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast({ title: 'Item added successfully' });
+      toast.success('Item added successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add item', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add item', { description: error.message });
     },
   });
 }
 
 export function useUpdateQuoteItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: QuoteItemUpdate & { quote_id: string }) => {
@@ -120,14 +118,13 @@ export function useUpdateQuoteItem() {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update item', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update item', { description: error.message });
     },
   });
 }
 
 export function useDeleteQuoteItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, quote_id }: { id: string; quote_id: string }) => {
@@ -142,10 +139,10 @@ export function useDeleteQuoteItem() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['quote-items', result.quote_id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast({ title: 'Item removed successfully' });
+      toast.success('Item removed successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to remove item', description: error.message, variant: 'destructive' });
+      toast.error('Failed to remove item', { description: error.message });
     },
   });
 }

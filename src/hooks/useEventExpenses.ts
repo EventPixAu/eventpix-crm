@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export type ExpenseCategory = 'staff' | 'travel' | 'accommodation' | 'sundry';
 
@@ -76,7 +76,6 @@ export function useEventExpenseSummary(eventId: string | undefined) {
 // Create expense (for manual entry or Xero sync)
 export function useCreateEventExpense() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (expense: Omit<EventExpense, 'id' | 'created_at' | 'updated_at'>) => {
@@ -91,10 +90,10 @@ export function useCreateEventExpense() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['event-expenses', data.event_id] });
-      toast({ title: 'Expense added' });
+      toast.success('Expense added');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add expense', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add expense', { description: error.message });
     },
   });
 }
@@ -102,7 +101,6 @@ export function useCreateEventExpense() {
 // Bulk upsert expenses from Xero sync
 export function useSyncEventExpenses() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -134,10 +132,10 @@ export function useSyncEventExpenses() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['event-expenses', data.eventId] });
-      toast({ title: 'Expenses synced', description: `${data.count} expenses imported` });
+      toast.success('Expenses synced', { description: `${data.count} expenses imported` });
     },
     onError: (error: Error) => {
-      toast({ title: 'Sync failed', description: error.message, variant: 'destructive' });
+      toast.error('Sync failed', { description: error.message });
     },
   });
 }
@@ -145,7 +143,6 @@ export function useSyncEventExpenses() {
 // Delete expense
 export function useDeleteEventExpense() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, eventId }: { id: string; eventId: string }) => {
@@ -159,10 +156,10 @@ export function useDeleteEventExpense() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['event-expenses', data.eventId] });
-      toast({ title: 'Expense deleted' });
+      toast.success('Expense deleted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete expense', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete expense', { description: error.message });
     },
   });
 }

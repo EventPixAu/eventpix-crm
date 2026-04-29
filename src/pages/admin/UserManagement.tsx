@@ -51,7 +51,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   useUsers,
@@ -182,7 +182,6 @@ function InviteUserDialog() {
 }
 
 function UsersTable({ users }: { users: UserProfile[] }) {
-  const { toast } = useToast();
   const setUserActive = useSetUserActive();
   const setUserRole = useSetUserRole();
   const { data: staffRoles = [] } = useAllStaffRoles();
@@ -191,11 +190,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
 
   const handleSendAccessEmail = async (user: UserProfile) => {
     if (!user.email) {
-      toast({
-        title: 'No email address',
-        description: 'This user does not have an email address.',
-        variant: 'destructive',
-      });
+      toast.error('No email address', { description: 'This user does not have an email address.' });
       return;
     }
 
@@ -209,16 +204,9 @@ function UsersTable({ users }: { users: UserProfile[] }) {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to send access email');
 
-      toast({
-        title: 'Access email sent',
-        description: `An access email has been sent to ${user.email}.`,
-      });
+      toast.success('Access email sent', { description: `An access email has been sent to ${user.email}.` });
     } catch (err: any) {
-      toast({
-        title: 'Failed to send access email',
-        description: err.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to send access email', { description: err.message });
     } finally {
       setSendingAccessEmail(null);
     }
@@ -332,7 +320,6 @@ function UsersTable({ users }: { users: UserProfile[] }) {
 }
 
 function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
-  const { toast } = useToast();
   const resendInvitation = useResendInvitation();
   const revokeInvitation = useRevokeInvitation();
 

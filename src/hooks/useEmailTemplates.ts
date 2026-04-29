@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Types
 export type EmailTriggerType = 'manual' | 'quote_sent' | 'quote_followup' | 'booking_confirmed' | 'event_reminder' | 'enquiry_received';
@@ -94,7 +94,6 @@ export function useEmailTemplate(id: string | undefined) {
 
 export function useCreateEmailTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (template: EmailTemplateInsert) => {
@@ -109,17 +108,16 @@ export function useCreateEmailTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-      toast({ title: 'Template created successfully' });
+      toast.success('Template created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create template', { description: error.message });
     },
   });
 }
 
 export function useUpdateEmailTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: EmailTemplateUpdate) => {
@@ -136,17 +134,16 @@ export function useUpdateEmailTemplate() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
       queryClient.invalidateQueries({ queryKey: ['email-templates', variables.id] });
-      toast({ title: 'Template updated successfully' });
+      toast.success('Template updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update template', { description: error.message });
     },
   });
 }
 
 export function useDeleteEmailTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -159,10 +156,10 @@ export function useDeleteEmailTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-      toast({ title: 'Template deleted successfully' });
+      toast.success('Template deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete template', { description: error.message });
     },
   });
 }

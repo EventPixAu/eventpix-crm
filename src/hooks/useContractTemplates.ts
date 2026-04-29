@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export type TemplateFormat = 'text' | 'html';
@@ -303,7 +303,6 @@ export function useContractTemplate(id: string | undefined) {
 
 export function useCreateContractTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (template: ContractTemplateInsert) => {
@@ -318,17 +317,16 @@ export function useCreateContractTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
-      toast({ title: 'Template created successfully' });
+      toast.success('Template created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create template', { description: error.message });
     },
   });
 }
 
 export function useUpdateContractTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: ContractTemplateUpdate) => {
@@ -345,17 +343,16 @@ export function useUpdateContractTemplate() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
       queryClient.invalidateQueries({ queryKey: ['contract-templates', variables.id] });
-      toast({ title: 'Template updated successfully' });
+      toast.success('Template updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update template', { description: error.message });
     },
   });
 }
 
 export function useDeleteContractTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -368,10 +365,10 @@ export function useDeleteContractTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contract-templates'] });
-      toast({ title: 'Template deleted successfully' });
+      toast.success('Template deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete template', { description: error.message });
     },
   });
 }
@@ -391,7 +388,6 @@ export interface GenerateContractParams {
 
 export function useGenerateContractFromTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (params: GenerateContractParams) => {
@@ -558,10 +554,10 @@ export function useGenerateContractFromTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      toast({ title: 'Contract generated successfully' });
+      toast.success('Contract generated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to generate contract', description: error.message, variant: 'destructive' });
+      toast.error('Failed to generate contract', { description: error.message });
     },
   });
 }

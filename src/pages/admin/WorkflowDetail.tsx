@@ -78,7 +78,7 @@ import {
   useBulkApplyTemplate,
 } from '@/hooks/useWorkflowTemplates';
 import { useDeleteWorksheet } from '@/hooks/useWorksheets';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useEventTypes } from '@/hooks/useLookups';
 import { Database } from '@/integrations/supabase/types';
 
@@ -313,16 +313,9 @@ export default function WorkflowDetail() {
   const handleUnassignWorkflow = async (worksheetId: string, eventName: string) => {
     try {
       await deleteWorksheet.mutateAsync(worksheetId);
-      toast({
-        title: "Workflow unassigned",
-        description: `Removed from "${eventName}"`,
-      });
+      toast.success("Workflow unassigned", { description: `Removed from "${eventName}"` });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to unassign workflow",
-        variant: "destructive",
-      });
+      toast.error("Error", { description: "Failed to unassign workflow" });
     }
   };
   

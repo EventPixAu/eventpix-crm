@@ -36,7 +36,7 @@ import {
 import { useClient, useUpdateClient, useDeleteClient, useClientEvents, useCreateClient } from '@/hooks/useSales';
 import { useCompanyCategories, useCreateCompanyCategory } from '@/hooks/useCompanyCategories';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   ClientProfileCard,
   ClientLeadsList,
@@ -88,7 +88,6 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: client, isLoading, error } = useClient(id);
   const { data: events = [] } = useClientEvents(id);
@@ -171,7 +170,7 @@ export default function ClientDetail() {
 
   const handleCreate = async () => {
     if (!formData.business_name.trim()) {
-      toast({ title: 'Please enter a business name', variant: 'destructive' });
+      toast.error('Please enter a business name');
       return;
     }
     const result = await createClient.mutateAsync({

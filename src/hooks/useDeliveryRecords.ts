@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export type DeliveryRecord = Tables<'delivery_records'>;
@@ -39,7 +39,6 @@ export function useDeliveryRecordByToken(qrToken: string | undefined) {
 
 export function useCreateDeliveryRecord() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (record: TablesInsert<'delivery_records'>) => {
@@ -54,17 +53,16 @@ export function useCreateDeliveryRecord() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['delivery-record', data.event_id] });
       queryClient.invalidateQueries({ queryKey: ['delivery-records'] });
-      toast({ title: 'Delivery record created' });
+      toast.success('Delivery record created');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create delivery record', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create delivery record', { description: error.message });
     },
   });
 }
 
 export function useUpdateDeliveryRecord() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<'delivery_records'> & { id: string }) => {
@@ -80,10 +78,10 @@ export function useUpdateDeliveryRecord() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['delivery-record', data.event_id] });
       queryClient.invalidateQueries({ queryKey: ['delivery-records'] });
-      toast({ title: 'Delivery record updated' });
+      toast.success('Delivery record updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update delivery record', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update delivery record', { description: error.message });
     },
   });
 }

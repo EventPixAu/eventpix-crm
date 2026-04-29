@@ -8,7 +8,7 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface AcceptQuoteResult {
   success: boolean;
@@ -23,7 +23,6 @@ interface AcceptQuoteResult {
  */
 export function useAcceptQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -75,17 +74,10 @@ export function useAcceptQuote() {
         });
       }
       
-      toast({ 
-        title: 'Quote accepted', 
-        description: 'The quote has been locked and the booking confirmed.' 
-      });
+      toast.success('Quote accepted', { description: 'The quote has been locked and the booking confirmed.' });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to accept quote', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to accept quote', { description: error.message });
     },
   });
 }

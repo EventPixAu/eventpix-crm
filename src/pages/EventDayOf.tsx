@@ -48,7 +48,7 @@ import { useEventNotes, useCreateEventNote, useDeleteEventNote } from '@/hooks/u
 import { useEventAllocations } from '@/hooks/useEquipmentAllocations';
 import { useEventDocuments, useGetDocumentUrl } from '@/hooks/useEventDocuments';
 import { downloadICS } from '@/lib/icsGenerator';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useSameDayEvents } from '@/hooks/useStaffAvailability';
 import { TodaysSchedule } from '@/components/TodaysSchedule';
@@ -118,7 +118,6 @@ function safeFormatTime(time: string | null | undefined): string | null {
 export default function EventDayOf() {
   const { id } = useParams<{ id: string }>();
   const { user, isAdmin } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Data fetching
@@ -324,9 +323,9 @@ export default function EventDayOf() {
     if (displayEvent?.venue_address) {
       try {
         await navigator.clipboard.writeText(displayEvent.venue_address);
-        toast({ title: 'Address copied to clipboard' });
+        toast.success('Address copied to clipboard');
       } catch {
-        toast({ title: 'Failed to copy address', variant: 'destructive' });
+        toast.error('Failed to copy address');
       }
     }
   };
@@ -342,13 +341,13 @@ export default function EventDayOf() {
       endTime: displayTimes.endTime || undefined,
       eventId: displayEvent.id,
     });
-    toast({ title: 'Calendar invite downloaded' });
+    toast.success('Calendar invite downloaded');
   };
 
   // Checklist toggle
   const handleToggleItem = (itemId: string, isDone: boolean) => {
     if (isOffline) {
-      toast({ title: 'Cannot update while offline', variant: 'destructive' });
+      toast.error('Cannot update while offline');
       return;
     }
     updateItem.mutate({
@@ -362,7 +361,7 @@ export default function EventDayOf() {
   const handleAddNote = () => {
     if (!noteContent.trim() || !id || !user) return;
     if (isOffline) {
-      toast({ title: 'Cannot add note while offline', variant: 'destructive' });
+      toast.error('Cannot add note while offline');
       return;
     }
     createNote.mutate({
@@ -380,7 +379,7 @@ export default function EventDayOf() {
   const handleDeleteNote = (noteId: string) => {
     if (!id) return;
     if (isOffline) {
-      toast({ title: 'Cannot delete note while offline', variant: 'destructive' });
+      toast.error('Cannot delete note while offline');
       return;
     }
     deleteNote.mutate({ noteId, eventId: id });
@@ -551,7 +550,7 @@ export default function EventDayOf() {
                   if (!error) {
                     queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
                     queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
-                    toast({ title: 'Availability confirmed!' });
+                    toast.success('Availability confirmed!');
                   }
                 }}
               >

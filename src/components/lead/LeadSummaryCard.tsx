@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useUpdateLead } from '@/hooks/useSales';
 import { useLeadStatuses } from '@/hooks/useLeadStatuses';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useLostReasons } from '@/hooks/useLostReasons';
 import { EditLeadDialog } from '@/components/EditLeadDialog';
 import {
@@ -84,7 +84,6 @@ export function LeadSummaryCard({
   onConvert,
 }: LeadSummaryCardProps) {
   const updateLead = useUpdateLead();
-  const { toast } = useToast();
   const { data: leadStatuses = [] } = useLeadStatuses();
 
   const { data: lostReasons } = useLostReasons();
@@ -106,7 +105,7 @@ export function LeadSummaryCard({
       return;
     }
     await updateLead.mutateAsync({ id: lead.id, status: newStatus as any });
-    toast({ title: `Status updated to ${leadStatuses.find(s => s.name === newStatus)?.label || newStatus}` });
+    toast.success(`Status updated to ${leadStatuses.find(s => s.name === newStatus)?.label || newStatus}`);
   };
 
   const handleArchive = async () => {
@@ -114,7 +113,7 @@ export function LeadSummaryCard({
       id: lead.id,
       status: 'lost',
     });
-    toast({ title: 'Lead archived' });
+    toast.success('Lead archived');
     onArchive?.();
   };
 
@@ -125,7 +124,7 @@ export function LeadSummaryCard({
       lost_reason_id: lostReasonId || null,
       notes: lostNotes ? `${lead.notes ? lead.notes + '\n' : ''}Lost: ${lostNotes}` : lead.notes,
     });
-    toast({ title: 'Lead marked as lost and archived' });
+    toast.success('Lead marked as lost and archived');
     setLostOpen(false);
     setLostReasonId('');
     setLostNotes('');

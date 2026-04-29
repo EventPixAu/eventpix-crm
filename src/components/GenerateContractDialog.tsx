@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   useActiveContractTemplates, 
   useGenerateContractFromTemplate,
@@ -67,7 +67,6 @@ export function GenerateContractDialog({
   sessions,
   onSuccess,
 }: GenerateContractDialogProps) {
-  const { toast } = useToast();
   const { data: templates } = useActiveContractTemplates();
   const generateContract = useGenerateContractFromTemplate();
 
@@ -109,7 +108,7 @@ export function GenerateContractDialog({
 
   const handleGenerate = async () => {
     if (!selectedTemplateId || !title.trim()) {
-      toast({ title: 'Please select a template and enter a title', variant: 'destructive' });
+      toast.error('Please select a template and enter a title');
       return;
     }
 

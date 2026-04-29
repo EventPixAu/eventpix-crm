@@ -51,11 +51,10 @@ import {
 } from '@/hooks/useQuoteTemplates';
 import { useArchiveTemplate, useRestoreTemplate } from '@/hooks/useTemplateArchive';
 import { PlainTextTemplateEditor } from '@/components/PlainTextTemplateEditor';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
 
 export default function QuoteTemplates() {
-  const { toast } = useToast();
   const { isAdmin } = useAuth();
   const { data: templates, isLoading } = useQuoteTemplates();
   const createTemplate = useCreateQuoteTemplate();
@@ -93,7 +92,7 @@ export default function QuoteTemplates() {
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
-      toast({ title: 'Template name is required', variant: 'destructive' });
+      toast.error('Template name is required');
       return;
     }
 
@@ -163,7 +162,7 @@ export default function QuoteTemplates() {
       terms_text: template.terms_text || null,
       items_json: template.items_json || [],
     });
-    toast({ title: 'Template duplicated' });
+    toast.success('Template duplicated');
   };
 
   return (

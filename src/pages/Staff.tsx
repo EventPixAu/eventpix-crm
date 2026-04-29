@@ -56,7 +56,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useActiveLocations } from '@/hooks/useAdminLookups';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
@@ -96,7 +96,6 @@ export default function Staff() {
   });
   const createStaff = useCreateStaff();
   const deleteStaff = useDeleteStaff();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [memberToDelete, setMemberToDelete] = useState<UnifiedTeamMember | null>(null);
   const isLoading = staffLoading || profilesLoading;
@@ -233,11 +232,11 @@ export default function Staff() {
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ['profiles'] });
         queryClient.invalidateQueries({ queryKey: ['staff-directory'] });
-        toast({ title: 'Team member deactivated' });
+        toast.success('Team member deactivated');
       }
       setMemberToDelete(null);
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Failed to remove', description: err.message });
+      toast.error('Failed to remove', { description: err.message });
     }
   };
 
@@ -259,15 +258,15 @@ export default function Staff() {
         queryClient.invalidateQueries({ queryKey: ['profiles'] });
         queryClient.invalidateQueries({ queryKey: ['staff-directory'] });
       }
-      toast({ title: 'Team member reactivated' });
+      toast.success('Team member reactivated');
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Failed to reactivate', description: err.message });
+      toast.error('Failed to reactivate', { description: err.message });
     }
   };
 
   const handleCreateStaff = async () => {
     if (!newStaff.name || !newStaff.email) {
-      toast({ variant: 'destructive', title: 'Name and email are required' });
+      toast.error('Name and email are required');
       return;
     }
     
@@ -629,9 +628,9 @@ export default function Staff() {
                                             body: { resend_access_for_user_id: member.user_id, email: member.email },
                                           }).then(({ data, error }) => {
                                             if (error || !data?.success) {
-                                              toast({ title: 'Failed to send', description: error?.message || data?.error, variant: 'destructive' });
+                                              toast.error('Failed to send', { description: error?.message || data?.error });
                                             } else {
-                                              toast({ title: 'Access email sent', description: `Password setup email sent to ${member.email}` });
+                                              toast.success('Access email sent', { description: `Password setup email sent to ${member.email}` });
                                             }
                                           });
                                         }}

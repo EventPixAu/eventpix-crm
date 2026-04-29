@@ -11,13 +11,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 
 export function CalendarSubscribeDialog() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [feedUrl, setFeedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,11 +49,7 @@ export function CalendarSubscribeDialog() {
       }
     } catch (error) {
       console.error('Error loading feed URL:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load calendar feed URL',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to load calendar feed URL' });
     } finally {
       setIsLoading(false);
     }
@@ -64,17 +59,10 @@ export function CalendarSubscribeDialog() {
     try {
       await navigator.clipboard.writeText(feedUrl);
       setCopied(true);
-      toast({
-        title: 'Copied!',
-        description: 'Calendar URL copied to clipboard',
-      });
+      toast.success('Copied!', { description: 'Calendar URL copied to clipboard' });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to copy to clipboard',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to copy to clipboard' });
     }
   };
 
@@ -93,17 +81,10 @@ export function CalendarSubscribeDialog() {
       const url = `${supabaseUrl}/functions/v1/calendar-feed?user_id=${user.id}&token=${data}`;
       setFeedUrl(url);
 
-      toast({
-        title: 'URL Regenerated',
-        description: 'Your calendar URL has been updated. Old subscriptions will stop working.',
-      });
+      toast.success('URL Regenerated', { description: 'Your calendar URL has been updated. Old subscriptions will stop working.' });
     } catch (error) {
       console.error('Error regenerating token:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to regenerate calendar URL',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to regenerate calendar URL' });
     } finally {
       setIsRegenerating(false);
     }

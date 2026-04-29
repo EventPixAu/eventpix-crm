@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useLeadNotes, useAddLeadNote, useDeleteLeadNote } from '@/hooks/useLeadNotes';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface LeadNotesPanelProps {
   leadId: string;
@@ -15,7 +15,6 @@ export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
   const { data: notes = [] } = useLeadNotes(leadId);
   const addNote = useAddLeadNote();
   const deleteNote = useDeleteLeadNote();
-  const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -26,12 +25,12 @@ export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
     setNewNote('');
     setIsAdding(false);
     setIsOpen(true);
-    toast({ title: 'Note added' });
+    toast.success('Note added');
   };
 
   const handleDelete = async (noteId: string) => {
     await deleteNote.mutateAsync({ id: noteId, leadId });
-    toast({ title: 'Note deleted' });
+    toast.success('Note deleted');
   };
 
   return (

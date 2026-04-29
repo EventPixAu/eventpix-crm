@@ -43,7 +43,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useContactImport, parseCSV, parseGoogleContactsWithGroups, fetchGoogleContactGroups, ImportedContact } from '@/hooks/useContactImport';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ContactImportDialogProps {
   open: boolean;
@@ -59,7 +59,6 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
   const [importTag, setImportTag] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
   
   const { 
     importContacts, 
@@ -114,11 +113,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           const parsed = parseGoogleContactsWithGroups(data.connections || [], groupMap);
           
           if (parsed.length === 0) {
-            toast({
-              title: 'No Contacts Found',
-              description: 'No importable contacts found in your Google account',
-              variant: 'destructive',
-            });
+            toast.error('No Contacts Found', { description: 'No importable contacts found in your Google account' });
             return;
           }
 
@@ -127,11 +122,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           setStep('preview');
           onOpenChange(true); // Open dialog if it was closed
         } catch (error: any) {
-          toast({
-            title: 'Google Import Failed',
-            description: error.message,
-            variant: 'destructive',
-          });
+          toast.error('Google Import Failed', { description: error.message });
         } finally {
           setIsGoogleLoading(false);
         }
@@ -156,11 +147,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.csv')) {
-      toast({
-        title: 'Invalid File',
-        description: 'Please select a CSV file',
-        variant: 'destructive',
-      });
+      toast.error('Invalid File', { description: 'Please select a CSV file' });
       return;
     }
 
@@ -169,11 +156,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
       const parsed = parseCSV(content);
       
       if (parsed.length === 0) {
-        toast({
-          title: 'No Contacts Found',
-          description: 'The CSV file appears to be empty or has an unsupported format',
-          variant: 'destructive',
-        });
+        toast.error('No Contacts Found', { description: 'The CSV file appears to be empty or has an unsupported format' });
         return;
       }
 
@@ -181,11 +164,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
       setImportSource('csv');
       setStep('preview');
     } catch (error: any) {
-      toast({
-        title: 'Failed to Parse CSV',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to Parse CSV', { description: error.message });
     }
 
     // Reset file input
@@ -220,10 +199,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
       // Check if popup was blocked
       if (!popup || popup.closed || typeof popup.closed === 'undefined') {
         // Popup was blocked - use redirect flow instead
-        toast({
-          title: 'Redirecting to Google',
-          description: 'You will be redirected to sign in with Google',
-        });
+        toast.success('Redirecting to Google', { description: 'You will be redirected to sign in with Google' });
         window.location.href = authUrl.toString();
         return;
       }
@@ -238,11 +214,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
 
         const accessToken = event.data.accessToken;
         if (!accessToken) {
-          toast({
-            title: 'Authentication Failed',
-            description: 'Could not get access token from Google',
-            variant: 'destructive',
-          });
+          toast.error('Authentication Failed', { description: 'Could not get access token from Google' });
           return;
         }
 
@@ -266,11 +238,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           const parsed = parseGoogleContactsWithGroups(data.connections || [], groupMap);
           
           if (parsed.length === 0) {
-            toast({
-              title: 'No Contacts Found',
-              description: 'No importable contacts found in your Google account',
-              variant: 'destructive',
-            });
+            toast.error('No Contacts Found', { description: 'No importable contacts found in your Google account' });
             return;
           }
 
@@ -278,11 +246,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
           setImportSource('google');
           setStep('preview');
         } catch (err: any) {
-          toast({
-            title: 'Failed to Fetch Contacts',
-            description: err.message,
-            variant: 'destructive',
-          });
+          toast.error('Failed to Fetch Contacts', { description: err.message });
         }
       };
 
@@ -302,11 +266,7 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
         window.removeEventListener('message', handleMessage);
       }, 300000);
     } catch (error: any) {
-      toast({
-        title: 'Google Import Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Google Import Failed', { description: error.message });
     }
   }, [toast]);
 

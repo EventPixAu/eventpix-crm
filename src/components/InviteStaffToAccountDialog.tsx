@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,6 @@ export function InviteStaffToAccountDialog({
 }: InviteStaffToAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState('photographer');
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: staffRoles = [] } = useAllStaffRoles();
   const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
@@ -97,19 +96,12 @@ export function InviteStaffToAccountDialog({
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['staff-profile'] });
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({
-        title: 'Invitation sent',
-        description: `An invitation email has been sent to ${staff.email}. Their account will be linked automatically when they accept.`,
-      });
+      toast.success('Invitation sent', { description: `An invitation email has been sent to ${staff.email}. Their account will be linked automatically when they accept.` });
       setOpen(false);
       onSuccess?.();
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to send invitation',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to send invitation', { description: error.message });
     },
   });
 

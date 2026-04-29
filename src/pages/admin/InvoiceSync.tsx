@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   useEventsWithInvoices, 
   useXeroSyncLogs, 
@@ -47,7 +47,6 @@ const STATUS_COLORS: Record<string, { label: string; variant: 'default' | 'secon
 
 export default function InvoiceSync() {
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   
   const { data: events, isLoading: eventsLoading } = useEventsWithInvoices();
@@ -65,15 +64,11 @@ export default function InvoiceSync() {
     const error = searchParams.get('xero_error');
     
     if (connected === 'true') {
-      toast({ title: 'Xero connected successfully!' });
+      toast.success('Xero connected successfully!');
       refetchStatus();
       setSearchParams({});
     } else if (error) {
-      toast({ 
-        title: 'Xero connection failed', 
-        description: error.replace(/_/g, ' '),
-        variant: 'destructive'
-      });
+      toast.error('Xero connection failed', { description: error.replace(/_/g, ' ') });
       setSearchParams({});
     }
   }, [searchParams, toast, refetchStatus, setSearchParams]);

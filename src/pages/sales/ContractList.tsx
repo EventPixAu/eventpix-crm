@@ -42,7 +42,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useContracts, useCreateContract } from '@/hooks/useContracts';
 import { useClients } from '@/hooks/useSales';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon: React.ComponentType<any> }> = {
   draft: { label: 'Draft', variant: 'secondary', icon: FileText },
@@ -53,7 +53,6 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
 
 export default function ContractList() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: contracts, isLoading } = useContracts();
   const { data: clients } = useClients();
   const createContract = useCreateContract();
@@ -75,7 +74,7 @@ export default function ContractList() {
 
   const handleCreateContract = async () => {
     if (!newContract.title || !newContract.client_id) {
-      toast({ title: 'Please fill in all required fields', variant: 'destructive' });
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -89,7 +88,7 @@ export default function ContractList() {
       setNewContract({ title: '', client_id: '' });
       navigate(`/sales/contracts/${result.id}`);
     } catch (err: any) {
-      toast({ title: 'Failed to create contract', description: err.message, variant: 'destructive' });
+      toast.error('Failed to create contract', { description: err.message });
     }
   };
 

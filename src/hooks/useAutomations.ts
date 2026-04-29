@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
 
 export type TriggerType = 'date_relative' | 'status_change' | 'assignment_created' | 'event_created' | 'delivery_completed';
@@ -83,7 +83,6 @@ export function useAutomation(id: string | undefined) {
 
 export function useCreateAutomation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (automation: AutomationInsert) => {
@@ -111,17 +110,16 @@ export function useCreateAutomation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automations'] });
-      toast({ title: 'Automation created successfully' });
+      toast.success('Automation created successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error creating automation', description: error.message, variant: 'destructive' });
+      toast.error('Error creating automation', { description: error.message });
     },
   });
 }
 
 export function useUpdateAutomation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: AutomationUpdate & { id: string }) => {
@@ -147,17 +145,16 @@ export function useUpdateAutomation() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['automations'] });
       queryClient.invalidateQueries({ queryKey: ['automations', data.id] });
-      toast({ title: 'Automation updated successfully' });
+      toast.success('Automation updated successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error updating automation', description: error.message, variant: 'destructive' });
+      toast.error('Error updating automation', { description: error.message });
     },
   });
 }
 
 export function useToggleAutomation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
@@ -173,17 +170,16 @@ export function useToggleAutomation() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['automations'] });
-      toast({ title: `Automation ${data.is_active ? 'enabled' : 'disabled'}` });
+      toast.success(`Automation ${data.is_active ? 'enabled' : 'disabled'}`);
     },
     onError: (error) => {
-      toast({ title: 'Error toggling automation', description: error.message, variant: 'destructive' });
+      toast.error('Error toggling automation', { description: error.message });
     },
   });
 }
 
 export function useDeleteAutomation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -196,10 +192,10 @@ export function useDeleteAutomation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automations'] });
-      toast({ title: 'Automation deleted successfully' });
+      toast.success('Automation deleted successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error deleting automation', description: error.message, variant: 'destructive' });
+      toast.error('Error deleting automation', { description: error.message });
     },
   });
 }

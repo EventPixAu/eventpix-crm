@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -78,7 +78,6 @@ export function SendOpsEmailDialog({
   initialBody,
   storageAttachments,
 }: SendOpsEmailDialogProps) {
-  const { toast } = useToast();
   const { data: templates } = useActiveEmailTemplates();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -104,7 +103,7 @@ export function SendOpsEmailDialog({
     if (!files) return;
     for (const file of Array.from(files)) {
       if (file.size > 10 * 1024 * 1024) {
-        toast({ title: 'File too large', description: `${file.name} exceeds 10 MB limit.`, variant: 'destructive' });
+        toast.error('File too large', { description: `${file.name} exceeds 10 MB limit.` });
         continue;
       }
       const reader = new FileReader();
@@ -237,11 +236,7 @@ export function SendOpsEmailDialog({
 
   const handleSend = async () => {
     if (selectedRecipients.length === 0 || !subject) {
-      toast({ 
-        title: 'Missing required fields', 
-        description: 'Please select at least one recipient and enter a subject.',
-        variant: 'destructive' 
-      });
+      toast.error('Missing required fields', { description: 'Please select at least one recipient and enter a subject.' });
       return;
     }
 
@@ -320,16 +315,9 @@ export function SendOpsEmailDialog({
       const failed = results.filter(r => r.status === 'rejected').length;
 
       if (failed > 0) {
-        toast({ 
-          title: 'Partial success', 
-          description: `${successful} sent, ${failed} failed.`,
-          variant: 'destructive' 
-        });
+        toast.error('Partial success', { description: `${successful} sent, ${failed} failed.` });
       } else {
-        toast({ 
-          title: 'Emails sent successfully', 
-          description: `Sent to ${successful} recipient(s).` 
-        });
+        toast.success('Emails sent successfully', { description: `Sent to ${successful} recipient(s).` });
       }
       
       // Reset form and close
@@ -341,11 +329,7 @@ export function SendOpsEmailDialog({
       setEditingPlainText(false);
       onOpenChange(false);
     } catch (err: any) {
-      toast({ 
-        title: 'Failed to send email', 
-        description: err.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to send email', { description: err.message });
     } finally {
       setSending(false);
     }

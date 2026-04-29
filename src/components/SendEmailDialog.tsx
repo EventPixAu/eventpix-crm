@@ -38,7 +38,7 @@ import { useGenerateProposalPdf, htmlToPdfBlob, blobToBase64 } from '@/hooks/use
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface MergeFieldContext {
   eventName?: string;
@@ -92,7 +92,6 @@ export function SendEmailDialog({
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
   const generatePdf = useGenerateProposalPdf();
-  const { toast } = useToast();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [recipients, setRecipients] = useState<Recipient[]>([]);
@@ -389,10 +388,7 @@ export function SendEmailDialog({
     setIsSending(false);
 
     if (successCount > 0) {
-      toast({
-        title: `Email sent to ${successCount} recipient${successCount > 1 ? 's' : ''}`,
-        description: failCount > 0 ? `${failCount} failed to send` : undefined,
-      });
+      toast.success(`Email sent to ${successCount} recipient${successCount > 1 ? 's' : ''}`, { description: failCount > 0 ? `${failCount} failed to send` : undefined });
       if (onSendSuccess) await onSendSuccess();
       onOpenChange(false);
     }

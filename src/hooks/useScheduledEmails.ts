@@ -5,7 +5,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface ScheduledEmail {
   id: string;
@@ -74,7 +74,6 @@ export function usePendingScheduledEmails() {
 
 export function useCreateScheduledEmail() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (email: ScheduledEmailInsert) => {
@@ -94,17 +93,16 @@ export function useCreateScheduledEmail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduled-emails'] });
-      toast({ title: 'Email scheduled successfully' });
+      toast.success('Email scheduled successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to schedule email', description: error.message, variant: 'destructive' });
+      toast.error('Failed to schedule email', { description: error.message });
     },
   });
 }
 
 export function useCancelScheduledEmail() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -117,17 +115,16 @@ export function useCancelScheduledEmail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduled-emails'] });
-      toast({ title: 'Scheduled email cancelled' });
+      toast.success('Scheduled email cancelled');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to cancel email', description: error.message, variant: 'destructive' });
+      toast.error('Failed to cancel email', { description: error.message });
     },
   });
 }
 
 export function useDeleteScheduledEmail() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -140,10 +137,10 @@ export function useDeleteScheduledEmail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduled-emails'] });
-      toast({ title: 'Scheduled email deleted' });
+      toast.success('Scheduled email deleted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete email', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete email', { description: error.message });
     },
   });
 }

@@ -3,11 +3,10 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export function useCreateCrewChecklistFromTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -76,14 +75,10 @@ export function useCreateCrewChecklistFromTemplate() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['event-crew-checklists', variables.eventId] });
-      toast({ title: 'Checklist created' });
+      toast.success('Checklist created');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to create checklist', 
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to create checklist', { description: error.message });
     },
   });
 }

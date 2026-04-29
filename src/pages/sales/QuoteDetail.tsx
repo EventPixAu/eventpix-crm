@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
 import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
 import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, useReorderQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
@@ -86,7 +86,6 @@ export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
   const { isAdmin } = useAuth();
   
   const isNewQuote = id === 'new';
@@ -162,11 +161,7 @@ export default function QuoteDetail() {
           // Navigate to the created quote (keeping any useful display params)
           navigate(`/sales/quotes/${newQuote.id}`, { replace: true });
         } catch (error: any) {
-          toast({ 
-            title: 'Failed to create quote', 
-            description: error.message, 
-            variant: 'destructive' 
-          });
+          toast.error('Failed to create quote', { description: error.message });
           navigate('/sales/quotes');
         }
       };
@@ -349,10 +344,10 @@ export default function QuoteDetail() {
         throw new Error(result.error || 'Failed to send quote');
       }
       
-      toast({ title: 'Budget marked as sent', description: 'Share the proposal link with your client.' });
+      toast.success('Budget marked as sent', { description: 'Share the proposal link with your client.' });
       window.location.reload();
     } catch (err: any) {
-      toast({ title: 'Failed to send budget', description: err.message, variant: 'destructive' });
+      toast.error('Failed to send budget', { description: err.message });
     } finally {
       setSendingQuote(false);
     }
@@ -374,10 +369,10 @@ export default function QuoteDetail() {
         throw new Error(result.error || 'Failed to regenerate token');
       }
       
-      toast({ title: 'Link regenerated', description: 'Previous link has been invalidated.' });
+      toast.success('Link regenerated', { description: 'Previous link has been invalidated.' });
       window.location.reload();
     } catch (err: any) {
-      toast({ title: 'Failed to regenerate link', description: err.message, variant: 'destructive' });
+      toast.error('Failed to regenerate link', { description: err.message });
     } finally {
       setRegeneratingToken(false);
     }
@@ -399,7 +394,7 @@ export default function QuoteDetail() {
     if (!quote?.public_token) return;
     const link = `${getPublicBaseUrl()}/accept/${quote.public_token}`;
     navigator.clipboard.writeText(link);
-    toast({ title: 'Link copied to clipboard' });
+    toast.success('Link copied to clipboard');
   };
 
   const handleIntroBlur = async () => {

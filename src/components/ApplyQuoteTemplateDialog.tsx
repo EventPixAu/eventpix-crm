@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { useActiveQuoteTemplates, QuoteTemplate } from '@/hooks/useQuoteTemplates';
 import { useCreateQuoteItem } from '@/hooks/useQuoteItems';
 import { useUpdateQuote } from '@/hooks/useSales';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ApplyQuoteTemplateDialogProps {
   open: boolean;
@@ -42,7 +42,6 @@ export function ApplyQuoteTemplateDialog({
   quoteId,
   onApplied,
 }: ApplyQuoteTemplateDialogProps) {
-  const { toast } = useToast();
   const { data: templates, isLoading } = useActiveQuoteTemplates();
   const createItem = useCreateQuoteItem();
   const updateQuote = useUpdateQuote();
@@ -81,16 +80,13 @@ export function ApplyQuoteTemplateDialog({
         });
       }
 
-      toast({ 
-        title: 'Template applied', 
-        description: `Added ${selectedTemplate.items_json.length} items from "${selectedTemplate.name}"` 
-      });
+      toast.success('Template applied', { description: `Added ${selectedTemplate.items_json.length} items from "${selectedTemplate.name}"` });
       
       setSelectedTemplateId('');
       onOpenChange(false);
       onApplied?.();
     } catch (err: any) {
-      toast({ title: 'Failed to apply template', description: err.message, variant: 'destructive' });
+      toast.error('Failed to apply template', { description: err.message });
     } finally {
       setApplying(false);
     }

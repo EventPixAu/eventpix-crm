@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface CoveragePackage {
   id: string;
@@ -54,7 +54,6 @@ export function useActiveCoveragePackages() {
 
 export function useCreateCoveragePackage() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (pkg: CoveragePackageInsert) => {
@@ -69,17 +68,16 @@ export function useCreateCoveragePackage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coverage-packages'] });
-      toast({ title: 'Coverage package created successfully' });
+      toast.success('Coverage package created successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error creating coverage package', description: error.message, variant: 'destructive' });
+      toast.error('Error creating coverage package', { description: error.message });
     },
   });
 }
 
 export function useUpdateCoveragePackage() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: CoveragePackageUpdate & { id: string }) => {
@@ -95,10 +93,10 @@ export function useUpdateCoveragePackage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['coverage-packages'] });
-      toast({ title: 'Coverage package updated successfully' });
+      toast.success('Coverage package updated successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error updating coverage package', description: error.message, variant: 'destructive' });
+      toast.error('Error updating coverage package', { description: error.message });
     },
   });
 }

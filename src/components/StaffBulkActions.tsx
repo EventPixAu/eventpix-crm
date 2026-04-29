@@ -28,7 +28,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Staff } from '@/hooks/useStaff';
 
 interface StaffBulkActionsProps {
@@ -46,7 +46,6 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
   const [isUpdating, setIsUpdating] = useState(false);
   
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const handleBulkStatusChange = async () => {
     setIsUpdating(true);
@@ -58,12 +57,12 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
 
       if (error) throw error;
 
-      toast({ title: `Updated status for ${selectedStaff.length} team members` });
+      toast.success(`Updated status for ${selectedStaff.length} team members`);
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       setStatusDialogOpen(false);
       onClearSelection();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to update status', description: error.message });
+      toast.error('Failed to update status', { description: error.message });
     } finally {
       setIsUpdating(false);
     }
@@ -79,12 +78,12 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
 
       if (error) throw error;
 
-      toast({ title: `Updated role for ${selectedStaff.length} team members` });
+      toast.success(`Updated role for ${selectedStaff.length} team members`);
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       setRoleDialogOpen(false);
       onClearSelection();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to update role', description: error.message });
+      toast.error('Failed to update role', { description: error.message });
     } finally {
       setIsUpdating(false);
     }
@@ -100,13 +99,13 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
 
       if (error) throw error;
 
-      toast({ title: `Updated location for ${selectedStaff.length} team members` });
+      toast.success(`Updated location for ${selectedStaff.length} team members`);
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       setLocationDialogOpen(false);
       setNewLocation('');
       onClearSelection();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to update location', description: error.message });
+      toast.error('Failed to update location', { description: error.message });
     } finally {
       setIsUpdating(false);
     }
@@ -137,7 +136,7 @@ export function StaffBulkActions({ selectedStaff, onClearSelection }: StaffBulkA
     link.click();
     document.body.removeChild(link);
     
-    toast({ title: `Exported ${selectedStaff.length} team members to CSV` });
+    toast.success(`Exported ${selectedStaff.length} team members to CSV`);
   };
 
   if (selectedStaff.length === 0) return null;

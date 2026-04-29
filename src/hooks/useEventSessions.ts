@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type EventSession = Database['public']['Tables']['event_sessions']['Row'];
@@ -47,7 +47,6 @@ export function useLeadSessions(leadId: string | undefined) {
 
 export function useCreateEventSession() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (session: EventSessionInsert) => {
@@ -67,17 +66,16 @@ export function useCreateEventSession() {
       if (data.lead_id) {
         queryClient.invalidateQueries({ queryKey: ['lead-sessions', data.lead_id] });
       }
-      toast({ title: 'Session added' });
+      toast.success('Session added');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add session', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add session', { description: error.message });
     },
   });
 }
 
 export function useUpdateEventSession() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: EventSessionUpdate & { id: string }) => {
@@ -98,17 +96,16 @@ export function useUpdateEventSession() {
       if (data.lead_id) {
         queryClient.invalidateQueries({ queryKey: ['lead-sessions', data.lead_id] });
       }
-      toast({ title: 'Session updated' });
+      toast.success('Session updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update session', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update session', { description: error.message });
     },
   });
 }
 
 export function useDeleteEventSession() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, eventId, leadId }: { id: string; eventId?: string; leadId?: string }) => {
@@ -127,10 +124,10 @@ export function useDeleteEventSession() {
       if (data.leadId) {
         queryClient.invalidateQueries({ queryKey: ['lead-sessions', data.leadId] });
       }
-      toast({ title: 'Session removed' });
+      toast.success('Session removed');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to remove session', description: error.message, variant: 'destructive' });
+      toast.error('Failed to remove session', { description: error.message });
     },
   });
 }

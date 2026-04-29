@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Types
 export interface Product {
@@ -71,7 +71,6 @@ export function useProductCategories() {
 
 export function useCreateProductCategory() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (category: Omit<ProductCategory, 'id' | 'created_at'>) => {
@@ -86,10 +85,10 @@ export function useCreateProductCategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-categories'] });
-      toast({ title: 'Category created successfully' });
+      toast.success('Category created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create category', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create category', { description: error.message });
     },
   });
 }
@@ -180,7 +179,6 @@ export function useProduct(id: string | undefined) {
 
 export function useCreateProduct() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (product: ProductInsert) => {
@@ -195,17 +193,16 @@ export function useCreateProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Product created successfully' });
+      toast.success('Product created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create product', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create product', { description: error.message });
     },
   });
 }
 
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: ProductUpdate) => {
@@ -222,17 +219,16 @@ export function useUpdateProduct() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', variables.id] });
-      toast({ title: 'Product updated successfully' });
+      toast.success('Product updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update product', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update product', { description: error.message });
     },
   });
 }
 
 export function useDeleteProduct() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -245,10 +241,10 @@ export function useDeleteProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Product deleted successfully' });
+      toast.success('Product deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete product', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete product', { description: error.message });
     },
   });
 }

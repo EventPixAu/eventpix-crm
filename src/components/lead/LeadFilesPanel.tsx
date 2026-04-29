@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { FolderOpen, Upload, Trash2, FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useLeadFiles, useUploadLeadFile, useDeleteLeadFile } from '@/hooks/useLeadFiles';
 import { LeadCollapsiblePanel } from './LeadCollapsiblePanel';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +18,6 @@ function formatFileSize(bytes: number | null) {
 }
 
 export function LeadFilesPanel({ leadId }: LeadFilesPanelProps) {
-  const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const { data: files = [] } = useLeadFiles(leadId);
   const uploadFile = useUploadLeadFile();
@@ -28,14 +27,14 @@ export function LeadFilesPanel({ leadId }: LeadFilesPanelProps) {
     if (!fileList) return;
     for (const file of Array.from(fileList)) {
       if (file.size > 50 * 1024 * 1024) {
-        toast({ title: 'File too large', description: `${file.name} exceeds 50 MB`, variant: 'destructive' });
+        toast.error('File too large', { description: `${file.name} exceeds 50 MB` });
         continue;
       }
       try {
         await uploadFile.mutateAsync({ leadId, file });
-        toast({ title: 'Uploaded', description: file.name });
+        toast.success('Uploaded', { description: file.name });
       } catch (e: any) {
-        toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+        toast.error('Upload failed', { description: e.message });
       }
     }
     if (inputRef.current) inputRef.current.value = '';
@@ -44,7 +43,7 @@ export function LeadFilesPanel({ leadId }: LeadFilesPanelProps) {
   const handleDownload = async (filePath: string, fileName: string) => {
     const { data, error } = await supabase.storage.from('lead-files').createSignedUrl(filePath, 3600);
     if (error || !data?.signedUrl) {
-      toast({ title: 'Download failed', description: error?.message || 'Could not generate download link', variant: 'destructive' });
+      toast.error('Download failed', { description: error?.message || 'Could not generate download link' });
       return;
     }
     const a = document.createElement('a');

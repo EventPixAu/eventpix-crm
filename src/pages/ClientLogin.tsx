@@ -5,7 +5,7 @@ import { Loader2, Mail, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 
@@ -13,7 +13,6 @@ export default function ClientLogin() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   // If already logged in, redirect to portal
@@ -37,11 +36,7 @@ export default function ClientLogin() {
       });
 
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Unable to send login link',
-          description: error.message,
-        });
+        toast.error('Unable to send login link', { description: error.message });
       } else {
         setLinkSent(true);
       }

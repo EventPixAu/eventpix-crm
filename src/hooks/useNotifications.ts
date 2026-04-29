@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface SendNotificationParams {
   type: 'assignment' | 'event_update';
@@ -10,7 +10,6 @@ interface SendNotificationParams {
 }
 
 export function useSendNotification() {
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (params: SendNotificationParams) => {
@@ -23,20 +22,13 @@ export function useSendNotification() {
     },
     onSuccess: (data) => {
       if (data?.dryRun) {
-        toast({ 
-          title: 'Notification queued (prototype mode)',
-          description: 'Email sending is not configured. Check console for details.',
-        });
+        toast.success('Notification queued (prototype mode)', { description: 'Email sending is not configured. Check console for details.' });
       } else {
-        toast({ title: 'Notification sent' });
+        toast.success('Notification sent');
       }
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to send notification', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to send notification', { description: error.message });
     },
   });
 }

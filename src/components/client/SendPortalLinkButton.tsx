@@ -12,7 +12,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { getPublicBaseUrl } from '@/lib/utils';
 
 export interface PortalLinkContact {
@@ -48,7 +48,6 @@ export function SendPortalLinkButton({
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const sendEmail = useSendCrmEmail();
-  const { toast } = useToast();
 
   // Build deduplicated contacts list from both props
   const allContacts: PortalLinkContact[] = [];
@@ -126,10 +125,7 @@ export function SendPortalLinkButton({
         });
       }
 
-      toast({
-        title: 'Portal link sent',
-        description: `Email sent to ${selectedEmails.size} contact${selectedEmails.size > 1 ? 's' : ''}`,
-      });
+      toast.success('Portal link sent', { description: `Email sent to ${selectedEmails.size} contact${selectedEmails.size > 1 ? 's' : ''}` });
       setConfirmOpen(false);
     } catch {
       // Error handled in hook

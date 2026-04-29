@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import type { Session } from '@supabase/supabase-js';
 
@@ -76,7 +76,6 @@ export default function ClientPortalDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;

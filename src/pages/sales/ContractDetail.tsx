@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { 
   useContract, 
   useUpdateContract, 
@@ -74,7 +74,6 @@ const editableTextToHtml = (text: string) => {
 export default function ContractDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   const { data: contract, isLoading } = useContract(id);
   const updateContract = useUpdateContract();
@@ -101,7 +100,7 @@ export default function ContractDetail() {
     const url = getPublicSigningUrl();
     if (url) {
       navigator.clipboard.writeText(url);
-      toast({ title: 'Signing link copied to clipboard' });
+      toast.success('Signing link copied to clipboard');
     }
   };
 
@@ -123,9 +122,9 @@ export default function ContractDetail() {
         file_url: fileUrl,
       });
       
-      toast({ title: 'Contract file uploaded successfully' });
+      toast.success('Contract file uploaded successfully');
     } catch (err: any) {
-      toast({ title: 'Failed to upload file', description: err.message, variant: 'destructive' });
+      toast.error('Failed to upload file', { description: err.message });
     } finally {
       setUploading(false);
     }

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 export interface ConvertToEventInput {
@@ -63,7 +63,6 @@ export interface ConvertToEventResult {
 
 export function useConvertToEvent() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   return useMutation({
@@ -104,21 +103,14 @@ export function useConvertToEvent() {
         contractsLinked > 0 ? `${contractsLinked} contracts` : null,
       ].filter(Boolean).join(', ');
       
-      toast({
-        title: 'Job created successfully',
-        description: `All Sales data transferred. ${details || 'Event ready'}${warnings.length > 0 ? `. Warnings: ${warnings.join(', ')}` : ''}`,
-      });
+      toast.success('Job created successfully', { description: `All Sales data transferred. ${details || 'Event ready'}${warnings.length > 0 ? `. Warnings: ${warnings.join(', ')}` : ''}` });
       
       if (result.event_id) {
         navigate(`/events/${result.event_id}`);
       }
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to create event',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to create event', { description: error.message });
     },
   });
 }
