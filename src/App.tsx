@@ -5,19 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { RoleGuard, AdminGuard, SalesGuard, OpsGuard, CrewGuard } from "@/components/RoleGuard";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    // Also catch late-rendering content
-    const t = setTimeout(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    }, 50);
-    return () => clearTimeout(t);
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 }
