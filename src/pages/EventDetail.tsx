@@ -937,7 +937,6 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
-                              updated_at: event.updated_at,
                               event_type_id: value,
                             });
                             setIsUpdatingStatus(false);
@@ -975,7 +974,6 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
-                              updated_at: event.updated_at,
                               delivery_method_guests_id: value,
                             });
                             setIsUpdatingStatus(false);
@@ -1013,7 +1011,6 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
-                              updated_at: event.updated_at,
                               delivery_method_id: value,
                             });
                             setIsUpdatingStatus(false);
@@ -1190,7 +1187,6 @@ export default function EventDetail() {
                           setIsUpdatingStatus(true);
                           await updateEvent.mutateAsync({
                             id: event.id,
-                            updated_at: event.updated_at,
                             ops_status: value,
                           });
                           setIsUpdatingStatus(false);
@@ -1219,7 +1215,6 @@ export default function EventDetail() {
                           setIsUpdatingStatus(true);
                           await updateEvent.mutateAsync({
                             id: event.id,
-                            updated_at: event.updated_at,
                             invoice_status: value,
                           });
                           setIsUpdatingStatus(false);
@@ -1248,7 +1243,6 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
-                              updated_at: event.updated_at,
                               invoice_reference: value || null,
                             });
                             setIsUpdatingStatus(false);
@@ -1269,7 +1263,6 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
-                              updated_at: event.updated_at,
                               xero_tag: value || null,
                             });
                             setIsUpdatingStatus(false);

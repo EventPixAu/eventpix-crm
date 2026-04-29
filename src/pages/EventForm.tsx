@@ -319,7 +319,7 @@ export default function EventForm() {
     }
 
     if (isEditing && id) {
-      await updateEvent.mutateAsync({ id, updated_at: event!.updated_at!, ...cleanValues });
+      await updateEvent.mutateAsync({ id, ...cleanValues });
       navigate(`/events/${id}`);
     } else {
       const result = await createEvent.mutateAsync(cleanValues);

@@ -33,7 +33,6 @@ interface ApplyQuoteTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quoteId: string;
-  quoteUpdatedAt: string;
   onApplied?: () => void;
 }
 
@@ -41,7 +40,6 @@ export function ApplyQuoteTemplateDialog({
   open,
   onOpenChange,
   quoteId,
-  quoteUpdatedAt,
   onApplied,
 }: ApplyQuoteTemplateDialogProps) {
   const { data: templates, isLoading } = useActiveQuoteTemplates();
@@ -78,7 +76,6 @@ export function ApplyQuoteTemplateDialog({
       if (selectedTemplate.terms_text) {
         await updateQuote.mutateAsync({
           id: quoteId,
-          updated_at: quoteUpdatedAt,
           terms_text: selectedTemplate.terms_text,
         });
       }

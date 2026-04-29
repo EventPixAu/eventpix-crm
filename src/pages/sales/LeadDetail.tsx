@@ -400,7 +400,6 @@ export default function LeadDetail(): JSX.Element {
           <LeadSummaryCard
             lead={{
               id: lead.id,
-              updated_at: lead.updated_at,
               lead_name: lead.lead_name,
               status: lead.status,
               client_id: (lead as any).client_id,
@@ -515,7 +514,7 @@ export default function LeadDetail(): JSX.Element {
                           <DropdownMenuItem
                             onClick={async (e) => {
                               e.preventDefault();
-                              await updateQuote.mutateAsync({ id: quote.id, updated_at: quote.updated_at, status: 'rejected' });
+                              await updateQuote.mutateAsync({ id: quote.id, status: 'rejected' });
                               toast.success('Budget marked as rejected');
                             }}
                             className="text-destructive focus:text-destructive"

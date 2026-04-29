@@ -56,7 +56,6 @@ const variantToColor: Record<string, string> = {
 
 interface ClientStatusEditorProps {
   clientId: string;
-  updatedAt: string;
   manualStatus: string | null;
   computedStatus: string;
   statusOverrideAt?: string | null;
@@ -66,7 +65,6 @@ interface ClientStatusEditorProps {
 
 export function ClientStatusEditor({
   clientId,
-  updatedAt,
   manualStatus,
   computedStatus,
   statusOverrideAt,
@@ -117,7 +115,6 @@ export function ClientStatusEditor({
       
       await updateClient.mutateAsync({
         id: clientId,
-        updated_at: updatedAt,
         manual_status: selectedStatus,
         status_override_at: new Date().toISOString(),
         status_override_by: user?.id,
@@ -152,7 +149,6 @@ export function ClientStatusEditor({
       
       await updateClient.mutateAsync({
         id: clientId,
-        updated_at: updatedAt,
         manual_status: null,
         status_override_at: null,
         status_override_by: null,
