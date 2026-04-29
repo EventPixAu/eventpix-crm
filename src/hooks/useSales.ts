@@ -368,16 +368,17 @@ export function useUpdateQuote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: QuoteUpdate & { id: string }) => {
+    mutationFn: async ({ id, updated_at: originalUpdatedAt, ...updates }: LockedQuoteUpdate) => {
       const { data, error } = await supabase
         .from('quotes')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .eq('updated_at', originalUpdatedAt)
+        .select();
       
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error(OPTIMISTIC_LOCK_ERROR);
+      return data[0];
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
