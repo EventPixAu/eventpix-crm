@@ -287,6 +287,7 @@ export function SortableQuoteItems({
                         onEdit={onEdit}
                         onDelete={onDelete}
                         onGroupChange={onGroupChange}
+                        isDeleting={isDeleting}
                       />
                     ))}
                   </TableBody>
