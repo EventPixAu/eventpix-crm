@@ -1,5 +1,5 @@
  import { useState, useMemo } from 'react';
- import { Users, Plus, Trash2, RefreshCw, UserCheck } from 'lucide-react';
+ import { Users, Plus, Trash2, RefreshCw, UserCheck, Loader2 } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';
@@ -97,6 +97,7 @@
    };
    
    const handleRemove = (id: string) => {
+     if (removeAssignment.isPending) return;
      removeAssignment.mutate({ id, series_id: seriesId });
      setRemoveId(null);
    };
@@ -333,9 +334,10 @@
              <AlertDialogCancel>Cancel</AlertDialogCancel>
              <AlertDialogAction 
                onClick={() => removeId && handleRemove(removeId)}
+               disabled={removeAssignment.isPending}
                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
              >
-               Remove
+               {removeAssignment.isPending ? 'Removing...' : 'Remove'}
              </AlertDialogAction>
            </AlertDialogFooter>
          </AlertDialogContent>

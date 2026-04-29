@@ -6,7 +6,7 @@
  * - Editable Company Status
  * - Edit/Delete buttons
  */
-import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag, Database } from 'lucide-react';
+import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag, Database, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ interface ClientProfileCardProps {
   onDelete: () => void;
   onStatusUpdate?: () => void;
   canDelete?: boolean;
+  isDeleting?: boolean;
 }
 
 // Parse billing_address into structured fields
@@ -67,7 +68,8 @@ export function ClientProfileCard({
   onEdit, 
   onDelete,
   onStatusUpdate,
-  canDelete = true 
+  canDelete = true,
+  isDeleting = false 
 }: ClientProfileCardProps) {
   const addressFields = parseAddress(client.billing_address);
   const hasAddress = Object.values(addressFields).some(v => v);
@@ -178,9 +180,9 @@ export function ClientProfileCard({
           />
           
           {canDelete && (
-            <Button variant="outline" size="sm" onClick={onDelete}>
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              Delete
+            <Button variant="outline" size="sm" onClick={onDelete} disabled={isDeleting}>
+              {isDeleting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           )}
         </div>

@@ -15,7 +15,8 @@ import {
   Send, 
   Trash2,
   Plus,
-  Circle 
+  Circle,
+  Loader2 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,9 +38,10 @@ interface JobItemProps {
   job: JobWithType;
   onSendEmail?: () => void;
   onDelete?: () => void;
+  isDeleting?: boolean;
 }
 
-function JobItem({ job, onSendEmail, onDelete }: JobItemProps) {
+function JobItem({ job, onSendEmail, onDelete, isDeleting = false }: JobItemProps) {
   // Status color based on ops_status
   const getStatusColor = (status: string | null | undefined) => {
     switch (status) {
@@ -97,9 +99,9 @@ function JobItem({ job, onSendEmail, onDelete }: JobItemProps) {
           Send email
         </Button>
         
-        <Button variant="outline" size="sm" onClick={onDelete}>
-          <Trash2 className="h-4 w-4 mr-1.5" />
-          Delete
+        <Button variant="outline" size="sm" onClick={onDelete} disabled={isDeleting}>
+          {isDeleting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+          {isDeleting ? 'Deleting...' : 'Delete'}
         </Button>
       </div>
     </div>
@@ -117,6 +119,7 @@ export function ClientJobsList({ clientId, onAddJob, onSendEmail }: ClientJobsLi
   const deleteEvent = useDeleteEvent();
   
   const handleDelete = async (eventId: string) => {
+    if (deleteEvent.isPending) return;
     if (!confirm('Are you sure you want to delete this job?')) return;
     try {
       await deleteEvent.mutateAsync(eventId);
@@ -159,6 +162,7 @@ export function ClientJobsList({ clientId, onAddJob, onSendEmail }: ClientJobsLi
               job={event as JobWithType}
               onSendEmail={() => onSendEmail?.(event.id)}
               onDelete={() => handleDelete(event.id)}
+              isDeleting={deleteEvent.isPending}
             />
           ))
         )}

@@ -186,6 +186,7 @@ export default function ClientDetail() {
 
   const handleDelete = async () => {
     if (!id) return;
+    if (deleteClient.isPending) return;
     if (events.length > 0) {
       alert('Cannot delete company with existing events. Please delete or reassign events first.');
       return;
@@ -437,6 +438,7 @@ export default function ClientDetail() {
             onEdit={handleOpenEdit}
             onDelete={handleDelete}
             canDelete={events.length === 0}
+            isDeleting={deleteClient.isPending}
           />
 
           {/* Notes */}

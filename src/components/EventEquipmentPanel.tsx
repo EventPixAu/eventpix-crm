@@ -22,7 +22,8 @@ import {
   Camera,
   Settings2,
   ExternalLink,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 import { 
   useEventAllocations, 
@@ -189,6 +190,7 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
   };
 
   const handleRemove = async (id: string) => {
+    if (removeAllocation.isPending) return;
     if (confirm('Remove this allocation?')) {
       await removeAllocation.mutateAsync({ id, eventId });
     }
@@ -567,8 +569,8 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                                         <Button size="icon" variant="ghost" onClick={() => openStatusDialog(alloc.id, alloc.status, alloc.user_id)} title="Update status">
                                           <ArrowLeftRight className="h-4 w-4" />
                                         </Button>
-                                        <Button size="icon" variant="ghost" onClick={() => handleRemove(alloc.id)} title="Remove">
-                                          <Trash2 className="h-4 w-4" />
+                                        <Button size="icon" variant="ghost" onClick={() => handleRemove(alloc.id)} disabled={removeAllocation.isPending} title="Remove">
+                                          {removeAllocation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                         </Button>
                                       </div>
                                     </TableCell>
@@ -666,9 +668,10 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => handleRemove(alloc.id)}
+                                disabled={removeAllocation.isPending}
                                 title="Remove"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                {removeAllocation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                               </Button>
                             </div>
                           </TableCell>

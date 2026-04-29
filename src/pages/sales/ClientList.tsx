@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Plus, Search, Building2, Mail, Phone, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Building2, Mail, Phone, MoreHorizontal, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -79,6 +79,7 @@ export default function ClientList() {
   };
 
   const handleDelete = async (id: string) => {
+    if (deleteClient.isPending) return;
     if (confirm('Are you sure you want to delete this client?')) {
       await deleteClient.mutateAsync(id);
     }
@@ -179,8 +180,14 @@ export default function ClientList() {
                             <DropdownMenuItem 
                               className="text-destructive"
                               onClick={() => handleDelete(client.id)}
+                              disabled={deleteClient.isPending}
                             >
-                              Delete
+                              {deleteClient.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Deleting...
+                                </>
+                              ) : 'Delete'}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>

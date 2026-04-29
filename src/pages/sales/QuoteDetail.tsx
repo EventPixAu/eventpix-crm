@@ -270,6 +270,7 @@ export default function QuoteDetail() {
 
   const handleDeleteItem = async (itemId: string) => {
     if (!id) return;
+    if (deleteItem.isPending) return;
     await deleteItem.mutateAsync({ id: itemId, quote_id: id });
   };
 
@@ -694,6 +695,7 @@ export default function QuoteDetail() {
                     onDelete={handleDeleteItem}
                     onGroupChange={handleItemGroupChange}
                     onReorder={handleReorderItems}
+                    isDeleting={deleteItem.isPending}
                   />
                 </CardContent>
               </Card>

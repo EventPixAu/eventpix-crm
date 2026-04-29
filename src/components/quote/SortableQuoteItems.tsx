@@ -22,7 +22,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -50,6 +50,7 @@ interface SortableRowProps {
   onEdit: (item: QuoteItem) => void;
   onDelete: (itemId: string) => void;
   onGroupChange: (itemId: string, group: string) => void;
+  isDeleting?: boolean;
 }
 
 function SortableRow({
@@ -60,6 +61,7 @@ function SortableRow({
   onEdit,
   onDelete,
   onGroupChange,
+  isDeleting = false,
 }: SortableRowProps) {
   const {
     attributes,
@@ -133,8 +135,9 @@ function SortableRow({
             variant="ghost" 
             size="icon"
             onClick={() => onDelete(item.id)}
+            disabled={isDeleting}
           >
-            <Trash2 className="h-4 w-4" />
+            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           </Button>
         </TableCell>
       )}
@@ -150,6 +153,7 @@ interface SortableQuoteItemsProps {
   onDelete: (itemId: string) => void;
   onGroupChange: (itemId: string, group: string) => void;
   onReorder: (items: { id: string; sort_order: number }[]) => void;
+  isDeleting?: boolean;
 }
 
 export function SortableQuoteItems({
@@ -160,6 +164,7 @@ export function SortableQuoteItems({
   onDelete,
   onGroupChange,
   onReorder,
+  isDeleting = false,
 }: SortableQuoteItemsProps) {
   const { data: categories = [] } = useProductCategories();
   
@@ -282,6 +287,7 @@ export function SortableQuoteItems({
                         onEdit={onEdit}
                         onDelete={onDelete}
                         onGroupChange={onGroupChange}
+                        isDeleting={isDeleting}
                       />
                     ))}
                   </TableBody>

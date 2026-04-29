@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send, Calendar, Search } from 'lucide-react';
+import { UserPlus, X, Users, AlertTriangle, CalendarX, Clock, AlertCircle, ShieldAlert, ShieldCheck, MapPin, Send, Calendar, Search, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
   Dialog,
@@ -373,7 +373,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
                       disabled={deleteAssignment.isPending}
                       title="Remove assignment"
                     >
-                      <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      {deleteAssignment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />}
                     </Button>
                   </div>
                 </div>

@@ -28,6 +28,7 @@ import {
   Trash2,
   MoreHorizontal,
   Send,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -524,14 +525,16 @@ export default function LeadDetail(): JSX.Element {
                           <DropdownMenuItem
                             onClick={async (e) => {
                               e.preventDefault();
+                              if (deleteQuote.isPending) return;
                               if (confirm('Delete this budget? This cannot be undone.')) {
                                 await deleteQuote.mutateAsync(quote.id);
                               }
                             }}
+                            disabled={deleteQuote.isPending}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Budget
+                            {deleteQuote.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                            {deleteQuote.isPending ? 'Deleting...' : 'Delete Budget'}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
