@@ -937,6 +937,7 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
+                              updated_at: event.updated_at,
                               event_type_id: value,
                             });
                             setIsUpdatingStatus(false);
@@ -974,6 +975,7 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
+                              updated_at: event.updated_at,
                               delivery_method_guests_id: value,
                             });
                             setIsUpdatingStatus(false);
@@ -1011,6 +1013,7 @@ export default function EventDetail() {
                             setIsUpdatingStatus(true);
                             await updateEvent.mutateAsync({
                               id: event.id,
+                              updated_at: event.updated_at,
                               delivery_method_id: value,
                             });
                             setIsUpdatingStatus(false);
