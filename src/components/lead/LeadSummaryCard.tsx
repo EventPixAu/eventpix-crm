@@ -45,6 +45,7 @@ import {
 interface LeadSummaryCardProps {
   lead: {
     id: string;
+    updated_at: string;
     lead_name: string;
     status: string;
     client_id?: string | null;
@@ -104,13 +105,14 @@ export function LeadSummaryCard({
       onConvert?.();
       return;
     }
-    await updateLead.mutateAsync({ id: lead.id, status: newStatus as any });
+    await updateLead.mutateAsync({ id: lead.id, updated_at: lead.updated_at, status: newStatus as any });
     toast.success(`Status updated to ${leadStatuses.find(s => s.name === newStatus)?.label || newStatus}`);
   };
 
   const handleArchive = async () => {
     await updateLead.mutateAsync({
       id: lead.id,
+      updated_at: lead.updated_at,
       status: 'lost',
     });
     toast.success('Lead archived');
@@ -120,6 +122,7 @@ export function LeadSummaryCard({
   const handleMarkAsLost = async () => {
     await updateLead.mutateAsync({
       id: lead.id,
+      updated_at: lead.updated_at,
       status: 'lost',
       lost_reason_id: lostReasonId || null,
       notes: lostNotes ? `${lead.notes ? lead.notes + '\n' : ''}Lost: ${lostNotes}` : lead.notes,
