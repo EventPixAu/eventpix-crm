@@ -14,6 +14,11 @@ function ScrollToTop() {
   return null;
 }
 
+function ErrorBoundaryWithReset({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return <ErrorBoundary title="App error" backTo="/auth" resetKey={pathname}>{children}</ErrorBoundary>;
+}
+
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import OperationsDashboard from "./pages/OperationsDashboard";
@@ -299,11 +304,11 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
-          <ErrorBoundary title="App error" backTo="/auth">
+          <ErrorBoundaryWithReset>
             <AuthProvider>
               <AppRoutes />
             </AuthProvider>
-          </ErrorBoundary>
+          </ErrorBoundaryWithReset>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
