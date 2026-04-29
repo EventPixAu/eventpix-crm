@@ -6301,6 +6301,14 @@ export type Database = {
       }
       can_access_operations: { Args: { _user_id: string }; Returns: boolean }
       can_access_sales: { Args: { _user_id: string }; Returns: boolean }
+      can_view_profile_for_shared_event: {
+        Args: { _profile_id: string; _viewer_id: string }
+        Returns: boolean
+      }
+      can_view_staff_for_shared_event: {
+        Args: { _staff_id: string; _viewer_id: string }
+        Returns: boolean
+      }
       check_staff_conflicts: {
         Args: {
           p_end_at: string
