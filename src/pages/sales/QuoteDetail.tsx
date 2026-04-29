@@ -309,6 +309,7 @@ export default function QuoteDetail() {
     try {
       await updateQuote.mutateAsync({
         id,
+        updated_at: quote.updated_at,
         discount_percent: discountPercent,
         discount_amount: discountAmount,
         discount_label: discountLabel,
@@ -404,6 +405,7 @@ export default function QuoteDetail() {
     if (introText !== currentIntro) {
       await updateQuote.mutateAsync({
         id,
+        updated_at: quote.updated_at,
         intro_text: introText || null,
       } as any);
     }
@@ -581,7 +583,7 @@ export default function QuoteDetail() {
                         return;
                       }
                       setCustomBudgetName(null);
-                      await updateQuote.mutateAsync({ id: id!, quote_name: val } as any);
+                      await updateQuote.mutateAsync({ id: id!, updated_at: quote.updated_at, quote_name: val } as any);
                     }}
                   >
                     <SelectTrigger className="flex-1">
@@ -604,13 +606,13 @@ export default function QuoteDetail() {
                   onChange={(e) => setCustomBudgetName(e.target.value)}
                   onBlur={async () => {
                     if (customBudgetName && customBudgetName.trim()) {
-                      await updateQuote.mutateAsync({ id: id!, quote_name: customBudgetName.trim() } as any);
+                      await updateQuote.mutateAsync({ id: id!, updated_at: quote.updated_at, quote_name: customBudgetName.trim() } as any);
                       setCustomBudgetName(null);
                     }
                   }}
                   onKeyDown={async (e) => {
                     if (e.key === 'Enter' && customBudgetName && customBudgetName.trim()) {
-                      await updateQuote.mutateAsync({ id: id!, quote_name: customBudgetName.trim() } as any);
+                      await updateQuote.mutateAsync({ id: id!, updated_at: quote.updated_at, quote_name: customBudgetName.trim() } as any);
                       setCustomBudgetName(null);
                     }
                   }}
