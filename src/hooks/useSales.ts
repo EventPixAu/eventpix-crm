@@ -10,7 +10,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 // Types
@@ -71,7 +71,6 @@ export function useClient(id: string | undefined) {
 
 export function useCreateClient() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (client: ClientInsert) => {
@@ -86,17 +85,16 @@ export function useCreateClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast({ title: 'Client created successfully' });
+      toast.success('Client created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create client', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create client', { description: error.message });
     },
   });
 }
 
 export function useUpdateClient() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: ClientUpdate & { id: string }) => {
@@ -113,17 +111,16 @@ export function useUpdateClient() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['clients', variables.id] });
-      toast({ title: 'Client updated successfully' });
+      toast.success('Client updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update client', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update client', { description: error.message });
     },
   });
 }
 
 export function useDeleteClient() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -136,10 +133,10 @@ export function useDeleteClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast({ title: 'Client deleted successfully' });
+      toast.success('Client deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete client', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete client', { description: error.message });
     },
   });
 }
@@ -239,7 +236,6 @@ export function useLead(id: string | undefined) {
 
 export function useCreateLead() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (lead: LeadInsert) => {
@@ -254,17 +250,16 @@ export function useCreateLead() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
-      toast({ title: 'Lead created successfully' });
+      toast.success('Lead created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create lead', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create lead', { description: error.message });
     },
   });
 }
 
 export function useUpdateLead() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: LeadUpdate & { id: string }) => {
@@ -281,10 +276,10 @@ export function useUpdateLead() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', variables.id] });
-      toast({ title: 'Lead updated successfully' });
+      toast.success('Lead updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update lead', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update lead', { description: error.message });
     },
   });
 }
@@ -340,7 +335,6 @@ export function useQuote(id: string | undefined) {
 
 export function useCreateQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (quote: QuoteInsert) => {
@@ -355,17 +349,16 @@ export function useCreateQuote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast({ title: 'Quote created successfully' });
+      toast.success('Quote created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create quote', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create quote', { description: error.message });
     },
   });
 }
 
 export function useUpdateQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: QuoteUpdate & { id: string }) => {
@@ -382,17 +375,16 @@ export function useUpdateQuote() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['quotes', variables.id] });
-      toast({ title: 'Quote updated successfully' });
+      toast.success('Quote updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update quote', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update quote', { description: error.message });
     },
   });
 }
 
 export function useDeleteQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -411,10 +403,10 @@ export function useDeleteQuote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast({ title: 'Budget deleted' });
+      toast.success('Budget deleted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete budget', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete budget', { description: error.message });
     },
   });
 }
@@ -425,7 +417,6 @@ export function useDeleteQuote() {
 
 export function useConvertQuoteToEvent() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -517,17 +508,10 @@ export function useConvertQuoteToEvent() {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast({ 
-        title: 'Quote converted to event', 
-        description: 'The quote has been accepted and an event has been created.' 
-      });
+      toast.success('Quote converted to event', { description: 'The quote has been accepted and an event has been created.' });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to convert quote', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to convert quote', { description: error.message });
     },
   });
 }

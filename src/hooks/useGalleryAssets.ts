@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface GalleryAsset {
   id: string;
@@ -54,7 +54,6 @@ export function useGalleryAssetsByEventId(eventId: string | undefined) {
 
 export function useUploadGalleryAsset() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ eventId, file }: { eventId: string; file: File }) => {
@@ -111,17 +110,16 @@ export function useUploadGalleryAsset() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['gallery-assets', data.event_id] });
-      toast({ title: 'Image uploaded successfully' });
+      toast.success('Image uploaded successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to upload image', description: error.message, variant: 'destructive' });
+      toast.error('Failed to upload image', { description: error.message });
     },
   });
 }
 
 export function useDeleteGalleryAsset() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, eventId, storagePath }: { id: string; eventId: string; storagePath: string }) => {
@@ -144,17 +142,16 @@ export function useDeleteGalleryAsset() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['gallery-assets', data.eventId] });
-      toast({ title: 'Image deleted' });
+      toast.success('Image deleted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete image', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete image', { description: error.message });
     },
   });
 }
 
 export function useReorderGalleryAssets() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ eventId, orderedIds }: { eventId: string; orderedIds: string[] }) => {
@@ -179,14 +176,13 @@ export function useReorderGalleryAssets() {
       queryClient.invalidateQueries({ queryKey: ['gallery-assets', data.eventId] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to reorder images', description: error.message, variant: 'destructive' });
+      toast.error('Failed to reorder images', { description: error.message });
     },
   });
 }
 
 export function useUpdateGalleryAsset() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -211,10 +207,10 @@ export function useUpdateGalleryAsset() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['gallery-assets', data.eventId] });
-      toast({ title: 'Image details updated' });
+      toast.success('Image details updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update image', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update image', { description: error.message });
     },
   });
 }

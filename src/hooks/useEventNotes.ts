@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface EventNote {
   id: string;
@@ -44,7 +44,6 @@ export function useEventNotes(eventId: string | undefined) {
 
 export function useCreateEventNote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -74,21 +73,16 @@ export function useCreateEventNote() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['event-notes', variables.eventId] });
-      toast({ title: 'Note added' });
+      toast.success('Note added');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to add note', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to add note', { description: error.message });
     },
   });
 }
 
 export function useDeleteEventNote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ noteId, eventId }: { noteId: string; eventId: string }) => {
@@ -102,14 +96,10 @@ export function useDeleteEventNote() {
     },
     onSuccess: (eventId) => {
       queryClient.invalidateQueries({ queryKey: ['event-notes', eventId] });
-      toast({ title: 'Note deleted' });
+      toast.success('Note deleted');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to delete note', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to delete note', { description: error.message });
     },
   });
 }

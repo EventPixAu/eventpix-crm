@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export type TemplateType = 'quote' | 'contract' | 'workflow' | 'email' | 'sales_workflow';
 
@@ -245,7 +245,6 @@ export function useTemplateUsageBatch(templateType: TemplateType, templateIds: s
 // Archive a template (soft delete)
 export function useArchiveTemplate(templateType: TemplateType) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   const getTableName = () => {
     switch (templateType) {
@@ -284,10 +283,10 @@ export function useArchiveTemplate(templateType: TemplateType) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [getQueryKey()] });
-      toast({ title: 'Template archived successfully' });
+      toast.success('Template archived successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to archive template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to archive template', { description: error.message });
     },
   });
 }
@@ -295,7 +294,6 @@ export function useArchiveTemplate(templateType: TemplateType) {
 // Restore an archived template
 export function useRestoreTemplate(templateType: TemplateType) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   const getTableName = () => {
     switch (templateType) {
@@ -331,10 +329,10 @@ export function useRestoreTemplate(templateType: TemplateType) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [getQueryKey()] });
-      toast({ title: 'Template restored successfully' });
+      toast.success('Template restored successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to restore template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to restore template', { description: error.message });
     },
   });
 }

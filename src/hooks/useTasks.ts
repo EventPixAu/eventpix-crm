@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export type TaskRelatedType = 'client' | 'contact' | 'lead' | 'event' | 'delivery';
 export type TaskType = 'follow_up' | 'call' | 'email' | 'prep' | 'delivery_check' | 'other';
@@ -123,7 +123,6 @@ export function useTask(id: string | undefined) {
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (task: TaskInsert) => {
@@ -143,17 +142,16 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({ title: 'Task created successfully' });
+      toast.success('Task created successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error creating task', description: error.message, variant: 'destructive' });
+      toast.error('Error creating task', { description: error.message });
     },
   });
 }
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: TaskUpdate & { id: string }) => {
@@ -170,17 +168,16 @@ export function useUpdateTask() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['tasks', data.id] });
-      toast({ title: 'Task updated successfully' });
+      toast.success('Task updated successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error updating task', description: error.message, variant: 'destructive' });
+      toast.error('Error updating task', { description: error.message });
     },
   });
 }
 
 export function useCompleteTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -202,17 +199,16 @@ export function useCompleteTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({ title: 'Task completed' });
+      toast.success('Task completed');
     },
     onError: (error) => {
-      toast({ title: 'Error completing task', description: error.message, variant: 'destructive' });
+      toast.error('Error completing task', { description: error.message });
     },
   });
 }
 
 export function useSnoozeTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, until }: { id: string; until: string }) => {
@@ -231,17 +227,16 @@ export function useSnoozeTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({ title: 'Task snoozed' });
+      toast.success('Task snoozed');
     },
     onError: (error) => {
-      toast({ title: 'Error snoozing task', description: error.message, variant: 'destructive' });
+      toast.error('Error snoozing task', { description: error.message });
     },
   });
 }
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -254,10 +249,10 @@ export function useDeleteTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({ title: 'Task deleted successfully' });
+      toast.success('Task deleted successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error deleting task', description: error.message, variant: 'destructive' });
+      toast.error('Error deleting task', { description: error.message });
     },
   });
 }

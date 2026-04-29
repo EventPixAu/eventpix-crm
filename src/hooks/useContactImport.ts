@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface ImportedContact {
   firstName?: string;
@@ -343,7 +343,6 @@ export function useContactImport() {
   } | null>(null);
   
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const importMutation = useMutation({
     mutationFn: async (contacts: ImportedContact[]): Promise<ImportResult> => {
@@ -617,18 +616,11 @@ export function useContactImport() {
       if (result.contactsCreated > 0) parts.push(`${result.contactsCreated} contacts created`);
       if (result.contactsUpdated > 0) parts.push(`${result.contactsUpdated} contacts updated`);
       
-      toast({
-        title: 'Import Complete',
-        description: parts.join(', ') || 'No changes made',
-      });
+      toast.success('Import Complete', { description: parts.join(', ') || 'No changes made' });
     },
     onError: (error: Error) => {
       setImportProgress(null);
-      toast({
-        title: 'Import Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Import Failed', { description: error.message });
     },
   });
 

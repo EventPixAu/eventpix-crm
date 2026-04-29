@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type EventContact = Database['public']['Tables']['event_contacts']['Row'];
@@ -52,7 +52,6 @@ export function useEventContacts(eventId: string | undefined) {
 
 export function useCreateEventContact() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (contact: EventContactInsert) => {
@@ -67,17 +66,16 @@ export function useCreateEventContact() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['event-contacts', data.event_id] });
-      toast({ title: 'Contact added to event' });
+      toast.success('Contact added to event');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add contact', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add contact', { description: error.message });
     },
   });
 }
 
 export function useUpdateEventContact() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, eventId, ...updates }: EventContactUpdate & { id: string; eventId: string }) => {
@@ -93,17 +91,16 @@ export function useUpdateEventContact() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['event-contacts', data.eventId] });
-      toast({ title: 'Contact updated' });
+      toast.success('Contact updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update contact', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update contact', { description: error.message });
     },
   });
 }
 
 export function useDeleteEventContact() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, eventId }: { id: string; eventId: string }) => {
@@ -117,10 +114,10 @@ export function useDeleteEventContact() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['event-contacts', data.eventId] });
-      toast({ title: 'Contact removed from event' });
+      toast.success('Contact removed from event');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to remove contact', description: error.message, variant: 'destructive' });
+      toast.error('Failed to remove contact', { description: error.message });
     },
   });
 }

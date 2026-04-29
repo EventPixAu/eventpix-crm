@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type EventRow = Database['public']['Tables']['events']['Row'];
@@ -132,7 +132,6 @@ export function useEventAssignments(eventId: string | undefined) {
 
 export function useCreateEvent() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (event: EventInsert) => {
@@ -237,20 +236,19 @@ export function useCreateEvent() {
         queryClient.invalidateQueries({ queryKey: ['lead', variables.lead_id] });
         queryClient.invalidateQueries({ queryKey: ['lead-sessions', variables.lead_id] });
         queryClient.invalidateQueries({ queryKey: ['enquiry-contacts', variables.lead_id] });
-        toast({ title: 'Lead converted to Job successfully' });
+        toast.success('Lead converted to Job successfully');
       } else {
-        toast({ title: 'Event created successfully' });
+        toast.success('Event created successfully');
       }
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to create event', description: error.message });
+      toast.error('Failed to create event', { description: error.message });
     },
   });
 }
 
 export function useUpdateEvent() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...event }: EventUpdate & { id: string }) => {
@@ -266,17 +264,16 @@ export function useUpdateEvent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast({ title: 'Event updated successfully' });
+      toast.success('Event updated successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to update event', description: error.message });
+      toast.error('Failed to update event', { description: error.message });
     },
   });
 }
 
 export function useDeleteEvent() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -289,17 +286,16 @@ export function useDeleteEvent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast({ title: 'Event deleted successfully' });
+      toast.success('Event deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to delete event', description: error.message });
+      toast.error('Failed to delete event', { description: error.message });
     },
   });
 }
 
 export function useCreateAssignment() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (assignment: { 
@@ -322,17 +318,16 @@ export function useCreateAssignment() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['event-assignments', variables.event_id] });
-      toast({ title: 'Staff assigned successfully' });
+      toast.success('Staff assigned successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to assign staff', description: error.message });
+      toast.error('Failed to assign staff', { description: error.message });
     },
   });
 }
 
 export function useDeleteAssignment() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, eventId }: { id: string; eventId: string }) => {
@@ -346,10 +341,10 @@ export function useDeleteAssignment() {
     },
     onSuccess: (eventId) => {
       queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-      toast({ title: 'Assignment removed successfully' });
+      toast.success('Assignment removed successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to remove assignment', description: error.message });
+      toast.error('Failed to remove assignment', { description: error.message });
     },
   });
 }

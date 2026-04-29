@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface RebookingProfile {
   id: string;
@@ -102,7 +102,6 @@ export function useRebookingProfile(clientId: string | undefined) {
 
 export function useCreateRebookingProfile() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (profile: RebookingProfileInsert) => {
@@ -117,17 +116,16 @@ export function useCreateRebookingProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rebooking-profiles'] });
-      toast({ title: 'Rebooking profile created successfully' });
+      toast.success('Rebooking profile created successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error creating rebooking profile', description: error.message, variant: 'destructive' });
+      toast.error('Error creating rebooking profile', { description: error.message });
     },
   });
 }
 
 export function useUpdateRebookingProfile() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: RebookingProfileUpdate & { id: string }) => {
@@ -144,17 +142,16 @@ export function useUpdateRebookingProfile() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['rebooking-profiles'] });
       queryClient.invalidateQueries({ queryKey: ['rebooking-profiles', data.client_id] });
-      toast({ title: 'Rebooking profile updated successfully' });
+      toast.success('Rebooking profile updated successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error updating rebooking profile', description: error.message, variant: 'destructive' });
+      toast.error('Error updating rebooking profile', { description: error.message });
     },
   });
 }
 
 export function useUpsertRebookingProfile() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (profile: RebookingProfileInsert) => {
@@ -169,17 +166,16 @@ export function useUpsertRebookingProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rebooking-profiles'] });
-      toast({ title: 'Rebooking profile saved successfully' });
+      toast.success('Rebooking profile saved successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error saving rebooking profile', description: error.message, variant: 'destructive' });
+      toast.error('Error saving rebooking profile', { description: error.message });
     },
   });
 }
 
 export function useDeleteRebookingProfile() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -192,10 +188,10 @@ export function useDeleteRebookingProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rebooking-profiles'] });
-      toast({ title: 'Rebooking profile deleted successfully' });
+      toast.success('Rebooking profile deleted successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error deleting rebooking profile', description: error.message, variant: 'destructive' });
+      toast.error('Error deleting rebooking profile', { description: error.message });
     },
   });
 }

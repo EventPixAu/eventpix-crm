@@ -5,7 +5,7 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface EmailAttachment {
   filename: string;
@@ -30,7 +30,6 @@ export interface SendEmailParams {
 
 export function useSendCrmEmail() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (params: SendEmailParams) => {
@@ -52,14 +51,10 @@ export function useSendCrmEmail() {
         queryClient.invalidateQueries({ queryKey: ['event-email-action-statuses', variables.eventId] });
       }
       queryClient.invalidateQueries({ queryKey: ['email-logs'] });
-      toast({ title: 'Email sent successfully' });
+      toast.success('Email sent successfully');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to send email', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to send email', { description: error.message });
     },
   });
 }

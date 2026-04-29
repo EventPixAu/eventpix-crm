@@ -7,7 +7,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Product } from '@/hooks/useProducts';
 
 // Types
@@ -146,7 +146,6 @@ export function usePackageItems(packageId: string | undefined) {
  */
 export function useCreatePackage() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (pkg: {
@@ -173,10 +172,10 @@ export function useCreatePackage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['packages'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Package created successfully' });
+      toast.success('Package created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create package', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create package', { description: error.message });
     },
   });
 }
@@ -186,7 +185,6 @@ export function useCreatePackage() {
  */
 export function useAddPackageItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ package_id, product_id, quantity = 1 }: {
@@ -221,10 +219,10 @@ export function useAddPackageItem() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['package-items', variables.package_id] });
       queryClient.invalidateQueries({ queryKey: ['packages', variables.package_id, 'with-items'] });
-      toast({ title: 'Item added to package' });
+      toast.success('Item added to package');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add item', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add item', { description: error.message });
     },
   });
 }
@@ -234,7 +232,6 @@ export function useAddPackageItem() {
  */
 export function useRemovePackageItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, package_id }: { id: string; package_id: string }) => {
@@ -249,10 +246,10 @@ export function useRemovePackageItem() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['package-items', result.package_id] });
       queryClient.invalidateQueries({ queryKey: ['packages', result.package_id, 'with-items'] });
-      toast({ title: 'Item removed from package' });
+      toast.success('Item removed from package');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to remove item', description: error.message, variant: 'destructive' });
+      toast.error('Failed to remove item', { description: error.message });
     },
   });
 }
@@ -262,7 +259,6 @@ export function useRemovePackageItem() {
  */
 export function useAddPackageToQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ quote_id, package_id, quantity = 1 }: {
@@ -288,13 +284,10 @@ export function useAddPackageToQuote() {
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quote-items', variables.quote_id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast({ 
-        title: 'Package added', 
-        description: `Added ${result.items_added} items from ${result.package_name}` 
-      });
+      toast.success('Package added', { description: `Added ${result.items_added} items from ${result.package_name}` });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add package', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add package', { description: error.message });
     },
   });
 }

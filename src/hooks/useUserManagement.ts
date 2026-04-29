@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Json } from '@/integrations/supabase/types';
 
 // Types
@@ -130,7 +130,6 @@ export function useInvitations() {
 // Provision invitation (step 1: create invitation record)
 export function useProvisionInvitation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
@@ -152,11 +151,7 @@ export function useProvisionInvitation() {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to create invitation',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to create invitation', { description: error.message });
     },
   });
 }
@@ -164,7 +159,6 @@ export function useProvisionInvitation() {
 // Create user via edge function (step 2: call edge function to create auth user)
 export function useCreateUser() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
@@ -183,17 +177,10 @@ export function useCreateUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'User invited',
-        description: 'An invitation email has been sent to the user.',
-      });
+      toast.success('User invited', { description: 'An invitation email has been sent to the user.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to invite user',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to invite user', { description: error.message });
     },
   });
 }
@@ -201,7 +188,6 @@ export function useCreateUser() {
 // Combined hook for invite flow (provision + create)
 export function useInviteUser() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const provisionMutation = useProvisionInvitation();
   const createMutation = useCreateUser();
 
@@ -222,17 +208,10 @@ export function useInviteUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'User invited',
-        description: 'An invitation email has been sent to the user.',
-      });
+      toast.success('User invited', { description: 'An invitation email has been sent to the user.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to invite user',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to invite user', { description: error.message });
     },
   });
 }
@@ -240,7 +219,6 @@ export function useInviteUser() {
 // Resend invitation (reprovision + create)
 export function useResendInvitation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
@@ -258,17 +236,10 @@ export function useResendInvitation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
-      toast({
-        title: 'Invitation resent',
-        description: 'A new invitation email has been sent.',
-      });
+      toast.success('Invitation resent', { description: 'A new invitation email has been sent.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to resend invitation',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to resend invitation', { description: error.message });
     },
   });
 }
@@ -276,7 +247,6 @@ export function useResendInvitation() {
 // Revoke invitation
 export function useRevokeInvitation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
@@ -295,17 +265,10 @@ export function useRevokeInvitation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-invitations'] });
-      toast({
-        title: 'Invitation revoked',
-        description: 'The invitation has been cancelled.',
-      });
+      toast.success('Invitation revoked', { description: 'The invitation has been cancelled.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to revoke invitation',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to revoke invitation', { description: error.message });
     },
   });
 }
@@ -313,7 +276,6 @@ export function useRevokeInvitation() {
 // Set user active/inactive
 export function useSetUserActive() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
@@ -333,17 +295,10 @@ export function useSetUserActive() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: variables.isActive ? 'User activated' : 'User deactivated',
-        description: `The user has been ${variables.isActive ? 'activated' : 'deactivated'}.`,
-      });
+      toast.success(variables.isActive ? 'User activated' : 'User deactivated', { description: `The user has been ${variables.isActive ? 'activated' : 'deactivated'}.` });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to update user status',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to update user status', { description: error.message });
     },
   });
 }
@@ -351,7 +306,6 @@ export function useSetUserActive() {
 // Set user role
 export function useSetUserRole() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
@@ -371,17 +325,10 @@ export function useSetUserRole() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'Role updated',
-        description: 'The user role has been changed.',
-      });
+      toast.success('Role updated', { description: 'The user role has been changed.' });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to update role',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to update role', { description: error.message });
     },
   });
 }

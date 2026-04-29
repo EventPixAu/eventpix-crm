@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
 
 // Types
@@ -92,7 +92,6 @@ export function useActiveWorkflowTemplates() {
 
 export function useCreateWorkflowTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (data: { 
@@ -117,17 +116,16 @@ export function useCreateWorkflowTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-workflow-templates'] });
-      toast({ title: 'Template created successfully' });
+      toast.success('Template created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create template', { description: error.message });
     },
   });
 }
 
 export function useUpdateWorkflowTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<SalesWorkflowTemplate> & { id: string }) => {
@@ -150,10 +148,10 @@ export function useUpdateWorkflowTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-workflow-templates'] });
-      toast({ title: 'Template updated successfully' });
+      toast.success('Template updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update template', { description: error.message });
     },
   });
 }
@@ -182,7 +180,6 @@ export function useLeadWorkflowItems(leadId: string | undefined) {
 
 export function useAddWorkflowItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (data: { lead_id: string; title: string; sort_order: number }) => {
@@ -199,7 +196,7 @@ export function useAddWorkflowItem() {
       queryClient.invalidateQueries({ queryKey: ['lead-workflow-items', variables.lead_id] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to add item', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add item', { description: error.message });
     },
   });
 }
@@ -271,7 +268,6 @@ export function useDeleteWorkflowItem() {
 
 export function useApplyTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -325,10 +321,10 @@ export function useApplyTemplate() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lead-workflow-items', variables.leadId] });
-      toast({ title: 'Template applied successfully' });
+      toast.success('Template applied successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to apply template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to apply template', { description: error.message });
     },
   });
 }

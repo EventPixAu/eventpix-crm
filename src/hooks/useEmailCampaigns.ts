@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { subMonths, startOfDay, parseISO, isBefore, isAfter } from 'date-fns';
 
 // Types
@@ -212,7 +212,6 @@ export function useCampaignContacts(campaignId: string | undefined) {
 
 export function useCreateEmailCampaign() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (campaign: CampaignInsert) => {
@@ -227,17 +226,16 @@ export function useCreateEmailCampaign() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast({ title: 'Campaign created successfully' });
+      toast.success('Campaign created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create campaign', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create campaign', { description: error.message });
     },
   });
 }
 
 export function useUpdateEmailCampaign() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CampaignInsert> & { id: string; status?: CampaignStatus }) => {
@@ -256,14 +254,13 @@ export function useUpdateEmailCampaign() {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns', variables.id] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update campaign', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update campaign', { description: error.message });
     },
   });
 }
 
 export function useDeleteEmailCampaign() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -276,10 +273,10 @@ export function useDeleteEmailCampaign() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast({ title: 'Campaign deleted successfully' });
+      toast.success('Campaign deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete campaign', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete campaign', { description: error.message });
     },
   });
 }
@@ -290,7 +287,6 @@ export function useDeleteEmailCampaign() {
 
 export function usePopulateCampaignRecipients() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ campaignId, targetSegment }: { campaignId: string; targetSegment: TargetSegment }) => {
@@ -393,10 +389,10 @@ export function usePopulateCampaignRecipients() {
     onSuccess: (count, variables) => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['campaign-contacts', variables.campaignId] });
-      toast({ title: `Added ${count} recipients to campaign` });
+      toast.success(`Added ${count} recipients to campaign`);
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to populate recipients', description: error.message, variant: 'destructive' });
+      toast.error('Failed to populate recipients', { description: error.message });
     },
   });
 }
@@ -407,7 +403,6 @@ export function usePopulateCampaignRecipients() {
 
 export function useScheduleCampaign() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ campaignId, scheduledAt }: { campaignId: string; scheduledAt: string }) => {
@@ -427,17 +422,16 @@ export function useScheduleCampaign() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['email-campaigns', variables.campaignId] });
-      toast({ title: 'Campaign scheduled successfully' });
+      toast.success('Campaign scheduled successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to schedule campaign', description: error.message, variant: 'destructive' });
+      toast.error('Failed to schedule campaign', { description: error.message });
     },
   });
 }
 
 export function useCancelCampaign() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (campaignId: string) => {
@@ -453,10 +447,10 @@ export function useCancelCampaign() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast({ title: 'Campaign cancelled' });
+      toast.success('Campaign cancelled');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to cancel campaign', description: error.message, variant: 'destructive' });
+      toast.error('Failed to cancel campaign', { description: error.message });
     },
   });
 }

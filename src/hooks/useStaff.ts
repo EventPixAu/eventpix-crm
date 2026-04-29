@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Profile-based staff (users with photographer role or any authenticated user for assignment)
 export interface StaffProfile {
@@ -251,7 +251,6 @@ export function useStaffMember(id: string | undefined) {
 
 export function useCreateStaff() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>) => {
@@ -266,17 +265,16 @@ export function useCreateStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({ title: 'Team member added successfully' });
+      toast.success('Team member added successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to add team member', description: error.message });
+      toast.error('Failed to add team member', { description: error.message });
     },
   });
 }
 
 export function useUpdateStaff() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...staff }: Partial<Staff> & { id: string }) => {
@@ -292,17 +290,16 @@ export function useUpdateStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({ title: 'Team member updated successfully' });
+      toast.success('Team member updated successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to update team member', description: error.message });
+      toast.error('Failed to update team member', { description: error.message });
     },
   });
 }
 
 export function useDeleteStaff() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -315,10 +312,10 @@ export function useDeleteStaff() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast({ title: 'Team member deleted successfully' });
+      toast.success('Team member deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ variant: 'destructive', title: 'Failed to delete team member', description: error.message });
+      toast.error('Failed to delete team member', { description: error.message });
     },
   });
 }

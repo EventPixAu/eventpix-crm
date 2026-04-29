@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface Venue {
   id: string;
@@ -75,7 +75,6 @@ export function useVenue(id: string | undefined) {
 
 export function useCreateVenue() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (venue: VenueInsert) => {
@@ -90,17 +89,16 @@ export function useCreateVenue() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] });
-      toast({ title: 'Venue created successfully' });
+      toast.success('Venue created successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error creating venue', description: error.message, variant: 'destructive' });
+      toast.error('Error creating venue', { description: error.message });
     },
   });
 }
 
 export function useUpdateVenue() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: VenueUpdate & { id: string }) => {
@@ -117,17 +115,16 @@ export function useUpdateVenue() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['venues'] });
       queryClient.invalidateQueries({ queryKey: ['venues', data.id] });
-      toast({ title: 'Venue updated successfully' });
+      toast.success('Venue updated successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error updating venue', description: error.message, variant: 'destructive' });
+      toast.error('Error updating venue', { description: error.message });
     },
   });
 }
 
 export function useDeleteVenue() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -140,10 +137,10 @@ export function useDeleteVenue() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] });
-      toast({ title: 'Venue deleted successfully' });
+      toast.success('Venue deleted successfully');
     },
     onError: (error) => {
-      toast({ title: 'Error deleting venue', description: error.message, variant: 'destructive' });
+      toast.error('Error deleting venue', { description: error.message });
     },
   });
 }

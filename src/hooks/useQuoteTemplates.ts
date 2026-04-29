@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Types
 export interface QuoteTemplateItem {
@@ -111,7 +111,6 @@ export function useQuoteTemplate(id: string | undefined) {
 
 export function useCreateQuoteTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (template: QuoteTemplateInsert) => {
@@ -134,17 +133,16 @@ export function useCreateQuoteTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
-      toast({ title: 'Template created successfully' });
+      toast.success('Template created successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create template', { description: error.message });
     },
   });
 }
 
 export function useUpdateQuoteTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: QuoteTemplateUpdate) => {
@@ -169,17 +167,16 @@ export function useUpdateQuoteTemplate() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
       queryClient.invalidateQueries({ queryKey: ['quote-templates', variables.id] });
-      toast({ title: 'Template updated successfully' });
+      toast.success('Template updated successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update template', { description: error.message });
     },
   });
 }
 
 export function useDeleteQuoteTemplate() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -192,10 +189,10 @@ export function useDeleteQuoteTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
-      toast({ title: 'Template deleted successfully' });
+      toast.success('Template deleted successfully');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete template', { description: error.message });
     },
   });
 }
@@ -205,7 +202,6 @@ export function useDeleteQuoteTemplate() {
  */
 export function useCreateTemplateFromQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -253,10 +249,10 @@ export function useCreateTemplateFromQuote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
-      toast({ title: 'Template created from quote' });
+      toast.success('Template created from quote');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create template', { description: error.message });
     },
   });
 }

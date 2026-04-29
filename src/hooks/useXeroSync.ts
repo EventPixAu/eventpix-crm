@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface XeroSyncLog {
   id: string;
@@ -87,7 +87,6 @@ export function useXeroConnectionStatus() {
 
 // Get Xero authorization URL
 export function useXeroAuthorize() {
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async () => {
@@ -106,11 +105,7 @@ export function useXeroAuthorize() {
       window.open(data.url, '_blank', 'width=600,height=700');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to connect to Xero',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error('Failed to connect to Xero', { description: error.message });
     },
   });
 }
@@ -118,7 +113,6 @@ export function useXeroAuthorize() {
 // Refresh Xero tokens
 export function useXeroRefreshToken() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async () => {
@@ -135,14 +129,10 @@ export function useXeroRefreshToken() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['xero-connection-status'] });
-      toast({ title: 'Xero token refreshed' });
+      toast.success('Xero token refreshed');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to refresh Xero token',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error('Failed to refresh Xero token', { description: error.message });
     },
   });
 }
@@ -150,7 +140,6 @@ export function useXeroRefreshToken() {
 // Disconnect from Xero
 export function useXeroDisconnect() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async () => {
@@ -167,14 +156,10 @@ export function useXeroDisconnect() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['xero-connection-status'] });
-      toast({ title: 'Disconnected from Xero' });
+      toast.success('Disconnected from Xero');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to disconnect',
-        description: error.message,
-        variant: 'destructive'
-      });
+      toast.error('Failed to disconnect', { description: error.message });
     },
   });
 }
@@ -216,7 +201,6 @@ export function useEventsWithInvoices() {
 // Sync invoice statuses from Xero
 export function useSyncInvoiceStatus() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async () => {
@@ -236,17 +220,10 @@ export function useSyncInvoiceStatus() {
       queryClient.invalidateQueries({ queryKey: ['events-with-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['event-financials'] });
-      toast({ 
-        title: 'Invoice sync completed', 
-        description: `Updated ${data.synced} invoice statuses from Xero.` 
-      });
+      toast.success('Invoice sync completed', { description: `Updated ${data.synced} invoice statuses from Xero.` });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Sync failed', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Sync failed', { description: error.message });
     },
   });
 }
@@ -254,7 +231,6 @@ export function useSyncInvoiceStatus() {
 // Sync expenses for a specific event from Xero
 export function useSyncEventExpenses() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (eventId: string) => {
@@ -274,17 +250,10 @@ export function useSyncEventExpenses() {
       queryClient.invalidateQueries({ queryKey: ['event-expenses', eventId] });
       queryClient.invalidateQueries({ queryKey: ['event-financials', eventId] });
       queryClient.invalidateQueries({ queryKey: ['event-costs', eventId] });
-      toast({ 
-        title: 'Expenses synced', 
-        description: `Imported ${data.synced} expense lines from Xero.` 
-      });
+      toast.success('Expenses synced', { description: `Imported ${data.synced} expense lines from Xero.` });
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Expense sync failed', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Expense sync failed', { description: error.message });
     },
   });
 }
@@ -292,7 +261,6 @@ export function useSyncEventExpenses() {
 // Update single event invoice status (for manual updates)
 export function useUpdateInvoiceStatus() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -321,14 +289,10 @@ export function useUpdateInvoiceStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events-with-invoices'] });
-      toast({ title: 'Invoice status updated' });
+      toast.success('Invoice status updated');
     },
     onError: (error: Error) => {
-      toast({ 
-        title: 'Failed to update invoice status', 
-        description: error.message, 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to update invoice status', { description: error.message });
     },
   });
 }
