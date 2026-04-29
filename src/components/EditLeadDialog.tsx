@@ -96,6 +96,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
 
     await updateLead.mutateAsync({
       id: lead.id,
+      updated_at: lead.updated_at,
       lead_name: formData.lead_name,
       client_id: formData.client_id || null,
       event_type_id: formData.event_type_id || null,
