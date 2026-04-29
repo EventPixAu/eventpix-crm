@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search, CalendarDays } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search, CalendarDays, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
   useEquipmentItems, 
@@ -187,6 +187,7 @@ export function EquipmentInventory() {
   };
 
   const handleDelete = async (id: string) => {
+    if (deleteItem.isPending) return;
     if (confirm('Are you sure you want to delete this item?')) {
       await deleteItem.mutateAsync(id);
     }
@@ -506,8 +507,8 @@ export function EquipmentInventory() {
                     <Button size="icon" variant="ghost" onClick={() => handleEdit(item)}>
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(item.id)}>
-                      <Trash2 className="h-4 w-4" />
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(item.id)} disabled={deleteItem.isPending}>
+                      {deleteItem.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     </Button>
                   </div>
                 </TableCell>
