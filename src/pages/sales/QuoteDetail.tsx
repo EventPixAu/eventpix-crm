@@ -514,7 +514,7 @@ export default function QuoteDetail() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
-                    await updateQuote.mutateAsync({ id: id!, status: 'rejected' });
+                    await updateQuote.mutateAsync({ id: id!, updated_at: quote.updated_at, status: 'rejected' });
                   }}
                   className="text-destructive focus:text-destructive"
                 >
@@ -1164,6 +1164,7 @@ export default function QuoteDetail() {
         open={isApplyTemplateOpen}
         onOpenChange={setIsApplyTemplateOpen}
         quoteId={quote.id}
+        quoteUpdatedAt={quote.updated_at}
       />
 
       {/* Save as Template Dialog */}
