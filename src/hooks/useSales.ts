@@ -17,14 +17,19 @@ import type { Database } from '@/integrations/supabase/types';
 type Client = Database['public']['Tables']['clients']['Row'];
 type ClientInsert = Database['public']['Tables']['clients']['Insert'];
 type ClientUpdate = Database['public']['Tables']['clients']['Update'];
+type LockedClientUpdate = ClientUpdate & { id: string; updated_at: string };
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 type LeadInsert = Database['public']['Tables']['leads']['Insert'];
 type LeadUpdate = Database['public']['Tables']['leads']['Update'];
+type LockedLeadUpdate = LeadUpdate & { id: string; updated_at: string };
 
 type Quote = Database['public']['Tables']['quotes']['Row'];
 type QuoteInsert = Database['public']['Tables']['quotes']['Insert'];
 type QuoteUpdate = Database['public']['Tables']['quotes']['Update'];
+type LockedQuoteUpdate = QuoteUpdate & { id: string; updated_at: string };
+
+const OPTIMISTIC_LOCK_ERROR = 'This event was modified by another user. Please refresh and try again.';
 
 // =============================================================
 // CLIENT HOOKS
@@ -97,16 +102,17 @@ export function useUpdateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: ClientUpdate & { id: string }) => {
+    mutationFn: async ({ id, updated_at: originalUpdatedAt, ...updates }: LockedClientUpdate) => {
       const { data, error } = await supabase
         .from('clients')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .eq('updated_at', originalUpdatedAt)
+        .select();
       
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error(OPTIMISTIC_LOCK_ERROR);
+      return data[0];
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -262,16 +268,17 @@ export function useUpdateLead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: LeadUpdate & { id: string }) => {
+    mutationFn: async ({ id, updated_at: originalUpdatedAt, ...updates }: LockedLeadUpdate) => {
       const { data, error } = await supabase
         .from('leads')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .eq('updated_at', originalUpdatedAt)
+        .select();
       
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error(OPTIMISTIC_LOCK_ERROR);
+      return data[0];
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
@@ -361,16 +368,17 @@ export function useUpdateQuote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: QuoteUpdate & { id: string }) => {
+    mutationFn: async ({ id, updated_at: originalUpdatedAt, ...updates }: LockedQuoteUpdate) => {
       const { data, error } = await supabase
         .from('quotes')
         .update(updates)
         .eq('id', id)
-        .select()
-        .single();
+        .eq('updated_at', originalUpdatedAt)
+        .select();
       
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) throw new Error(OPTIMISTIC_LOCK_ERROR);
+      return data[0];
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });

@@ -6,6 +6,9 @@ import type { Database } from '@/integrations/supabase/types';
 type EventRow = Database['public']['Tables']['events']['Row'];
 type EventInsert = Database['public']['Tables']['events']['Insert'];
 type EventUpdate = Database['public']['Tables']['events']['Update'];
+type LockedEventUpdate = EventUpdate & { id: string; updated_at: string };
+
+const OPTIMISTIC_LOCK_ERROR = 'This event was modified by another user. Please refresh and try again.';
 
 export type Event = EventRow;
 
@@ -251,16 +254,20 @@ export function useUpdateEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...event }: EventUpdate & { id: string }) => {
+    mutationFn: async ({ id, updated_at: originalUpdatedAt, ...event }: LockedEventUpdate) => {
       const { data, error } = await supabase
         .from('events')
         .update(event)
         .eq('id', id)
-        .select()
-        .single();
+        .eq('updated_at', originalUpdatedAt)
+        .select();
       
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) {
+        throw new Error(OPTIMISTIC_LOCK_ERROR);
+      }
+
+      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });

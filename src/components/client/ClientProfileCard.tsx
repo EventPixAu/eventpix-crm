@@ -16,6 +16,7 @@ import { SendPortalLinkButton } from './SendPortalLinkButton';
 interface ClientProfileCardProps {
   client: {
     id: string;
+    updated_at: string;
     business_name: string;
     company_phone?: string | null;
     company_email?: string | null;
@@ -110,6 +111,7 @@ export function ClientProfileCard({
         <div className="text-sm text-muted-foreground mb-1.5">Status</div>
         <ClientStatusEditor
           clientId={client.id}
+          updatedAt={client.updated_at}
           manualStatus={client.manual_status || null}
           computedStatus={computedStatus}
           statusOverrideAt={client.status_override_at}

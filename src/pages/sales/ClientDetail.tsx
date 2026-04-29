@@ -156,6 +156,7 @@ export default function ClientDetail() {
       .filter(Boolean);
     await updateClient.mutateAsync({ 
       id, 
+      updated_at: client.updated_at,
       business_name: formData.business_name,
       company_phone: formData.company_phone,
       company_email: formData.company_email,

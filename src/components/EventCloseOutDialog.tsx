@@ -18,12 +18,13 @@ interface StaffMember {
 
 interface EventCloseOutDialogProps {
   eventId: string;
+  eventUpdatedAt: string;
   eventName: string;
   assignedStaff: StaffMember[];
   trigger?: React.ReactNode;
 }
 
-export function EventCloseOutDialog({ eventId, eventName, assignedStaff, trigger }: EventCloseOutDialogProps) {
+export function EventCloseOutDialog({ eventId, eventUpdatedAt, eventName, assignedStaff, trigger }: EventCloseOutDialogProps) {
   const { user } = useAuth();
   const updateEvent = useUpdateEvent();
   const createFeedback = useCreateFeedback();
@@ -59,6 +60,7 @@ export function EventCloseOutDialog({ eventId, eventName, assignedStaff, trigger
       // Update event status
       await updateEvent.mutateAsync({
         id: eventId,
+        updated_at: eventUpdatedAt,
         ops_status: 'completed',
       });
 

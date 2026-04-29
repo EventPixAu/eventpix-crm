@@ -220,6 +220,7 @@ export default function PipelineView() {
     try {
       await updateLead.mutateAsync({
         id: draggedLeadId,
+        updated_at: lead.updated_at,
         status: newStatus,
       });
       const targetColumn = COLUMNS.find(c => c.status === newStatus);
@@ -233,10 +234,13 @@ export default function PipelineView() {
 
   const handleConfirmLost = async () => {
     if (!pendingLostLeadId || !selectedLostReasonId) return;
+    const lead = leads?.find(l => l.id === pendingLostLeadId);
+    if (!lead) return;
 
     try {
       await updateLead.mutateAsync({
         id: pendingLostLeadId,
+        updated_at: lead.updated_at,
         status: 'lost',
         lost_reason_id: selectedLostReasonId,
       });
