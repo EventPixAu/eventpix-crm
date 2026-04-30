@@ -1081,12 +1081,22 @@ export default function QuoteDetail() {
               )}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsConvertOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleConvertToEvent} 
-              disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
-            >
-              {convertToEvent.isPending ? 'Creating...' : 'Create Event'}
-            </Button>
+                {conversionError && (
+                  <Button
+                    variant="outline"
+                    onClick={handleConvertToEvent}
+                    disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    {convertToEvent.isPending ? 'Trying...' : 'Try again'}
+                  </Button>
+                )}
+                <Button 
+                  onClick={handleConvertToEvent} 
+                  disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
+                >
+                  {convertToEvent.isPending ? 'Creating...' : 'Create Event'}
+                </Button>
               </div>
             </div>
           </DialogFooter>
