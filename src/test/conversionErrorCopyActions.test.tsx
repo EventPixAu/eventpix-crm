@@ -124,12 +124,14 @@ describe('ConversionErrorCopyActions aria-live announcements', () => {
     fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
     await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
 
-    fireEvent.keyDown(window, { key: 't' });
+    await user.keyboard('t');
     const updatedToggle = await screen.findByRole('button', { name: /switch conversion error copy format from prettified to raw/i });
+    await waitFor(() => expect(updatedToggle).toHaveFocus());
 
-    document.body.focus();
     await user.tab();
+    expect(screen.getByRole('button', { name: /retry copying pretty conversion error text/i })).toHaveFocus();
 
+    await user.tab({ shift: true });
     expect(updatedToggle).toHaveFocus();
   });
 
@@ -143,7 +145,7 @@ describe('ConversionErrorCopyActions aria-live announcements', () => {
     fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
     await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
 
-    fireEvent.keyDown(window, { key: 't' });
+    await user.keyboard('t');
     const updatedToggle = await screen.findByRole('button', { name: /switch conversion error copy format from prettified to raw/i });
     await waitFor(() => expect(updatedToggle).toHaveFocus());
 
