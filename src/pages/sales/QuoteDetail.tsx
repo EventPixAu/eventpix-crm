@@ -419,6 +419,12 @@ export default function QuoteDetail() {
     }
   };
 
+  const copyConversionError = () => {
+    if (!conversionError) return;
+    navigator.clipboard.writeText(`${conversionError.step}: ${conversionError.message}`);
+    toast.success('Conversion error copied');
+  };
+
   const copyProposalLink = () => {
     if (!quote?.public_token) return;
     const link = `${getPublicBaseUrl()}/accept/${quote.public_token}`;
