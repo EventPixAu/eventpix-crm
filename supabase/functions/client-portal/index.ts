@@ -83,8 +83,8 @@ serve(async (req) => {
     const { data: assignments } = await supabase
       .from("event_assignments")
       .select(`
-        id, user_id, staff_id, staff_role_id, role_on_event, status,
-        profile:profiles!event_assignments_user_id_fkey ( full_name, first_name, last_name, phone, avatar_url ),
+        id, user_id, staff_id, staff_role_id, role_on_event, assignment_status,
+        profile:profiles!event_assignments_user_id_fkey ( full_name, phone, avatar_url ),
         staff_role:staff_roles!event_assignments_staff_role_id_fkey ( name ),
         staff:staff_id ( name, role )
       `)
@@ -94,9 +94,8 @@ serve(async (req) => {
       .map((a: any) => {
         const profile = a.profile;
         const staff = a.staff;
-        const profileName = profile?.full_name || `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
         return {
-          name: profileName || staff?.name || "Team Member",
+          name: profile?.full_name || staff?.name || "Team Member",
           phone: profile?.phone || null,
           avatar_url: profile?.avatar_url || null,
           role: a.staff_role?.name || a.role_on_event || staff?.role || "Team",
