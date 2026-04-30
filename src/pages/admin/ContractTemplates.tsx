@@ -664,8 +664,8 @@ Date: {{today}}`}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete Permanently
+            <AlertDialogAction onClick={handleDelete} disabled={deleteTemplate.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleteTemplate.isPending ? 'Deleting...' : 'Delete Permanently'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
