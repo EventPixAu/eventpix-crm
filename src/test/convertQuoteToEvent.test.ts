@@ -83,7 +83,7 @@ describe('convertQuoteToEvent', () => {
       step: 'create_event',
       sqlstate: '23502',
     });
-    await expect(convertQuoteToEvent({ quoteId, eventData, idempotencyKey })).rejects.toBeInstanceOf(ConvertQuoteToEventError);
+    await expect(promise).rejects.toBeInstanceOf(ConvertQuoteToEventError);
     expect(rpc).toHaveBeenCalledWith('convert_quote_to_event', {
       p_input: { quote_id: quoteId, event_data: eventData, idempotency_key: idempotencyKey },
     });
