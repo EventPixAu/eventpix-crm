@@ -117,6 +117,8 @@ const getClipboardErrorReason = (error: unknown) => {
   return 'Your browser blocked clipboard access';
 };
 
+const CONVERSION_COPY_TOAST_ID = 'conversion-error-copy';
+
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -453,12 +455,29 @@ export default function QuoteDetail() {
 
   const copyConversionError = async () => {
     if (!conversionError) return;
+    const errorText = `${conversionError.step}: ${conversionError.message}`;
+
     try {
-      await copyTextToClipboard(`${conversionError.step}: ${conversionError.message}`);
-      toast.success('Conversion error copied');
+      await copyTextToClipboard(errorText);
+      toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
     } catch (error) {
+      const retryCopy = async () => {
+        try {
+          await copyTextToClipboard(errorText);
+          toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
+        } catch (retryError) {
+          toast.error('Still unable to copy conversion error', {
+            id: CONVERSION_COPY_TOAST_ID,
+            description: getClipboardErrorReason(retryError),
+            action: { label: 'Retry', onClick: retryCopy },
+          });
+        }
+      };
+
       toast.error('Failed to copy conversion error', {
+        id: CONVERSION_COPY_TOAST_ID,
         description: getClipboardErrorReason(error),
+        action: { label: 'Retry', onClick: retryCopy },
       });
     }
   };
