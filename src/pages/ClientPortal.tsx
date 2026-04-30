@@ -192,6 +192,9 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
         .join(', ')
     : null;
   const baseUrl = getBaseUrl();
+  const visibleTeam = (data.team || []).filter(
+    (member) => !member.role?.toLowerCase().includes('editor')
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -310,7 +313,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
         )}
 
         {/* Your Team */}
-        {(data.team?.length ?? 0) > 0 && (
+        {visibleTeam.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -322,7 +325,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
               Your Team
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
-              {data.team.map((member, i) => (
+              {visibleTeam.map((member, i) => (
                 <div key={i} className="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/5">
                   {member.avatar_url ? (
                     <img src={member.avatar_url} alt={member.name} className="h-10 w-10 rounded-full object-cover" />
