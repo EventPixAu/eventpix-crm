@@ -33,8 +33,9 @@ serve(async (req) => {
       .from("events")
       .select(`
         id, event_name, event_date, start_time, end_time,
-        venue_name, venue_id, client_name, event_type_id,
+        venue_name, venue_id, client_id, client_name, event_type_id,
         special_instructions, notes, photography_brief,
+        onsite_contact_name, onsite_contact_phone,
         qr_file_path, qr_file_name, pre_registration_link,
         brief_content, client_brief_content, main_shoot_date,
         lead_id, quote_id,
@@ -106,9 +107,49 @@ serve(async (req) => {
     // Contacts
     const { data: rawContacts } = await supabase
       .from("event_contacts")
-      .select("id, contact_name, contact_email, contact_phone, contact_type, notes")
-      .eq("event_id", event.id);
-    const contacts = rawContacts || [];
+      .select(`
+        id, contact_name, contact_email, contact_phone, contact_type, notes, sort_order,
+        client_contact:client_contacts!event_contacts_client_contact_id_fkey (
+          id, contact_name, email, phone, phone_mobile, phone_office, role_title, role
+        )
+      `)
+      .eq("event_id", event.id)
+      .order("sort_order", { ascending: true });
+
+    const contacts = (rawContacts || []).map((c: any) => {
+      const cc = c.client_contact;
+      return {
+        id: c.id,
+        contact_type: c.contact_type || "primary",
+        contact_name: c.contact_name || cc?.contact_name || null,
+        contact_email: c.contact_email || cc?.email || null,
+        contact_phone: c.contact_phone || cc?.phone_mobile || cc?.phone_office || cc?.phone || null,
+        notes: c.notes || null,
+      };
+    });
+
+    if (event.onsite_contact_name && !contacts.some((c: any) => c.contact_name === event.onsite_contact_name)) {
+      let onsiteContact: any = null;
+      if (event.client_id) {
+        const { data } = await supabase
+          .from("client_contacts")
+          .select("id, contact_name, email, phone, phone_mobile, phone_office")
+          .eq("client_id", event.client_id)
+          .ilike("contact_name", event.onsite_contact_name)
+          .limit(1)
+          .maybeSingle();
+        onsiteContact = data;
+      }
+
+      contacts.push({
+        id: onsiteContact?.id || `onsite-${event.id}`,
+        contact_type: "onsite",
+        contact_name: event.onsite_contact_name,
+        contact_email: onsiteContact?.email || null,
+        contact_phone: event.onsite_contact_phone || onsiteContact?.phone_mobile || onsiteContact?.phone_office || onsiteContact?.phone || null,
+        notes: null,
+      });
+    }
 
     // Contracts
     const { data: rawContracts } = await supabase
