@@ -30,7 +30,13 @@ describe('convertQuoteToEvent', () => {
     const idempotencyKey = `quote-convert-${quoteId}`;
     const rpc = vi.mocked(supabase.rpc);
 
-    rpc.mockResolvedValue({ data: { success: true, event_id: eventId }, error: null });
+    rpc.mockResolvedValue({
+      data: { success: true, event_id: eventId },
+      error: null,
+      count: null,
+      status: 200,
+      statusText: 'OK',
+    });
 
     const firstResult = await convertQuoteToEvent({ quoteId, eventData, idempotencyKey });
     const retryResult = await convertQuoteToEvent({ quoteId, eventData, idempotencyKey });
