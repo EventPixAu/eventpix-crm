@@ -87,7 +87,13 @@ describe('convertQuoteToEvent', () => {
     const quoteId = 'quote-789';
     const eventData = { event_name: 'Conference', event_date: '2026-06-15' };
     const idempotencyKey = `quote-convert-${quoteId}`;
-    const rpcError = { message: 'permission denied for function convert_quote_to_event', code: '42501' };
+    const rpcError = {
+      name: 'PostgrestError',
+      message: 'permission denied for function convert_quote_to_event',
+      code: '42501',
+      details: '',
+      hint: '',
+    };
     const rpc = vi.mocked(supabase.rpc);
 
     rpc.mockResolvedValueOnce({
