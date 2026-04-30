@@ -85,6 +85,24 @@ const GROUP_LABELS = [
 
 const getConversionErrorStorageKey = (quoteId?: string) => quoteId ? `quote-conversion-error:${quoteId}` : null;
 
+const copyTextToClipboard = async (text: string) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+};
+
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -419,9 +437,9 @@ export default function QuoteDetail() {
     }
   };
 
-  const copyConversionError = () => {
+  const copyConversionError = async () => {
     if (!conversionError) return;
-    navigator.clipboard.writeText(`${conversionError.step}: ${conversionError.message}`);
+    await copyTextToClipboard(`${conversionError.step}: ${conversionError.message}`);
     toast.success('Conversion error copied');
   };
 
