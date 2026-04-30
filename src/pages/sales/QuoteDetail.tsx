@@ -474,6 +474,11 @@ export default function QuoteDetail() {
     let copyFormat: ConversionErrorCopyFormat = 'raw';
     const getErrorText = () => getConversionErrorCopyText(conversionError, copyFormat);
     let removeFormatShortcut = () => {};
+    const focusFormatToggle = () => {
+      window.requestAnimationFrame(() => {
+        document.getElementById(CONVERSION_COPY_FORMAT_TOGGLE_ID)?.focus();
+      });
+    };
 
     const installFormatShortcut = (toggleFormat: () => void) => {
       removeFormatShortcut();
@@ -494,7 +499,11 @@ export default function QuoteDetail() {
       toast.info('Conversion error text', {
         id: CONVERSION_COPY_TOAST_ID,
         description: <span className="whitespace-pre-wrap break-words font-mono text-xs">{getErrorText()}</span>,
-        action: { label: 'Retry', onClick: retryCopy },
+        action: (
+          <button id={CONVERSION_COPY_RETRY_ID} type="button" aria-label={`Retry copying ${copyFormat} conversion error text`} onClick={retryCopy}>
+            Retry
+          </button>
+        ),
       });
     };
 
@@ -510,16 +519,32 @@ export default function QuoteDetail() {
         description: (
           <div className="space-y-2">
             <p>{getClipboardErrorReason(error)}</p>
-            <button type="button" className="text-xs underline" onClick={toggleFormat}>
+            <button
+              id={CONVERSION_COPY_FORMAT_TOGGLE_ID}
+              type="button"
+              className="text-xs underline"
+              aria-label={`Switch conversion error copy format from ${copyFormat === 'raw' ? 'raw to prettified' : 'prettified to raw'}`}
+              aria-pressed={copyFormat === 'pretty'}
+              onClick={toggleFormat}
+            >
               Copy format: {copyFormat === 'raw' ? 'Raw' : 'Prettified'} (T)
             </button>
           </div>
         ),
-        action: { label: 'Retry', onClick: retryCopy },
-        cancel: { label: 'Preview', onClick: previewCopyText },
+        action: (
+          <button id={CONVERSION_COPY_RETRY_ID} type="button" aria-label={`Retry copying ${copyFormat} conversion error text`} onClick={retryCopy}>
+            Retry
+          </button>
+        ),
+        cancel: (
+          <button id={CONVERSION_COPY_PREVIEW_ID} type="button" aria-label={`Preview ${copyFormat} conversion error text before copying`} onClick={previewCopyText}>
+            Preview
+          </button>
+        ),
         onDismiss: removeFormatShortcut,
         onAutoClose: removeFormatShortcut,
       });
+      focusFormatToggle();
     };
 
     try {
