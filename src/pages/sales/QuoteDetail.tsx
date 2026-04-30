@@ -453,8 +453,14 @@ export default function QuoteDetail() {
 
   const copyConversionError = async () => {
     if (!conversionError) return;
-    await copyTextToClipboard(`${conversionError.step}: ${conversionError.message}`);
-    toast.success('Conversion error copied');
+    try {
+      await copyTextToClipboard(`${conversionError.step}: ${conversionError.message}`);
+      toast.success('Conversion error copied');
+    } catch (error) {
+      toast.error('Failed to copy conversion error', {
+        description: getClipboardErrorReason(error),
+      });
+    }
   };
 
   const copyProposalLink = () => {
