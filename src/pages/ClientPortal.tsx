@@ -25,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import eventpixLogo from '@/assets/eventpix-logo.png';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase';
 
 interface PortalContract {
   id: string;
@@ -138,12 +139,13 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
 
     const fetchData = async () => {
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || SUPABASE_ANON_KEY;
         const resp = await fetch(
           `${supabaseUrl}/functions/v1/${portalFunction}?token=${token}`,
           {
             headers: {
-              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              'apikey': supabaseAnonKey,
             },
           }
         );
