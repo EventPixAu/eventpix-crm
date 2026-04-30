@@ -268,7 +268,7 @@ export function useAdminCalendarEvents(
 
       const conflictEventIds = new Set<string>();
       if (userIds.size > 0) {
-        const { data: conflicts } = await supabase.rpc('check_batch_staff_conflicts', {
+        const { data: conflicts } = await (supabase as any).rpc('check_batch_staff_conflicts', {
           p_user_ids: Array.from(userIds),
           p_start_at: new Date(rangeStart).toISOString(),
           p_end_at: new Date(rangeEnd).toISOString(),
