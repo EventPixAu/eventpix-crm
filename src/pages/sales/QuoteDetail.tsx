@@ -652,9 +652,6 @@ export default function QuoteDetail() {
 
   return (
     <AppLayout>
-      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {copyErrorAnnouncement}
-      </div>
       {/* Header with Back + Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -1210,10 +1207,7 @@ export default function QuoteDetail() {
                 <AlertTitle>Conversion failed at {conversionError.step}</AlertTitle>
                 <AlertDescription className="space-y-2">
                   <p>{conversionError.message}</p>
-                  <Button type="button" variant="outline" size="sm" onClick={copyConversionError}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy error
-                  </Button>
+                  <ConversionErrorCopyActions conversionError={conversionError} />
                 </AlertDescription>
               </Alert>
             )}
