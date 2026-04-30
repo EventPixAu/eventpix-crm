@@ -457,28 +457,38 @@ export default function QuoteDetail() {
     if (!conversionError) return;
     const errorText = `${conversionError.step}: ${conversionError.message}`;
 
+    let retryCopy = async () => {};
+    const previewCopyText = () => {
+      toast.info('Conversion error text', {
+        id: CONVERSION_COPY_TOAST_ID,
+        description: <span className="break-words font-mono text-xs">{errorText}</span>,
+        action: { label: 'Retry', onClick: retryCopy },
+      });
+    };
+
+    const showCopyFailureToast = (title: string, error: unknown) => {
+      toast.error(title, {
+        id: CONVERSION_COPY_TOAST_ID,
+        description: getClipboardErrorReason(error),
+        action: { label: 'Retry', onClick: retryCopy },
+        cancel: { label: 'Preview', onClick: previewCopyText },
+      });
+    };
+
     try {
       await copyTextToClipboard(errorText);
       toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
     } catch (error) {
-      const retryCopy = async () => {
+      retryCopy = async () => {
         try {
           await copyTextToClipboard(errorText);
           toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
         } catch (retryError) {
-          toast.error('Still unable to copy conversion error', {
-            id: CONVERSION_COPY_TOAST_ID,
-            description: getClipboardErrorReason(retryError),
-            action: { label: 'Retry', onClick: retryCopy },
-          });
+          showCopyFailureToast('Still unable to copy conversion error', retryError);
         }
       };
 
-      toast.error('Failed to copy conversion error', {
-        id: CONVERSION_COPY_TOAST_ID,
-        description: getClipboardErrorReason(error),
-        action: { label: 'Retry', onClick: retryCopy },
-      });
+      showCopyFailureToast('Failed to copy conversion error', error);
     }
   };
 
