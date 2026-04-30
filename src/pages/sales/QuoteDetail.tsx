@@ -126,6 +126,7 @@ export default function QuoteDetail() {
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
   const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(null);
+  const conversionError = lastConversionError;
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -383,15 +384,23 @@ export default function QuoteDetail() {
 
   const handleConvertToEvent = async () => {
     if (!id || !eventData.event_name || !eventData.event_date) return;
-    
-    const result = await convertToEvent.mutateAsync({
-      quoteId: id,
-      eventData,
-      idempotencyKey: `quote-convert-${id}`,
-    });
-    
-    setIsConvertOpen(false);
-    navigate(result.event_id ? `/events/${result.event_id}` : '/events');
+
+    try {
+      const result = await convertToEvent.mutateAsync({
+        quoteId: id,
+        eventData,
+        idempotencyKey: `quote-convert-${id}`,
+      });
+
+      setLastConversionError(null);
+      setIsConvertOpen(false);
+      navigate(result.event_id ? `/events/${result.event_id}` : '/events');
+    } catch (error) {
+      setLastConversionError({
+        step: error instanceof ConvertQuoteToEventError && error.step ? error.step : 'convert_quote_to_event',
+        message: error instanceof Error ? error.message : 'Failed to convert quote',
+      });
+    }
   };
 
   const copyProposalLink = () => {
