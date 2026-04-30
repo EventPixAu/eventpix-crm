@@ -138,9 +138,9 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
 
     const fetchData = async () => {
       try {
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const resp = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/${portalFunction}?token=${token}`,
+          `${supabaseUrl}/functions/v1/${portalFunction}?token=${token}`,
           {
             headers: {
               'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
