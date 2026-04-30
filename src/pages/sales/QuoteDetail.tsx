@@ -117,6 +117,19 @@ const getClipboardErrorReason = (error: unknown) => {
   return 'Your browser blocked clipboard access';
 };
 
+type ConversionErrorCopyFormat = 'raw' | 'pretty';
+
+const getConversionErrorCopyText = (
+  conversionError: { step: string; message: string },
+  format: ConversionErrorCopyFormat,
+) => {
+  if (format === 'pretty') {
+    return `Conversion failed\nStep: ${conversionError.step}\nMessage: ${conversionError.message}`;
+  }
+
+  return `${conversionError.step}: ${conversionError.message}`;
+};
+
 const CONVERSION_COPY_TOAST_ID = 'conversion-error-copy';
 
 export default function QuoteDetail() {
