@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStaff, useCreateStaff, useDeleteStaff, useProfiles, useStaffDirectory, Staff as StaffType } from '@/hooks/useStaff';
+import { useStaff, useCreateStaff, useDeleteStaff, useProfiles, useStaffRoles, Staff as StaffType } from '@/hooks/useStaff';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,6 +72,7 @@ interface UnifiedTeamMember {
   phone: string | null;
   location: string | null;
   role: 'photographer' | 'videographer' | 'assistant';
+  displayRole: string;
   status: 'active' | 'inactive';
   user_id: string | null;
   source: 'profile' | 'staff';
@@ -85,6 +86,7 @@ export default function Staff() {
   const { isAdmin } = useAuth();
   const { data: staff = [], isLoading: staffLoading } = useStaff();
   const { data: profiles = [], isLoading: profilesLoading } = useProfiles();
+  const { data: roles = [] } = useStaffRoles();
   const { data: locations = [] } = useActiveLocations();
   const { data: userRolesMap = new Map<string, string>() } = useQuery({
     queryKey: ['user-roles-map'],
@@ -127,6 +129,10 @@ export default function Staff() {
     return map;
   }, [profiles]);
 
+  const roleNameMap = useMemo(() => {
+    return new Map(roles.map(role => [role.id, role.name]));
+  }, [roles]);
+
   // Get sorted locations from lookup table
   const sortedLocations = useMemo(() => {
     return [...locations].sort((a, b) => a.name.localeCompare(b.name));
@@ -146,6 +152,7 @@ export default function Staff() {
       phone: p.phone || null,
       location: p.location || null,
       role: (['photographer', 'videographer', 'assistant'].includes(userRolesMap.get(p.id) || '') ? userRolesMap.get(p.id) : 'photographer') as 'photographer' | 'videographer' | 'assistant',
+      displayRole: roleNameMap.get(p.default_role_id || '') || userRolesMap.get(p.id) || 'Team Member',
       status: (p.status === 'inactive' || p.is_active === false ? 'inactive' : 'active') as 'active' | 'inactive',
       user_id: p.id, // Profile ID IS the user ID
       source: 'profile' as const,
@@ -164,6 +171,7 @@ export default function Staff() {
         phone: s.phone,
         location: s.location,
         role: s.role,
+        displayRole: s.role,
         status: s.status,
         user_id: s.user_id,
         source: 'staff' as const,
@@ -175,7 +183,7 @@ export default function Staff() {
     return [...profileMembers, ...unlinkedStaff].sort((a, b) => 
       a.name.localeCompare(b.name)
     );
-  }, [profiles, staff, userRolesMap]);
+  }, [profiles, staff, userRolesMap, roleNameMap]);
 
   const filteredStaff = unifiedTeamMembers.filter((member) => {
     const searchLower = search.toLowerCase();
@@ -184,7 +192,7 @@ export default function Staff() {
       member.email.toLowerCase().includes(searchLower) ||
       (member.phone && member.phone.toLowerCase().includes(searchLower)) ||
       (member.location && member.location.toLowerCase().includes(searchLower));
-    const matchesRole = roleFilter === 'all' || member.role === roleFilter;
+    const matchesRole = roleFilter === 'all' || member.displayRole.toLowerCase() === roleFilter;
     const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
     const matchesLocation = !locationFilter || 
       (member.location && member.location.toLowerCase().includes(locationFilter.toLowerCase()));
@@ -667,7 +675,7 @@ export default function Staff() {
                             {!isAdmin && <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                           </div>
                           <p className="text-sm text-muted-foreground capitalize mb-3">
-                            {member.role}
+                            {member.displayRole}
                           </p>
                           <div className="space-y-1.5">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
