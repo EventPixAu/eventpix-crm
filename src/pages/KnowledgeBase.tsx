@@ -345,8 +345,8 @@ export default function KnowledgeBase() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
-              Delete
+            <AlertDialogAction onClick={handleDelete} disabled={deleteArticle.isPending} className="bg-destructive">
+              {deleteArticle.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
