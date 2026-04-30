@@ -177,6 +177,7 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
+  const [copyErrorAnnouncement, setCopyErrorAnnouncement] = useState('');
   const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(() => {
     const storageKey = getConversionErrorStorageKey(id);
     if (!storageKey || typeof window === 'undefined') return null;
@@ -473,6 +474,7 @@ export default function QuoteDetail() {
     if (!conversionError) return;
     let copyFormat: ConversionErrorCopyFormat = 'raw';
     const getErrorText = () => getConversionErrorCopyText(conversionError, copyFormat);
+    const announceCopyErrorStatus = (message: string) => setCopyErrorAnnouncement(`${message} ${Date.now()}`);
     let removeFormatShortcut = () => {};
     const focusFormatToggle = () => {
       window.requestAnimationFrame(() => {
@@ -496,6 +498,7 @@ export default function QuoteDetail() {
     let retryCopy = async () => {};
     const previewCopyText = () => {
       removeFormatShortcut();
+      announceCopyErrorStatus(`Preview showing ${copyFormat} conversion error text.`);
       toast.info('Conversion error text', {
         id: CONVERSION_COPY_TOAST_ID,
         description: <span className="whitespace-pre-wrap break-words font-mono text-xs">{getErrorText()}</span>,
@@ -510,6 +513,7 @@ export default function QuoteDetail() {
     const showCopyFailureToast = (title: string, error: unknown) => {
       const toggleFormat = () => {
         copyFormat = copyFormat === 'raw' ? 'pretty' : 'raw';
+        announceCopyErrorStatus(`Copy format switched to ${copyFormat === 'raw' ? 'raw' : 'prettified'} conversion error text.`);
         showCopyFailureToast(title, error);
       };
       installFormatShortcut(toggleFormat);
@@ -550,14 +554,17 @@ export default function QuoteDetail() {
     try {
       await copyTextToClipboard(getErrorText());
       removeFormatShortcut();
+      announceCopyErrorStatus('Conversion error text copied successfully.');
       toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
     } catch (error) {
       retryCopy = async () => {
         try {
           await copyTextToClipboard(getErrorText());
           removeFormatShortcut();
+          announceCopyErrorStatus('Retry completed. Conversion error text copied successfully.');
           toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
         } catch (retryError) {
+          announceCopyErrorStatus(`Retry failed. ${getClipboardErrorReason(retryError)}.`);
           showCopyFailureToast('Still unable to copy conversion error', retryError);
         }
       };
@@ -624,6 +631,9 @@ export default function QuoteDetail() {
 
   return (
     <AppLayout>
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {copyErrorAnnouncement}
+      </div>
       {/* Header with Back + Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
