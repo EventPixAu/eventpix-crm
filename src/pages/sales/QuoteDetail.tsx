@@ -83,6 +83,8 @@ const GROUP_LABELS = [
   'Other',
 ];
 
+const getConversionErrorStorageKey = (quoteId?: string) => quoteId ? `quote-conversion-error:${quoteId}` : null;
+
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -125,7 +127,16 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
-  const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(null);
+  const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(() => {
+    const storageKey = getConversionErrorStorageKey(id);
+    if (!storageKey || typeof window === 'undefined') return null;
+
+    try {
+      return JSON.parse(window.localStorage.getItem(storageKey) || 'null');
+    } catch {
+      return null;
+    }
+  });
   const conversionError = lastConversionError;
   const [newItem, setNewItem] = useState({
     product_id: '',
