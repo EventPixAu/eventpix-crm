@@ -26,43 +26,6 @@ type Quote = Database['public']['Tables']['quotes']['Row'];
 type QuoteInsert = Database['public']['Tables']['quotes']['Insert'];
 type QuoteUpdate = Database['public']['Tables']['quotes']['Update'];
 
-export class ConvertQuoteToEventError extends Error {
-  step?: string;
-  sqlstate?: string;
-
-  constructor(payload: { error?: string; message?: string; step?: string; sqlstate?: string }) {
-    super(payload.error || payload.message || 'Failed to convert quote');
-    this.name = 'ConvertQuoteToEventError';
-    this.step = payload.step;
-    this.sqlstate = payload.sqlstate;
-  }
-}
-
-export async function convertQuoteToEvent({
-  quoteId,
-  eventData,
-  idempotencyKey,
-}: {
-  quoteId: string;
-  eventData: any;
-  idempotencyKey?: string;
-}) {
-  const { data, error } = await supabase.rpc('convert_quote_to_event', {
-    p_input: {
-      quote_id: quoteId,
-      event_data: eventData,
-      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
-    },
-  });
-
-  if (error) throw error;
-
-  const result = data as { success?: boolean; event_id?: string; error?: string; message?: string; step?: string; sqlstate?: string };
-  if (!result?.success) throw new ConvertQuoteToEventError(result || {});
-
-  return result;
-}
-
 // =============================================================
 // CLIENT HOOKS
 // =============================================================
@@ -456,17 +419,90 @@ export function useConvertQuoteToEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ quoteId, eventData }: { quoteId: string; eventData: any; idempotencyKey?: string }) => {
-      const { data, error } = await supabase.rpc('convert_quote_to_event', {
-        p_input: { quote_id: quoteId, event_data: eventData },
-      });
+    mutationFn: async ({ 
+      quoteId, 
+      eventData 
+    }: { 
+      quoteId: string; 
+      eventData: {
+        event_name: string;
+        event_date: string;
+        event_type_id?: string;
+        start_time?: string;
+        end_time?: string;
+        venue_name?: string;
+        venue_address?: string;
+        notes?: string;
+      };
+    }) => {
+      // 1. Get the quote and lead details
+      const { data: quote, error: quoteError } = await supabase
+        .from('quotes')
+        .select(`
+          *,
+          lead:leads(*),
+          client:clients(*)
+        `)
+        .eq('id', quoteId)
+        .single();
+      
+      if (quoteError) throw quoteError;
+      if (!quote) throw new Error('Quote not found');
+      if (quote.status === 'accepted') throw new Error('Quote already accepted');
 
-      if (error) throw error;
+      // 2. Create the event with links to client, lead, and quote
+      const leadData = quote.lead as any;
+      const clientData = quote.client as any;
+      
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .insert({
+          event_name: eventData.event_name,
+          event_date: eventData.event_date,
+          event_type_id: eventData.event_type_id || leadData?.event_type_id,
+          start_time: eventData.start_time,
+          end_time: eventData.end_time,
+          venue_name: eventData.venue_name,
+          venue_address: eventData.venue_address,
+          notes: eventData.notes,
+          client_id: quote.client_id || leadData?.client_id,
+          client_name: clientData?.business_name || leadData?.client?.business_name || 'Unknown Client',
+          lead_id: quote.lead_id,
+          quote_id: quoteId,
+          event_type: 'corporate', // Default, should be derived
+          ops_status: 'confirmed',
+        })
+        .select()
+        .single();
+      
+      if (eventError) throw eventError;
 
-      const result = data as { success?: boolean; event_id?: string; error?: string; message?: string; step?: string; sqlstate?: string };
-      if (!result?.success) throw new ConvertQuoteToEventError(result || {});
+      // 3. Update quote: set status to accepted and link to created event
+      const { error: updateQuoteError } = await supabase
+        .from('quotes')
+        .update({ 
+          status: 'accepted',
+          linked_event_id: event.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', quoteId);
+      
+      if (updateQuoteError) throw updateQuoteError;
 
-      return result;
+      // 4. Update lead status to accepted (locks further edits)
+      if (quote.lead_id) {
+        const { error: updateLeadError } = await supabase
+          .from('leads')
+          .update({ 
+            status: 'accepted',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', quote.lead_id);
+        
+        if (updateLeadError) throw updateLeadError;
+      }
+
+      return event;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
@@ -475,10 +511,7 @@ export function useConvertQuoteToEvent() {
       toast.success('Quote converted to event', { description: 'The quote has been accepted and an event has been created.' });
     },
     onError: (error: Error) => {
-      const step = error instanceof ConvertQuoteToEventError ? error.step : undefined;
-      toast.error('Failed to convert quote', {
-        description: step ? `${step}: ${error.message}` : error.message,
-      });
+      toast.error('Failed to convert quote', { description: error.message });
     },
   });
 }

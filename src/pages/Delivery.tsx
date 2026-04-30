@@ -129,7 +129,7 @@ export default function Delivery() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <Link to={`/events/${event.id}/delivery`} aria-label={`Open delivery screen for ${event.event_name}`}>
+                        <Link to={`/events/${event.id}`}>
                           <Button variant="ghost" size="sm">
                             <QrCode className="h-4 w-4" />
                           </Button>

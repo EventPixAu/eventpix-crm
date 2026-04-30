@@ -23,7 +23,6 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -51,7 +50,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ConvertQuoteToEventError, useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
+import { useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
 import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
 import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, useReorderQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
@@ -82,183 +81,6 @@ const GROUP_LABELS = [
   'Travel',
   'Other',
 ];
-
-const getConversionErrorStorageKey = (quoteId?: string) => quoteId ? `quote-conversion-error:${quoteId}` : null;
-
-const copyTextToClipboard = async (text: string) => {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'fixed';
-  textarea.style.left = '-9999px';
-  textarea.style.top = '0';
-  try {
-    document.body.appendChild(textarea);
-    textarea.select();
-    const copied = document.execCommand('copy');
-    if (!copied) throw new Error('Copy command was rejected by the browser');
-  } finally {
-    textarea.remove();
-  }
-};
-
-const getClipboardErrorReason = (error: unknown) => {
-  if (error instanceof DOMException && error.name === 'NotAllowedError') {
-    return 'Clipboard permission was denied';
-  }
-
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === 'string' && error.trim()) return error;
-  return 'Your browser blocked clipboard access';
-};
-
-type ConversionErrorCopyFormat = 'raw' | 'pretty';
-type ConversionErrorDetails = { step: string; message: string };
-
-const getConversionErrorCopyText = (
-  conversionError: ConversionErrorDetails,
-  format: ConversionErrorCopyFormat,
-) => {
-  if (format === 'pretty') {
-    return `Conversion failed\nStep: ${conversionError.step}\nMessage: ${conversionError.message}`;
-  }
-
-  return `${conversionError.step}: ${conversionError.message}`;
-};
-
-const CONVERSION_COPY_TOAST_ID = 'conversion-error-copy';
-const CONVERSION_COPY_FORMAT_TOGGLE_ID = 'conversion-error-copy-format-toggle';
-const CONVERSION_COPY_RETRY_ID = 'conversion-error-copy-retry';
-const CONVERSION_COPY_PREVIEW_ID = 'conversion-error-copy-preview';
-
-export function ConversionErrorCopyActions({
-  conversionError,
-  copyToClipboard = copyTextToClipboard,
-}: {
-  conversionError: ConversionErrorDetails;
-  copyToClipboard?: (text: string) => Promise<void>;
-}) {
-  const [copyErrorAnnouncement, setCopyErrorAnnouncement] = useState('');
-
-  const copyConversionError = async () => {
-    let copyFormat: ConversionErrorCopyFormat = 'raw';
-    const getErrorText = () => getConversionErrorCopyText(conversionError, copyFormat);
-    const announceCopyErrorStatus = (message: string) => setCopyErrorAnnouncement(`${message} ${Date.now()}`);
-    let removeFormatShortcut = () => {};
-    const focusFormatToggle = () => {
-      window.requestAnimationFrame(() => {
-        document.getElementById(CONVERSION_COPY_FORMAT_TOGGLE_ID)?.focus();
-      });
-    };
-
-    const installFormatShortcut = (toggleFormat: () => void) => {
-      removeFormatShortcut();
-      const handleKeyDown = (event: KeyboardEvent) => {
-        const target = event.target as HTMLElement | null;
-        const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
-        if (isTyping || event.key.toLowerCase() !== 't') return;
-        event.preventDefault();
-        toggleFormat();
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      removeFormatShortcut = () => window.removeEventListener('keydown', handleKeyDown);
-    };
-
-    let retryCopy = async () => {};
-    const previewCopyText = () => {
-      removeFormatShortcut();
-      announceCopyErrorStatus(`Preview showing ${copyFormat} conversion error text.`);
-      toast.info('Conversion error text', {
-        id: CONVERSION_COPY_TOAST_ID,
-        description: <span className="whitespace-pre-wrap break-words font-mono text-xs">{getErrorText()}</span>,
-        action: (
-          <button id={CONVERSION_COPY_RETRY_ID} type="button" aria-label={`Retry copying ${copyFormat} conversion error text`} onClick={retryCopy}>
-            Retry
-          </button>
-        ),
-      });
-    };
-
-    const showCopyFailureToast = (title: string, error: unknown) => {
-      const toggleFormat = () => {
-        copyFormat = copyFormat === 'raw' ? 'pretty' : 'raw';
-        announceCopyErrorStatus(`Copy format switched to ${copyFormat === 'raw' ? 'raw' : 'prettified'} conversion error text.`);
-        showCopyFailureToast(title, error);
-      };
-      installFormatShortcut(toggleFormat);
-
-      toast.error(title, {
-        id: CONVERSION_COPY_TOAST_ID,
-        description: (
-          <div className="space-y-2">
-            <p>{getClipboardErrorReason(error)}</p>
-            <button
-              id={CONVERSION_COPY_FORMAT_TOGGLE_ID}
-              type="button"
-              className="text-xs underline"
-              aria-label={`Switch conversion error copy format from ${copyFormat === 'raw' ? 'raw to prettified' : 'prettified to raw'}`}
-              aria-pressed={copyFormat === 'pretty'}
-              onClick={toggleFormat}
-            >
-              Copy format: {copyFormat === 'raw' ? 'Raw' : 'Prettified'} (T)
-            </button>
-          </div>
-        ),
-        action: (
-          <button id={CONVERSION_COPY_RETRY_ID} type="button" aria-label={`Retry copying ${copyFormat} conversion error text`} onClick={retryCopy}>
-            Retry
-          </button>
-        ),
-        cancel: (
-          <button id={CONVERSION_COPY_PREVIEW_ID} type="button" aria-label={`Preview ${copyFormat} conversion error text before copying`} onClick={previewCopyText}>
-            Preview
-          </button>
-        ),
-        onDismiss: removeFormatShortcut,
-        onAutoClose: removeFormatShortcut,
-      });
-      focusFormatToggle();
-    };
-
-    try {
-      await copyToClipboard(getErrorText());
-      removeFormatShortcut();
-      announceCopyErrorStatus('Conversion error text copied successfully.');
-      toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
-    } catch (error) {
-      retryCopy = async () => {
-        try {
-          await copyToClipboard(getErrorText());
-          removeFormatShortcut();
-          announceCopyErrorStatus('Retry completed. Conversion error text copied successfully.');
-          toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
-        } catch (retryError) {
-          announceCopyErrorStatus(`Retry failed. ${getClipboardErrorReason(retryError)}.`);
-          showCopyFailureToast('Still unable to copy conversion error', retryError);
-        }
-      };
-
-      showCopyFailureToast('Failed to copy conversion error', error);
-    }
-  };
-
-  return (
-    <>
-      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {copyErrorAnnouncement}
-      </div>
-      <Button type="button" variant="outline" size="sm" onClick={copyConversionError}>
-        <Copy className="h-4 w-4 mr-2" />
-        Copy error
-      </Button>
-    </>
-  );
-}
 
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -302,17 +124,6 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
-  const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(() => {
-    const storageKey = getConversionErrorStorageKey(id);
-    if (!storageKey || typeof window === 'undefined') return null;
-
-    try {
-      return JSON.parse(window.localStorage.getItem(storageKey) || 'null');
-    } catch {
-      return null;
-    }
-  });
-  const conversionError = lastConversionError;
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -570,28 +381,14 @@ export default function QuoteDetail() {
 
   const handleConvertToEvent = async () => {
     if (!id || !eventData.event_name || !eventData.event_date) return;
-
-    try {
-      const result = await convertToEvent.mutateAsync({
-        quoteId: id,
-        eventData,
-        idempotencyKey: `quote-convert-${id}`,
-      });
-
-      setLastConversionError(null);
-      const storageKey = getConversionErrorStorageKey(id);
-      if (storageKey) window.localStorage.removeItem(storageKey);
-      setIsConvertOpen(false);
-      navigate(result.event_id ? `/events/${result.event_id}` : '/events');
-    } catch (error) {
-      const nextConversionError = {
-        step: error instanceof ConvertQuoteToEventError && error.step ? error.step : 'convert_quote_to_event',
-        message: error instanceof Error ? error.message : 'Failed to convert quote',
-      };
-      setLastConversionError(nextConversionError);
-      const storageKey = getConversionErrorStorageKey(id);
-      if (storageKey) window.localStorage.setItem(storageKey, JSON.stringify(nextConversionError));
-    }
+    
+    await convertToEvent.mutateAsync({
+      quoteId: id,
+      eventData,
+    });
+    
+    setIsConvertOpen(false);
+    navigate('/events');
   };
 
   const copyProposalLink = () => {
@@ -1202,15 +999,6 @@ export default function QuoteDetail() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {conversionError && (
-              <Alert variant="destructive">
-                <AlertTitle>Conversion failed at {conversionError.step}</AlertTitle>
-                <AlertDescription className="space-y-2">
-                  <p>{conversionError.message}</p>
-                  <ConversionErrorCopyActions conversionError={conversionError} />
-                </AlertDescription>
-              </Alert>
-            )}
             <div className="space-y-2">
               <Label htmlFor="event_name">Event Name *</Label>
               <Input
@@ -1270,34 +1058,13 @@ export default function QuoteDetail() {
             </div>
           </div>
           <DialogFooter>
-            <div className="flex w-full flex-col gap-3">
-              {conversionError && (
-                <p className="text-sm text-destructive">
-                  {convertToEvent.isPending
-                    ? `Retrying ${conversionError.step}...`
-                    : `${conversionError.step}: ${conversionError.message}`}
-                </p>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsConvertOpen(false)}>Cancel</Button>
-                {conversionError && (
-                  <Button
-                    variant="outline"
-                    onClick={handleConvertToEvent}
-                    disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${convertToEvent.isPending ? 'animate-spin' : ''}`} />
-                    {convertToEvent.isPending ? 'Trying...' : 'Try again'}
-                  </Button>
-                )}
-                <Button 
-                  onClick={handleConvertToEvent} 
-                  disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
-                >
-                  {convertToEvent.isPending ? 'Creating...' : 'Create Event'}
-                </Button>
-              </div>
-            </div>
+            <Button variant="outline" onClick={() => setIsConvertOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleConvertToEvent} 
+              disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
+            >
+              {convertToEvent.isPending ? 'Creating...' : 'Create Event'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
