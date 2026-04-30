@@ -85,6 +85,23 @@ describe('ConversionErrorCopyActions aria-live announcements', () => {
     });
   });
 
+  it('toggles the copy format and announces it when pressing the T shortcut', async () => {
+    renderCopyActions(vi.fn().mockRejectedValue(new Error('Clipboard unavailable')));
+
+    fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
+    await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
+
+    fireEvent.keyDown(window, { key: 't' });
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent('Copy format switched to prettified conversion error text.');
+      expect(screen.getByRole('button', { name: /switch conversion error copy format from prettified to raw/i })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+  });
+
   it('announces when Preview completes', async () => {
     renderCopyActions(vi.fn().mockRejectedValue(new Error('Clipboard unavailable')));
 
