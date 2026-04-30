@@ -1088,7 +1088,7 @@ export default function QuoteDetail() {
                     onClick={handleConvertToEvent}
                     disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
                   >
-                    <RefreshCw className="h-4 w-4 mr-2" />
+                    <RefreshCw className={`h-4 w-4 mr-2 ${convertToEvent.isPending ? 'animate-spin' : ''}`} />
                     {convertToEvent.isPending ? 'Trying...' : 'Try again'}
                   </Button>
                 )}
