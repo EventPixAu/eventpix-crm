@@ -124,13 +124,40 @@ describe('ConversionErrorCopyActions aria-live announcements', () => {
     fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
     await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
 
-    fireEvent.keyDown(window, { key: 't' });
+    await user.keyboard('t');
     const updatedToggle = await screen.findByRole('button', { name: /switch conversion error copy format from prettified to raw/i });
+    await waitFor(() => expect(updatedToggle).toHaveFocus());
 
-    document.body.focus();
     await user.tab();
+    expect(screen.getByRole('button', { name: /retry copying pretty conversion error text/i })).toHaveFocus();
 
+    await user.tab({ shift: true });
     expect(updatedToggle).toHaveFocus();
+  });
+
+  it.each([
+    ['Enter', '{Enter}'],
+    ['Space', ' '],
+  ])('changes format and announces it when pressing %s on the toggle after the T shortcut', async (_keyName, key) => {
+    const user = userEvent.setup();
+    renderCopyActions(vi.fn().mockRejectedValue(new Error('Clipboard unavailable')));
+
+    fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
+    await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
+
+    await user.keyboard('t');
+    const updatedToggle = await screen.findByRole('button', { name: /switch conversion error copy format from prettified to raw/i });
+    await waitFor(() => expect(updatedToggle).toHaveFocus());
+
+    await user.keyboard(key);
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent('Copy format switched to raw conversion error text.');
+      expect(screen.getByRole('button', { name: /switch conversion error copy format from raw to prettified/i })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
+    });
   });
 
   it('announces when Preview completes', async () => {
