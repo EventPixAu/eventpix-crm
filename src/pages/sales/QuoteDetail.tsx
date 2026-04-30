@@ -391,13 +391,13 @@ export default function QuoteDetail() {
   const handleConvertToEvent = async () => {
     if (!id || !eventData.event_name || !eventData.event_date) return;
     
-    await convertToEvent.mutateAsync({
+    const result = await convertToEvent.mutateAsync({
       quoteId: id,
       eventData,
     });
     
     setIsConvertOpen(false);
-    navigate('/events');
+    navigate(result.event_id ? `/events/${result.event_id}` : '/events');
   };
 
   const copyProposalLink = () => {
@@ -1008,6 +1008,12 @@ export default function QuoteDetail() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {conversionError && (
+              <Alert variant="destructive">
+                <AlertTitle>Conversion failed at {conversionError.step}</AlertTitle>
+                <AlertDescription>{conversionError.message}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="event_name">Event Name *</Label>
               <Input
@@ -1067,13 +1073,22 @@ export default function QuoteDetail() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsConvertOpen(false)}>Cancel</Button>
+            <div className="flex w-full flex-col gap-3">
+              {conversionError && (
+                <p className="text-sm text-destructive">
+                  {conversionError.step}: {conversionError.message}
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsConvertOpen(false)}>Cancel</Button>
             <Button 
               onClick={handleConvertToEvent} 
               disabled={!eventData.event_name || !eventData.event_date || convertToEvent.isPending}
             >
               {convertToEvent.isPending ? 'Creating...' : 'Create Event'}
             </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
