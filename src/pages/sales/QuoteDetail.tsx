@@ -419,6 +419,12 @@ export default function QuoteDetail() {
     }
   };
 
+  const copyConversionError = () => {
+    if (!conversionError) return;
+    navigator.clipboard.writeText(`${conversionError.step}: ${conversionError.message}`);
+    toast.success('Conversion error copied');
+  };
+
   const copyProposalLink = () => {
     if (!quote?.public_token) return;
     const link = `${getPublicBaseUrl()}/accept/${quote.public_token}`;
@@ -1030,7 +1036,13 @@ export default function QuoteDetail() {
             {conversionError && (
               <Alert variant="destructive">
                 <AlertTitle>Conversion failed at {conversionError.step}</AlertTitle>
-                <AlertDescription>{conversionError.message}</AlertDescription>
+                <AlertDescription className="space-y-2">
+                  <p>{conversionError.message}</p>
+                  <Button type="button" variant="outline" size="sm" onClick={copyConversionError}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy error
+                  </Button>
+                </AlertDescription>
               </Alert>
             )}
             <div className="space-y-2">
