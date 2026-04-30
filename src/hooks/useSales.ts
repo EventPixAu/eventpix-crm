@@ -456,7 +456,18 @@ export function useConvertQuoteToEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: convertQuoteToEvent,
+    mutationFn: async ({ quoteId, eventData }: { quoteId: string; eventData: any; idempotencyKey?: string }) => {
+      const { data, error } = await supabase.rpc('convert_quote_to_event', {
+        p_input: { quote_id: quoteId, event_data: eventData },
+      });
+
+      if (error) throw error;
+
+      const result = data as { success?: boolean; event_id?: string; error?: string; message?: string; step?: string; sqlstate?: string };
+      if (!result?.success) throw new ConvertQuoteToEventError(result || {});
+
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
