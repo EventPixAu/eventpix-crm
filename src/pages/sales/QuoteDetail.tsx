@@ -23,6 +23,7 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -50,7 +51,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
+import { ConvertQuoteToEventError, useQuote, useUpdateQuote, useConvertQuoteToEvent, useCreateQuote } from '@/hooks/useSales';
 import { useAcceptQuote } from '@/hooks/useQuoteAcceptance';
 import { useQuoteItems, useCreateQuoteItem, useUpdateQuoteItem, useDeleteQuoteItem, useReorderQuoteItems, QuoteItem } from '@/hooks/useQuoteItems';
 import { useActiveProducts } from '@/hooks/useProducts';
@@ -110,6 +111,14 @@ export default function QuoteDetail() {
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
+  const conversionError = convertToEvent.error
+    ? {
+        step: convertToEvent.error instanceof ConvertQuoteToEventError && convertToEvent.error.step
+          ? convertToEvent.error.step
+          : 'convert_quote_to_event',
+        message: convertToEvent.error.message,
+      }
+    : null;
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
