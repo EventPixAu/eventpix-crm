@@ -111,14 +111,6 @@ export default function QuoteDetail() {
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
-  const conversionError = convertToEvent.error
-    ? {
-        step: convertToEvent.error instanceof ConvertQuoteToEventError && convertToEvent.error.step
-          ? convertToEvent.error.step
-          : 'convert_quote_to_event',
-        message: convertToEvent.error.message,
-      }
-    : null;
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -133,6 +125,8 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
+  const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(null);
+  const conversionError = lastConversionError;
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -390,15 +384,23 @@ export default function QuoteDetail() {
 
   const handleConvertToEvent = async () => {
     if (!id || !eventData.event_name || !eventData.event_date) return;
-    
-    const result = await convertToEvent.mutateAsync({
-      quoteId: id,
-      eventData,
-      idempotencyKey: `quote-convert-${id}`,
-    });
-    
-    setIsConvertOpen(false);
-    navigate(result.event_id ? `/events/${result.event_id}` : '/events');
+
+    try {
+      const result = await convertToEvent.mutateAsync({
+        quoteId: id,
+        eventData,
+        idempotencyKey: `quote-convert-${id}`,
+      });
+
+      setLastConversionError(null);
+      setIsConvertOpen(false);
+      navigate(result.event_id ? `/events/${result.event_id}` : '/events');
+    } catch (error) {
+      setLastConversionError({
+        step: error instanceof ConvertQuoteToEventError && error.step ? error.step : 'convert_quote_to_event',
+        message: error instanceof Error ? error.message : 'Failed to convert quote',
+      });
+    }
   };
 
   const copyProposalLink = () => {
@@ -1077,7 +1079,9 @@ export default function QuoteDetail() {
             <div className="flex w-full flex-col gap-3">
               {conversionError && (
                 <p className="text-sm text-destructive">
-                  {conversionError.step}: {conversionError.message}
+                  {convertToEvent.isPending
+                    ? `Retrying ${conversionError.step}...`
+                    : `${conversionError.step}: ${conversionError.message}`}
                 </p>
               )}
               <div className="flex justify-end gap-2">
