@@ -131,6 +131,9 @@ const getConversionErrorCopyText = (
 };
 
 const CONVERSION_COPY_TOAST_ID = 'conversion-error-copy';
+const CONVERSION_COPY_FORMAT_TOGGLE_ID = 'conversion-error-copy-format-toggle';
+const CONVERSION_COPY_RETRY_ID = 'conversion-error-copy-retry';
+const CONVERSION_COPY_PREVIEW_ID = 'conversion-error-copy-preview';
 
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
