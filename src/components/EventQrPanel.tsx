@@ -24,6 +24,7 @@ interface EventQrPanelProps {
 export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, isAdmin = false }: EventQrPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editingLink, setEditingLink] = useState(false);
   const [linkValue, setLinkValue] = useState(preRegistrationLink || '');
   const [savingLink, setSavingLink] = useState(false);
@@ -97,7 +98,8 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   };
 
   const handleDelete = async () => {
-    if (!qrFilePath || !confirm('Remove QR file?')) return;
+    if (!qrFilePath || deleting || !confirm('Remove QR file?')) return;
+    setDeleting(true);
     try {
       await supabase.storage.from('event-documents').remove([qrFilePath]);
       await supabase
@@ -108,6 +110,8 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
       toast.success('QR file removed');
     } catch {
       toast.error('Failed to remove');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -210,8 +214,8 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
                 {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               </Button>
               {isAdmin && (
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4" />
+                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
             </div>
