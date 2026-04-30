@@ -83,19 +83,26 @@ serve(async (req) => {
     const { data: assignments } = await supabase
       .from("event_assignments")
       .select(`
-        id, role, status,
-        profiles:profile_id ( first_name, last_name, phone, avatar_url )
+        id, user_id, staff_id, staff_role_id, role_on_event, status,
+        profile:profiles!event_assignments_user_id_fkey ( full_name, first_name, last_name, phone, avatar_url ),
+        staff_role:staff_roles!event_assignments_staff_role_id_fkey ( name ),
+        staff:staff_id ( name, role )
       `)
       .eq("event_id", event.id);
 
     const team = (assignments || [])
-      .filter((a: any) => a.profiles)
-      .map((a: any) => ({
-        name: `${a.profiles.first_name || ""} ${a.profiles.last_name || ""}`.trim(),
-        phone: a.profiles.phone || null,
-        avatar_url: a.profiles.avatar_url || null,
-        role: a.role,
-      }));
+      .map((a: any) => {
+        const profile = a.profile;
+        const staff = a.staff;
+        const profileName = profile?.full_name || `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
+        return {
+          name: profileName || staff?.name || "Team Member",
+          phone: profile?.phone || null,
+          avatar_url: profile?.avatar_url || null,
+          role: a.staff_role?.name || a.role_on_event || staff?.role || "Team",
+        };
+      })
+      .filter((member: any) => !member.role?.toLowerCase().includes("editor"));
 
     // Contacts
     const { data: rawContacts } = await supabase
