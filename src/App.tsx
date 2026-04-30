@@ -171,7 +171,7 @@ function RoleBasedDashboard() {
         </button>
         <button
           onClick={async () => {
-            const { supabase } = await import('@/integrations/supabase/client');
+            const { supabase } = await import('@/lib/supabase');
             await supabase.auth.signOut();
             window.location.href = '/auth';
           }}

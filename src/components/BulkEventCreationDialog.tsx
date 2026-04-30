@@ -44,6 +44,7 @@ import { useBulkCreateEvents, EventSeries } from '@/hooks/useEventSeries';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { supabase } from '@/lib/supabase';
 
 interface BulkEventRow {
   id: string;
@@ -118,8 +119,7 @@ export function BulkEventCreationDialog({
       
       // Fetch contact details if series has a default contact
       if (seriesDefaultContactId) {
-        import('@/integrations/supabase/client').then(({ supabase }) => {
-          supabase
+        supabase
             .from('client_contacts')
             .select('contact_name, phone, phone_mobile, phone_office, client_id, client:clients(business_name)')
             .eq('id', seriesDefaultContactId)
@@ -147,7 +147,6 @@ export function BulkEventCreationDialog({
                 }
               }
             });
-        });
       }
     }
   }, [open, series.name, seriesStartTime, seriesEndTime, seriesDefaultContactId]);
