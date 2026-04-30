@@ -227,7 +227,7 @@ export function StaffRateEditor({ userId, userName }: StaffRateEditorProps) {
                       <Button size="icon" variant="ghost" onClick={() => handleEdit(rate)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(rate.id)}>
+                      <Button size="icon" variant="ghost" onClick={() => handleDelete(rate.id)} disabled={deleteRate.isPending}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

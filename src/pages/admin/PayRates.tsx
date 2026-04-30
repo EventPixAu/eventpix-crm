@@ -172,6 +172,7 @@ export default function PayRates() {
                             variant="ghost"
                             size="icon"
                             onClick={() => { if (confirm('Remove this rate?')) deleteRate.mutate(entry.id); }}
+                            disabled={deleteRate.isPending}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
@@ -312,7 +313,7 @@ export default function PayRates() {
                           <Button variant="ghost" size="icon" onClick={() => openEditAllowance(a)}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => { if (confirm('Remove this allowance?')) deleteAllowance.mutate(a.id); }}>
+                          <Button variant="ghost" size="icon" onClick={() => { if (confirm('Remove this allowance?')) deleteAllowance.mutate(a.id); }} disabled={deleteAllowance.isPending}>
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
                         </div>
