@@ -266,11 +266,10 @@ export function useAdminCalendarEvents(
         });
       });
 
-      // Check conflicts for each user
       const conflictEventIds = new Set<string>();
-      for (const userId of userIds) {
-        const { data: conflicts } = await supabase.rpc('check_staff_conflicts', {
-          p_user_id: userId,
+      if (userIds.size > 0) {
+        const { data: conflicts } = await (supabase as any).rpc('check_batch_staff_conflicts', {
+          p_user_ids: Array.from(userIds),
           p_start_at: new Date(rangeStart).toISOString(),
           p_end_at: new Date(rangeEnd).toISOString(),
         });
