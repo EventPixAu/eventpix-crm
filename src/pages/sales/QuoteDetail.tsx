@@ -97,10 +97,24 @@ const copyTextToClipboard = async (text: string) => {
   textarea.style.position = 'fixed';
   textarea.style.left = '-9999px';
   textarea.style.top = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
+  try {
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    if (!copied) throw new Error('Copy command was rejected by the browser');
+  } finally {
+    textarea.remove();
+  }
+};
+
+const getClipboardErrorReason = (error: unknown) => {
+  if (error instanceof DOMException && error.name === 'NotAllowedError') {
+    return 'Clipboard permission was denied';
+  }
+
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  return 'Your browser blocked clipboard access';
 };
 
 export default function QuoteDetail() {
@@ -439,8 +453,14 @@ export default function QuoteDetail() {
 
   const copyConversionError = async () => {
     if (!conversionError) return;
-    await copyTextToClipboard(`${conversionError.step}: ${conversionError.message}`);
-    toast.success('Conversion error copied');
+    try {
+      await copyTextToClipboard(`${conversionError.step}: ${conversionError.message}`);
+      toast.success('Conversion error copied');
+    } catch (error) {
+      toast.error('Failed to copy conversion error', {
+        description: getClipboardErrorReason(error),
+      });
+    }
   };
 
   const copyProposalLink = () => {
