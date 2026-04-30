@@ -470,9 +470,24 @@ export default function QuoteDetail() {
     if (!conversionError) return;
     let copyFormat: ConversionErrorCopyFormat = 'raw';
     const getErrorText = () => getConversionErrorCopyText(conversionError, copyFormat);
+    let removeFormatShortcut = () => {};
+
+    const installFormatShortcut = (toggleFormat: () => void) => {
+      removeFormatShortcut();
+      const handleKeyDown = (event: KeyboardEvent) => {
+        const target = event.target as HTMLElement | null;
+        const isTyping = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
+        if (isTyping || event.key.toLowerCase() !== 't') return;
+        event.preventDefault();
+        toggleFormat();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      removeFormatShortcut = () => window.removeEventListener('keydown', handleKeyDown);
+    };
 
     let retryCopy = async () => {};
     const previewCopyText = () => {
+      removeFormatShortcut();
       toast.info('Conversion error text', {
         id: CONVERSION_COPY_TOAST_ID,
         description: <span className="whitespace-pre-wrap break-words font-mono text-xs">{getErrorText()}</span>,
@@ -485,6 +500,7 @@ export default function QuoteDetail() {
         copyFormat = copyFormat === 'raw' ? 'pretty' : 'raw';
         showCopyFailureToast(title, error);
       };
+      installFormatShortcut(toggleFormat);
 
       toast.error(title, {
         id: CONVERSION_COPY_TOAST_ID,
@@ -492,22 +508,26 @@ export default function QuoteDetail() {
           <div className="space-y-2">
             <p>{getClipboardErrorReason(error)}</p>
             <button type="button" className="text-xs underline" onClick={toggleFormat}>
-              Copy format: {copyFormat === 'raw' ? 'Raw' : 'Prettified'}
+              Copy format: {copyFormat === 'raw' ? 'Raw' : 'Prettified'} (T)
             </button>
           </div>
         ),
         action: { label: 'Retry', onClick: retryCopy },
         cancel: { label: 'Preview', onClick: previewCopyText },
+        onDismiss: removeFormatShortcut,
+        onAutoClose: removeFormatShortcut,
       });
     };
 
     try {
       await copyTextToClipboard(getErrorText());
+      removeFormatShortcut();
       toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
     } catch (error) {
       retryCopy = async () => {
         try {
           await copyTextToClipboard(getErrorText());
+          removeFormatShortcut();
           toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
         } catch (retryError) {
           showCopyFailureToast('Still unable to copy conversion error', retryError);
