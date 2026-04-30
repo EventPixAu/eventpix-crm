@@ -1079,7 +1079,9 @@ export default function QuoteDetail() {
             <div className="flex w-full flex-col gap-3">
               {conversionError && (
                 <p className="text-sm text-destructive">
-                  {conversionError.step}: {conversionError.message}
+                  {convertToEvent.isPending
+                    ? `Retrying ${conversionError.step}...`
+                    : `${conversionError.step}: ${conversionError.message}`}
                 </p>
               )}
               <div className="flex justify-end gap-2">
