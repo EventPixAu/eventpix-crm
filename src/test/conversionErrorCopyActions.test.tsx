@@ -102,6 +102,20 @@ describe('ConversionErrorCopyActions aria-live announcements', () => {
     });
   });
 
+  it('moves focus to the copy format toggle after pressing the T shortcut', async () => {
+    renderCopyActions(vi.fn().mockRejectedValue(new Error('Clipboard unavailable')));
+
+    fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
+    await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
+
+    fireEvent.keyDown(window, { key: 't' });
+
+    const updatedToggle = await screen.findByRole('button', { name: /switch conversion error copy format from prettified to raw/i });
+    await waitFor(() => {
+      expect(updatedToggle).toHaveFocus();
+    });
+  });
+
   it('announces when Preview completes', async () => {
     renderCopyActions(vi.fn().mockRejectedValue(new Error('Clipboard unavailable')));
 
