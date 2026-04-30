@@ -38,6 +38,31 @@ export class ConvertQuoteToEventError extends Error {
   }
 }
 
+export async function convertQuoteToEvent({
+  quoteId,
+  eventData,
+  idempotencyKey,
+}: {
+  quoteId: string;
+  eventData: any;
+  idempotencyKey?: string;
+}) {
+  const { data, error } = await supabase.rpc('convert_quote_to_event', {
+    p_input: {
+      quote_id: quoteId,
+      event_data: eventData,
+      ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
+    },
+  });
+
+  if (error) throw error;
+
+  const result = data as { success?: boolean; event_id?: string; error?: string; message?: string; step?: string; sqlstate?: string };
+  if (!result?.success) throw new ConvertQuoteToEventError(result || {});
+
+  return result;
+}
+
 // =============================================================
 // CLIENT HOOKS
 // =============================================================
@@ -431,21 +456,7 @@ export function useConvertQuoteToEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ quoteId, eventData }: { quoteId: string; eventData: any }) => {
-      const { data, error } = await supabase.rpc('convert_quote_to_event', {
-        p_input: {
-          quote_id: quoteId,
-          event_data: eventData,
-        },
-      });
-
-      if (error) throw error;
-
-      const result = data as { success?: boolean; event_id?: string; error?: string; message?: string; step?: string; sqlstate?: string };
-      if (!result?.success) throw new ConvertQuoteToEventError(result || {});
-
-      return result;
-    },
+    mutationFn: convertQuoteToEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['leads'] });
