@@ -404,13 +404,18 @@ export default function QuoteDetail() {
       });
 
       setLastConversionError(null);
+      const storageKey = getConversionErrorStorageKey(id);
+      if (storageKey) window.localStorage.removeItem(storageKey);
       setIsConvertOpen(false);
       navigate(result.event_id ? `/events/${result.event_id}` : '/events');
     } catch (error) {
-      setLastConversionError({
+      const nextConversionError = {
         step: error instanceof ConvertQuoteToEventError && error.step ? error.step : 'convert_quote_to_event',
         message: error instanceof Error ? error.message : 'Failed to convert quote',
-      });
+      };
+      setLastConversionError(nextConversionError);
+      const storageKey = getConversionErrorStorageKey(id);
+      if (storageKey) window.localStorage.setItem(storageKey, JSON.stringify(nextConversionError));
     }
   };
 
