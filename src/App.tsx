@@ -25,6 +25,7 @@ import OperationsDashboard from "./pages/OperationsDashboard";
 import PhotographerDashboard from "./pages/PhotographerDashboard";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
+import EventDelivery from "./pages/EventDelivery";
 import EventForm from "./pages/EventForm";
 import EventWorksheets from "./pages/EventWorksheets";
 import EventDayOf from "./pages/EventDayOf";
@@ -209,6 +210,7 @@ function AppRoutes() {
       <Route path="/events" element={<ProtectedRoute><OpsGuard><Events /></OpsGuard></ProtectedRoute>} />
       <Route path="/events/new" element={<ProtectedRoute><OpsGuard><EventForm /></OpsGuard></ProtectedRoute>} />
       <Route path="/events/:id" element={<ProtectedRoute><OpsGuard><EventDetail /></OpsGuard></ProtectedRoute>} />
+      <Route path="/events/:id/delivery" element={<ProtectedRoute><OpsGuard><EventDelivery /></OpsGuard></ProtectedRoute>} />
       <Route path="/events/:id/edit" element={<ProtectedRoute><OpsGuard><EventForm /></OpsGuard></ProtectedRoute>} />
       <Route path="/events/:id/worksheets" element={<ProtectedRoute><OpsGuard><EventWorksheets /></OpsGuard></ProtectedRoute>} />
       {/* Day-of view accessible to assigned crew */}
