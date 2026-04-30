@@ -111,14 +111,6 @@ export default function QuoteDetail() {
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
-  const conversionError = convertToEvent.error
-    ? {
-        step: convertToEvent.error instanceof ConvertQuoteToEventError && convertToEvent.error.step
-          ? convertToEvent.error.step
-          : 'convert_quote_to_event',
-        message: convertToEvent.error.message,
-      }
-    : null;
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -133,6 +125,7 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
+  const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(null);
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
