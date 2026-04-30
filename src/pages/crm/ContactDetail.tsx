@@ -726,9 +726,9 @@ export default function ContactDetail() {
                   <Pencil className="h-4 w-4 mr-1.5" />
                   Edit
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDelete}>
+                <Button variant="outline" size="sm" onClick={handleDelete} disabled={deleteContact.isPending}>
                   <Trash2 className="h-4 w-4 mr-1.5" />
-                  Delete
+                  {deleteContact.isPending ? 'Deleting...' : 'Delete'}
                 </Button>
               </div>
             </CardContent>

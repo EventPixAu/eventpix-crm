@@ -257,6 +257,7 @@ function StepItem({
                 {isAdmin && (
                   <button
                     onClick={handleDelete}
+                    disabled={deleteStep.isPending}
                     className="p-1 text-muted-foreground hover:text-destructive transition-colors"
                     title="Remove step"
                   >
