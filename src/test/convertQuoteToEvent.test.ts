@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -23,6 +23,10 @@ import { supabase } from '@/lib/supabase';
 import { ConvertQuoteToEventError, convertQuoteToEvent } from '@/hooks/useSales';
 
 describe('convertQuoteToEvent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('sends the same idempotency_key on repeated calls and returns the same event_id', async () => {
     const eventId = 'event-123';
     const quoteId = 'quote-123';
@@ -71,7 +75,9 @@ describe('convertQuoteToEvent', () => {
       statusText: 'OK',
     });
 
-    await expect(convertQuoteToEvent({ quoteId, eventData, idempotencyKey })).rejects.toMatchObject({
+    const promise = convertQuoteToEvent({ quoteId, eventData, idempotencyKey });
+
+    await expect(promise).rejects.toMatchObject({
       name: 'ConvertQuoteToEventError',
       message: 'Event date is required',
       step: 'create_event',
