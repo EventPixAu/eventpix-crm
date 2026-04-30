@@ -251,15 +251,23 @@ export function useUpdateEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...event }: EventUpdate & { id: string }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ id, updated_at: originalUpdatedAt, ...event }: Omit<EventUpdate, 'updated_at'> & { id: string; updated_at?: string }) => {
+      let query = supabase
         .from('events')
         .update(event)
-        .eq('id', id)
+        .eq('id', id);
+
+      if (originalUpdatedAt) {
+        query = query.eq('updated_at', originalUpdatedAt);
+      }
+
+      const { data, error } = await query
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) throw new Error('This event was modified by another user. Please refresh and try again.');
+
       return data;
     },
     onSuccess: () => {
