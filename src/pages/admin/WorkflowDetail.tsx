@@ -95,6 +95,7 @@ interface SortableItemProps {
   onUpdate: (id: string, data: Partial<WorkflowTemplateItem>) => void;
   onDelete: (id: string) => void;
   canDelete: boolean;
+  isDeleting: boolean;
 }
 
 const dateReferenceOptions = [
@@ -105,7 +106,7 @@ const dateReferenceOptions = [
   { value: 'delivery_deadline', label: 'Delivery Deadline' },
 ];
 
-function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps) {
+function SortableItem({ item, onUpdate, onDelete, canDelete, isDeleting }: SortableItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(item.label);
   const [editHelpText, setEditHelpText] = useState(item.help_text || '');
@@ -268,8 +269,8 @@ function SortableItem({ item, onUpdate, onDelete, canDelete }: SortableItemProps
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(item.id)}>
-                      Delete
+                    <AlertDialogAction onClick={() => onDelete(item.id)} disabled={isDeleting}>
+                      {isDeleting ? 'Deleting...' : 'Delete'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -666,6 +667,7 @@ export default function WorkflowDetail() {
                       onUpdate={handleUpdateItem}
                       onDelete={handleDeleteItem}
                       canDelete={canDelete}
+                      isDeleting={deleteItem.isPending}
                     />
                   ))}
                 </div>
