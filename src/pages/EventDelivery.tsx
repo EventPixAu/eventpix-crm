@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, Calendar, CheckCircle, ExternalLink, Link as LinkIcon, Package, QrCode } from 'lucide-react';
+import { ArrowLeft, Calendar, Check, CheckCircle, Copy, ExternalLink, Link as LinkIcon, Package, QrCode } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import { useEvent } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useDeliveryMethods } from '@/hooks/useLookups';
@@ -26,6 +28,7 @@ const formatMethod = (method?: string | null) => {
 export default function EventDelivery() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [copiedDeliveryDetails, setCopiedDeliveryDetails] = useState(false);
   const { data: event, isLoading: eventLoading } = useEvent(id);
   const { data: deliveryRecord, isLoading: deliveryLoading } = useDeliveryRecord(id);
   const { data: deliveryMethods = [] } = useDeliveryMethods();
@@ -47,6 +50,21 @@ export default function EventDelivery() {
   const galleryUrl = deliveryRecord?.qr_token ? `${getPublicBaseUrl()}/g/${deliveryRecord.qr_token}` : null;
   const qrReference = galleryUrl || deliveryRecord?.qr_code_data || (event as any)?.qr_file_name || (event as any)?.qr_file_path || null;
   const isLoading = eventLoading || deliveryLoading;
+
+  const copyDeliveryDetails = async () => {
+    const text = [`Delivery link: ${deliveryLink || 'Not set'}`, `QR reference: ${qrReference || 'Not set'}`].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedDeliveryDetails(true);
+      toast.success('Delivery details copied');
+      window.setTimeout(() => setCopiedDeliveryDetails(false), 2000);
+    } catch (error) {
+      toast.error('Failed to copy delivery details', {
+        description: error instanceof Error ? error.message : 'Clipboard access was blocked',
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -94,6 +112,17 @@ export default function EventDelivery() {
               {deliveryRecord?.delivered_at ? 'Delivered' : 'Pending delivery'}
             </Badge>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={copyDeliveryDetails}
+            disabled={!deliveryLink && !qrReference}
+          >
+            {copiedDeliveryDetails ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+            {copiedDeliveryDetails ? 'Copied delivery details' : 'Copy delivery link & QR reference'}
+          </Button>
 
           <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
             <div className="flex items-start gap-3">
