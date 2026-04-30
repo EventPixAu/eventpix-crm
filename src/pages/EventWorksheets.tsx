@@ -264,9 +264,10 @@ export default function EventWorksheets() {
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() => handleDeleteWorksheet(worksheet.id)}
+                                      disabled={deleteWorksheet.isPending}
                                       className="bg-destructive hover:bg-destructive/90"
                                     >
-                                      Delete
+                                      {deleteWorksheet.isPending ? 'Deleting...' : 'Delete'}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
