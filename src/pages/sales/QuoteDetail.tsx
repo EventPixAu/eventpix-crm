@@ -117,6 +117,19 @@ const getClipboardErrorReason = (error: unknown) => {
   return 'Your browser blocked clipboard access';
 };
 
+type ConversionErrorCopyFormat = 'raw' | 'pretty';
+
+const getConversionErrorCopyText = (
+  conversionError: { step: string; message: string },
+  format: ConversionErrorCopyFormat,
+) => {
+  if (format === 'pretty') {
+    return `Conversion failed\nStep: ${conversionError.step}\nMessage: ${conversionError.message}`;
+  }
+
+  return `${conversionError.step}: ${conversionError.message}`;
+};
+
 const CONVERSION_COPY_TOAST_ID = 'conversion-error-copy';
 
 export default function QuoteDetail() {
@@ -455,33 +468,46 @@ export default function QuoteDetail() {
 
   const copyConversionError = async () => {
     if (!conversionError) return;
-    const errorText = `${conversionError.step}: ${conversionError.message}`;
+    let copyFormat: ConversionErrorCopyFormat = 'raw';
+    const getErrorText = () => getConversionErrorCopyText(conversionError, copyFormat);
 
     let retryCopy = async () => {};
     const previewCopyText = () => {
       toast.info('Conversion error text', {
         id: CONVERSION_COPY_TOAST_ID,
-        description: <span className="break-words font-mono text-xs">{errorText}</span>,
+        description: <span className="whitespace-pre-wrap break-words font-mono text-xs">{getErrorText()}</span>,
         action: { label: 'Retry', onClick: retryCopy },
       });
     };
 
     const showCopyFailureToast = (title: string, error: unknown) => {
+      const toggleFormat = () => {
+        copyFormat = copyFormat === 'raw' ? 'pretty' : 'raw';
+        showCopyFailureToast(title, error);
+      };
+
       toast.error(title, {
         id: CONVERSION_COPY_TOAST_ID,
-        description: getClipboardErrorReason(error),
+        description: (
+          <div className="space-y-2">
+            <p>{getClipboardErrorReason(error)}</p>
+            <button type="button" className="text-xs underline" onClick={toggleFormat}>
+              Copy format: {copyFormat === 'raw' ? 'Raw' : 'Prettified'}
+            </button>
+          </div>
+        ),
         action: { label: 'Retry', onClick: retryCopy },
         cancel: { label: 'Preview', onClick: previewCopyText },
       });
     };
 
     try {
-      await copyTextToClipboard(errorText);
+      await copyTextToClipboard(getErrorText());
       toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
     } catch (error) {
       retryCopy = async () => {
         try {
-          await copyTextToClipboard(errorText);
+          await copyTextToClipboard(getErrorText());
           toast.success('Conversion error copied', { id: CONVERSION_COPY_TOAST_ID });
         } catch (retryError) {
           showCopyFailureToast('Still unable to copy conversion error', retryError);
