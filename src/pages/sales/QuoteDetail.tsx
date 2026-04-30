@@ -302,7 +302,6 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
-  const [copyErrorAnnouncement, setCopyErrorAnnouncement] = useState('');
   const [lastConversionError, setLastConversionError] = useState<{ step: string; message: string } | null>(() => {
     const storageKey = getConversionErrorStorageKey(id);
     if (!storageKey || typeof window === 'undefined') return null;
