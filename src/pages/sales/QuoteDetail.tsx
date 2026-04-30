@@ -394,6 +394,7 @@ export default function QuoteDetail() {
     const result = await convertToEvent.mutateAsync({
       quoteId: id,
       eventData,
+      idempotencyKey: `quote-convert-${id}`,
     });
     
     setIsConvertOpen(false);
