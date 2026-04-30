@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const toastStore = vi.hoisted(() => {
@@ -114,6 +115,22 @@ describe('ConversionErrorCopyActions aria-live announcements', () => {
     await waitFor(() => {
       expect(updatedToggle).toHaveFocus();
     });
+  });
+
+  it('keeps the updated copy format toggle reachable by tab navigation after pressing the T shortcut', async () => {
+    const user = userEvent.setup();
+    renderCopyActions(vi.fn().mockRejectedValue(new Error('Clipboard unavailable')));
+
+    fireEvent.click(screen.getByRole('button', { name: /copy error/i }));
+    await screen.findByRole('button', { name: /switch conversion error copy format from raw to prettified/i });
+
+    fireEvent.keyDown(window, { key: 't' });
+    const updatedToggle = await screen.findByRole('button', { name: /switch conversion error copy format from prettified to raw/i });
+
+    document.body.focus();
+    await user.tab();
+
+    expect(updatedToggle).toHaveFocus();
   });
 
   it('announces when Preview completes', async () => {
