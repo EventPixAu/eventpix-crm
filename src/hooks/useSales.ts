@@ -464,7 +464,10 @@ export function useConvertQuoteToEvent() {
       toast.success('Quote converted to event', { description: 'The quote has been accepted and an event has been created.' });
     },
     onError: (error: Error) => {
-      toast.error('Failed to convert quote', { description: error.message });
+      const step = error instanceof ConvertQuoteToEventError ? error.step : undefined;
+      toast.error('Failed to convert quote', {
+        description: step ? `${step}: ${error.message}` : error.message,
+      });
     },
   });
 }
