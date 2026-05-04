@@ -5,12 +5,15 @@
  * Shows data from accepted quotes and Xero-synced expenses.
  * Access: Admin only
  */
-import { DollarSign, TrendingUp, TrendingDown, Users, Car, Home, Package, ExternalLink, RefreshCw } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Users, Car, Package, ExternalLink, RefreshCw, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
 import { useEvent } from '@/hooks/useEvents';
 import { useSyncEventExpenses as useXeroSyncEventExpenses, useSyncInvoiceStatus } from '@/hooks/useXeroSync';
