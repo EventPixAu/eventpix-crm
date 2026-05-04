@@ -251,6 +251,8 @@ export function useEventFinancials(eventId: string | undefined) {
         invoicePaidAt: event.invoice_paid_at,
         isPaid,
         incomeSource,
+        matchedPayments,
+        matchedPaymentsTotal,
         staffCost,
         expectedStaffCost,
         hasXeroStaffCost,
