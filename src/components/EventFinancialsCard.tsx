@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
 import { useEvent } from '@/hooks/useEvents';
-import { useSyncEventExpenses as useXeroSyncEventExpenses, useSyncInvoiceStatus } from '@/hooks/useXeroSync';
+import { useSyncEventExpenses as useXeroSyncEventExpenses } from '@/hooks/useXeroSync';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +38,6 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
   const { data: event } = useEvent(eventId);
   const { isAdmin } = useAuth();
   const syncExpenses = useXeroSyncEventExpenses();
-  const syncInvoices = useSyncInvoiceStatus();
   const [paymentsOpen, setPaymentsOpen] = useState(false);
   
   if (isLoading) {
@@ -237,18 +236,15 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
             className="w-full gap-2"
             onClick={async () => {
               try {
-                await Promise.all([
-                  syncExpenses.mutateAsync(eventId),
-                  syncInvoices.mutateAsync(),
-                ]);
+                await syncExpenses.mutateAsync(eventId);
               } catch {
                 // Individual mutations handle their own error toasts
               }
             }}
-            disabled={syncExpenses.isPending || syncInvoices.isPending}
+            disabled={syncExpenses.isPending}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending || syncInvoices.isPending ? 'animate-spin' : ''}`} />
-            {syncExpenses.isPending || syncInvoices.isPending ? 'Syncing with Xero…' : 'Sync with Xero'}
+            <RefreshCw className={`h-3.5 w-3.5 ${syncExpenses.isPending ? 'animate-spin' : ''}`} />
+            {syncExpenses.isPending ? 'Syncing with Xero…' : 'Sync with Xero'}
           </Button>
         )}
         {event?.quote_id && (
