@@ -444,6 +444,8 @@ Deno.serve(async (req) => {
         const matchedPayments: any[] = [];
 
         // Resolve tracking option for this tag (so we can match line-level tracking, not just header text)
+        let incomeTrackingCategoryID: string | null = null;
+        let incomeTrackingCategoryName: string | null = null;
         let incomeTrackingOptionID: string | null = null;
         let incomeTrackingOptionName: string | null = null;
         try {
@@ -453,6 +455,8 @@ Deno.serve(async (req) => {
             for (const cat of tcJson.TrackingCategories || []) {
               for (const opt of cat.Options || []) {
                 if (normalise(opt.Name) === tagNeedle) {
+                  incomeTrackingCategoryID = cat.TrackingCategoryID;
+                  incomeTrackingCategoryName = cat.Name;
                   incomeTrackingOptionID = opt.TrackingOptionID;
                   incomeTrackingOptionName = opt.Name;
                   break;
@@ -465,6 +469,30 @@ Deno.serve(async (req) => {
           console.error('Tracking lookup for income failed:', e);
         }
         console.log(`Income tracking option: ${incomeTrackingOptionName || 'NONE'} (${incomeTrackingOptionID || '-'})`);
+
+        const parseReportAmount = (value: unknown): number => {
+          const parsed = Number(String(value ?? '0').replace(/,/g, ''));
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const fetchTrackingProfitAndLossReport = async () => {
+          if (!incomeTrackingCategoryID || !incomeTrackingOptionID) return null;
+
+          const eventDate = event.event_date ? new Date(`${event.event_date}T00:00:00`) : new Date();
+          const fromDate = `${eventDate.getFullYear()}-01-01`;
+          const toDate = `${eventDate.getFullYear()}-12-31`;
+          const reportUrl = `${XERO_API_URL}/Reports/ProfitAndLoss?trackingCategoryID=${incomeTrackingCategoryID}&trackingOptionID=${incomeTrackingOptionID}&fromDate=${fromDate}&toDate=${toDate}&standardLayout=true`;
+          console.log(`Fetching P&L report for income fallback between ${fromDate} and ${toDate}`);
+
+          const reportResponse = await xeroFetch(reportUrl);
+          if (!reportResponse.ok) {
+            console.error('Failed to fetch income P&L report:', await reportResponse.text());
+            return null;
+          }
+
+          const reportData = await reportResponse.json();
+          return reportData.Reports?.[0] || null;
+        };
 
         const lineHasTrackingMatch = (line: any): boolean => {
           const tracking = Array.isArray(line?.Tracking) ? line.Tracking : [];
@@ -519,6 +547,53 @@ Deno.serve(async (req) => {
             xero_payment_id: null,
             synced_at: new Date().toISOString(),
           });
+        }
+
+        // Xero's BankTransactions endpoint does not reliably expose all Receive Money entries by tracking tag.
+        // Use the tracking P&L report as a fallback so account-level cash sales tagged to the event are still counted.
+        if (matchedPayments.length === 0) {
+          const report = await fetchTrackingProfitAndLossReport();
+          const incomeRows: any[] = [];
+
+          for (const section of report?.Rows || []) {
+            const sectionTitleLower = String(section.Title || '').toLowerCase();
+            const isIncomeSection = section.RowType === 'Section' && (
+              sectionTitleLower.includes('income') ||
+              sectionTitleLower.includes('revenue') ||
+              sectionTitleLower.includes('sales')
+            );
+            if (!isIncomeSection) continue;
+
+            for (const row of section.Rows || []) {
+              if (row.RowType !== 'Row') continue;
+              const cells = row.Cells || [];
+              const accountName = String(cells[0]?.Value || '').trim();
+              const amount = Math.abs(parseReportAmount(cells[1]?.Value));
+              const accountLower = accountName.toLowerCase();
+
+              if (!accountName || !amount || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
+              incomeRows.push({ accountName, amount });
+            }
+          }
+
+          for (const row of incomeRows) {
+            matchedPayments.push({
+              event_id: eventId,
+              payment_date: event.event_date || null,
+              contact_name: row.accountName,
+              description: `${incomeTrackingOptionName || event.xero_tag} income from P&L`,
+              amount: row.amount,
+              source_type: 'receive_money',
+              xero_transaction_id: `report-income-${incomeTrackingOptionID}-${row.accountName}`,
+              xero_invoice_id: null,
+              xero_payment_id: null,
+              synced_at: new Date().toISOString(),
+            });
+          }
+
+          if (incomeRows.length > 0) {
+            console.log(`Income fallback matched ${incomeRows.length} P&L income rows for tag "${event.xero_tag}"`);
+          }
         }
 
         // 2) Invoice payments where the parent invoice is tagged (by header OR line tracking)
