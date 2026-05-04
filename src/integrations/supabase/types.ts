@@ -2428,6 +2428,62 @@ export type Database = {
           },
         ]
       }
+      event_payments: {
+        Row: {
+          amount: number
+          contact_name: string | null
+          created_at: string
+          description: string | null
+          event_id: string
+          id: string
+          payment_date: string | null
+          source_type: string
+          synced_at: string | null
+          updated_at: string
+          xero_invoice_id: string | null
+          xero_payment_id: string | null
+          xero_transaction_id: string | null
+        }
+        Insert: {
+          amount?: number
+          contact_name?: string | null
+          created_at?: string
+          description?: string | null
+          event_id: string
+          id?: string
+          payment_date?: string | null
+          source_type: string
+          synced_at?: string | null
+          updated_at?: string
+          xero_invoice_id?: string | null
+          xero_payment_id?: string | null
+          xero_transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          contact_name?: string | null
+          created_at?: string
+          description?: string | null
+          event_id?: string
+          id?: string
+          payment_date?: string | null
+          source_type?: string
+          synced_at?: string | null
+          updated_at?: string
+          xero_invoice_id?: string | null
+          xero_payment_id?: string | null
+          xero_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_payments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_series: {
         Row: {
           created_at: string | null
