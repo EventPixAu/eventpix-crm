@@ -533,9 +533,27 @@ Deno.serve(async (req) => {
           );
         };
 
+        const reportIncomeRows = await getReportIncomeRows();
+        if (reportIncomeRows.length > 0) {
+          for (const row of reportIncomeRows) {
+            matchedPayments.push({
+              event_id: eventId,
+              payment_date: event.event_date || null,
+              contact_name: row.accountName,
+              description: `${incomeTrackingOptionName || event.xero_tag} income from P&L`,
+              amount: row.amount,
+              source_type: 'receive_money',
+              xero_transaction_id: `report-income-${incomeTrackingOptionID}-${row.accountName}`,
+              xero_invoice_id: null,
+              xero_payment_id: null,
+              synced_at: new Date().toISOString(),
+            });
+          }
+          console.log(`Income report matched ${reportIncomeRows.length} P&L income rows for tag "${event.xero_tag}"`);
+        }
+
         // 1) Receive money bank transactions matching the tag (header text OR line tracking)
-        const allBankTxns = await fetchPagedRecords('BankTransactions', 'BankTransactions');
-        const receiveTxns = allBankTxns.filter((txn: any) =>
+        const receiveTxns = reportIncomeRows.length > 0 ? [] : (await fetchPagedRecords('BankTransactions', 'BankTransactions')).filter((txn: any) =>
           ['RECEIVE', 'RECEIVE-PREPAYMENT', 'RECEIVE-OVERPAYMENT'].includes(String(txn.Type || ''))
         );
         console.log(`Scanning ${receiveTxns.length} RECEIVE bank txns for tag "${event.xero_tag}"`);
@@ -583,29 +601,7 @@ Deno.serve(async (req) => {
         // Xero's BankTransactions endpoint does not reliably expose all Receive Money entries by tracking tag.
         // Use the tracking P&L report as a fallback so account-level cash sales tagged to the event are still counted.
         if (matchedPayments.length === 0) {
-          const report = await fetchTrackingProfitAndLossReport();
-          const incomeRows: any[] = [];
-
-          for (const section of report?.Rows || []) {
-            const sectionTitleLower = String(section.Title || '').toLowerCase();
-            const isIncomeSection = section.RowType === 'Section' && (
-              sectionTitleLower.includes('income') ||
-              sectionTitleLower.includes('revenue') ||
-              sectionTitleLower.includes('sales')
-            );
-            if (!isIncomeSection) continue;
-
-            for (const row of section.Rows || []) {
-              if (row.RowType !== 'Row') continue;
-              const cells = row.Cells || [];
-              const accountName = String(cells[0]?.Value || '').trim();
-              const amount = Math.abs(parseReportAmount(cells[1]?.Value));
-              const accountLower = accountName.toLowerCase();
-
-              if (!accountName || !amount || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
-              incomeRows.push({ accountName, amount });
-            }
-          }
+          const incomeRows = await getReportIncomeRows();
 
           for (const row of incomeRows) {
             matchedPayments.push({
