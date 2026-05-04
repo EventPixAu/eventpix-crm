@@ -444,6 +444,8 @@ Deno.serve(async (req) => {
         const matchedPayments: any[] = [];
 
         // Resolve tracking option for this tag (so we can match line-level tracking, not just header text)
+        let incomeTrackingCategoryID: string | null = null;
+        let incomeTrackingCategoryName: string | null = null;
         let incomeTrackingOptionID: string | null = null;
         let incomeTrackingOptionName: string | null = null;
         try {
@@ -453,6 +455,8 @@ Deno.serve(async (req) => {
             for (const cat of tcJson.TrackingCategories || []) {
               for (const opt of cat.Options || []) {
                 if (normalise(opt.Name) === tagNeedle) {
+                  incomeTrackingCategoryID = cat.TrackingCategoryID;
+                  incomeTrackingCategoryName = cat.Name;
                   incomeTrackingOptionID = opt.TrackingOptionID;
                   incomeTrackingOptionName = opt.Name;
                   break;
@@ -465,6 +469,30 @@ Deno.serve(async (req) => {
           console.error('Tracking lookup for income failed:', e);
         }
         console.log(`Income tracking option: ${incomeTrackingOptionName || 'NONE'} (${incomeTrackingOptionID || '-'})`);
+
+        const parseReportAmount = (value: unknown): number => {
+          const parsed = Number(String(value ?? '0').replace(/,/g, ''));
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const fetchTrackingProfitAndLossReport = async () => {
+          if (!incomeTrackingCategoryID || !incomeTrackingOptionID) return null;
+
+          const eventDate = event.event_date ? new Date(`${event.event_date}T00:00:00`) : new Date();
+          const fromDate = `${eventDate.getFullYear()}-01-01`;
+          const toDate = `${eventDate.getFullYear()}-12-31`;
+          const reportUrl = `${XERO_API_URL}/Reports/ProfitAndLoss?trackingCategoryID=${incomeTrackingCategoryID}&trackingOptionID=${incomeTrackingOptionID}&fromDate=${fromDate}&toDate=${toDate}&standardLayout=true`;
+          console.log(`Fetching P&L report for income fallback between ${fromDate} and ${toDate}`);
+
+          const reportResponse = await xeroFetch(reportUrl);
+          if (!reportResponse.ok) {
+            console.error('Failed to fetch income P&L report:', await reportResponse.text());
+            return null;
+          }
+
+          const reportData = await reportResponse.json();
+          return reportData.Reports?.[0] || null;
+        };
 
         const lineHasTrackingMatch = (line: any): boolean => {
           const tracking = Array.isArray(line?.Tracking) ? line.Tracking : [];
