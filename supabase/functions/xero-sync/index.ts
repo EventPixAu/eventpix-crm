@@ -475,7 +475,9 @@ Deno.serve(async (req) => {
           return Number.isFinite(parsed) ? parsed : 0;
         };
 
+        let cachedTrackingProfitAndLossReport: any | undefined;
         const fetchTrackingProfitAndLossReport = async () => {
+          if (cachedTrackingProfitAndLossReport !== undefined) return cachedTrackingProfitAndLossReport;
           if (!incomeTrackingCategoryID || !incomeTrackingOptionID) return null;
 
           const eventDate = event.event_date ? new Date(`${event.event_date}T00:00:00`) : new Date();
@@ -491,7 +493,36 @@ Deno.serve(async (req) => {
           }
 
           const reportData = await reportResponse.json();
-          return reportData.Reports?.[0] || null;
+          cachedTrackingProfitAndLossReport = reportData.Reports?.[0] || null;
+          return cachedTrackingProfitAndLossReport;
+        };
+
+        const getReportIncomeRows = async () => {
+          const report = await fetchTrackingProfitAndLossReport();
+          const incomeRows: { accountName: string; amount: number }[] = [];
+
+          for (const section of report?.Rows || []) {
+            const sectionTitleLower = String(section.Title || '').toLowerCase();
+            const isIncomeSection = section.RowType === 'Section' && (
+              sectionTitleLower.includes('income') ||
+              sectionTitleLower.includes('revenue') ||
+              sectionTitleLower.includes('sales')
+            );
+            if (!isIncomeSection) continue;
+
+            for (const row of section.Rows || []) {
+              if (row.RowType !== 'Row') continue;
+              const cells = row.Cells || [];
+              const accountName = String(cells[0]?.Value || '').trim();
+              const amount = Math.abs(parseReportAmount(cells[1]?.Value));
+              const accountLower = accountName.toLowerCase();
+
+              if (!accountName || !amount || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
+              incomeRows.push({ accountName, amount });
+            }
+          }
+
+          return incomeRows;
         };
 
         const lineHasTrackingMatch = (line: any): boolean => {
@@ -502,9 +533,27 @@ Deno.serve(async (req) => {
           );
         };
 
+        const reportIncomeRows = await getReportIncomeRows();
+        if (reportIncomeRows.length > 0) {
+          for (const row of reportIncomeRows) {
+            matchedPayments.push({
+              event_id: eventId,
+              payment_date: event.event_date || null,
+              contact_name: row.accountName,
+              description: `${incomeTrackingOptionName || event.xero_tag} income from P&L`,
+              amount: row.amount,
+              source_type: 'receive_money',
+              xero_transaction_id: `report-income-${incomeTrackingOptionID}-${row.accountName}`,
+              xero_invoice_id: null,
+              xero_payment_id: null,
+              synced_at: new Date().toISOString(),
+            });
+          }
+          console.log(`Income report matched ${reportIncomeRows.length} P&L income rows for tag "${event.xero_tag}"`);
+        }
+
         // 1) Receive money bank transactions matching the tag (header text OR line tracking)
-        const allBankTxns = await fetchPagedRecords('BankTransactions', 'BankTransactions');
-        const receiveTxns = allBankTxns.filter((txn: any) =>
+        const receiveTxns = reportIncomeRows.length > 0 ? [] : (await fetchPagedRecords('BankTransactions', 'BankTransactions')).filter((txn: any) =>
           ['RECEIVE', 'RECEIVE-PREPAYMENT', 'RECEIVE-OVERPAYMENT'].includes(String(txn.Type || ''))
         );
         console.log(`Scanning ${receiveTxns.length} RECEIVE bank txns for tag "${event.xero_tag}"`);
@@ -552,29 +601,7 @@ Deno.serve(async (req) => {
         // Xero's BankTransactions endpoint does not reliably expose all Receive Money entries by tracking tag.
         // Use the tracking P&L report as a fallback so account-level cash sales tagged to the event are still counted.
         if (matchedPayments.length === 0) {
-          const report = await fetchTrackingProfitAndLossReport();
-          const incomeRows: any[] = [];
-
-          for (const section of report?.Rows || []) {
-            const sectionTitleLower = String(section.Title || '').toLowerCase();
-            const isIncomeSection = section.RowType === 'Section' && (
-              sectionTitleLower.includes('income') ||
-              sectionTitleLower.includes('revenue') ||
-              sectionTitleLower.includes('sales')
-            );
-            if (!isIncomeSection) continue;
-
-            for (const row of section.Rows || []) {
-              if (row.RowType !== 'Row') continue;
-              const cells = row.Cells || [];
-              const accountName = String(cells[0]?.Value || '').trim();
-              const amount = Math.abs(parseReportAmount(cells[1]?.Value));
-              const accountLower = accountName.toLowerCase();
-
-              if (!accountName || !amount || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
-              incomeRows.push({ accountName, amount });
-            }
-          }
+          const incomeRows = await getReportIncomeRows();
 
           for (const row of incomeRows) {
             matchedPayments.push({
@@ -598,7 +625,7 @@ Deno.serve(async (req) => {
 
         // 2) Invoice payments where the parent invoice is tagged (by header OR line tracking)
         const arInvoiceWhere = encodeURIComponent('Type=="ACCREC"');
-        const arInvoices = await fetchPagedRecords(`Invoices?where=${arInvoiceWhere}`, 'Invoices');
+        const arInvoices = reportIncomeRows.length > 0 ? [] : await fetchPagedRecords(`Invoices?where=${arInvoiceWhere}`, 'Invoices');
         const headerMatchedInvoices = arInvoices.filter((inv: any) => matchesEventTag(inv, tagNeedle));
         console.log(`AR invoices: total=${arInvoices.length}, header-matched=${headerMatchedInvoices.length}`);
 
@@ -676,12 +703,16 @@ Deno.serve(async (req) => {
                 .eq('id', eventId);
             }
           }
-        } else if (syncedIncome > 0) {
-          // No invoice_reference but we have payments — store aggregate amount
+        }
+
+        if (syncedIncome > 0) {
+          // Store aggregate income even when the event has no invoice reference.
           await supabase
             .from('events')
             .update({
               invoice_amount: syncedIncome,
+              invoice_status: 'paid',
+              invoice_paid_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('id', eventId);
