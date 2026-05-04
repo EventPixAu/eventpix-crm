@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
       return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
     };
 
+    // DB constraint allows only: not_invoiced, invoiced, paid
     const mapInvoiceStatus = (invoice: any) => {
       switch (invoice.Status) {
         case 'PAID':
@@ -211,19 +212,14 @@ Deno.serve(async (req) => {
             invoice_paid_at: parseXeroDate(invoice.FullyPaidOnDate) || new Date().toISOString(),
           };
         case 'AUTHORISED':
-          return {
-            invoice_status: new Date(invoice.DueDate) < new Date() ? 'overdue' : 'sent',
-            invoice_paid_at: null,
-          };
+        case 'SUBMITTED':
         case 'DRAFT':
-          return { invoice_status: 'draft', invoice_paid_at: null };
+          return { invoice_status: 'invoiced', invoice_paid_at: null };
         case 'VOIDED':
-          return { invoice_status: 'void', invoice_paid_at: null };
+        case 'DELETED':
+          return { invoice_status: 'not_invoiced', invoice_paid_at: null };
         default:
-          return {
-            invoice_status: String(invoice.Status || '').toLowerCase() || null,
-            invoice_paid_at: null,
-          };
+          return { invoice_status: 'invoiced', invoice_paid_at: null };
       }
     };
 
@@ -447,19 +443,65 @@ Deno.serve(async (req) => {
         // ===== INCOME: aggregate all RECEIVE bank transactions + invoice payments matching the Xero Tag =====
         const matchedPayments: any[] = [];
 
-        // 1) Receive money bank transactions matching the tag
+        // Resolve tracking option for this tag (so we can match line-level tracking, not just header text)
+        let incomeTrackingOptionID: string | null = null;
+        let incomeTrackingOptionName: string | null = null;
+        try {
+          const tcRes = await xeroFetch(`${XERO_API_URL}/TrackingCategories`);
+          if (tcRes.ok) {
+            const tcJson = await tcRes.json();
+            for (const cat of tcJson.TrackingCategories || []) {
+              for (const opt of cat.Options || []) {
+                if (normalise(opt.Name) === tagNeedle) {
+                  incomeTrackingOptionID = opt.TrackingOptionID;
+                  incomeTrackingOptionName = opt.Name;
+                  break;
+                }
+              }
+              if (incomeTrackingOptionID) break;
+            }
+          }
+        } catch (e) {
+          console.error('Tracking lookup for income failed:', e);
+        }
+        console.log(`Income tracking option: ${incomeTrackingOptionName || 'NONE'} (${incomeTrackingOptionID || '-'})`);
+
+        const lineHasTrackingMatch = (line: any): boolean => {
+          const tracking = Array.isArray(line?.Tracking) ? line.Tracking : [];
+          return tracking.some((t: any) =>
+            (incomeTrackingOptionID && t.TrackingOptionID === incomeTrackingOptionID) ||
+            (t.Option && normalise(t.Option) === tagNeedle)
+          );
+        };
+
+        // 1) Receive money bank transactions matching the tag (header text OR line tracking)
         const allBankTxns = await fetchPagedRecords('BankTransactions', 'BankTransactions');
         const receiveTxns = allBankTxns.filter((txn: any) =>
           ['RECEIVE', 'RECEIVE-PREPAYMENT', 'RECEIVE-OVERPAYMENT'].includes(String(txn.Type || ''))
         );
-        for (const txn of receiveTxns) {
-          const txnMatches = matchesEventTag(txn, tagNeedle);
+        console.log(`Scanning ${receiveTxns.length} RECEIVE bank txns for tag "${event.xero_tag}"`);
+
+        for (const txnSummary of receiveTxns) {
+          const headerMatches = matchesEventTag(txnSummary, tagNeedle);
+
+          // Always fetch detail to access LineItems.Tracking (list endpoint omits LineItems)
+          let txn = txnSummary;
+          let detailFetched = false;
+          if (incomeTrackingOptionID || !headerMatches) {
+            const detailRes = await xeroFetch(`${XERO_API_URL}/BankTransactions/${txnSummary.BankTransactionID}`);
+            if (detailRes.ok) {
+              const detailJson = await detailRes.json();
+              txn = detailJson.BankTransactions?.[0] || txnSummary;
+              detailFetched = true;
+            }
+          }
+
           const lineItems = Array.isArray(txn.LineItems) ? txn.LineItems : [];
-          const matchingLines = lineItems.filter((line: any) => matchesEventTag(line, tagNeedle));
+          const matchingLines = lineItems.filter((line: any) => lineHasTrackingMatch(line) || matchesEventTag(line, tagNeedle));
 
-          if (!txnMatches && matchingLines.length === 0) continue;
+          if (!headerMatches && matchingLines.length === 0) continue;
 
-          const amount = matchingLines.length > 0 && !txnMatches
+          const amount = matchingLines.length > 0 && !headerMatches
             ? matchingLines.reduce((sum: number, l: any) => sum + Math.abs(Number(l.LineAmount ?? l.UnitAmount ?? 0)), 0)
             : Math.abs(Number(txn.Total ?? txn.SubTotal ?? 0));
 
@@ -479,18 +521,32 @@ Deno.serve(async (req) => {
           });
         }
 
-        // 2) Invoice payments where the parent invoice is tagged
+        // 2) Invoice payments where the parent invoice is tagged (by header OR line tracking)
         const arInvoiceWhere = encodeURIComponent('Type=="ACCREC"');
         const arInvoices = await fetchPagedRecords(`Invoices?where=${arInvoiceWhere}`, 'Invoices');
-        const taggedArInvoices = arInvoices.filter((inv: any) => matchesEventTag(inv, tagNeedle));
+        const headerMatchedInvoices = arInvoices.filter((inv: any) => matchesEventTag(inv, tagNeedle));
+        console.log(`AR invoices: total=${arInvoices.length}, header-matched=${headerMatchedInvoices.length}`);
 
-        for (const inv of taggedArInvoices) {
-          // Fetch full invoice to get Payments array
+        // Always fetch detail (line items only on detail endpoint), then dedupe by InvoiceID
+        const candidateInvoices = headerMatchedInvoices.length > 0 ? headerMatchedInvoices : arInvoices;
+
+        const seenInvoiceIds = new Set<string>();
+        for (const inv of candidateInvoices) {
+          if (!inv.InvoiceID || seenInvoiceIds.has(inv.InvoiceID)) continue;
+          seenInvoiceIds.add(inv.InvoiceID);
+
           const detailRes = await xeroFetch(`${XERO_API_URL}/Invoices/${inv.InvoiceID}`);
           if (!detailRes.ok) continue;
           const detail = await detailRes.json();
           const fullInvoice = detail.Invoices?.[0];
-          const payments = Array.isArray(fullInvoice?.Payments) ? fullInvoice.Payments : [];
+          if (!fullInvoice) continue;
+
+          const headerMatches = matchesEventTag(fullInvoice, tagNeedle);
+          const lineItems = Array.isArray(fullInvoice.LineItems) ? fullInvoice.LineItems : [];
+          const lineTracked = lineItems.some((l: any) => lineHasTrackingMatch(l));
+          if (!headerMatches && !lineTracked) continue;
+
+          const payments = Array.isArray(fullInvoice.Payments) ? fullInvoice.Payments : [];
           for (const p of payments) {
             const amt = Math.abs(Number(p.Amount ?? 0));
             if (!Number.isFinite(amt) || amt === 0) continue;
