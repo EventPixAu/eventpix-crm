@@ -9,6 +9,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
+export interface MatchedPayment {
+  id: string;
+  payment_date: string | null;
+  contact_name: string | null;
+  description: string | null;
+  amount: number;
+  source_type: 'receive_money' | 'invoice_payment';
+}
+
 export interface EventFinancials {
   // Income
   quotedTotal: number;
@@ -17,8 +26,10 @@ export interface EventFinancials {
   invoiceStatus: string | null;
   invoicePaidAt: string | null;
   isPaid: boolean;
-  incomeSource: 'invoice' | 'quote';
-  
+  incomeSource: 'invoice' | 'quote' | 'payments';
+  matchedPayments: MatchedPayment[];
+  matchedPaymentsTotal: number;
+
   // Expenses by category
   staffCost: number;
   expectedStaffCost: number;
