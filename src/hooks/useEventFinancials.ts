@@ -9,6 +9,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
+export interface MatchedPayment {
+  id: string;
+  payment_date: string | null;
+  contact_name: string | null;
+  description: string | null;
+  amount: number;
+  source_type: 'receive_money' | 'invoice_payment';
+}
+
 export interface EventFinancials {
   // Income
   quotedTotal: number;
@@ -17,8 +26,10 @@ export interface EventFinancials {
   invoiceStatus: string | null;
   invoicePaidAt: string | null;
   isPaid: boolean;
-  incomeSource: 'invoice' | 'quote';
-  
+  incomeSource: 'invoice' | 'quote' | 'payments';
+  matchedPayments: MatchedPayment[];
+  matchedPaymentsTotal: number;
+
   // Expenses by category
   staffCost: number;
   expectedStaffCost: number;
@@ -129,15 +140,32 @@ export function useEventFinancials(eventId: string | undefined) {
         .eq('event_id', eventId);
       
       if (expenseError) throw expenseError;
-      
-      // Calculate income - prefer invoice amount over quote
+
+      // Fetch matched Xero payments tagged to this event
+      const { data: paymentsData } = await supabase
+        .from('event_payments' as any)
+        .select('id, payment_date, contact_name, description, amount, source_type')
+        .eq('event_id', eventId)
+        .order('payment_date', { ascending: false });
+      const matchedPayments: MatchedPayment[] = ((paymentsData as any[]) || []).map((p) => ({
+        id: p.id,
+        payment_date: p.payment_date,
+        contact_name: p.contact_name,
+        description: p.description,
+        amount: Number(p.amount) || 0,
+        source_type: p.source_type,
+      }));
+      const matchedPaymentsTotal = matchedPayments.reduce((s, p) => s + p.amount, 0);
+
+      // Calculate income - prefer aggregated payments, then invoice amount, then quote
       const quote = event.quotes as any;
       const invoiceAmount = (event as any).invoice_amount || null;
       const invoiceReference = (event as any).invoice_reference || null;
       const quoteTotal = quote?.total_estimate || quote?.subtotal || 0;
-      const incomeSource: 'invoice' | 'quote' = invoiceAmount ? 'invoice' : 'quote';
-      const quotedTotal = invoiceAmount || quoteTotal || 0;
-      const isPaid = event.invoice_status === 'paid';
+      const incomeSource: 'invoice' | 'quote' | 'payments' =
+        matchedPaymentsTotal > 0 ? 'payments' : invoiceAmount ? 'invoice' : 'quote';
+      const quotedTotal = matchedPaymentsTotal > 0 ? matchedPaymentsTotal : (invoiceAmount || quoteTotal || 0);
+      const isPaid = event.invoice_status === 'paid' || matchedPaymentsTotal > 0;
       
       // Build rate card lookup by staff_role_id
       const rateMap = new Map<string, { hourly_rate: number; minimum_paid_hours: number }>();
@@ -223,6 +251,8 @@ export function useEventFinancials(eventId: string | undefined) {
         invoicePaidAt: event.invoice_paid_at,
         isPaid,
         incomeSource,
+        matchedPayments,
+        matchedPaymentsTotal,
         staffCost,
         expectedStaffCost,
         hasXeroStaffCost,

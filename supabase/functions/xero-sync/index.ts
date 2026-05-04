@@ -444,34 +444,119 @@ Deno.serve(async (req) => {
           return records;
         };
 
-        let syncedIncome = 0;
+        // ===== INCOME: aggregate all RECEIVE bank transactions + invoice payments matching the Xero Tag =====
+        const matchedPayments: any[] = [];
+
+        // 1) Receive money bank transactions matching the tag
+        const allBankTxns = await fetchPagedRecords('BankTransactions', 'BankTransactions');
+        const receiveTxns = allBankTxns.filter((txn: any) =>
+          ['RECEIVE', 'RECEIVE-PREPAYMENT', 'RECEIVE-OVERPAYMENT'].includes(String(txn.Type || ''))
+        );
+        for (const txn of receiveTxns) {
+          const txnMatches = matchesEventTag(txn, tagNeedle);
+          const lineItems = Array.isArray(txn.LineItems) ? txn.LineItems : [];
+          const matchingLines = lineItems.filter((line: any) => matchesEventTag(line, tagNeedle));
+
+          if (!txnMatches && matchingLines.length === 0) continue;
+
+          const amount = matchingLines.length > 0 && !txnMatches
+            ? matchingLines.reduce((sum: number, l: any) => sum + Math.abs(Number(l.LineAmount ?? l.UnitAmount ?? 0)), 0)
+            : Math.abs(Number(txn.Total ?? txn.SubTotal ?? 0));
+
+          if (!Number.isFinite(amount) || amount === 0) continue;
+
+          matchedPayments.push({
+            event_id: eventId,
+            payment_date: txn.DateString?.slice(0, 10) || (txn.Date ? new Date(parseInt(String(txn.Date).match(/\d+/)?.[0] || '0')).toISOString().slice(0, 10) : null),
+            contact_name: txn.Contact?.Name || null,
+            description: txn.Reference || (lineItems[0]?.Description) || 'Receive money',
+            amount,
+            source_type: 'receive_money',
+            xero_transaction_id: txn.BankTransactionID || null,
+            xero_invoice_id: null,
+            xero_payment_id: null,
+            synced_at: new Date().toISOString(),
+          });
+        }
+
+        // 2) Invoice payments where the parent invoice is tagged
+        const arInvoiceWhere = encodeURIComponent('Type=="ACCREC"');
+        const arInvoices = await fetchPagedRecords(`Invoices?where=${arInvoiceWhere}`, 'Invoices');
+        const taggedArInvoices = arInvoices.filter((inv: any) => matchesEventTag(inv, tagNeedle));
+
+        for (const inv of taggedArInvoices) {
+          // Fetch full invoice to get Payments array
+          const detailRes = await xeroFetch(`${XERO_API_URL}/Invoices/${inv.InvoiceID}`);
+          if (!detailRes.ok) continue;
+          const detail = await detailRes.json();
+          const fullInvoice = detail.Invoices?.[0];
+          const payments = Array.isArray(fullInvoice?.Payments) ? fullInvoice.Payments : [];
+          for (const p of payments) {
+            const amt = Math.abs(Number(p.Amount ?? 0));
+            if (!Number.isFinite(amt) || amt === 0) continue;
+            matchedPayments.push({
+              event_id: eventId,
+              payment_date: p.Date ? new Date(parseInt(String(p.Date).match(/\d+/)?.[0] || '0')).toISOString().slice(0, 10) : null,
+              contact_name: fullInvoice.Contact?.Name || null,
+              description: `Payment for ${fullInvoice.InvoiceNumber || 'invoice'}`,
+              amount: amt,
+              source_type: 'invoice_payment',
+              xero_transaction_id: null,
+              xero_invoice_id: fullInvoice.InvoiceID,
+              xero_payment_id: p.PaymentID,
+              synced_at: new Date().toISOString(),
+            });
+          }
+        }
+
+        // Deduplicate by Xero IDs
+        const dedupedPayments = Array.from(
+          new Map(matchedPayments.map((p) => [
+            p.xero_payment_id || p.xero_transaction_id || `${p.description}-${p.amount}-${p.payment_date}`,
+            p,
+          ])).values(),
+        );
+
+        const syncedIncome = dedupedPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+        // Replace existing payment records
+        await supabase.from('event_payments').delete().eq('event_id', eventId);
+        if (dedupedPayments.length > 0) {
+          await supabase.from('event_payments').insert(dedupedPayments);
+        }
+
+        // Update event invoice_amount and status from invoice_reference (legacy single-invoice path)
         if (event.invoice_reference) {
           const invoiceWhere = encodeURIComponent(`InvoiceNumber=="${event.invoice_reference.replaceAll('"', '\\"')}"`);
           const invoiceResponse = await xeroFetch(`${XERO_API_URL}/Invoices?where=${invoiceWhere}`);
-
           if (invoiceResponse.ok) {
             const invoicePayload = await invoiceResponse.json();
             const invoice = invoicePayload.Invoices?.[0];
-
             if (invoice) {
-              syncedIncome = Number(invoice.Total || invoice.SubTotal || 0);
               const mappedStatus = mapInvoiceStatus(invoice);
               await supabase
                 .from('events')
                 .update({
-                  invoice_amount: syncedIncome || null,
+                  invoice_amount: syncedIncome || Number(invoice.Total || invoice.SubTotal || 0) || null,
                   invoice_status: mappedStatus.invoice_status,
                   invoice_paid_at: mappedStatus.invoice_paid_at,
                   updated_at: new Date().toISOString(),
                 })
                 .eq('id', eventId);
-
-              console.log(`Synced invoice ${event.invoice_reference}: $${syncedIncome}`);
             }
-          } else {
-            console.error(`Failed to fetch invoice ${event.invoice_reference}:`, await invoiceResponse.text());
           }
+        } else if (syncedIncome > 0) {
+          // No invoice_reference but we have payments — store aggregate amount
+          await supabase
+            .from('events')
+            .update({
+              invoice_amount: syncedIncome,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', eventId);
         }
+
+        console.log(`Matched ${dedupedPayments.length} payments totalling $${syncedIncome} for tag "${event.xero_tag}"`);
 
         console.log(`Searching for expenses with tag: "${event.xero_tag}"`);
 

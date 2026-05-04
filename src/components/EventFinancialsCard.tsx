@@ -5,12 +5,15 @@
  * Shows data from accepted quotes and Xero-synced expenses.
  * Access: Admin only
  */
-import { DollarSign, TrendingUp, TrendingDown, Users, Car, Home, Package, ExternalLink, RefreshCw } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Users, Car, Package, ExternalLink, RefreshCw, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useEventFinancials } from '@/hooks/useEventFinancials';
 import { useEvent } from '@/hooks/useEvents';
 import { useSyncEventExpenses as useXeroSyncEventExpenses, useSyncInvoiceStatus } from '@/hooks/useXeroSync';
@@ -36,6 +39,7 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
   const { isAdmin } = useAuth();
   const syncExpenses = useXeroSyncEventExpenses();
   const syncInvoices = useSyncInvoiceStatus();
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
   
   if (isLoading) {
     return (
@@ -80,12 +84,20 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
             <span className="font-semibold text-lg">{formatCurrency(financials.quotedTotal)}</span>
           </div>
           <div className="flex items-center justify-between mt-0.5">
-            {financials.invoiceReference ? (
+            {financials.incomeSource === 'payments' ? (
               <p className="text-xs text-muted-foreground">
-                {financials.invoiceReference}
+                {financials.matchedPayments.length} matched payment{financials.matchedPayments.length === 1 ? '' : 's'}
+                {event?.xero_tag ? ` (${event.xero_tag})` : ''}
               </p>
+            ) : financials.invoiceReference ? (
+              <p className="text-xs text-muted-foreground">{financials.invoiceReference}</p>
             ) : (
               <p className="text-xs text-muted-foreground">From quote</p>
+            )}
+            {financials.incomeSource === 'payments' && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-500/30">
+                Received
+              </Badge>
             )}
             {financials.incomeSource === 'invoice' && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-500/30">
@@ -98,10 +110,40 @@ export function EventFinancialsCard({ eventId }: EventFinancialsCardProps) {
               </Badge>
             )}
           </div>
-          {!financials.isPaid && financials.invoiceStatus && (
+          {!financials.isPaid && financials.invoiceStatus && financials.incomeSource !== 'payments' && (
             <p className="text-xs text-muted-foreground mt-0.5">
               Invoice status: {financials.invoiceStatus}
             </p>
+          )}
+
+          {financials.matchedPayments.length > 0 && (
+            <Collapsible open={paymentsOpen} onOpenChange={setPaymentsOpen} className="mt-2">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <ChevronDown className={cn('h-3 w-3 transition-transform', paymentsOpen && 'rotate-180')} />
+                  {paymentsOpen ? 'Hide' : 'View'} matched payments
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 space-y-1.5 rounded-md border border-border/50 bg-muted/30 p-2">
+                {financials.matchedPayments.map((p) => (
+                  <div key={p.id} className="flex items-start justify-between gap-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-foreground">
+                        {p.contact_name || p.description || 'Payment'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {p.payment_date ? format(parseISO(p.payment_date), 'dd MMM yyyy') : '—'}
+                        {' · '}
+                        {p.source_type === 'receive_money' ? 'Receive money' : 'Invoice payment'}
+                      </p>
+                    </div>
+                    <span className="shrink-0 font-medium tabular-nums">
+                      {formatCurrency(p.amount)}
+                    </span>
+                  </div>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
         
