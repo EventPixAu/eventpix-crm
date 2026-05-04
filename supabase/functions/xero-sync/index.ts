@@ -475,7 +475,9 @@ Deno.serve(async (req) => {
           return Number.isFinite(parsed) ? parsed : 0;
         };
 
+        let cachedTrackingProfitAndLossReport: any | undefined;
         const fetchTrackingProfitAndLossReport = async () => {
+          if (cachedTrackingProfitAndLossReport !== undefined) return cachedTrackingProfitAndLossReport;
           if (!incomeTrackingCategoryID || !incomeTrackingOptionID) return null;
 
           const eventDate = event.event_date ? new Date(`${event.event_date}T00:00:00`) : new Date();
@@ -491,7 +493,36 @@ Deno.serve(async (req) => {
           }
 
           const reportData = await reportResponse.json();
-          return reportData.Reports?.[0] || null;
+          cachedTrackingProfitAndLossReport = reportData.Reports?.[0] || null;
+          return cachedTrackingProfitAndLossReport;
+        };
+
+        const getReportIncomeRows = async () => {
+          const report = await fetchTrackingProfitAndLossReport();
+          const incomeRows: { accountName: string; amount: number }[] = [];
+
+          for (const section of report?.Rows || []) {
+            const sectionTitleLower = String(section.Title || '').toLowerCase();
+            const isIncomeSection = section.RowType === 'Section' && (
+              sectionTitleLower.includes('income') ||
+              sectionTitleLower.includes('revenue') ||
+              sectionTitleLower.includes('sales')
+            );
+            if (!isIncomeSection) continue;
+
+            for (const row of section.Rows || []) {
+              if (row.RowType !== 'Row') continue;
+              const cells = row.Cells || [];
+              const accountName = String(cells[0]?.Value || '').trim();
+              const amount = Math.abs(parseReportAmount(cells[1]?.Value));
+              const accountLower = accountName.toLowerCase();
+
+              if (!accountName || !amount || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
+              incomeRows.push({ accountName, amount });
+            }
+          }
+
+          return incomeRows;
         };
 
         const lineHasTrackingMatch = (line: any): boolean => {
