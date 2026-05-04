@@ -6596,6 +6596,7 @@ export type Database = {
         | "photographer_assignment"
         | "event_update"
         | "enquiry_received"
+        | "contract_sent"
       entity_type: "lead" | "job"
       event_type:
         | "wedding"
@@ -6809,6 +6810,7 @@ export const Constants = {
         "photographer_assignment",
         "event_update",
         "enquiry_received",
+        "contract_sent",
       ],
       entity_type: ["lead", "job"],
       event_type: [

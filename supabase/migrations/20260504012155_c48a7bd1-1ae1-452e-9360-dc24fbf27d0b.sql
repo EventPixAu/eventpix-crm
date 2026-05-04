@@ -1,0 +1,1 @@
+ALTER TYPE email_trigger_type ADD VALUE IF NOT EXISTS 'contract_sent';
