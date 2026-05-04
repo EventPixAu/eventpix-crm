@@ -1228,6 +1228,8 @@ export default function EventDetail() {
                           <SelectItem value="not_invoiced">Not Invoiced</SelectItem>
                           <SelectItem value="invoiced">Invoiced</SelectItem>
                           <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="second_win">Second Win (Paid)</SelectItem>
+                          <SelectItem value="no_show">No Show</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
