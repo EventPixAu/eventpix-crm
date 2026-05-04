@@ -625,7 +625,7 @@ Deno.serve(async (req) => {
 
         // 2) Invoice payments where the parent invoice is tagged (by header OR line tracking)
         const arInvoiceWhere = encodeURIComponent('Type=="ACCREC"');
-        const arInvoices = await fetchPagedRecords(`Invoices?where=${arInvoiceWhere}`, 'Invoices');
+        const arInvoices = reportIncomeRows.length > 0 ? [] : await fetchPagedRecords(`Invoices?where=${arInvoiceWhere}`, 'Invoices');
         const headerMatchedInvoices = arInvoices.filter((inv: any) => matchesEventTag(inv, tagNeedle));
         console.log(`AR invoices: total=${arInvoices.length}, header-matched=${headerMatchedInvoices.length}`);
 
@@ -703,12 +703,16 @@ Deno.serve(async (req) => {
                 .eq('id', eventId);
             }
           }
-        } else if (syncedIncome > 0) {
-          // No invoice_reference but we have payments — store aggregate amount
+        }
+
+        if (syncedIncome > 0) {
+          // Store aggregate income even when the event has no invoice reference.
           await supabase
             .from('events')
             .update({
               invoice_amount: syncedIncome,
+              invoice_status: 'paid',
+              invoice_paid_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('id', eventId);
