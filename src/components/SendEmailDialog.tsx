@@ -140,6 +140,21 @@ export function SendEmailDialog({
     }
   }, [open, clientEmail, clientName, recipients.length, hasAutoResolved]);
 
+  // Auto-select default template based on context when dialog opens
+  useEffect(() => {
+    if (!open || !templates || selectedTemplateId) return;
+    const desiredTrigger = context === 'contract' ? 'contract_sent' : context === 'quote' ? 'quote_sent' : null;
+    if (!desiredTrigger) return;
+    const match = templates.find(t => t.trigger_type === desiredTrigger);
+    if (match) {
+      setSelectedTemplateId(match.id);
+      setSubject(processMergeFields(match.subject));
+      const rawBody = match.body_text || match.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+      setBody(rawBody);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, templates, context]);
+
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (!open) {
