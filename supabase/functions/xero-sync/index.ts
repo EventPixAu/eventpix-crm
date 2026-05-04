@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
       return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
     };
 
+    // DB constraint allows only: not_invoiced, invoiced, paid
     const mapInvoiceStatus = (invoice: any) => {
       switch (invoice.Status) {
         case 'PAID':
@@ -211,19 +212,14 @@ Deno.serve(async (req) => {
             invoice_paid_at: parseXeroDate(invoice.FullyPaidOnDate) || new Date().toISOString(),
           };
         case 'AUTHORISED':
-          return {
-            invoice_status: new Date(invoice.DueDate) < new Date() ? 'overdue' : 'sent',
-            invoice_paid_at: null,
-          };
+        case 'SUBMITTED':
         case 'DRAFT':
-          return { invoice_status: 'draft', invoice_paid_at: null };
+          return { invoice_status: 'invoiced', invoice_paid_at: null };
         case 'VOIDED':
-          return { invoice_status: 'void', invoice_paid_at: null };
+        case 'DELETED':
+          return { invoice_status: 'not_invoiced', invoice_paid_at: null };
         default:
-          return {
-            invoice_status: String(invoice.Status || '').toLowerCase() || null,
-            invoice_paid_at: null,
-          };
+          return { invoice_status: 'invoiced', invoice_paid_at: null };
       }
     };
 
