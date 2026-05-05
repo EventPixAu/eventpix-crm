@@ -719,6 +719,43 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
+        {/* Team Brief */}
+        {((displayEvent as any).brief_content || (displayEvent as any).brief_file_path) && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.11 }}
+            className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold">Team Brief</h3>
+            </div>
+            {(displayEvent as any).brief_content && (
+              <p className="text-sm whitespace-pre-wrap">
+                {(displayEvent as any).brief_content}
+              </p>
+            )}
+            {(displayEvent as any).brief_file_path && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={async () => {
+                  const path = (displayEvent as any).brief_file_path as string;
+                  const { data } = await supabase.storage
+                    .from('event-documents')
+                    .createSignedUrl(path, 3600);
+                  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                {(displayEvent as any).brief_file_name || 'Download Brief'}
+              </Button>
+            )}
+          </motion.section>
+        )}
+
         {/* Photography Section - Brief, Camera Settings, Delivery */}
         {((displayEvent as any).photography_brief || 
           (displayEvent as any).camera_settings || 
