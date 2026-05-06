@@ -65,6 +65,7 @@ export function useMyJobSheets() {
             id,
             event_name,
             event_date,
+            timezone,
             start_time,
             end_time,
             venue_name,
