@@ -122,8 +122,29 @@ export function useMyJobSheets() {
         const sessions = (event.event_sessions || []) as any[];
         const matchingSession = sessions.find((s: any) => s.session_date === event.event_date) || sessions[0];
         
-        // Prioritize: assignment call_time_at > session arrival_time
-        const arrivalTime = (a as any).call_time_at || matchingSession?.arrival_time || null;
+        // Prioritize: assignment call_time_at (timestamptz) > session arrival_time (HH:mm:ss)
+        // call_time_at is a full timestamp; convert to HH:mm:ss in the event's local timezone
+        const eventTz = event.timezone || 'Australia/Sydney';
+        let arrivalTime: string | null = null;
+        if ((a as any).call_time_at) {
+          try {
+            const parts = new Intl.DateTimeFormat('en-GB', {
+              timeZone: eventTz,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            }).formatToParts(new Date((a as any).call_time_at));
+            const h = parts.find(p => p.type === 'hour')?.value || '00';
+            const m = parts.find(p => p.type === 'minute')?.value || '00';
+            const s = parts.find(p => p.type === 'second')?.value || '00';
+            arrivalTime = `${h === '24' ? '00' : h}:${m}:${s}`;
+          } catch {
+            arrivalTime = matchingSession?.arrival_time || null;
+          }
+        } else {
+          arrivalTime = matchingSession?.arrival_time || null;
+        }
         const startTime = matchingSession?.start_time || event.start_time;
         const endTime = matchingSession?.end_time || event.end_time;
         const venueName = matchingSession?.venue_name || event.venue_name;
