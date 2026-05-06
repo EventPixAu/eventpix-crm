@@ -1124,7 +1124,7 @@ export default function EventDetail() {
                   {event.coverage_details && (
                     <div className="mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Coverage Details</p>
-                      <p className="text-sm">{event.coverage_details}</p>
+                      <p className="text-sm whitespace-pre-wrap">{event.coverage_details}</p>
                     </div>
                   )}
                   {(event as any).photography_brief && (
