@@ -35,6 +35,7 @@ import { EventContactsEditor } from '@/components/EventContactsEditor';
 import { EventClientLookup } from '@/components/EventClientLookup';
 import { useLead } from '@/hooks/useSales';
 import { useLeadSessions, useEventSessions } from '@/hooks/useEventSessions';
+import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
