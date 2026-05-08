@@ -87,7 +87,13 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
 
   const handleOpenCreate = () => {
     setEditingSession(null);
-    setFormData(emptySession);
+    setFormData({
+      ...emptySession,
+      session_date: defaultSessionDate || '',
+      venue_name: defaultVenueName || '',
+      venue_address: defaultVenueAddress || '',
+      timezone: defaultTimezone || 'Australia/Sydney',
+    });
     setIsDialogOpen(true);
   };
 
