@@ -35,6 +35,7 @@ import { EventContactsEditor } from '@/components/EventContactsEditor';
 import { EventClientLookup } from '@/components/EventClientLookup';
 import { useLead } from '@/hooks/useSales';
 import { useLeadSessions, useEventSessions } from '@/hooks/useEventSessions';
+import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
@@ -323,6 +324,25 @@ export default function EventForm() {
       navigate(`/events/${id}`);
     } else {
       const result = await createEvent.mutateAsync(cleanValues);
+      // Auto-create initial session from the event's date/venue so the
+      // schedule has a sensible default and team timezones display correctly.
+      try {
+        if (result?.id && cleanValues.event_date) {
+          await supabase.from('event_sessions').insert({
+            event_id: result.id,
+            session_date: cleanValues.event_date,
+            start_time: cleanValues.start_time,
+            end_time: cleanValues.end_time,
+            venue_name: cleanValues.venue_name,
+            venue_address: cleanValues.venue_address,
+            timezone: 'Australia/Sydney',
+            session_type: 'live',
+            sort_order: 0,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to auto-create initial session', e);
+      }
       navigate(`/events/${result.id}`);
     }
   };
