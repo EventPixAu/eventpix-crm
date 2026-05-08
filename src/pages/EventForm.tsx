@@ -764,7 +764,13 @@ export default function EventForm() {
             {/* Sessions Section - only show when editing */}
             {isEditing && id && (
               <div className="bg-card border border-border rounded-xl p-5">
-                <EventSessionsEditor eventId={id} disabled={isFormLocked} />
+                <EventSessionsEditor
+                  eventId={id}
+                  disabled={isFormLocked}
+                  defaultSessionDate={event?.event_date || form.watch('event_date')}
+                  defaultVenueName={event?.venue_name || form.watch('venue_name')}
+                  defaultVenueAddress={event?.venue_address || form.watch('venue_address')}
+                />
               </div>
             )}
 
