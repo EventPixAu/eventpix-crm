@@ -66,9 +66,13 @@ interface EventSessionsEditorProps {
   leadId?: string;
   disabled?: boolean;
   hideHeader?: boolean;
+  defaultSessionDate?: string;
+  defaultVenueName?: string;
+  defaultVenueAddress?: string;
+  defaultTimezone?: string;
 }
 
-export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader }: EventSessionsEditorProps) {
+export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, defaultSessionDate, defaultVenueName, defaultVenueAddress, defaultTimezone }: EventSessionsEditorProps) {
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: leadSessions = [] } = useLeadSessions(leadId);
   const sessions = eventId ? eventSessions : leadSessions;
