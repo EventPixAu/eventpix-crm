@@ -48,8 +48,13 @@ interface EventContactsEditorProps {
 
 export function EventContactsEditor({ eventId, clientId, disabled, maxContacts = 5 }: EventContactsEditorProps) {
   const { data: contacts = [] } = useEventContacts(eventId);
+  const { data: dynamicContactTypes = [] } = useActiveContactTypes();
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
+
+  const contactTypeOptions = dynamicContactTypes.length > 0
+    ? dynamicContactTypes.map((t) => ({ value: t.value, label: t.name }))
+    : CONTACT_TYPES.map((t) => ({ value: t.value, label: t.label }));
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
