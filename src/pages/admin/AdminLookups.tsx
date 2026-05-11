@@ -47,6 +47,9 @@ import {
   useAllLocations,
   useCreateLocation,
   useUpdateLocation,
+  useAllContactTypes,
+  useCreateContactType,
+  useUpdateContactType,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
 import {
