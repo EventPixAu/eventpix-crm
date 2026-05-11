@@ -511,24 +511,23 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
         </div>
       </div>
       {isAdmin && (
-        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border/50">
-          <Link to={`/events/${eventId}/day-of`}>
+        <div className="grid grid-cols-2 gap-1.5 mt-3 pt-3 border-t border-border/50">
+          <Link to={`/events/${eventId}/day-of`} className="contents">
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 text-xs gap-1.5"
+              className="h-7 text-xs gap-1.5 w-full"
               title="Preview crew job sheet"
             >
               <Eye className="h-3.5 w-3.5" />
               Preview
             </Button>
           </Link>
-          <div className="flex-1" />
           {confirmationStatus !== 'confirmed' && (
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="h-7 text-xs w-full"
               onClick={async () => {
                 const { data: updated, error } = await supabase
                   .from('event_assignments')
@@ -553,7 +552,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs"
+            className="h-7 text-xs w-full"
             onClick={() => {
               const userId = assignment.user_id || assignment.staff?.id;
               if (!userId) return;
@@ -575,7 +574,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-7 text-xs w-full text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Remove from event"
                 disabled={removeAssignment.isPending}
               >
