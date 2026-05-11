@@ -3,7 +3,7 @@
  * plus a pre-registration link field.
  */
 import { useState, useRef, useCallback } from 'react';
-import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera } from 'lucide-react';
+import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera, Palette } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,10 +18,11 @@ interface EventQrPanelProps {
   preRegistrationLink?: string | null;
   dropboxLink?: string | null;
   smugmugLink?: string | null;
+  artworkDriveLink?: string | null;
   isAdmin?: boolean;
 }
 
-export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, isAdmin = false }: EventQrPanelProps) {
+export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, artworkDriveLink, isAdmin = false }: EventQrPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -37,6 +38,10 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   const [smugmugValue, setSmugmugValue] = useState(smugmugLink || '');
   const [savingSmugmug, setSavingSmugmug] = useState(false);
   const [copiedSmugmug, setCopiedSmugmug] = useState(false);
+  const [editingArtwork, setEditingArtwork] = useState(false);
+  const [artworkValue, setArtworkValue] = useState(artworkDriveLink || '');
+  const [savingArtwork, setSavingArtwork] = useState(false);
+  const [copiedArtwork, setCopiedArtwork] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -324,6 +329,23 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           isAdmin={isAdmin}
           placeholder="https://www.smugmug.com/..."
           onSave={() => handleSaveGenericLink('smugmug_link', smugmugValue, setSavingSmugmug, setEditingSmugmug, 'SmugMug link')}
+        />
+
+        {/* Artwork Google Drive Link */}
+        <LinkField
+          label="Artwork (Google Drive)"
+          icon={<Palette className="h-3.5 w-3.5" />}
+          currentValue={artworkDriveLink}
+          editValue={artworkValue}
+          setEditValue={setArtworkValue}
+          editing={editingArtwork}
+          setEditing={setEditingArtwork}
+          saving={savingArtwork}
+          copied={copiedArtwork}
+          setCopied={setCopiedArtwork}
+          isAdmin={isAdmin}
+          placeholder="https://drive.google.com/..."
+          onSave={() => handleSaveGenericLink('artwork_drive_link', artworkValue, setSavingArtwork, setEditingArtwork, 'Artwork link')}
         />
       </CardContent>
     </Card>
