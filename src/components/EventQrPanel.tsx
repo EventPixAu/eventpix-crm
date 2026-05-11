@@ -330,6 +330,23 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           placeholder="https://www.smugmug.com/..."
           onSave={() => handleSaveGenericLink('smugmug_link', smugmugValue, setSavingSmugmug, setEditingSmugmug, 'SmugMug link')}
         />
+
+        {/* Artwork Google Drive Link */}
+        <LinkField
+          label="Artwork (Google Drive)"
+          icon={<Palette className="h-3.5 w-3.5" />}
+          currentValue={artworkDriveLink}
+          editValue={artworkValue}
+          setEditValue={setArtworkValue}
+          editing={editingArtwork}
+          setEditing={setEditingArtwork}
+          saving={savingArtwork}
+          copied={copiedArtwork}
+          setCopied={setCopiedArtwork}
+          isAdmin={isAdmin}
+          placeholder="https://drive.google.com/..."
+          onSave={() => handleSaveGenericLink('artwork_drive_link', artworkValue, setSavingArtwork, setEditingArtwork, 'Artwork link')}
+        />
       </CardContent>
     </Card>
   );
