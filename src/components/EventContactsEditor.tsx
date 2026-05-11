@@ -35,6 +35,7 @@ import {
   CONTACT_TYPES,
   type ContactType,
 } from '@/hooks/useEventContacts';
+import { useActiveContactTypes } from '@/hooks/useAdminLookups';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
@@ -47,8 +48,13 @@ interface EventContactsEditorProps {
 
 export function EventContactsEditor({ eventId, clientId, disabled, maxContacts = 5 }: EventContactsEditorProps) {
   const { data: contacts = [] } = useEventContacts(eventId);
+  const { data: dynamicContactTypes = [] } = useActiveContactTypes();
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
+
+  const contactTypeOptions = dynamicContactTypes.length > 0
+    ? dynamicContactTypes.map((t) => ({ value: t.value, label: t.name }))
+    : CONTACT_TYPES.map((t) => ({ value: t.value, label: t.label }));
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -101,7 +107,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
   };
 
   const getContactTypeLabel = (type: string) => {
-    return CONTACT_TYPES.find(t => t.value === type)?.label || type;
+    return contactTypeOptions.find(t => t.value === type)?.label || type;
   };
 
   const getDisplayPhone = (contact: typeof contacts[0]) => {
@@ -237,7 +243,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONTACT_TYPES.map((type) => (
+                  {contactTypeOptions.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>

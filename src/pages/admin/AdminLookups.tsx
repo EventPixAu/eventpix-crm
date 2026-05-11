@@ -23,6 +23,7 @@ import {
   Building2,
   CircleDot,
   ClipboardList,
+  Contact,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
@@ -47,6 +48,9 @@ import {
   useAllLocations,
   useCreateLocation,
   useUpdateLocation,
+  useAllContactTypes,
+  useCreateContactType,
+  useUpdateContactType,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
 import {
@@ -407,6 +411,11 @@ export default function AdminLookups() {
   const createOpsStatus = useCreateOpsStatus();
   const updateOpsStatus = useUpdateOpsStatus();
 
+  // Contact Types
+  const { data: contactTypes = [], isLoading: contactTypesLoading } = useAllContactTypes();
+  const createContactType = useCreateContactType();
+  const updateContactType = useUpdateContactType();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -456,6 +465,13 @@ export default function AdminLookups() {
               >
                 <Heart className="h-4 w-4 mr-2" />
                 Relationships
+              </TabsTrigger>
+              <TabsTrigger 
+                value="contact-types"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Contact className="h-4 w-4 mr-2" />
+                Contact Types
               </TabsTrigger>
               <TabsTrigger 
                 value="lead-sources"
@@ -595,6 +611,24 @@ export default function AdminLookups() {
                 createPending={createRelationshipType.isPending}
                 updatePending={updateRelationshipType.isPending}
                 itemLabel="Relationship Type"
+              />
+            </TabsContent>
+
+            <TabsContent value="contact-types" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Event contact types</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the "Contact Type" dropdown when adding contacts to an event.
+                </p>
+              </div>
+              <LookupTable
+                items={contactTypes}
+                isLoading={contactTypesLoading}
+                onCreate={async (name) => { await createContactType.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateContactType.mutateAsync({ id, ...updates }); }}
+                createPending={createContactType.isPending}
+                updatePending={updateContactType.isPending}
+                itemLabel="Contact Type"
               />
             </TabsContent>
 

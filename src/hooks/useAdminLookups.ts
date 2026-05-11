@@ -268,6 +268,117 @@ export function useUpdateEquipmentCategory() {
 }
 
 // =============================================
+// CONTACT TYPES (Event Contacts)
+// =============================================
+
+export interface ContactTypeLookup extends LookupItem {
+  value: string;
+}
+
+function slugifyContactType(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 50) || `type_${Date.now()}`;
+}
+
+export function useAllContactTypes() {
+  return useQuery({
+    queryKey: ['contact-types', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contact_types_lookup')
+        .select('*')
+        .order('sort_order')
+        .order('name');
+      if (error) throw error;
+      return data as ContactTypeLookup[];
+    },
+  });
+}
+
+export function useActiveContactTypes() {
+  return useQuery({
+    queryKey: ['contact-types', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contact_types_lookup')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order')
+        .order('name');
+      if (error) throw error;
+      return data as ContactTypeLookup[];
+    },
+  });
+}
+
+export function useCreateContactType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data: maxData } = await supabase
+        .from('contact_types_lookup')
+        .select('sort_order')
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextOrder = (maxData?.sort_order || 0) + 1;
+
+      let value = slugifyContactType(name);
+      // Ensure uniqueness
+      const { data: existing } = await supabase
+        .from('contact_types_lookup')
+        .select('value')
+        .like('value', `${value}%`);
+      if (existing && existing.some((r) => r.value === value)) {
+        value = `${value}_${Date.now().toString(36)}`;
+      }
+
+      const { data, error } = await supabase
+        .from('contact_types_lookup')
+        .insert({ name, value, sort_order: nextOrder })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contact-types'] });
+      toast.success('Contact type created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateContactType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<ContactTypeLookup> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('contact_types_lookup')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contact-types'] });
+      toast.success('Contact type updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update: ' + error.message);
+    },
+  });
+}
+
+// =============================================
 // LOCATIONS
 // =============================================
 
