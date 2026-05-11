@@ -1298,6 +1298,7 @@ export default function EventDetail() {
                   preRegistrationLink={(event as any).pre_registration_link || null}
                   dropboxLink={(event as any).dropbox_link || null}
                   smugmugLink={(event as any).smugmug_link || null}
+                  artworkDriveLink={(event as any).artwork_drive_link || null}
                   isAdmin={isAdmin || isOperations || isSales}
                 />
               )}
