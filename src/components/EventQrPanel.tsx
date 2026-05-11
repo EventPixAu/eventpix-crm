@@ -3,7 +3,7 @@
  * plus a pre-registration link field.
  */
 import { useState, useRef, useCallback } from 'react';
-import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera } from 'lucide-react';
+import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera, Palette } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
