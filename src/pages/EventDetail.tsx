@@ -1587,9 +1587,13 @@ export default function EventDetail() {
                   return null;
                 })()}
 
-                {/* Per-session grouped assignments */}
+                {/* Per-session grouped assignments (include general "all sessions" crew) */}
                 {eventSessions.map(session => {
-                  const sessionAssigns = assignments.filter(a => a.session_id === session.id);
+                  const generalAssigns = assignments.filter(a => !a.session_id);
+                  const sessionAssigns = [
+                    ...generalAssigns,
+                    ...assignments.filter(a => a.session_id === session.id),
+                  ];
                   return (
                     <div key={session.id} className="border border-border rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-3">
