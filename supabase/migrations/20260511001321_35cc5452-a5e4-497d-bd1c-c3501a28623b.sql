@@ -1,0 +1,1 @@
+UPDATE public.event_sessions SET session_date = '2026-05-27' WHERE id = '86f5c0ce-877e-483f-925c-bd11ea19db6b' AND session_date = '2006-05-27';
