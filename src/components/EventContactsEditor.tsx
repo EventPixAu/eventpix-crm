@@ -107,7 +107,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
   };
 
   const getContactTypeLabel = (type: string) => {
-    return CONTACT_TYPES.find(t => t.value === type)?.label || type;
+    return contactTypeOptions.find(t => t.value === type)?.label || type;
   };
 
   const getDisplayPhone = (contact: typeof contacts[0]) => {
