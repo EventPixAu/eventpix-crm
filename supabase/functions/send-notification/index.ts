@@ -79,26 +79,8 @@ async function sendViaGmailApi(to: string, subject: string, html: string, icsCon
 
 // ── ICS helpers ──
 
-function generateICS(event: any, sequence: number, appUrl: string, sessionId?: string): string {
-  const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
+function generateICS(event: any, sequence: number, appUrl: string, sessionId?: string, sessions?: any[]): string {
   const dtstamp = formatDateToICS(new Date());
-  let dtstart: string, dtend: string;
-  const timezone = event.timezone || 'Australia/Sydney';
-  const timezoneBlock = getVTimezone(timezone);
-
-  if (event.start_at) {
-    dtstart = formatDateToICS(new Date(event.start_at));
-    dtend = event.end_at ? formatDateToICS(new Date(event.end_at))
-      : formatDateToICS(new Date(new Date(event.start_at).getTime() + 2 * 3600000));
-  } else {
-    dtstart = formatLocalDateTimeToICS(event.event_date, event.start_time || '09:00:00');
-    if (event.end_time) {
-      const endDate = shouldEndNextDay(event.start_time, event.end_time) ? addDays(event.event_date, 1) : event.event_date;
-      dtend = formatLocalDateTimeToICS(endDate, event.end_time);
-    } else { dtend = formatLocalDateTimeToICS(event.event_date, addHoursToTime(event.start_time || '09:00:00', 2)); }
-  }
-
-  const location = [event.venue_name, event.venue_address].filter(Boolean).join(", ");
   const description = [
     event.coverage_details,
     event.onsite_contact_name ? `On-site contact: ${event.onsite_contact_name}` : null,
@@ -106,7 +88,65 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
     `View in app: ${appUrl}/events/${event.id}`,
   ].filter(Boolean).join("\\n");
 
-  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Eventpix//Event Management//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:REQUEST\r\n${timezoneBlock ? `${timezoneBlock}\r\n` : ''}BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${timezone}:${dtstart}\r\nDTEND;TZID=${timezone}:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR`;
+  // Collect timezones used so we can include the appropriate VTIMEZONE blocks
+  const timezonesUsed = new Set<string>();
+
+  const buildVEvent = (uid: string, dateStr: string, startTime: string | null, endTime: string | null, tz: string, venueName: string | null, venueAddr: string | null, label?: string | null): string => {
+    timezonesUsed.add(tz);
+    const dtstart = formatLocalDateTimeToICS(dateStr, startTime || '09:00:00');
+    let dtend: string;
+    if (endTime) {
+      const endDate = shouldEndNextDay(startTime, endTime) ? addDays(dateStr, 1) : dateStr;
+      dtend = formatLocalDateTimeToICS(endDate, endTime);
+    } else {
+      dtend = formatLocalDateTimeToICS(dateStr, addHoursToTime(startTime || '09:00:00', 2));
+    }
+    const location = [venueName, venueAddr].filter(Boolean).join(", ");
+    const summary = label ? `${event.event_name} - ${label}` : event.event_name;
+    return `BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${tz}:${dtstart}\r\nDTEND;TZID=${tz}:${dtend}\r\nSUMMARY:${escapeICS(summary)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`;
+  };
+
+  const vevents: string[] = [];
+
+  if (sessions && sessions.length > 0) {
+    // Multi-session calendar invite (one VEVENT per session)
+    for (const s of sessions) {
+      const uid = `${event.id}-${s.id}@eventpix.com.au`;
+      vevents.push(buildVEvent(
+        uid,
+        s.session_date,
+        s.start_time,
+        s.end_time,
+        s.timezone || event.timezone || 'Australia/Sydney',
+        s.venue_name || event.venue_name,
+        s.venue_address || event.venue_address,
+        s.label,
+      ));
+    }
+  } else if (event.start_at) {
+    const tz = event.timezone || 'Australia/Sydney';
+    timezonesUsed.add(tz);
+    const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
+    const dtstart = formatDateToICS(new Date(event.start_at));
+    const dtend = event.end_at ? formatDateToICS(new Date(event.end_at))
+      : formatDateToICS(new Date(new Date(event.start_at).getTime() + 2 * 3600000));
+    const location = [event.venue_name, event.venue_address].filter(Boolean).join(", ");
+    vevents.push(`BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART:${dtstart}\r\nDTEND:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`);
+  } else {
+    const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
+    vevents.push(buildVEvent(
+      uid,
+      event.event_date,
+      event.start_time,
+      event.end_time,
+      event.timezone || 'Australia/Sydney',
+      event.venue_name,
+      event.venue_address,
+    ));
+  }
+
+  const tzBlocks = Array.from(timezonesUsed).map(tz => getVTimezone(tz)).filter(Boolean).join('\r\n');
+  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Eventpix//Event Management//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:REQUEST\r\n${tzBlocks ? `${tzBlocks}\r\n` : ''}${vevents.join('\r\n')}\r\nEND:VCALENDAR`;
 }
 
 function formatDateToICS(date: Date): string {
@@ -237,8 +277,9 @@ const handler = async (req: Request): Promise<Response> => {
       recipientEmail = profile.email;
       recipientName = profile.full_name || profile.email;
 
-      // If this assignment is tied to a specific session, override event date/time/venue with session data
+      // Determine session context for this assignment
       let assignmentSessionId: string | undefined;
+      let allSessions: any[] | undefined;
       if (assignment_id) {
         const { data: assignment } = await supabase
           .from("event_assignments")
@@ -246,6 +287,7 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", assignment_id)
           .maybeSingle();
         if (assignment?.session_id) {
+          // Single-session assignment: override event with session data
           assignmentSessionId = assignment.session_id;
           const { data: session } = await supabase
             .from("event_sessions")
@@ -260,11 +302,24 @@ const handler = async (req: Request): Promise<Response> => {
             event.venue_address = session.venue_address || event.venue_address;
             event.timezone = session.timezone || event.timezone;
           }
+        } else {
+          // "All Sessions" assignment: include every session as a separate calendar entry
+          const { data: sessions } = await supabase
+            .from("event_sessions")
+            .select("id, session_date, start_time, end_time, venue_name, venue_address, timezone, label, sort_order")
+            .eq("event_id", event_id)
+            .order("session_date", { ascending: true });
+          if (sessions && sessions.length > 0) {
+            allSessions = sessions;
+          }
         }
       }
 
-      subject = `Eventpix - New assignment: ${event.event_name} - ${formatDate(event.event_date)}`;
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId);
+      const dateLabel = allSessions && allSessions.length > 1
+        ? `${formatDate(allSessions[0].session_date)} – ${formatDate(allSessions[allSessions.length - 1].session_date)}`
+        : formatDate(event.event_date);
+      subject = `Eventpix - New assignment: ${event.event_name} - ${dateLabel}`;
+      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId, allSessions);
 
       if (assignment_id) {
         await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
