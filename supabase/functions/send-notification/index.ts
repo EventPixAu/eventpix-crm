@@ -79,8 +79,8 @@ async function sendViaGmailApi(to: string, subject: string, html: string, icsCon
 
 // ── ICS helpers ──
 
-function generateICS(event: any, sequence: number, appUrl: string): string {
-  const uid = `${event.id}@eventpix.com.au`;
+function generateICS(event: any, sequence: number, appUrl: string, sessionId?: string): string {
+  const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
   const dtstamp = formatDateToICS(new Date());
   let dtstart: string, dtend: string;
   const timezone = event.timezone || 'Australia/Sydney';
