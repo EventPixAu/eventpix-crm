@@ -312,6 +312,8 @@ export function useActiveContactTypes() {
       if (error) throw error;
       return data as ContactTypeLookup[];
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
