@@ -277,8 +277,9 @@ const handler = async (req: Request): Promise<Response> => {
       recipientEmail = profile.email;
       recipientName = profile.full_name || profile.email;
 
-      // If this assignment is tied to a specific session, override event date/time/venue with session data
+      // Determine session context for this assignment
       let assignmentSessionId: string | undefined;
+      let allSessions: any[] | undefined;
       if (assignment_id) {
         const { data: assignment } = await supabase
           .from("event_assignments")
@@ -286,6 +287,7 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", assignment_id)
           .maybeSingle();
         if (assignment?.session_id) {
+          // Single-session assignment: override event with session data
           assignmentSessionId = assignment.session_id;
           const { data: session } = await supabase
             .from("event_sessions")
@@ -300,11 +302,24 @@ const handler = async (req: Request): Promise<Response> => {
             event.venue_address = session.venue_address || event.venue_address;
             event.timezone = session.timezone || event.timezone;
           }
+        } else {
+          // "All Sessions" assignment: include every session as a separate calendar entry
+          const { data: sessions } = await supabase
+            .from("event_sessions")
+            .select("id, session_date, start_time, end_time, venue_name, venue_address, timezone, label, sort_order")
+            .eq("event_id", event_id)
+            .order("session_date", { ascending: true });
+          if (sessions && sessions.length > 0) {
+            allSessions = sessions;
+          }
         }
       }
 
-      subject = `Eventpix - New assignment: ${event.event_name} - ${formatDate(event.event_date)}`;
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId);
+      const dateLabel = allSessions && allSessions.length > 1
+        ? `${formatDate(allSessions[0].session_date)} – ${formatDate(allSessions[allSessions.length - 1].session_date)}`
+        : formatDate(event.event_date);
+      subject = `Eventpix - New assignment: ${event.event_name} - ${dateLabel}`;
+      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId, allSessions);
 
       if (assignment_id) {
         await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
