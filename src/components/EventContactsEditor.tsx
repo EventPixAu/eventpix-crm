@@ -35,6 +35,7 @@ import {
   CONTACT_TYPES,
   type ContactType,
 } from '@/hooks/useEventContacts';
+import { useActiveContactTypes } from '@/hooks/useAdminLookups';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
