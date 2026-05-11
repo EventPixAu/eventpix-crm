@@ -411,6 +411,11 @@ export default function AdminLookups() {
   const createOpsStatus = useCreateOpsStatus();
   const updateOpsStatus = useUpdateOpsStatus();
 
+  // Contact Types
+  const { data: contactTypes = [], isLoading: contactTypesLoading } = useAllContactTypes();
+  const createContactType = useCreateContactType();
+  const updateContactType = useUpdateContactType();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
