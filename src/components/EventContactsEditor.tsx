@@ -243,7 +243,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONTACT_TYPES.map((type) => (
+                  {contactTypeOptions.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>
