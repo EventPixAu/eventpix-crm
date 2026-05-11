@@ -238,6 +238,7 @@ const handler = async (req: Request): Promise<Response> => {
       recipientName = profile.full_name || profile.email;
 
       // If this assignment is tied to a specific session, override event date/time/venue with session data
+      let assignmentSessionId: string | undefined;
       if (assignment_id) {
         const { data: assignment } = await supabase
           .from("event_assignments")
@@ -245,6 +246,7 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", assignment_id)
           .maybeSingle();
         if (assignment?.session_id) {
+          assignmentSessionId = assignment.session_id;
           const { data: session } = await supabase
             .from("event_sessions")
             .select("session_date, start_time, end_time, venue_name, venue_address, timezone, label")
@@ -262,7 +264,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       subject = `Eventpix - New assignment: ${event.event_name} - ${formatDate(event.event_date)}`;
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl);
+      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId);
 
       if (assignment_id) {
         await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
