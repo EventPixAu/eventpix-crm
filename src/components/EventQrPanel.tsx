@@ -38,6 +38,10 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   const [smugmugValue, setSmugmugValue] = useState(smugmugLink || '');
   const [savingSmugmug, setSavingSmugmug] = useState(false);
   const [copiedSmugmug, setCopiedSmugmug] = useState(false);
+  const [editingArtwork, setEditingArtwork] = useState(false);
+  const [artworkValue, setArtworkValue] = useState(artworkDriveLink || '');
+  const [savingArtwork, setSavingArtwork] = useState(false);
+  const [copiedArtwork, setCopiedArtwork] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
