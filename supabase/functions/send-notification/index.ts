@@ -79,8 +79,8 @@ async function sendViaGmailApi(to: string, subject: string, html: string, icsCon
 
 // ── ICS helpers ──
 
-function generateICS(event: any, sequence: number, appUrl: string): string {
-  const uid = `${event.id}@eventpix.com.au`;
+function generateICS(event: any, sequence: number, appUrl: string, sessionId?: string): string {
+  const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
   const dtstamp = formatDateToICS(new Date());
   let dtstart: string, dtend: string;
   const timezone = event.timezone || 'Australia/Sydney';
@@ -236,8 +236,35 @@ const handler = async (req: Request): Promise<Response> => {
 
       recipientEmail = profile.email;
       recipientName = profile.full_name || profile.email;
+
+      // If this assignment is tied to a specific session, override event date/time/venue with session data
+      let assignmentSessionId: string | undefined;
+      if (assignment_id) {
+        const { data: assignment } = await supabase
+          .from("event_assignments")
+          .select("session_id")
+          .eq("id", assignment_id)
+          .maybeSingle();
+        if (assignment?.session_id) {
+          assignmentSessionId = assignment.session_id;
+          const { data: session } = await supabase
+            .from("event_sessions")
+            .select("session_date, start_time, end_time, venue_name, venue_address, timezone, label")
+            .eq("id", assignment.session_id)
+            .maybeSingle();
+          if (session) {
+            event.event_date = session.session_date || event.event_date;
+            event.start_time = session.start_time || event.start_time;
+            event.end_time = session.end_time || event.end_time;
+            event.venue_name = session.venue_name || event.venue_name;
+            event.venue_address = session.venue_address || event.venue_address;
+            event.timezone = session.timezone || event.timezone;
+          }
+        }
+      }
+
       subject = `Eventpix - New assignment: ${event.event_name} - ${formatDate(event.event_date)}`;
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl);
+      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId);
 
       if (assignment_id) {
         await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
