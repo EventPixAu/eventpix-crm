@@ -614,6 +614,24 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
+            <TabsContent value="contact-types" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Event contact types</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the "Contact Type" dropdown when adding contacts to an event.
+                </p>
+              </div>
+              <LookupTable
+                items={contactTypes}
+                isLoading={contactTypesLoading}
+                onCreate={async (name) => { await createContactType.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateContactType.mutateAsync({ id, ...updates }); }}
+                createPending={createContactType.isPending}
+                updatePending={updateContactType.isPending}
+                itemLabel="Contact Type"
+              />
+            </TabsContent>
+
             <TabsContent value="lead-sources" className="m-0">
               <LookupTable
                 items={leadSources}
