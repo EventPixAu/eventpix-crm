@@ -527,7 +527,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="h-7 text-xs w-full"
               onClick={async () => {
                 const { data: updated, error } = await supabase
                   .from('event_assignments')
@@ -552,7 +552,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs"
+            className="h-7 text-xs w-full"
             onClick={() => {
               const userId = assignment.user_id || assignment.staff?.id;
               if (!userId) return;
@@ -574,7 +574,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-7 text-xs w-full text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Remove from event"
                 disabled={removeAssignment.isPending}
               >
