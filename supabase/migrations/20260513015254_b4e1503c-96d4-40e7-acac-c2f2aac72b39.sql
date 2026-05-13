@@ -1,0 +1,1 @@
+ALTER TABLE public.event_contacts DROP CONSTRAINT IF EXISTS event_contacts_contact_type_check;
