@@ -41,6 +41,7 @@ import { useEventSessions } from '@/hooks/useEventSessions';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
 import { StaffEquipmentPreview } from './StaffEquipmentPreview';
+import { AdditionalEquipmentNotes } from './AdditionalEquipmentNotes';
 
 function formatTime12(timeStr: string): string {
   try {
@@ -714,6 +715,10 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
             </div>
           </div>
         )}
+
+        <div className="mt-6">
+          <AdditionalEquipmentNotes eventId={eventId} canEdit={!!isAdmin} />
+        </div>
       </CardContent>
 
       {/* Status Update Dialog */}
