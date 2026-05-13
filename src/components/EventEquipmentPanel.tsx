@@ -41,6 +41,7 @@ import { useEventSessions } from '@/hooks/useEventSessions';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
 import { StaffEquipmentPreview } from './StaffEquipmentPreview';
+import { AdditionalEquipmentNotes } from './AdditionalEquipmentNotes';
 
 function formatTime12(timeStr: string): string {
   try {
