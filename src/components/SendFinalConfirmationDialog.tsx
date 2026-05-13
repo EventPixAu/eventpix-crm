@@ -223,6 +223,21 @@ function buildConfirmationBody(
     }
   }
 
+  // On-site contact(s)
+  if (onsiteContacts.length > 0) {
+    lines.push('');
+    lines.push('─────────────────────────────');
+    lines.push('ON-SITE CONTACT');
+    lines.push('─────────────────────────────');
+    lines.push('');
+    for (const c of onsiteContacts) {
+      if (!c.name) continue;
+      lines.push(c.name);
+      if (c.phone) lines.push(`Mobile: ${c.phone}`);
+      if (c.email) lines.push(`Email: ${c.email}`);
+    }
+  }
+
   // Client brief
   if (eventData.client_brief_content) {
     lines.push('');
