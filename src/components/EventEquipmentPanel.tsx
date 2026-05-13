@@ -715,6 +715,10 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
             </div>
           </div>
         )}
+
+        <div className="mt-6">
+          <AdditionalEquipmentNotes eventId={eventId} canEdit={!!isAdmin} />
+        </div>
       </CardContent>
 
       {/* Status Update Dialog */}
