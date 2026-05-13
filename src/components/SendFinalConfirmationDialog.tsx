@@ -69,6 +69,7 @@ interface SendFinalConfirmationDialogProps {
   recipients: Recipient[];
   assignments: any[];
   sessions?: SessionData[];
+  onsiteContacts?: { name: string; phone?: string | null; email?: string | null }[];
 }
 
 function formatTime12h(time?: string | null): string {
@@ -115,6 +116,7 @@ function buildConfirmationBody(
   assignments: any[],
   primaryContactName: string,
   sessions: SessionData[] = [],
+  onsiteContacts: { name: string; phone?: string | null; email?: string | null }[] = [],
 ): string {
   const onsiteAssignments = assignments.filter(isOnsiteAssignment);
   const lines: string[] = [];
@@ -221,6 +223,21 @@ function buildConfirmationBody(
     }
   }
 
+  // On-site contact(s)
+  if (onsiteContacts.length > 0) {
+    lines.push('');
+    lines.push('─────────────────────────────');
+    lines.push('ON-SITE CONTACT');
+    lines.push('─────────────────────────────');
+    lines.push('');
+    for (const c of onsiteContacts) {
+      if (!c.name) continue;
+      lines.push(c.name);
+      if (c.phone) lines.push(`Mobile: ${c.phone}`);
+      if (c.email) lines.push(`Email: ${c.email}`);
+    }
+  }
+
   // Client brief
   if (eventData.client_brief_content) {
     lines.push('');
@@ -257,6 +274,7 @@ export function SendFinalConfirmationDialog({
   recipients,
   assignments,
   sessions = [],
+  onsiteContacts = [],
 }: SendFinalConfirmationDialogProps) {
   const sendEmail = useSendCrmEmail();
 
@@ -269,8 +287,8 @@ export function SendFinalConfirmationDialog({
     clientRecipients[0]?.name || eventData.client_name;
 
   const defaultBody = useMemo(
-    () => buildConfirmationBody(eventData, assignments, primaryContactName, sessions),
-    [eventData, assignments, primaryContactName, sessions]
+    () => buildConfirmationBody(eventData, assignments, primaryContactName, sessions, onsiteContacts),
+    [eventData, assignments, primaryContactName, sessions, onsiteContacts]
   );
 
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
