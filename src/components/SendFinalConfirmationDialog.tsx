@@ -116,6 +116,7 @@ function buildConfirmationBody(
   assignments: any[],
   primaryContactName: string,
   sessions: SessionData[] = [],
+  onsiteContacts: { name: string; phone?: string | null; email?: string | null }[] = [],
 ): string {
   const onsiteAssignments = assignments.filter(isOnsiteAssignment);
   const lines: string[] = [];
