@@ -2881,6 +2881,7 @@ export type Database = {
       }
       events: {
         Row: {
+          additional_equipment_notes: string | null
           artwork_drive_link: string | null
           booking_date: string | null
           brief_content: string | null
@@ -2957,6 +2958,7 @@ export type Database = {
           xero_tag: string | null
         }
         Insert: {
+          additional_equipment_notes?: string | null
           artwork_drive_link?: string | null
           booking_date?: string | null
           brief_content?: string | null
@@ -3035,6 +3037,7 @@ export type Database = {
           xero_tag?: string | null
         }
         Update: {
+          additional_equipment_notes?: string | null
           artwork_drive_link?: string | null
           booking_date?: string | null
           brief_content?: string | null
