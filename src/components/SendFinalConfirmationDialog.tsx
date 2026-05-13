@@ -274,6 +274,7 @@ export function SendFinalConfirmationDialog({
   recipients,
   assignments,
   sessions = [],
+  onsiteContacts = [],
 }: SendFinalConfirmationDialogProps) {
   const sendEmail = useSendCrmEmail();
 
@@ -286,8 +287,8 @@ export function SendFinalConfirmationDialog({
     clientRecipients[0]?.name || eventData.client_name;
 
   const defaultBody = useMemo(
-    () => buildConfirmationBody(eventData, assignments, primaryContactName, sessions),
-    [eventData, assignments, primaryContactName, sessions]
+    () => buildConfirmationBody(eventData, assignments, primaryContactName, sessions, onsiteContacts),
+    [eventData, assignments, primaryContactName, sessions, onsiteContacts]
   );
 
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
