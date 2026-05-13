@@ -69,6 +69,7 @@ interface SendFinalConfirmationDialogProps {
   recipients: Recipient[];
   assignments: any[];
   sessions?: SessionData[];
+  onsiteContacts?: { name: string; phone?: string | null; email?: string | null }[];
 }
 
 function formatTime12h(time?: string | null): string {
