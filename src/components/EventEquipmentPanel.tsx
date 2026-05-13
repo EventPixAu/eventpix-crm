@@ -717,7 +717,11 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
         )}
 
         <div className="mt-6">
-          <AdditionalEquipmentNotes eventId={eventId} canEdit={!!isAdmin} />
+          <AdditionalEquipmentNotes
+            eventId={eventId}
+            canEdit={!!isAdmin}
+            members={profileLinkedStaff.map((s) => ({ userId: s.oderId, name: s.name }))}
+          />
         </div>
       </CardContent>
 
