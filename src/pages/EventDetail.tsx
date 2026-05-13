@@ -1730,6 +1730,14 @@ export default function EventDetail() {
           recipients={emailRecipients}
           assignments={assignments}
           sessions={eventSessions}
+          onsiteContacts={eventContacts
+            .filter((c: any) => c.contact_type === 'onsite')
+            .map((c: any) => ({
+              name: c.contact_name || c.client_contact?.contact_name || '',
+              phone: c.contact_phone || c.client_contact?.phone_mobile || c.client_contact?.phone || null,
+              email: c.contact_email || c.client_contact?.email || null,
+            }))
+            .filter((c: any) => c.name)}
         />
       )}
 
