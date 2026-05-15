@@ -142,6 +142,9 @@ export default function Events() {
   const getEventStatus = (dateStr: string, event?: any) => {
     if (event?.ops_status === 'archived') return 'archived';
     if (event?.ops_status === 'completed') return 'completed';
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr === today) return 'today';
+    if (dateStr < today) return 'past';
     return 'upcoming';
   };
 
