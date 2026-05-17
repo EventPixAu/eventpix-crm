@@ -1412,7 +1412,7 @@ export default function EventDetail() {
                       )}
                     </Button>
                   )}
-                  {(isAdmin || isOperations) && ((event as any).dropbox_link || (event as any).smugmug_link) && primaryContactEmail && (
+                  {(isAdmin || isOperations) && ((event as any).dropbox_link || (event as any).smugmug_link) && (
                     <Button
                       variant="outline"
                       className="w-full justify-between"
