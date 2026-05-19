@@ -19,6 +19,7 @@ import {
   QrCode,
   Send,
   Trash2,
+  Truck,
   User,
   History,
   Wand2,
