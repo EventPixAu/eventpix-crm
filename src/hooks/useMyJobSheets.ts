@@ -94,9 +94,7 @@ export function useMyJobSheets() {
               id,
               worksheet_items!left(id, is_done)
             ),
-            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address)
-          )
-        `)
+            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type)
         .eq('user_id', user.id);
 
       if (error) throw error;
