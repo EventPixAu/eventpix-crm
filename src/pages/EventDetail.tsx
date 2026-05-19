@@ -19,6 +19,7 @@ import {
   QrCode,
   Send,
   Trash2,
+  Truck,
   User,
   History,
   Wand2,
@@ -480,6 +481,12 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
             >
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
+            {(assignment as any).responsible_for_delivery && (
+              <Badge variant="outline" className="text-xs shrink-0 border-amber-500/60 text-amber-600 dark:text-amber-400">
+                <Truck className="h-3 w-3 mr-1" />
+                Owns Delivery
+              </Badge>
+            )}
           </div>
           {isAdmin && editingRole ? (
             <Select
@@ -549,6 +556,29 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
               Confirm
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className={`h-7 text-xs w-full ${(assignment as any).responsible_for_delivery ? 'border-amber-500/60 text-amber-600 dark:text-amber-400' : ''}`}
+            onClick={async () => {
+              const next = !(assignment as any).responsible_for_delivery;
+              const { error } = await supabase
+                .from('event_assignments')
+                .update({ responsible_for_delivery: next })
+                .eq('id', assignment.id);
+              if (error) {
+                toast.error('Failed to update', { description: error.message });
+              } else {
+                queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+                queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+                toast.success(next ? `${name} now owns delivery` : 'Delivery ownership cleared');
+              }
+            }}
+            title="Toggle responsibility for post-event delivery"
+          >
+            <Truck className="h-3.5 w-3.5 mr-1" />
+            {(assignment as any).responsible_for_delivery ? 'Owns Delivery' : 'Owns Delivery?'}
+          </Button>
           <Button
             variant="outline"
             size="sm"
