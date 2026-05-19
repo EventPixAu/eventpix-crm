@@ -28,6 +28,7 @@ export interface CalendarEvent {
   needs_attention: boolean;
   is_delivered: boolean;
   is_lead?: boolean; // Flag for leads shown on calendar
+  confirmation_status?: string | null; // staff's availability confirmation for this event
 }
 
 export interface CalendarLead {
