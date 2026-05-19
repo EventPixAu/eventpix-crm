@@ -130,14 +130,23 @@ export function EventBriefPanel({
 
   const handleDownloadFile = async () => {
     if (!briefFilePath) return;
+    // Open the window synchronously inside the user gesture so mobile
+    // browsers (Samsung Internet, iOS Safari) don't block it after `await`.
+    const newWindow = window.open('about:blank', '_blank');
     const { data, error } = await supabase.storage
       .from('event-documents')
       .createSignedUrl(briefFilePath, 3600);
     if (error || !data?.signedUrl) {
+      if (newWindow) newWindow.close();
       toast.error('Unable to open brief', { description: error?.message || 'You may not have permission to view this file.' });
       return;
     }
-    window.open(data.signedUrl, '_blank');
+    if (newWindow) {
+      newWindow.location.href = data.signedUrl;
+    } else {
+      // Popup was blocked — navigate the current tab as a fallback.
+      window.location.href = data.signedUrl;
+    }
   };
 
   const handleRemoveFile = async () => {
