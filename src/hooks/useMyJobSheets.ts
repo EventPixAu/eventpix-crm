@@ -18,6 +18,18 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { addDays, isBefore } from 'date-fns';
 
+export interface JobSheetSession {
+  id: string;
+  session_date: string;
+  arrival_time: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  label: string | null;
+  venue_name: string | null;
+  venue_address: string | null;
+  session_type: string | null;
+}
+
 export interface MyJobSheet {
   id: string;
   assignment_id: string;
@@ -32,6 +44,8 @@ export interface MyJobSheet {
   onsite_contact_phone: string | null;
   coverage_details: string | null;
   confirmation_status: string | null;
+  // All live sessions (multi-day support)
+  sessions: JobSheetSession[];
   // Equipment status (aggregated)
   has_equipment: boolean;
   equipment_picked_up: boolean;
@@ -80,7 +94,7 @@ export function useMyJobSheets() {
               id,
               worksheet_items!left(id, is_done)
             ),
-            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address)
+            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type)
           )
         `)
         .eq('user_id', user.id);
@@ -164,6 +178,20 @@ export function useMyJobSheets() {
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
           confirmation_status: (a as any).confirmation_status || null,
+          sessions: (sessions as any[])
+            .filter((s) => s.session_type !== 'post_production' && s.session_type !== 'post-production')
+            .sort((x, y) => (x.session_date || '').localeCompare(y.session_date || ''))
+            .map((s) => ({
+              id: s.id,
+              session_date: s.session_date,
+              arrival_time: s.arrival_time ?? null,
+              start_time: s.start_time ?? null,
+              end_time: s.end_time ?? null,
+              label: s.label ?? null,
+              venue_name: s.venue_name ?? null,
+              venue_address: s.venue_address ?? null,
+              session_type: s.session_type ?? null,
+            })),
           has_equipment: hasEquipment,
           equipment_picked_up: equipmentPickedUp,
           checklist_total: checklistTotal,

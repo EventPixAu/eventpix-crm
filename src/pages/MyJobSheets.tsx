@@ -119,26 +119,59 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
               {/* Event details */}
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground truncate">{job.event_name}</h3>
-                
-                {/* Call time */}
-                {job.arrival_time && (
-                  <div className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    <span>Call: {format(new Date(`2000-01-01T${job.arrival_time}`), 'h:mm a')}</span>
+
+                {job.sessions && job.sessions.length > 1 ? (
+                  <div className="mt-2 space-y-1.5">
+                    {job.sessions.map((s, idx) => {
+                      const sDate = parseISO(s.session_date);
+                      return (
+                        <div key={s.id} className="text-sm border-l-2 border-primary/40 pl-2">
+                          <p className="font-medium">
+                            {s.label || `Day ${idx + 1}`}
+                            <span className="ml-1.5 text-muted-foreground font-normal">
+                              {format(sDate, 'EEE, MMM d')}
+                            </span>
+                          </p>
+                          {s.arrival_time && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              Call: {format(new Date(`2000-01-01T${s.arrival_time}`), 'h:mm a')}
+                            </p>
+                          )}
+                          {s.start_time && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              {format(new Date(`2000-01-01T${s.start_time}`), 'h:mm a')}
+                              {s.end_time && ` – ${format(new Date(`2000-01-01T${s.end_time}`), 'h:mm a')}`}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+                ) : (
+                  <>
+                    {/* Call time */}
+                    {job.arrival_time && (
+                      <div className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
+                        <span>Call: {format(new Date(`2000-01-01T${job.arrival_time}`), 'h:mm a')}</span>
+                      </div>
+                    )}
+
+                    {/* Event time */}
+                    {job.start_time && (
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
+                        <span>
+                          {format(new Date(`2000-01-01T${job.start_time}`), 'h:mm a')}
+                          {job.end_time && ` – ${format(new Date(`2000-01-01T${job.end_time}`), 'h:mm a')}`}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
-                
-                {/* Event time */}
-                {job.start_time && (
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    <span>
-                      {format(new Date(`2000-01-01T${job.start_time}`), 'h:mm a')}
-                      {job.end_time && ` – ${format(new Date(`2000-01-01T${job.end_time}`), 'h:mm a')}`}
-                    </span>
-                  </div>
-                )}
-                
+
                 {/* Venue */}
                 {(job.venue_name || suburb) && (
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">

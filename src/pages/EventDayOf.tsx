@@ -523,34 +523,102 @@ export default function EventDayOf() {
             <h1 className="text-xl font-display font-bold mb-3">{displayEvent.event_name}</h1>
           </div>
 
-          {/* Date & Time Card */}
+          {/* Date & Time / Sessions Card */}
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
           >
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold mb-1">Date & Time</h3>
-                <p className="font-medium">{eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}</p>
-                {(displayTimes.startTime || displayTimes.arrivalTime) && (
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {displayTimes.arrivalTime && (
-                      <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
+            {(() => {
+              const liveSessions = (eventSessions as any[]).filter(
+                (s) => s.session_type !== 'post_production' && s.session_type !== 'post-production'
+              );
+              if (liveSessions.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                        <Calendar className="h-5 w-5 text-primary" />
+                      </div>
+                      <h3 className="font-semibold">
+                        {liveSessions.length > 1 ? `Sessions (${liveSessions.length})` : 'Date & Time'}
+                      </h3>
+                    </div>
+                    <div className="space-y-2">
+                      {liveSessions.map((s, i) => {
+                        const sDate = safeParseISO(s.session_date);
+                        return (
+                          <div
+                            key={s.id}
+                            className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3"
+                          >
+                            <div className="shrink-0 w-12 text-center rounded-md bg-primary/10 py-1.5">
+                              <p className="text-base font-bold text-primary leading-none">
+                                {sDate ? format(sDate, 'd') : '—'}
+                              </p>
+                              <p className="text-[10px] uppercase text-muted-foreground mt-0.5">
+                                {sDate ? format(sDate, 'EEE') : ''}
+                              </p>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm">
+                                {s.label || `Day ${i + 1}`}
+                                <span className="ml-2 text-muted-foreground font-normal">
+                                  {sDate ? format(sDate, 'EEEE, MMM d, yyyy') : ''}
+                                </span>
+                              </p>
+                              {s.arrival_time && (
+                                <p className="text-sm text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  Call: {safeFormatTime(s.arrival_time)}
+                                </p>
+                              )}
+                              {s.start_time && (
+                                <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  {safeFormatTime(s.start_time)}
+                                  {s.end_time && ` – ${safeFormatTime(s.end_time)}`}
+                                </p>
+                              )}
+                              {(s.venue_name || s.venue_address) && (
+                                <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
+                                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">{s.venue_name || s.venue_address}</span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold mb-1">Date & Time</h3>
+                    <p className="font-medium">{eventDate ? format(eventDate, 'EEE, MMM d, yyyy') : 'Date TBD'}</p>
+                    {(displayTimes.startTime || displayTimes.arrivalTime) && (
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {displayTimes.arrivalTime && (
+                          <>Crew Call: {safeFormatTime(displayTimes.arrivalTime)} · </>
+                        )}
+                        {displayTimes.startTime && (
+                          <>
+                            {safeFormatTime(displayTimes.startTime)}
+                            {displayTimes.endTime && ` – ${safeFormatTime(displayTimes.endTime)}`}
+                          </>
+                        )}
+                      </p>
                     )}
-                    {displayTimes.startTime && (
-                      <>
-                        {safeFormatTime(displayTimes.startTime)}
-                        {displayTimes.endTime && ` – ${safeFormatTime(displayTimes.endTime)}`}
-                      </>
-                    )}
-                  </p>
-                )}
-              </div>
-            </div>
+                  </div>
+                </div>
+              );
+            })()}
           </motion.section>
 
           <div className="px-4">
