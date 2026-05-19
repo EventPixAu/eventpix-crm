@@ -142,70 +142,98 @@
            return a.sort_order - b.sort_order;
          });
  
-       let synced = 0;
-       let skipped = 0;
- 
-       for (const event of upcomingEvents) {
-         // Check if event already has workflow steps
-         const { data: existingSteps } = await supabase
-           .from('event_workflow_steps')
-           .select('id')
-           .eq('event_id', event.id)
-           .limit(1);
- 
-         if (existingSteps && existingSteps.length > 0) {
-           skipped++;
-           continue;
-         }
- 
-         // Initialize workflow for this event
-         const eventDate = new Date(event.event_date);
-         const bookingDate = new Date(event.created_at || new Date());
- 
-         const steps = selectedSteps.map((step, index) => {
-           let dueDate: string | null = null;
-           
-           if (step.date_offset_days !== null && step.date_offset_reference) {
-             let referenceDate: Date;
-             switch (step.date_offset_reference) {
-               case 'job_accepted':
-                 referenceDate = bookingDate;
-                 break;
-               case 'event_date':
-                 referenceDate = eventDate;
-                 break;
-               default:
-                 referenceDate = eventDate;
-             }
-             const calculated = new Date(referenceDate);
-             calculated.setDate(calculated.getDate() + step.date_offset_days);
-             dueDate = calculated.toISOString().split('T')[0];
-           }
-           
-           return {
-             event_id: event.id,
-             template_item_id: null,
-             step_label: step.label,
-             step_order: index + 1,
-             completion_type: step.completion_type || 'manual',
-             auto_trigger_event: step.auto_trigger_event,
-             due_date: dueDate,
-             is_completed: false,
-             notes: step.help_text,
-           };
-         });
- 
-         const { error } = await supabase
-           .from('event_workflow_steps')
-           .insert(steps);
- 
-         if (!error) {
-           synced++;
-         }
-       }
- 
-       setHasChanges(false);
-       toast.success(`Synced workflow to ${synced} event(s)${skipped > 0 ? `, ${skipped} already had workflows` : ''}`);
+      let synced = 0;
+      let preserved = 0;
+      let failed = 0;
+
+      for (const event of upcomingEvents) {
+        // Fetch existing steps to preserve completion state
+        const { data: existingSteps } = await supabase
+          .from('event_workflow_steps')
+          .select('step_label, is_completed, completed_at, completed_by, notes')
+          .eq('event_id', event.id);
+
+        const completedByLabel = new Map<string, { is_completed: boolean; completed_at: string | null; completed_by: string | null }>();
+        (existingSteps || []).forEach((s: any) => {
+          if (s.is_completed) {
+            completedByLabel.set(s.step_label, {
+              is_completed: true,
+              completed_at: s.completed_at,
+              completed_by: s.completed_by,
+            });
+          }
+        });
+
+        // Initialize workflow for this event
+        const eventDate = new Date(event.event_date);
+        const bookingDate = new Date(event.created_at || new Date());
+
+        const steps = selectedSteps.map((step, index) => {
+          let dueDate: string | null = null;
+
+          if (step.date_offset_days !== null && step.date_offset_reference) {
+            let referenceDate: Date;
+            switch (step.date_offset_reference) {
+              case 'job_accepted':
+                referenceDate = bookingDate;
+                break;
+              case 'event_date':
+                referenceDate = eventDate;
+                break;
+              default:
+                referenceDate = eventDate;
+            }
+            const calculated = new Date(referenceDate);
+            calculated.setDate(calculated.getDate() + step.date_offset_days);
+            dueDate = calculated.toISOString().split('T')[0];
+          }
+
+          const preservedState = completedByLabel.get(step.label);
+          if (preservedState) preserved++;
+
+          return {
+            event_id: event.id,
+            template_item_id: null,
+            step_label: step.label,
+            step_order: index + 1,
+            completion_type: step.completion_type || 'manual',
+            auto_trigger_event: step.auto_trigger_event,
+            due_date: dueDate,
+            is_completed: preservedState?.is_completed ?? false,
+            completed_at: preservedState?.completed_at ?? null,
+            completed_by: preservedState?.completed_by ?? null,
+            notes: step.help_text,
+          };
+        });
+
+        // Replace existing steps for this event
+        const { error: deleteError } = await supabase
+          .from('event_workflow_steps')
+          .delete()
+          .eq('event_id', event.id);
+
+        if (deleteError) {
+          failed++;
+          continue;
+        }
+
+        const { error } = await supabase
+          .from('event_workflow_steps')
+          .insert(steps);
+
+        if (!error) {
+          synced++;
+        } else {
+          failed++;
+        }
+      }
+
+      setHasChanges(false);
+      toast.success(
+        `Synced workflow to ${synced} event(s)` +
+          (preserved > 0 ? `, preserved ${preserved} completed step(s)` : '') +
+          (failed > 0 ? `, ${failed} failed` : '')
+      );
      } catch (error: any) {
        toast.error('Failed to sync workflow: ' + error.message);
      } finally {
