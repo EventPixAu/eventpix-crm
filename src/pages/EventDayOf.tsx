@@ -294,7 +294,9 @@ export default function EventDayOf() {
     
     const opsStatus = (displayEvent as any).ops_status;
     const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
-    if (displayEvent.delivery_deadline && !isCompleted) {
+    // Only admins or the assignee marked as "responsible for delivery" see the Delivery Due badge.
+    const showDeliveryBadge = isAdmin || (myAssignment as any)?.responsible_for_delivery === true;
+    if (showDeliveryBadge && displayEvent.delivery_deadline && !isCompleted) {
       const deadline = safeParseISO(displayEvent.delivery_deadline);
       if (deadline) {
         const inSevenDays = addDays(new Date(), 7);
