@@ -18,6 +18,18 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { addDays, isBefore } from 'date-fns';
 
+export interface JobSheetSession {
+  id: string;
+  session_date: string;
+  arrival_time: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  label: string | null;
+  venue_name: string | null;
+  venue_address: string | null;
+  session_type: string | null;
+}
+
 export interface MyJobSheet {
   id: string;
   assignment_id: string;
@@ -32,6 +44,8 @@ export interface MyJobSheet {
   onsite_contact_phone: string | null;
   coverage_details: string | null;
   confirmation_status: string | null;
+  // All live sessions (multi-day support)
+  sessions: JobSheetSession[];
   // Equipment status (aggregated)
   has_equipment: boolean;
   equipment_picked_up: boolean;
