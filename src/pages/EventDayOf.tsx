@@ -292,19 +292,7 @@ export default function EventDayOf() {
       badges.push({ label: 'Today', variant: 'default' });
     }
     
-    const opsStatus = (displayEvent as any).ops_status;
-    const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
-    // Only admins or the assignee marked as "responsible for delivery" see the Delivery Due badge.
-    const showDeliveryBadge = isAdmin || (myAssignment as any)?.responsible_for_delivery === true;
-    if (showDeliveryBadge && displayEvent.delivery_deadline && !isCompleted) {
-      const deadline = safeParseISO(displayEvent.delivery_deadline);
-      if (deadline) {
-        const inSevenDays = addDays(new Date(), 7);
-        if (isBefore(deadline, inSevenDays) && !deliveryRecord?.delivered_at) {
-          badges.push({ label: 'Delivery Due', variant: 'destructive' });
-        }
-      }
-    }
+    // Delivery responsibility is now handled via Workflow step assignments, not on the staff card.
     
     return badges;
   };

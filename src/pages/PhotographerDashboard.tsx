@@ -136,11 +136,6 @@ function JobCard({ job, showFullDate = false }: { job: MyJobSheet; showFullDate?
                       {job.equipment_picked_up ? 'Gear Ready' : 'Gear Pending'}
                     </Badge>
                   )}
-                  {job.delivery_due_soon && !job.delivered && (
-                    <Badge variant="destructive" className="text-xs">
-                      Delivery Due
-                    </Badge>
-                  )}
                 </div>
               </div>
 
