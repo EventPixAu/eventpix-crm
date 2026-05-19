@@ -299,8 +299,8 @@ export function EventBriefPanel({
               </div>
             )}
 
-            {/* Uploaded document section */}
-            {isAdmin && (
+            {/* Uploaded document section — visible to crew (download) and admin (manage) */}
+            {(isAdmin || briefFilePath) && (
               <div className="mt-4 pt-3 border-t border-border">
                 <input
                   ref={fileInputRef}
@@ -318,28 +318,30 @@ export function EventBriefPanel({
                       <Download className="h-4 w-4 shrink-0" />
                       <span className="truncate">{briefFileName || 'Document'}</span>
                     </button>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        title="Replace document"
-                      >
-                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={handleRemoveFile}
-                        title="Remove document"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          title="Replace document"
+                        >
+                          {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={handleRemoveFile}
+                          title="Remove document"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                ) : (
+                ) : isAdmin ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -354,7 +356,7 @@ export function EventBriefPanel({
                     )}
                     Upload Brief Document
                   </Button>
-                )}
+                ) : null}
               </div>
             )}
           </div>
