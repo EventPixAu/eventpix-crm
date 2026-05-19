@@ -206,9 +206,8 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
             {/* Confirm availability button */}
             {!isEventPast && (!job.confirmation_status || job.confirmation_status === 'pending') && (
               <Button
-                variant="outline"
                 size="sm"
-                className="w-full mt-3 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground"
+                className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white border-0"
                 onClick={handleConfirm}
                 disabled={confirming}
               >

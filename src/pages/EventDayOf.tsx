@@ -567,7 +567,7 @@ export default function EventDayOf() {
             {!isAdmin && myAssignment && (!myAssignment.confirmation_status || myAssignment.confirmation_status === 'pending') && (
               <Button
                 size="sm"
-                className="mt-3 gap-2"
+                className="mt-3 gap-2 bg-orange-500 hover:bg-orange-600 text-white border-0"
                 onClick={async () => {
                   const { error } = await supabase
                     .from('event_assignments')
