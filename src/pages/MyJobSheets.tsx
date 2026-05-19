@@ -226,7 +226,14 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                   {job.checklist_done}/{job.checklist_total}
                 </Badge>
               )}
-              
+
+              {/* Delivery due — driven by Workflow step assigned to this team member */}
+              {job.delivery_due_soon && !job.delivered && (
+                <Badge variant="destructive" className="text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Delivery Due
+                </Badge>
+              )}
             </div>
 
             {/* Confirm availability button */}
