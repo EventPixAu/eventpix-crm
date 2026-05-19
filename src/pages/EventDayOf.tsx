@@ -37,7 +37,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventSessions } from '@/hooks/useEventSessions';
@@ -281,6 +281,25 @@ export default function EventDayOf() {
     return myAssignment.role_on_event || null;
   }, [myAssignment, staffRoles]);
 
+  // Workflow steps assigned to current user for this event — drives the Delivery Due badge.
+  const { data: myDueWorkflowSteps = [] } = useQuery({
+    queryKey: ['my-workflow-steps-due', id, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !id) return [];
+      const sevenDays = addDays(new Date(), 7).toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from('event_workflow_steps')
+        .select('id, due_date, is_completed, step_label')
+        .eq('event_id', id)
+        .eq('assigned_to', user.id)
+        .eq('is_completed', false)
+        .not('due_date', 'is', null)
+        .lte('due_date', sevenDays);
+      return data || [];
+    },
+    enabled: !!user?.id && !!id,
+  });
+
   // Status badges
   const getStatusBadges = () => {
     if (!displayEvent) return [];
@@ -291,9 +310,15 @@ export default function EventDayOf() {
     if (eventDate && isToday(eventDate)) {
       badges.push({ label: 'Today', variant: 'default' });
     }
-    
-    // Delivery responsibility is now handled via Workflow step assignments, not on the staff card.
-    
+
+    // Delivery responsibility comes from Workflow step assignments.
+    const opsStatus = (displayEvent as any).ops_status;
+    const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
+    const hasDueWorkflow = (myDueWorkflowSteps as any[]).length > 0;
+    if (hasDueWorkflow && !deliveryRecord?.delivered_at && !isCompleted) {
+      badges.push({ label: 'Delivery Due', variant: 'destructive' });
+    }
+
     return badges;
   };
 

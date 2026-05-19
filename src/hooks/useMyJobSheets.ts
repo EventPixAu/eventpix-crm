@@ -75,7 +75,6 @@ export function useMyJobSheets() {
           event_id,
           confirmation_status,
           call_time_at,
-          responsible_for_delivery,
           events!inner(
             id,
             event_name,
@@ -103,11 +102,24 @@ export function useMyJobSheets() {
 
       if (error) throw error;
 
+      // Fetch workflow steps assigned to this user that are incomplete and due within 7 days.
+      // These drive the "Delivery Due" badge — responsibility comes from Workflow assignment.
+      const sevenDaysISO = addDays(new Date(), 7).toISOString().slice(0, 10);
+      const { data: dueSteps } = await supabase
+        .from('event_workflow_steps')
+        .select('event_id, due_date, is_completed')
+        .eq('assigned_to', user.id)
+        .eq('is_completed', false)
+        .not('due_date', 'is', null)
+        .lte('due_date', sevenDaysISO);
+      const eventsWithDueWorkflow = new Set((dueSteps || []).map((s: any) => s.event_id));
+
       const today = new Date();
       const sevenDaysFromNow = addDays(today, 7);
 
       return (assignments || []).map(a => {
         const event = a.events as any;
+
         
         // Equipment aggregation
         const allocations = (event.equipment_allocations || []) as any[];
@@ -126,17 +138,14 @@ export function useMyJobSheets() {
           checklistDone += items.filter((item: any) => item.is_done).length;
         });
         
-        // Delivery status
+        // Delivery status — now driven by Workflow step assignment, not the assignment flag.
         const deliveryRecords = (event.delivery_records || []) as any[];
         const delivered = deliveryRecords.some((dr: any) => dr.delivered_at);
         const deliveryDeadline = event.delivery_deadline;
         const opsStatus = event.ops_status;
         const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
-        const responsibleForDelivery = (a as any).responsible_for_delivery === true;
-        const deliveryDueSoon = responsibleForDelivery &&
-          deliveryDeadline &&
-          isBefore(new Date(deliveryDeadline), sevenDaysFromNow) &&
-          !delivered && !isCompleted;
+        const deliveryDueSoon = eventsWithDueWorkflow.has(event.id) && !delivered && !isCompleted;
+
 
         // Get session data - find matching session for event date or first session
         const sessions = (event.event_sessions || []) as any[];
