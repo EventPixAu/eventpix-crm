@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   Calendar,
   List,
-  LayoutGrid
+  LayoutGrid,
+  CheckCircle
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
