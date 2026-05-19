@@ -1603,42 +1603,58 @@ export default function EventDetail() {
                   </div>
                 )}
 
-                {/* Per-session grouped assignments (legacy general assignments are merged into every session) */}
-                {eventSessions.map(session => {
+                {/* Group sessions by date so multiple sessions on the same day display together */}
+                {(() => {
                   const generalAssigns = assignments.filter(a => !a.session_id);
-                  const sessionAssigns = [
-                    ...generalAssigns,
-                    ...assignments.filter(a => a.session_id === session.id),
-                  ];
-                  return (
-                    <div key={session.id} className="border border-border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Calendar className="h-4 w-4 text-primary" />
-                        <h3 className="text-sm font-medium">
-                          {format(parseISO(session.session_date), 'EEE, d MMM yyyy')}
-                        </h3>
-                        {session.start_time && (
-                          <span className="text-xs text-muted-foreground">
-                            {formatSessionTime(session.start_time)}
-                            {session.end_time ? ` – ${formatSessionTime(session.end_time)}` : ''}
-                          </span>
-                        )}
-                        {session.label && (
-                          <Badge variant="outline" className="text-xs">{session.label}</Badge>
-                        )}
-                      </div>
-                      {sessionAssigns.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic pl-6">No crew assigned to this session</p>
-                      ) : (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {sessionAssigns.map(assignment => (
-                            <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                  const byDate = new Map<string, typeof eventSessions>();
+                  eventSessions.forEach(s => {
+                    const key = s.session_date;
+                    if (!byDate.has(key)) byDate.set(key, [] as any);
+                    (byDate.get(key) as any).push(s);
+                  });
+                  const sortedDates = Array.from(byDate.keys()).sort();
+                  return sortedDates.map(date => {
+                    const daySessions = byDate.get(date)!;
+                    const sessionIds = daySessions.map(s => s.id);
+                    const dayAssigns = [
+                      ...generalAssigns,
+                      ...assignments.filter(a => a.session_id && sessionIds.includes(a.session_id)),
+                    ];
+                    // Build a short range/label summary for the day's sessions
+                    const sessionSummaries = daySessions.map(s => {
+                      const parts: string[] = [];
+                      if (s.start_time) {
+                        parts.push(
+                          `${formatSessionTime(s.start_time)}${s.end_time ? ` – ${formatSessionTime(s.end_time)}` : ''}`
+                        );
+                      }
+                      if (s.label) parts.push(s.label);
+                      return parts.join(' ');
+                    }).filter(Boolean);
+                    return (
+                      <div key={date} className="border border-border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
+                          <Calendar className="h-4 w-4 text-primary" />
+                          <h3 className="text-sm font-medium">
+                            {format(parseISO(date), 'EEE, d MMM yyyy')}
+                          </h3>
+                          {sessionSummaries.map((s, i) => (
+                            <Badge key={i} variant="outline" className="text-xs font-normal">{s}</Badge>
                           ))}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        {dayAssigns.length === 0 ? (
+                          <p className="text-xs text-muted-foreground italic pl-6">No crew assigned to this day</p>
+                        ) : (
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {dayAssigns.map(assignment => (
+                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
           </div>
