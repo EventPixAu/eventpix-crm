@@ -78,9 +78,9 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: event } = useEvent(eventId);
   const { data: sessions = [] } = useEventSessions(eventId);
   
-  // Auto-select session when there's only one
+  // Auto-select a session when sessions exist (no more "All Sessions" general assignments)
   useEffect(() => {
-    if (sessions.length === 1 && selectedSession === 'all') {
+    if (sessions.length > 0 && (selectedSession === 'all' || !sessions.find(s => s.id === selectedSession))) {
       setSelectedSession(sessions[0].id);
     }
   }, [sessions, selectedSession]);
