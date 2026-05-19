@@ -405,11 +405,10 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               <SelectTrigger className="h-9">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  <SelectValue placeholder="All Sessions" />
+                  <SelectValue placeholder="Select session" />
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sessions (General)</SelectItem>
                 {sessions.map((s) => {
                   const isPost = (s as any).session_type === 'post_production';
                   return (
