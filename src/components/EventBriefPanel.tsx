@@ -130,10 +130,14 @@ export function EventBriefPanel({
 
   const handleDownloadFile = async () => {
     if (!briefFilePath) return;
-    const { data } = await supabase.storage
+    const { data, error } = await supabase.storage
       .from('event-documents')
       .createSignedUrl(briefFilePath, 3600);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    if (error || !data?.signedUrl) {
+      toast.error('Unable to open brief', { description: error?.message || 'You may not have permission to view this file.' });
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
   };
 
   const handleRemoveFile = async () => {
