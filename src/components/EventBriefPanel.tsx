@@ -133,19 +133,22 @@ export function EventBriefPanel({
     // Open the window synchronously inside the user gesture so mobile
     // browsers (Samsung Internet, iOS Safari) don't block it after `await`.
     const newWindow = window.open('about:blank', '_blank');
-    const { data, error } = await supabase.storage
-      .from('event-documents')
-      .createSignedUrl(briefFilePath, 3600);
-    if (error || !data?.signedUrl) {
+    const { data, error } = await supabase.functions.invoke('get-team-brief-url', {
+      body: { event_id: eventId },
+    });
+    const url = (data as any)?.url;
+    if (error || !url) {
       if (newWindow) newWindow.close();
-      toast.error('Unable to open brief', { description: error?.message || 'You may not have permission to view this file.' });
+      toast.error('Unable to open brief', {
+        description: (data as any)?.error || error?.message || 'You may not have permission to view this file.',
+      });
       return;
     }
     if (newWindow) {
-      newWindow.location.href = data.signedUrl;
+      newWindow.location.href = url;
     } else {
       // Popup was blocked — navigate the current tab as a fallback.
-      window.location.href = data.signedUrl;
+      window.location.href = url;
     }
   };
 
