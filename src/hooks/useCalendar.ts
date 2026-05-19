@@ -419,6 +419,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
 
       (assignedEvents || []).forEach(a => {
         const event = a.events as any;
+        const confirmationStatus = (a as any).confirmation_status || null;
         const deliveryRecord = (event.delivery_records as any[])?.[0];
         const sessions = (event.event_sessions as any[]) || [];
         
