@@ -178,6 +178,20 @@ export function useMyJobSheets() {
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
           confirmation_status: (a as any).confirmation_status || null,
+          sessions: (sessions as any[])
+            .filter((s) => s.session_type !== 'post_production' && s.session_type !== 'post-production')
+            .sort((x, y) => (x.session_date || '').localeCompare(y.session_date || ''))
+            .map((s) => ({
+              id: s.id,
+              session_date: s.session_date,
+              arrival_time: s.arrival_time ?? null,
+              start_time: s.start_time ?? null,
+              end_time: s.end_time ?? null,
+              label: s.label ?? null,
+              venue_name: s.venue_name ?? null,
+              venue_address: s.venue_address ?? null,
+              session_type: s.session_type ?? null,
+            })),
           has_equipment: hasEquipment,
           equipment_picked_up: equipmentPickedUp,
           checklist_total: checklistTotal,
