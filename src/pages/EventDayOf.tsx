@@ -345,27 +345,28 @@ export default function EventDayOf() {
   };
 
   const handleOpenTeamBrief = async () => {
-    const path = displayEvent?.brief_file_path;
-    if (!path) return;
+    if (!displayEvent?.brief_file_path || !displayEvent?.id) return;
 
     // Open synchronously from the tap so Samsung Internet/iOS Safari do not block it.
     const newWindow = window.open('about:blank', '_blank');
-    const { data, error } = await supabase.storage
-      .from('event-documents')
-      .createSignedUrl(path, 3600);
 
-    if (error || !data?.signedUrl) {
+    const { data, error } = await supabase.functions.invoke('get-team-brief-url', {
+      body: { event_id: displayEvent.id },
+    });
+
+    const url = (data as any)?.url;
+    if (error || !url) {
       if (newWindow) newWindow.close();
       toast.error('Unable to open brief', {
-        description: error?.message || 'You may not have permission to view this file.',
+        description: (data as any)?.error || error?.message || 'You may not have permission to view this file.',
       });
       return;
     }
 
     if (newWindow) {
-      newWindow.location.href = data.signedUrl;
+      newWindow.location.href = url;
     } else {
-      window.location.href = data.signedUrl;
+      window.location.href = url;
     }
   };
 
