@@ -1594,29 +1594,16 @@ export default function EventDetail() {
               <p className="text-muted-foreground text-sm">No staff assigned yet</p>
             ) : (
               <div className="space-y-6">
-                {/* General (all-session) assignments */}
-                {(() => {
-                  const generalAssignments = assignments.filter(a => !a.session_id);
-                  const hasSessions = eventSessions.length > 0;
-                  
-                  if (generalAssignments.length > 0) {
-                    return (
-                      <div>
-                        {hasSessions && (
-                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">All Sessions</h3>
-                        )}
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {generalAssignments.map(assignment => (
-                            <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                {/* If there are no sessions, just show all assignments flat */}
+                {eventSessions.length === 0 && (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {assignments.map(assignment => (
+                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                    ))}
+                  </div>
+                )}
 
-                {/* Per-session grouped assignments (include general "all sessions" crew) */}
+                {/* Per-session grouped assignments (legacy general assignments are merged into every session) */}
                 {eventSessions.map(session => {
                   const generalAssigns = assignments.filter(a => !a.session_id);
                   const sessionAssigns = [
