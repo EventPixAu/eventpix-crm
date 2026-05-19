@@ -2126,6 +2126,7 @@ export type Database = {
           id: string
           notes: string | null
           notified: boolean | null
+          responsible_for_delivery: boolean
           role_on_event: string | null
           session_id: string | null
           staff_id: string | null
@@ -2145,6 +2146,7 @@ export type Database = {
           id?: string
           notes?: string | null
           notified?: boolean | null
+          responsible_for_delivery?: boolean
           role_on_event?: string | null
           session_id?: string | null
           staff_id?: string | null
@@ -2164,6 +2166,7 @@ export type Database = {
           id?: string
           notes?: string | null
           notified?: boolean | null
+          responsible_for_delivery?: boolean
           role_on_event?: string | null
           session_id?: string | null
           staff_id?: string | null
