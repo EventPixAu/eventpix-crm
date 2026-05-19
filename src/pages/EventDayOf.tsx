@@ -745,7 +745,7 @@ export default function EventDayOf() {
         )}
 
         {/* Team Brief */}
-        {((displayEvent as any).brief_content || (displayEvent as any).brief_file_path) && (
+        {(displayEvent?.brief_content || displayEvent?.brief_file_path) && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -756,12 +756,12 @@ export default function EventDayOf() {
               <FileText className="h-4 w-4 text-primary" />
               <h3 className="font-semibold">Team Brief</h3>
             </div>
-            {(displayEvent as any).brief_content && (
+            {displayEvent.brief_content && (
               <p className="text-sm whitespace-pre-wrap">
-                {(displayEvent as any).brief_content}
+                {displayEvent.brief_content}
               </p>
             )}
-            {(displayEvent as any).brief_file_path && (
+            {displayEvent.brief_file_path && (
               <Button
                 variant="outline"
                 size="sm"
@@ -769,7 +769,7 @@ export default function EventDayOf() {
                 onClick={handleOpenTeamBrief}
               >
                 <Download className="h-4 w-4 mr-1" />
-                {(displayEvent as any).brief_file_name || 'Download Brief'}
+                {displayEvent.brief_file_name || 'Download Brief'}
               </Button>
             )}
           </motion.section>
