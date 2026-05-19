@@ -77,6 +77,12 @@ function EventTile({ event }: { event: CalendarEvent }) {
       {suburb && (
         <span className="text-muted-foreground truncate block">{suburb}</span>
       )}
+      {event.confirmation_status !== 'confirmed' && (
+        <span className="mt-1 inline-flex items-center gap-1 rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+          <CheckCircle className="h-2.5 w-2.5" />
+          Confirm
+        </span>
+      )}
     </Link>
   );
 }
