@@ -292,7 +292,9 @@ export default function EventDayOf() {
       badges.push({ label: 'Today', variant: 'default' });
     }
     
-    if (displayEvent.delivery_deadline) {
+    const opsStatus = (displayEvent as any).ops_status;
+    const isCompleted = opsStatus === 'completed' || opsStatus === 'archived';
+    if (displayEvent.delivery_deadline && !isCompleted) {
       const deadline = safeParseISO(displayEvent.delivery_deadline);
       if (deadline) {
         const inSevenDays = addDays(new Date(), 7);
