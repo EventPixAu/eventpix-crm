@@ -380,6 +380,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
         .from('event_assignments')
         .select(`
           event_id,
+          confirmation_status,
           events!inner(
             id,
             event_name,
