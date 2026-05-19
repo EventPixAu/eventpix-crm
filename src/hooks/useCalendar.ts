@@ -28,6 +28,7 @@ export interface CalendarEvent {
   needs_attention: boolean;
   is_delivered: boolean;
   is_lead?: boolean; // Flag for leads shown on calendar
+  confirmation_status?: string | null; // staff's availability confirmation for this event
 }
 
 export interface CalendarLead {
@@ -379,6 +380,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
         .from('event_assignments')
         .select(`
           event_id,
+          confirmation_status,
           events!inner(
             id,
             event_name,
@@ -417,6 +419,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
 
       (assignedEvents || []).forEach(a => {
         const event = a.events as any;
+        const confirmationStatus = (a as any).confirmation_status || null;
         const deliveryRecord = (event.delivery_records as any[])?.[0];
         const sessions = (event.event_sessions as any[]) || [];
         
@@ -452,6 +455,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
                 has_conflict: conflictEventIds.has(event.id),
                 needs_attention: needsAttention,
                 is_delivered: !!deliveryRecord?.delivered_at,
+                confirmation_status: confirmationStatus,
               });
             }
           });
@@ -482,6 +486,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
               has_conflict: conflictEventIds.has(event.id),
               needs_attention: needsAttention,
               is_delivered: !!deliveryRecord?.delivered_at,
+              confirmation_status: confirmationStatus,
             });
           }
         }

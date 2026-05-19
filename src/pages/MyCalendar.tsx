@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   Calendar,
   List,
-  LayoutGrid
+  LayoutGrid,
+  CheckCircle
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -75,6 +76,12 @@ function EventTile({ event }: { event: CalendarEvent }) {
       <span className="text-foreground block truncate">{event.event_name}</span>
       {suburb && (
         <span className="text-muted-foreground truncate block">{suburb}</span>
+      )}
+      {event.confirmation_status !== 'confirmed' && (
+        <span className="mt-1 inline-flex items-center gap-1 rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+          <CheckCircle className="h-2.5 w-2.5" />
+          Confirm
+        </span>
       )}
     </Link>
   );
@@ -141,6 +148,18 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
           )}
         </div>
       </div>
+      {event.confirmation_status !== 'confirmed' && (
+        <span className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-orange-500 hover:bg-orange-600 px-3 py-1.5 text-xs font-medium text-white">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Confirm Availability
+        </span>
+      )}
+      {event.confirmation_status === 'confirmed' && (
+        <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Confirmed
+        </span>
+      )}
     </Link>
   );
 }
