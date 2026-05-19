@@ -130,7 +130,7 @@ export function useMyJobSheets() {
         const delivered = deliveryRecords.some((dr: any) => dr.delivered_at);
         const deliveryDeadline = event.delivery_deadline;
         const opsStatus = event.ops_status;
-        const isCompleted = opsStatus === 'completed' || opsStatus === 'archived';
+        const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
         const deliveryDueSoon = deliveryDeadline && 
           isBefore(new Date(deliveryDeadline), sevenDaysFromNow) && 
           !delivered && !isCompleted;
