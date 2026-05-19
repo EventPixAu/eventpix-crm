@@ -293,7 +293,7 @@ export default function EventDayOf() {
     }
     
     const opsStatus = (displayEvent as any).ops_status;
-    const isCompleted = opsStatus === 'completed' || opsStatus === 'archived';
+    const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
     if (displayEvent.delivery_deadline && !isCompleted) {
       const deadline = safeParseISO(displayEvent.delivery_deadline);
       if (deadline) {
