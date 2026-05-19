@@ -481,6 +481,12 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
             >
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
+            {(assignment as any).responsible_for_delivery && (
+              <Badge variant="outline" className="text-xs shrink-0 border-amber-500/60 text-amber-600 dark:text-amber-400">
+                <Truck className="h-3 w-3 mr-1" />
+                Owns Delivery
+              </Badge>
+            )}
           </div>
           {isAdmin && editingRole ? (
             <Select
