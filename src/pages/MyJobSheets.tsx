@@ -227,13 +227,6 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                 </Badge>
               )}
               
-              {/* Delivery due warning */}
-              {job.delivery_due_soon && !job.delivered && (
-                <Badge variant="destructive" className="text-xs">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Delivery Due
-                </Badge>
-              )}
             </div>
 
             {/* Confirm availability button */}
