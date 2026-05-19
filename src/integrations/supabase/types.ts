@@ -6451,6 +6451,10 @@ export type Database = {
         }[]
       }
       check_staff_eligibility: { Args: { p_user_id: string }; Returns: Json }
+      complete_assigned_workflow_step: {
+        Args: { p_event_id: string; p_notes?: string; p_step_id: string }
+        Returns: undefined
+      }
       complete_workflow_step: {
         Args: { p_is_complete: boolean; p_step_id: string }
         Returns: Json
@@ -6669,6 +6673,10 @@ export type Database = {
         Returns: undefined
       }
       track_email_open: { Args: { p_email_log_id: string }; Returns: undefined }
+      uncomplete_assigned_workflow_step: {
+        Args: { p_event_id: string; p_step_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:

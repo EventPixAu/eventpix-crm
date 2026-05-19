@@ -344,6 +344,31 @@ export default function EventDayOf() {
     toast.success('Calendar invite downloaded');
   };
 
+  const handleOpenTeamBrief = async () => {
+    const path = displayEvent?.brief_file_path;
+    if (!path) return;
+
+    // Open synchronously from the tap so Samsung Internet/iOS Safari do not block it.
+    const newWindow = window.open('about:blank', '_blank');
+    const { data, error } = await supabase.storage
+      .from('event-documents')
+      .createSignedUrl(path, 3600);
+
+    if (error || !data?.signedUrl) {
+      if (newWindow) newWindow.close();
+      toast.error('Unable to open brief', {
+        description: error?.message || 'You may not have permission to view this file.',
+      });
+      return;
+    }
+
+    if (newWindow) {
+      newWindow.location.href = data.signedUrl;
+    } else {
+      window.location.href = data.signedUrl;
+    }
+  };
+
   // Checklist toggle
   const handleToggleItem = (itemId: string, isDone: boolean) => {
     if (isOffline) {
@@ -720,7 +745,7 @@ export default function EventDayOf() {
         )}
 
         {/* Team Brief */}
-        {((displayEvent as any).brief_content || (displayEvent as any).brief_file_path) && (
+        {(displayEvent?.brief_content || displayEvent?.brief_file_path) && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -731,26 +756,20 @@ export default function EventDayOf() {
               <FileText className="h-4 w-4 text-primary" />
               <h3 className="font-semibold">Team Brief</h3>
             </div>
-            {(displayEvent as any).brief_content && (
+            {displayEvent.brief_content && (
               <p className="text-sm whitespace-pre-wrap">
-                {(displayEvent as any).brief_content}
+                {displayEvent.brief_content}
               </p>
             )}
-            {(displayEvent as any).brief_file_path && (
+            {displayEvent.brief_file_path && (
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={async () => {
-                  const path = (displayEvent as any).brief_file_path as string;
-                  const { data } = await supabase.storage
-                    .from('event-documents')
-                    .createSignedUrl(path, 3600);
-                  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-                }}
+                onClick={handleOpenTeamBrief}
               >
                 <Download className="h-4 w-4 mr-1" />
-                {(displayEvent as any).brief_file_name || 'Download Brief'}
+                {displayEvent.brief_file_name || 'Download Brief'}
               </Button>
             )}
           </motion.section>
