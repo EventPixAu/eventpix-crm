@@ -486,6 +486,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
               has_conflict: conflictEventIds.has(event.id),
               needs_attention: needsAttention,
               is_delivered: !!deliveryRecord?.delivered_at,
+              confirmation_status: confirmationStatus,
             });
           }
         }
