@@ -132,8 +132,10 @@ export function useMyJobSheets() {
         const deliveryDeadline = event.delivery_deadline;
         const opsStatus = event.ops_status;
         const isCompleted = opsStatus === 'completed' || opsStatus === 'archived' || opsStatus === 'delivered';
-        const deliveryDueSoon = deliveryDeadline && 
-          isBefore(new Date(deliveryDeadline), sevenDaysFromNow) && 
+        const responsibleForDelivery = (a as any).responsible_for_delivery === true;
+        const deliveryDueSoon = responsibleForDelivery &&
+          deliveryDeadline &&
+          isBefore(new Date(deliveryDeadline), sevenDaysFromNow) &&
           !delivered && !isCompleted;
 
         // Get session data - find matching session for event date or first session
