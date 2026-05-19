@@ -129,9 +129,11 @@ export function useMyJobSheets() {
         const deliveryRecords = (event.delivery_records || []) as any[];
         const delivered = deliveryRecords.some((dr: any) => dr.delivered_at);
         const deliveryDeadline = event.delivery_deadline;
+        const opsStatus = event.ops_status;
+        const isCompleted = opsStatus === 'completed' || opsStatus === 'archived';
         const deliveryDueSoon = deliveryDeadline && 
           isBefore(new Date(deliveryDeadline), sevenDaysFromNow) && 
-          !delivered;
+          !delivered && !isCompleted;
 
         // Get session data - find matching session for event date or first session
         const sessions = (event.event_sessions || []) as any[];
