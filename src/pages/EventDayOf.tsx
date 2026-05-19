@@ -345,7 +345,7 @@ export default function EventDayOf() {
   };
 
   const handleOpenTeamBrief = async () => {
-    const path = (displayEvent as any)?.brief_file_path as string | undefined;
+    const path = displayEvent?.brief_file_path;
     if (!path) return;
 
     // Open synchronously from the tap so Samsung Internet/iOS Safari do not block it.
