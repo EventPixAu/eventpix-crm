@@ -87,6 +87,7 @@ export function useMyJobSheets() {
             onsite_contact_name,
             onsite_contact_phone,
             coverage_details,
+            ops_status,
             delivery_deadline,
             delivery_records!left(id, delivered_at),
             equipment_allocations!left(id, status),
