@@ -208,6 +208,7 @@ export function PhotographerChecklist({ eventId }: PhotographerChecklistProps) {
                 <AnimatePresence>
                   {phaseItems.map((step, index) => {
                     const isAuto = step.completion_type === 'auto';
+                    const isBusy = completeStep.isPending || uncompleteStep.isPending;
                     const isOverdue = step.due_date && !step.is_completed &&
                       isPast(parseISO(step.due_date)) && !isToday(parseISO(step.due_date));
                     const isDueToday = step.due_date && isToday(parseISO(step.due_date));
@@ -221,8 +222,20 @@ export function PhotographerChecklist({ eventId }: PhotographerChecklistProps) {
                         transition={{ delay: index * 0.03 }}
                       >
                         <div
+                          role={isAuto ? undefined : 'button'}
+                          tabIndex={isAuto || isBusy ? undefined : 0}
+                          onClick={() => !isAuto && !isBusy && handleToggle(step)}
+                          onKeyDown={(event) => {
+                            if (isAuto || isBusy) return;
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              handleToggle(step);
+                            }
+                          }}
                           className={cn(
-                            'p-3 rounded-lg border border-border bg-card transition-colors',
+                            'p-3 rounded-lg border border-border bg-card transition-colors touch-manipulation select-none',
+                            !isAuto && !isBusy && 'cursor-pointer active:bg-muted/70',
+                            isBusy && 'opacity-60',
                             step.is_completed && 'bg-muted/50 opacity-70',
                             isOverdue && !step.is_completed && 'border-destructive/50 bg-destructive/5',
                             isDueToday && !step.is_completed && 'border-warning/50 bg-warning/5',
@@ -239,9 +252,9 @@ export function PhotographerChecklist({ eventId }: PhotographerChecklistProps) {
                             ) : (
                               <Checkbox
                                 checked={step.is_completed}
-                                onCheckedChange={() => handleToggle(step)}
-                                disabled={completeStep.isPending || uncompleteStep.isPending}
-                                className="mt-0.5"
+                                aria-hidden="true"
+                                tabIndex={-1}
+                                className="mt-0.5 pointer-events-none h-5 w-5"
                               />
                             )}
                             <div className="flex-1 min-w-0">

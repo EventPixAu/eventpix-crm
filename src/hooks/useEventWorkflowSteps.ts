@@ -109,18 +109,11 @@ export function useCompleteWorkflowStep() {
       eventId: string;
       notes?: string;
     }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from('event_workflow_steps')
-        .update({ 
-          is_completed: true,
-          completed_at: new Date().toISOString(),
-          completed_by: user?.id || null,
-          notes: notes || null,
-        })
-        .eq('id', stepId)
-        .eq('completion_type', 'manual'); // Only allow manual completion via UI
+      const { error } = await supabase.rpc('complete_assigned_workflow_step', {
+        p_step_id: stepId,
+        p_event_id: eventId,
+        p_notes: notes || null,
+      });
       
       if (error) throw error;
     },
@@ -148,20 +141,17 @@ export function useUncompleteWorkflowStep() {
       stepId: string; 
       eventId: string;
     }) => {
-      const { error } = await supabase
-        .from('event_workflow_steps')
-        .update({ 
-          is_completed: false,
-          completed_at: null,
-          completed_by: null,
-        })
-        .eq('id', stepId)
-        .eq('completion_type', 'manual'); // Only allow manual uncomplete
+      const { error } = await supabase.rpc('uncomplete_assigned_workflow_step', {
+        p_step_id: stepId,
+        p_event_id: eventId,
+      });
       
       if (error) throw error;
     },
     onSuccess: (_, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['next-task-per-event'] });
+      queryClient.invalidateQueries({ queryKey: ['job-tasks-with-due-dates'] });
       toast.success('Step marked as incomplete');
     },
     onError: (error) => {

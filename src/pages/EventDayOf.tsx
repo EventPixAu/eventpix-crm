@@ -344,6 +344,31 @@ export default function EventDayOf() {
     toast.success('Calendar invite downloaded');
   };
 
+  const handleOpenTeamBrief = async () => {
+    const path = (displayEvent as any)?.brief_file_path as string | undefined;
+    if (!path) return;
+
+    // Open synchronously from the tap so Samsung Internet/iOS Safari do not block it.
+    const newWindow = window.open('about:blank', '_blank');
+    const { data, error } = await supabase.storage
+      .from('event-documents')
+      .createSignedUrl(path, 3600);
+
+    if (error || !data?.signedUrl) {
+      if (newWindow) newWindow.close();
+      toast.error('Unable to open brief', {
+        description: error?.message || 'You may not have permission to view this file.',
+      });
+      return;
+    }
+
+    if (newWindow) {
+      newWindow.location.href = data.signedUrl;
+    } else {
+      window.location.href = data.signedUrl;
+    }
+  };
+
   // Checklist toggle
   const handleToggleItem = (itemId: string, isDone: boolean) => {
     if (isOffline) {
@@ -741,13 +766,7 @@ export default function EventDayOf() {
                 variant="outline"
                 size="sm"
                 className="mt-3"
-                onClick={async () => {
-                  const path = (displayEvent as any).brief_file_path as string;
-                  const { data } = await supabase.storage
-                    .from('event-documents')
-                    .createSignedUrl(path, 3600);
-                  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-                }}
+                onClick={handleOpenTeamBrief}
               >
                 <Download className="h-4 w-4 mr-1" />
                 {(displayEvent as any).brief_file_name || 'Download Brief'}
