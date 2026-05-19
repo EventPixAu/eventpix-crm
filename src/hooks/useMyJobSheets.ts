@@ -75,6 +75,7 @@ export function useMyJobSheets() {
           event_id,
           confirmation_status,
           call_time_at,
+          responsible_for_delivery,
           events!inner(
             id,
             event_name,
