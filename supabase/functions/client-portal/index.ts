@@ -214,8 +214,8 @@ serve(async (req) => {
     const response = {
       event_name: event.event_name,
       event_date: event.event_date,
-      start_time: event.start_time,
-      end_time: event.end_time,
+      start_time: sessionStart ?? event.start_time,
+      end_time: sessionEnd ?? event.end_time,
       client_name: event.client_name,
       venue_name: event.venue_name,
       venue,
