@@ -419,13 +419,14 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
                 if (a.is_completed !== b.is_completed) {
                   return a.is_completed ? -1 : 1;
                 }
-                // Sort by due_date ascending; no-date items go to the end
+                // Sort by due_date ascending; no-date items fall back to template sort_order
                 if (a.due_date && b.due_date) {
-                  return a.due_date.localeCompare(b.due_date);
+                  const cmp = a.due_date.localeCompare(b.due_date);
+                  if (cmp !== 0) return cmp;
                 }
-                if (a.due_date) return -1;
-                if (b.due_date) return 1;
-                return 0;
+                if (a.due_date && !b.due_date) return -1;
+                if (!a.due_date && b.due_date) return 1;
+                return (a.step_order ?? 0) - (b.step_order ?? 0);
               })
               .map((step) => {
                 const isFirstIncomplete = !step.is_completed && step.id === steps.find(s => !s.is_completed)?.id;
