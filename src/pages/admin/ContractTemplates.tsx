@@ -110,7 +110,8 @@ export default function ContractTemplates() {
     await createTemplate.mutateAsync({
       name: formData.name,
       body_text: formData.body_text,
-      body_html: formData.body_text, // Store same content in both for compatibility
+      body_html: formData.body_text, // Store same content in both fields
+      format: formData.format,
       is_active: formData.is_active,
     });
 
@@ -495,12 +496,51 @@ export default function ContractTemplates() {
               />
             </div>
             
-            <PlainTextTemplateEditor
-              value={formData.body_text}
-              onChange={(value) => setFormData({ ...formData, body_text: value })}
-              format="text"
-              label="Contract Body *"
-              placeholder={`PHOTOGRAPHY SERVICES AGREEMENT
+            <div className="space-y-2">
+              <Label>Format *</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={formData.format === 'text' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, format: 'text' })}
+                >
+                  Plain Text
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.format === 'html' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, format: 'html' })}
+                >
+                  HTML
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {formData.format === 'html'
+                  ? 'Paste raw HTML (headings, paragraphs, lists, bold, etc.). Merge fields like {{client.business_name}} work as usual.'
+                  : 'Plain text with **bold** and line breaks. Merge fields like {{client.business_name}} work as usual.'}
+              </p>
+            </div>
+
+            {formData.format === 'html' ? (
+              <div className="space-y-2">
+                <Label htmlFor="create-body-html">Contract Body (HTML) *</Label>
+                <Textarea
+                  id="create-body-html"
+                  value={formData.body_text}
+                  onChange={(e) => setFormData({ ...formData, body_text: e.target.value })}
+                  className="min-h-[350px] font-mono text-sm"
+                  placeholder={`<h1>Photography Services Agreement</h1>\n<p>This agreement is between Eventpix and {{client.business_name}}.</p>\n<h2>Event Details</h2>\n<ul>\n  <li>Event: {{event.event_name}}</li>\n  <li>Date: {{event.event_date}}</li>\n</ul>`}
+                />
+              </div>
+            ) : (
+              <PlainTextTemplateEditor
+                value={formData.body_text}
+                onChange={(value) => setFormData({ ...formData, body_text: value })}
+                format="text"
+                label="Contract Body *"
+                placeholder={`PHOTOGRAPHY SERVICES AGREEMENT
 
 This agreement is made between Eventpix ("the Photographer") and {{client.business_name}} ("the Client").
 
@@ -516,8 +556,9 @@ Total: {{quote.total_estimate}}
 The parties agree to the terms and conditions outlined herein.
 
 Date: {{today}}`}
-              minHeight="350px"
-            />
+                minHeight="350px"
+              />
+            )}
 
             <div className="flex items-center gap-2">
               <Switch
