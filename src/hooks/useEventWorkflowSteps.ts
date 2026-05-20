@@ -5,6 +5,12 @@ import { toast } from 'sonner';
 
 type EventWorkflowStep = Database['public']['Tables']['event_workflow_steps']['Row'];
 
+interface WorkflowMasterOrdering {
+  phase: string | null;
+  sort_order: number | null;
+  role: { id: string | null; name: string } | null;
+}
+
 export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
   assigned_to: string | null;
   workflow_phase?: string | null;
