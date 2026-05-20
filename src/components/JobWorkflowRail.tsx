@@ -357,10 +357,6 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
       })
       .map(({ step }) => step);
   }, [steps]);
-      }
-      return (a.step_order ?? 0) - (b.step_order ?? 0);
-    });
-  }, [steps]);
   
   // Map user IDs to role names for badge display
   const userRoleMap = useMemo(() => {
