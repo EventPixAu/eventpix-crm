@@ -57,6 +57,10 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         .from('event_workflow_steps')
         .select(`
           *,
+          workflow_template_item:workflow_template_items!event_workflow_steps_template_item_id_fkey(
+            sort_order,
+            workflow_template:workflow_templates!workflow_template_items_template_id_fkey(phase, sort_order)
+          ),
           completed_by_profile:profiles!event_workflow_steps_completed_by_fkey(full_name, email)
         `)
         .eq('event_id', eventId)
@@ -83,11 +87,11 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
       // Event Type Defaults create instance-only workflow rows, so enrich them
       // from matching master steps to show the configured default role badge.
       const stepLabels = [...new Set((data || []).map((s: any) => s.step_label).filter(Boolean))];
-      const masterRoleMap: Record<string, { id: string | null; name: string } | null> = {};
+      const masterStepMap: Record<string, WorkflowMasterOrdering | null> = {};
       if (stepLabels.length > 0) {
         const { data: masterSteps } = await supabase
           .from('workflow_master_steps')
-          .select('label, default_staff_role_id')
+          .select('label, phase, sort_order, default_staff_role_id')
           .in('label', stepLabels);
 
         const roleIds = [...new Set((masterSteps || []).map((s: any) => s.default_staff_role_id).filter(Boolean))];
@@ -101,20 +105,27 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         }
 
         (masterSteps || []).forEach((s: any) => {
-          masterRoleMap[s.label] = s.default_staff_role_id
-            ? { id: s.default_staff_role_id, name: roleMap[s.default_staff_role_id] || 'Team' }
-            : null;
+          masterStepMap[s.label] = {
+            phase: s.phase,
+            sort_order: s.sort_order,
+            role: s.default_staff_role_id
+              ? { id: s.default_staff_role_id, name: roleMap[s.default_staff_role_id] || 'Team' }
+              : null,
+          };
         });
       }
 
       return (data || []).map((s: any) => ({
         ...s,
         assigned_to_profile: s.assigned_to ? profileMap[s.assigned_to] || null : null,
-        default_staff_role_id: masterRoleMap[s.step_label]?.id || null,
-        default_staff_role: masterRoleMap[s.step_label]
-          ? { name: masterRoleMap[s.step_label]!.name }
+        workflow_phase: s.workflow_template_item?.workflow_template?.phase ?? masterStepMap[s.step_label]?.phase ?? null,
+        workflow_template_sort_order: s.workflow_template_item?.workflow_template?.sort_order ?? 0,
+        workflow_sort_order: s.workflow_template_item?.sort_order ?? masterStepMap[s.step_label]?.sort_order ?? s.step_order,
+        default_staff_role_id: masterStepMap[s.step_label]?.role?.id || null,
+        default_staff_role: masterStepMap[s.step_label]?.role
+          ? { name: masterStepMap[s.step_label]!.role!.name }
           : null,
-      })) as EventWorkflowStepWithProfile[];
+      })).sort(compareEventWorkflowSteps) as EventWorkflowStepWithProfile[];
     },
     enabled: !!eventId,
   });
