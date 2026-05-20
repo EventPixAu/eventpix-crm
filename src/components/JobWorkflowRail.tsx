@@ -426,7 +426,7 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
                 }
                 if (a.due_date && !b.due_date) return -1;
                 if (!a.due_date && b.due_date) return 1;
-                return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+                return (a.step_order ?? 0) - (b.step_order ?? 0);
               })
               .map((step) => {
                 const isFirstIncomplete = !step.is_completed && step.id === steps.find(s => !s.is_completed)?.id;
