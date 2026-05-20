@@ -416,8 +416,16 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
           <div className="relative">
             {[...steps]
               .sort((a, b) => {
-                if (a.is_completed === b.is_completed) return 0;
-                return a.is_completed ? -1 : 1;
+                if (a.is_completed !== b.is_completed) {
+                  return a.is_completed ? -1 : 1;
+                }
+                // Sort by due_date ascending; no-date items go to the end
+                if (a.due_date && b.due_date) {
+                  return a.due_date.localeCompare(b.due_date);
+                }
+                if (a.due_date) return -1;
+                if (b.due_date) return 1;
+                return 0;
               })
               .map((step) => {
                 const isFirstIncomplete = !step.is_completed && step.id === steps.find(s => !s.is_completed)?.id;
