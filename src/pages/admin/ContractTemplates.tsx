@@ -606,7 +606,18 @@ Date: {{today}}`}
             
             {formData.format === 'html' ? (
               <div className="space-y-2">
-                <Label htmlFor="edit-body_html">Contract Body (HTML) *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-body_html">Contract Body (HTML) *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => selectedTemplate && setIsPreviewOpen(true)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Rendered
+                  </Button>
+                </div>
                 <Textarea
                   id="edit-body_html"
                   value={formData.body_text}
@@ -614,7 +625,7 @@ Date: {{today}}`}
                   className="min-h-[300px] font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This template uses legacy HTML format. Use the convert action to switch to plain text.
+                  HTML format. Use "View Rendered" to preview without markup, or convert to plain text from the list.
                 </p>
               </div>
             ) : (
