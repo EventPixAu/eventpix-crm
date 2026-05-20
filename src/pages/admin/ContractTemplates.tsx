@@ -110,7 +110,8 @@ export default function ContractTemplates() {
     await createTemplate.mutateAsync({
       name: formData.name,
       body_text: formData.body_text,
-      body_html: formData.body_text, // Store same content in both for compatibility
+      body_html: formData.body_text, // Store same content in both fields
+      format: formData.format,
       is_active: formData.is_active,
     });
 
