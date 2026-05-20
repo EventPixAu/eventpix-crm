@@ -85,20 +85,24 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
 }
 
 /** Get display props for an email action status */
-export function getActionStatusDisplay(status: EmailActionStatus['status']) {
+export function getActionStatusDisplay(status: EmailActionStatus['status'], sentAt?: string | null) {
+  const dateSuffix = sentAt
+    ? ` · ${new Date(sentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+    : '';
+  const fullTitle = sentAt ? new Date(sentAt).toLocaleString() : undefined;
   switch (status) {
     case 'opened':
     case 'clicked':
-      return { label: 'Opened', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
+      return { label: `Opened${dateSuffix}`, title: fullTitle, className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' };
     case 'delivered':
-      return { label: 'Delivered', className: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
+      return { label: `Delivered${dateSuffix}`, title: fullTitle, className: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
     case 'sent':
-      return { label: 'Sent', className: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
+      return { label: `Sent${dateSuffix}`, title: fullTitle, className: 'bg-sky-500/20 text-sky-400 border-sky-500/30' };
     case 'bounced':
     case 'failed':
-      return { label: 'Failed', className: 'bg-destructive/20 text-destructive border-destructive/30' };
+      return { label: `Failed${dateSuffix}`, title: fullTitle, className: 'bg-destructive/20 text-destructive border-destructive/30' };
     case 'not_sent':
     default:
-      return { label: 'Not Sent', className: 'bg-muted text-muted-foreground border-border' };
+      return { label: 'Not Sent', title: undefined, className: 'bg-muted text-muted-foreground border-border' };
   }
 }
