@@ -5,8 +5,17 @@ import { toast } from 'sonner';
 
 type EventWorkflowStep = Database['public']['Tables']['event_workflow_steps']['Row'];
 
+interface WorkflowMasterOrdering {
+  phase: string | null;
+  sort_order: number | null;
+  role: { id: string | null; name: string } | null;
+}
+
 export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
   assigned_to: string | null;
+  workflow_phase?: string | null;
+  workflow_template_sort_order?: number | null;
+  workflow_sort_order?: number | null;
   default_staff_role_id?: string | null;
   default_staff_role?: {
     name: string;
@@ -21,6 +30,28 @@ export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
   } | null;
 }
 
+const WORKFLOW_PHASE_ORDER: Record<string, number> = {
+  pre_event: 0,
+  day_of: 1,
+  post_event: 2,
+};
+
+function compareEventWorkflowSteps(a: EventWorkflowStepWithProfile, b: EventWorkflowStepWithProfile) {
+  const phaseA = a.workflow_phase ? WORKFLOW_PHASE_ORDER[a.workflow_phase] ?? 99 : 99;
+  const phaseB = b.workflow_phase ? WORKFLOW_PHASE_ORDER[b.workflow_phase] ?? 99 : 99;
+  if (phaseA !== phaseB) return phaseA - phaseB;
+
+  const templateOrderA = a.workflow_template_sort_order ?? 0;
+  const templateOrderB = b.workflow_template_sort_order ?? 0;
+  if (templateOrderA !== templateOrderB) return templateOrderA - templateOrderB;
+
+  const workflowOrderA = a.workflow_sort_order ?? a.step_order ?? 0;
+  const workflowOrderB = b.workflow_sort_order ?? b.step_order ?? 0;
+  if (workflowOrderA !== workflowOrderB) return workflowOrderA - workflowOrderB;
+
+  return (a.step_order ?? 0) - (b.step_order ?? 0);
+}
+
 // Fetch all workflow steps for an event
 export function useEventWorkflowSteps(eventId: string | undefined) {
   return useQuery({
@@ -32,6 +63,10 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         .from('event_workflow_steps')
         .select(`
           *,
+          workflow_template_item:workflow_template_items!event_workflow_steps_template_item_id_fkey(
+            sort_order,
+            workflow_template:workflow_templates!workflow_template_items_template_id_fkey(phase, sort_order)
+          ),
           completed_by_profile:profiles!event_workflow_steps_completed_by_fkey(full_name, email)
         `)
         .eq('event_id', eventId)
@@ -58,11 +93,11 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
       // Event Type Defaults create instance-only workflow rows, so enrich them
       // from matching master steps to show the configured default role badge.
       const stepLabels = [...new Set((data || []).map((s: any) => s.step_label).filter(Boolean))];
-      const masterRoleMap: Record<string, { id: string | null; name: string } | null> = {};
+      const masterStepMap: Record<string, WorkflowMasterOrdering | null> = {};
       if (stepLabels.length > 0) {
         const { data: masterSteps } = await supabase
           .from('workflow_master_steps')
-          .select('label, default_staff_role_id')
+          .select('label, phase, sort_order, default_staff_role_id')
           .in('label', stepLabels);
 
         const roleIds = [...new Set((masterSteps || []).map((s: any) => s.default_staff_role_id).filter(Boolean))];
@@ -76,20 +111,27 @@ export function useEventWorkflowSteps(eventId: string | undefined) {
         }
 
         (masterSteps || []).forEach((s: any) => {
-          masterRoleMap[s.label] = s.default_staff_role_id
-            ? { id: s.default_staff_role_id, name: roleMap[s.default_staff_role_id] || 'Team' }
-            : null;
+          masterStepMap[s.label] = {
+            phase: s.phase,
+            sort_order: s.sort_order,
+            role: s.default_staff_role_id
+              ? { id: s.default_staff_role_id, name: roleMap[s.default_staff_role_id] || 'Team' }
+              : null,
+          };
         });
       }
 
       return (data || []).map((s: any) => ({
         ...s,
         assigned_to_profile: s.assigned_to ? profileMap[s.assigned_to] || null : null,
-        default_staff_role_id: masterRoleMap[s.step_label]?.id || null,
-        default_staff_role: masterRoleMap[s.step_label]
-          ? { name: masterRoleMap[s.step_label]!.name }
+        workflow_phase: s.workflow_template_item?.workflow_template?.phase ?? masterStepMap[s.step_label]?.phase ?? null,
+        workflow_template_sort_order: s.workflow_template_item?.workflow_template?.sort_order ?? 0,
+        workflow_sort_order: s.workflow_template_item?.sort_order ?? masterStepMap[s.step_label]?.sort_order ?? s.step_order,
+        default_staff_role_id: masterStepMap[s.step_label]?.role?.id || null,
+        default_staff_role: masterStepMap[s.step_label]?.role
+          ? { name: masterStepMap[s.step_label]!.role!.name }
           : null,
-      })) as EventWorkflowStepWithProfile[];
+      })).sort(compareEventWorkflowSteps) as EventWorkflowStepWithProfile[];
     },
     enabled: !!eventId,
   });
