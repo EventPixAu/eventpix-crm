@@ -76,9 +76,21 @@ serve(async (req) => {
     // Sessions
     const { data: sessions } = await supabase
       .from("event_sessions")
-      .select("id, session_label, session_date, start_time, end_time, venue_name, notes")
+      .select("id, label, session_date, start_time, end_time, arrival_time, venue_name, notes")
       .eq("event_id", event.id)
-      .order("session_date", { ascending: true });
+      .order("session_date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    // Derive displayed start/end from sessions so the Client Portal matches the
+    // session call/end times shown elsewhere (e.g., team brief). Prefer the
+    // first session's arrival_time (call time) as the start, falling back to
+    // the session's start_time. End uses the last session's end_time.
+    const sessionStart = sessions?.length
+      ? (sessions[0].arrival_time || sessions[0].start_time)
+      : null;
+    const sessionEnd = sessions?.length
+      ? (sessions[sessions.length - 1].end_time || sessions[sessions.length - 1].start_time)
+      : null;
 
     // Team (assignments)
     const { data: assignments } = await supabase
