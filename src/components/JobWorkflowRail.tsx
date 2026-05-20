@@ -347,9 +347,16 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const { data: assignments = [] } = useEventAssignments(eventId);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const orderedSteps = useMemo(() => {
-    return [...steps].sort((a, b) => {
-      if (a.is_completed !== b.is_completed) {
-        return a.is_completed ? -1 : 1;
+    return steps
+      .map((step, index) => ({ step, index }))
+      .sort((a, b) => {
+        if (a.step.is_completed !== b.step.is_completed) {
+          return a.step.is_completed ? -1 : 1;
+        }
+        return a.index - b.index;
+      })
+      .map(({ step }) => step);
+  }, [steps]);
       }
       return (a.step_order ?? 0) - (b.step_order ?? 0);
     });
@@ -423,12 +430,6 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
         <ScrollArea className="h-[400px] pr-3" ref={scrollAreaRef}>
           <div className="relative">
             {orderedSteps
-              .sort((a, b) => {
-                if (a.is_completed !== b.is_completed) {
-                  return a.is_completed ? -1 : 1;
-                }
-                return (a.step_order ?? 0) - (b.step_order ?? 0);
-              })
               .map((step) => {
                 const isFirstIncomplete = !step.is_completed && step.id === orderedSteps.find(s => !s.is_completed)?.id;
                 return (
