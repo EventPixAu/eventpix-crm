@@ -346,6 +346,14 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
   const { total, completed, percentage, overdue, steps } = useWorkflowProgress(eventId);
   const { data: assignments = [] } = useEventAssignments(eventId);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const orderedSteps = useMemo(() => {
+    return [...steps].sort((a, b) => {
+      if (a.is_completed !== b.is_completed) {
+        return a.is_completed ? -1 : 1;
+      }
+      return (a.step_order ?? 0) - (b.step_order ?? 0);
+    });
+  }, [steps]);
   
   // Map user IDs to role names for badge display
   const userRoleMap = useMemo(() => {
@@ -375,7 +383,7 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [steps]);
+  }, [orderedSteps]);
   
   
   if (steps.length === 0) {
@@ -414,22 +422,15 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
         {/* Steps List with ScrollArea - completed float to top */}
         <ScrollArea className="h-[400px] pr-3" ref={scrollAreaRef}>
           <div className="relative">
-            {[...steps]
+            {orderedSteps
               .sort((a, b) => {
                 if (a.is_completed !== b.is_completed) {
                   return a.is_completed ? -1 : 1;
                 }
-                // Sort by due_date ascending; no-date items fall back to template sort_order
-                if (a.due_date && b.due_date) {
-                  const cmp = a.due_date.localeCompare(b.due_date);
-                  if (cmp !== 0) return cmp;
-                }
-                if (a.due_date && !b.due_date) return -1;
-                if (!a.due_date && b.due_date) return 1;
                 return (a.step_order ?? 0) - (b.step_order ?? 0);
               })
               .map((step) => {
-                const isFirstIncomplete = !step.is_completed && step.id === steps.find(s => !s.is_completed)?.id;
+                const isFirstIncomplete = !step.is_completed && step.id === orderedSteps.find(s => !s.is_completed)?.id;
                 return (
                   <div
                     key={step.id}
