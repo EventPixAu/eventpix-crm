@@ -7,6 +7,9 @@ type EventWorkflowStep = Database['public']['Tables']['event_workflow_steps']['R
 
 export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
   assigned_to: string | null;
+  workflow_phase?: string | null;
+  workflow_template_sort_order?: number | null;
+  workflow_sort_order?: number | null;
   default_staff_role_id?: string | null;
   default_staff_role?: {
     name: string;
@@ -19,6 +22,28 @@ export interface EventWorkflowStepWithProfile extends EventWorkflowStep {
     full_name: string | null;
     email: string;
   } | null;
+}
+
+const WORKFLOW_PHASE_ORDER: Record<string, number> = {
+  pre_event: 0,
+  day_of: 1,
+  post_event: 2,
+};
+
+function compareEventWorkflowSteps(a: EventWorkflowStepWithProfile, b: EventWorkflowStepWithProfile) {
+  const phaseA = a.workflow_phase ? WORKFLOW_PHASE_ORDER[a.workflow_phase] ?? 99 : 99;
+  const phaseB = b.workflow_phase ? WORKFLOW_PHASE_ORDER[b.workflow_phase] ?? 99 : 99;
+  if (phaseA !== phaseB) return phaseA - phaseB;
+
+  const templateOrderA = a.workflow_template_sort_order ?? 0;
+  const templateOrderB = b.workflow_template_sort_order ?? 0;
+  if (templateOrderA !== templateOrderB) return templateOrderA - templateOrderB;
+
+  const workflowOrderA = a.workflow_sort_order ?? a.step_order ?? 0;
+  const workflowOrderB = b.workflow_sort_order ?? b.step_order ?? 0;
+  if (workflowOrderA !== workflowOrderB) return workflowOrderA - workflowOrderB;
+
+  return (a.step_order ?? 0) - (b.step_order ?? 0);
 }
 
 // Fetch all workflow steps for an event
