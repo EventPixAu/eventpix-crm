@@ -651,6 +651,121 @@ export default function CalendarView() {
             })}
           </div>
         </motion.div>
+      ) : viewMode === '5weeks' ? (
+        /* 5 Weeks View */
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-card border border-border rounded-xl overflow-hidden shadow-card"
+        >
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 border-b border-border">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <div
+                key={day}
+                className="py-3 text-center text-sm font-medium text-muted-foreground"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Days - exactly 5 weeks */}
+          <div className="grid grid-cols-7">
+            {fiveWeekDays.map((day) => {
+              const dayEvents = getEventsForDay(day);
+              const dayLeads = getLeadsForDay(day);
+              const isCurrentDay = isToday(day);
+              const totalItems = dayEvents.length + dayLeads.length;
+              const isBusyDay = totalItems >= 5;
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const dayAvailability = availabilityByDate.get(dateStr);
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    'min-h-[120px] border-b border-r border-border p-2 transition-colors',
+                    !isSameMonth(day, currentMonth) && 'bg-muted/30',
+                    isCurrentDay && 'bg-primary/5',
+                    isBusyDay && 'ring-1 ring-inset ring-primary/30',
+                    dayAvailability?.status === 'unavailable' && 'bg-destructive/10',
+                    dayAvailability?.status === 'limited' && 'bg-amber-500/10'
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={cn(
+                          'w-7 h-7 flex items-center justify-center text-sm rounded-full',
+                          isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
+                        )}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {dayAvailability && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className={cn(
+                              'inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                              dayAvailability.status === 'unavailable' && 'bg-destructive/20 text-destructive',
+                              dayAvailability.status === 'limited' && 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                            )}>
+                              {dayAvailability.status === 'unavailable' ? (
+                                <><UserX className="h-3 w-3" /> {dayAvailability.from ? format(new Date(`2000-01-01T${dayAvailability.from}`), 'ha') : 'Off'}</>
+                              ) : (
+                                <><UserMinus className="h-3 w-3" /> Ltd</>
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs">
+                            <p className="font-medium">{selectedStaffName} — {dayAvailability.status === 'unavailable' ? 'Unavailable' : 'Limited'}</p>
+                            {dayAvailability.from && dayAvailability.until && (
+                              <p className="text-xs mt-0.5">
+                                {format(new Date(`2000-01-01T${dayAvailability.from}`), 'h:mm a')} – {format(new Date(`2000-01-01T${dayAvailability.until}`), 'h:mm a')}
+                              </p>
+                            )}
+                            {dayAvailability.notes && <p className="text-xs mt-1">{dayAvailability.notes}</p>}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                    {isBusyDay && (
+                      <button
+                        onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
+                        className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded hover:bg-primary/20 transition-colors"
+                      >
+                        <Eye className="h-3 w-3" />
+                        {totalItems}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {/* Show leads first */}
+                    {dayLeads.slice(0, 2).map((lead) => (
+                      <LeadTile key={`lead-${lead.id}`} lead={lead} />
+                    ))}
+                    {/* Then events */}
+                    {dayEvents.slice(0, 3 - Math.min(dayLeads.length, 2)).map((event) => (
+                      <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
+                    ))}
+                    {totalItems > 3 && (
+                      <>
+                        <button
+                          onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
+                          className="text-xs text-muted-foreground pl-1.5 hover:text-primary transition-colors"
+                        >
+                          +{totalItems - 3} more
+                        </button>
+                        <DaySummaryBadge events={dayEvents} />
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
       ) : (
         /* Month View */
         <motion.div
