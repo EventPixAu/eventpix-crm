@@ -486,6 +486,9 @@ export default function CalendarView() {
             <ToggleGroupItem value="week" aria-label="Week view">
               <Calendar className="h-4 w-4" />
             </ToggleGroupItem>
+            <ToggleGroupItem value="5weeks" aria-label="5 weeks view">
+              <Columns3 className="h-4 w-4" />
+            </ToggleGroupItem>
             <ToggleGroupItem value="list" aria-label="List view">
               <List className="h-4 w-4" />
             </ToggleGroupItem>
