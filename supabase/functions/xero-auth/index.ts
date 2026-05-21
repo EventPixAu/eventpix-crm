@@ -82,10 +82,14 @@ Deno.serve(async (req) => {
 
     switch (path) {
       case 'authorize': {
-        // Generate state for CSRF protection
+        // Generate state for CSRF protection and persist it server-side
         const state = crypto.randomUUID();
-        
-        // Store state in URL for now (in production, use session/cookie)
+        await supabase.from('oauth_states').insert({
+          state,
+          provider: 'xero',
+          user_id: userId,
+        });
+
         const scopes = [
           'openid',
           'profile',
@@ -113,9 +117,9 @@ Deno.serve(async (req) => {
       case 'callback': {
         const code = url.searchParams.get('code');
         const error = url.searchParams.get('error');
+        const returnedState = url.searchParams.get('state');
 
         if (error) {
-          // Redirect back to app with error
           return new Response(null, {
             status: 302,
             headers: { Location: `${origin}/admin/invoices?xero_error=${error}` }
@@ -128,6 +132,29 @@ Deno.serve(async (req) => {
             headers: { Location: `${origin}/admin/invoices?xero_error=no_code` }
           });
         }
+
+        // Validate CSRF state
+        if (!returnedState) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: `${origin}/admin/invoices?xero_error=missing_state` }
+          });
+        }
+        const { data: stateRow } = await supabase
+          .from('oauth_states')
+          .select('state, expires_at')
+          .eq('state', returnedState)
+          .eq('provider', 'xero')
+          .maybeSingle();
+        if (!stateRow || new Date(stateRow.expires_at) < new Date()) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: `${origin}/admin/invoices?xero_error=invalid_state` }
+          });
+        }
+        // Single-use: delete after validation
+        await supabase.from('oauth_states').delete().eq('state', returnedState);
+
 
         // Exchange code for tokens
         const tokenResponse = await fetch(XERO_TOKEN_URL, {
