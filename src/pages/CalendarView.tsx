@@ -28,6 +28,7 @@ import {
   Layers,
   Eye,
   Globe,
+  Columns3,
 } from 'lucide-react';
 import { CalendarSubscribeDialog } from '@/components/CalendarSubscribeDialog';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -55,7 +56,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { getTimezoneAbbr } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'month' | 'week' | 'list';
+type ViewMode = 'month' | 'week' | '5weeks' | 'list';
 
 // Generate consistent colors for series based on their ID
 const SERIES_COLORS = [
@@ -335,6 +336,15 @@ export default function CalendarView() {
     return eachDayOfInterval({ start, end });
   }, [currentWeek]);
 
+  const fiveWeekDays = useMemo(() => {
+    const start = startOfWeek(currentWeek, { weekStartsOn: 0 });
+    const end = addWeeks(start, 5);
+    // end is the start of week 6, so we want days up to but not including end
+    const allDays = eachDayOfInterval({ start, end });
+    allDays.pop(); // Remove the 36th day (start of week 6)
+    return allDays;
+  }, [currentWeek]);
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach((event) => {
@@ -399,16 +409,20 @@ export default function CalendarView() {
   const startDayOfWeek = startOfMonth(currentMonth).getDay();
 
   const handlePrev = () => {
-    if (viewMode === 'week') {
-      setCurrentWeek(subWeeks(currentWeek, 1));
+    if (viewMode === 'week' || viewMode === '5weeks') {
+      const newWeek = subWeeks(currentWeek, 1);
+      setCurrentWeek(newWeek);
+      setCurrentMonth(newWeek);
     } else {
       setCurrentMonth(subMonths(currentMonth, 1));
     }
   };
 
   const handleNext = () => {
-    if (viewMode === 'week') {
-      setCurrentWeek(addWeeks(currentWeek, 1));
+    if (viewMode === 'week' || viewMode === '5weeks') {
+      const newWeek = addWeeks(currentWeek, 1);
+      setCurrentWeek(newWeek);
+      setCurrentMonth(newWeek);
     } else {
       setCurrentMonth(addMonths(currentMonth, 1));
     }
@@ -445,6 +459,8 @@ export default function CalendarView() {
           <h2 className="text-xl font-display font-semibold min-w-[200px] text-center">
             {viewMode === 'week'
               ? `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`
+              : viewMode === '5weeks'
+              ? `${format(fiveWeekDays[0], 'MMM d')} - ${format(fiveWeekDays[34], 'MMM d, yyyy')}`
               : format(currentMonth, 'MMMM yyyy')}
           </h2>
           <Button variant="outline" size="icon" onClick={handleNext}>
@@ -469,6 +485,9 @@ export default function CalendarView() {
             </ToggleGroupItem>
             <ToggleGroupItem value="week" aria-label="Week view">
               <Calendar className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="5weeks" aria-label="5 weeks view">
+              <Columns3 className="h-4 w-4" />
             </ToggleGroupItem>
             <ToggleGroupItem value="list" aria-label="List view">
               <List className="h-4 w-4" />
@@ -551,6 +570,10 @@ export default function CalendarView() {
             <Calendar className="h-4 w-4 mr-2" />
             Week
           </ToggleGroupItem>
+          <ToggleGroupItem value="5weeks" className="flex-1">
+            <Columns3 className="h-4 w-4 mr-2" />
+            5 Wks
+          </ToggleGroupItem>
           <ToggleGroupItem value="list" className="flex-1">
             <List className="h-4 w-4 mr-2" />
             List
@@ -623,6 +646,121 @@ export default function CalendarView() {
                   {dayEvents.map((event) => (
                     <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
                   ))}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      ) : viewMode === '5weeks' ? (
+        /* 5 Weeks View */
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-card border border-border rounded-xl overflow-hidden shadow-card"
+        >
+          {/* Weekday Headers */}
+          <div className="grid grid-cols-7 border-b border-border">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <div
+                key={day}
+                className="py-3 text-center text-sm font-medium text-muted-foreground"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Days - exactly 5 weeks */}
+          <div className="grid grid-cols-7">
+            {fiveWeekDays.map((day) => {
+              const dayEvents = getEventsForDay(day);
+              const dayLeads = getLeadsForDay(day);
+              const isCurrentDay = isToday(day);
+              const totalItems = dayEvents.length + dayLeads.length;
+              const isBusyDay = totalItems >= 5;
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const dayAvailability = availabilityByDate.get(dateStr);
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    'min-h-[120px] border-b border-r border-border p-2 transition-colors',
+                    !isSameMonth(day, currentMonth) && 'bg-muted/30',
+                    isCurrentDay && 'bg-primary/5',
+                    isBusyDay && 'ring-1 ring-inset ring-primary/30',
+                    dayAvailability?.status === 'unavailable' && 'bg-destructive/10',
+                    dayAvailability?.status === 'limited' && 'bg-amber-500/10'
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1">
+                      <span
+                        className={cn(
+                          'w-7 h-7 flex items-center justify-center text-sm rounded-full',
+                          isCurrentDay && 'bg-primary text-primary-foreground font-semibold'
+                        )}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {dayAvailability && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className={cn(
+                              'inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                              dayAvailability.status === 'unavailable' && 'bg-destructive/20 text-destructive',
+                              dayAvailability.status === 'limited' && 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                            )}>
+                              {dayAvailability.status === 'unavailable' ? (
+                                <><UserX className="h-3 w-3" /> {dayAvailability.from ? format(new Date(`2000-01-01T${dayAvailability.from}`), 'ha') : 'Off'}</>
+                              ) : (
+                                <><UserMinus className="h-3 w-3" /> Ltd</>
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-xs">
+                            <p className="font-medium">{selectedStaffName} — {dayAvailability.status === 'unavailable' ? 'Unavailable' : 'Limited'}</p>
+                            {dayAvailability.from && dayAvailability.until && (
+                              <p className="text-xs mt-0.5">
+                                {format(new Date(`2000-01-01T${dayAvailability.from}`), 'h:mm a')} – {format(new Date(`2000-01-01T${dayAvailability.until}`), 'h:mm a')}
+                              </p>
+                            )}
+                            {dayAvailability.notes && <p className="text-xs mt-1">{dayAvailability.notes}</p>}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                    {isBusyDay && (
+                      <button
+                        onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
+                        className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded hover:bg-primary/20 transition-colors"
+                      >
+                        <Eye className="h-3 w-3" />
+                        {totalItems}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {/* Show leads first */}
+                    {dayLeads.slice(0, 2).map((lead) => (
+                      <LeadTile key={`lead-${lead.id}`} lead={lead} />
+                    ))}
+                    {/* Then events */}
+                    {dayEvents.slice(0, 3 - Math.min(dayLeads.length, 2)).map((event) => (
+                      <EventTile key={event.id} event={event} seriesColorMap={seriesColorMap} />
+                    ))}
+                    {totalItems > 3 && (
+                      <>
+                        <button
+                          onClick={() => navigate(`/calendar/day?date=${dateStr}`)}
+                          className="text-xs text-muted-foreground pl-1.5 hover:text-primary transition-colors"
+                        >
+                          +{totalItems - 3} more
+                        </button>
+                        <DaySummaryBadge events={dayEvents} />
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
