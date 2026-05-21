@@ -4060,6 +4060,30 @@ export type Database = {
           },
         ]
       }
+      oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          provider: string
+          state: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          provider: string
+          state: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          provider?: string
+          state?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ops_statuses: {
         Row: {
           created_at: string | null

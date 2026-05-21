@@ -1,14 +1,12 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Webhook } from "https://esm.sh/svix@1.21.0";
 
 /**
  * Resend Webhook Handler
- * 
+ *
  * Receives delivery status events from Resend and updates email_logs accordingly.
- * Configure in Resend dashboard: POST to https://<project>.supabase.co/functions/v1/resend-webhook
- * 
- * Events handled: email.delivered, email.bounced, email.complained,
- *                 email.opened, email.clicked, email.delivery_delayed
+ * Requires RESEND_WEBHOOK_SECRET env var for Svix signature verification.
  */
 
 const corsHeaders = {
@@ -22,7 +20,28 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    // Verify Svix signature
+    const webhookSecret = Deno.env.get("RESEND_WEBHOOK_SECRET");
+    const rawBody = await req.text();
+    if (!webhookSecret) {
+      console.error("RESEND_WEBHOOK_SECRET not configured – rejecting webhook");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    try {
+      const wh = new Webhook(webhookSecret);
+      wh.verify(rawBody, {
+        "svix-id": req.headers.get("svix-id") ?? "",
+        "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
+        "svix-signature": req.headers.get("svix-signature") ?? "",
+      });
+    } catch (e) {
+      console.error("Invalid webhook signature:", e);
+      return new Response(JSON.stringify({ error: "Invalid signature" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    const body = JSON.parse(rawBody);
     const eventType = body.type;
     const data = body.data;
 

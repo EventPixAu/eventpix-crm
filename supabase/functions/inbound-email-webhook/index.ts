@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Webhook } from "https://esm.sh/svix@1.21.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, svix-id, svix-timestamp, svix-signature, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface ResendWebhookPayload {
@@ -32,8 +33,29 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const payload: ResendWebhookPayload = await req.json();
-    console.log("Received inbound email webhook:", JSON.stringify(payload, null, 2));
+    // Verify webhook signature (Svix / Resend)
+    const webhookSecret = Deno.env.get("RESEND_WEBHOOK_SECRET");
+    const rawBody = await req.text();
+    if (!webhookSecret) {
+      console.error("RESEND_WEBHOOK_SECRET not configured – rejecting webhook");
+      return new Response(JSON.stringify({ success: false, error: "Webhook secret not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    try {
+      const wh = new Webhook(webhookSecret);
+      wh.verify(rawBody, {
+        "svix-id": req.headers.get("svix-id") ?? "",
+        "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
+        "svix-signature": req.headers.get("svix-signature") ?? "",
+      });
+    } catch (e) {
+      console.error("Invalid webhook signature:", e);
+      return new Response(JSON.stringify({ success: false, error: "Invalid signature" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    const payload: ResendWebhookPayload = JSON.parse(rawBody);
+    console.log("Received inbound email webhook:", payload.type);
 
     // Extract the data from Resend's webhook structure
     const { data } = payload;
