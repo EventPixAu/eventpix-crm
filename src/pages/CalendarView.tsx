@@ -336,6 +336,15 @@ export default function CalendarView() {
     return eachDayOfInterval({ start, end });
   }, [currentWeek]);
 
+  const fiveWeekDays = useMemo(() => {
+    const start = startOfWeek(currentWeek, { weekStartsOn: 0 });
+    const end = addWeeks(start, 5);
+    // end is the start of week 6, so we want days up to but not including end
+    const allDays = eachDayOfInterval({ start, end });
+    allDays.pop(); // Remove the 36th day (start of week 6)
+    return allDays;
+  }, [currentWeek]);
+
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach((event) => {
