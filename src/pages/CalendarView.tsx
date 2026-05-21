@@ -267,7 +267,7 @@ export default function CalendarView() {
   const navigate = useNavigate();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('5weeks');
   const [selectedStaff, setSelectedStaff] = useState('all');
   const [selectedEventType, setSelectedEventType] = useState('all');
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('all');
