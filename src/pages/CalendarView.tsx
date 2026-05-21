@@ -570,6 +570,10 @@ export default function CalendarView() {
             <Calendar className="h-4 w-4 mr-2" />
             Week
           </ToggleGroupItem>
+          <ToggleGroupItem value="5weeks" className="flex-1">
+            <Columns3 className="h-4 w-4 mr-2" />
+            5 Wks
+          </ToggleGroupItem>
           <ToggleGroupItem value="list" className="flex-1">
             <List className="h-4 w-4 mr-2" />
             List
