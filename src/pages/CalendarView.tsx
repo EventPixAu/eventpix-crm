@@ -28,6 +28,7 @@ import {
   Layers,
   Eye,
   Globe,
+  Columns3,
 } from 'lucide-react';
 import { CalendarSubscribeDialog } from '@/components/CalendarSubscribeDialog';
 import { AppLayout } from '@/components/layout/AppLayout';
