@@ -409,16 +409,20 @@ export default function CalendarView() {
   const startDayOfWeek = startOfMonth(currentMonth).getDay();
 
   const handlePrev = () => {
-    if (viewMode === 'week') {
-      setCurrentWeek(subWeeks(currentWeek, 1));
+    if (viewMode === 'week' || viewMode === '5weeks') {
+      const newWeek = subWeeks(currentWeek, 1);
+      setCurrentWeek(newWeek);
+      setCurrentMonth(newWeek);
     } else {
       setCurrentMonth(subMonths(currentMonth, 1));
     }
   };
 
   const handleNext = () => {
-    if (viewMode === 'week') {
-      setCurrentWeek(addWeeks(currentWeek, 1));
+    if (viewMode === 'week' || viewMode === '5weeks') {
+      const newWeek = addWeeks(currentWeek, 1);
+      setCurrentWeek(newWeek);
+      setCurrentMonth(newWeek);
     } else {
       setCurrentMonth(addMonths(currentMonth, 1));
     }
