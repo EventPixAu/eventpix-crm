@@ -459,6 +459,8 @@ export default function CalendarView() {
           <h2 className="text-xl font-display font-semibold min-w-[200px] text-center">
             {viewMode === 'week'
               ? `${format(weekDays[0], 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`
+              : viewMode === '5weeks'
+              ? `${format(fiveWeekDays[0], 'MMM d')} - ${format(fiveWeekDays[34], 'MMM d, yyyy')}`
               : format(currentMonth, 'MMMM yyyy')}
           </h2>
           <Button variant="outline" size="icon" onClick={handleNext}>
