@@ -56,7 +56,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { getTimezoneAbbr } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'month' | 'week' | 'list';
+type ViewMode = 'month' | 'week' | '5weeks' | 'list';
 
 // Generate consistent colors for series based on their ID
 const SERIES_COLORS = [
