@@ -60,7 +60,7 @@ export function GuardrailOverrideDialog({
       eventId,
       userId,
       overrideType,
-      rulesBreached: Array.from(acknowledgedRules),
+      rulesBreached: allBlocks.map(b => b.rule),
       justification: justification.trim(),
     });
     
