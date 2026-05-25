@@ -215,6 +215,20 @@ export function CrewChecklistTemplatesManager() {
     },
   });
 
+  // Fetch event types
+  const { data: eventTypes = [] } = useQuery({
+    queryKey: ['event-types-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_types')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      if (error) throw error;
+      return data as EventType[];
+    },
+  });
+
   // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (data: {
@@ -225,7 +239,9 @@ export function CrewChecklistTemplatesManager() {
       is_active: boolean;
       staff_role_id: string | null;
       phase: CrewPhase;
+      event_type_ids: string[];
     }) => {
+      let templateId = data.id;
       if (data.id) {
         const { error } = await supabase
           .from('crew_checklist_templates')
@@ -241,7 +257,7 @@ export function CrewChecklistTemplatesManager() {
           .eq('id', data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('crew_checklist_templates')
           .insert({
             name: data.name,
@@ -250,8 +266,32 @@ export function CrewChecklistTemplatesManager() {
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
             phase: data.phase,
-          });
+          })
+          .select('id')
+          .single();
         if (error) throw error;
+        templateId = inserted.id;
+      }
+
+      // Sync event type links
+      if (templateId) {
+        const { error: delErr } = await supabase
+          .from('crew_checklist_template_event_types')
+          .delete()
+          .eq('template_id', templateId);
+        if (delErr) throw delErr;
+
+        if (data.event_type_ids.length > 0) {
+          const { error: insErr } = await supabase
+            .from('crew_checklist_template_event_types')
+            .insert(
+              data.event_type_ids.map(eid => ({
+                template_id: templateId!,
+                event_type_id: eid,
+              }))
+            );
+          if (insErr) throw insErr;
+        }
       }
     },
     onSuccess: () => {
