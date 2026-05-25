@@ -35,7 +35,6 @@ export function useMyJobTasks() {
           due_date,
           is_completed,
           event_id,
-          assigned_role,
           events!inner(
             id,
             event_name,
@@ -59,7 +58,7 @@ export function useMyJobTasks() {
         event_name: row.events.event_name,
         ops_status: row.events.ops_status,
         event_date: row.events.event_date,
-        event_role: row.assigned_role ?? null,
+        event_role: null,
       }));
     },
   });
