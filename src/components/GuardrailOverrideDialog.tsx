@@ -43,8 +43,7 @@ export function GuardrailOverrideDialog({
   const logOverride = useLogGuardrailOverride();
   
   const allBlocks = [...hardBlocks, ...softBlocks];
-  const allAcknowledged = allBlocks.every(block => acknowledgedRules.has(block.rule));
-  const canConfirm = allAcknowledged && justification.trim().length >= 10;
+  const canConfirm = justification.trim().length >= 10;
   
   const handleToggleRule = (rule: string) => {
     const newSet = new Set(acknowledgedRules);
@@ -61,7 +60,7 @@ export function GuardrailOverrideDialog({
       eventId,
       userId,
       overrideType,
-      rulesBreached: Array.from(acknowledgedRules),
+      rulesBreached: allBlocks.map(b => b.rule),
       justification: justification.trim(),
     });
     
