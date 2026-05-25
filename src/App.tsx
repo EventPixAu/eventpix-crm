@@ -129,8 +129,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
  * - Crew: Photographer-focused mobile dashboard
  */
 function RoleBasedDashboard() {
-  const { role, isAdmin, loading, user } = useAuth();
-  
+  const { role, isAdmin, loading } = useAuth();
+  const { data: hasOwnTasks, isLoading: hasTasksLoading } = useHasOwnJobTasks();
+
   // Still resolving role — show spinner instead of prematurely redirecting
   if (loading) {
     return (
@@ -140,16 +141,27 @@ function RoleBasedDashboard() {
     );
   }
 
-   // Admin and Operations default to Operations Dashboard
-   if (isAdmin || role === 'operations') {
+   // Operations users who also hold event-role assignments land on a personal "My Tasks" dashboard.
+   // Admins and pure operations users (no personal assignments) keep the full Operations dashboard.
+   if (role === 'operations') {
+     if (hasTasksLoading) {
+       return (
+         <div className="min-h-screen flex items-center justify-center bg-background">
+           <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+         </div>
+       );
+     }
+     return <Navigate to={hasOwnTasks ? '/my-tasks' : '/operations'} replace />;
+   }
+   if (isAdmin) {
      return <Navigate to="/operations" replace />;
    }
-  
+
   // Sales users get sales dashboard
   if (role === 'sales') {
     return <Navigate to="/sales/dashboard" replace />;
   }
-  
+
   // Crew (photographers) get the mobile-first photographer dashboard
   if (role === 'crew') {
     return <PhotographerDashboard />;
