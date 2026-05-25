@@ -457,6 +457,7 @@ export default function WorkflowsAdmin() {
       help_text: newStep.help_text || null,
       is_active: true,
       default_staff_role_id: newStep.default_staff_role_id ?? adminRole?.id ?? null,
+      default_assignee_user_id: null,
     });
     
     // If we're in Event Types tab with a selected event type, add this step to selection
@@ -516,6 +517,7 @@ export default function WorkflowsAdmin() {
       help_text: step.help_text,
       is_active: step.is_active,
       default_staff_role_id: step.default_staff_role_id,
+      default_assignee_user_id: step.default_assignee_user_id,
     });
   };
 
