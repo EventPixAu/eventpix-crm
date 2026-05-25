@@ -41,24 +41,34 @@ export interface CrewChecklistTemplate {
 }
 
 // Fetch crew checklist templates
-export function useCrewChecklistTemplates() {
+export function useCrewChecklistTemplates(eventTypeId?: string | null) {
   return useQuery({
-    queryKey: ['crew-checklist-templates'],
+    queryKey: ['crew-checklist-templates', eventTypeId ?? 'all'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_checklist_templates')
-        .select('*')
+        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)')
         .eq('is_active', true)
         .order('name');
-      
+
       if (error) throw error;
-      return (data || []).map(t => ({
+      const rows = (data || []).map(t => ({
         ...t,
         items: (t.items as unknown as { item_text: string; sort_order: number }[]) || [],
-      })) as CrewChecklistTemplate[];
+        event_type_ids: ((t as any).event_type_links || []).map((l: any) => l.event_type_id) as string[],
+      }));
+
+      // Filter: if eventTypeId provided, include templates that either have no linked
+      // event types (apply to all) or include this specific event type.
+      const filtered = eventTypeId
+        ? rows.filter(t => t.event_type_ids.length === 0 || t.event_type_ids.includes(eventTypeId))
+        : rows;
+
+      return filtered as (CrewChecklistTemplate & { event_type_ids: string[] })[];
     },
   });
 }
+
 
 // Fetch my checklist for a specific event
 export function useMyCrewChecklist(eventId: string | undefined) {
