@@ -5979,6 +5979,7 @@ export type Database = {
           created_at: string
           date_offset_days: number | null
           date_offset_reference: string | null
+          default_assignee_user_id: string | null
           default_staff_role_id: string | null
           help_text: string | null
           id: string
@@ -5994,6 +5995,7 @@ export type Database = {
           created_at?: string
           date_offset_days?: number | null
           date_offset_reference?: string | null
+          default_assignee_user_id?: string | null
           default_staff_role_id?: string | null
           help_text?: string | null
           id?: string
@@ -6009,6 +6011,7 @@ export type Database = {
           created_at?: string
           date_offset_days?: number | null
           date_offset_reference?: string | null
+          default_assignee_user_id?: string | null
           default_staff_role_id?: string | null
           help_text?: string | null
           id?: string
@@ -6445,6 +6448,10 @@ export type Database = {
         Returns: Json
       }
       admin_sync_staff_assignments: { Args: never; Returns: number }
+      apply_default_step_assignees: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       auto_complete_workflow_step: {
         Args: {
           p_entity_id: string

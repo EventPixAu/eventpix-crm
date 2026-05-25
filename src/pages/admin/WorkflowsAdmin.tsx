@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
   Settings2, 
@@ -321,6 +322,18 @@ export default function WorkflowsAdmin() {
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
   const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
   const { data: staffRoles = [] } = useAllStaffRoles();
+  const { data: assignableUsers = [] } = useQuery({
+    queryKey: ['assignable-staff-for-defaults'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('is_active', true)
+        .order('full_name', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; full_name: string | null; email: string }>;
+    },
+  });
   
   const setDefaults = useSetEventTypeStepDefaults();
   const createStep = useCreateMasterStep();
@@ -457,6 +470,7 @@ export default function WorkflowsAdmin() {
       help_text: newStep.help_text || null,
       is_active: true,
       default_staff_role_id: newStep.default_staff_role_id ?? adminRole?.id ?? null,
+      default_assignee_user_id: null,
     });
     
     // If we're in Event Types tab with a selected event type, add this step to selection
@@ -489,6 +503,7 @@ export default function WorkflowsAdmin() {
       help_text: editingStep.help_text,
       is_active: editingStep.is_active,
       default_staff_role_id: editingStep.default_staff_role_id,
+      default_assignee_user_id: editingStep.default_assignee_user_id,
     });
     
     setEditingStep(null);
@@ -515,6 +530,7 @@ export default function WorkflowsAdmin() {
       help_text: step.help_text,
       is_active: step.is_active,
       default_staff_role_id: step.default_staff_role_id,
+      default_assignee_user_id: step.default_assignee_user_id,
     });
   };
 
@@ -1253,6 +1269,35 @@ export default function WorkflowsAdmin() {
                   Role assigned by default when this step is initialized
                 </p>
               </div>
+
+              <div>
+                <Label>Default Assignee (person)</Label>
+                <Select
+                  value={editingStep.default_assignee_user_id ?? '__none__'}
+                  onValueChange={v =>
+                    setEditingStep({
+                      ...editingStep,
+                      default_assignee_user_id: v === '__none__' ? null : v,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No default assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {assignableUsers.map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Person auto-assigned to this step on new events. Overrides nothing on existing events.
+                </p>
+              </div>
+
 
               <div>
                 <Label>Help Text</Label>

@@ -44,6 +44,7 @@ import { StaffRateEditor } from '@/components/StaffRateEditor';
 import { StaffProfileEditor } from '@/components/StaffProfileEditor';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
+import { StaffWorkflowDefaults } from '@/components/StaffWorkflowDefaults';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
@@ -684,6 +685,12 @@ export default function StaffDetail() {
               Compliance
             </TabsTrigger>
           )}
+          {isAdmin && (
+            <TabsTrigger value="workflow-defaults" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Workflow Defaults
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Profile Tab */}
@@ -1027,6 +1034,14 @@ export default function StaffDetail() {
             <StaffCompliancePanel 
               userId={id} 
               currentOnboardingStatus={onboardingStatus}
+            />
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="workflow-defaults">
+            <StaffWorkflowDefaults
+              userId={profile.id}
+              fullName={profile.full_name || profile.email}
             />
           </TabsContent>
         )}
