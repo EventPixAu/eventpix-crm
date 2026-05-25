@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
   Settings2, 
@@ -321,6 +322,18 @@ export default function WorkflowsAdmin() {
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
   const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
   const { data: staffRoles = [] } = useAllStaffRoles();
+  const { data: assignableUsers = [] } = useQuery({
+    queryKey: ['assignable-staff-for-defaults'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('is_active', true)
+        .order('full_name', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; full_name: string | null; email: string }>;
+    },
+  });
   
   const setDefaults = useSetEventTypeStepDefaults();
   const createStep = useCreateMasterStep();
