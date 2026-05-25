@@ -504,11 +504,18 @@ export function CrewChecklistTemplatesManager() {
                               <ClipboardList className="h-4 w-4 text-muted-foreground" />
                               <div>
                                 <span className="font-medium">{template.name}</span>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
                                   <Badge variant="outline" className="text-xs">
                                     <Users className="h-3 w-3 mr-1" />
                                     {getRoleName(template.staff_role_id)}
                                   </Badge>
+                                  {template.event_type_ids.length > 0 ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      {template.event_type_ids.length} event type{template.event_type_ids.length === 1 ? '' : 's'}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs">All event types</Badge>
+                                  )}
                                   <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
                                     {template.is_active ? 'Active' : 'Inactive'}
                                   </Badge>
