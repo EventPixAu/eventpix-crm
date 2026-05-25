@@ -636,6 +636,39 @@ export function CrewChecklistTemplatesManager() {
             </div>
 
             <div className="space-y-2">
+              <Label>Applies to Event Types</Label>
+              <p className="text-xs text-muted-foreground">
+                Leave all unchecked to apply this template to every event type.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+                {eventTypes.length === 0 && (
+                  <span className="text-xs text-muted-foreground italic">No event types defined</span>
+                )}
+                {eventTypes.map((et) => {
+                  const checked = formEventTypeIds.includes(et.id);
+                  return (
+                    <label key={et.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormEventTypeIds([...formEventTypeIds, et.id]);
+                          } else {
+                            setFormEventTypeIds(formEventTypeIds.filter((id) => id !== et.id));
+                          }
+                        }}
+                      />
+                      <span>{et.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+
+            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
