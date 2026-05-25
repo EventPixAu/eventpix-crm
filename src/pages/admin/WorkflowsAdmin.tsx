@@ -489,6 +489,7 @@ export default function WorkflowsAdmin() {
       help_text: editingStep.help_text,
       is_active: editingStep.is_active,
       default_staff_role_id: editingStep.default_staff_role_id,
+      default_assignee_user_id: editingStep.default_assignee_user_id,
     });
     
     setEditingStep(null);

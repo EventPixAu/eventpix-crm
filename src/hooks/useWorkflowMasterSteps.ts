@@ -16,6 +16,7 @@ export interface WorkflowMasterStep {
   help_text: string | null;
   is_active: boolean;
   default_staff_role_id: string | null;
+  default_assignee_user_id: string | null;
   created_at: string;
   updated_at: string;
 }
