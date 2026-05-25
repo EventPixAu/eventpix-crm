@@ -1309,6 +1309,39 @@ export type Database = {
           },
         ]
       }
+      crew_checklist_template_event_types: {
+        Row: {
+          created_at: string
+          event_type_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_checklist_template_event_types_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crew_checklist_template_event_types_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crew_checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crew_checklist_templates: {
         Row: {
           created_at: string | null

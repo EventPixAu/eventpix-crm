@@ -149,6 +149,7 @@ interface CrewChecklistTemplate {
   staff_role_id: string | null;
   phase: CrewPhase;
   created_at: string | null;
+  event_type_ids: string[];
 }
 
 const PHASE_CONFIG = [
@@ -158,6 +159,11 @@ const PHASE_CONFIG = [
 ] as const;
 
 interface StaffRole {
+  id: string;
+  name: string;
+}
+
+interface EventType {
   id: string;
   name: string;
 }
@@ -176,6 +182,7 @@ export function CrewChecklistTemplatesManager() {
   const [formPhase, setFormPhase] = useState<CrewPhase>('pre_event');
   const [formIsActive, setFormIsActive] = useState(true);
   const [formItems, setFormItems] = useState<ChecklistItem[]>([]);
+  const [formEventTypeIds, setFormEventTypeIds] = useState<string[]>([]);
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery({
@@ -183,12 +190,13 @@ export function CrewChecklistTemplatesManager() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_checklist_templates')
-        .select('*')
+        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)')
         .order('name');
       if (error) throw error;
-      return (data || []).map((t) => ({
+      return (data || []).map((t: any) => ({
         ...t,
         items: (t.items as unknown as ChecklistItem[]) || [],
+        event_type_ids: (t.event_type_links || []).map((l: any) => l.event_type_id),
       })) as CrewChecklistTemplate[];
     },
   });
@@ -207,6 +215,20 @@ export function CrewChecklistTemplatesManager() {
     },
   });
 
+  // Fetch event types
+  const { data: eventTypes = [] } = useQuery({
+    queryKey: ['event-types-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('event_types')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      if (error) throw error;
+      return data as EventType[];
+    },
+  });
+
   // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (data: {
@@ -217,7 +239,9 @@ export function CrewChecklistTemplatesManager() {
       is_active: boolean;
       staff_role_id: string | null;
       phase: CrewPhase;
+      event_type_ids: string[];
     }) => {
+      let templateId = data.id;
       if (data.id) {
         const { error } = await supabase
           .from('crew_checklist_templates')
@@ -233,7 +257,7 @@ export function CrewChecklistTemplatesManager() {
           .eq('id', data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('crew_checklist_templates')
           .insert({
             name: data.name,
@@ -242,8 +266,32 @@ export function CrewChecklistTemplatesManager() {
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
             phase: data.phase,
-          });
+          })
+          .select('id')
+          .single();
         if (error) throw error;
+        templateId = inserted.id;
+      }
+
+      // Sync event type links
+      if (templateId) {
+        const { error: delErr } = await supabase
+          .from('crew_checklist_template_event_types')
+          .delete()
+          .eq('template_id', templateId);
+        if (delErr) throw delErr;
+
+        if (data.event_type_ids.length > 0) {
+          const { error: insErr } = await supabase
+            .from('crew_checklist_template_event_types')
+            .insert(
+              data.event_type_ids.map(eid => ({
+                template_id: templateId!,
+                event_type_id: eid,
+              }))
+            );
+          if (insErr) throw insErr;
+        }
       }
     },
     onSuccess: () => {
@@ -309,6 +357,7 @@ export function CrewChecklistTemplatesManager() {
     setFormPhase('pre_event');
     setFormIsActive(true);
     setFormItems([{ item_text: '', sort_order: 1 }]);
+    setFormEventTypeIds([]);
     setEditingTemplate({} as CrewChecklistTemplate);
   };
 
@@ -320,6 +369,7 @@ export function CrewChecklistTemplatesManager() {
     setFormPhase(template.phase || 'pre_event');
     setFormIsActive(template.is_active);
     setFormItems(template.items.length > 0 ? template.items : [{ item_text: '', sort_order: 1 }]);
+    setFormEventTypeIds(template.event_type_ids || []);
     setEditingTemplate(template);
   };
 
@@ -351,6 +401,7 @@ export function CrewChecklistTemplatesManager() {
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
       phase: formPhase,
+      event_type_ids: formEventTypeIds,
     });
   };
 
@@ -453,11 +504,18 @@ export function CrewChecklistTemplatesManager() {
                               <ClipboardList className="h-4 w-4 text-muted-foreground" />
                               <div>
                                 <span className="font-medium">{template.name}</span>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
                                   <Badge variant="outline" className="text-xs">
                                     <Users className="h-3 w-3 mr-1" />
                                     {getRoleName(template.staff_role_id)}
                                   </Badge>
+                                  {template.event_type_ids.length > 0 ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      {template.event_type_ids.length} event type{template.event_type_ids.length === 1 ? '' : 's'}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs">All event types</Badge>
+                                  )}
                                   <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
                                     {template.is_active ? 'Active' : 'Inactive'}
                                   </Badge>
@@ -583,6 +641,39 @@ export function CrewChecklistTemplatesManager() {
                 </Select>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label>Applies to Event Types</Label>
+              <p className="text-xs text-muted-foreground">
+                Leave all unchecked to apply this template to every event type.
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+                {eventTypes.length === 0 && (
+                  <span className="text-xs text-muted-foreground italic">No event types defined</span>
+                )}
+                {eventTypes.map((et) => {
+                  const checked = formEventTypeIds.includes(et.id);
+                  return (
+                    <label key={et.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormEventTypeIds([...formEventTypeIds, et.id]);
+                          } else {
+                            setFormEventTypeIds(formEventTypeIds.filter((id) => id !== et.id));
+                          }
+                        }}
+                      />
+                      <span>{et.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
