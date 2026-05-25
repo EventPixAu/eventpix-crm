@@ -95,7 +95,7 @@ export default function MyTasksDashboard() {
           <StatCard title="Due Today" value={stats.dueToday} icon={Calendar} variant="default" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <StatCard title="Overdue" value={stats.overdue} icon={AlertCircle} variant={stats.overdue > 0 ? 'destructive' : 'default'} />
+          <StatCard title="Overdue" value={stats.overdue} icon={AlertCircle} variant={stats.overdue > 0 ? 'warning' : 'default'} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <StatCard title="Across Events" value={stats.events} icon={CheckCircle2} variant="default" />
