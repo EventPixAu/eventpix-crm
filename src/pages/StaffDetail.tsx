@@ -1036,6 +1036,14 @@ export default function StaffDetail() {
             />
           </TabsContent>
         )}
+        {isAdmin && (
+          <TabsContent value="workflow-defaults">
+            <StaffWorkflowDefaults
+              userId={profile.id}
+              fullName={profile.full_name || profile.email}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </AppLayout>
   );
