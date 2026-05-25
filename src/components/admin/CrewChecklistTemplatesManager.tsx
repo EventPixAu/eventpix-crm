@@ -357,6 +357,7 @@ export function CrewChecklistTemplatesManager() {
     setFormPhase('pre_event');
     setFormIsActive(true);
     setFormItems([{ item_text: '', sort_order: 1 }]);
+    setFormEventTypeIds([]);
     setEditingTemplate({} as CrewChecklistTemplate);
   };
 
@@ -368,6 +369,7 @@ export function CrewChecklistTemplatesManager() {
     setFormPhase(template.phase || 'pre_event');
     setFormIsActive(template.is_active);
     setFormItems(template.items.length > 0 ? template.items : [{ item_text: '', sort_order: 1 }]);
+    setFormEventTypeIds(template.event_type_ids || []);
     setEditingTemplate(template);
   };
 
@@ -399,6 +401,7 @@ export function CrewChecklistTemplatesManager() {
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
       phase: formPhase,
+      event_type_ids: formEventTypeIds,
     });
   };
 
