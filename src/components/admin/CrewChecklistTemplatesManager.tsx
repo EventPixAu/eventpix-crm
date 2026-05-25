@@ -149,6 +149,7 @@ interface CrewChecklistTemplate {
   staff_role_id: string | null;
   phase: CrewPhase;
   created_at: string | null;
+  event_type_ids: string[];
 }
 
 const PHASE_CONFIG = [
@@ -158,6 +159,11 @@ const PHASE_CONFIG = [
 ] as const;
 
 interface StaffRole {
+  id: string;
+  name: string;
+}
+
+interface EventType {
   id: string;
   name: string;
 }
@@ -176,6 +182,7 @@ export function CrewChecklistTemplatesManager() {
   const [formPhase, setFormPhase] = useState<CrewPhase>('pre_event');
   const [formIsActive, setFormIsActive] = useState(true);
   const [formItems, setFormItems] = useState<ChecklistItem[]>([]);
+  const [formEventTypeIds, setFormEventTypeIds] = useState<string[]>([]);
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery({
@@ -183,12 +190,13 @@ export function CrewChecklistTemplatesManager() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_checklist_templates')
-        .select('*')
+        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)')
         .order('name');
       if (error) throw error;
-      return (data || []).map((t) => ({
+      return (data || []).map((t: any) => ({
         ...t,
         items: (t.items as unknown as ChecklistItem[]) || [],
+        event_type_ids: (t.event_type_links || []).map((l: any) => l.event_type_id),
       })) as CrewChecklistTemplate[];
     },
   });
