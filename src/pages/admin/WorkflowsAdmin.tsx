@@ -1271,6 +1271,35 @@ export default function WorkflowsAdmin() {
               </div>
 
               <div>
+                <Label>Default Assignee (person)</Label>
+                <Select
+                  value={editingStep.default_assignee_user_id ?? '__none__'}
+                  onValueChange={v =>
+                    setEditingStep({
+                      ...editingStep,
+                      default_assignee_user_id: v === '__none__' ? null : v,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="No default assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— None —</SelectItem>
+                    {assignableUsers.map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Person auto-assigned to this step on new events. Overrides nothing on existing events.
+                </p>
+              </div>
+
+
+              <div>
                 <Label>Help Text</Label>
                 <Input
                   value={editingStep.help_text ?? ''}
