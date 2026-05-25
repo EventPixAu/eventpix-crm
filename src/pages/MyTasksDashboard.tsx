@@ -8,7 +8,7 @@
  * They still have full CRM/Sales/Operations access via the sidebar and
  * can drill into any event from the linked event names.
  */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -17,12 +17,10 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { useMyJobTasks, type MyJobTask } from '@/hooks/useMyJobTasks';
-import { useCompleteWorkflowStep } from '@/hooks/useEventWorkflowSteps';
 
 function getRelativeDate(dateStr: string) {
   const date = parseISO(dateStr);
