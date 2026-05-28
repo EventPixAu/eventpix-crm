@@ -3,7 +3,7 @@
  * plus a pre-registration link field.
  */
 import { useState, useRef, useCallback } from 'react';
-import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera, Palette } from 'lucide-react';
+import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera, Palette, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +19,11 @@ interface EventQrPanelProps {
   dropboxLink?: string | null;
   smugmugLink?: string | null;
   artworkDriveLink?: string | null;
+  eventWebPageLink?: string | null;
   isAdmin?: boolean;
 }
 
-export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, artworkDriveLink, isAdmin = false }: EventQrPanelProps) {
+export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, artworkDriveLink, eventWebPageLink, isAdmin = false }: EventQrPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -42,6 +43,10 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   const [artworkValue, setArtworkValue] = useState(artworkDriveLink || '');
   const [savingArtwork, setSavingArtwork] = useState(false);
   const [copiedArtwork, setCopiedArtwork] = useState(false);
+  const [editingWebPage, setEditingWebPage] = useState(false);
+  const [webPageValue, setWebPageValue] = useState(eventWebPageLink || '');
+  const [savingWebPage, setSavingWebPage] = useState(false);
+  const [copiedWebPage, setCopiedWebPage] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -346,6 +351,23 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           isAdmin={isAdmin}
           placeholder="https://drive.google.com/..."
           onSave={() => handleSaveGenericLink('artwork_drive_link', artworkValue, setSavingArtwork, setEditingArtwork, 'Artwork link')}
+        />
+
+        {/* Event Web Page Link (visible to team) */}
+        <LinkField
+          label="Event Web Page"
+          icon={<Globe className="h-3.5 w-3.5" />}
+          currentValue={eventWebPageLink}
+          editValue={webPageValue}
+          setEditValue={setWebPageValue}
+          editing={editingWebPage}
+          setEditing={setEditingWebPage}
+          saving={savingWebPage}
+          copied={copiedWebPage}
+          setCopied={setCopiedWebPage}
+          isAdmin={isAdmin}
+          placeholder="https://..."
+          onSave={() => handleSaveGenericLink('event_web_page_link', webPageValue, setSavingWebPage, setEditingWebPage, 'Event web page')}
         />
       </CardContent>
     </Card>
