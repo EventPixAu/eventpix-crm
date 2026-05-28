@@ -228,12 +228,18 @@ export function BulkEventCreationDialog({
   const handleBulkCreate = async () => {
     if (validRows.length === 0) return;
     
+    const seriesAdditionalContactIds: string[] = (((series as any).additional_contact_ids as string[] | null) || []).filter(Boolean);
+
     const events = validRows.map(row => {
       const venueName = row.city || row.venue_name;
       // Use row-specific contact, or fall back to default if enabled
       const contactName = row.onsite_contact_name || (useDefaultContact ? defaultContactInfo.name : '');
       const contactPhone = row.onsite_contact_phone || (useDefaultContact ? defaultContactInfo.phone : '');
-      
+
+      // Build list of client_contact_ids to attach: row contact (or default) first, then series additional
+      const primaryContactId = row.onsite_contact_id || (useDefaultContact ? defaultContactId : null);
+      const contactIds = [primaryContactId, ...seriesAdditionalContactIds].filter((v): v is string => !!v);
+
       return {
         event_name: `${series.name} - ${venueName}`,
         client_name: clientName || series.name,
@@ -254,6 +260,7 @@ export function BulkEventCreationDialog({
           ? format(addDays(parseISO(row.event_date), series.default_delivery_deadline_days || 5), 'yyyy-MM-dd')
           : undefined,
         notes: row.notes || undefined,
+        contact_ids: contactIds,
       };
     });
     

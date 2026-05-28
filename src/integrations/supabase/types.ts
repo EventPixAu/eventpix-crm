@@ -2587,6 +2587,7 @@ export type Database = {
       }
       event_series: {
         Row: {
+          additional_contact_ids: string[]
           created_at: string | null
           default_contact_id: string | null
           default_coverage_details: string | null
@@ -2611,6 +2612,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          additional_contact_ids?: string[]
           created_at?: string | null
           default_contact_id?: string | null
           default_coverage_details?: string | null
@@ -2635,6 +2637,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          additional_contact_ids?: string[]
           created_at?: string | null
           default_contact_id?: string | null
           default_coverage_details?: string | null

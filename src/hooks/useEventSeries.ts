@@ -321,6 +321,7 @@ export function useBulkCreateEvents() {
       ops_status?: string;
       delivery_deadline?: string;
       notes?: string;
+      contact_ids?: string[];
     }>) => {
       const results = {
         created: 0,
@@ -331,9 +332,10 @@ export function useBulkCreateEvents() {
       // Insert events one by one to trigger worksheets creation
       for (const event of events) {
         try {
+          const { contact_ids, ...eventInsert } = event;
           const { data, error } = await supabase
             .from('events')
-            .insert(event)
+            .insert(eventInsert)
             .select('id')
             .single();
           
@@ -363,6 +365,37 @@ export function useBulkCreateEvents() {
             console.error('Bulk create session error:', event.event_name, sessionError);
             results.errors.push(`${event.event_name}: Event created but session was not created (${sessionError.message})`);
           }
+
+          // Attach client contacts (primary + additional) as event_contacts
+          const uniqueContactIds = Array.from(new Set((contact_ids || []).filter(Boolean)));
+          if (uniqueContactIds.length > 0) {
+            const { data: contactRows } = await supabase
+              .from('client_contacts')
+              .select('id, contact_name, email, phone, phone_mobile, phone_office')
+              .in('id', uniqueContactIds);
+
+            const rowsToInsert = uniqueContactIds.map((cid, idx) => {
+              const c = contactRows?.find(r => r.id === cid);
+              return {
+                event_id: data.id,
+                client_contact_id: cid,
+                contact_name: c?.contact_name || null,
+                contact_email: c?.email || null,
+                contact_phone: c?.phone_mobile || c?.phone_office || c?.phone || null,
+                contact_type: idx === 0 ? 'primary' : 'other',
+                sort_order: idx,
+              };
+            });
+
+            const { error: contactsError } = await supabase
+              .from('event_contacts')
+              .insert(rowsToInsert);
+            if (contactsError) {
+              console.error('Bulk create contacts error:', event.event_name, contactsError);
+              results.errors.push(`${event.event_name}: Event created but contacts were not linked (${contactsError.message})`);
+            }
+          }
+
             results.created++;
           }
         } catch (err: any) {
@@ -371,6 +404,7 @@ export function useBulkCreateEvents() {
           results.errors.push(`${event.event_name}: ${err.message}`);
         }
       }
+
       
       return results;
     },
