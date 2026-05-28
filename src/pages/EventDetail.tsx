@@ -1086,7 +1086,7 @@ export default function EventDetail() {
                       </Button>
                     )}
                   </div>
-                  <SessionsDisplay eventId={id} />
+                  <SessionsDisplay eventId={id} assignments={assignments} />
                 </div>
               )}
 
