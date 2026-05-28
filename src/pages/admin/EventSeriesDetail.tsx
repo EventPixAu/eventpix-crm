@@ -198,6 +198,7 @@ export default function EventSeriesDetail() {
         default_ops_status: editDefaultOpsStatus || 'confirmed',
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
+        additional_contact_ids: editAdditionalContactIds.filter(Boolean),
       } as any)
       .eq('id', id);
     
