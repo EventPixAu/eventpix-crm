@@ -352,6 +352,23 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           placeholder="https://drive.google.com/..."
           onSave={() => handleSaveGenericLink('artwork_drive_link', artworkValue, setSavingArtwork, setEditingArtwork, 'Artwork link')}
         />
+
+        {/* Event Web Page Link (visible to team) */}
+        <LinkField
+          label="Event Web Page"
+          icon={<Globe className="h-3.5 w-3.5" />}
+          currentValue={eventWebPageLink}
+          editValue={webPageValue}
+          setEditValue={setWebPageValue}
+          editing={editingWebPage}
+          setEditing={setEditingWebPage}
+          saving={savingWebPage}
+          copied={copiedWebPage}
+          setCopied={setCopiedWebPage}
+          isAdmin={isAdmin}
+          placeholder="https://..."
+          onSave={() => handleSaveGenericLink('event_web_page_link', webPageValue, setSavingWebPage, setEditingWebPage, 'Event web page')}
+        />
       </CardContent>
     </Card>
   );
