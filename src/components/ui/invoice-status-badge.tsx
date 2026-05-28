@@ -3,7 +3,7 @@ import { DollarSign, Clock, CheckCircle, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InvoiceStatusBadgeProps {
-  status: 'not_invoiced' | 'invoiced' | 'paid' | null;
+  status: 'not_invoiced' | 'invoiced' | 'paid' | 'sponsored' | null;
   reference?: string | null;
   className?: string;
 }
@@ -27,6 +27,12 @@ export function InvoiceStatusBadge({ status, reference, className }: InvoiceStat
       icon: CheckCircle,
       variant: 'secondary' as const,
       className: 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400',
+    },
+    sponsored: {
+      label: 'Sponsored',
+      icon: Gift,
+      variant: 'secondary' as const,
+      className: 'border-purple-500/50 bg-purple-500/10 text-purple-700 dark:text-purple-400',
     },
   };
 
