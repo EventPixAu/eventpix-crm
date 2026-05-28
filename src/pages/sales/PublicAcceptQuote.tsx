@@ -123,6 +123,7 @@ export default function PublicAcceptQuote() {
             quoteId: quote.id,
             acceptedByName: formData.name,
             acceptedByEmail: formData.email,
+            publicToken: token,
           },
         }).catch(err => {
           console.error('Failed to send confirmation emails:', err);
