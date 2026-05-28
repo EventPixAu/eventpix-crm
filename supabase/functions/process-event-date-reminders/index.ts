@@ -41,6 +41,35 @@ async function sendViaGmailApi(to: string, subject: string, html: string): Promi
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Auth: require either CRON_SECRET header (for scheduled runs) or admin JWT (manual trigger)
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const requestCronSecret = req.headers.get("X-Cron-Secret");
+  const authHeader = req.headers.get("Authorization");
+  let authorized = false;
+
+  if (cronSecret && requestCronSecret && requestCronSecret === cronSecret) {
+    authorized = true;
+  } else if (authHeader?.startsWith("Bearer ")) {
+    const authClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims } = await authClient.auth.getClaims(token);
+    const userId = claims?.claims?.sub;
+    if (userId) {
+      const { data: roles } = await authClient.from("user_roles").select("role").eq("user_id", userId);
+      if (roles?.some((r: { role: string }) => r.role === "admin")) authorized = true;
+    }
+  }
+
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
   try {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const today = new Date().toISOString().split("T")[0];
