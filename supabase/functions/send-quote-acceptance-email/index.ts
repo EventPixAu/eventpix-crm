@@ -10,6 +10,7 @@ interface SendQuoteAcceptanceEmailRequest {
   quoteId: string;
   acceptedByName: string;
   acceptedByEmail: string;
+  publicToken?: string;
 }
 
 async function getGmailAccessToken(): Promise<string> {
