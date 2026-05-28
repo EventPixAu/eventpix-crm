@@ -43,6 +43,10 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   const [artworkValue, setArtworkValue] = useState(artworkDriveLink || '');
   const [savingArtwork, setSavingArtwork] = useState(false);
   const [copiedArtwork, setCopiedArtwork] = useState(false);
+  const [editingWebPage, setEditingWebPage] = useState(false);
+  const [webPageValue, setWebPageValue] = useState(eventWebPageLink || '');
+  const [savingWebPage, setSavingWebPage] = useState(false);
+  const [copiedWebPage, setCopiedWebPage] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
