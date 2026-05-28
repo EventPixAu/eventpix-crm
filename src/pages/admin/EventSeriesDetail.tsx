@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Eye,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
