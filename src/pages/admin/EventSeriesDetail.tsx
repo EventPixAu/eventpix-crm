@@ -938,6 +938,61 @@ export default function EventSeriesDetail() {
                     companyId={events?.[0]?.client_id || null}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Additional Contacts</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditAdditionalContactIds([...editAdditionalContactIds, ''])}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Add Contact
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Copied onto every new event created from this series, alongside the default contact.
+                  </p>
+                  {editAdditionalContactIds.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic py-2">
+                      No additional contacts added.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {editAdditionalContactIds.map((contactId, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <ContactSelector
+                              value={contactId || null}
+                              onChange={(newId) => {
+                                const next = [...editAdditionalContactIds];
+                                next[index] = newId || '';
+                                setEditAdditionalContactIds(next);
+                              }}
+                              placeholder="Search for a contact..."
+                              companyId={events?.[0]?.client_id || null}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditAdditionalContactIds(
+                                editAdditionalContactIds.filter((_, i) => i !== index)
+                              );
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 
                 <div className="space-y-2">
                   <Label>Deadline Days (after event)</Label>
