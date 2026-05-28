@@ -294,9 +294,20 @@ export function EventBriefPanel({
               <div className="text-center py-6 text-muted-foreground">
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No brief assigned</p>
+                {isAdmin && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" /> Write Manually
+                    </Button>
+                  </div>
+                )}
                 {isAdmin && templates.length > 0 && (
-                  <p className="text-xs mt-1">
-                    Select a template above to add a brief
+                  <p className="text-xs mt-3">
+                    Or select a template above
                   </p>
                 )}
               </div>
