@@ -46,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const body: SendQuoteAcceptanceEmailRequest = await req.json();
-    const { quoteId, acceptedByName, acceptedByEmail } = body;
+    const { quoteId, acceptedByName, acceptedByEmail, publicToken } = body;
 
     if (!quoteId || !acceptedByName || !acceptedByEmail) {
       return new Response(JSON.stringify({ success: false, error: "Missing required fields" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
@@ -55,9 +55,29 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending quote acceptance emails for quote: ${quoteId}`);
 
     const { data: quote, error: quoteError } = await supabase
-      .from("quotes").select("id, quote_number, total_estimate, subtotal, tax_total, accepted_at, lead_id, client_id").eq("id", quoteId).single();
+      .from("quotes").select("id, quote_number, total_estimate, subtotal, tax_total, accepted_at, lead_id, client_id, public_token").eq("id", quoteId).single();
     if (quoteError || !quote) {
       return new Response(JSON.stringify({ success: false, error: "Quote not found" }), { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+
+    // Authorize: either a valid publicToken matching the quote, OR an authenticated user JWT
+    let authorized = false;
+    if (publicToken && quote.public_token && publicToken === quote.public_token) {
+      authorized = true;
+    } else {
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const authClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+        const { data: claims } = await authClient.auth.getClaims(authHeader.replace("Bearer ", ""));
+        if (claims?.claims?.sub) authorized = true;
+      }
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
     let leadData: any = null, clientData: any = null;
