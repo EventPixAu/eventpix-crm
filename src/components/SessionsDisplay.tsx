@@ -1,17 +1,19 @@
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, MapPin, ExternalLink, Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useEventSessions } from '@/hooks/useEventSessions';
+import type { EventAssignment } from '@/hooks/useEvents';
 import { cn } from '@/lib/utils';
 
 interface SessionsDisplayProps {
   eventId: string;
   compact?: boolean;
   className?: string;
+  assignments?: EventAssignment[];
 }
 
-export function SessionsDisplay({ eventId, compact = false, className }: SessionsDisplayProps) {
+export function SessionsDisplay({ eventId, compact = false, className, assignments = [] }: SessionsDisplayProps) {
   const { data: sessions = [], isLoading } = useEventSessions(eventId);
 
   if (isLoading) {
