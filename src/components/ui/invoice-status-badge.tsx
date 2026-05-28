@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Clock, CheckCircle } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InvoiceStatusBadgeProps {
