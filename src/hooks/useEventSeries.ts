@@ -321,6 +321,7 @@ export function useBulkCreateEvents() {
       ops_status?: string;
       delivery_deadline?: string;
       notes?: string;
+      contact_ids?: string[];
     }>) => {
       const results = {
         created: 0,
