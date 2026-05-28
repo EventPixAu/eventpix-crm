@@ -175,6 +175,7 @@ export default function EventSeriesDetail() {
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
+      setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
     }
   }, [series]);
   
