@@ -1300,6 +1300,7 @@ export default function EventDetail() {
                   dropboxLink={(event as any).dropbox_link || null}
                   smugmugLink={(event as any).smugmug_link || null}
                   artworkDriveLink={(event as any).artwork_drive_link || null}
+                  eventWebPageLink={(event as any).event_web_page_link || null}
                   isAdmin={isAdmin || isOperations || isSales}
                 />
               )}
