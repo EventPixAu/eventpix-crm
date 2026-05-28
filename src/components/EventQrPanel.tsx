@@ -19,10 +19,11 @@ interface EventQrPanelProps {
   dropboxLink?: string | null;
   smugmugLink?: string | null;
   artworkDriveLink?: string | null;
+  eventWebPageLink?: string | null;
   isAdmin?: boolean;
 }
 
-export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, artworkDriveLink, isAdmin = false }: EventQrPanelProps) {
+export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, artworkDriveLink, eventWebPageLink, isAdmin = false }: EventQrPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
