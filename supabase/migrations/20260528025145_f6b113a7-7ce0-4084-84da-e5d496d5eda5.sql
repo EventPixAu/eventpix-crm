@@ -1,0 +1,2 @@
+ALTER TABLE public.events DROP CONSTRAINT IF EXISTS events_invoice_status_check;
+ALTER TABLE public.events ADD CONSTRAINT events_invoice_status_check CHECK (invoice_status = ANY (ARRAY['not_invoiced'::text, 'invoiced'::text, 'paid'::text, 'sponsored'::text]));
