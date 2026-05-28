@@ -125,6 +125,30 @@ export function SessionsDisplay({ eventId, compact = false, className, assignmen
                       </button>
                     )}
                   </div>
+
+                  {(() => {
+                    const sessionCrew = assignments.filter(a => a.session_id === session.id);
+                    if (sessionCrew.length === 0) return null;
+                    return (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {sessionCrew.map((a) => {
+                          const name = a.profile?.full_name || a.staff?.name || 'Unassigned';
+                          const role = a.staff_role?.name || a.role_on_event || a.staff?.role || 'Crew';
+                          return (
+                            <Badge
+                              key={a.id}
+                              variant="secondary"
+                              className="text-xs font-normal gap-1"
+                            >
+                              <Camera className="h-3 w-3" />
+                              {name}
+                              <span className="text-muted-foreground">· {role}</span>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </CardContent>
