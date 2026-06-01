@@ -3004,6 +3004,7 @@ export type Database = {
           is_training: boolean | null
           job_intake_id: string | null
           lead_id: string | null
+          live_feed_link: string | null
           main_shoot_date: string | null
           notes: string | null
           onsite_contact_name: string | null
@@ -3084,6 +3085,7 @@ export type Database = {
           is_training?: boolean | null
           job_intake_id?: string | null
           lead_id?: string | null
+          live_feed_link?: string | null
           main_shoot_date?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
@@ -3164,6 +3166,7 @@ export type Database = {
           is_training?: boolean | null
           job_intake_id?: string | null
           lead_id?: string | null
+          live_feed_link?: string | null
           main_shoot_date?: string | null
           notes?: string | null
           onsite_contact_name?: string | null

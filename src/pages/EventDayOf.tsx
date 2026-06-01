@@ -1071,14 +1071,14 @@ export default function EventDayOf() {
         )}
 
         {/* QR & Pre-Registration - visible to team and client */}
-        {((event as any)?.qr_file_path || (event as any)?.pre_registration_link || (event as any)?.event_web_page_link) && (
+        {((event as any)?.qr_file_path || (event as any)?.pre_registration_link || (event as any)?.live_feed_link || (event as any)?.event_web_page_link) && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.195 }}
             className="mx-4 mb-4"
           >
-            <h3 className="font-semibold mb-3">QR & Pre-Registration</h3>
+            <h3 className="font-semibold mb-3">QR Registration</h3>
             {(event as any)?.qr_file_path && (
               <QrFileCard
                 filePath={(event as any).qr_file_path}
@@ -1088,7 +1088,7 @@ export default function EventDayOf() {
             )}
             {(event as any)?.pre_registration_link && (
               <div className="mt-2 p-3 rounded-lg border bg-card">
-                <p className="text-xs text-muted-foreground mb-1">Pre-Registration Link</p>
+                <p className="text-xs text-muted-foreground mb-1">Registration Link</p>
                 <a
                   href={(event as any).pre_registration_link}
                   target="_blank"
@@ -1096,6 +1096,19 @@ export default function EventDayOf() {
                   className="text-sm text-primary hover:underline break-all"
                 >
                   {(event as any).pre_registration_link}
+                </a>
+              </div>
+            )}
+            {(event as any)?.live_feed_link && (
+              <div className="mt-2 p-3 rounded-lg border bg-card">
+                <p className="text-xs text-muted-foreground mb-1">Live Feed Link</p>
+                <a
+                  href={(event as any).live_feed_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline break-all"
+                >
+                  {(event as any).live_feed_link}
                 </a>
               </div>
             )}
