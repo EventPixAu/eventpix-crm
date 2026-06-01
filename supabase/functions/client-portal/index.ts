@@ -242,6 +242,8 @@ serve(async (req) => {
       qr_file_name: event.qr_file_name,
       qr_signed_url: qrSignedUrl,
       pre_registration_link: event.pre_registration_link || null,
+      live_feed_link: (event as any).live_feed_link || null,
+      event_web_page_link: (event as any).event_web_page_link || null,
     };
 
     return new Response(JSON.stringify(response), {
