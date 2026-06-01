@@ -1,8 +1,8 @@
 /**
  * Panel for uploading/displaying a QR code (PDF or PNG) for an event,
- * plus a pre-registration link field.
+ * plus registration and live feed link fields.
  */
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { QrCode, Upload, Trash2, Loader2, Download, FileText, Image as ImageIcon, Link2, ExternalLink, Copy, Check, Pencil, Droplets, Camera, Palette, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ interface EventQrPanelProps {
   qrFilePath: string | null;
   qrFileName: string | null;
   preRegistrationLink?: string | null;
+  liveFeedLink?: string | null;
   dropboxLink?: string | null;
   smugmugLink?: string | null;
   artworkDriveLink?: string | null;
@@ -23,7 +24,7 @@ interface EventQrPanelProps {
   isAdmin?: boolean;
 }
 
-export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, dropboxLink, smugmugLink, artworkDriveLink, eventWebPageLink, isAdmin = false }: EventQrPanelProps) {
+export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationLink, liveFeedLink, dropboxLink, smugmugLink, artworkDriveLink, eventWebPageLink, isAdmin = false }: EventQrPanelProps) {
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -47,6 +48,10 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   const [webPageValue, setWebPageValue] = useState(eventWebPageLink || '');
   const [savingWebPage, setSavingWebPage] = useState(false);
   const [copiedWebPage, setCopiedWebPage] = useState(false);
+  const [editingLiveFeed, setEditingLiveFeed] = useState(false);
+  const [liveFeedValue, setLiveFeedValue] = useState(liveFeedLink || '');
+  const [savingLiveFeed, setSavingLiveFeed] = useState(false);
+  const [copiedLiveFeed, setCopiedLiveFeed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -179,7 +184,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <QrCode className="h-4 w-4" />
-            QR & Registration
+            QR Registration
           </CardTitle>
           {isAdmin && (
             <>
@@ -234,12 +239,12 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
           <p className="text-sm text-muted-foreground">No QR file uploaded yet.</p>
         )}
 
-        {/* Pre-Registration Link Section */}
+        {/* Registration Link */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium flex items-center gap-1.5">
               <Link2 className="h-3.5 w-3.5" />
-              Registration & Live Feed Link
+              Registration Link
             </p>
             {isAdmin && !editingLink && (
               <Button
@@ -301,6 +306,23 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
             <p className="text-sm text-muted-foreground">No registration link set.</p>
           )}
         </div>
+
+        {/* Live Feed Link */}
+        <LinkField
+          label="Live Feed Link"
+          icon={<Link2 className="h-3.5 w-3.5" />}
+          currentValue={liveFeedLink}
+          editValue={liveFeedValue}
+          setEditValue={setLiveFeedValue}
+          editing={editingLiveFeed}
+          setEditing={setEditingLiveFeed}
+          saving={savingLiveFeed}
+          copied={copiedLiveFeed}
+          setCopied={setCopiedLiveFeed}
+          isAdmin={isAdmin}
+          placeholder="https://..."
+          onSave={() => handleSaveGenericLink('live_feed_link', liveFeedValue, setSavingLiveFeed, setEditingLiveFeed, 'Live feed link')}
+        />
 
         {/* Dropbox Link */}
         <LinkField
