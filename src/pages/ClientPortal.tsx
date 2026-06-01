@@ -95,6 +95,8 @@ interface PortalData {
   qr_file_name: string | null;
   qr_signed_url: string | null;
   pre_registration_link: string | null;
+  live_feed_link: string | null;
+  event_web_page_link: string | null;
 }
 
 function formatTime(time: string | null): string {
@@ -428,13 +430,13 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           </motion.div>
         )}
 
-        {/* QR Code & Pre-Registration */}
-        {(data.qr_signed_url || data.pre_registration_link) && (
+        {/* QR Code & Links */}
+        {(data.qr_signed_url || data.pre_registration_link || data.live_feed_link || data.event_web_page_link) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
-            className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
+            className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm space-y-3"
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <QrCode className="h-5 w-5 text-cyan-400" />
@@ -454,10 +456,10 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
               </div>
             )}
             {data.pre_registration_link && (
-              <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/5">
+              <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                 <p className="text-white/60 text-xs mb-1.5 flex items-center gap-1">
                   <Link2 className="h-3 w-3" />
-                  Pre-Registration Link
+                  Registration Link
                 </p>
                 <a
                   href={data.pre_registration_link}
@@ -466,6 +468,38 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                   className="text-cyan-400 hover:text-cyan-300 text-sm underline break-all"
                 >
                   {data.pre_registration_link}
+                </a>
+              </div>
+            )}
+            {data.live_feed_link && (
+              <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                <p className="text-white/60 text-xs mb-1.5 flex items-center gap-1">
+                  <Link2 className="h-3 w-3" />
+                  Live Feed Link
+                </p>
+                <a
+                  href={data.live_feed_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:text-cyan-300 text-sm underline break-all"
+                >
+                  {data.live_feed_link}
+                </a>
+              </div>
+            )}
+            {data.event_web_page_link && (
+              <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+                <p className="text-white/60 text-xs mb-1.5 flex items-center gap-1">
+                  <Link2 className="h-3 w-3" />
+                  Event Web Page
+                </p>
+                <a
+                  href={data.event_web_page_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:text-cyan-300 text-sm underline break-all"
+                >
+                  {data.event_web_page_link}
                 </a>
               </div>
             )}

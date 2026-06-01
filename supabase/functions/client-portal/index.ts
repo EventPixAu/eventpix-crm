@@ -36,7 +36,7 @@ serve(async (req) => {
         venue_name, venue_id, client_id, client_name, event_type_id,
         special_instructions, notes, photography_brief,
         onsite_contact_name, onsite_contact_phone,
-        qr_file_path, qr_file_name, pre_registration_link,
+        qr_file_path, qr_file_name, pre_registration_link, live_feed_link, event_web_page_link,
         brief_content, client_brief_content, main_shoot_date,
         lead_id, quote_id,
         client_brief_template_id, client_brief_file_name, client_brief_file_path
@@ -242,6 +242,8 @@ serve(async (req) => {
       qr_file_name: event.qr_file_name,
       qr_signed_url: qrSignedUrl,
       pre_registration_link: event.pre_registration_link || null,
+      live_feed_link: (event as any).live_feed_link || null,
+      event_web_page_link: (event as any).event_web_page_link || null,
     };
 
     return new Response(JSON.stringify(response), {
