@@ -440,7 +440,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           >
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <QrCode className="h-5 w-5 text-cyan-400" />
-              QR Code
+              Event Links
             </h2>
             {data.qr_signed_url && (
               <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5">
