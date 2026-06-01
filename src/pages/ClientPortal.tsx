@@ -95,6 +95,8 @@ interface PortalData {
   qr_file_name: string | null;
   qr_signed_url: string | null;
   pre_registration_link: string | null;
+  live_feed_link: string | null;
+  event_web_page_link: string | null;
 }
 
 function formatTime(time: string | null): string {
