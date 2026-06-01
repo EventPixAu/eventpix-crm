@@ -216,15 +216,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          {data.event_type && (
-            <Badge variant="secondary" className="mb-3 bg-white/10 text-white/80 border-white/20">
-              {data.event_type}
-            </Badge>
-          )}
-          <h1 className="text-3xl font-bold text-white mb-2">{data.event_name}</h1>
-          {data.client_name && (
-            <p className="text-white/60 text-lg">{data.client_name}</p>
-          )}
+          <h1 className="text-3xl font-bold text-white">{data.event_name}</h1>
         </motion.div>
 
         {/* Date & Venue Card */}
