@@ -28,15 +28,15 @@ export default function ClientLogin() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          emailRedirectTo: `${window.location.origin}/portal`,
+      const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
+        body: {
+          email: email.trim(),
+          redirectTo: `${window.location.origin}/portal`,
         },
       });
 
-      if (error) {
-        toast.error('Unable to send login link', { description: error.message });
+      if (error || (data && data.error)) {
+        toast.error('Unable to send login link', { description: error?.message || data?.error });
       } else {
         setLinkSent(true);
       }
