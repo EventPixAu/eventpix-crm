@@ -1441,6 +1441,7 @@ export default function EventDetail() {
                         contactEmail={primaryContactEmail}
                         contactName={primaryContactName}
                         eventId={event.id}
+                        eventPortalToken={event.client_portal_token}
                         contacts={eventContacts
                           .filter(c => {
                             const email = c.contact_email || c.client_contact?.email;
@@ -1732,6 +1733,7 @@ export default function EventDetail() {
             delivery_method_guests: getDeliveryMethodName('delivery_method_guests_id'),
             arrival_time: eventSessions[0]?.arrival_time || null,
             client_brief_content: (event as any).client_brief_content,
+            client_portal_token: event.client_portal_token,
           }}
           recipients={emailRecipients}
           assignments={assignments}

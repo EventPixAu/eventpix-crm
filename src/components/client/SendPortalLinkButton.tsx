@@ -30,6 +30,8 @@ interface SendPortalLinkButtonProps {
   contacts?: PortalLinkContact[];
   /** Optional event ID to link the email log to */
   eventId?: string;
+  /** Optional direct event portal token to bypass email login fallback */
+  eventPortalToken?: string | null;
   className?: string;
   buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
 }
@@ -41,6 +43,7 @@ export function SendPortalLinkButton({
   contactName,
   contacts: contactsProp,
   eventId,
+  eventPortalToken,
   className,
   buttonSize = 'sm',
 }: SendPortalLinkButtonProps) {
@@ -90,7 +93,9 @@ export function SendPortalLinkButton({
     });
   };
 
-  const portalUrl = `${getPublicBaseUrl()}/client-login`;
+  const portalUrl = eventPortalToken
+    ? `${getPublicBaseUrl()}/event/${eventPortalToken}`
+    : `${getPublicBaseUrl()}/client-login`;
 
   const handleSend = async () => {
     if (selectedEmails.size === 0) return;
@@ -109,9 +114,10 @@ export function SendPortalLinkButton({
               Open Client Portal
             </a>
           </p>
-          <p style="color: #666; font-size: 14px;">
-            Simply enter your email address (<strong>${email}</strong>) and we'll send you a secure login link. No password needed.
-          </p>
+          ${eventPortalToken
+            ? '<p style="color: #666; font-size: 14px;">This link opens your event details directly, so no follow-up login email is needed.</p>'
+            : `<p style="color: #666; font-size: 14px;">Simply enter your email address (<strong>${email}</strong>) and we'll send you a secure login link. No password needed.</p>`
+          }
           <p>Thanks,<br/>The Eventpixii Team</p>
         `.trim();
 
@@ -178,7 +184,9 @@ export function SendPortalLinkButton({
               <p><strong>To:</strong> {allContacts[0]?.name || allContacts[0]?.email}</p>
               <p><strong>Subject:</strong> Your Client Portal Access — Eventpixii</p>
               <p className="text-muted-foreground mt-2">
-                The email explains how to use the magic link login — no password required.
+                {eventPortalToken
+                  ? 'The email includes a direct event portal link — no follow-up login email required.'
+                  : 'The email explains how to use the magic link login — no password required.'}
               </p>
             </div>
           )}
