@@ -65,6 +65,7 @@ interface SendFinalConfirmationDialogProps {
     delivery_method_guests?: string;
     arrival_time?: string | null;
     client_brief_content?: string | null;
+    client_portal_token?: string | null;
   };
   recipients: Recipient[];
   assignments: any[];
@@ -256,7 +257,10 @@ function buildConfirmationBody(
   }
 
   lines.push('');
-  lines.push(`Full details regarding your event are available via the Eventpixii portal that you can access via this link: ${getPublicBaseUrl()}/client-login`);
+  const portalUrl = eventData.client_portal_token
+    ? `${getPublicBaseUrl()}/event/${eventData.client_portal_token}`
+    : `${getPublicBaseUrl()}/client-login`;
+  lines.push(`Full details regarding your event are available via the Eventpixii portal that you can access via this link: ${portalUrl}`);
   lines.push('');
   lines.push('If you have any questions or changes, please don\'t hesitate to get in touch.');
   lines.push('');
