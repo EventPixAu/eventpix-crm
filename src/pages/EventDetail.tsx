@@ -1441,6 +1441,7 @@ export default function EventDetail() {
                         contactEmail={primaryContactEmail}
                         contactName={primaryContactName}
                         eventId={event.id}
+                        eventPortalToken={event.client_portal_token}
                         contacts={eventContacts
                           .filter(c => {
                             const email = c.contact_email || c.client_contact?.email;
