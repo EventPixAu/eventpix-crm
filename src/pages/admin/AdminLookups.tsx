@@ -52,6 +52,9 @@ import {
   useAllContactTypes,
   useCreateContactType,
   useUpdateContactType,
+  useAllDressCodes,
+  useCreateDressCode,
+  useUpdateDressCode,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
 import {
