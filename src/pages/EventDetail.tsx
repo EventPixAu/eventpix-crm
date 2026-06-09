@@ -1858,12 +1858,12 @@ export default function EventDetail() {
           initialSubject={`Request to upload files – ${event.event_name}`}
           initialBody={(() => {
             const eventDate = event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : '';
-            return `<p>Hi,</p>` +
-              `<p>Thank you for shooting <strong>${event.event_name}</strong>${eventDate ? ` on ${eventDate}` : ''}.</p>` +
-              `<p>Please upload the event files to our portal at your earliest convenience:</p>` +
-              `<p><a href="https://trevorsteam-portal-6373224367.portal.massive.io/"><strong>Upload Files Here</strong></a></p>` +
-              `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
-              `<p>Kind regards,<br/>The EventPix Team</p>`;
+            return `Hi,\n` +
+              `Thank you for shooting ${event.event_name}${eventDate ? ` on ${eventDate}` : ''}.\n` +
+              `Please upload the event files to our portal at your earliest convenience:\n` +
+              `[Upload Files Here](https://trevorsteam-portal-6373224367.portal.massive.io/)\n` +
+              `If you have any questions, please don't hesitate to get in touch.\n` +
+              `Kind regards,\nThe EventPix Team`;
           })()}
         />
       )}
