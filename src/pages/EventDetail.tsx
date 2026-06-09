@@ -1372,14 +1372,12 @@ export default function EventDetail() {
                     </Button>
                   )}
                   {(isAdmin || isOperations) && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => window.open(`/events/${id}/day-of`, '_blank')}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View as Photographer
-                    </Button>
+                    <Link to={`/events/${id}/day-of`} className="block">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View as Photographer
+                      </Button>
+                    </Link>
                   )}
                   {(isAdmin || isOperations) && event?.quote_id && (
                     <Link to={`/sales/quotes/${event.quote_id}`} className="block">
