@@ -24,6 +24,7 @@ import {
   CircleDot,
   ClipboardList,
   Contact,
+  Shirt,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
