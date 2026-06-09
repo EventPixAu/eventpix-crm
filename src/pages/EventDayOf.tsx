@@ -909,47 +909,7 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
-        {/* Assignments Snapshot */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
-        >
-          <h3 className="font-semibold mb-3">Team ({displayAssignments.length})</h3>
-          {displayAssignments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No staff assigned</p>
-          ) : (
-            <div className="space-y-2">
-              {displayAssignments.map((assignment) => {
-                const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
-                const role = assignment.staff_role?.name || assignment.role_on_event || 'Staff';
-                const isMe = assignment.user_id === user?.id;
-                
-                return (
-                  <div
-                    key={assignment.id}
-                    className={cn(
-                      'flex items-center gap-3 p-2 rounded-lg',
-                      isMe && 'bg-primary/10'
-                    )}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                      <span className="text-xs font-medium">{name.charAt(0).toUpperCase()}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {name}
-                        {isMe && <span className="text-primary ml-1">(You)</span>}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">{role}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </motion.section>
+        {/* Team list is now shown inline with each session above */}
 
         {/* Quick Notes */}
         <motion.section
