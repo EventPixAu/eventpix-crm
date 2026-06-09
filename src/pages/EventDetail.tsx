@@ -194,7 +194,10 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
   );
 }
 
-function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
+function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
+  const canView = isAdmin || isOperations || isSelf;
+  const canEdit = isAdmin || isOperations;
+  if (!canView) return null;
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
   const { data: eventSessions = [] } = useEventSessions(eventId);
