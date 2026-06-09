@@ -24,6 +24,7 @@ import {
   CircleDot,
   ClipboardList,
   Contact,
+  Shirt,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import SiteSettingsPanel from '@/components/admin/SiteSettingsPanel';
@@ -51,6 +52,9 @@ import {
   useAllContactTypes,
   useCreateContactType,
   useUpdateContactType,
+  useAllDressCodes,
+  useCreateDressCode,
+  useUpdateDressCode,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
 import {
@@ -416,6 +420,11 @@ export default function AdminLookups() {
   const createContactType = useCreateContactType();
   const updateContactType = useUpdateContactType();
 
+  // Dress Codes
+  const { data: dressCodes = [], isLoading: dressCodesLoading } = useAllDressCodes();
+  const createDressCode = useCreateDressCode();
+  const updateDressCode = useUpdateDressCode();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -472,6 +481,13 @@ export default function AdminLookups() {
               >
                 <Contact className="h-4 w-4 mr-2" />
                 Contact Types
+              </TabsTrigger>
+              <TabsTrigger 
+                value="dress-codes"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Shirt className="h-4 w-4 mr-2" />
+                Dress Codes
               </TabsTrigger>
               <TabsTrigger 
                 value="lead-sources"
@@ -629,6 +645,24 @@ export default function AdminLookups() {
                 createPending={createContactType.isPending}
                 updatePending={updateContactType.isPending}
                 itemLabel="Contact Type"
+              />
+            </TabsContent>
+
+            <TabsContent value="dress-codes" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Event dress codes</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the "Dress Code" dropdown on each event.
+                </p>
+              </div>
+              <LookupTable
+                items={dressCodes}
+                isLoading={dressCodesLoading}
+                onCreate={async (name) => { await createDressCode.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateDressCode.mutateAsync({ id, ...updates }); }}
+                createPending={createDressCode.isPending}
+                updatePending={updateDressCode.isPending}
+                itemLabel="Dress Code"
               />
             </TabsContent>
 

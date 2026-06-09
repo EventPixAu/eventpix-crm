@@ -78,6 +78,7 @@ import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
 import { EventContactsCard } from '@/components/EventContactsCard';
+import { EventDressCodeCard } from '@/components/EventDressCodeCard';
 import { StaffWorkflowPanel } from '@/components/StaffWorkflowPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { useEventSectionVisibility } from '@/hooks/useRoleSectionVisibility';
@@ -1109,6 +1110,14 @@ export default function EventDetail() {
                     queryClient.invalidateQueries({ queryKey: ['event', id] });
                   }}
                   assignments={assignments}
+                />
+              )}
+              {/* Dress Code (admin-managed lookup) */}
+              {canSeeSection('contacts') && id && (
+                <EventDressCodeCard
+                  eventId={id}
+                  value={(event as any).dress_code}
+                  canEdit={isAdmin || isOperations}
                 />
               )}
               {/* Coverage, Photography Instructions & Notes */}
