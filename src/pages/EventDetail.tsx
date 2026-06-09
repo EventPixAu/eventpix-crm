@@ -1111,6 +1111,14 @@ export default function EventDetail() {
                   assignments={assignments}
                 />
               )}
+              {/* Dress Code (admin-managed lookup) */}
+              {canSeeSection('contacts') && id && (
+                <EventDressCodeCard
+                  eventId={id}
+                  value={(event as any).dress_code}
+                  canEdit={isAdmin || isOperations}
+                />
+              )}
               {/* Coverage, Photography Instructions & Notes */}
               {canSeeSection('additional_details') && (event.coverage_details || (event as any).photography_brief || event.notes) && (
                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
