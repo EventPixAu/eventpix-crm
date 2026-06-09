@@ -245,10 +245,10 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
     }
   }
 
-  const callHours = sessionHours ? Math.ceil(sessionHours) : rateEntry.minimum_paid_hours;
-  const basePay = sessionHours
-    ? calculatePayFromRateCard(rateEntry.hourly_rate, rateEntry.minimum_paid_hours, sessionHours)
-    : rateEntry.hourly_rate * (rateEntry.minimum_paid_hours + 1);
+  // Enforce minimum paid hours (e.g. 2hr minimum call)
+  const effectiveHours = Math.max(sessionHours || 0, rateEntry.minimum_paid_hours);
+  const callHours = Math.ceil(effectiveHours);
+  const basePay = rateEntry.hourly_rate * (callHours + 1);
 
   // Calculate extras total
   const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
@@ -257,7 +257,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
     return sum + amt * qty;
   }, 0);
 
-  const totalWithExtras = basePay + extrasTotal;
+  const travel = Number((assignment as any).travel_amount || 0);
+  const totalWithExtras = basePay + extrasTotal + travel;
 
   const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
   const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
