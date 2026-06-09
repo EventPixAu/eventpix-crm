@@ -603,6 +603,34 @@ export default function EventDayOf() {
                                   <span className="truncate">{s.venue_name || s.venue_address}</span>
                                 </p>
                               )}
+                              {(() => {
+                                const sessionCrew = (displayAssignments as any[]).filter((a) => a.session_id === s.id);
+                                if (sessionCrew.length === 0) return null;
+                                return (
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {sessionCrew.map((a) => {
+                                      const name = a.profile?.full_name || a.staff?.name || 'Unknown';
+                                      const role = a.staff_role?.name || a.role_on_event || '';
+                                      const isMe = a.user_id === user?.id;
+                                      return (
+                                        <span
+                                          key={a.id}
+                                          className={cn(
+                                            'inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-xs',
+                                            isMe && 'bg-primary/15 border-primary/30'
+                                          )}
+                                        >
+                                          <span className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium">
+                                            {name.charAt(0).toUpperCase()}
+                                          </span>
+                                          <span className="font-medium">{name}{isMe && ' (You)'}</span>
+                                          {role && <span className="text-muted-foreground">· {role}</span>}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         );
@@ -881,47 +909,7 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
-        {/* Assignments Snapshot */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
-        >
-          <h3 className="font-semibold mb-3">Team ({displayAssignments.length})</h3>
-          {displayAssignments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No staff assigned</p>
-          ) : (
-            <div className="space-y-2">
-              {displayAssignments.map((assignment) => {
-                const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
-                const role = assignment.staff_role?.name || assignment.role_on_event || 'Staff';
-                const isMe = assignment.user_id === user?.id;
-                
-                return (
-                  <div
-                    key={assignment.id}
-                    className={cn(
-                      'flex items-center gap-3 p-2 rounded-lg',
-                      isMe && 'bg-primary/10'
-                    )}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                      <span className="text-xs font-medium">{name.charAt(0).toUpperCase()}</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {name}
-                        {isMe && <span className="text-primary ml-1">(You)</span>}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">{role}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </motion.section>
+        {/* Team list is now shown inline with each session above */}
 
         {/* Quick Notes */}
         <motion.section
