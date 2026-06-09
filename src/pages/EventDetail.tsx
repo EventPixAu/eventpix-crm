@@ -205,6 +205,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const [editingTravel, setEditingTravel] = useState(false);
+  const [travelInput, setTravelInput] = useState('');
 
   // Fetch assignment allowances
   const { data: assignmentAllowances = [] } = useQuery({
