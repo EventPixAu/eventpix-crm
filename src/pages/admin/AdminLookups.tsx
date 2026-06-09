@@ -648,6 +648,24 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
+            <TabsContent value="dress-codes" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Event dress codes</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the "Dress Code" dropdown on each event.
+                </p>
+              </div>
+              <LookupTable
+                items={dressCodes}
+                isLoading={dressCodesLoading}
+                onCreate={async (name) => { await createDressCode.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateDressCode.mutateAsync({ id, ...updates }); }}
+                createPending={createDressCode.isPending}
+                updatePending={updateDressCode.isPending}
+                itemLabel="Dress Code"
+              />
+            </TabsContent>
+
             <TabsContent value="lead-sources" className="m-0">
               <LookupTable
                 items={leadSources}
