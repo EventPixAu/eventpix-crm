@@ -339,6 +339,45 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
         </span>
       </div>
 
+      {/* Travel (per-assignment manual amount) */}
+      {(canEdit || travel > 0) && (
+        <div className="flex items-center gap-2 pl-5">
+          <span className="text-xs text-muted-foreground">
+            + Travel:{' '}
+            {canEdit && editingTravel ? (
+              <span className="inline-flex items-center gap-1">
+                $<input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="w-20 h-5 text-xs bg-background border border-border rounded px-1 text-foreground"
+                  value={travelInput}
+                  onChange={(e) => setTravelInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUpdateTravel(parseFloat(travelInput) || 0);
+                    if (e.key === 'Escape') setEditingTravel(false);
+                  }}
+                  onBlur={() => handleUpdateTravel(parseFloat(travelInput) || 0)}
+                  autoFocus
+                />
+              </span>
+            ) : (
+              <button
+                className={`font-medium text-foreground ${canEdit ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (!canEdit) return;
+                  setTravelInput(String(travel));
+                  setEditingTravel(true);
+                }}
+                disabled={!canEdit}
+              >
+                ${travel.toFixed(2)}
+              </button>
+            )}
+          </span>
+        </div>
+      )}
+
       {/* Extras */}
       {assignmentAllowances.map((aa: any) => {
         const name = aa.pay_allowances?.name || 'Extra';
@@ -349,7 +388,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
             <div className="flex items-center gap-2 pl-5">
               <span className="text-xs text-muted-foreground">
                 + {name}:{' '}
-                {isAdmin && isEditing ? (
+                {canEdit && isEditing ? (
                   <span className="inline-flex items-center gap-1">
                     $<input
                       type="number"
@@ -367,26 +406,26 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
                   </span>
                 ) : (
                   <button
-                    className={`font-medium text-foreground ${isAdmin ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
+                    className={`font-medium text-foreground ${canEdit ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
                     onClick={() => {
-                      if (!isAdmin) return;
+                      if (!canEdit) return;
                       setEditingAllowanceId(aa.id);
                       setEditAmount(String(amt));
                     }}
-                    disabled={!isAdmin}
+                    disabled={!canEdit}
                   >
                     ${(amt * (aa.quantity || 1)).toFixed(2)}
                   </button>
                 )}
               </span>
-              {isAdmin && (
+              {canEdit && (
                 <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveExtra(aa.id)}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               )}
             </div>
             {/* Notes for this allowance */}
-            {isAdmin && isEditing && (
+            {canEdit && isEditing && (
               <div className="pl-5">
                 <input
                   type="text"
@@ -409,7 +448,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
       })}
 
       {/* Add extras button */}
-      {isAdmin && availableExtras.length > 0 && (
+      {canEdit && availableExtras.length > 0 && (
         addingExtra ? (
           <div className="pl-5">
             <Select onValueChange={handleAddExtra}>
@@ -432,8 +471,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
         )
       )}
 
-      {/* Total with extras */}
-      {extrasTotal > 0 && isAdmin && (
+      {/* Total */}
+      {(extrasTotal > 0 || travel > 0) && (
         <div className="flex items-center gap-2 pt-1 border-t border-border/50">
           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium">
