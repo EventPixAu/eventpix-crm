@@ -2191,6 +2191,7 @@ export type Database = {
           session_id: string | null
           staff_id: string | null
           staff_role_id: string | null
+          travel_amount: number
           user_id: string | null
           wrap_time_at: string | null
         }
@@ -2211,6 +2212,7 @@ export type Database = {
           session_id?: string | null
           staff_id?: string | null
           staff_role_id?: string | null
+          travel_amount?: number
           user_id?: string | null
           wrap_time_at?: string | null
         }
@@ -2231,6 +2233,7 @@ export type Database = {
           session_id?: string | null
           staff_id?: string | null
           staff_role_id?: string | null
+          travel_amount?: number
           user_id?: string | null
           wrap_time_at?: string | null
         }

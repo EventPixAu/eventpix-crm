@@ -194,7 +194,10 @@ function EditingInstructionsPanel({ value, templateId, onSave }: { value: string
   );
 }
 
-function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
+function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
+  const canView = isAdmin || isOperations || isSelf;
+  const canEdit = isAdmin || isOperations;
+  if (!canView) return null;
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
   const { data: eventSessions = [] } = useEventSessions(eventId);
@@ -202,6 +205,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
+  const [editingTravel, setEditingTravel] = useState(false);
+  const [travelInput, setTravelInput] = useState('');
 
   // Fetch assignment allowances
   const { data: assignmentAllowances = [] } = useQuery({
@@ -242,10 +247,10 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
     }
   }
 
-  const callHours = sessionHours ? Math.ceil(sessionHours) : rateEntry.minimum_paid_hours;
-  const basePay = sessionHours
-    ? calculatePayFromRateCard(rateEntry.hourly_rate, rateEntry.minimum_paid_hours, sessionHours)
-    : rateEntry.hourly_rate * (rateEntry.minimum_paid_hours + 1);
+  // Enforce minimum paid hours (e.g. 2hr minimum call)
+  const effectiveHours = Math.max(sessionHours || 0, rateEntry.minimum_paid_hours);
+  const callHours = Math.ceil(effectiveHours);
+  const basePay = rateEntry.hourly_rate * (callHours + 1);
 
   // Calculate extras total
   const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
@@ -254,7 +259,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
     return sum + amt * qty;
   }, 0);
 
-  const totalWithExtras = basePay + extrasTotal;
+  const travel = Number((assignment as any).travel_amount || 0);
+  const totalWithExtras = basePay + extrasTotal + travel;
 
   const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
   const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
@@ -307,6 +313,21 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
     }
   };
 
+  const handleUpdateTravel = async (newAmount: number) => {
+    const safe = isNaN(newAmount) || newAmount < 0 ? 0 : newAmount;
+    const { error } = await supabase
+      .from('event_assignments')
+      .update({ travel_amount: safe })
+      .eq('id', assignment.id);
+    if (error) {
+      toast.error('Failed to update travel', { description: error.message });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+    }
+    setEditingTravel(false);
+  };
+
+
   return (
     <div className="mt-2 pt-2 border-t border-border space-y-1">
       <div className="flex items-center gap-2">
@@ -318,6 +339,45 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
         </span>
       </div>
 
+      {/* Travel (per-assignment manual amount) */}
+      {(canEdit || travel > 0) && (
+        <div className="flex items-center gap-2 pl-5">
+          <span className="text-xs text-muted-foreground">
+            + Travel:{' '}
+            {canEdit && editingTravel ? (
+              <span className="inline-flex items-center gap-1">
+                $<input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="w-20 h-5 text-xs bg-background border border-border rounded px-1 text-foreground"
+                  value={travelInput}
+                  onChange={(e) => setTravelInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUpdateTravel(parseFloat(travelInput) || 0);
+                    if (e.key === 'Escape') setEditingTravel(false);
+                  }}
+                  onBlur={() => handleUpdateTravel(parseFloat(travelInput) || 0)}
+                  autoFocus
+                />
+              </span>
+            ) : (
+              <button
+                className={`font-medium text-foreground ${canEdit ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (!canEdit) return;
+                  setTravelInput(String(travel));
+                  setEditingTravel(true);
+                }}
+                disabled={!canEdit}
+              >
+                ${travel.toFixed(2)}
+              </button>
+            )}
+          </span>
+        </div>
+      )}
+
       {/* Extras */}
       {assignmentAllowances.map((aa: any) => {
         const name = aa.pay_allowances?.name || 'Extra';
@@ -328,7 +388,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
             <div className="flex items-center gap-2 pl-5">
               <span className="text-xs text-muted-foreground">
                 + {name}:{' '}
-                {isAdmin && isEditing ? (
+                {canEdit && isEditing ? (
                   <span className="inline-flex items-center gap-1">
                     $<input
                       type="number"
@@ -346,26 +406,26 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
                   </span>
                 ) : (
                   <button
-                    className={`font-medium text-foreground ${isAdmin ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
+                    className={`font-medium text-foreground ${canEdit ? 'hover:text-primary hover:underline cursor-pointer' : ''}`}
                     onClick={() => {
-                      if (!isAdmin) return;
+                      if (!canEdit) return;
                       setEditingAllowanceId(aa.id);
                       setEditAmount(String(amt));
                     }}
-                    disabled={!isAdmin}
+                    disabled={!canEdit}
                   >
                     ${(amt * (aa.quantity || 1)).toFixed(2)}
                   </button>
                 )}
               </span>
-              {isAdmin && (
+              {canEdit && (
                 <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveExtra(aa.id)}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               )}
             </div>
             {/* Notes for this allowance */}
-            {isAdmin && isEditing && (
+            {canEdit && isEditing && (
               <div className="pl-5">
                 <input
                   type="text"
@@ -388,7 +448,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
       })}
 
       {/* Add extras button */}
-      {isAdmin && availableExtras.length > 0 && (
+      {canEdit && availableExtras.length > 0 && (
         addingExtra ? (
           <div className="pl-5">
             <Select onValueChange={handleAddExtra}>
@@ -411,8 +471,8 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
         )
       )}
 
-      {/* Total with extras */}
-      {extrasTotal > 0 && isAdmin && (
+      {/* Total */}
+      {(extrasTotal > 0 || travel > 0) && (
         <div className="flex items-center gap-2 pt-1 border-t border-border/50">
           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium">
@@ -424,7 +484,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin }: { assignment: Ev
   );
 }
 
-function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
+function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
@@ -605,7 +665,7 @@ function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAss
           </AlertDialog>
         </div>
       )}
-      <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} />
+      <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );
@@ -1589,7 +1649,7 @@ export default function EventDetail() {
                 {eventSessions.length === 0 && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {assignments.map(assignment => (
-                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} />
                     ))}
                   </div>
                 )}
@@ -1638,7 +1698,7 @@ export default function EventDetail() {
                         ) : (
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {dayAssigns.map(assignment => (
-                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} />
+                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} />
                             ))}
                           </div>
                         )}
