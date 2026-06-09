@@ -420,6 +420,11 @@ export default function AdminLookups() {
   const createContactType = useCreateContactType();
   const updateContactType = useUpdateContactType();
 
+  // Dress Codes
+  const { data: dressCodes = [], isLoading: dressCodesLoading } = useAllDressCodes();
+  const createDressCode = useCreateDressCode();
+  const updateDressCode = useUpdateDressCode();
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
