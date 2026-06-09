@@ -100,6 +100,8 @@ const administrationItems: NavItem[] = [
   { href: '/sales/templates', label: 'Budget Templates', icon: FileText },
   { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
   { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },
+  { href: '/admin/team-brief-templates', label: 'Team Brief Templates', icon: FileText },
+  { href: '/admin/event-brief-templates', label: 'Event Brief Templates', icon: FileText },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
   { href: '/admin/lookups', label: 'Lookups', icon: Settings },
   { href: '/admin/pay-rates', label: 'Pay Rates', icon: DollarSign },

@@ -72,6 +72,8 @@ import LeadDetail from "./pages/sales/LeadDetail";
 import LeadPortalPreview from "./pages/sales/LeadPortalPreview";
 import ContractTemplates from "./pages/admin/ContractTemplates";
 import EmailTemplates from "./pages/admin/EmailTemplates";
+import TeamBriefTemplates from "./pages/admin/TeamBriefTemplates";
+import EventBriefTemplates from "./pages/admin/EventBriefTemplates";
 import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
@@ -263,6 +265,8 @@ function AppRoutes() {
       <Route path="/equipment" element={<ProtectedRoute><OpsGuard><Equipment /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/team-brief-templates" element={<ProtectedRoute><AdminGuard><TeamBriefTemplates /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/event-brief-templates" element={<ProtectedRoute><AdminGuard><EventBriefTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/insurance" element={<ProtectedRoute><AdminGuard><CompanyInsurance /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/role-visibility" element={<ProtectedRoute><AdminGuard><RoleVisibility /></AdminGuard></ProtectedRoute>} />
