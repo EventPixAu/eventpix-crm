@@ -476,3 +476,92 @@ export function useUpdateLocation() {
     },
   });
 }
+
+// =============================================
+// DRESS CODES
+// =============================================
+
+export interface DressCode extends LookupItem {}
+
+export function useAllDressCodes() {
+  return useQuery({
+    queryKey: ['dress-codes', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dress_codes' as any)
+        .select('*')
+        .order('sort_order')
+        .order('name');
+      if (error) throw error;
+      return (data || []) as unknown as DressCode[];
+    },
+  });
+}
+
+export function useActiveDressCodes() {
+  return useQuery({
+    queryKey: ['dress-codes', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dress_codes' as any)
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order')
+        .order('name');
+      if (error) throw error;
+      return (data || []) as unknown as DressCode[];
+    },
+  });
+}
+
+export function useCreateDressCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data: maxData } = await supabase
+        .from('dress_codes' as any)
+        .select('sort_order')
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextOrder = ((maxData as any)?.sort_order || 0) + 1;
+      const { data, error } = await supabase
+        .from('dress_codes' as any)
+        .insert({ name, sort_order: nextOrder } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dress-codes'] });
+      toast.success('Dress code created');
+    },
+    onError: (error) => {
+      toast.error('Failed to create: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateDressCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<DressCode> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('dress_codes' as any)
+        .update({ ...updates, updated_at: new Date().toISOString() } as any)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dress-codes'] });
+      toast.success('Dress code updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update: ' + error.message);
+    },
+  });
+}
