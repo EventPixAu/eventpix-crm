@@ -484,7 +484,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
   );
 }
 
-function AssignmentCard({ assignment, eventId, isAdmin }: { assignment: EventAssignment; eventId: string; isAdmin: boolean }) {
+function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
