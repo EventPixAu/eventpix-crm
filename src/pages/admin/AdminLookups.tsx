@@ -483,6 +483,13 @@ export default function AdminLookups() {
                 Contact Types
               </TabsTrigger>
               <TabsTrigger 
+                value="dress-codes"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Shirt className="h-4 w-4 mr-2" />
+                Dress Codes
+              </TabsTrigger>
+              <TabsTrigger 
                 value="lead-sources"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
