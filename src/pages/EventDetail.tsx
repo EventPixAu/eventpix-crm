@@ -313,6 +313,21 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
     }
   };
 
+  const handleUpdateTravel = async (newAmount: number) => {
+    const safe = isNaN(newAmount) || newAmount < 0 ? 0 : newAmount;
+    const { error } = await supabase
+      .from('event_assignments')
+      .update({ travel_amount: safe })
+      .eq('id', assignment.id);
+    if (error) {
+      toast.error('Failed to update travel', { description: error.message });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+    }
+    setEditingTravel(false);
+  };
+
+
   return (
     <div className="mt-2 pt-2 border-t border-border space-y-1">
       <div className="flex items-center gap-2">
