@@ -603,6 +603,34 @@ export default function EventDayOf() {
                                   <span className="truncate">{s.venue_name || s.venue_address}</span>
                                 </p>
                               )}
+                              {(() => {
+                                const sessionCrew = (displayAssignments as any[]).filter((a) => a.session_id === s.id);
+                                if (sessionCrew.length === 0) return null;
+                                return (
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {sessionCrew.map((a) => {
+                                      const name = a.profile?.full_name || a.staff?.name || 'Unknown';
+                                      const role = a.staff_role?.name || a.role_on_event || '';
+                                      const isMe = a.user_id === user?.id;
+                                      return (
+                                        <span
+                                          key={a.id}
+                                          className={cn(
+                                            'inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-xs',
+                                            isMe && 'bg-primary/15 border-primary/30'
+                                          )}
+                                        >
+                                          <span className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium">
+                                            {name.charAt(0).toUpperCase()}
+                                          </span>
+                                          <span className="font-medium">{name}{isMe && ' (You)'}</span>
+                                          {role && <span className="text-muted-foreground">· {role}</span>}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         );
