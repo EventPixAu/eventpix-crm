@@ -10,6 +10,7 @@ export interface UserProfile {
   full_name: string | null;
   phone: string | null;
   is_active: boolean | null;
+  is_salaried: boolean | null;
   created_at: string | null;
   updated_at: string | null;
   role?: string | null;
