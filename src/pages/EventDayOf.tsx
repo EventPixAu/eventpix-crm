@@ -568,7 +568,7 @@ export default function EventDayOf() {
                         {liveSessions.length > 1 ? `Sessions (${liveSessions.length})` : 'Date & Time'}
                       </h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className={cn("space-y-2", liveSessions.length > 2 && "max-h-[380px] overflow-y-auto pr-1 -mr-1")}>
                       {liveSessions.map((s, i) => {
                         const sDate = safeParseISO(s.session_date);
                         return (
