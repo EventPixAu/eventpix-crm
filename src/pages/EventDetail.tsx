@@ -78,6 +78,7 @@ import { EventPaymentPanel } from '@/components/EventPaymentPanel';
 import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { EventContactsCard } from '@/components/EventContactsCard';
 import { EventDressCodeCard } from '@/components/EventDressCodeCard';
 import { StaffWorkflowPanel } from '@/components/StaffWorkflowPanel';
@@ -1589,6 +1590,33 @@ export default function EventDetail() {
                         </Badge>
                       )}
                     </Button>
+                  )}
+                  {(isAdmin || isOperations) && (
+                    <div className="mt-2 pt-3 border-t space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Client portal sharing</p>
+                      <label className="flex items-start gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={!!(event as any).share_team_vehicle_info}
+                          onCheckedChange={async (checked) => {
+                            await supabase.from('events').update({ share_team_vehicle_info: !!checked }).eq('id', id!);
+                            queryClient.invalidateQueries({ queryKey: ['events', id] });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>Share team vehicle rego & make/model</span>
+                      </label>
+                      <label className="flex items-start gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={!!(event as any).share_team_dietary}
+                          onCheckedChange={async (checked) => {
+                            await supabase.from('events').update({ share_team_dietary: !!checked }).eq('id', id!);
+                            queryClient.invalidateQueries({ queryKey: ['events', id] });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>Share team dietary requirements</span>
+                      </label>
+                    </div>
                   )}
                 </div>
               </div>}
