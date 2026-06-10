@@ -39,7 +39,8 @@ serve(async (req) => {
         qr_file_path, qr_file_name, pre_registration_link, live_feed_link, event_web_page_link,
         brief_content, client_brief_content, main_shoot_date,
         lead_id, quote_id,
-        client_brief_template_id, client_brief_file_name, client_brief_file_path
+        client_brief_template_id, client_brief_file_name, client_brief_file_path,
+        share_team_vehicle_info, share_team_dietary
       `)
       .eq("client_portal_token", token)
       .maybeSingle();
@@ -97,7 +98,7 @@ serve(async (req) => {
       .from("event_assignments")
       .select(`
         id, user_id, staff_id, staff_role_id, role_on_event, assignment_status,
-        profile:profiles!event_assignments_user_id_fkey ( full_name, phone, avatar_url ),
+        profile:profiles!event_assignments_user_id_fkey ( full_name, phone, avatar_url, vehicle_registration, vehicle_make_model, dietary_requirements ),
         staff_role:staff_roles!event_assignments_staff_role_id_fkey ( name ),
         staff:staff_id ( name, role )
       `)
@@ -112,6 +113,9 @@ serve(async (req) => {
           phone: profile?.phone || null,
           avatar_url: profile?.avatar_url || null,
           role: a.staff_role?.name || a.role_on_event || staff?.role || "Team",
+          vehicle_registration: event.share_team_vehicle_info ? (profile?.vehicle_registration || null) : null,
+          vehicle_make_model: event.share_team_vehicle_info ? (profile?.vehicle_make_model || null) : null,
+          dietary_requirements: event.share_team_dietary ? (profile?.dietary_requirements || null) : null,
         };
       })
       .filter((member: any) => !member.role?.toLowerCase().includes("editor"));
