@@ -83,10 +83,31 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     };
     const map = new Map<string, Member>();
 
+    // Build a name-keyed fallback (e.g. "photographer" → 125) from the rate card
+    const rateByKeyword = new Map<string, number>();
+    for (const r of rateCard) {
+      const nm = ((r as any).staff_roles?.name || '').toLowerCase().trim();
+      const rate = Number(r.hourly_rate) || 0;
+      if (!rate) continue;
+      if (nm === 'photographer' || nm === 'videographer') rateByKeyword.set('photographer', rate);
+      else if (nm === 'editor') rateByKeyword.set('editor', rate);
+      else if (nm === 'assistant') rateByKeyword.set('assistant', rate);
+    }
+    const resolveRateByName = (name: string): number => {
+      const n = name.toLowerCase();
+      if (n.includes('photograph') || n.includes('videograph')) return rateByKeyword.get('photographer') || 0;
+      if (n.includes('editor') || n.includes('edit')) return rateByKeyword.get('editor') || 0;
+      if (n.includes('assistant')) return rateByKeyword.get('assistant') || 0;
+      return 0;
+    };
+
     for (const a of assignments) {
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
       const rateEntry = rateCard.find(r => r.staff_role_id === a.staff_role_id);
-      const baseRate = (a as any).hourly_rate_override ?? rateEntry?.hourly_rate ?? 0;
+      const baseRate =
+        (a as any).hourly_rate_override ??
+        rateEntry?.hourly_rate ??
+        resolveRateByName(roleName);
       if (!baseRate) continue;
 
       // Determine sessions to bill: bound session, else all event sessions
