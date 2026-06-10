@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
-import { Search, Plus, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { Search, Plus, ChevronRight, Edit, Trash2, FileUp } from 'lucide-react';
+import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/lib/auth';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
+import { convertDocxToMarkdown } from '@/lib/markdown';
 import {
   useKnowledgeArticles,
   useCreateKnowledgeArticle,
@@ -129,35 +132,43 @@ export default function KnowledgeBase() {
     }
   };
 
-  const renderMarkdown = (content: string) => {
-    // Simple markdown rendering
-    return content
-      .split('\n')
-      .map((line, i) => {
-        if (line.startsWith('# ')) {
-          return <h1 key={i} className="text-2xl font-bold mb-4">{line.slice(2)}</h1>;
-        }
-        if (line.startsWith('## ')) {
-          return <h2 key={i} className="text-xl font-semibold mt-6 mb-3">{line.slice(3)}</h2>;
-        }
-        if (line.startsWith('### ')) {
-          return <h3 key={i} className="text-lg font-medium mt-4 mb-2">{line.slice(4)}</h3>;
-        }
-        if (line.startsWith('- ')) {
-          return <li key={i} className="ml-4 mb-1">{line.slice(2)}</li>;
-        }
-        if (line.startsWith('**Q:')) {
-          return <p key={i} className="font-semibold mt-4">{line.replace(/\*\*/g, '')}</p>;
-        }
-        if (line.startsWith('A:')) {
-          return <p key={i} className="mb-4 text-muted-foreground">{line}</p>;
-        }
-        if (line.trim() === '') {
-          return <br key={i} />;
-        }
-        return <p key={i} className="mb-2">{line}</p>;
-      });
-  };
+  // .docx upload → Markdown conversion
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [converting, setConverting] = useState(false);
+
+  const handleDocxUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (
+        !file.name.endsWith('.docx') &&
+        file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ) {
+        toast.error('Please upload a .docx file');
+        return;
+      }
+
+      setConverting(true);
+      try {
+        const { markdown, title } = await convertDocxToMarkdown(file);
+        setFormData((prev) => ({
+          ...prev,
+          title: prev.title || title,
+          content: markdown,
+        }));
+        toast.success(`"${file.name}" converted to Markdown`);
+      } catch (err) {
+        console.error('Docx conversion failed:', err);
+        toast.error('Failed to convert Word document. Try copying text manually.');
+      } finally {
+        setConverting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    },
+    []
+  );
 
   return (
     <AppLayout>
@@ -227,9 +238,7 @@ export default function KnowledgeBase() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                {renderMarkdown(selectedArticle.content)}
-              </div>
+              <MarkdownRenderer content={selectedArticle.content} />
             </CardContent>
           </Card>
         </div>
@@ -308,7 +317,26 @@ export default function KnowledgeBase() {
                 </datalist>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="content">Content * (Markdown supported)</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="content">Content * (Markdown supported)</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={converting}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <FileUp className="h-4 w-4 mr-1.5" />
+                    {converting ? 'Converting...' : 'Import Word'}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={handleDocxUpload}
+                  />
+                </div>
                 <Textarea
                   id="content"
                   value={formData.content}
