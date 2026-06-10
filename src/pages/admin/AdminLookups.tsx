@@ -112,6 +112,14 @@ interface LookupTableProps {
   createPending: boolean;
   updatePending: boolean;
   itemLabel: string;
+  /** Optional extra boolean toggle column (e.g. "Onsite" for staff roles) */
+  extraToggle?: {
+    field: string;
+    header: string;
+    description?: string;
+    /** default for items where the field is undefined */
+    defaultValue?: boolean;
+  };
 }
 
 function LookupTable({
@@ -122,6 +130,7 @@ function LookupTable({
   createPending,
   updatePending,
   itemLabel,
+  extraToggle,
 }: LookupTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
