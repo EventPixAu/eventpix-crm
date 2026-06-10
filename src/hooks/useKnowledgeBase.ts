@@ -30,6 +30,24 @@ export function useKnowledgeArticles() {
   });
 }
 
+export function useKnowledgeArticlesByCategory(category: string) {
+  return useQuery({
+    queryKey: ['knowledge-base', 'category', category],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('knowledge_base')
+        .select('*')
+        .eq('category', category)
+        .eq('is_active', true)
+        .order('sort_order');
+      
+      if (error) throw error;
+      return data as KnowledgeArticle[];
+    },
+    enabled: !!category,
+  });
+}
+
 export function useKnowledgeArticle(id: string | undefined) {
   return useQuery({
     queryKey: ['knowledge-base', id],

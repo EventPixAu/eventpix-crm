@@ -62,6 +62,7 @@ import { DeliveryInfo } from '@/components/crew/DeliveryInfo';
 import { AllEventContacts } from '@/components/crew/AllEventContacts';
 import { EventEquipmentByRole } from '@/components/crew/EventEquipmentByRole';
 import { PhotographerChecklist } from '@/components/crew/PhotographerChecklist';
+import { PhotographerGuides } from '@/components/crew/PhotographerGuides';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -1205,6 +1206,9 @@ export default function EventDayOf() {
             />
           </motion.section>
         )}
+
+        {/* Photographer Guides - quick access to knowledge base articles */}
+        <PhotographerGuides />
 
         {/* Note: Admin workflow worksheets are NOT shown on the crew Day-Of view. 
             Crew members only see their personal role-based checklist above. */}
