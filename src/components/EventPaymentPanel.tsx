@@ -224,7 +224,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard, eventSessions]);
+  }, [assignments, rateCard, eventSessions, fixedRateCard]);
 
   // Filter for non-admin/ops viewers — show only their own row
   const visibleMembers = useMemo(() => {
