@@ -43,7 +43,7 @@ import { useEventBriefTemplate } from '@/hooks/useEventBriefTemplates';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
-import { useStaffRoles } from '@/hooks/useLookups';
+import { useStaffRoles, useDeliveryMethods } from '@/hooks/useLookups';
 import { useDayOfCache } from '@/hooks/useDayOfCache';
 import { useEventNotes, useCreateEventNote, useDeleteEventNote } from '@/hooks/useEventNotes';
 import { useEventAllocations } from '@/hooks/useEquipmentAllocations';
