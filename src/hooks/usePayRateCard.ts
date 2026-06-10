@@ -32,10 +32,10 @@ export function usePayRateCard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pay_rate_card')
-        .select('*, staff_roles:staff_role_id(id, name)')
+        .select('*, staff_roles:staff_role_id(id, name, is_onsite)')
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data as (PayRateCardEntry & { staff_roles: { id: string; name: string } })[];
+      return data as (PayRateCardEntry & { staff_roles: { id: string; name: string; is_onsite?: boolean } })[];
     },
   });
 }
