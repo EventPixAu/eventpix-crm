@@ -81,6 +81,9 @@ interface PortalData {
     name: string;
     avatar_url: string | null;
     phone: string | null;
+    vehicle_registration: string | null;
+    vehicle_make_model: string | null;
+    dietary_requirements: string | null;
   }>;
   contacts: Array<{
     id: string;
@@ -328,13 +331,23 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                       <User className="h-5 w-5 text-white/40" />
                     </div>
                   )}
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-white font-medium text-sm">{member.name}</p>
                     <p className="text-white/50 text-xs capitalize">{member.role}</p>
                     {member.phone && (
                       <a href={`tel:${member.phone}`} className="text-blue-400 text-xs flex items-center gap-1 hover:underline mt-0.5">
                         <Phone className="h-3 w-3" /> {member.phone}
                       </a>
+                    )}
+                    {(member.vehicle_registration || member.vehicle_make_model) && (
+                      <p className="text-white/60 text-xs mt-1">
+                        🚗 {[member.vehicle_make_model, member.vehicle_registration].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                    {member.dietary_requirements && (
+                      <p className="text-white/60 text-xs mt-0.5">
+                        🍽️ {member.dietary_requirements}
+                      </p>
                     )}
                   </div>
                 </div>
