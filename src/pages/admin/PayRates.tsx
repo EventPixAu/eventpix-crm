@@ -22,6 +22,33 @@ export default function PayRates() {
   const { data: allowances = [], isLoading: allowancesLoading } = usePayAllowances();
   const upsertAllowance = useUpsertPayAllowance();
   const deleteAllowance = useDeletePayAllowance();
+  const { data: fixedRates = [], isLoading: fixedLoading } = useFixedRateCard();
+  const upsertFixed = useUpsertFixedRate();
+  const deleteFixed = useDeleteFixedRate();
+
+  const [fixedDialogOpen, setFixedDialogOpen] = useState(false);
+  const [editFixed, setEditFixed] = useState<{
+    id?: string;
+    staff_role_id: string;
+    fixed_rate: number;
+    notes: string;
+  } | null>(null);
+
+  const usedFixedRoleIds = new Set(fixedRates.map(r => r.staff_role_id));
+  const availableFixedRoles = staffRoles.filter(r => !usedFixedRoleIds.has(r.id) || editFixed?.staff_role_id === r.id);
+
+  const openAddFixed = () => {
+    setEditFixed({ staff_role_id: '', fixed_rate: 0, notes: '' });
+    setFixedDialogOpen(true);
+  };
+  const openEditFixed = (entry: typeof fixedRates[number]) => {
+    setEditFixed({ id: entry.id, staff_role_id: entry.staff_role_id, fixed_rate: entry.fixed_rate, notes: entry.notes || '' });
+    setFixedDialogOpen(true);
+  };
+  const handleSaveFixed = () => {
+    if (!editFixed || !editFixed.staff_role_id) return;
+    upsertFixed.mutate(editFixed, { onSuccess: () => setFixedDialogOpen(false) });
+  };
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<{
