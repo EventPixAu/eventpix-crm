@@ -62,9 +62,6 @@ import {
   useSetUserActive,
   useSetUserRole,
   useSetUserSalaried,
-  useUsers,
-  useInvitations,
-} from '@/hooks/useUserManagement';
   type UserProfile,
   type UserInvitation,
 } from '@/hooks/useUserManagement';
