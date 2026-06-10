@@ -1,0 +1,2 @@
+UPDATE public.staff_roles SET is_onsite = false WHERE name ILIKE 'Staff %' OR name ILIKE '%retoucher%';
+UPDATE public.staff_roles SET is_onsite = true WHERE name NOT ILIKE 'Staff %' AND name NOT ILIKE '%retoucher%';
