@@ -4409,6 +4409,7 @@ export type Database = {
           home_state: string | null
           id: string
           is_active: boolean | null
+          is_salaried: boolean
           is_training: boolean | null
           location: string | null
           location_postcode: string | null
@@ -4454,6 +4455,7 @@ export type Database = {
           home_state?: string | null
           id: string
           is_active?: boolean | null
+          is_salaried?: boolean
           is_training?: boolean | null
           location?: string | null
           location_postcode?: string | null
@@ -4499,6 +4501,7 @@ export type Database = {
           home_state?: string | null
           id?: string
           is_active?: boolean | null
+          is_salaried?: boolean
           is_training?: boolean | null
           location?: string | null
           location_postcode?: string | null

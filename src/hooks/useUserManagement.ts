@@ -10,6 +10,7 @@ export interface UserProfile {
   full_name: string | null;
   phone: string | null;
   is_active: boolean | null;
+  is_salaried: boolean | null;
   created_at: string | null;
   updated_at: string | null;
   role?: string | null;
@@ -53,7 +54,7 @@ export function useUsers() {
       const [profilesRes, rolesRes, invitationsRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, email, full_name, phone, status, is_active, created_at, updated_at, onboarding_status')
+          .select('id, email, full_name, phone, status, is_active, is_salaried, created_at, updated_at, onboarding_status')
           .order('created_at', { ascending: false }),
         supabase
           .from('user_roles')
@@ -98,6 +99,7 @@ export function useUsers() {
           full_name: p.full_name,
           phone: p.phone,
           is_active: p.is_active ?? p.status === 'active',
+          is_salaried: (p as any).is_salaried ?? false,
           created_at: p.created_at,
           updated_at: p.updated_at,
           role: roleMap.get(p.id) || null,
@@ -329,6 +331,28 @@ export function useSetUserRole() {
     },
     onError: (error: Error) => {
       toast.error('Failed to update role', { description: error.message });
+    },
+  });
+}
+
+// Toggle salaried flag on a user profile
+export function useSetUserSalaried() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, isSalaried }: { userId: string; isSalaried: boolean }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_salaried: isSalaried } as any)
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success(v.isSalaried ? 'Marked as salaried' : 'Marked as hourly');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to update', { description: error.message });
     },
   });
 }

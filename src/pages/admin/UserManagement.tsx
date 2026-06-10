@@ -61,6 +61,7 @@ import {
   useRevokeInvitation,
   useSetUserActive,
   useSetUserRole,
+  useSetUserSalaried,
   type UserProfile,
   type UserInvitation,
 } from '@/hooks/useUserManagement';
@@ -184,6 +185,7 @@ function InviteUserDialog() {
 function UsersTable({ users }: { users: UserProfile[] }) {
   const setUserActive = useSetUserActive();
   const setUserRole = useSetUserRole();
+  const setUserSalaried = useSetUserSalaried();
   const { data: staffRoles = [] } = useAllStaffRoles();
   const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
   const [sendingAccessEmail, setSendingAccessEmail] = useState<string | null>(null);
@@ -221,13 +223,14 @@ function UsersTable({ users }: { users: UserProfile[] }) {
           <TableHead>Role</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Joined</TableHead>
+          <TableHead className="text-center" title="Salaried staff are excluded from per-event Payment">Salaried</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {users.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
               No users found
             </TableCell>
           </TableRow>
@@ -287,6 +290,13 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                   ? formatDistanceToNow(new Date(user.created_at), { addSuffix: true })
                   : '-'
                 }
+              </TableCell>
+              <TableCell className="text-center">
+                <Switch
+                  checked={!!user.is_salaried}
+                  onCheckedChange={(checked) => setUserSalaried.mutate({ userId: user.id, isSalaried: checked })}
+                  disabled={setUserSalaried.isPending}
+                />
               </TableCell>
               <TableCell>
                 <DropdownMenu>
