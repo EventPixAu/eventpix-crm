@@ -16,6 +16,7 @@ import { DollarSign, Pencil, Check, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useEventAssignments } from '@/hooks/useEvents';
+import { useEventSessions } from '@/hooks/useEventSessions';
 import { usePayRateCard } from '@/hooks/usePayRateCard';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
