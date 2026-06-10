@@ -152,11 +152,13 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         pay,
         formula: isPhotog ? 'photographer' : 'editor',
       };
+      (line as any).key = `${a.id}-${session.id}`;
 
       const existing = map.get(key) || { userId: a.user_id, name, lines: [], total: 0 };
       existing.lines.push(line);
       existing.total += pay;
       map.set(key, existing);
+      } // end session loop
     }
 
     // Sort each member's lines by date
@@ -164,7 +166,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard]);
+  }, [assignments, rateCard, eventSessions]);
 
   // Filter for non-admin/ops viewers — show only their own row
   const visibleMembers = useMemo(() => {
