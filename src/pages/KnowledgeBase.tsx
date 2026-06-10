@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search, Plus, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { Search, Plus, ChevronRight, Edit, Trash2, FileUp } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/lib/auth';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
+import { convertDocxToMarkdown } from '@/lib/markdown';
 import {
   useKnowledgeArticles,
   useCreateKnowledgeArticle,
