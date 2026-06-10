@@ -2183,6 +2183,7 @@ export type Database = {
           created_at: string | null
           estimated_cost: number | null
           event_id: string
+          hourly_rate_override: number | null
           id: string
           notes: string | null
           notified: boolean | null
@@ -2204,6 +2205,7 @@ export type Database = {
           created_at?: string | null
           estimated_cost?: number | null
           event_id: string
+          hourly_rate_override?: number | null
           id?: string
           notes?: string | null
           notified?: boolean | null
@@ -2225,6 +2227,7 @@ export type Database = {
           created_at?: string | null
           estimated_cost?: number | null
           event_id?: string
+          hourly_rate_override?: number | null
           id?: string
           notes?: string | null
           notified?: boolean | null

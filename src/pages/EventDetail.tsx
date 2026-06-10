@@ -74,6 +74,7 @@ import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog'
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { EventBudgetCard } from '@/components/EventBudgetCard';
 import { EventQuotesPanel } from '@/components/EventQuotesPanel';
+import { EventPaymentPanel } from '@/components/EventPaymentPanel';
 import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
@@ -1396,6 +1397,16 @@ export default function EventDetail() {
                   eventId={id!}
                   quoteId={(event as any).quote_id}
                   leadId={(event as any).lead_id}
+                />
+              )}
+
+              {/* Payment (Team) Panel */}
+              {id && (
+                <EventPaymentPanel
+                  eventId={id}
+                  isAdmin={isAdmin}
+                  isOperations={isOperations}
+                  currentUserId={user?.id}
                 />
               )}
             </motion.div>
