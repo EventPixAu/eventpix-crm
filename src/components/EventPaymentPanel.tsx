@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useEventAssignments } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { usePayRateCard } from '@/hooks/usePayRateCard';
+import { useStaffRoles } from '@/hooks/useLookups';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
