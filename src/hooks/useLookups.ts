@@ -18,6 +18,7 @@ export interface DeliveryMethod {
 export interface StaffRole {
   id: string;
   name: string;
+  is_onsite?: boolean;
 }
 
 export interface EquipmentCategory {

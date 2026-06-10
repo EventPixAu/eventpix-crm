@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { useEventAssignments } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { usePayRateCard } from '@/hooks/usePayRateCard';
+import { useStaffRoles } from '@/hooks/useLookups';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -66,6 +67,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   const { data: assignments = [] } = useEventAssignments(eventId);
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: rateCard = [] } = usePayRateCard();
+  const { data: allStaffRoles = [] } = useStaffRoles();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rateInput, setRateInput] = useState('');
@@ -110,9 +112,16 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       }
     }
 
+    // Build a set of role IDs marked as off-site (post-production only — not paid per event)
+    const offsiteRoleIds = new Set(
+      allStaffRoles.filter(r => r.is_onsite === false).map(r => r.id)
+    );
+
     for (const a of assignments) {
       // Skip salaried team members — they're not paid per event
       if ((a as any).profile?.is_salaried) continue;
+      // Skip off-site roles (post-production editors, retouchers) — handled by workflow, not call-sheet pay
+      if (a.staff_role_id && offsiteRoleIds.has(a.staff_role_id)) continue;
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
 
       // Fixed per-event rate takes precedence
@@ -228,7 +237,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard, eventSessions]);
+  }, [assignments, rateCard, eventSessions, allStaffRoles]);
 
   // Filter for non-admin/ops viewers — show only their own row
   const visibleMembers = useMemo(() => {

@@ -112,6 +112,14 @@ interface LookupTableProps {
   createPending: boolean;
   updatePending: boolean;
   itemLabel: string;
+  /** Optional extra boolean toggle column (e.g. "Onsite" for staff roles) */
+  extraToggle?: {
+    field: string;
+    header: string;
+    description?: string;
+    /** default for items where the field is undefined */
+    defaultValue?: boolean;
+  };
 }
 
 function LookupTable({
@@ -122,6 +130,7 @@ function LookupTable({
   createPending,
   updatePending,
   itemLabel,
+  extraToggle,
 }: LookupTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -232,6 +241,11 @@ function LookupTable({
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left p-3 text-sm font-medium">Name</th>
+              {extraToggle && (
+                <th className="text-center p-3 text-sm font-medium w-24" title={extraToggle.description}>
+                  {extraToggle.header}
+                </th>
+              )}
               <th className="text-center p-3 text-sm font-medium w-24">Active</th>
               <th className="text-center p-3 text-sm font-medium w-24">Order</th>
               <th className="text-right p-3 text-sm font-medium w-20">Edit</th>
@@ -240,7 +254,7 @@ function LookupTable({
           <tbody className="divide-y divide-border">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                <td colSpan={extraToggle ? 5 : 4} className="p-8 text-center text-muted-foreground">
                   No {itemLabel.toLowerCase()}s yet. Add one above.
                 </td>
               </tr>
@@ -294,6 +308,17 @@ function LookupTable({
                       </div>
                     )}
                   </td>
+                  {extraToggle && (
+                    <td className="p-3 text-center">
+                      <Switch
+                        checked={((item as any)[extraToggle.field] ?? extraToggle.defaultValue ?? true) as boolean}
+                        onCheckedChange={(checked) =>
+                          onUpdate(item.id, { [extraToggle.field]: checked } as any)
+                        }
+                        disabled={updatePending}
+                      />
+                    </td>
+                  )}
                   <td className="p-3 text-center">
                     <Switch
                       checked={item.is_active}
@@ -605,6 +630,9 @@ export default function AdminLookups() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   These values populate the role dropdown when assigning someone to an event. Team member categories are set separately on each Team profile.
                 </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  <strong>Onsite</strong> roles appear on call sheets and in event pay calculations. Turn off for post-production roles (e.g. <em>Editor - Post</em>, <em>Editor - Zno</em>) that are workflow-only and not billed per event.
+                </p>
               </div>
               <LookupTable
                 items={staffRoles}
@@ -614,6 +642,12 @@ export default function AdminLookups() {
                 createPending={createStaffRole.isPending}
                 updatePending={updateStaffRole.isPending}
                 itemLabel="Staff Role"
+                extraToggle={{
+                  field: 'is_onsite',
+                  header: 'Onsite',
+                  description: 'Onsite = billed per event and shown on call sheets. Off = post-production / workflow only.',
+                  defaultValue: true,
+                }}
               />
             </TabsContent>
 

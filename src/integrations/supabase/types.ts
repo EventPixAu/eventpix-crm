@@ -5635,6 +5635,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_onsite: boolean
           name: string
           sort_order: number | null
         }
@@ -5643,6 +5644,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_onsite?: boolean
           name: string
           sort_order?: number | null
         }
@@ -5651,6 +5653,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_onsite?: boolean
           name?: string
           sort_order?: number | null
         }
