@@ -131,35 +131,43 @@ export default function KnowledgeBase() {
     }
   };
 
-  const renderMarkdown = (content: string) => {
-    // Simple markdown rendering
-    return content
-      .split('\n')
-      .map((line, i) => {
-        if (line.startsWith('# ')) {
-          return <h1 key={i} className="text-2xl font-bold mb-4">{line.slice(2)}</h1>;
-        }
-        if (line.startsWith('## ')) {
-          return <h2 key={i} className="text-xl font-semibold mt-6 mb-3">{line.slice(3)}</h2>;
-        }
-        if (line.startsWith('### ')) {
-          return <h3 key={i} className="text-lg font-medium mt-4 mb-2">{line.slice(4)}</h3>;
-        }
-        if (line.startsWith('- ')) {
-          return <li key={i} className="ml-4 mb-1">{line.slice(2)}</li>;
-        }
-        if (line.startsWith('**Q:')) {
-          return <p key={i} className="font-semibold mt-4">{line.replace(/\*\*/g, '')}</p>;
-        }
-        if (line.startsWith('A:')) {
-          return <p key={i} className="mb-4 text-muted-foreground">{line}</p>;
-        }
-        if (line.trim() === '') {
-          return <br key={i} />;
-        }
-        return <p key={i} className="mb-2">{line}</p>;
-      });
-  };
+  // .docx upload → Markdown conversion
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [converting, setConverting] = useState(false);
+
+  const handleDocxUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (
+        !file.name.endsWith('.docx') &&
+        file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ) {
+        toast.error('Please upload a .docx file');
+        return;
+      }
+
+      setConverting(true);
+      try {
+        const { markdown, title } = await convertDocxToMarkdown(file);
+        setFormData((prev) => ({
+          ...prev,
+          title: prev.title || title,
+          content: markdown,
+        }));
+        toast.success(`"${file.name}" converted to Markdown`);
+      } catch (err) {
+        console.error('Docx conversion failed:', err);
+        toast.error('Failed to convert Word document. Try copying text manually.');
+      } finally {
+        setConverting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    },
+    []
+  );
 
   return (
     <AppLayout>
