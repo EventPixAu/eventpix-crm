@@ -861,7 +861,7 @@ export default function EventDayOf() {
         )}
 
         {/* Team Brief */}
-        {(displayEvent?.brief_content || displayEvent?.brief_file_path) && (
+        {(displayEvent?.brief_content || displayEvent?.brief_file_path || briefTemplate?.pdf_file_path) && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -886,6 +886,23 @@ export default function EventDayOf() {
               >
                 <Download className="h-4 w-4 mr-1" />
                 {displayEvent.brief_file_name || 'Download Brief'}
+              </Button>
+            )}
+            {briefTemplate?.pdf_file_path && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 ml-2"
+                onClick={async () => {
+                  const { data } = await supabase.storage
+                    .from('brief-template-files')
+                    .createSignedUrl(briefTemplate.pdf_file_path!, 3600);
+                  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                  else toast.error('Unable to open PDF');
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                {briefTemplate.pdf_file_name || 'Download PDF'}
               </Button>
             )}
           </motion.section>
