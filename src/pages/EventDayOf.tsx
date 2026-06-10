@@ -302,7 +302,10 @@ export default function EventDayOf() {
         .eq('is_completed', false)
         .not('due_date', 'is', null)
         .lte('due_date', sevenDays);
-      return data || [];
+      // Only count delivery-related steps for the "Delivery Due" badge —
+      // avoids flagging unrelated prep/admin steps that happen to be due.
+      const deliveryKeywords = /deliver(?!\s+printers|\s+consumables)|upload|smugmug|send link|files are ready|gallery|archive|process/i;
+      return (data || []).filter((s: any) => s.step_label && deliveryKeywords.test(s.step_label));
     },
     enabled: !!user?.id && !!id,
   });
