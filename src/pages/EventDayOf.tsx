@@ -39,6 +39,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
+import { useEventBriefTemplate } from '@/hooks/useEventBriefTemplates';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
@@ -123,6 +124,7 @@ export default function EventDayOf() {
   // Data fetching
   const { data: event, isLoading: eventLoading, error: eventError } = useEvent(id);
   const { data: assignments = [], isLoading: assignmentsLoading } = useEventAssignments(id);
+  const { data: briefTemplate } = useEventBriefTemplate((event as any)?.brief_template_id || undefined);
   const { data: eventSessions = [] } = useEventSessions(id);
   const { data: worksheets = [] } = useEventWorksheets(id);
   const { data: deliveryRecord } = useDeliveryRecord(id);
@@ -859,7 +861,7 @@ export default function EventDayOf() {
         )}
 
         {/* Team Brief */}
-        {(displayEvent?.brief_content || displayEvent?.brief_file_path) && (
+        {(displayEvent?.brief_content || displayEvent?.brief_file_path || briefTemplate?.pdf_file_path) && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -886,6 +888,23 @@ export default function EventDayOf() {
                 {displayEvent.brief_file_name || 'Download Brief'}
               </Button>
             )}
+            {briefTemplate?.pdf_file_path && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 ml-2"
+                onClick={async () => {
+                  const { data } = await supabase.storage
+                    .from('brief-template-files')
+                    .createSignedUrl(briefTemplate.pdf_file_path!, 3600);
+                  if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                  else toast.error('Unable to open PDF');
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                {briefTemplate.pdf_file_name || 'Download PDF'}
+              </Button>
+            )}
           </motion.section>
         )}
 
@@ -904,7 +923,7 @@ export default function EventDayOf() {
               cameraSettings={(displayEvent as any).camera_settings}
               deliveryMethod={displayEvent.delivery_method}
               deliveryDeadline={displayEvent.delivery_deadline}
-              dressCode={(displayEvent as any).dress_code}
+              dressCode={null}
             />
           </motion.section>
         )}
