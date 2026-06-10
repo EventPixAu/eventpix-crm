@@ -176,6 +176,13 @@ function buildConfirmationBody(
         const role = cleanRoleName(a.staff_role?.name || a.role_on_event || 'Photographer');
         const phone = a.profile?.phone || a.staff?.phone || '';
         lines.push(`${role}: ${name}${phone ? `   Mobile: ${phone}` : ''}`);
+        if (eventData.share_team_vehicle_info) {
+          const vehicle = [a.profile?.vehicle_make_model, a.profile?.vehicle_registration].filter(Boolean).join(' · ');
+          if (vehicle) lines.push(`   Vehicle: ${vehicle}`);
+        }
+        if (eventData.share_team_dietary && a.profile?.dietary_requirements) {
+          lines.push(`   Dietary: ${a.profile.dietary_requirements}`);
+        }
       }
     }
   } else {
