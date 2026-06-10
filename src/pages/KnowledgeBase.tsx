@@ -238,9 +238,7 @@ export default function KnowledgeBase() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                {renderMarkdown(selectedArticle.content)}
-              </div>
+              <MarkdownRenderer content={selectedArticle.content} />
             </CardContent>
           </Card>
         </div>
