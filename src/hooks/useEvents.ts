@@ -102,7 +102,10 @@ export function useEventAssignments(eventId: string | undefined) {
             full_name,
             email,
             phone,
-            is_salaried
+            is_salaried,
+            vehicle_registration,
+            vehicle_make_model,
+            dietary_requirements
           ),
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (
             id,
