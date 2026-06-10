@@ -185,6 +185,7 @@ function InviteUserDialog() {
 function UsersTable({ users }: { users: UserProfile[] }) {
   const setUserActive = useSetUserActive();
   const setUserRole = useSetUserRole();
+  const setUserSalaried = useSetUserSalaried();
   const { data: staffRoles = [] } = useAllStaffRoles();
   const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
   const [sendingAccessEmail, setSendingAccessEmail] = useState<string | null>(null);
