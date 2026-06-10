@@ -249,9 +249,13 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
   }
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
-  const effectiveHours = Math.max(sessionHours || 0, rateEntry.minimum_paid_hours);
+  const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
+  const hourlyRate = Number(rateEntry.hourly_rate) || 0;
+  const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
+  const minHours = Number(rateEntry.minimum_paid_hours) || 0;
+  const effectiveHours = Math.max(sessionHours || 0, minHours);
   const callHours = Math.ceil(effectiveHours);
-  const basePay = rateEntry.hourly_rate * (callHours + 1);
+  const basePay = isFixedMode ? fixedRate : hourlyRate * (callHours + 1);
 
   // Calculate extras total
   const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
@@ -335,7 +339,9 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-xs text-muted-foreground">
           Pay: <span className="font-medium text-foreground">
-            ${rateEntry.hourly_rate.toFixed(2)}/hr × {callHours + 1}hrs = ${basePay.toFixed(2)}
+            {isFixedMode
+              ? `$${fixedRate.toFixed(2)} fixed = $${basePay.toFixed(2)}`
+              : `$${hourlyRate.toFixed(2)}/hr × ${callHours + 1}hrs = $${basePay.toFixed(2)}`}
           </span>
         </span>
       </div>
