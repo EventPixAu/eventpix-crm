@@ -308,6 +308,17 @@ function LookupTable({
                       </div>
                     )}
                   </td>
+                  {extraToggle && (
+                    <td className="p-3 text-center">
+                      <Switch
+                        checked={((item as any)[extraToggle.field] ?? extraToggle.defaultValue ?? true) as boolean}
+                        onCheckedChange={(checked) =>
+                          onUpdate(item.id, { [extraToggle.field]: checked } as any)
+                        }
+                        disabled={updatePending}
+                      />
+                    </td>
+                  )}
                   <td className="p-3 text-center">
                     <Switch
                       checked={item.is_active}
