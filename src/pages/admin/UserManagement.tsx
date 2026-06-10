@@ -291,6 +291,13 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                   : '-'
                 }
               </TableCell>
+              <TableCell className="text-center">
+                <Switch
+                  checked={!!user.is_salaried}
+                  onCheckedChange={(checked) => setUserSalaried.mutate({ userId: user.id, isSalaried: checked })}
+                  disabled={setUserSalaried.isPending}
+                />
+              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
