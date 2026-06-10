@@ -112,9 +112,16 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       }
     }
 
+    // Build a set of role IDs marked as off-site (post-production only — not paid per event)
+    const offsiteRoleIds = new Set(
+      allStaffRoles.filter(r => r.is_onsite === false).map(r => r.id)
+    );
+
     for (const a of assignments) {
       // Skip salaried team members — they're not paid per event
       if ((a as any).profile?.is_salaried) continue;
+      // Skip off-site roles (post-production editors, retouchers) — handled by workflow, not call-sheet pay
+      if (a.staff_role_id && offsiteRoleIds.has(a.staff_role_id)) continue;
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
 
       // Fixed per-event rate takes precedence
