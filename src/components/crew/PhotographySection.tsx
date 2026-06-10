@@ -18,6 +18,7 @@ interface PhotographySectionProps {
   photographyBrief?: string | null;
   cameraSettings?: string | null;
   deliveryMethod?: string | null;
+  deliveryMethodGuests?: string | null;
   deliveryDeadline?: string | null;
   dressCode?: string | null;
 }
@@ -54,13 +55,15 @@ export function PhotographySection({
   photographyBrief,
   cameraSettings,
   deliveryMethod,
+  deliveryMethodGuests,
   deliveryDeadline,
   dressCode,
 }: PhotographySectionProps) {
-  const methodInfo = deliveryMethod ? DELIVERY_METHOD_LABELS[deliveryMethod] : null;
+  const methodKey = deliveryMethod ? deliveryMethod.toLowerCase().replace(/\s+/g, '_') : '';
+  const methodInfo = methodKey ? DELIVERY_METHOD_LABELS[methodKey] : null;
   const MethodIcon = methodInfo?.icon || Send;
 
-  const hasContent = photographyBrief || cameraSettings || deliveryMethod || dressCode;
+  const hasContent = photographyBrief || cameraSettings || deliveryMethod || deliveryMethodGuests || dressCode;
 
   if (!hasContent) {
     return null;
@@ -118,18 +121,33 @@ export function PhotographySection({
         </Card>
       )}
 
-      {/* Delivery Method */}
+      {/* Delivery Method - Guests */}
+      {deliveryMethodGuests && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              Delivery Method - Guests
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Badge variant="default" className="capitalize">{deliveryMethodGuests}</Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delivery - Photographer */}
       {deliveryMethod && (
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <MethodIcon className="h-4 w-4" />
-              Delivery Method
+              Delivery - Photographer
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
-              <Badge variant="default">{methodInfo?.label || deliveryMethod}</Badge>
+              <Badge variant="default" className="capitalize">{methodInfo?.label || deliveryMethod}</Badge>
               {deliveryDeadline && (
                 <span className="text-sm text-muted-foreground">
                   Due: {new Date(deliveryDeadline).toLocaleDateString()}

@@ -59,6 +59,7 @@ const eventSchema = z.object({
   photography_instructions: z.string().optional(),
   delivery_method_id: z.string().optional().nullable(),
   delivery_method_guests_id: z.string().optional().nullable(),
+  delivery_method_photographer_id: z.string().optional().nullable(),
   delivery_deadline: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -131,6 +132,7 @@ export default function EventForm() {
       photography_instructions: '',
       delivery_method_id: null,
       delivery_method_guests_id: null,
+      delivery_method_photographer_id: null,
       delivery_deadline: '',
       notes: '',
     },
@@ -225,6 +227,7 @@ export default function EventForm() {
         photography_instructions: (event as any).photography_brief || '',
         delivery_method_id: deliveryMethodId,
         delivery_method_guests_id: (event as any).delivery_method_guests_id || null,
+        delivery_method_photographer_id: (event as any).delivery_method_photographer_id || null,
         delivery_deadline: event.delivery_deadline || '',
         notes: event.notes || '',
       });
@@ -264,6 +267,7 @@ export default function EventForm() {
         photography_instructions: '',
         delivery_method_id: null,
         delivery_method_guests_id: null,
+        delivery_method_photographer_id: null,
         delivery_deadline: deliveryDeadline,
         notes: sourceLead.notes || '',
       });
@@ -309,6 +313,7 @@ export default function EventForm() {
       photography_brief: values.photography_instructions || null,
       delivery_method_id: values.delivery_method_id || null,
       delivery_method_guests_id: values.delivery_method_guests_id || null,
+      delivery_method_photographer_id: values.delivery_method_photographer_id || null,
       delivery_deadline: values.delivery_deadline || null,
       notes: values.notes || null,
     };
@@ -726,6 +731,31 @@ export default function EventForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Delivery Method - Guests</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
+                        <FormControl>
+                          <SelectTrigger className="bg-secondary">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {deliveryMethods.map((method) => (
+                            <SelectItem key={method.id} value={method.id}>
+                              {method.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="delivery_method_photographer_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery - Photographer</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
                           <SelectTrigger className="bg-secondary">
