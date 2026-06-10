@@ -1399,6 +1399,16 @@ export default function EventDetail() {
                   leadId={(event as any).lead_id}
                 />
               )}
+
+              {/* Payment (Team) Panel */}
+              {id && (
+                <EventPaymentPanel
+                  eventId={id}
+                  isAdmin={isAdmin}
+                  isOperations={isOperations}
+                  currentUserId={user?.id}
+                />
+              )}
             </motion.div>
 
             {/* Column 3: Quick Actions, Workflow, Tasks, Contracts */}
