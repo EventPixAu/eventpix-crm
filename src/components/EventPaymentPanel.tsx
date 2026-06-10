@@ -67,6 +67,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   const { data: assignments = [] } = useEventAssignments(eventId);
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: rateCard = [] } = usePayRateCard();
+  const { data: allStaffRoles = [] } = useStaffRoles();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rateInput, setRateInput] = useState('');
