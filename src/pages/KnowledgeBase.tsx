@@ -317,7 +317,26 @@ export default function KnowledgeBase() {
                 </datalist>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="content">Content * (Markdown supported)</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="content">Content * (Markdown supported)</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={converting}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <FileUp className="h-4 w-4 mr-1.5" />
+                    {converting ? 'Converting...' : 'Import Word'}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    onChange={handleDocxUpload}
+                  />
+                </div>
                 <Textarea
                   id="content"
                   value={formData.content}
