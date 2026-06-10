@@ -416,6 +416,126 @@ export default function PayRates() {
           </DialogContent>
         </Dialog>
 
+        {/* Fixed Rate Card — flat per-event amount overrides hourly */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Banknote className="h-5 w-5" />
+                Set Rate Card (per event)
+              </CardTitle>
+              <CardDescription>
+                Flat amount paid per event for a role (e.g. LBA Stage Photographer = $650). Overrides hourly calculation.
+              </CardDescription>
+            </div>
+            <Button onClick={openAddFixed} size="sm" className="gap-1">
+              <Plus className="h-4 w-4" /> Add Fixed Rate
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {fixedLoading ? (
+              <p className="text-muted-foreground text-sm">Loading...</p>
+            ) : fixedRates.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-8">
+                No fixed rates configured. Click "Add Fixed Rate" to add one.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Fixed Amount</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="w-[100px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fixedRates.map(entry => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">{entry.staff_roles?.name || '—'}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="secondary">${entry.fixed_rate.toFixed(2)}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs max-w-[240px] truncate">
+                        {entry.notes || '—'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 justify-end">
+                          <Button variant="ghost" size="icon" onClick={() => openEditFixed(entry)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { if (confirm('Remove this fixed rate?')) deleteFixed.mutate(entry.id); }}
+                            disabled={deleteFixed.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fixed Rate Add/Edit Dialog */}
+        <Dialog open={fixedDialogOpen} onOpenChange={setFixedDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editFixed?.id ? 'Edit Fixed Rate' : 'Add Fixed Rate'}</DialogTitle>
+            </DialogHeader>
+            {editFixed && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select
+                    value={editFixed.staff_role_id}
+                    onValueChange={v => setEditFixed({ ...editFixed, staff_role_id: v })}
+                    disabled={!!editFixed.id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableFixedRoles.map(r => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Fixed Amount ($ per event)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={editFixed.fixed_rate || ''}
+                    onChange={e => setEditFixed({ ...editFixed, fixed_rate: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes (optional)</Label>
+                  <Textarea
+                    value={editFixed.notes}
+                    onChange={e => setEditFixed({ ...editFixed, notes: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setFixedDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveFixed} disabled={upsertFixed.isPending || !editFixed?.staff_role_id}>
+                {editFixed?.id ? 'Save Changes' : 'Add Fixed Rate'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <p className="text-xs text-muted-foreground text-center">All rates are ex GST</p>
       </div>
     </AppLayout>
