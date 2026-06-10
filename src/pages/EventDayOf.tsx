@@ -62,6 +62,7 @@ import { DeliveryInfo } from '@/components/crew/DeliveryInfo';
 import { AllEventContacts } from '@/components/crew/AllEventContacts';
 import { EventEquipmentByRole } from '@/components/crew/EventEquipmentByRole';
 import { PhotographerChecklist } from '@/components/crew/PhotographerChecklist';
+import { PhotographerGuides } from '@/components/crew/PhotographerGuides';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
