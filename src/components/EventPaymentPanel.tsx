@@ -64,6 +64,7 @@ interface PayLine {
 
 export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId }: Props) {
   const { data: assignments = [] } = useEventAssignments(eventId);
+  const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: rateCard = [] } = usePayRateCard();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -83,17 +84,22 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     const map = new Map<string, Member>();
 
     for (const a of assignments) {
-      const session = (a as any).session;
-      if (!session?.start_time || !session?.end_time) continue;
-
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
       const rateEntry = rateCard.find(r => r.staff_role_id === a.staff_role_id);
       const baseRate = (a as any).hourly_rate_override ?? rateEntry?.hourly_rate ?? 0;
       if (!baseRate) continue;
 
-      const startMin = parseHHMM(session.start_time)!;
-      const endMin = parseHHMM(session.end_time)!;
-      if (endMin <= startMin) continue;
+      // Determine sessions to bill: bound session, else all event sessions
+      const boundSession = (a as any).session;
+      const sessionsToBill = boundSession?.start_time && boundSession?.end_time
+        ? [boundSession]
+        : eventSessions.filter(s => s.start_time && s.end_time);
+      if (sessionsToBill.length === 0) continue;
+
+      for (const session of sessionsToBill) {
+        const startMin = parseHHMM(session.start_time)!;
+        const endMin = parseHHMM(session.end_time)!;
+        if (endMin <= startMin) continue;
 
       const isPhotog = isPhotographerRole(roleName);
       let hours: number;
