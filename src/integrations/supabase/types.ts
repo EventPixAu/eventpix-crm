@@ -3336,41 +3336,6 @@ export type Database = {
           },
         ]
       }
-      fixed_rate_card: {
-        Row: {
-          created_at: string
-          fixed_rate: number
-          id: string
-          notes: string | null
-          staff_role_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          fixed_rate?: number
-          id?: string
-          notes?: string | null
-          staff_role_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          fixed_rate?: number
-          id?: string
-          notes?: string | null
-          staff_role_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fixed_rate_card_staff_role_id_fkey"
-            columns: ["staff_role_id"]
-            isOneToOne: true
-            referencedRelation: "staff_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       gallery_assets: {
         Row: {
           alt_text: string | null
@@ -4305,28 +4270,34 @@ export type Database = {
       pay_rate_card: {
         Row: {
           created_at: string
-          hourly_rate: number
+          fixed_rate: number | null
+          hourly_rate: number | null
           id: string
-          minimum_paid_hours: number
+          minimum_paid_hours: number | null
           notes: string | null
+          rate_mode: string
           staff_role_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          hourly_rate?: number
+          fixed_rate?: number | null
+          hourly_rate?: number | null
           id?: string
-          minimum_paid_hours?: number
+          minimum_paid_hours?: number | null
           notes?: string | null
+          rate_mode?: string
           staff_role_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          hourly_rate?: number
+          fixed_rate?: number | null
+          hourly_rate?: number | null
           id?: string
-          minimum_paid_hours?: number
+          minimum_paid_hours?: number | null
           notes?: string | null
+          rate_mode?: string
           staff_role_id?: string
           updated_at?: string
         }
