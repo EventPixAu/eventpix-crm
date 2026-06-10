@@ -1,0 +1,1 @@
+UPDATE public.knowledge_base SET category = 'RealTime Delivery' WHERE category = 'Delivery Procedures';
