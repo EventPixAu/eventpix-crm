@@ -286,7 +286,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
           <div key={member.name} className="border border-border rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="font-medium text-sm">{member.name}</div>
-              <div className="text-sm font-semibold">${member.total.toFixed(2)}</div>
+              <div className="text-sm font-semibold">${(Number(member.total) || 0).toFixed(2)}</div>
             </div>
             <div className="space-y-1.5">
               {member.lines.map(line => {
@@ -331,13 +331,13 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                           }}
                           title={(isAdmin || isOperations) ? 'Click to edit rate' : undefined}
                         >
-                          ${line.rate.toFixed(0)}/hr
+                          ${(Number(line.rate) || 0).toFixed(0)}{line.formula === 'fixed' ? '' : '/hr'}
                           {(isAdmin || isOperations) && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
                         </button>
                       )}
                     </div>
                     <div className="col-span-1 text-right text-foreground font-medium">
-                      ${line.pay.toFixed(0)}
+                      ${(Number(line.pay) || 0).toFixed(0)}
                     </div>
                     {isEditing && (isAdmin || isOperations) && (
                       <div className="col-span-12 flex justify-end gap-1">
@@ -362,7 +362,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         {canView && visibleMembers.length > 1 && (
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <span className="text-sm font-medium">Total</span>
-            <span className="text-base font-semibold">${grandTotal.toFixed(2)}</span>
+            <span className="text-base font-semibold">${(Number(grandTotal) || 0).toFixed(2)}</span>
           </div>
         )}
       </CardContent>
