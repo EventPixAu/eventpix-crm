@@ -66,6 +66,8 @@ interface SendFinalConfirmationDialogProps {
     arrival_time?: string | null;
     client_brief_content?: string | null;
     client_portal_token?: string | null;
+    share_team_vehicle_info?: boolean;
+    share_team_dietary?: boolean;
   };
   recipients: Recipient[];
   assignments: any[];
