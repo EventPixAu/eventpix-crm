@@ -904,7 +904,7 @@ export default function EventDayOf() {
               cameraSettings={(displayEvent as any).camera_settings}
               deliveryMethod={displayEvent.delivery_method}
               deliveryDeadline={displayEvent.delivery_deadline}
-              dressCode={(displayEvent as any).dress_code}
+              dressCode={null}
             />
           </motion.section>
         )}
