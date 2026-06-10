@@ -241,6 +241,11 @@ function LookupTable({
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left p-3 text-sm font-medium">Name</th>
+              {extraToggle && (
+                <th className="text-center p-3 text-sm font-medium w-24" title={extraToggle.description}>
+                  {extraToggle.header}
+                </th>
+              )}
               <th className="text-center p-3 text-sm font-medium w-24">Active</th>
               <th className="text-center p-3 text-sm font-medium w-24">Order</th>
               <th className="text-right p-3 text-sm font-medium w-20">Edit</th>
@@ -249,7 +254,7 @@ function LookupTable({
           <tbody className="divide-y divide-border">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                <td colSpan={extraToggle ? 5 : 4} className="p-8 text-center text-muted-foreground">
                   No {itemLabel.toLowerCase()}s yet. Add one above.
                 </td>
               </tr>
