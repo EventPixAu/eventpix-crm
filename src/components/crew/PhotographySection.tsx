@@ -18,6 +18,7 @@ interface PhotographySectionProps {
   photographyBrief?: string | null;
   cameraSettings?: string | null;
   deliveryMethod?: string | null;
+  deliveryMethodGuests?: string | null;
   deliveryDeadline?: string | null;
   dressCode?: string | null;
 }
