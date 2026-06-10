@@ -630,6 +630,9 @@ export default function AdminLookups() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   These values populate the role dropdown when assigning someone to an event. Team member categories are set separately on each Team profile.
                 </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  <strong>Onsite</strong> roles appear on call sheets and in event pay calculations. Turn off for post-production roles (e.g. <em>Editor - Post</em>, <em>Editor - Zno</em>) that are workflow-only and not billed per event.
+                </p>
               </div>
               <LookupTable
                 items={staffRoles}
@@ -639,6 +642,12 @@ export default function AdminLookups() {
                 createPending={createStaffRole.isPending}
                 updatePending={updateStaffRole.isPending}
                 itemLabel="Staff Role"
+                extraToggle={{
+                  field: 'is_onsite',
+                  header: 'Onsite',
+                  description: 'Onsite = billed per event and shown on call sheets. Off = post-production / workflow only.',
+                  defaultValue: true,
+                }}
               />
             </TabsContent>
 
