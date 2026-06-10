@@ -3050,6 +3050,8 @@ export type Database = {
           quote_id: string | null
           recommended_kit_id: string | null
           run_sheet_url: string | null
+          share_team_dietary: boolean
+          share_team_vehicle_info: boolean
           smugmug_link: string | null
           special_instructions: string | null
           start_at: string | null
@@ -3131,6 +3133,8 @@ export type Database = {
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
+          share_team_dietary?: boolean
+          share_team_vehicle_info?: boolean
           smugmug_link?: string | null
           special_instructions?: string | null
           start_at?: string | null
@@ -3212,6 +3216,8 @@ export type Database = {
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
+          share_team_dietary?: boolean
+          share_team_vehicle_info?: boolean
           smugmug_link?: string | null
           special_instructions?: string | null
           start_at?: string | null
