@@ -74,6 +74,7 @@ import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog'
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { EventBudgetCard } from '@/components/EventBudgetCard';
 import { EventQuotesPanel } from '@/components/EventQuotesPanel';
+import { EventPaymentPanel } from '@/components/EventPaymentPanel';
 import { EventFinancialsCard } from '@/components/EventFinancialsCard';
 import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { Badge } from '@/components/ui/badge';
