@@ -129,6 +129,11 @@ export default function EventDayOf() {
   const { data: worksheets = [] } = useEventWorksheets(id);
   const { data: deliveryRecord } = useDeliveryRecord(id);
   const { data: staffRoles = [] } = useStaffRoles();
+  const { data: deliveryMethodsLookup = [] } = useDeliveryMethods();
+  const deliveryMethodMap = useMemo(
+    () => Object.fromEntries(deliveryMethodsLookup.map((m: any) => [m.id, m.name])),
+    [deliveryMethodsLookup]
+  );
   const { data: eventNotes = [] } = useEventNotes(id);
   const { data: allDocuments = [] } = useEventDocuments(id);
   const getDocumentUrl = useGetDocumentUrl();
@@ -910,9 +915,11 @@ export default function EventDayOf() {
         )}
 
         {/* Photography Section - Brief, Camera Settings, Delivery */}
-        {((displayEvent as any).photography_brief || 
-          (displayEvent as any).camera_settings || 
-          displayEvent.delivery_method) && (
+        {((displayEvent as any).photography_brief ||
+          (displayEvent as any).camera_settings ||
+          displayEvent.delivery_method ||
+          (displayEvent as any).delivery_method_photographer_id ||
+          (displayEvent as any).delivery_method_guests_id) && (
           <motion.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -922,7 +929,13 @@ export default function EventDayOf() {
             <PhotographySection
               photographyBrief={(displayEvent as any).photography_brief}
               cameraSettings={(displayEvent as any).camera_settings}
-              deliveryMethod={displayEvent.delivery_method}
+              deliveryMethod={
+                deliveryMethodMap[(displayEvent as any).delivery_method_photographer_id] ||
+                displayEvent.delivery_method
+              }
+              deliveryMethodGuests={
+                deliveryMethodMap[(displayEvent as any).delivery_method_guests_id] || null
+              }
               deliveryDeadline={displayEvent.delivery_deadline}
               dressCode={null}
             />
