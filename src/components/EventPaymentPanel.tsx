@@ -102,6 +102,8 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     };
 
     for (const a of assignments) {
+      // Skip salaried team members — they're not paid per event
+      if ((a as any).profile?.is_salaried) continue;
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
       const rateEntry = rateCard.find(r => r.staff_role_id === a.staff_role_id);
       const baseRate =
