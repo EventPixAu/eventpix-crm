@@ -144,10 +144,11 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       }
 
       const rateEntry = rateCard.find(r => r.staff_role_id === a.staff_role_id);
-      const baseRate =
+      const baseRate = Number(
         (a as any).hourly_rate_override ??
         rateEntry?.hourly_rate ??
-        resolveRateByName(roleName);
+        resolveRateByName(roleName)
+      ) || 0;
       if (!baseRate) continue;
 
       // Determine sessions to bill: bound session, else all event sessions
