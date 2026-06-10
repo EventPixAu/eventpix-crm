@@ -54,7 +54,7 @@ export function useUsers() {
       const [profilesRes, rolesRes, invitationsRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('id, email, full_name, phone, status, is_active, created_at, updated_at, onboarding_status')
+          .select('id, email, full_name, phone, status, is_active, is_salaried, created_at, updated_at, onboarding_status')
           .order('created_at', { ascending: false }),
         supabase
           .from('user_roles')
