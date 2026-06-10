@@ -39,6 +39,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { useEvent, useEventAssignments } from '@/hooks/useEvents';
+import { useEventBriefTemplate } from '@/hooks/useEventBriefTemplates';
 import { useDeliveryRecord } from '@/hooks/useDeliveryRecords';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { useEventWorksheets, useAllWorksheetItems, useUpdateWorksheetItem } from '@/hooks/useWorksheets';
