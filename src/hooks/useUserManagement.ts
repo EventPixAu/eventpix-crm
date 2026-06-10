@@ -99,6 +99,7 @@ export function useUsers() {
           full_name: p.full_name,
           phone: p.phone,
           is_active: p.is_active ?? p.status === 'active',
+          is_salaried: (p as any).is_salaried ?? false,
           created_at: p.created_at,
           updated_at: p.updated_at,
           role: roleMap.get(p.id) || null,
