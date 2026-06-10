@@ -18,10 +18,12 @@ interface AllEventContactsProps {
     name?: string | null;
     phone?: string | null;
   } | null;
+  /** Crew view: only show onsite contact (fallback to primary) */
+  crewOnly?: boolean;
 }
 
-export function AllEventContacts({ eventId, onsiteContact }: AllEventContactsProps) {
-  const { data: contacts = [], isLoading } = useEventContacts(eventId);
+export function AllEventContacts({ eventId, onsiteContact, crewOnly = false }: AllEventContactsProps) {
+  const { data: allContacts = [], isLoading } = useEventContacts(eventId);
 
   if (isLoading) {
     return (
@@ -35,8 +37,18 @@ export function AllEventContacts({ eventId, onsiteContact }: AllEventContactsPro
     );
   }
 
-  // Combine on-site contact with event contacts if provided
-  const hasOnsite = onsiteContact?.name || onsiteContact?.phone;
+  // For crew view: prefer onsite contact; fall back to primary if no onsite exists
+  let contacts = allContacts;
+  let hasOnsite = !!(onsiteContact?.name || onsiteContact?.phone);
+  if (crewOnly) {
+    const onsite = allContacts.filter((c) => c.contact_type === 'onsite');
+    contacts = onsite.length > 0
+      ? onsite
+      : allContacts.filter((c) => c.contact_type === 'primary');
+    // Suppress event-record onsite block if we already have onsite contacts from DB
+    if (onsite.length > 0) hasOnsite = false;
+  }
+
   const totalContacts = contacts.length + (hasOnsite ? 1 : 0);
 
   if (totalContacts === 0) {

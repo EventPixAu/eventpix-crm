@@ -826,6 +826,7 @@ export default function EventDayOf() {
           >
             <AllEventContacts 
               eventId={id} 
+              crewOnly
               onsiteContact={{
                 name: displayEvent.onsite_contact_name,
                 phone: displayEvent.onsite_contact_phone,
