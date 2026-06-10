@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useEventAssignments } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
-import { usePayRateCard } from '@/hooks/usePayRateCard';
+import { usePayRateCard, useFixedRateCard } from '@/hooks/usePayRateCard';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -59,13 +59,14 @@ interface PayLine {
   hours: number;
   rate: number;
   pay: number;
-  formula: 'photographer' | 'editor';
+  formula: 'photographer' | 'editor' | 'fixed';
 }
 
 export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId }: Props) {
   const { data: assignments = [] } = useEventAssignments(eventId);
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: rateCard = [] } = usePayRateCard();
+  const { data: fixedRateCard = [] } = useFixedRateCard();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rateInput, setRateInput] = useState('');
@@ -101,10 +102,44 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       return 0;
     };
 
+    const fixedByRole = new Map<string, number>();
+    for (const f of fixedRateCard) {
+      fixedByRole.set(f.staff_role_id, Number(f.fixed_rate) || 0);
+    }
+
     for (const a of assignments) {
       // Skip salaried team members — they're not paid per event
       if ((a as any).profile?.is_salaried) continue;
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
+
+      // Fixed per-event rate takes precedence
+      const fixedAmount = a.staff_role_id ? fixedByRole.get(a.staff_role_id) : undefined;
+      if (fixedAmount && fixedAmount > 0) {
+        const name =
+          (a as any).profile?.full_name ||
+          (a as any).profile?.email ||
+          (a as any).staff?.name ||
+          'Unassigned';
+        const key = a.user_id || a.staff_id || name;
+        const line: PayLine = {
+          assignmentId: a.id,
+          date: null,
+          label: `${roleName || 'Crew'} · Fixed rate`,
+          startEnd: '—',
+          callTime: '—',
+          hours: 0,
+          rate: fixedAmount,
+          pay: fixedAmount,
+          formula: 'fixed',
+        };
+        (line as any).key = `${a.id}-fixed`;
+        const existing = map.get(key) || { userId: a.user_id, name, lines: [], total: 0 };
+        existing.lines.push(line);
+        existing.total += fixedAmount;
+        map.set(key, existing);
+        continue;
+      }
+
       const rateEntry = rateCard.find(r => r.staff_role_id === a.staff_role_id);
       const baseRate =
         (a as any).hourly_rate_override ??
@@ -189,7 +224,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard, eventSessions]);
+  }, [assignments, rateCard, eventSessions, fixedRateCard]);
 
   // Filter for non-admin/ops viewers — show only their own row
   const visibleMembers = useMemo(() => {

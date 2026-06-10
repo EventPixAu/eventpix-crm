@@ -186,6 +186,71 @@ export function useDeletePayAllowance() {
   });
 }
 
+// ===== Fixed Rate Card (flat per-event amount per role) =====
+export interface FixedRateCardEntry {
+  id: string;
+  staff_role_id: string;
+  fixed_rate: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useFixedRateCard() {
+  return useQuery({
+    queryKey: ['fixed-rate-card'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('fixed_rate_card')
+        .select('*, staff_roles:staff_role_id(id, name)')
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data as (FixedRateCardEntry & { staff_roles: { id: string; name: string } })[];
+    },
+  });
+}
+
+export function useUpsertFixedRate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: { id?: string; staff_role_id: string; fixed_rate: number; notes?: string | null }) => {
+      if (entry.id) {
+        const { error } = await (supabase as any).from('fixed_rate_card').update({
+          fixed_rate: entry.fixed_rate,
+          notes: entry.notes ?? null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', entry.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any).from('fixed_rate_card').insert({
+          staff_role_id: entry.staff_role_id,
+          fixed_rate: entry.fixed_rate,
+          notes: entry.notes ?? null,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['fixed-rate-card'] });
+      qc.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Fixed rate saved');
+    },
+    onError: (e: Error) => toast.error('Failed: ' + e.message),
+  });
+}
+
+export function useDeleteFixedRate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('fixed_rate_card').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['fixed-rate-card'] }); toast.success('Removed'); },
+    onError: (e: Error) => toast.error('Failed: ' + e.message),
+  });
+}
+
 /**
  * Calculate pay for an assignment based on rate card + session duration.
  * Formula: (call_hours × rate) + (1 × rate) = (call_hours + 1) × rate
