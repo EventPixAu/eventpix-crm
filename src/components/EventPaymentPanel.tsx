@@ -59,7 +59,7 @@ interface PayLine {
   hours: number;
   rate: number;
   pay: number;
-  formula: 'photographer' | 'editor';
+  formula: 'photographer' | 'editor' | 'fixed';
 }
 
 export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId }: Props) {
