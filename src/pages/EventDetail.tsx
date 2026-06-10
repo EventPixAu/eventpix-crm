@@ -826,9 +826,11 @@ export default function EventDetail() {
   };
 
   // Helper to get delivery method name
-  const getDeliveryMethodName = (field: 'delivery_method_id' | 'delivery_method_guests_id' = 'delivery_method_id') => {
+  const getDeliveryMethodName = (
+    field: 'delivery_method_id' | 'delivery_method_guests_id' | 'delivery_method_photographer_id' = 'delivery_method_id'
+  ) => {
     if (!event) return '';
-    const fieldId = event[field];
+    const fieldId = (event as any)[field];
     if (fieldId && deliveryMethodMap[fieldId]) {
       return deliveryMethodMap[fieldId];
     }
@@ -1099,6 +1101,43 @@ export default function EventDetail() {
                         </Select>
                       ) : (
                         <p className="font-medium capitalize">{getDeliveryMethodName('delivery_method_id') || 'Not set'}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Delivery - Photographer */}
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Package className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Delivery - Photographer</p>
+                      {isAdmin ? (
+                        <Select
+                          value={(event as any).delivery_method_photographer_id || ''}
+                          onValueChange={async (value) => {
+                            setIsUpdatingStatus(true);
+                            await updateEvent.mutateAsync({
+                              id: event.id,
+                              delivery_method_photographer_id: value,
+                            } as any);
+                            setIsUpdatingStatus(false);
+                          }}
+                          disabled={isUpdatingStatus}
+                        >
+                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {deliveryMethods.map((method) => (
+                              <SelectItem key={method.id} value={method.id}>
+                                {method.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="font-medium capitalize">{getDeliveryMethodName('delivery_method_photographer_id') || 'Not set'}</p>
                       )}
                     </div>
                   </div>
