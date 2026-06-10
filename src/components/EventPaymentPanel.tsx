@@ -86,8 +86,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     // Build a name-keyed fallback (e.g. "photographer" → 125) from the rate card
     const rateByKeyword = new Map<string, number>();
     for (const r of rateCard) {
-      const nm = ((r as any).staff_role?.name || '').toLowerCase();
-      const direct = (rateCard.find(x => x.staff_role_id === r.staff_role_id) as any);
+      const nm = ((r as any).staff_roles?.name || '').toLowerCase().trim();
       const rate = Number(r.hourly_rate) || 0;
       if (!rate) continue;
       if (nm === 'photographer' || nm === 'videographer') rateByKeyword.set('photographer', rate);
