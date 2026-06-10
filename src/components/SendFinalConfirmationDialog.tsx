@@ -66,6 +66,8 @@ interface SendFinalConfirmationDialogProps {
     arrival_time?: string | null;
     client_brief_content?: string | null;
     client_portal_token?: string | null;
+    share_team_vehicle_info?: boolean;
+    share_team_dietary?: boolean;
   };
   recipients: Recipient[];
   assignments: any[];
@@ -174,6 +176,13 @@ function buildConfirmationBody(
         const role = cleanRoleName(a.staff_role?.name || a.role_on_event || 'Photographer');
         const phone = a.profile?.phone || a.staff?.phone || '';
         lines.push(`${role}: ${name}${phone ? `   Mobile: ${phone}` : ''}`);
+        if (eventData.share_team_vehicle_info) {
+          const vehicle = [a.profile?.vehicle_make_model, a.profile?.vehicle_registration].filter(Boolean).join(' · ');
+          if (vehicle) lines.push(`   Vehicle: ${vehicle}`);
+        }
+        if (eventData.share_team_dietary && a.profile?.dietary_requirements) {
+          lines.push(`   Dietary: ${a.profile.dietary_requirements}`);
+        }
       }
     }
   } else {
@@ -205,12 +214,23 @@ function buildConfirmationBody(
       return role.includes('lead') || role.includes('photographer');
     }) || onsiteAssignments[0];
 
+    const appendExtras = (a: any) => {
+      if (eventData.share_team_vehicle_info) {
+        const vehicle = [a?.profile?.vehicle_make_model, a?.profile?.vehicle_registration].filter(Boolean).join(' · ');
+        if (vehicle) lines.push(`Vehicle: ${vehicle}`);
+      }
+      if (eventData.share_team_dietary && a?.profile?.dietary_requirements) {
+        lines.push(`Dietary: ${a.profile.dietary_requirements}`);
+      }
+    };
+
     if (leadAssignment) {
       const leadName = leadAssignment?.profile?.full_name || leadAssignment?.staff?.name || 'TBC';
       const leadPhone = leadAssignment?.profile?.phone || leadAssignment?.staff?.phone || '';
       const leadRole = cleanRoleName(leadAssignment?.staff_role?.name || leadAssignment?.role_on_event || 'Lead Photographer');
       lines.push(`${leadRole}: ${leadName}`);
       if (leadPhone) lines.push(`Mobile: ${leadPhone}`);
+      appendExtras(leadAssignment);
 
       const otherAssignments = onsiteAssignments.filter(a => a !== leadAssignment);
       for (const a of otherAssignments) {
@@ -220,6 +240,7 @@ function buildConfirmationBody(
         lines.push('');
         lines.push(`${role}: ${name}`);
         if (phone) lines.push(`Mobile: ${phone}`);
+        appendExtras(a);
       }
     }
   }
