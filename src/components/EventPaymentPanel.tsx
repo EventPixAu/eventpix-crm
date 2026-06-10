@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useEventAssignments } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
-import { usePayRateCard, useFixedRateCard } from '@/hooks/usePayRateCard';
+import { usePayRateCard } from '@/hooks/usePayRateCard';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -66,7 +66,6 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   const { data: assignments = [] } = useEventAssignments(eventId);
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: rateCard = [] } = usePayRateCard();
-  const { data: fixedRateCard = [] } = useFixedRateCard();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rateInput, setRateInput] = useState('');
@@ -84,9 +83,10 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     };
     const map = new Map<string, Member>();
 
-    // Build a name-keyed fallback (e.g. "photographer" → 125) from the rate card
+    // Build name-keyed fallback (hourly rates only) for assignments without staff_role_id
     const rateByKeyword = new Map<string, number>();
     for (const r of rateCard) {
+      if ((r as any).rate_mode !== 'hourly') continue;
       const nm = ((r as any).staff_roles?.name || '').toLowerCase().trim();
       const rate = Number(r.hourly_rate) || 0;
       if (!rate) continue;
@@ -102,9 +102,12 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       return 0;
     };
 
+    // Set Rate roles: { staff_role_id → fixed amount }
     const fixedByRole = new Map<string, number>();
-    for (const f of fixedRateCard) {
-      fixedByRole.set(f.staff_role_id, Number(f.fixed_rate) || 0);
+    for (const r of rateCard) {
+      if ((r as any).rate_mode === 'fixed') {
+        fixedByRole.set(r.staff_role_id, Number((r as any).fixed_rate) || 0);
+      }
     }
 
     for (const a of assignments) {
@@ -224,7 +227,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard, eventSessions, fixedRateCard]);
+  }, [assignments, rateCard, eventSessions]);
 
   // Filter for non-admin/ops viewers — show only their own row
   const visibleMembers = useMemo(() => {

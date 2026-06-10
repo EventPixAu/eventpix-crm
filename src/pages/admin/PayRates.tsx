@@ -10,8 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Plus, Pencil, Trash2, Info, Car, Wrench, Banknote } from 'lucide-react';
-import { usePayRateCard, useUpsertPayRate, useDeletePayRate, calculatePayFromRateCard, usePayAllowances, useUpsertPayAllowance, useDeletePayAllowance, useFixedRateCard, useUpsertFixedRate, useDeleteFixedRate } from '@/hooks/usePayRateCard';
+import { DollarSign, Plus, Pencil, Trash2, Info, Car } from 'lucide-react';
+import {
+  usePayRateCard, useUpsertPayRate, useDeletePayRate, calculatePayFromRateCard,
+  usePayAllowances, useUpsertPayAllowance, useDeletePayAllowance,
+  type RateMode,
+} from '@/hooks/usePayRateCard';
 import { useStaffRoles } from '@/hooks/useStaff';
 
 export default function PayRates() {
@@ -22,40 +26,15 @@ export default function PayRates() {
   const { data: allowances = [], isLoading: allowancesLoading } = usePayAllowances();
   const upsertAllowance = useUpsertPayAllowance();
   const deleteAllowance = useDeletePayAllowance();
-  const { data: fixedRates = [], isLoading: fixedLoading } = useFixedRateCard();
-  const upsertFixed = useUpsertFixedRate();
-  const deleteFixed = useDeleteFixedRate();
-
-  const [fixedDialogOpen, setFixedDialogOpen] = useState(false);
-  const [editFixed, setEditFixed] = useState<{
-    id?: string;
-    staff_role_id: string;
-    fixed_rate: number;
-    notes: string;
-  } | null>(null);
-
-  const usedFixedRoleIds = new Set(fixedRates.map(r => r.staff_role_id));
-  const availableFixedRoles = staffRoles.filter(r => !usedFixedRoleIds.has(r.id) || editFixed?.staff_role_id === r.id);
-
-  const openAddFixed = () => {
-    setEditFixed({ staff_role_id: '', fixed_rate: 0, notes: '' });
-    setFixedDialogOpen(true);
-  };
-  const openEditFixed = (entry: typeof fixedRates[number]) => {
-    setEditFixed({ id: entry.id, staff_role_id: entry.staff_role_id, fixed_rate: entry.fixed_rate, notes: entry.notes || '' });
-    setFixedDialogOpen(true);
-  };
-  const handleSaveFixed = () => {
-    if (!editFixed || !editFixed.staff_role_id) return;
-    upsertFixed.mutate(editFixed, { onSuccess: () => setFixedDialogOpen(false) });
-  };
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<{
     id?: string;
     staff_role_id: string;
+    rate_mode: RateMode;
     hourly_rate: number;
     minimum_paid_hours: number;
+    fixed_rate: number;
     notes: string;
   } | null>(null);
 
@@ -72,7 +51,7 @@ export default function PayRates() {
   const availableRoles = staffRoles.filter(r => !usedRoleIds.has(r.id) || editEntry?.staff_role_id === r.id);
 
   const openAdd = () => {
-    setEditEntry({ staff_role_id: '', hourly_rate: 0, minimum_paid_hours: 3, notes: '' });
+    setEditEntry({ staff_role_id: '', rate_mode: 'hourly', hourly_rate: 0, minimum_paid_hours: 3, fixed_rate: 0, notes: '' });
     setDialogOpen(true);
   };
 
@@ -80,8 +59,10 @@ export default function PayRates() {
     setEditEntry({
       id: entry.id,
       staff_role_id: entry.staff_role_id,
-      hourly_rate: entry.hourly_rate,
-      minimum_paid_hours: entry.minimum_paid_hours,
+      rate_mode: (entry.rate_mode || 'hourly') as RateMode,
+      hourly_rate: entry.hourly_rate ?? 0,
+      minimum_paid_hours: entry.minimum_paid_hours ?? 3,
+      fixed_rate: entry.fixed_rate ?? 0,
       notes: entry.notes || '',
     });
     setDialogOpen(true);
@@ -107,51 +88,47 @@ export default function PayRates() {
     upsertAllowance.mutate(editAllowance, { onSuccess: () => setAllowanceDialogOpen(false) });
   };
 
-  // Example calculations for the info section
-  const exampleHourlyRate = rateCard.length > 0 ? rateCard[0].hourly_rate : 75;
-  const exampleMinHours = rateCard.length > 0 ? rateCard[0].minimum_paid_hours : 3;
+  const firstHourly = rateCard.find(r => r.rate_mode === 'hourly' && r.hourly_rate);
+  const exampleHourlyRate = firstHourly?.hourly_rate ?? 75;
+  const exampleMinHours = firstHourly?.minimum_paid_hours ?? 3;
 
   return (
     <AppLayout>
       <div className="p-6 space-y-6 max-w-5xl mx-auto">
         <PageHeader title="Pay Rates" description="Manage global rate card and pay calculation rules" />
 
-        {/* Formula explanation */}
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div className="space-y-2 text-sm">
-                <p className="font-medium text-foreground">Pay Calculation Formula</p>
+                <p className="font-medium text-foreground">Rate Modes</p>
                 <p className="text-muted-foreground">
-                  Each role has an <strong>hourly rate</strong> and a <strong>minimum paid hours</strong> value.
-                  The minimum covers setup, travel, and pack-down time.
-                </p>
-                <p className="text-muted-foreground">
-                  <strong>Example:</strong> If hourly rate = ${exampleHourlyRate} and minimum = {exampleMinHours}hrs:
+                  Each role uses one of two modes:
                 </p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
-                  <li>2hr session → paid {exampleMinHours}hrs = <strong>${calculatePayFromRateCard(exampleHourlyRate, exampleMinHours, 2).toFixed(2)}</strong></li>
-                  <li>4hr session → paid 4hrs = <strong>${calculatePayFromRateCard(exampleHourlyRate, exampleMinHours, 4).toFixed(2)}</strong></li>
-                  <li>8hr session → paid 8hrs = <strong>${calculatePayFromRateCard(exampleHourlyRate, exampleMinHours, 8).toFixed(2)}</strong></li>
+                  <li><strong>Hourly</strong> — pay = (ceil(session hours) + 1) × hourly rate. The +1hr covers setup, travel, pack-down.</li>
+                  <li><strong>Set Rate</strong> — flat amount paid per event regardless of session length (e.g. LBA Stage Photographer = $650).</li>
                 </ul>
-                <p className="text-muted-foreground text-xs">
-                  Event Series (e.g. LBA) can override this with a fixed per-job rate — configured on the series page.
+                <p className="text-muted-foreground">
+                  <strong>Hourly example:</strong> ${exampleHourlyRate}/hr →
+                  2hr → <strong>${calculatePayFromRateCard(exampleHourlyRate, exampleMinHours as number, 2).toFixed(2)}</strong>,
+                  4hr → <strong>${calculatePayFromRateCard(exampleHourlyRate, exampleMinHours as number, 4).toFixed(2)}</strong>,
+                  8hr → <strong>${calculatePayFromRateCard(exampleHourlyRate, exampleMinHours as number, 8).toFixed(2)}</strong>
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Rate Card Table */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
-                Global Rate Card
+                Rate Card
               </CardTitle>
-              <CardDescription>Hourly rates per role — applied to all standard events</CardDescription>
+              <CardDescription>One rate per role — choose Hourly or Set Rate per event</CardDescription>
             </div>
             <Button onClick={openAdd} size="sm" className="gap-1">
               <Plus className="h-4 w-4" /> Add Role Rate
@@ -169,9 +146,8 @@ export default function PayRates() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Hourly Rate</TableHead>
-                    <TableHead className="text-right">Min Paid Hours</TableHead>
-                    <TableHead className="text-right">Min Pay</TableHead>
+                    <TableHead>Mode</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="w-[100px]" />
                   </TableRow>
@@ -180,12 +156,16 @@ export default function PayRates() {
                   {rateCard.map(entry => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">{entry.staff_roles?.name || '—'}</TableCell>
-                      <TableCell className="text-right">${entry.hourly_rate.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">{entry.minimum_paid_hours}hrs</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="secondary">
-                          ${(entry.hourly_rate * entry.minimum_paid_hours).toFixed(2)}
+                      <TableCell>
+                        <Badge variant={entry.rate_mode === 'fixed' ? 'default' : 'outline'}>
+                          {entry.rate_mode === 'fixed' ? 'Set Rate' : 'Hourly'}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {entry.rate_mode === 'fixed'
+                          ? <Badge variant="secondary">${Number(entry.fixed_rate ?? 0).toFixed(2)} / event</Badge>
+                          : <>${Number(entry.hourly_rate ?? 0).toFixed(2)} / hr</>
+                        }
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">
                         {entry.notes || '—'}
@@ -213,7 +193,6 @@ export default function PayRates() {
           </CardContent>
         </Card>
 
-        {/* Add/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -238,46 +217,57 @@ export default function PayRates() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Hourly Rate ($)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      value={editEntry.hourly_rate || ''}
-                      onChange={e => setEditEntry({ ...editEntry, hourly_rate: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Minimum Paid Hours</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step={0.5}
-                      value={editEntry.minimum_paid_hours || ''}
-                      onChange={e => setEditEntry({ ...editEntry, minimum_paid_hours: parseFloat(e.target.value) || 0 })}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      e.g. 3 = first 2hrs are paid as 3hrs (covers travel/setup)
-                    </p>
-                  </div>
+
+                <div className="space-y-2">
+                  <Label>Rate Mode</Label>
+                  <Select
+                    value={editEntry.rate_mode}
+                    onValueChange={v => setEditEntry({ ...editEntry, rate_mode: v as RateMode })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="fixed">Set Rate (flat per event)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {editEntry.hourly_rate > 0 && (
-                  <div className="bg-secondary/50 rounded-lg p-3 text-sm">
-                    <p className="text-muted-foreground">
-                      Minimum pay: <strong className="text-foreground">
-                        ${(editEntry.hourly_rate * editEntry.minimum_paid_hours).toFixed(2)}
-                      </strong> ({editEntry.minimum_paid_hours}hrs × ${editEntry.hourly_rate.toFixed(2)})
-                    </p>
+
+                {editEntry.rate_mode === 'hourly' ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Hourly Rate ($)</Label>
+                      <Input
+                        type="number" min={0} step={0.01}
+                        value={editEntry.hourly_rate || ''}
+                        onChange={e => setEditEntry({ ...editEntry, hourly_rate: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Minimum Paid Hours</Label>
+                      <Input
+                        type="number" min={0} step={0.5}
+                        value={editEntry.minimum_paid_hours || ''}
+                        onChange={e => setEditEntry({ ...editEntry, minimum_paid_hours: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Set Rate Amount ($ per event)</Label>
+                    <Input
+                      type="number" min={0} step={0.01}
+                      value={editEntry.fixed_rate || ''}
+                      onChange={e => setEditEntry({ ...editEntry, fixed_rate: parseFloat(e.target.value) || 0 })}
+                    />
+                    <p className="text-xs text-muted-foreground">Flat amount paid per event regardless of session length.</p>
                   </div>
                 )}
+
                 <div className="space-y-2">
                   <Label>Notes (optional)</Label>
                   <Textarea
                     value={editEntry.notes}
                     onChange={e => setEditEntry({ ...editEntry, notes: e.target.value })}
-                    placeholder="e.g. Includes travel allowance..."
                     rows={2}
                   />
                 </div>
@@ -292,7 +282,6 @@ export default function PayRates() {
           </DialogContent>
         </Dialog>
 
-        {/* Allowances & Surcharges */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -353,7 +342,6 @@ export default function PayRates() {
           </CardContent>
         </Card>
 
-        {/* Allowance Add/Edit Dialog */}
         <Dialog open={allowanceDialogOpen} onOpenChange={setAllowanceDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -373,9 +361,7 @@ export default function PayRates() {
                   <div className="space-y-2">
                     <Label>Amount ($ ex GST)</Label>
                     <Input
-                      type="number"
-                      min={0}
-                      step={0.01}
+                      type="number" min={0} step={0.01}
                       value={editAllowance.amount || ''}
                       onChange={e => setEditAllowance({ ...editAllowance, amount: parseFloat(e.target.value) || 0 })}
                     />
@@ -386,9 +372,7 @@ export default function PayRates() {
                       value={editAllowance.unit}
                       onValueChange={v => setEditAllowance({ ...editAllowance, unit: v })}
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="flat">Flat Rate (per assignment)</SelectItem>
                         <SelectItem value="per_hour">Per Hour</SelectItem>
@@ -401,7 +385,6 @@ export default function PayRates() {
                   <Textarea
                     value={editAllowance.notes}
                     onChange={e => setEditAllowance({ ...editAllowance, notes: e.target.value })}
-                    placeholder="e.g. Includes delivery and setup..."
                     rows={2}
                   />
                 </div>
@@ -411,126 +394,6 @@ export default function PayRates() {
               <Button variant="outline" onClick={() => setAllowanceDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSaveAllowance} disabled={upsertAllowance.isPending || !editAllowance?.name}>
                 {editAllowance?.id ? 'Save Changes' : 'Add Allowance'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Fixed Rate Card — flat per-event amount overrides hourly */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Banknote className="h-5 w-5" />
-                Set Rate Card (per event)
-              </CardTitle>
-              <CardDescription>
-                Flat amount paid per event for a role (e.g. LBA Stage Photographer = $650). Overrides hourly calculation.
-              </CardDescription>
-            </div>
-            <Button onClick={openAddFixed} size="sm" className="gap-1">
-              <Plus className="h-4 w-4" /> Add Fixed Rate
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {fixedLoading ? (
-              <p className="text-muted-foreground text-sm">Loading...</p>
-            ) : fixedRates.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-8">
-                No fixed rates configured. Click "Add Fixed Rate" to add one.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Fixed Amount</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead className="w-[100px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fixedRates.map(entry => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{entry.staff_roles?.name || '—'}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="secondary">${entry.fixed_rate.toFixed(2)}</Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs max-w-[240px] truncate">
-                        {entry.notes || '—'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 justify-end">
-                          <Button variant="ghost" size="icon" onClick={() => openEditFixed(entry)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { if (confirm('Remove this fixed rate?')) deleteFixed.mutate(entry.id); }}
-                            disabled={deleteFixed.isPending}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Fixed Rate Add/Edit Dialog */}
-        <Dialog open={fixedDialogOpen} onOpenChange={setFixedDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editFixed?.id ? 'Edit Fixed Rate' : 'Add Fixed Rate'}</DialogTitle>
-            </DialogHeader>
-            {editFixed && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Select
-                    value={editFixed.staff_role_id}
-                    onValueChange={v => setEditFixed({ ...editFixed, staff_role_id: v })}
-                    disabled={!!editFixed.id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFixedRoles.map(r => (
-                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Fixed Amount ($ per event)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={editFixed.fixed_rate || ''}
-                    onChange={e => setEditFixed({ ...editFixed, fixed_rate: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Notes (optional)</Label>
-                  <Textarea
-                    value={editFixed.notes}
-                    onChange={e => setEditFixed({ ...editFixed, notes: e.target.value })}
-                    rows={2}
-                  />
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setFixedDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveFixed} disabled={upsertFixed.isPending || !editFixed?.staff_role_id}>
-                {editFixed?.id ? 'Save Changes' : 'Add Fixed Rate'}
               </Button>
             </DialogFooter>
           </DialogContent>
