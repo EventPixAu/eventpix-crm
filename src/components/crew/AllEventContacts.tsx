@@ -37,16 +37,18 @@ export function AllEventContacts({ eventId, onsiteContact, crewOnly = false }: A
     );
   }
 
-  // For crew view: prefer onsite contact; fall back to primary if no onsite exists
+  // For crew view: prefer event-record onsite → DB onsite → DB primary (only one source)
   let contacts = allContacts;
   let hasOnsite = !!(onsiteContact?.name || onsiteContact?.phone);
   if (crewOnly) {
-    const onsite = allContacts.filter((c) => c.contact_type === 'onsite');
-    contacts = onsite.length > 0
-      ? onsite
-      : allContacts.filter((c) => c.contact_type === 'primary');
-    // Suppress event-record onsite block if we already have onsite contacts from DB
-    if (onsite.length > 0) hasOnsite = false;
+    if (hasOnsite) {
+      contacts = [];
+    } else {
+      const onsite = allContacts.filter((c) => c.contact_type === 'onsite');
+      contacts = onsite.length > 0
+        ? onsite
+        : allContacts.filter((c) => c.contact_type === 'primary');
+    }
   }
 
   const totalContacts = contacts.length + (hasOnsite ? 1 : 0);
