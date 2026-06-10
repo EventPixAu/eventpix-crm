@@ -223,6 +223,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
           <TableHead>Role</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Joined</TableHead>
+          <TableHead className="text-center" title="Salaried staff are excluded from per-event Payment">Salaried</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
