@@ -232,7 +232,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                 const isEditing = editingId === line.assignmentId;
                 return (
                   <div
-                    key={line.assignmentId}
+                    key={(line as any).key || line.assignmentId}
                     className="grid grid-cols-12 gap-2 items-center text-xs text-muted-foreground"
                   >
                     <div className="col-span-3">
