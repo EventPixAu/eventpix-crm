@@ -334,3 +334,25 @@ export function useSetUserRole() {
     },
   });
 }
+
+// Toggle salaried flag on a user profile
+export function useSetUserSalaried() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, isSalaried }: { userId: string; isSalaried: boolean }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_salaried: isSalaried } as any)
+        .eq('id', userId);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success(v.isSalaried ? 'Marked as salaried' : 'Marked as hourly');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to update', { description: error.message });
+    },
+  });
+}
