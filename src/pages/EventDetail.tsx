@@ -27,6 +27,7 @@ import {
   Users,
   Upload,
   Loader2,
+  Globe,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
