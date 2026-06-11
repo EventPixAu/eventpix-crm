@@ -40,6 +40,8 @@ export interface ConvertToEventInput {
     create_worksheets?: boolean;
     copy_enquiry_contacts?: boolean;
   };
+  /** Extra fields to write directly to the new events row after the RPC succeeds. */
+  post_event_fields?: Record<string, unknown>;
 }
 
 export interface ConvertToEventResult {
