@@ -251,6 +251,28 @@ export function LeadSummaryCard({
               <span className="font-medium">{leadSource?.name || lead.source || '—'}</span>
             </div>
           </div>
+
+          {/* Event Website */}
+          <div className="flex justify-between items-start">
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Globe className="h-3 w-3" />
+              Event Website
+            </span>
+            <span className="font-medium text-right max-w-[60%] break-all">
+              {lead.event_website ? (
+                <a
+                  href={lead.event_website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  {lead.event_website}
+                </a>
+              ) : (
+                '—'
+              )}
+            </span>
+          </div>
         </div>
 
         {/* Lost reason dialog (triggered from status dropdown) */}
