@@ -942,11 +942,14 @@ export default function EventDayOf() {
               }
               deliveryDeadline={displayEvent.delivery_deadline}
               dressCode={null}
-            />
-          </motion.section>
-        )}
+          />
+        </motion.section>
+      )}
 
-        {/* Team list is now shown inline with each session above */}
+      {/* Photographer Guides - quick access to knowledge base articles */}
+      <PhotographerGuides />
+
+      {/* Team list is now shown inline with each session above */}
 
         {/* Quick Notes */}
         <motion.section
