@@ -60,6 +60,9 @@ export function ConvertToEventDialog({ open, onOpenChange, lead }: ConvertToEven
         create_worksheets: true,
         copy_enquiry_contacts: true,
       },
+      post_event_fields: lead.event_website
+        ? { event_website: lead.event_website }
+        : undefined,
     };
 
     convertToEvent(params, {
