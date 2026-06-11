@@ -52,6 +52,7 @@ const eventSchema = z.object({
   venue_address: z.string().optional(),
   venue_access_notes: z.string().optional(),
   venue_parking_notes: z.string().optional(),
+  event_website: z.string().optional(),
   client_name: z.string().min(1, 'Client name is required'),
   onsite_contact_name: z.string().optional(),
   onsite_contact_phone: z.string().optional(),
