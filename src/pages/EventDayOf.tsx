@@ -1210,10 +1210,7 @@ export default function EventDayOf() {
           </motion.section>
         )}
 
-        {/* Photographer Guides - quick access to knowledge base articles */}
-        <PhotographerGuides />
-
-        {/* Note: Admin workflow worksheets are NOT shown on the crew Day-Of view. 
+        {/* Note: Admin workflow worksheets are NOT shown on the crew Day-Of view.
             Crew members only see their personal role-based checklist above. */}
       </div>
     </div>
