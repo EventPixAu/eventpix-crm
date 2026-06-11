@@ -45,30 +45,30 @@ serve(async (req) => {
       });
     }
 
-    const params = new URLSearchParams({
-      place_id: placeId,
-      fields: 'name,formatted_address,address_components,geometry',
-      key: GOOGLE_PLACES_API_KEY,
-    });
-    if (sessionToken) params.set('sessiontoken', sessionToken);
+    // Use Places API (New) - Place Details endpoint
+    const url = new URL(`https://places.googleapis.com/v1/places/${placeId}`);
+    if (sessionToken) url.searchParams.set('sessionToken', sessionToken);
 
-    const detailsRes = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?${params}`
-    );
+    const detailsRes = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'X-Goog-Api-Key': GOOGLE_PLACES_API_KEY,
+        'X-Goog-FieldMask': 'id,displayName,formattedAddress,addressComponents,location',
+      },
+    });
     const detailsData = await detailsRes.json();
 
-    if (detailsData.status !== 'OK') {
+    if (!detailsRes.ok) {
       console.error('Places Details error:', detailsData);
-      return new Response(JSON.stringify({ error: detailsData.status }), {
+      return new Response(JSON.stringify({ error: detailsData.error?.message || 'API error' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const result = detailsData.result;
     return new Response(JSON.stringify({
-      name: result.name,
-      formatted_address: result.formatted_address,
-      address_components: result.address_components,
+      name: detailsData.displayName?.text || '',
+      formatted_address: detailsData.formattedAddress || '',
+      address_components: detailsData.addressComponents || [],
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
