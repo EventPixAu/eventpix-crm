@@ -600,6 +600,20 @@ export default function EventForm() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="event_website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Website</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="https://example.com" className="bg-secondary" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
