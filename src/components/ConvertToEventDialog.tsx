@@ -24,6 +24,7 @@ interface Lead {
   estimated_event_date: string | null;
   requirements_summary?: string | null;
   venue_text?: string | null;
+  event_website?: string | null;
   client?: {
     id: string;
     business_name: string;
