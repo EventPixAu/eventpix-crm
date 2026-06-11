@@ -91,19 +91,26 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
   // Collect timezones used so we can include the appropriate VTIMEZONE blocks
   const timezonesUsed = new Set<string>();
 
-  const buildVEvent = (uid: string, dateStr: string, startTime: string | null, endTime: string | null, tz: string, venueName: string | null, venueAddr: string | null, label?: string | null): string => {
+  const buildVEvent = (uid: string, dateStr: string, startTime: string | null, endTime: string | null, tz: string, venueName: string | null, venueAddr: string | null, label?: string | null, callTime?: string | null): string => {
     timezonesUsed.add(tz);
-    const dtstart = formatLocalDateTimeToICS(dateStr, startTime || '09:00:00');
+    // Use crew call/arrival time as block start so setup is included in the invite
+    const effectiveStart = callTime || startTime || '09:00:00';
+    const dtstart = formatLocalDateTimeToICS(dateStr, effectiveStart);
     let dtend: string;
     if (endTime) {
-      const endDate = shouldEndNextDay(startTime, endTime) ? addDays(dateStr, 1) : dateStr;
+      const endDate = shouldEndNextDay(effectiveStart, endTime) ? addDays(dateStr, 1) : dateStr;
       dtend = formatLocalDateTimeToICS(endDate, endTime);
     } else {
-      dtend = formatLocalDateTimeToICS(dateStr, addHoursToTime(startTime || '09:00:00', 2));
+      dtend = formatLocalDateTimeToICS(dateStr, addHoursToTime(startTime || effectiveStart, 2));
     }
     const location = [venueName, venueAddr].filter(Boolean).join(", ");
     const summary = label ? `${event.event_name} - ${label}` : event.event_name;
-    return `BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${tz}:${dtstart}\r\nDTEND;TZID=${tz}:${dtend}\r\nSUMMARY:${escapeICS(summary)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`;
+    const descLines = [description];
+    if (callTime && startTime && callTime !== startTime) {
+      descLines.unshift(`Call time: ${formatTime(callTime)} (setup) — Event starts ${formatTime(startTime)}`);
+    }
+    const fullDesc = descLines.filter(Boolean).join("\\n");
+    return `BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${tz}:${dtstart}\r\nDTEND;TZID=${tz}:${dtend}\r\nSUMMARY:${escapeICS(summary)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(fullDesc)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`;
   };
 
   const vevents: string[] = [];
