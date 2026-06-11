@@ -128,17 +128,24 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
         s.venue_name || event.venue_name,
         s.venue_address || event.venue_address,
         s.label,
+        s.arrival_time,
       ));
     }
   } else if (event.start_at) {
     const tz = event.timezone || 'Australia/Sydney';
     timezonesUsed.add(tz);
     const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
-    const dtstart = formatDateToICS(new Date(event.start_at));
+    // Prefer call_time_at (includes setup) over start_at
+    const startSource = event.call_time_at || event.start_at;
+    const dtstart = formatDateToICS(new Date(startSource));
     const dtend = event.end_at ? formatDateToICS(new Date(event.end_at))
-      : formatDateToICS(new Date(new Date(event.start_at).getTime() + 2 * 3600000));
+      : formatDateToICS(new Date(new Date(startSource).getTime() + 2 * 3600000));
     const location = [event.venue_name, event.venue_address].filter(Boolean).join(", ");
-    vevents.push(`BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART:${dtstart}\r\nDTEND:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`);
+    let desc = description;
+    if (event.call_time_at && event.start_at && event.call_time_at !== event.start_at) {
+      desc = `Call time: ${new Date(event.call_time_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true})} (setup) — Event starts ${new Date(event.start_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true})}\\n${description}`;
+    }
+    vevents.push(`BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART:${dtstart}\r\nDTEND:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(desc)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`);
   } else {
     const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
     vevents.push(buildVEvent(
@@ -149,6 +156,8 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
       event.timezone || 'Australia/Sydney',
       event.venue_name,
       event.venue_address,
+      null,
+      event.call_time_at ? new Date(event.call_time_at).toTimeString().slice(0,8) : null,
     ));
   }
 
