@@ -41,6 +41,7 @@ interface Lead {
   status: string;
   source?: string | null;
   venue_text?: string | null;
+  event_website?: string | null;
 }
 
 interface EditLeadDialogProps {
@@ -62,6 +63,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
     lead_source_id: '',
     estimated_event_date: '',
     venue_text: '',
+    event_website: '',
     notes: '',
     status: '',
   });
