@@ -307,7 +307,7 @@ const handler = async (req: Request): Promise<Response> => {
           assignmentSessionId = assignment.session_id;
           const { data: session } = await supabase
             .from("event_sessions")
-            .select("session_date, start_time, end_time, venue_name, venue_address, timezone, label")
+            .select("session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label")
             .eq("id", assignment.session_id)
             .maybeSingle();
           if (session) {
@@ -317,6 +317,18 @@ const handler = async (req: Request): Promise<Response> => {
             event.venue_name = session.venue_name || event.venue_name;
             event.venue_address = session.venue_address || event.venue_address;
             event.timezone = session.timezone || event.timezone;
+            // Use arrival/call time so setup is included in invite
+            if (session.arrival_time) {
+              event.call_time_at = null; // ensure session path is used
+              event.start_at = null;
+              (event as any)._session_arrival_time = session.arrival_time;
+            }
+          }
+        } else {
+          // "All Sessions" assignment: include every session as a separate calendar entry
+          const { data: sessions } = await supabase
+            .from("event_sessions")
+            .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label, sort_order")
           }
         } else {
           // "All Sessions" assignment: include every session as a separate calendar entry
