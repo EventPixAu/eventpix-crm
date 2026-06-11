@@ -680,6 +680,7 @@ export default function LeadDetail(): JSX.Element {
           estimated_event_date: lead.estimated_event_date,
           requirements_summary: (lead as any).requirements_summary,
           venue_text: (lead as any).venue_text,
+          event_website: (lead as any).event_website,
           client: client ? { id: client.id, business_name: client.business_name } : null,
         } : null}
       />
