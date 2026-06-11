@@ -110,25 +110,36 @@ export function VenueSuggestInput({
   };
 
   const handleGoogleSelect = async (prediction: GooglePrediction) => {
-    onChange(prediction.structured_formatting?.main_text || prediction.description);
+    const fallbackName = prediction.structured_formatting?.main_text || prediction.description;
+    const fallbackAddress = prediction.structured_formatting?.secondary_text || '';
+    onChange(fallbackName);
     setOpen(false);
     setGooglePredictions([]);
-    
+    inputRef.current?.blur();
+
+    // Fill immediately with the prediction's address, then refine with full details
+    if (fallbackAddress) {
+      onGooglePlaceSelect?.({ name: fallbackName, address: fallbackAddress });
+    }
+
     // Fetch place details for the full address
     try {
       const { data, error } = await supabase.functions.invoke('google-places-details', {
         body: { placeId: prediction.place_id, sessionToken },
       });
-      if (!error && data) {
+      if (error) {
+        console.error('google-places-details error:', error);
+      } else if (data?.formatted_address) {
         onGooglePlaceSelect?.({
-          name: data.name || prediction.structured_formatting?.main_text || '',
-          address: data.formatted_address || '',
+          name: data.name || fallbackName,
+          address: data.formatted_address,
         });
+      } else if (data?.error) {
+        console.error('google-places-details API error:', data.error);
       }
-    } catch {
-      // Still set the name even if details fail
+    } catch (err) {
+      console.error('google-places-details failed:', err);
     }
-    inputRef.current?.blur();
   };
   
   const formatAddress = (venue: Venue) => {
