@@ -946,8 +946,8 @@ export default function EventDayOf() {
         </motion.section>
       )}
 
-      {/* Photographer Guides - quick access to knowledge base articles */}
-      <PhotographerGuides />
+        {/* Photographer Guides - quick access to knowledge base articles */}
+        <PhotographerGuides />
 
       {/* Team list is now shown inline with each session above */}
 
