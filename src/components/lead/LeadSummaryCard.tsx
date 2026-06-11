@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,6 +54,7 @@ interface LeadSummaryCardProps {
     notes?: string | null;
     source?: string | null;
     venue_text?: string | null;
+    event_website?: string | null;
   };
   eventType?: { id: string; name: string } | null;
   leadSource?: { id: string; name: string } | null;
@@ -249,6 +250,28 @@ export function LeadSummaryCard({
               )}
               <span className="font-medium">{leadSource?.name || lead.source || '—'}</span>
             </div>
+          </div>
+
+          {/* Event Website */}
+          <div className="flex justify-between items-start">
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Globe className="h-3 w-3" />
+              Event Website
+            </span>
+            <span className="font-medium text-right max-w-[60%] break-all">
+              {lead.event_website ? (
+                <a
+                  href={lead.event_website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  {lead.event_website}
+                </a>
+              ) : (
+                '—'
+              )}
+            </span>
           </div>
         </div>
 

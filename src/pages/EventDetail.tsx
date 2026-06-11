@@ -27,6 +27,7 @@ import {
   Users,
   Upload,
   Loader2,
+  Globe,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -1153,6 +1154,25 @@ export default function EventDetail() {
                           address={event.venue_address} 
                           venueName={event.venue_name} 
                         />
+                      </div>
+                    </div>
+                  )}
+
+                  {(event as any).event_website && (
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Globe className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-muted-foreground">Event Website</p>
+                        <a
+                          href={(event as any).event_website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-primary hover:underline break-all"
+                        >
+                          {(event as any).event_website}
+                        </a>
                       </div>
                     </div>
                   )}

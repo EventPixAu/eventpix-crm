@@ -52,6 +52,7 @@ const eventSchema = z.object({
   venue_address: z.string().optional(),
   venue_access_notes: z.string().optional(),
   venue_parking_notes: z.string().optional(),
+  event_website: z.string().optional(),
   client_name: z.string().min(1, 'Client name is required'),
   onsite_contact_name: z.string().optional(),
   onsite_contact_phone: z.string().optional(),
@@ -125,6 +126,7 @@ export default function EventForm() {
       venue_address: '',
       venue_access_notes: '',
       venue_parking_notes: '',
+      event_website: '',
       client_name: '',
       onsite_contact_name: '',
       onsite_contact_phone: '',
@@ -220,6 +222,7 @@ export default function EventForm() {
         venue_address: event.venue_address || '',
         venue_access_notes: (event as any).venue_access_notes || '',
         venue_parking_notes: (event as any).venue_parking_notes || '',
+        event_website: (event as any).event_website || '',
         client_name: event.client_name,
         onsite_contact_name: event.onsite_contact_name || '',
         onsite_contact_phone: event.onsite_contact_phone || '',
@@ -260,6 +263,7 @@ export default function EventForm() {
         venue_address: '',
         venue_access_notes: '',
         venue_parking_notes: '',
+        event_website: (sourceLead as any).event_website || '',
         client_name: client?.business_name || '',
         onsite_contact_name: '',
         onsite_contact_phone: '',
@@ -307,6 +311,7 @@ export default function EventForm() {
       venue_address: values.venue_address || null,
       venue_access_notes: values.venue_access_notes || null,
       venue_parking_notes: values.venue_parking_notes || null,
+      event_website: values.event_website || null,
       onsite_contact_name: values.onsite_contact_name || null,
       onsite_contact_phone: values.onsite_contact_phone || null,
       coverage_details: values.coverage_details || null,
@@ -590,6 +595,20 @@ export default function EventForm() {
                     <FormLabel>Parking Notes</FormLabel>
                     <FormControl>
                       <Textarea {...field} placeholder="e.g., Street parking available, paid parking at 123 Main St..." className="bg-secondary min-h-[60px]" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="event_website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Website</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="url" placeholder="https://example.com" className="bg-secondary" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

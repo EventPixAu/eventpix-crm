@@ -40,6 +40,8 @@ export interface ConvertToEventInput {
     create_worksheets?: boolean;
     copy_enquiry_contacts?: boolean;
   };
+  /** Extra fields to write directly to the new events row after the RPC succeeds. */
+  post_event_fields?: Record<string, unknown>;
 }
 
 export interface ConvertToEventResult {
@@ -67,8 +69,9 @@ export function useConvertToEvent() {
 
   return useMutation({
     mutationFn: async (params: ConvertToEventInput): Promise<ConvertToEventResult> => {
+      const { post_event_fields, ...rpcParams } = params;
       const { data, error } = await supabase.rpc('convert_enquiry_to_event', {
-        p_input: params as any,
+        p_input: rpcParams as any,
       });
 
       if (error) throw error;
@@ -76,6 +79,15 @@ export function useConvertToEvent() {
       const result = data as unknown as ConvertToEventResult;
       if (!result.success) {
         throw new Error(result.error || 'Conversion failed');
+      }
+
+      // Write any extra event fields (e.g. event_website) that the RPC doesn't handle.
+      if (result.event_id && post_event_fields && Object.keys(post_event_fields).length > 0) {
+        const { error: updErr } = await supabase
+          .from('events')
+          .update(post_event_fields as any)
+          .eq('id', result.event_id);
+        if (updErr) console.error('Failed to apply post_event_fields', updErr);
       }
 
       return result;

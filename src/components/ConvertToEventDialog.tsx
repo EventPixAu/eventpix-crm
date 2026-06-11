@@ -24,6 +24,7 @@ interface Lead {
   estimated_event_date: string | null;
   requirements_summary?: string | null;
   venue_text?: string | null;
+  event_website?: string | null;
   client?: {
     id: string;
     business_name: string;
@@ -59,6 +60,9 @@ export function ConvertToEventDialog({ open, onOpenChange, lead }: ConvertToEven
         create_worksheets: true,
         copy_enquiry_contacts: true,
       },
+      post_event_fields: lead.event_website
+        ? { event_website: lead.event_website }
+        : undefined,
     };
 
     convertToEvent(params, {
