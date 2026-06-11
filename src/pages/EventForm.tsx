@@ -263,6 +263,7 @@ export default function EventForm() {
         venue_address: '',
         venue_access_notes: '',
         venue_parking_notes: '',
+        event_website: (sourceLead as any).event_website || '',
         client_name: client?.business_name || '',
         onsite_contact_name: '',
         onsite_contact_phone: '',
