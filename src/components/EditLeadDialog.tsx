@@ -87,6 +87,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
         lead_source_id: lead.lead_source_id || '',
         estimated_event_date: lead.estimated_event_date || '',
         venue_text: lead.venue_text || '',
+        event_website: lead.event_website || '',
         notes: lead.notes || '',
         status: lead.status || 'new',
       });
@@ -104,6 +105,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
       lead_source_id: formData.lead_source_id || null,
       estimated_event_date: formData.estimated_event_date || null,
       venue_text: formData.venue_text || null,
+      event_website: formData.event_website || null,
       notes: formData.notes || null,
       status: formData.status as 'new' | 'qualified' | 'quoted' | 'contract_sent' | 'won' | 'lost' | 'accepted',
     });
