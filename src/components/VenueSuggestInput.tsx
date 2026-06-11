@@ -185,9 +185,11 @@ export function VenueSuggestInput({
                 <button
                   key={venue.id}
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleVenueSelect(venue)}
                   className="w-full px-3 py-2 text-left hover:bg-muted transition-colors border-b last:border-b-0"
                 >
+
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -212,9 +214,11 @@ export function VenueSuggestInput({
                 <button
                   key={prediction.place_id}
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleGoogleSelect(prediction)}
                   className="w-full px-3 py-2 text-left hover:bg-muted transition-colors border-b last:border-b-0"
                 >
+
                   <div className="flex items-start gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div className="min-w-0 flex-1">
