@@ -234,6 +234,7 @@ ${event.venue_name ? `<div class="detail"><div class="detail-label">Venue</div><
 ${event.onsite_contact_name ? `<div class="detail"><div class="detail-label">On-site Contact</div><div class="detail-value">${event.onsite_contact_name}${event.onsite_contact_phone ? ` - ${event.onsite_contact_phone}` : ''}</div></div>` : ''}
 ${event.coverage_details ? `<div class="detail"><div class="detail-label">Coverage Details</div><div class="detail-value">${event.coverage_details}</div></div>` : ''}
 <a href="${appUrl}/events/${event.id}" class="button">View Event Details</a>
+${subject.includes('Updated details') ? '<p style="margin-top:20px;color:#6b7280;font-size:14px;"><em>Apologies for any repeated calendar invites — we’re making sure your schedule reflects the most up-to-date timings.</em></p>' : ''}
 ${subject.includes('New assignment') ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability by return email.</p>' : ''}
 </div><div class="footer"><p>EventPix - Event Photography Management</p></div></div></body></html>`;
 }
