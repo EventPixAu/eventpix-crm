@@ -91,19 +91,26 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
   // Collect timezones used so we can include the appropriate VTIMEZONE blocks
   const timezonesUsed = new Set<string>();
 
-  const buildVEvent = (uid: string, dateStr: string, startTime: string | null, endTime: string | null, tz: string, venueName: string | null, venueAddr: string | null, label?: string | null): string => {
+  const buildVEvent = (uid: string, dateStr: string, startTime: string | null, endTime: string | null, tz: string, venueName: string | null, venueAddr: string | null, label?: string | null, callTime?: string | null): string => {
     timezonesUsed.add(tz);
-    const dtstart = formatLocalDateTimeToICS(dateStr, startTime || '09:00:00');
+    // Use crew call/arrival time as block start so setup is included in the invite
+    const effectiveStart = callTime || startTime || '09:00:00';
+    const dtstart = formatLocalDateTimeToICS(dateStr, effectiveStart);
     let dtend: string;
     if (endTime) {
-      const endDate = shouldEndNextDay(startTime, endTime) ? addDays(dateStr, 1) : dateStr;
+      const endDate = shouldEndNextDay(effectiveStart, endTime) ? addDays(dateStr, 1) : dateStr;
       dtend = formatLocalDateTimeToICS(endDate, endTime);
     } else {
-      dtend = formatLocalDateTimeToICS(dateStr, addHoursToTime(startTime || '09:00:00', 2));
+      dtend = formatLocalDateTimeToICS(dateStr, addHoursToTime(startTime || effectiveStart, 2));
     }
     const location = [venueName, venueAddr].filter(Boolean).join(", ");
     const summary = label ? `${event.event_name} - ${label}` : event.event_name;
-    return `BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${tz}:${dtstart}\r\nDTEND;TZID=${tz}:${dtend}\r\nSUMMARY:${escapeICS(summary)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`;
+    const descLines = [description];
+    if (callTime && startTime && callTime !== startTime) {
+      descLines.unshift(`Call time: ${formatTime(callTime)} (setup) — Event starts ${formatTime(startTime)}`);
+    }
+    const fullDesc = descLines.filter(Boolean).join("\\n");
+    return `BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART;TZID=${tz}:${dtstart}\r\nDTEND;TZID=${tz}:${dtend}\r\nSUMMARY:${escapeICS(summary)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(fullDesc)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`;
   };
 
   const vevents: string[] = [];
@@ -121,17 +128,24 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
         s.venue_name || event.venue_name,
         s.venue_address || event.venue_address,
         s.label,
+        s.arrival_time,
       ));
     }
   } else if (event.start_at) {
     const tz = event.timezone || 'Australia/Sydney';
     timezonesUsed.add(tz);
     const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
-    const dtstart = formatDateToICS(new Date(event.start_at));
+    // Prefer call_time_at (includes setup) over start_at
+    const startSource = event.call_time_at || event.start_at;
+    const dtstart = formatDateToICS(new Date(startSource));
     const dtend = event.end_at ? formatDateToICS(new Date(event.end_at))
-      : formatDateToICS(new Date(new Date(event.start_at).getTime() + 2 * 3600000));
+      : formatDateToICS(new Date(new Date(startSource).getTime() + 2 * 3600000));
     const location = [event.venue_name, event.venue_address].filter(Boolean).join(", ");
-    vevents.push(`BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART:${dtstart}\r\nDTEND:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(description)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`);
+    let desc = description;
+    if (event.call_time_at && event.start_at && event.call_time_at !== event.start_at) {
+      desc = `Call time: ${new Date(event.call_time_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true})} (setup) — Event starts ${new Date(event.start_at).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',hour12:true})}\\n${description}`;
+    }
+    vevents.push(`BEGIN:VEVENT\r\nUID:${uid}\r\nDTSTAMP:${dtstamp}\r\nDTSTART:${dtstart}\r\nDTEND:${dtend}\r\nSUMMARY:${escapeICS(event.event_name)}\r\nLOCATION:${escapeICS(location)}\r\nDESCRIPTION:${escapeICS(desc)}\r\nSEQUENCE:${sequence}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT`);
   } else {
     const uid = sessionId ? `${event.id}-${sessionId}@eventpix.com.au` : `${event.id}@eventpix.com.au`;
     vevents.push(buildVEvent(
@@ -142,6 +156,8 @@ function generateICS(event: any, sequence: number, appUrl: string, sessionId?: s
       event.timezone || 'Australia/Sydney',
       event.venue_name,
       event.venue_address,
+      null,
+      event.call_time_at ? new Date(event.call_time_at).toTimeString().slice(0,8) : null,
     ));
   }
 
@@ -287,11 +303,12 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", assignment_id)
           .maybeSingle();
         if (assignment?.session_id) {
-          // Single-session assignment: override event with session data
+          // Single-session assignment: pass as a single-entry sessions list
+          // so the ICS includes call/arrival time (setup) when present.
           assignmentSessionId = assignment.session_id;
           const { data: session } = await supabase
             .from("event_sessions")
-            .select("session_date, start_time, end_time, venue_name, venue_address, timezone, label")
+            .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label")
             .eq("id", assignment.session_id)
             .maybeSingle();
           if (session) {
@@ -301,12 +318,16 @@ const handler = async (req: Request): Promise<Response> => {
             event.venue_name = session.venue_name || event.venue_name;
             event.venue_address = session.venue_address || event.venue_address;
             event.timezone = session.timezone || event.timezone;
+            // Force the session path in generateICS so arrival_time becomes DTSTART
+            event.start_at = null;
+            event.call_time_at = null;
+            allSessions = [session];
           }
         } else {
           // "All Sessions" assignment: include every session as a separate calendar entry
           const { data: sessions } = await supabase
             .from("event_sessions")
-            .select("id, session_date, start_time, end_time, venue_name, venue_address, timezone, label, sort_order")
+            .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label, sort_order")
             .eq("event_id", event_id)
             .order("session_date", { ascending: true });
           if (sessions && sessions.length > 0) {
@@ -330,7 +351,12 @@ const handler = async (req: Request): Promise<Response> => {
       if (assignError) throw new Error(`Failed to fetch assignments: ${assignError.message}`);
 
       subject = `Eventpix - Updated details: ${event.event_name} - ${formatDate(event.event_date)}`;
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl);
+      const { data: updateSessions } = await supabase
+        .from("event_sessions")
+        .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label, sort_order")
+        .eq("event_id", event_id)
+        .order("session_date", { ascending: true });
+      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, undefined, (updateSessions && updateSessions.length > 0) ? updateSessions : undefined);
 
       const results: { email: string; name: string }[] = [];
       for (const a of assignments || []) {
