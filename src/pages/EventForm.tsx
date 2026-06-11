@@ -222,6 +222,7 @@ export default function EventForm() {
         venue_address: event.venue_address || '',
         venue_access_notes: (event as any).venue_access_notes || '',
         venue_parking_notes: (event as any).venue_parking_notes || '',
+        event_website: (event as any).event_website || '',
         client_name: event.client_name,
         onsite_contact_name: event.onsite_contact_name || '',
         onsite_contact_phone: event.onsite_contact_phone || '',
