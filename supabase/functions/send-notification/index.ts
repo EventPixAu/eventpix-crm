@@ -346,7 +346,12 @@ const handler = async (req: Request): Promise<Response> => {
       if (assignError) throw new Error(`Failed to fetch assignments: ${assignError.message}`);
 
       subject = `Eventpix - Updated details: ${event.event_name} - ${formatDate(event.event_date)}`;
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl);
+      const { data: updateSessions } = await supabase
+        .from("event_sessions")
+        .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label, sort_order")
+        .eq("event_id", event_id)
+        .order("session_date", { ascending: true });
+      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, undefined, (updateSessions && updateSessions.length > 0) ? updateSessions : undefined);
 
       const results: { email: string; name: string }[] = [];
       for (const a of assignments || []) {
