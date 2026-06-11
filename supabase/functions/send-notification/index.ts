@@ -303,11 +303,12 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", assignment_id)
           .maybeSingle();
         if (assignment?.session_id) {
-          // Single-session assignment: override event with session data
+          // Single-session assignment: pass as a single-entry sessions list
+          // so the ICS includes call/arrival time (setup) when present.
           assignmentSessionId = assignment.session_id;
           const { data: session } = await supabase
             .from("event_sessions")
-            .select("session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label")
+            .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label")
             .eq("id", assignment.session_id)
             .maybeSingle();
           if (session) {
@@ -317,24 +318,16 @@ const handler = async (req: Request): Promise<Response> => {
             event.venue_name = session.venue_name || event.venue_name;
             event.venue_address = session.venue_address || event.venue_address;
             event.timezone = session.timezone || event.timezone;
-            // Use arrival/call time so setup is included in invite
-            if (session.arrival_time) {
-              event.call_time_at = null; // ensure session path is used
-              event.start_at = null;
-              (event as any)._session_arrival_time = session.arrival_time;
-            }
+            // Force the session path in generateICS so arrival_time becomes DTSTART
+            event.start_at = null;
+            event.call_time_at = null;
+            allSessions = [session];
           }
         } else {
           // "All Sessions" assignment: include every session as a separate calendar entry
           const { data: sessions } = await supabase
             .from("event_sessions")
             .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label, sort_order")
-          }
-        } else {
-          // "All Sessions" assignment: include every session as a separate calendar entry
-          const { data: sessions } = await supabase
-            .from("event_sessions")
-            .select("id, session_date, start_time, end_time, venue_name, venue_address, timezone, label, sort_order")
             .eq("event_id", event_id)
             .order("session_date", { ascending: true });
           if (sessions && sessions.length > 0) {
