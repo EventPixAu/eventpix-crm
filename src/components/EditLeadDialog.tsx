@@ -249,6 +249,18 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="edit_event_website">Event Website</Label>
+            <Input
+              id="edit_event_website"
+              type="url"
+              value={formData.event_website}
+              onChange={(e) => setFormData({ ...formData, event_website: e.target.value })}
+              placeholder="https://example.com"
+            />
+          </div>
+
+
+          <div className="space-y-2">
             <Label htmlFor="edit_notes">Notes</Label>
             <Textarea
               id="edit_notes"
