@@ -311,6 +311,7 @@ export default function EventForm() {
       venue_address: values.venue_address || null,
       venue_access_notes: values.venue_access_notes || null,
       venue_parking_notes: values.venue_parking_notes || null,
+      event_website: values.event_website || null,
       onsite_contact_name: values.onsite_contact_name || null,
       onsite_contact_phone: values.onsite_contact_phone || null,
       coverage_details: values.coverage_details || null,
