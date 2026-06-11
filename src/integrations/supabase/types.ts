@@ -3030,6 +3030,7 @@ export type Database = {
           event_type: Database["public"]["Enums"]["event_type"]
           event_type_id: string | null
           event_web_page_link: string | null
+          event_website: string | null
           id: string
           invoice_amount: number | null
           invoice_paid_at: string | null
@@ -3114,6 +3115,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           event_web_page_link?: string | null
+          event_website?: string | null
           id?: string
           invoice_amount?: number | null
           invoice_paid_at?: string | null
@@ -3198,6 +3200,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           event_type_id?: string | null
           event_web_page_link?: string | null
+          event_website?: string | null
           id?: string
           invoice_amount?: number | null
           invoice_paid_at?: string | null
@@ -3900,6 +3903,7 @@ export type Database = {
           estimated_event_date: string | null
           event_month_hint: number | null
           event_type_id: string | null
+          event_website: string | null
           id: string
           is_training: boolean | null
           lead_name: string
@@ -3933,6 +3937,7 @@ export type Database = {
           estimated_event_date?: string | null
           event_month_hint?: number | null
           event_type_id?: string | null
+          event_website?: string | null
           id?: string
           is_training?: boolean | null
           lead_name: string
@@ -3966,6 +3971,7 @@ export type Database = {
           estimated_event_date?: string | null
           event_month_hint?: number | null
           event_type_id?: string | null
+          event_website?: string | null
           id?: string
           is_training?: boolean | null
           lead_name?: string
