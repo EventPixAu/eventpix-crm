@@ -356,7 +356,10 @@ const handler = async (req: Request): Promise<Response> => {
         .select("id, session_date, start_time, end_time, arrival_time, venue_name, venue_address, timezone, label, sort_order")
         .eq("event_id", event_id)
         .order("session_date", { ascending: true });
-      icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, undefined, (updateSessions && updateSessions.length > 0) ? updateSessions : undefined);
+      // Bump SEQUENCE so calendar clients accept the updated times (same UID requires a higher sequence)
+      const updatedSequence = (event.calendar_sequence || 0) + 1;
+      await supabase.from("events").update({ calendar_sequence: updatedSequence }).eq("id", event_id);
+      icsContent = generateICS(event, updatedSequence, appUrl, undefined, (updateSessions && updateSessions.length > 0) ? updateSessions : undefined);
 
       const results: { email: string; name: string }[] = [];
       for (const a of assignments || []) {
