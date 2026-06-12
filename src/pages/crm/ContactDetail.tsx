@@ -65,6 +65,7 @@ import { useContactActivities, useCreateContactActivity, useDeleteContactActivit
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { toast } from 'sonner';
 import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
+import { ContactFollowUpTasksPanel } from '@/components/ContactFollowUpTasksPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
 import { SendContactEmailDialog } from '@/components/crm/SendContactEmailDialog';
 
@@ -805,7 +806,9 @@ export default function ContactDetail() {
           />
         </div>
 
-        {/* Right Column - Activity Timeline */}
+        {/* Right Column - Follow-up Tasks + Activity Timeline */}
+        <div className="space-y-6">
+        <ContactFollowUpTasksPanel contactId={id!} />
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -895,6 +898,7 @@ export default function ContactDetail() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Edit Contact Dialog */}
