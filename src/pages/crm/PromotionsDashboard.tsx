@@ -1,6 +1,6 @@
 /**
  * PROMOTIONS DASHBOARD
- * 
+ *
  * CRM-focused dashboard for marketing/promotions targeting non-current clients:
  * - Prospects (companies never had an event)
  * - Previous clients (last event > 12 months ago)
@@ -8,7 +8,7 @@
  */
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format, parseISO, subMonths, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, subMonths, isBefore, isToday, isThisWeek, startOfDay } from 'date-fns';
 import { motion } from 'framer-motion';
 import { 
   Building2, 
@@ -23,7 +23,24 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
-  X
+  X,
+  UserCheck,
+  History,
+  HelpCircle,
+  Briefcase,
+  School,
+  MapPin,
+  Camera,
+  Video,
+  Radio,
+  Package,
+  Activity,
+  AlertCircle,
+  AlertTriangle,
+  Archive,
+  CalendarCheck,
+  ListTodo,
+  ArrowRight,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -38,6 +55,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Progress } from '@/components/ui/progress';
+import { CONTACT_STATUSES } from '@/lib/contactClassification';
 
 // Type for debug contact info
 interface DebugContactInfo {
@@ -48,6 +67,17 @@ interface DebugContactInfo {
   client_id: string | null;
   association_count: number;
   is_truly_orphan: boolean;
+}
+
+interface ContactSummary {
+  id: string;
+  contact_name: string;
+  email: string | null;
+  status: string | null;
+  category: string | null;
+  archived: boolean | null;
+  client_id: string | null;
+  has_associations: boolean;
 }
 
 export default function PromotionsDashboard() {
@@ -128,6 +158,145 @@ export default function PromotionsDashboard() {
   const orphanContacts = orphanContactsData?.orphanContacts || [];
   const debugContacts = orphanContactsData?.debugContacts || [];
 
+  // Fetch all contacts for status/category/data health
+  const { data: allContacts = [] } = useQuery({
+    queryKey: ['crm-dashboard-all-contacts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .select('id, contact_name, email, status, category, archived, client_id')
+        .order('contact_name');
+      if (error) throw error;
+
+      // Fetch active associations to determine "has company"
+      const contactIds = (data || []).map((c: any) => c.id);
+      let assocSet = new Set<string>();
+      if (contactIds.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < contactIds.length; i += batchSize) {
+          const batch = contactIds.slice(i, i + batchSize);
+          const { data: assocData } = await supabase
+            .from('contact_company_associations')
+            .select('contact_id')
+            .in('contact_id', batch)
+            .eq('is_active', true);
+          (assocData || []).forEach((a: any) => assocSet.add(a.contact_id));
+        }
+      }
+
+      return (data || []).map((c: any) => ({
+        id: c.id,
+        contact_name: c.contact_name,
+        email: c.email,
+        status: c.status,
+        category: c.category,
+        archived: c.archived,
+        client_id: c.client_id,
+        has_associations: assocSet.has(c.id) || !!c.client_id,
+      })) as ContactSummary[];
+    },
+  });
+
+  // Fetch contact-related tasks for follow-up snapshot
+  const { data: contactTasks = [] } = useQuery({
+    queryKey: ['crm-dashboard-contact-tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, status, due_at')
+        .eq('related_type', 'contact')
+        .order('due_at', { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Contact Status counts
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    CONTACT_STATUSES.forEach(s => { counts[s.value] = 0; });
+    counts['Unassigned'] = 0;
+    allContacts.forEach(c => {
+      if (!c.status) {
+        counts['Unassigned']++;
+      } else if (counts[c.status] !== undefined) {
+        counts[c.status]++;
+      } else {
+        counts['Unassigned']++;
+      }
+    });
+    return counts;
+  }, [allContacts]);
+
+  // Contact Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const knownCategories = [
+      'Schools',
+      'Event Management',
+      'Professional Conference Organiser (PCO)',
+      'PCO',
+      'Marketing and PR',
+      'Venue Management',
+      'Photographer',
+      'Videographer',
+      'AV Production',
+      'Event Supplier',
+    ];
+    knownCategories.forEach(cat => { counts[cat] = 0; });
+    counts['Uncategorised'] = 0;
+    allContacts.forEach(c => {
+      if (!c.category) {
+        counts['Uncategorised']++;
+      } else if (counts[c.category] !== undefined) {
+        counts[c.category]++;
+      } else {
+        // If it's a known variant (e.g. just "PCO")
+        const matched = knownCategories.find(k => 
+          c.category!.toLowerCase().includes(k.toLowerCase()) ||
+          k.toLowerCase().includes(c.category!.toLowerCase())
+        );
+        if (matched) {
+          counts[matched]++;
+        } else {
+          counts[c.category] = (counts[c.category] || 0) + 1;
+        }
+      }
+    });
+    return counts;
+  }, [allContacts]);
+
+  // Data health
+  const dataHealth = useMemo(() => {
+    const total = allContacts.length;
+    const incomplete = allContacts.filter(c => 
+      !c.email || !c.has_associations || !c.status || !c.category
+    );
+    const archived = allContacts.filter(c => c.archived);
+    const complete = total - incomplete.length;
+    const percentage = total > 0 ? Math.round((complete / total) * 100) : 0;
+    return { total, complete, incomplete: incomplete.length, archived: archived.length, percentage };
+  }, [allContacts]);
+
+  // Follow-up snapshot
+  const followUpStats = useMemo(() => {
+    const today = startOfDay(new Date());
+    const pendingTasks = contactTasks.filter((t: any) => t.status !== 'done');
+    const overdue = pendingTasks.filter((t: any) => {
+      const due = t.due_at ? parseISO(t.due_at) : null;
+      return due && isBefore(due, today);
+    });
+    const dueToday = pendingTasks.filter((t: any) => {
+      const due = t.due_at ? parseISO(t.due_at) : null;
+      return due && isToday(due);
+    });
+    const dueThisWeek = pendingTasks.filter((t: any) => {
+      const due = t.due_at ? parseISO(t.due_at) : null;
+      return due && isThisWeek(due, { weekStartsOn: 1 });
+    });
+    return { overdue: overdue.length, dueToday: dueToday.length, dueThisWeek: dueThisWeek.length };
+  }, [contactTasks]);
+
   // Calculate client segments
   const segments = useMemo(() => {
     const now = new Date();
@@ -170,6 +339,48 @@ export default function PromotionsDashboard() {
       totalNonCurrent: prospects.length + previousClients.length
     };
   }, [clients]);
+
+  const statusOrder = ['Current', 'Previous', 'Old', 'Prospect', 'Unassigned'];
+  const categoryOrder = [
+    'Schools',
+    'Event Management',
+    'Professional Conference Organiser (PCO)',
+    'Marketing and PR',
+    'Venue Management',
+    'Photographer',
+    'Videographer',
+    'AV Production',
+    'Event Supplier',
+  ];
+
+  const statusIcons: Record<string, React.ElementType> = {
+    Current: UserCheck,
+    Previous: History,
+    Old: Clock,
+    Prospect: UserPlus,
+    Unassigned: HelpCircle,
+  };
+
+  const categoryIcons: Record<string, React.ElementType> = {
+    'Schools': School,
+    'Event Management': Briefcase,
+    'Professional Conference Organiser (PCO)': Building2,
+    'PCO': Building2,
+    'Marketing and PR': Megaphone,
+    'Venue Management': MapPin,
+    'Photographer': Camera,
+    'Videographer': Video,
+    'AV Production': Radio,
+    'Event Supplier': Package,
+  };
+
+  const statusColors: Record<string, string> = {
+    Current: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    Previous: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    Old: 'bg-slate-500/10 text-slate-600 border-slate-500/20',
+    Prospect: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    Unassigned: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+  };
 
   return (
     <AppLayout>
@@ -529,6 +740,262 @@ export default function PromotionsDashboard() {
             </Card>
           </Collapsible>
         </motion.div>
+      </div>
+
+      {/* NEW PANELS */}
+      <div className="mt-8 space-y-6">
+        {/* Row 1: Contact Status & Category Summaries */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Contact Status Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-primary" />
+                  Contact Status Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {statusOrder.map((status) => {
+                    const count = statusCounts[status] || 0;
+                    const total = allContacts.length || 1;
+                    const pct = Math.round((count / total) * 100);
+                    const Icon = statusIcons[status] || HelpCircle;
+                    return (
+                      <div key={status} className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${statusColors[status] || 'bg-muted'}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">{status}</span>
+                            <span className="text-sm font-bold">{count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 pt-3 border-t text-center">
+                  <Link to="/crm/contacts" className="text-sm text-primary hover:underline">
+                    View all contacts
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Contact Category Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-primary" />
+                  Contact Category Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {categoryOrder.map((cat) => {
+                    const count = categoryCounts[cat] || 0;
+                    const total = allContacts.length || 1;
+                    const pct = Math.round((count / total) * 100);
+                    const Icon = categoryIcons[cat] || Briefcase;
+                    const label = cat === 'Professional Conference Organiser (PCO)' ? 'PCO' : cat;
+                    return (
+                      <div key={cat} className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium truncate">{label}</span>
+                            <span className="text-sm font-bold">{count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                  {/* Uncategorised */}
+                  {(() => {
+                    const count = categoryCounts['Uncategorised'] || 0;
+                    const total = allContacts.length || 1;
+                    const pct = Math.round((count / total) * 100);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">Uncategorised</span>
+                            <span className="text-sm font-bold">{count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-muted-foreground/30 rounded-full transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="mt-4 pt-3 border-t text-center">
+                  <Link to="/crm/contacts" className="text-sm text-primary hover:underline">
+                    View all contacts
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Row 2: Data Health & Follow-up Snapshot */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Data Health Indicator */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Data Health
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative w-20 h-20 shrink-0">
+                    <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-muted"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="text-primary"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray={`${dataHealth.percentage}, 100`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-lg font-bold">{dataHealth.percentage}%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>{dataHealth.complete}</strong> of <strong>{dataHealth.total}</strong> contacts have all key fields
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Email, Company, Status &amp; Category
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                    <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
+                    <div>
+                      <p className="text-lg font-bold">{dataHealth.incomplete}</p>
+                      <p className="text-xs text-muted-foreground">Incomplete</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-500/5 border border-slate-500/10">
+                    <Archive className="h-5 w-5 text-slate-500 shrink-0" />
+                    <div>
+                      <p className="text-lg font-bold">{dataHealth.archived}</p>
+                      <p className="text-xs text-muted-foreground">Archived</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t text-center">
+                  <Link to="/crm/contacts" className="text-sm text-primary hover:underline">
+                    Manage contact data
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Follow-up Snapshot */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.0 }}
+          >
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarCheck className="h-5 w-5 text-primary" />
+                  Follow-up Snapshot
+                </CardTitle>
+                <Link to="/crm/follow-ups" className="text-sm text-primary hover:underline flex items-center gap-1">
+                  View dashboard <ArrowRight className="h-3 w-3" />
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="text-center p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                    <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-1" />
+                    <p className="text-xl font-bold text-destructive">{followUpStats.overdue}</p>
+                    <p className="text-xs text-muted-foreground">Overdue</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <Clock className="h-5 w-5 text-primary mx-auto mb-1" />
+                    <p className="text-xl font-bold text-primary">{followUpStats.dueToday}</p>
+                    <p className="text-xs text-muted-foreground">Due Today</p>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-muted border">
+                    <ListTodo className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xl font-bold">{followUpStats.dueThisWeek}</p>
+                    <p className="text-xs text-muted-foreground">This Week</p>
+                  </div>
+                </div>
+
+                <Link to="/crm/follow-ups">
+                  <Button variant="outline" className="w-full">
+                    <CalendarCheck className="h-4 w-4 mr-2" />
+                    Open Follow-up Dashboard
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
     </AppLayout>
   );
