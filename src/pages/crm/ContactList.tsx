@@ -778,6 +778,13 @@ export default function ContactList() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[36px]">
+                        <Checkbox
+                          checked={allOnPageSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead className="min-w-[150px]">Name</TableHead>
                       <TableHead className="min-w-[200px]">Companies</TableHead>
                       <TableHead className="min-w-[120px]">Job Title</TableHead>
@@ -790,10 +797,24 @@ export default function ContactList() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredContacts.map((contact) => (
-                      <TableRow key={contact.id}>
+                    {filteredContacts.map((contact) => {
+                      const missing: string[] = [];
+                      if (!contact.email) missing.push('Email');
+                      if (contact.companies.length === 0) missing.push('Company');
+                      if (!contact.status) missing.push('Status');
+                      if (!contact.category) missing.push('Category');
+                      const isMissing = missing.length > 0;
+                      return (
+                      <TableRow key={contact.id} className={contact.archived ? 'opacity-60' : ''}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedIds.has(contact.id)}
+                            onCheckedChange={() => toggleSelect(contact.id)}
+                            aria-label={`Select ${contact.contact_name}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/crm/contacts/${contact.id}`}
                               className="font-medium hover:text-primary"
@@ -807,7 +828,18 @@ export default function ContactList() {
                                 Primary
                               </Badge>
                             )}
+                            {contact.archived && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Archive className="h-3 w-3" /> Archived
+                              </Badge>
+                            )}
+                            {isMissing && (
+                              <Badge variant="outline" className="text-[10px] gap-1 border-amber-500/50 text-amber-600" title={`Missing: ${missing.join(', ')}`}>
+                                <AlertCircle className="h-3 w-3" /> Incomplete
+                              </Badge>
+                            )}
                           </div>
+
                         </TableCell>
                         <TableCell>
                           {contact.companies.length > 0 ? (
