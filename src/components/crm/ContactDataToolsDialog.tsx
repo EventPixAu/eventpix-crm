@@ -59,7 +59,7 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
 
     // 1) Email-based
     const byEmail = new Map<string, Contact[]>();
-    contacts.forEach((c) => {
+    activeContacts.forEach((c) => {
       if (!c.email) return;
       const k = c.email.trim().toLowerCase();
       if (!k) return;
@@ -80,7 +80,7 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
 
     // 2) Name + Company
     const byNameCompany = new Map<string, Contact[]>();
-    contacts.forEach((c) => {
+    activeContacts.forEach((c) => {
       const name = `${(c.first_name || '').trim()} ${(c.last_name || '').trim()}`.trim().toLowerCase()
         || (c.contact_name || '').trim().toLowerCase();
       if (!name) return;
