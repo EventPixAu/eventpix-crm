@@ -5,7 +5,7 @@
  */
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -42,11 +46,17 @@ import {
   X,
   Tag,
   Database,
+  Wrench,
+  Archive,
+  ArchiveRestore,
+  AlertCircle,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
+import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+
 
 
 // Handle Google OAuth callback immediately if we're in a popup
