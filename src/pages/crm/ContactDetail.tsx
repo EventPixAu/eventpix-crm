@@ -775,7 +775,7 @@ export default function ContactDetail() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex flex-wrap gap-2 pt-4 border-t">
                 <Button variant="outline" size="sm" onClick={() => setIsViewOpen(true)}>
                   <Eye className="h-4 w-4 mr-1.5" />
                   View
