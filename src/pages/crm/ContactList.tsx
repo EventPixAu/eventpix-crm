@@ -212,6 +212,8 @@ export default function ContactList() {
             is_freelance,
             tags,
             source,
+            status,
+            category,
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
