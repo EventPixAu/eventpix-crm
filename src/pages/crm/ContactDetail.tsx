@@ -65,6 +65,7 @@ import { useContactActivities, useCreateContactActivity, useDeleteContactActivit
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { toast } from 'sonner';
 import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompanyAssociationsPanel';
+import { ContactFollowUpTasksPanel } from '@/components/ContactFollowUpTasksPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
 import { SendContactEmailDialog } from '@/components/crm/SendContactEmailDialog';
 
