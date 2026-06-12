@@ -523,12 +523,15 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   );
 }
 
+import { CampaignWizardDialog } from './CampaignWizardDialog';
+
 export function EmailCampaignManager() {
   const { data: campaigns = [], isLoading } = useEmailCampaigns();
   const deleteCampaign = useDeleteEmailCampaign();
   const cancelCampaign = useCancelCampaign();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
 
   const getStatusBadge = (status: CampaignStatus) => {
@@ -557,10 +560,16 @@ export function EmailCampaignManager() {
             Create and manage automated email workflows for client segments
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Campaign
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Quick Campaign
+          </Button>
+          <Button onClick={() => setWizardOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Campaign
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
