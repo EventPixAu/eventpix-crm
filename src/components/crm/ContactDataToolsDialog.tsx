@@ -121,11 +121,50 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
         if (!keep[f] && remove[f]) updates[f as string] = remove[f];
       });
       if (Object.keys(updates).length) {
-        await supabase.from('client_contacts').update(updates).eq('id', keep.id);
+        const { error: updErr } = await supabase.from('client_contacts').update(updates).eq('id', keep.id);
+        if (updErr) throw updErr;
       }
-      // Re-point related records that we know of
-      await supabase.from('contact_company_associations').update({ contact_id: keep.id }).eq('contact_id', remove.id);
-      await supabase.from('contact_activities').update({ contact_id: keep.id }).eq('contact_id', remove.id);
+
+      // Re-point company associations, but avoid unique-constraint conflicts
+      // when both contacts are linked to the same company.
+      const { data: keepAssocs, error: keepAssocErr } = await supabase
+        .from('contact_company_associations')
+        .select('company_id')
+        .eq('contact_id', keep.id);
+      if (keepAssocErr) throw keepAssocErr;
+      const keepCompanyIds = new Set((keepAssocs || []).map((a: any) => a.company_id));
+
+      const { data: removeAssocs, error: removeAssocErr } = await supabase
+        .from('contact_company_associations')
+        .select('id, company_id')
+        .eq('contact_id', remove.id);
+      if (removeAssocErr) throw removeAssocErr;
+
+      const conflictIds = (removeAssocs || []).filter((a: any) => keepCompanyIds.has(a.company_id)).map((a: any) => a.id);
+      const safeIds = (removeAssocs || []).filter((a: any) => !keepCompanyIds.has(a.company_id)).map((a: any) => a.id);
+
+      if (conflictIds.length) {
+        const { error: delErr } = await supabase
+          .from('contact_company_associations')
+          .delete()
+          .in('id', conflictIds);
+        if (delErr) throw delErr;
+      }
+      if (safeIds.length) {
+        const { error: movErr } = await supabase
+          .from('contact_company_associations')
+          .update({ contact_id: keep.id })
+          .in('id', safeIds);
+        if (movErr) throw movErr;
+      }
+
+      // Re-point activities (no unique constraint here)
+      const { error: actErr } = await supabase
+        .from('contact_activities')
+        .update({ contact_id: keep.id })
+        .eq('contact_id', remove.id);
+      if (actErr) throw actErr;
+
       // Soft-archive duplicate instead of hard-deleting to avoid FK breakage
       const { error } = await supabase
         .from('client_contacts')
