@@ -341,6 +341,9 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
             <div className="space-y-1.5">
               {member.lines.map(line => {
                 const isEditing = editingId === line.assignmentId;
+                const isEditingHours = editingHoursId === line.assignmentId;
+                const canEdit = isAdmin || isOperations;
+                const editableHours = line.formula !== 'fixed';
                 return (
                   <div
                     key={(line as any).key || line.assignmentId}
@@ -356,10 +359,36 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                       </div>
                     </div>
                     <div className="col-span-2 text-right">
-                      {line.hours}{line.formula === 'editor' ? '' : ''}hrs
+                      {isEditingHours && canEdit && editableHours ? (
+                        <div className="inline-flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            className="w-14 h-6 text-xs bg-background border border-border rounded px-1 text-foreground"
+                            value={hoursInput}
+                            onChange={e => setHoursInput(e.target.value)}
+                            autoFocus
+                          />
+                          <span>hrs</span>
+                        </div>
+                      ) : (
+                        <button
+                          className={canEdit && editableHours ? 'hover:text-primary' : ''}
+                          disabled={!canEdit || !editableHours}
+                          onClick={() => {
+                            setEditingHoursId(line.assignmentId);
+                            setHoursInput(String(line.hours));
+                          }}
+                          title={canEdit && editableHours ? 'Click to override hours' : undefined}
+                        >
+                          {line.hours}hrs
+                          {canEdit && editableHours && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
+                        </button>
+                      )}
                     </div>
                     <div className="col-span-2 text-right">
-                      {isEditing && (isAdmin || isOperations) ? (
+                      {isEditing && canEdit ? (
                         <div className="inline-flex items-center gap-1">
                           $<input
                             type="number"
@@ -373,23 +402,23 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                         </div>
                       ) : (
                         <button
-                          className={(isAdmin || isOperations) ? 'hover:text-primary' : ''}
-                          disabled={!(isAdmin || isOperations)}
+                          className={canEdit ? 'hover:text-primary' : ''}
+                          disabled={!canEdit}
                           onClick={() => {
                             setEditingId(line.assignmentId);
                             setRateInput(String(line.rate));
                           }}
-                          title={(isAdmin || isOperations) ? 'Click to edit rate' : undefined}
+                          title={canEdit ? 'Click to edit rate' : undefined}
                         >
                           ${(Number(line.rate) || 0).toFixed(0)}{line.formula === 'fixed' ? '' : '/hr'}
-                          {(isAdmin || isOperations) && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
+                          {canEdit && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
                         </button>
                       )}
                     </div>
                     <div className="col-span-1 text-right text-foreground font-medium">
                       ${(Number(line.pay) || 0).toFixed(0)}
                     </div>
-                    {isEditing && (isAdmin || isOperations) && (
+                    {isEditing && canEdit && (
                       <div className="col-span-12 flex justify-end gap-1">
                         <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => clearOverride(line.assignmentId)}>
                           Reset
@@ -398,6 +427,19 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                           <X className="h-3 w-3" />
                         </Button>
                         <Button size="sm" className="h-6 px-2" onClick={() => saveRate(line.assignmentId)}>
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                    {isEditingHours && canEdit && editableHours && (
+                      <div className="col-span-12 flex justify-end gap-1">
+                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => clearHoursOverride(line.assignmentId)}>
+                          Reset
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setEditingHoursId(null)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <Button size="sm" className="h-6 px-2" onClick={() => saveHours(line.assignmentId)}>
                           <Check className="h-3 w-3" />
                         </Button>
                       </div>
