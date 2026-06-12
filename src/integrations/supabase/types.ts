@@ -418,6 +418,7 @@ export type Database = {
       }
       client_contacts: {
         Row: {
+          category: string | null
           client_id: string | null
           consent_source: string | null
           consent_status: string | null
@@ -439,9 +440,11 @@ export type Database = {
           role: string | null
           role_title: string | null
           source: string | null
+          status: string | null
           tags: string[] | null
         }
         Insert: {
+          category?: string | null
           client_id?: string | null
           consent_source?: string | null
           consent_status?: string | null
@@ -463,9 +466,11 @@ export type Database = {
           role?: string | null
           role_title?: string | null
           source?: string | null
+          status?: string | null
           tags?: string[] | null
         }
         Update: {
+          category?: string | null
           client_id?: string | null
           consent_source?: string | null
           consent_status?: string | null
@@ -487,6 +492,7 @@ export type Database = {
           role?: string | null
           role_title?: string | null
           source?: string | null
+          status?: string | null
           tags?: string[] | null
         }
         Relationships: [
