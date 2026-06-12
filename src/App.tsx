@@ -82,7 +82,7 @@ import RoleVisibility from "./pages/admin/RoleVisibility";
 import OnboardingGuideEditor from "./pages/admin/OnboardingGuideEditor";
 import CompanyInsurance from "./pages/admin/CompanyInsurance";
 import PayRates from "./pages/admin/PayRates";
-import { CompanyList, ContactList, CrmEmails, PromotionsDashboard, CrmLookups } from "./pages/crm";
+import { CompanyList, ContactList, CrmEmails, PromotionsDashboard, CrmLookups, FollowUpDashboard } from "./pages/crm";
 import ContactDetail from "./pages/crm/ContactDetail";
 import ResetPassword from "./pages/ResetPassword";
 import SalesDashboard from "./pages/sales/SalesDashboard";
@@ -281,6 +281,7 @@ function AppRoutes() {
       <Route path="/crm/contacts" element={<ProtectedRoute><SalesGuard><ContactList /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/contacts/new" element={<ProtectedRoute><SalesGuard><ContactDetail /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/contacts/:id" element={<ProtectedRoute><SalesGuard><ContactDetail /></SalesGuard></ProtectedRoute>} />
+      <Route path="/crm/follow-ups" element={<ProtectedRoute><SalesGuard><FollowUpDashboard /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/emails" element={<ProtectedRoute><SalesGuard><CrmEmails /></SalesGuard></ProtectedRoute>} />
       <Route path="/crm/lookups" element={<ProtectedRoute><AdminGuard><CrmLookups /></AdminGuard></ProtectedRoute>} />
       

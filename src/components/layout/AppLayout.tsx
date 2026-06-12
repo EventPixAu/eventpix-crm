@@ -22,6 +22,7 @@ import {
   ClipboardList,
   FileCheck,
   Home,
+  ListTodo,
   LogOut,
   Mail,
   Menu,
@@ -64,6 +65,7 @@ const crmItems: NavItem[] = [
   { href: '/crm/promotions', label: 'Dashboard', icon: Home },
   { href: '/crm/companies', label: 'Companies', icon: Building2 },
   { href: '/crm/contacts', label: 'Contacts', icon: User },
+  { href: '/crm/follow-ups', label: 'Follow-ups', icon: ListTodo },
   { href: '/crm/emails', label: 'Emails', icon: Mail },
   { href: '/crm/lookups', label: 'Lookups', icon: Settings },
 ];

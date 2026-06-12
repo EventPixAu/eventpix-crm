@@ -4,3 +4,4 @@ export { default as ContactDetail } from './ContactDetail';
 export { default as CrmEmails } from './CrmEmails';
 export { default as PromotionsDashboard } from './PromotionsDashboard';
 export { default as CrmLookups } from './CrmLookups';
+export { default as FollowUpDashboard } from './FollowUpDashboard';
