@@ -88,7 +88,10 @@ interface Contact {
   companies: CompanyAssociation[];
   tags: string[] | null;
   source: string | null;
+  status: string | null;
+  category: string | null;
 }
+
 
 export default function ContactList() {
   const [search, setSearch] = useState('');
