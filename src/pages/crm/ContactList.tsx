@@ -112,6 +112,12 @@ export default function ContactList() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [incompleteOnly, setIncompleteOnly] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dataToolsOpen, setDataToolsOpen] = useState(false);
+  const queryClient = useQueryClient();
+
 
   const { data: jobTitles = [] } = useJobTitles();
 
