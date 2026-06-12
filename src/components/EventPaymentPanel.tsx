@@ -290,6 +290,39 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     }
   };
 
+  const saveHours = async (assignmentId: string) => {
+    const parsed = parseFloat(hoursInput);
+    if (isNaN(parsed) || parsed < 0) {
+      toast.error('Enter valid hours');
+      return;
+    }
+    const { error } = await supabase
+      .from('event_assignments')
+      .update({ hours_override: parsed } as any)
+      .eq('id', assignmentId);
+    if (error) {
+      toast.error('Failed to save hours', { description: error.message });
+    } else {
+      toast.success('Hours updated');
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+      setEditingHoursId(null);
+    }
+  };
+
+  const clearHoursOverride = async (assignmentId: string) => {
+    const { error } = await supabase
+      .from('event_assignments')
+      .update({ hours_override: null } as any)
+      .eq('id', assignmentId);
+    if (error) {
+      toast.error('Failed to reset hours', { description: error.message });
+    } else {
+      toast.success('Hours reset to calculated');
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+      setEditingHoursId(null);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
