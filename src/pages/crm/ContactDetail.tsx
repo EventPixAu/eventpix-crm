@@ -312,6 +312,8 @@ export default function ContactDetail() {
         role_title: contact.role_title || '',
         notes: contact.notes || '',
         client_id: contact.client_id || '',
+        status: (contact as any).status || '',
+        category: (contact as any).category || '',
       });
       setIsEditOpen(true);
     }
@@ -335,7 +337,9 @@ export default function ContactDetail() {
       role_title: formData.role_title || null,
       notes: formData.notes,
       client_id: formData.client_id,
-    });
+      status: formData.status || null,
+      category: formData.category || null,
+    } as any);
   };
 
   const handleUpdate = () => {
@@ -347,6 +351,8 @@ export default function ContactDetail() {
       job_title_id: formData.job_title_id || null,
       role_title: formData.role_title || null,
       notes: formData.notes,
+      status: formData.status || null,
+      category: formData.category || null,
     } as any);
   };
 
