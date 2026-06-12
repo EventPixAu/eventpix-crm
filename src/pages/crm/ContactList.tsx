@@ -669,13 +669,8 @@ export default function ContactList() {
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50 max-h-[300px]">
                     <SelectItem value="__clear__">Clear Category</SelectItem>
-                    {CONTACT_CATEGORY_GROUPS.map((group) => (
-                      <div key={group.label}>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
-                        {group.options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </div>
+                    {categoryOptions.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
