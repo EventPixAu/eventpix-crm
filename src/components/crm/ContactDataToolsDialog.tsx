@@ -53,12 +53,13 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const duplicates = useMemo<DuplicatePair[]>(() => {
+    const activeContacts = contacts.filter((c) => !c.archived);
     const pairs: DuplicatePair[] = [];
     const seenPairs = new Set<string>();
 
     // 1) Email-based
     const byEmail = new Map<string, Contact[]>();
-    contacts.forEach((c) => {
+    activeContacts.forEach((c) => {
       if (!c.email) return;
       const k = c.email.trim().toLowerCase();
       if (!k) return;
@@ -79,7 +80,7 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
 
     // 2) Name + Company
     const byNameCompany = new Map<string, Contact[]>();
-    contacts.forEach((c) => {
+    activeContacts.forEach((c) => {
       const name = `${(c.first_name || '').trim()} ${(c.last_name || '').trim()}`.trim().toLowerCase()
         || (c.contact_name || '').trim().toLowerCase();
       if (!name) return;
