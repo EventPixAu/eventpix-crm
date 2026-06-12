@@ -805,7 +805,9 @@ export default function ContactDetail() {
           />
         </div>
 
-        {/* Right Column - Activity Timeline */}
+        {/* Right Column - Follow-up Tasks + Activity Timeline */}
+        <div className="space-y-6">
+        <ContactFollowUpTasksPanel contactId={id!} />
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -895,6 +897,7 @@ export default function ContactDetail() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Edit Contact Dialog */}
