@@ -107,6 +107,8 @@ export default function ContactDetail() {
     role_title: '',
     notes: '',
     client_id: '',
+    status: '',
+    category: '',
   });
   const [activityData, setActivityData] = useState({
     activity_type: 'email' as 'email' | 'phone_call' | 'meeting',
