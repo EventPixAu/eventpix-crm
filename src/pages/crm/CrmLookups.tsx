@@ -179,14 +179,13 @@ function LookupTable({
             <tr>
               <th className="text-left p-3 text-sm font-medium">Name</th>
               <th className="text-center p-3 text-sm font-medium w-24">Active</th>
-              <th className="text-center p-3 text-sm font-medium w-24">Order</th>
               <th className="text-right p-3 text-sm font-medium w-20">Edit</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                <td colSpan={3} className="p-8 text-center text-muted-foreground">
                   No {itemLabel.toLowerCase()}s yet. Add one above.
                 </td>
               </tr>
