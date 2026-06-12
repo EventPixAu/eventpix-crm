@@ -178,6 +178,7 @@ export default function ContactList() {
           source,
           status,
           category,
+          archived,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
