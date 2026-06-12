@@ -511,6 +511,40 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {CONTACT_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Category Filter */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-[300px]">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {CONTACT_CATEGORY_GROUPS.map((group) => (
+                    <div key={group.label}>
+                      <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                      {group.options.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </div>
+                  ))}
+                </SelectContent>
+              </Select>
+
+
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
