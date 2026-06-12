@@ -422,6 +422,40 @@ export default function ContactList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  const bulkUpdate = useMutation({
+    mutationFn: async (updates: { status?: string | null; category?: string | null; archived?: boolean }) => {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return;
+      const payload: Record<string, any> = { ...updates };
+      if (updates.archived !== undefined) {
+        payload.archived_at = updates.archived ? new Date().toISOString() : null;
+      }
+      const { error } = await supabase.from('client_contacts').update(payload).in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      setSelectedIds(new Set());
+      toast.success('Contacts updated');
+    },
+    onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+  const toggleSelectAll = () => {
+    const allIds = filteredContacts.map((c) => c.id);
+    const allSelected = allIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+  };
+  const allOnPageSelected = filteredContacts.length > 0 && filteredContacts.every((c) => selectedIds.has(c.id));
+
+
   return (
     <AppLayout>
     <div className="space-y-4 sm:space-y-6">
