@@ -350,11 +350,35 @@ export default function ContactList() {
         if (!hasTags) return false;
       }
 
+      // Status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === '__unassigned__') {
+          if (contact.status) return false;
+        } else if (contact.status !== statusFilter) {
+          return false;
+        }
+      }
+
+      // Category filter
+      if (categoryFilter !== 'all') {
+        if (categoryFilter === '__unassigned__') {
+          if (contact.category) return false;
+        } else if (contact.category !== categoryFilter) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter]);
 
-  const hasActiveFilters = companyFilter !== 'all' || jobTitleFilter !== 'all' || standaloneFilter !== 'all' || tagFilter !== 'all';
+  const hasActiveFilters =
+    companyFilter !== 'all' ||
+    jobTitleFilter !== 'all' ||
+    standaloneFilter !== 'all' ||
+    tagFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    categoryFilter !== 'all';
 
   const clearFilters = () => {
     setCompanyFilter('all');
