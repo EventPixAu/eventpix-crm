@@ -22,6 +22,7 @@ import {
   ClipboardList,
   FileCheck,
   Home,
+  ListTodo,
   LogOut,
   Mail,
   Menu,
