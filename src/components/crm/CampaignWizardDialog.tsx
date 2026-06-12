@@ -24,7 +24,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 
 interface AudienceFilters {
@@ -85,7 +84,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   const [scheduleMode, setScheduleMode] = useState<'now' | 'later'>('now');
   const [scheduledAt, setScheduledAt] = useState('');
 
-  const { data: statuses = [] } = useCompanyStatuses();
+  
   const { data: categories = [] } = useCompanyCategories();
 
   // Distinct states from contacts
@@ -303,7 +302,12 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               <div className="grid grid-cols-2 gap-5">
                 <FilterGroup
                   label="Status"
-                  options={statuses.map((s) => ({ value: s.name, label: s.label }))}
+                  options={[
+                    { value: 'Current', label: 'Current' },
+                    { value: 'Previous', label: 'Previous' },
+                    { value: 'Old', label: 'Old' },
+                    { value: 'Prospect', label: 'Prospect' },
+                  ]}
                   selected={filters.statuses}
                   onToggle={(v) => toggleFilter('statuses', v)}
                 />
