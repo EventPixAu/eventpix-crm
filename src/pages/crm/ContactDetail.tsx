@@ -715,6 +715,17 @@ export default function ContactDetail() {
                 );
               })()}
 
+              {((contact as any).status || (contact as any).category) && (
+                <div className="flex flex-wrap gap-2">
+                  {(contact as any).status && (
+                    <Badge variant="outline">Status: {(contact as any).status}</Badge>
+                  )}
+                  {(contact as any).category && (
+                    <Badge variant="secondary">{(contact as any).category}</Badge>
+                  )}
+                </div>
+              )}
+
               {/* Contact Details */}
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-3">
