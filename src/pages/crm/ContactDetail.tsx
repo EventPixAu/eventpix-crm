@@ -60,6 +60,7 @@ import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useJobTitles } from '@/hooks/useJobTitles';
+import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS } from '@/lib/contactClassification';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { toast } from 'sonner';
@@ -106,6 +107,8 @@ export default function ContactDetail() {
     role_title: '',
     notes: '',
     client_id: '',
+    status: '',
+    category: '',
   });
   const [activityData, setActivityData] = useState({
     activity_type: 'email' as 'email' | 'phone_call' | 'meeting',
@@ -213,6 +216,8 @@ export default function ContactDetail() {
       role_title?: string | null;
       notes: string;
       client_id: string;
+      status?: string | null;
+      category?: string | null;
     }) => {
       const contactName = `${data.first_name} ${data.last_name}`.trim() || data.first_name || 'Unnamed';
       const { data: result, error } = await supabase
@@ -227,6 +232,8 @@ export default function ContactDetail() {
           role_title: data.role_title || null,
           notes: data.notes || null,
           client_id: data.client_id,
+          status: data.status || null,
+          category: data.category || null,
         })
         .select()
         .single();
@@ -309,6 +316,8 @@ export default function ContactDetail() {
         role_title: contact.role_title || '',
         notes: contact.notes || '',
         client_id: contact.client_id || '',
+        status: (contact as any).status || '',
+        category: (contact as any).category || '',
       });
       setIsEditOpen(true);
     }
@@ -332,7 +341,9 @@ export default function ContactDetail() {
       role_title: formData.role_title || null,
       notes: formData.notes,
       client_id: formData.client_id,
-    });
+      status: formData.status || null,
+      category: formData.category || null,
+    } as any);
   };
 
   const handleUpdate = () => {
@@ -344,6 +355,8 @@ export default function ContactDetail() {
       job_title_id: formData.job_title_id || null,
       role_title: formData.role_title || null,
       notes: formData.notes,
+      status: formData.status || null,
+      category: formData.category || null,
     } as any);
   };
 
@@ -513,6 +526,45 @@ export default function ContactDetail() {
               />
               <p className="text-xs text-muted-foreground">For specific titles not in the dropdown</p>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create_status">Status</Label>
+                <Select
+                  value={formData.status || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, status: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="create_status"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {CONTACT_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create_category">Category</Label>
+                <Select
+                  value={formData.category || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, category: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="create_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {CONTACT_CATEGORY_GROUPS.map((group) => (
+                      <div key={group.label}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                        {group.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             
             <div className="space-y-2">
               <Label htmlFor="create_notes">Notes</Label>
@@ -662,6 +714,17 @@ export default function ContactDetail() {
                   </div>
                 );
               })()}
+
+              {((contact as any).status || (contact as any).category) && (
+                <div className="flex flex-wrap gap-2">
+                  {(contact as any).status && (
+                    <Badge variant="outline">Status: {(contact as any).status}</Badge>
+                  )}
+                  {(contact as any).category && (
+                    <Badge variant="secondary">{(contact as any).category}</Badge>
+                  )}
+                </div>
+              )}
 
               {/* Contact Details */}
               <div className="space-y-3 text-sm">
@@ -918,6 +981,44 @@ export default function ContactDetail() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={2}
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_status">Status</Label>
+                <Select
+                  value={formData.status || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, status: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="edit_status"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {CONTACT_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_category">Category</Label>
+                <Select
+                  value={formData.category || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, category: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="edit_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {CONTACT_CATEGORY_GROUPS.map((group) => (
+                      <div key={group.label}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                        {group.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>

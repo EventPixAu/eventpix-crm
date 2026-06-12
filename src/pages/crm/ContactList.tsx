@@ -46,6 +46,8 @@ import {
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
+import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+
 
 // Handle Google OAuth callback immediately if we're in a popup
 if (typeof window !== 'undefined') {
@@ -86,7 +88,10 @@ interface Contact {
   companies: CompanyAssociation[];
   tags: string[] | null;
   source: string | null;
+  status: string | null;
+  category: string | null;
 }
+
 
 export default function ContactList() {
   const [search, setSearch] = useState('');
@@ -94,6 +99,8 @@ export default function ContactList() {
   const [jobTitleFilter, setJobTitleFilter] = useState<string>('all');
   const [standaloneFilter, setStandaloneFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const { data: jobTitles = [] } = useJobTitles();
 
@@ -152,6 +159,8 @@ export default function ContactList() {
           is_freelance,
           tags,
           source,
+          status,
+          category,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
@@ -203,6 +212,8 @@ export default function ContactList() {
             is_freelance,
             tags,
             source,
+            status,
+            category,
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
@@ -305,6 +316,8 @@ export default function ContactList() {
           companies,
           tags: contact.tags,
           source: contact.source || null,
+          status: contact.status || null,
+          category: contact.category || null,
         };
       }) as Contact[];
     },
@@ -337,17 +350,43 @@ export default function ContactList() {
         if (!hasTags) return false;
       }
 
+      // Status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === '__unassigned__') {
+          if (contact.status) return false;
+        } else if (contact.status !== statusFilter) {
+          return false;
+        }
+      }
+
+      // Category filter
+      if (categoryFilter !== 'all') {
+        if (categoryFilter === '__unassigned__') {
+          if (contact.category) return false;
+        } else if (contact.category !== categoryFilter) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter]);
 
-  const hasActiveFilters = companyFilter !== 'all' || jobTitleFilter !== 'all' || standaloneFilter !== 'all' || tagFilter !== 'all';
+  const hasActiveFilters =
+    companyFilter !== 'all' ||
+    jobTitleFilter !== 'all' ||
+    standaloneFilter !== 'all' ||
+    tagFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    categoryFilter !== 'all';
 
   const clearFilters = () => {
     setCompanyFilter('all');
     setJobTitleFilter('all');
     setStandaloneFilter('all');
     setTagFilter('all');
+    setStatusFilter('all');
+    setCategoryFilter('all');
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -472,6 +511,40 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {CONTACT_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Category Filter */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-[300px]">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {CONTACT_CATEGORY_GROUPS.map((group) => (
+                    <div key={group.label}>
+                      <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                      {group.options.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </div>
+                  ))}
+                </SelectContent>
+              </Select>
+
+
               {hasActiveFilters && (
                 <Button
                   variant="ghost"
@@ -579,6 +652,8 @@ export default function ContactList() {
                       <TableHead className="min-w-[200px]">Companies</TableHead>
                       <TableHead className="min-w-[120px]">Job Title</TableHead>
                       <TableHead className="min-w-[100px]">Source</TableHead>
+                      <TableHead className="min-w-[110px]">Status</TableHead>
+                      <TableHead className="min-w-[160px]">Category</TableHead>
                       <TableHead className="min-w-[180px]">Email</TableHead>
                       <TableHead className="min-w-[120px]">Mobile</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
@@ -648,6 +723,20 @@ export default function ContactList() {
                               <Database className="h-3 w-3" />
                               {contact.source}
                             </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.status ? (
+                            <Badge variant="outline" className="text-xs">{contact.status}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.category ? (
+                            <Badge variant="secondary" className="text-xs">{contact.category}</Badge>
                           ) : (
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
