@@ -46,6 +46,8 @@ import {
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
+import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+
 
 // Handle Google OAuth callback immediately if we're in a popup
 if (typeof window !== 'undefined') {
