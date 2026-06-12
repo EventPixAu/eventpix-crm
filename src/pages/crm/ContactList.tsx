@@ -99,6 +99,8 @@ export default function ContactList() {
   const [jobTitleFilter, setJobTitleFilter] = useState<string>('all');
   const [standaloneFilter, setStandaloneFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const { data: jobTitles = [] } = useJobTitles();
 
