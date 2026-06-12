@@ -60,6 +60,7 @@ import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useJobTitles } from '@/hooks/useJobTitles';
+import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS } from '@/lib/contactClassification';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { toast } from 'sonner';
