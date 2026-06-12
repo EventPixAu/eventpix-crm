@@ -190,7 +190,7 @@ function LookupTable({
                 </td>
               </tr>
             ) : (
-              items.map((item, index) => (
+              items.map((item) => (
                 <tr 
                   key={item.id}
                   className={`transition-colors ${!item.is_active ? 'bg-muted/30 opacity-60' : 'hover:bg-muted/20'}`}
