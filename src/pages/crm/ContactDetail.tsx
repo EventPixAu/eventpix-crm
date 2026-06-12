@@ -216,6 +216,8 @@ export default function ContactDetail() {
       role_title?: string | null;
       notes: string;
       client_id: string;
+      status?: string | null;
+      category?: string | null;
     }) => {
       const contactName = `${data.first_name} ${data.last_name}`.trim() || data.first_name || 'Unnamed';
       const { data: result, error } = await supabase
@@ -230,6 +232,8 @@ export default function ContactDetail() {
           role_title: data.role_title || null,
           notes: data.notes || null,
           client_id: data.client_id,
+          status: data.status || null,
+          category: data.category || null,
         })
         .select()
         .single();
