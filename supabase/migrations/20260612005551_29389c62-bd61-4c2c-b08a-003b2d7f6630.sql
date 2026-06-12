@@ -1,0 +1,1 @@
+ALTER TABLE public.event_assignments ADD COLUMN IF NOT EXISTS hours_override numeric;
