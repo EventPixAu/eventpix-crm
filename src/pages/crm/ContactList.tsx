@@ -316,6 +316,8 @@ export default function ContactList() {
           companies,
           tags: contact.tags,
           source: contact.source || null,
+          status: contact.status || null,
+          category: contact.category || null,
         };
       }) as Contact[];
     },
