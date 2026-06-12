@@ -192,7 +192,7 @@ serve(async (req) => {
         body_html: html,
         body_preview: html.replace(/<[^>]*>/g, "").substring(0, 200),
         status: "pending",
-        sent_by: userData.user.id,
+        sent_by: actorUserId ?? campaign.created_by,
         contact_id: rec.contact_id,
         client_id: rec.client_id,
       }).select("id").maybeSingle();
@@ -222,7 +222,7 @@ serve(async (req) => {
             activity_date: new Date().toISOString(),
             subject: `[Campaign: ${campaign.name}] ${subject}`,
             notes: `Step ${stepOrder + 1} sent to ${rec.recipient_email}`,
-            created_by: userData.user.id,
+            created_by: actorUserId ?? campaign.created_by,
           });
         }
 
