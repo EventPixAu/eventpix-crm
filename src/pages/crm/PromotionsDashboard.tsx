@@ -36,6 +36,7 @@ import {
   Package,
   Activity,
   AlertCircle,
+  AlertTriangle,
   Archive,
   CalendarCheck,
   ListTodo,
