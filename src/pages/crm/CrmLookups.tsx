@@ -55,7 +55,7 @@ interface LookupTableProps {
 }
 
 function LookupTable({
-  items,
+  items: rawItems,
   isLoading,
   onCreate,
   onUpdate,
@@ -63,6 +63,14 @@ function LookupTable({
   updatePending,
   itemLabel,
 }: LookupTableProps) {
+  // Sort alphabetically, with "Other" always last
+  const items = [...rawItems].sort((a, b) => {
+    const aOther = a.name.trim().toLowerCase() === 'other';
+    const bOther = b.name.trim().toLowerCase() === 'other';
+    if (aOther && !bOther) return 1;
+    if (!aOther && bOther) return -1;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [newName, setNewName] = useState('');
@@ -171,19 +179,18 @@ function LookupTable({
             <tr>
               <th className="text-left p-3 text-sm font-medium">Name</th>
               <th className="text-center p-3 text-sm font-medium w-24">Active</th>
-              <th className="text-center p-3 text-sm font-medium w-24">Order</th>
               <th className="text-right p-3 text-sm font-medium w-20">Edit</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                <td colSpan={3} className="p-8 text-center text-muted-foreground">
                   No {itemLabel.toLowerCase()}s yet. Add one above.
                 </td>
               </tr>
             ) : (
-              items.map((item, index) => (
+              items.map((item) => (
                 <tr 
                   key={item.id}
                   className={`transition-colors ${!item.is_active ? 'bg-muted/30 opacity-60' : 'hover:bg-muted/20'}`}
@@ -238,28 +245,6 @@ function LookupTable({
                       onCheckedChange={() => handleToggleActive(item)}
                       disabled={updatePending}
                     />
-                  </td>
-                  <td className="p-3">
-                    <div className="flex justify-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0"
-                        disabled={index === 0 || updatePending}
-                        onClick={() => handleMoveUp(item, index)}
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0"
-                        disabled={index === items.length - 1 || updatePending}
-                        onClick={() => handleMoveDown(item, index)}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </td>
                   <td className="p-3 text-right">
                     {editingId !== item.id && (
