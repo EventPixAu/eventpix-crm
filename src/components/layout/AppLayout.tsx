@@ -97,6 +97,7 @@ const administrationItems: NavItem[] = [
   { href: '/admin/users', label: 'User Management', icon: Users },
   { href: '/admin/insurance', label: 'Company Insurance', icon: Shield },
   { href: '/admin/role-visibility', label: 'Page Visibility', icon: Layers },
+  { href: '/admin/onboarding-guide', label: 'Onboarding Guide', icon: FileText },
   { href: '/sales/templates', label: 'Budget Templates', icon: FileText },
   { href: '/admin/contract-templates', label: 'Contract Templates', icon: FileSignature },
   { href: '/admin/email-templates', label: 'Email Templates', icon: Mail },

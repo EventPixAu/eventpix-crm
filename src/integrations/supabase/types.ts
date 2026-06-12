@@ -4184,6 +4184,42 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_guide_sections: {
+        Row: {
+          body_markdown: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          section_key: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_markdown?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          section_key: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_markdown?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          section_key?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ops_statuses: {
         Row: {
           created_at: string | null
