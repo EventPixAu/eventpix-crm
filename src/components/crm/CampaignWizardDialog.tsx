@@ -335,8 +335,23 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                       <strong>{finalRecipients.length}</strong> contacts will receive this campaign
                       {matchingLoading && <Loader2 className="h-3 w-3 animate-spin" />}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Unsubscribed & archived contacts excluded automatically
+                    <div className="flex items-center gap-3">
+                      {finalRecipients.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
+                            setManualIncludes([]);
+                            setManualExcludes([]);
+                          }}
+                          className="text-xs text-destructive hover:underline"
+                        >
+                          Clear all recipients
+                        </button>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        Unsubscribed & archived contacts excluded automatically
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -350,23 +365,44 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   onChange={(e) => setManualSearch(e.target.value)}
                 />
                 {searchResults.length > 0 && (
-                  <div className="border rounded-md max-h-40 overflow-auto">
+                  <div className="border rounded-md max-h-40 overflow-auto divide-y">
                     {searchResults.map((c) => (
-                      <button
+                      <div
                         key={c.id}
-                        type="button"
-                        onClick={() => {
-                          if (!manualIncludes.find((x) => x.id === c.id)) {
-                            setManualIncludes([...manualIncludes, c]);
-                          }
-                          setManualExcludes(manualExcludes.filter((id) => id !== c.id));
-                          setManualSearch('');
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
+                        className="px-3 py-2 text-sm flex items-center justify-between gap-2 hover:bg-muted"
                       >
-                        <span>{c.contact_name}</span>
-                        <span className="text-muted-foreground">{c.email}</span>
-                      </button>
+                        <div className="min-w-0">
+                          <div className="truncate">{c.contact_name}</div>
+                          <div className="text-muted-foreground text-xs truncate">{c.email}</div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
+                              setManualExcludes([]);
+                              setManualIncludes([c]);
+                              setManualSearch('');
+                            }}
+                            className="text-xs px-2 py-1 rounded border hover:bg-accent"
+                          >
+                            Add only this contact
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!manualIncludes.find((x) => x.id === c.id)) {
+                                setManualIncludes([...manualIncludes, c]);
+                              }
+                              setManualExcludes(manualExcludes.filter((id) => id !== c.id));
+                              setManualSearch('');
+                            }}
+                            className="text-xs px-2 py-1 rounded border hover:bg-accent"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
