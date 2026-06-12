@@ -55,7 +55,7 @@ interface LookupTableProps {
 }
 
 function LookupTable({
-  items,
+  items: rawItems,
   isLoading,
   onCreate,
   onUpdate,
@@ -63,6 +63,14 @@ function LookupTable({
   updatePending,
   itemLabel,
 }: LookupTableProps) {
+  // Sort alphabetically, with "Other" always last
+  const items = [...rawItems].sort((a, b) => {
+    const aOther = a.name.trim().toLowerCase() === 'other';
+    const bOther = b.name.trim().toLowerCase() === 'other';
+    if (aOther && !bOther) return 1;
+    if (!aOther && bOther) return -1;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [newName, setNewName] = useState('');
