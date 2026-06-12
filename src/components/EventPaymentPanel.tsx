@@ -175,9 +175,14 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         if (endMin <= startMin) continue;
 
       const isPhotog = isPhotographerRole(roleName);
+      const hoursOverride = (a as any).hours_override;
+      const hasOverride = hoursOverride != null && !isNaN(Number(hoursOverride));
       let hours: number;
       let pay: number;
-      if (isPhotog) {
+      if (hasOverride) {
+        hours = Number(hoursOverride);
+        pay = hours * baseRate;
+      } else if (isPhotog) {
         const rawHours = (endMin - startMin) / 60;
         const billed = Math.ceil(rawHours) + 1;
         hours = billed;
