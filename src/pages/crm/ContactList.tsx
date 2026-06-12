@@ -100,6 +100,7 @@ interface Contact {
   source: string | null;
   status: string | null;
   category: string | null;
+  archived: boolean | null;
 }
 
 
