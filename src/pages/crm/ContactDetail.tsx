@@ -60,7 +60,8 @@ import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useJobTitles } from '@/hooks/useJobTitles';
-import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS } from '@/lib/contactClassification';
+import { CONTACT_STATUSES } from '@/lib/contactClassification';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { toast } from 'sonner';
@@ -91,6 +92,7 @@ export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: categoryOptions = [] } = useCompanyCategories();
   
   const isCreateMode = !id;
   
@@ -553,13 +555,8 @@ export default function ContactDetail() {
                   <SelectTrigger id="create_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     <SelectItem value="__none__">Unassigned</SelectItem>
-                    {CONTACT_CATEGORY_GROUPS.map((group) => (
-                      <div key={group.label}>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
-                        {group.options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </div>
+                    {categoryOptions.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1032,13 +1029,8 @@ export default function ContactDetail() {
                   <SelectTrigger id="edit_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     <SelectItem value="__none__">Unassigned</SelectItem>
-                    {CONTACT_CATEGORY_GROUPS.map((group) => (
-                      <div key={group.label}>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
-                        {group.options.map((opt) => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </div>
+                    {categoryOptions.map((opt) => (
+                      <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
