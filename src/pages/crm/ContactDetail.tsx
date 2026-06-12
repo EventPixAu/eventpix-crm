@@ -790,6 +790,26 @@ export default function ContactDetail() {
                   <Pencil className="h-4 w-4 mr-1.5" />
                   Edit
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const next = !(contact as any).archived;
+                    const { error } = await supabase
+                      .from('client_contacts')
+                      .update({ archived: next, archived_at: next ? new Date().toISOString() : null })
+                      .eq('id', id!);
+                    if (error) {
+                      toast.error('Failed to update archive state', { description: error.message });
+                    } else {
+                      toast.success(next ? 'Contact archived' : 'Contact restored');
+                      queryClient.invalidateQueries({ queryKey: ['contact', id] });
+                      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+                    }
+                  }}
+                >
+                  {(contact as any).archived ? 'Restore' : 'Archive'}
+                </Button>
                 <Button variant="outline" size="sm" onClick={handleDelete} disabled={deleteContact.isPending}>
                   <Trash2 className="h-4 w-4 mr-1.5" />
                   {deleteContact.isPending ? 'Deleting...' : 'Delete'}

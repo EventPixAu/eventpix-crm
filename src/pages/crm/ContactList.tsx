@@ -5,7 +5,7 @@
  */
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -13,6 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -42,11 +46,17 @@ import {
   X,
   Tag,
   Database,
+  Wrench,
+  Archive,
+  ArchiveRestore,
+  AlertCircle,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
+import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+
 
 
 // Handle Google OAuth callback immediately if we're in a popup
@@ -90,6 +100,7 @@ interface Contact {
   source: string | null;
   status: string | null;
   category: string | null;
+  archived: boolean | null;
 }
 
 
@@ -101,6 +112,12 @@ export default function ContactList() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [incompleteOnly, setIncompleteOnly] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dataToolsOpen, setDataToolsOpen] = useState(false);
+  const queryClient = useQueryClient();
+
 
   const { data: jobTitles = [] } = useJobTitles();
 
@@ -161,6 +178,7 @@ export default function ContactList() {
           source,
           status,
           category,
+          archived,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
@@ -214,6 +232,7 @@ export default function ContactList() {
             source,
             status,
             category,
+            archived,
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
@@ -318,6 +337,7 @@ export default function ContactList() {
           source: contact.source || null,
           status: contact.status || null,
           category: contact.category || null,
+          archived: (contact as any).archived ?? false,
         };
       }) as Contact[];
     },
@@ -326,6 +346,15 @@ export default function ContactList() {
   // Apply client-side filters
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
+      // Archived
+      if (!showArchived && contact.archived) return false;
+
+      // Incomplete-only filter
+      if (incompleteOnly) {
+        const missing = !contact.email || contact.companies.length === 0 || !contact.status || !contact.category;
+        if (!missing) return false;
+      }
+
       // Company filter
       if (companyFilter !== 'all') {
         const hasCompany = contact.companies.some(c => c.company_id === companyFilter);
@@ -370,7 +399,8 @@ export default function ContactList() {
 
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, incompleteOnly, showArchived]);
+
 
   const hasActiveFilters =
     companyFilter !== 'all' ||
@@ -392,6 +422,40 @@ export default function ContactList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  const bulkUpdate = useMutation({
+    mutationFn: async (updates: { status?: string | null; category?: string | null; archived?: boolean }) => {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return;
+      const payload: Record<string, any> = { ...updates };
+      if (updates.archived !== undefined) {
+        payload.archived_at = updates.archived ? new Date().toISOString() : null;
+      }
+      const { error } = await supabase.from('client_contacts').update(payload).in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      setSelectedIds(new Set());
+      toast.success('Contacts updated');
+    },
+    onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+  const toggleSelectAll = () => {
+    const allIds = filteredContacts.map((c) => c.id);
+    const allSelected = allIds.every((id) => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
+  };
+  const allOnPageSelected = filteredContacts.length > 0 && filteredContacts.every((c) => selectedIds.has(c.id));
+
+
   return (
     <AppLayout>
     <div className="space-y-4 sm:space-y-6">
@@ -400,6 +464,10 @@ export default function ContactList() {
         description="Manage contacts across all companies"
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDataToolsOpen(true)}>
+              <Wrench className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Data Tools</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
               <Upload className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Import</span>
@@ -421,6 +489,13 @@ export default function ContactList() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
       />
+
+      <ContactDataToolsDialog
+        open={dataToolsOpen}
+        onOpenChange={setDataToolsOpen}
+        contacts={contacts}
+      />
+
 
       <Card>
         <CardContent className="p-3 sm:p-6">
@@ -557,7 +632,69 @@ export default function ContactList() {
                 </Button>
               )}
             </div>
+
+            {/* Toggle Row: Incomplete + Archived */}
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              <div className="flex items-center gap-2">
+                <Switch id="incomplete-only" checked={incompleteOnly} onCheckedChange={setIncompleteOnly} />
+                <Label htmlFor="incomplete-only" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                  Show incomplete contacts only
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+                <Label htmlFor="show-archived" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <Archive className="h-3.5 w-3.5" />
+                  Show archived
+                </Label>
+              </div>
+            </div>
+
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 p-2 rounded-md border bg-muted/40">
+                <span className="text-sm font-medium">{selectedIds.size} selected</span>
+                <Select onValueChange={(v) => bulkUpdate.mutate({ status: v === '__clear__' ? null : v })}>
+                  <SelectTrigger className="h-8 w-[170px] text-xs">
+                    <SelectValue placeholder="Assign Status…" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="__clear__">Clear Status</SelectItem>
+                    {CONTACT_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={(v) => bulkUpdate.mutate({ category: v === '__clear__' ? null : v })}>
+                  <SelectTrigger className="h-8 w-[190px] text-xs">
+                    <SelectValue placeholder="Assign Category…" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50 max-h-[300px]">
+                    <SelectItem value="__clear__">Clear Category</SelectItem>
+                    {CONTACT_CATEGORY_GROUPS.map((group) => (
+                      <div key={group.label}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                        {group.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: true })}>
+                  <Archive className="h-3.5 w-3.5 mr-1" /> Archive
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: false })}>
+                  <ArchiveRestore className="h-3.5 w-3.5 mr-1" /> Restore
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                  <X className="h-3.5 w-3.5 mr-1" /> Clear selection
+                </Button>
+              </div>
+            )}
           </div>
+
 
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">
@@ -648,6 +785,13 @@ export default function ContactList() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[36px]">
+                        <Checkbox
+                          checked={allOnPageSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead className="min-w-[150px]">Name</TableHead>
                       <TableHead className="min-w-[200px]">Companies</TableHead>
                       <TableHead className="min-w-[120px]">Job Title</TableHead>
@@ -660,10 +804,24 @@ export default function ContactList() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredContacts.map((contact) => (
-                      <TableRow key={contact.id}>
+                    {filteredContacts.map((contact) => {
+                      const missing: string[] = [];
+                      if (!contact.email) missing.push('Email');
+                      if (contact.companies.length === 0) missing.push('Company');
+                      if (!contact.status) missing.push('Status');
+                      if (!contact.category) missing.push('Category');
+                      const isMissing = missing.length > 0;
+                      return (
+                      <TableRow key={contact.id} className={contact.archived ? 'opacity-60' : ''}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedIds.has(contact.id)}
+                            onCheckedChange={() => toggleSelect(contact.id)}
+                            aria-label={`Select ${contact.contact_name}`}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/crm/contacts/${contact.id}`}
                               className="font-medium hover:text-primary"
@@ -677,7 +835,18 @@ export default function ContactList() {
                                 Primary
                               </Badge>
                             )}
+                            {contact.archived && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Archive className="h-3 w-3" /> Archived
+                              </Badge>
+                            )}
+                            {isMissing && (
+                              <Badge variant="outline" className="text-[10px] gap-1 border-amber-500/50 text-amber-600" title={`Missing: ${missing.join(', ')}`}>
+                                <AlertCircle className="h-3 w-3" /> Incomplete
+                              </Badge>
+                            )}
                           </div>
+
                         </TableCell>
                         <TableCell>
                           {contact.companies.length > 0 ? (
@@ -775,7 +944,8 @@ export default function ContactList() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

@@ -418,6 +418,8 @@ export type Database = {
       }
       client_contacts: {
         Row: {
+          archived: boolean
+          archived_at: string | null
           category: string | null
           client_id: string | null
           consent_source: string | null
@@ -444,6 +446,8 @@ export type Database = {
           tags: string[] | null
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
           category?: string | null
           client_id?: string | null
           consent_source?: string | null
@@ -470,6 +474,8 @@ export type Database = {
           tags?: string[] | null
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
           category?: string | null
           client_id?: string | null
           consent_source?: string | null
