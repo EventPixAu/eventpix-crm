@@ -696,6 +696,7 @@ export function EmailCampaignManager() {
       )}
 
       <CreateCampaignDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CampaignWizardDialog open={wizardOpen} onOpenChange={setWizardOpen} />
       <CampaignDetailDialog
         campaign={selectedCampaign}
         open={!!selectedCampaign}
