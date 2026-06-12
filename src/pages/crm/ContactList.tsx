@@ -740,6 +740,7 @@ export default function ContactList() {
                           ) : (
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
+                        </TableCell>
                         <TableCell>
                           {contact.email ? (
                             <a
