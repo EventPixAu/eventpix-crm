@@ -337,6 +337,7 @@ export default function ContactList() {
           source: contact.source || null,
           status: contact.status || null,
           category: contact.category || null,
+          archived: (contact as any).archived ?? false,
         };
       }) as Contact[];
     },
