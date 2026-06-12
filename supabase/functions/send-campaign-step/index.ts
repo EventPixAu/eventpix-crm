@@ -68,15 +68,24 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const auth = req.headers.get("Authorization");
-    if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
-    const { data: userData } = await supabase.auth.getUser(auth.replace("Bearer ", ""));
-    if (!userData.user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    // Allow internal cron dispatch via shared secret, otherwise require user auth + role
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const providedCron = req.headers.get("x-cron-secret");
+    const isCron = !!cronSecret && providedCron === cronSecret;
 
-    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userData.user.id);
-    const allowed = new Set(["admin", "sales", "operations"]);
-    if (!(roles || []).some((r: { role: string }) => allowed.has(r.role))) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+    let actorUserId: string | null = null;
+    if (!isCron) {
+      const auth = req.headers.get("Authorization");
+      if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      const { data: userData } = await supabase.auth.getUser(auth.replace("Bearer ", ""));
+      if (!userData.user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userData.user.id);
+      const allowed = new Set(["admin", "sales", "operations"]);
+      if (!(roles || []).some((r: { role: string }) => allowed.has(r.role))) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
+      }
+      actorUserId = userData.user.id;
     }
 
     const body: SendCampaignStepBody = await req.json();
