@@ -92,6 +92,7 @@ export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: categoryOptions = [] } = useCompanyCategories();
   
   const isCreateMode = !id;
   
