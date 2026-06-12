@@ -728,6 +728,19 @@ export default function ContactList() {
                           )}
                         </TableCell>
                         <TableCell>
+                          {contact.status ? (
+                            <Badge variant="outline" className="text-xs">{contact.status}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.category ? (
+                            <Badge variant="secondary" className="text-xs">{contact.category}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        <TableCell>
                           {contact.email ? (
                             <a
                               href={`mailto:${contact.email}`}
