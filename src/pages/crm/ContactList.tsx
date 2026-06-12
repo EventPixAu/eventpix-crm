@@ -346,6 +346,15 @@ export default function ContactList() {
   // Apply client-side filters
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
+      // Archived
+      if (!showArchived && contact.archived) return false;
+
+      // Incomplete-only filter
+      if (incompleteOnly) {
+        const missing = !contact.email || contact.companies.length === 0 || !contact.status || !contact.category;
+        if (!missing) return false;
+      }
+
       // Company filter
       if (companyFilter !== 'all') {
         const hasCompany = contact.companies.some(c => c.company_id === companyFilter);
@@ -390,7 +399,8 @@ export default function ContactList() {
 
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, incompleteOnly, showArchived]);
+
 
   const hasActiveFilters =
     companyFilter !== 'all' ||
