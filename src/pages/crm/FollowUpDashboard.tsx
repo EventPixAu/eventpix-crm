@@ -678,5 +678,6 @@ export default function FollowUpDashboard() {
         </div>
       </div>
     </div>
+    </AppLayout>
   );
 }
