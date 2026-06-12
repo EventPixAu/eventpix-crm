@@ -71,6 +71,8 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rateInput, setRateInput] = useState('');
+  const [editingHoursId, setEditingHoursId] = useState<string | null>(null);
+  const [hoursInput, setHoursInput] = useState('');
 
   const canView = isAdmin || isOperations;
   // If not admin/ops, only show if the current user has an assignment on this event
