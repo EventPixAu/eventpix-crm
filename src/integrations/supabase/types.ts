@@ -303,6 +303,64 @@ export type Database = {
           },
         ]
       }
+      campaign_step_sends: {
+        Row: {
+          campaign_contact_id: string
+          created_at: string
+          email_log_id: string | null
+          error_message: string | null
+          id: string
+          scheduled_for: string | null
+          sent_at: string | null
+          status: string
+          step_id: string
+        }
+        Insert: {
+          campaign_contact_id: string
+          created_at?: string
+          email_log_id?: string | null
+          error_message?: string | null
+          id?: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          step_id: string
+        }
+        Update: {
+          campaign_contact_id?: string
+          created_at?: string
+          email_log_id?: string | null
+          error_message?: string | null
+          id?: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          status?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_step_sends_campaign_contact_id_fkey"
+            columns: ["campaign_contact_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_step_sends_email_log_id_fkey"
+            columns: ["email_log_id"]
+            isOneToOne: false
+            referencedRelation: "email_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_step_sends_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaign_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_brief_templates: {
         Row: {
           content: string
@@ -421,6 +479,7 @@ export type Database = {
           archived: boolean
           archived_at: string | null
           category: string | null
+          city: string | null
           client_id: string | null
           consent_source: string | null
           consent_status: string | null
@@ -442,13 +501,17 @@ export type Database = {
           role: string | null
           role_title: string | null
           source: string | null
+          state: string | null
           status: string | null
           tags: string[] | null
+          unsubscribed: boolean
+          unsubscribed_at: string | null
         }
         Insert: {
           archived?: boolean
           archived_at?: string | null
           category?: string | null
+          city?: string | null
           client_id?: string | null
           consent_source?: string | null
           consent_status?: string | null
@@ -470,13 +533,17 @@ export type Database = {
           role?: string | null
           role_title?: string | null
           source?: string | null
+          state?: string | null
           status?: string | null
           tags?: string[] | null
+          unsubscribed?: boolean
+          unsubscribed_at?: string | null
         }
         Update: {
           archived?: boolean
           archived_at?: string | null
           category?: string | null
+          city?: string | null
           client_id?: string | null
           consent_source?: string | null
           consent_status?: string | null
@@ -498,8 +565,11 @@ export type Database = {
           role?: string | null
           role_title?: string | null
           source?: string | null
+          state?: string | null
           status?: string | null
           tags?: string[] | null
+          unsubscribed?: boolean
+          unsubscribed_at?: string | null
         }
         Relationships: [
           {
@@ -1593,17 +1663,64 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaign_steps: {
+        Row: {
+          body_html: string
+          campaign_id: string
+          created_at: string
+          delay_days: number
+          id: string
+          step_order: number
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          campaign_id: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          step_order: number
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          campaign_id?: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          step_order?: number
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_steps_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaigns: {
         Row: {
           body_override: string | null
           campaign_type: string
           created_at: string
           created_by: string | null
+          current_step: number
           description: string | null
           failed_count: number | null
+          filters: Json
           id: string
+          is_sequence: boolean
+          manual_excludes: Json
+          manual_includes: Json
           name: string
           scheduled_at: string | null
+          send_via: string
           sent_count: number | null
           status: string
           subject_override: string | null
@@ -1617,11 +1734,17 @@ export type Database = {
           campaign_type: string
           created_at?: string
           created_by?: string | null
+          current_step?: number
           description?: string | null
           failed_count?: number | null
+          filters?: Json
           id?: string
+          is_sequence?: boolean
+          manual_excludes?: Json
+          manual_includes?: Json
           name: string
           scheduled_at?: string | null
+          send_via?: string
           sent_count?: number | null
           status?: string
           subject_override?: string | null
@@ -1635,11 +1758,17 @@ export type Database = {
           campaign_type?: string
           created_at?: string
           created_by?: string | null
+          current_step?: number
           description?: string | null
           failed_count?: number | null
+          filters?: Json
           id?: string
+          is_sequence?: boolean
+          manual_excludes?: Json
+          manual_includes?: Json
           name?: string
           scheduled_at?: string | null
+          send_via?: string
           sent_count?: number | null
           status?: string
           subject_override?: string | null
