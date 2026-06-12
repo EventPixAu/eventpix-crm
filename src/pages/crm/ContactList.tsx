@@ -55,7 +55,8 @@ import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
-import { CONTACT_STATUSES, CONTACT_CATEGORY_GROUPS, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+import { CONTACT_STATUSES, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 
 
 
