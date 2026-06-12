@@ -385,6 +385,8 @@ export default function ContactList() {
     setJobTitleFilter('all');
     setStandaloneFilter('all');
     setTagFilter('all');
+    setStatusFilter('all');
+    setCategoryFilter('all');
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
