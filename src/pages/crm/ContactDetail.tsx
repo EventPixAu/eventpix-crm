@@ -526,6 +526,45 @@ export default function ContactDetail() {
               />
               <p className="text-xs text-muted-foreground">For specific titles not in the dropdown</p>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create_status">Status</Label>
+                <Select
+                  value={formData.status || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, status: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="create_status"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {CONTACT_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create_category">Category</Label>
+                <Select
+                  value={formData.category || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, category: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="create_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {CONTACT_CATEGORY_GROUPS.map((group) => (
+                      <div key={group.label}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                        {group.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             
             <div className="space-y-2">
               <Label htmlFor="create_notes">Notes</Label>
