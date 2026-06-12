@@ -490,6 +490,13 @@ export default function ContactList() {
         onOpenChange={setCreateDialogOpen}
       />
 
+      <ContactDataToolsDialog
+        open={dataToolsOpen}
+        onOpenChange={setDataToolsOpen}
+        contacts={contacts}
+      />
+
+
       <Card>
         <CardContent className="p-3 sm:p-6">
           {/* Search and Filters */}
