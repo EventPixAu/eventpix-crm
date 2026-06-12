@@ -20,6 +20,7 @@ function ErrorBoundaryWithReset({ children }: { children: React.ReactNode }) {
 }
 
 import Auth from "./pages/Auth";
+import Unsubscribe from "./pages/Unsubscribe";
 import Dashboard from "./pages/Dashboard";
 import OperationsDashboard from "./pages/OperationsDashboard";
 import MyTasksDashboard from "./pages/MyTasksDashboard";
@@ -216,6 +217,7 @@ function AppRoutes() {
       <Route path="/lead/:token" element={<ClientPortal portalFunction="lead-portal" />} />
       <Route path="/client-login" element={<ClientLogin />} />
       <Route path="/portal" element={<ClientPortalDashboard />} />
+      <Route path="/unsubscribe" element={<Unsubscribe />} />
       
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}
