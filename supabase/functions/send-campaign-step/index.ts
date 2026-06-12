@@ -202,7 +202,6 @@ serve(async (req) => {
           await supabase.from("email_logs").update({
             status: "sent",
             sent_at: new Date().toISOString(),
-            provider_message_id: result.id,
           }).eq("id", logRow.id);
         }
 
