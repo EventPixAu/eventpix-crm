@@ -625,7 +625,69 @@ export default function ContactList() {
                 </Button>
               )}
             </div>
+
+            {/* Toggle Row: Incomplete + Archived */}
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              <div className="flex items-center gap-2">
+                <Switch id="incomplete-only" checked={incompleteOnly} onCheckedChange={setIncompleteOnly} />
+                <Label htmlFor="incomplete-only" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                  Show incomplete contacts only
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch id="show-archived" checked={showArchived} onCheckedChange={setShowArchived} />
+                <Label htmlFor="show-archived" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <Archive className="h-3.5 w-3.5" />
+                  Show archived
+                </Label>
+              </div>
+            </div>
+
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 p-2 rounded-md border bg-muted/40">
+                <span className="text-sm font-medium">{selectedIds.size} selected</span>
+                <Select onValueChange={(v) => bulkUpdate.mutate({ status: v === '__clear__' ? null : v })}>
+                  <SelectTrigger className="h-8 w-[170px] text-xs">
+                    <SelectValue placeholder="Assign Status…" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="__clear__">Clear Status</SelectItem>
+                    {CONTACT_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select onValueChange={(v) => bulkUpdate.mutate({ category: v === '__clear__' ? null : v })}>
+                  <SelectTrigger className="h-8 w-[190px] text-xs">
+                    <SelectValue placeholder="Assign Category…" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50 max-h-[300px]">
+                    <SelectItem value="__clear__">Clear Category</SelectItem>
+                    {CONTACT_CATEGORY_GROUPS.map((group) => (
+                      <div key={group.label}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">{group.label}</div>
+                        {group.options.map((opt) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: true })}>
+                  <Archive className="h-3.5 w-3.5 mr-1" /> Archive
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: false })}>
+                  <ArchiveRestore className="h-3.5 w-3.5 mr-1" /> Restore
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                  <X className="h-3.5 w-3.5 mr-1" /> Clear selection
+                </Button>
+              </div>
+            )}
           </div>
+
 
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">
