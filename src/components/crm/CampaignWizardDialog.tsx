@@ -169,6 +169,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     setStep(1);
     setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
+    setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
     setFollowUps([]);
     setScheduleMode('now'); setScheduledAt('');
