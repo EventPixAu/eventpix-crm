@@ -71,6 +71,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
   const [manualSearch, setManualSearch] = useState('');
+  const [audienceCleared, setAudienceCleared] = useState(false);
 
   // Step 2
   const [name, setName] = useState('');
