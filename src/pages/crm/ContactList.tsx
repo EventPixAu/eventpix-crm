@@ -943,6 +943,18 @@ export default function ContactList() {
                                 <Archive className="h-3 w-3" /> Archived
                               </Badge>
                             )}
+                            {contact.bounce_status && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] gap-1 ${contact.bounce_status === 'bounced' ? 'border-destructive/60 text-destructive' : 'border-amber-500/60 text-amber-600'}`}
+                                title={contact.bounce_status === 'bounced'
+                                  ? `Hard bounce${contact.bounced_at ? ' on ' + new Date(contact.bounced_at).toLocaleDateString() : ''}`
+                                  : `Spam complaint${contact.bounced_at ? ' on ' + new Date(contact.bounced_at).toLocaleDateString() : ''}`}
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                {contact.bounce_status === 'bounced' ? 'Bounced' : 'Complaint'}
+                              </Badge>
+                            )}
                             {isMissing && (
                               <Badge variant="outline" className="text-[10px] gap-1 border-amber-500/50 text-amber-600" title={`Missing: ${missing.join(', ')}`}>
                                 <AlertCircle className="h-3 w-3" /> Incomplete
