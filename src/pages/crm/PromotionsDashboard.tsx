@@ -228,7 +228,12 @@ export default function PromotionsDashboard() {
     return counts;
   }, [allContacts]);
 
-  // Contact Category counts
+  // Contact Category counts — exclude Staff contacts from client-side aggregates
+  const clientContacts = useMemo(
+    () => allContacts.filter((c: any) => c.status !== 'Staff'),
+    [allContacts]
+  );
+
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     const knownCategories = [
@@ -245,7 +250,7 @@ export default function PromotionsDashboard() {
     ];
     knownCategories.forEach(cat => { counts[cat] = 0; });
     counts['Uncategorised'] = 0;
-    allContacts.forEach(c => {
+    clientContacts.forEach(c => {
       if (!c.category) {
         counts['Uncategorised']++;
       } else if (counts[c.category] !== undefined) {
@@ -264,19 +269,19 @@ export default function PromotionsDashboard() {
       }
     });
     return counts;
-  }, [allContacts]);
+  }, [clientContacts]);
 
-  // Data health
+  // Data health — exclude Staff from client totals
   const dataHealth = useMemo(() => {
-    const total = allContacts.length;
-    const incomplete = allContacts.filter(c => 
+    const total = clientContacts.length;
+    const incomplete = clientContacts.filter(c =>
       !c.email || !c.has_associations || !c.status || !c.category
     );
-    const archived = allContacts.filter(c => c.archived);
+    const archived = clientContacts.filter(c => c.archived);
     const complete = total - incomplete.length;
     const percentage = total > 0 ? Math.round((complete / total) * 100) : 0;
     return { total, complete, incomplete: incomplete.length, archived: archived.length, percentage };
-  }, [allContacts]);
+  }, [clientContacts]);
 
   // Follow-up snapshot
   const followUpStats = useMemo(() => {
@@ -340,7 +345,7 @@ export default function PromotionsDashboard() {
     };
   }, [clients]);
 
-  const statusOrder = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Archived', 'Unassigned'];
+  const statusOrder = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Unassigned'];
   const categoryOrder = [
     'Schools',
     'Event Management',
@@ -359,6 +364,7 @@ export default function PromotionsDashboard() {
     Previous: History,
     Old: Clock,
     Prospect: UserPlus,
+    Staff: Users,
     Archived: Archive,
     Unassigned: HelpCircle,
   };
@@ -381,6 +387,7 @@ export default function PromotionsDashboard() {
     Previous: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
     Old: 'bg-slate-500/10 text-slate-600 border-slate-500/20',
     Prospect: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    Staff: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
     Unassigned: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
   };
 

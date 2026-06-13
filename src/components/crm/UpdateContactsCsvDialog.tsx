@@ -90,8 +90,8 @@ const HEADER_MAP: Record<string, keyof CsvRow> = {
   'lead source': 'source',
 };
 
-const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Archived']);
-const PROTECTED_STATUSES = new Set(['Active', 'Current']);
+const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived']);
+const PROTECTED_STATUSES = new Set(['Active', 'Current', 'Staff']);
 
 function normaliseStatus(raw?: string): string | undefined {
   if (!raw) return undefined;
@@ -102,6 +102,7 @@ function normaliseStatus(raw?: string): string | undefined {
   if (v.startsWith('previous')) return 'Previous';
   if (v.startsWith('old')) return 'Old';
   if (v.startsWith('prospect')) return 'Prospect';
+  if (v.startsWith('staff')) return 'Staff';
   if (v.startsWith('archiv')) return 'Archived';
   const cap = raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1).toLowerCase();
   return VALID_STATUSES.has(cap) ? cap : undefined;
@@ -405,7 +406,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               </div>
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-purple-600">{summary.statusProtected}</div>
-                <div className="text-xs text-muted-foreground">Retained Active/Current status</div>
+                <div className="text-xs text-muted-foreground">Retained Active/Current/Staff status</div>
               </div>
             </div>
             {summary.errors.length > 0 ? (
