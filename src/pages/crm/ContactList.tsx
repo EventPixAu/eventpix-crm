@@ -353,7 +353,7 @@ export default function ContactList() {
 
       // Incomplete-only filter
       if (incompleteOnly) {
-        const missing = !contact.email || contact.companies.length === 0 || !contact.status || !contact.category;
+        const missing = !contact.email || contact.companies.length === 0 || !contact.status || !contact.category || !contact.first_name;
         if (!missing) return false;
       }
 
