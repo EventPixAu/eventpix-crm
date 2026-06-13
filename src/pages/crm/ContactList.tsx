@@ -360,6 +360,8 @@ export default function ContactList() {
           status: contact.status || null,
           category: contact.category || null,
           archived: (contact as any).archived ?? false,
+          bounce_status: (contact as any).bounce_status ?? null,
+          bounced_at: (contact as any).bounced_at ?? null,
         };
       }) as Contact[];
     },
