@@ -909,6 +909,7 @@ export default function ContactDetail() {
         {/* Right Column - Follow-up Tasks + Activity Timeline */}
         <div className="space-y-6">
         <ContactFollowUpTasksPanel contactId={id!} />
+        <ContactNotesPanel contactId={id!} />
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
