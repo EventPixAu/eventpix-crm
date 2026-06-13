@@ -722,9 +722,38 @@ export default function ContactList() {
                 <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: false })}>
                   <ArchiveRestore className="h-3.5 w-3.5 mr-1" /> Restore
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive hover:text-destructive border-destructive/40 hover:bg-destructive/10"
+                  onClick={() => setConfirmDeleteOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
                   <X className="h-3.5 w-3.5 mr-1" /> Clear selection
                 </Button>
+
+                <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedIds.size} contact{selectedIds.size === 1 ? '' : 's'}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently deletes the selected contacts and their related notes, activities, and company associations. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={bulkDelete.isPending}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => { e.preventDefault(); bulkDelete.mutate(); }}
+                        disabled={bulkDelete.isPending}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {bulkDelete.isPending ? 'Deleting…' : 'Delete'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             )}
           </div>
