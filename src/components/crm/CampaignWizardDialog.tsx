@@ -348,9 +348,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                         <button
                           type="button"
                           onClick={() => {
+                            setAudienceCleared(true);
                             setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
+                            setManualSearch('');
                           }}
                           className="text-xs text-destructive hover:underline"
                         >
