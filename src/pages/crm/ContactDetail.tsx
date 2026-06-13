@@ -441,6 +441,13 @@ export default function ContactDetail() {
         return <PhoneCall className="h-4 w-4" />;
       case 'meeting':
         return <Calendar className="h-4 w-4" />;
+      case 'status_change':
+      case 'category_change':
+        return <Tag className="h-4 w-4" />;
+      case 'task_created':
+        return <Circle className="h-4 w-4" />;
+      case 'task_completed':
+        return <CheckCircle2 className="h-4 w-4" />;
       default:
         return <MessageSquare className="h-4 w-4" />;
     }
@@ -448,14 +455,14 @@ export default function ContactDetail() {
 
   const getActivityLabel = (type: string) => {
     switch (type) {
-      case 'email':
-        return 'Email';
-      case 'phone_call':
-        return 'Phone Call';
-      case 'meeting':
-        return 'Meeting';
-      default:
-        return type;
+      case 'email': return 'Email';
+      case 'phone_call': return 'Phone Call';
+      case 'meeting': return 'Meeting';
+      case 'status_change': return 'Status Changed';
+      case 'category_change': return 'Category Changed';
+      case 'task_created': return 'Task Created';
+      case 'task_completed': return 'Task Completed';
+      default: return type;
     }
   };
 
