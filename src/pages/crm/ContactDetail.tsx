@@ -369,6 +369,8 @@ export default function ContactDetail() {
       notes: formData.notes,
       status: formData.status || null,
       category: formData.category || null,
+      city: formData.city || null,
+      state: formData.state || null,
     } as any);
   };
 
