@@ -770,15 +770,31 @@ export default function ContactDetail() {
                 );
               })()}
 
-              {((contact as any).status || (contact as any).category) && (
+              {/* Prominent Status & Category badges */}
+              {((contact as any).status || (contact as any).category) ? (
                 <div className="flex flex-wrap gap-2">
-                  {(contact as any).status && (
-                    <Badge variant="outline">Status: {(contact as any).status}</Badge>
-                  )}
+                  {(contact as any).status && (() => {
+                    const s = (contact as any).status as string;
+                    const color =
+                      s === 'Current' ? 'bg-success/15 text-success border-success/30' :
+                      s === 'Previous' ? 'bg-info/15 text-info border-info/30' :
+                      s === 'Prospect' ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' :
+                      'bg-muted text-muted-foreground border-border';
+                    return (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${color}`}>
+                        {s}
+                      </span>
+                    );
+                  })()}
                   {(contact as any).category && (
-                    <Badge variant="secondary">{(contact as any).category}</Badge>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                      <Tag className="h-3 w-3 mr-1" />
+                      {(contact as any).category}
+                    </span>
                   )}
                 </div>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">No status or category set</div>
               )}
 
               {/* Contact Details */}
