@@ -627,17 +627,20 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   );
 }
 
-function FilterGroup({ label, options, selected, onToggle }: {
+function FilterGroup({ label, options, selected, onToggle, emptyMessage }: {
   label: string;
   options: { value: string; label: string }[];
   selected: string[];
   onToggle: (v: string) => void;
+  emptyMessage?: string;
 }) {
   return (
     <div className="space-y-2">
       <Label className="text-xs uppercase text-muted-foreground">{label}</Label>
       <div className="border rounded-md p-2 max-h-40 overflow-auto space-y-1">
-        {options.length === 0 && <p className="text-xs text-muted-foreground">No options</p>}
+        {options.length === 0 && (
+          <p className="text-xs text-muted-foreground">{emptyMessage || 'No options'}</p>
+        )}
         {options.map((o) => (
           <label key={o.value} className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={selected.includes(o.value)} onCheckedChange={() => onToggle(o.value)} />
