@@ -389,6 +389,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onClick={() => {
+                              setAudienceCleared(false);
                               setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
