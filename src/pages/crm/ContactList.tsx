@@ -423,6 +423,7 @@ export default function ContactList() {
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [updateCsvOpen, setUpdateCsvOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const bulkUpdate = useMutation({
