@@ -493,6 +493,11 @@ export default function ContactList() {
         onOpenChange={setImportDialogOpen} 
       />
 
+      <UpdateContactsCsvDialog
+        open={updateCsvOpen}
+        onOpenChange={setUpdateCsvOpen}
+      />
+
       <CreateStandaloneContactDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
