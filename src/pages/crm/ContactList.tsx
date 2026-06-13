@@ -50,7 +50,18 @@ import {
   Archive,
   ArchiveRestore,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { UpdateContactsCsvDialog } from '@/components/crm/UpdateContactsCsvDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
