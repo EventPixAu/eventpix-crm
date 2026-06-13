@@ -798,6 +798,7 @@ export default function ContactList() {
                   <TableBody>
                     {filteredContacts.map((contact) => {
                       const missing: string[] = [];
+                      if (!contact.first_name) missing.push('First Name');
                       if (!contact.email) missing.push('Email');
                       if (contact.companies.length === 0) missing.push('Company');
                       if (!contact.status) missing.push('Status');
