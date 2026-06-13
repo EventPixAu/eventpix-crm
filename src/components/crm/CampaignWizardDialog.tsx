@@ -124,6 +124,8 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .eq('unsubscribed', false)
         .not('email', 'is', null);
       if (filters.statuses.length) q = q.in('status', filters.statuses);
+      // Exclude Staff contacts from campaigns by default unless explicitly chosen
+      else q = q.or('status.is.null,status.neq.Staff');
       if (filters.categories.length) q = q.in('category', filters.categories);
       if (filters.sources.length) q = q.in('source', filters.sources);
       if (filters.states.length) q = q.in('state', filters.states);
@@ -358,6 +360,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                     { value: 'Previous', label: 'Previous' },
                     { value: 'Old', label: 'Old' },
                     { value: 'Prospect', label: 'Prospect' },
+                    { value: 'Staff', label: 'Staff' },
                     { value: 'Archived', label: 'Archived' },
                   ]}
                   selected={filters.statuses}

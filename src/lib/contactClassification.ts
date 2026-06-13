@@ -10,6 +10,7 @@ export const CONTACT_STATUSES = [
   { value: 'Previous', label: 'Previous', description: 'Contacts dealt with in the past 5 years' },
   { value: 'Old', label: 'Old', description: 'No contact in over 5 years' },
   { value: 'Prospect', label: 'Prospect', description: 'Never booked, potential client' },
+  { value: 'Staff', label: 'Staff', description: 'Internal staff/team contacts — excluded from marketing campaigns and client counts' },
   { value: 'Archived', label: 'Archived', description: 'No longer in use' },
 ] as const;
 
