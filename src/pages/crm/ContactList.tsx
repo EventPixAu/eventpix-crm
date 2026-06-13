@@ -677,6 +677,21 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
+              {/* Bounce Filter */}
+              <Select value={bounceFilter} onValueChange={setBounceFilter}>
+                <SelectTrigger className="w-[160px] h-8 text-xs">
+                  <SelectValue placeholder="All Email Health" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Email Health</SelectItem>
+                  <SelectItem value="any">Bounced (any)</SelectItem>
+                  <SelectItem value="bounced">Hard bounced</SelectItem>
+                  <SelectItem value="complained">Spam complaint</SelectItem>
+                </SelectContent>
+              </Select>
+
+
+
 
               {hasActiveFilters && (
                 <Button
