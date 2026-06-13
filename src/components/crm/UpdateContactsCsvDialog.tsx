@@ -89,17 +89,19 @@ const HEADER_MAP: Record<string, keyof CsvRow> = {
   'lead source': 'source',
 };
 
-const VALID_STATUSES = new Set(['Current', 'Previous', 'Old', 'Prospect']);
+const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Archived']);
+const PROTECTED_STATUSES = new Set(['Active', 'Current']);
 
 function normaliseStatus(raw?: string): string | undefined {
   if (!raw) return undefined;
   const v = raw.trim().toLowerCase();
   if (!v) return undefined;
+  if (v.startsWith('active')) return 'Active';
   if (v.startsWith('current')) return 'Current';
   if (v.startsWith('previous')) return 'Previous';
   if (v.startsWith('old')) return 'Old';
   if (v.startsWith('prospect')) return 'Prospect';
-  // Case-insensitive exact match
+  if (v.startsWith('archiv')) return 'Archived';
   const cap = raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1).toLowerCase();
   return VALID_STATUSES.has(cap) ? cap : undefined;
 }
