@@ -243,7 +243,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             };
             const { data, error } = await supabase
               .from('client_contacts')
-              .insert(insertRow)
+              .insert(insertRow as any)
               .select('id')
               .single();
             if (error) throw error;
