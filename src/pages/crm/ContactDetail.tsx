@@ -1090,6 +1090,27 @@ export default function ContactDetail() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="edit_city">City</Label>
+                <Input
+                  id="edit_city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="e.g. Melbourne"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_state">State</Label>
+                <Input
+                  id="edit_state"
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  placeholder="e.g. VIC"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="edit_status">Status</Label>
                 <Select
                   value={formData.status || '__none__'}
