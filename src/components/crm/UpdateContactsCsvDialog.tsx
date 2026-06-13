@@ -52,6 +52,7 @@ interface ImportSummary {
   updated: number;
   created: number;
   skipped: number;
+  statusProtected: number;
   errors: string[];
 }
 
