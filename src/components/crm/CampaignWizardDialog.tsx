@@ -147,11 +147,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   });
 
   const finalRecipients = useMemo(() => {
-    if (audienceCleared && manualIncludes.length === 0) return [];
     const excludeSet = new Set(manualExcludes);
     const seen = new Set<string>();
     const list: WizardContact[] = [];
-    for (const c of matched) {
+    const filterMatchedRecipients = audienceCleared ? [] : matched;
+    for (const c of filterMatchedRecipients) {
       if (excludeSet.has(c.id)) continue;
       if (!c.email || seen.has(c.id)) continue;
       seen.add(c.id);
@@ -389,7 +389,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onClick={() => {
-                              setAudienceCleared(false);
+                              setAudienceCleared(true);
                               setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
@@ -402,7 +402,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onClick={() => {
-                              setAudienceCleared(false);
                               if (!manualIncludes.find((x) => x.id === c.id)) {
                                 setManualIncludes([...manualIncludes, c]);
                               }
