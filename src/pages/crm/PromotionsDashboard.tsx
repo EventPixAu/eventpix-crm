@@ -388,7 +388,7 @@ export default function PromotionsDashboard() {
         title="Promotions Dashboard"
         description="Target non-current clients for marketing campaigns"
         actions={
-          <Link to="/crm/emails">
+          <Link to="/crm/emails?tab=campaigns">
             <Button className="bg-gradient-primary hover:opacity-90">
               <Mail className="h-4 w-4 mr-2" />
               Email Campaigns

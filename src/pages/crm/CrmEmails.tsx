@@ -3,7 +3,8 @@
  * 
  * Manage email templates, scheduled emails, compose one-off emails, and review inbound replies
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -29,7 +30,13 @@ import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
 export default function CrmEmails() {
-  const [activeTab, setActiveTab] = useState('inbox');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'inbox';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t) setActiveTab(t);
+  }, [searchParams]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   
   // Compose state
