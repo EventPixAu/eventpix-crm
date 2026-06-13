@@ -195,7 +195,7 @@ serve(async (req) => {
       };
 
       const subject = applyMergeFields(step.subject, ctx);
-      const html = applyMergeFields(step.body_html, ctx) + buildUnsubscribeFooter(unsubscribeUrl);
+      const html = applyMergeFields(step.body_html, ctx) + buildCampaignFooter(unsubscribeUrl, supabaseUrl);
 
       // Log first
       const { data: logRow } = await supabase.from("email_logs").insert({
