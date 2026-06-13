@@ -493,13 +493,26 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
               <div className="space-y-2">
                 <Label>Email body (HTML)</Label>
-                <Textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={12}
+                <Textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={10}
                   placeholder="<p>Hi {{First Name}},</p><p>It's been a while since {{Last Event}}. We'd love to work with {{Company}} again…</p>" />
               </div>
               <TokenRow onInsert={(t) => insertToken(t, 'body')} />
-              <p className="text-xs text-muted-foreground">
-                Unsubscribe link is automatically appended to every email.
-              </p>
+
+              <Card className="border">
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Eye className="h-4 w-4" />
+                    Email preview
+                  </div>
+                  <div className="text-sm font-medium border-b pb-2">
+                    {applyPreviewMergeFields(subject) || 'Subject line preview'}
+                  </div>
+                  <div
+                    className="text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: previewHtml }}
+                  />
+                </CardContent>
+              </Card>
             </div>
           )}
 
