@@ -780,6 +780,7 @@ export default function ContactDetail() {
                       s === 'Current' ? 'bg-success/15 text-success border-success/30' :
                       s === 'Previous' ? 'bg-info/15 text-info border-info/30' :
                       s === 'Prospect' ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' :
+                      s === 'Staff' ? 'bg-indigo-500/15 text-indigo-600 border-indigo-500/30' :
                       'bg-muted text-muted-foreground border-border';
                     return (
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${color}`}>
