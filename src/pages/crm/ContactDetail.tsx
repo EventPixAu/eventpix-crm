@@ -328,6 +328,8 @@ export default function ContactDetail() {
         client_id: contact.client_id || '',
         status: (contact as any).status || '',
         category: (contact as any).category || '',
+        city: (contact as any).city || '',
+        state: (contact as any).state || '',
       });
       setIsEditOpen(true);
     }
