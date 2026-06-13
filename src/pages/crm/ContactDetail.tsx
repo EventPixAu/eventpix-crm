@@ -25,6 +25,10 @@ import {
   PhoneCall,
   Calendar,
   Send,
+  MapPin,
+  CheckCircle2,
+  Circle,
+  Tag,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -69,6 +73,7 @@ import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompany
 import { ContactFollowUpTasksPanel } from '@/components/ContactFollowUpTasksPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
 import { SendContactEmailDialog } from '@/components/crm/SendContactEmailDialog';
+import { ContactNotesPanel } from '@/components/crm/ContactNotesPanel';
 
 interface Contact {
   id: string;
@@ -112,6 +117,8 @@ export default function ContactDetail() {
     client_id: '',
     status: '',
     category: '',
+    city: '',
+    state: '',
   });
   const [activityData, setActivityData] = useState({
     activity_type: 'email' as 'email' | 'phone_call' | 'meeting',
@@ -124,6 +131,23 @@ export default function ContactDetail() {
   const { data: associations = [] } = useContactAssociations(id);
   const createActivity = useCreateContactActivity();
   const deleteActivity = useDeleteContactActivity();
+
+  // Tasks linked to this contact (for activity timeline)
+  const { data: contactTasks = [] } = useQuery({
+    queryKey: ['contact-tasks-timeline', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, title, description, status, created_at, completed_at, due_at')
+        .eq('related_type', 'contact')
+        .eq('related_id', id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
 
   // Fetch companies for the dropdown when creating a new contact
   const { data: companies = [] } = useQuery({
@@ -163,20 +187,19 @@ export default function ContactDetail() {
   // Fetch email logs after contact is loaded (needs email address for matching)
   const { data: emailLogs = [], isLoading: emailsLoading } = useContactEmailLogs(id, contact?.email);
 
-  // Combine activities and email logs into unified timeline
+  // Combine activities, email logs, and tasks into unified timeline
   const combinedTimeline = useMemo(() => {
     const items: Array<{
       id: string;
-      type: 'activity' | 'email_log';
+      type: 'activity' | 'email_log' | 'task';
       activity_type: string;
       date: string;
       subject: string | null;
       notes: string | null;
-      source?: 'manual' | 'sent';
+      source?: 'manual' | 'sent' | 'system';
       event_id?: string | null;
     }> = [];
 
-    // Add manual activities
     activities.forEach(a => {
       items.push({
         id: a.id,
@@ -185,11 +208,10 @@ export default function ContactDetail() {
         date: a.activity_date,
         subject: a.subject,
         notes: a.notes,
-        source: 'manual',
+        source: ((a.activity_type as string) === 'status_change' || (a.activity_type as string) === 'category_change') ? 'system' : 'manual',
       });
     });
 
-    // Add email logs (sent emails)
     emailLogs.forEach(e => {
       items.push({
         id: e.id,
@@ -203,11 +225,35 @@ export default function ContactDetail() {
       });
     });
 
+    contactTasks.forEach((t: any) => {
+      items.push({
+        id: `task-created-${t.id}`,
+        type: 'task',
+        activity_type: 'task_created',
+        date: t.created_at,
+        subject: `Task created: ${t.title}`,
+        notes: t.description || null,
+        source: 'system',
+      });
+      if (t.completed_at) {
+        items.push({
+          id: `task-completed-${t.id}`,
+          type: 'task',
+          activity_type: 'task_completed',
+          date: t.completed_at,
+          subject: `Task completed: ${t.title}`,
+          notes: null,
+          source: 'system',
+        });
+      }
+    });
+
+
     // Sort by date descending
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return items;
-  }, [activities, emailLogs]);
+  }, [activities, emailLogs, contactTasks]);
 
   const createContact = useMutation({
     mutationFn: async (data: {
@@ -321,6 +367,8 @@ export default function ContactDetail() {
         client_id: contact.client_id || '',
         status: (contact as any).status || '',
         category: (contact as any).category || '',
+        city: (contact as any).city || '',
+        state: (contact as any).state || '',
       });
       setIsEditOpen(true);
     }
@@ -360,6 +408,8 @@ export default function ContactDetail() {
       notes: formData.notes,
       status: formData.status || null,
       category: formData.category || null,
+      city: formData.city || null,
+      state: formData.state || null,
     } as any);
   };
 
@@ -391,6 +441,13 @@ export default function ContactDetail() {
         return <PhoneCall className="h-4 w-4" />;
       case 'meeting':
         return <Calendar className="h-4 w-4" />;
+      case 'status_change':
+      case 'category_change':
+        return <Tag className="h-4 w-4" />;
+      case 'task_created':
+        return <Circle className="h-4 w-4" />;
+      case 'task_completed':
+        return <CheckCircle2 className="h-4 w-4" />;
       default:
         return <MessageSquare className="h-4 w-4" />;
     }
@@ -398,14 +455,14 @@ export default function ContactDetail() {
 
   const getActivityLabel = (type: string) => {
     switch (type) {
-      case 'email':
-        return 'Email';
-      case 'phone_call':
-        return 'Phone Call';
-      case 'meeting':
-        return 'Meeting';
-      default:
-        return type;
+      case 'email': return 'Email';
+      case 'phone_call': return 'Phone Call';
+      case 'meeting': return 'Meeting';
+      case 'status_change': return 'Status Changed';
+      case 'category_change': return 'Category Changed';
+      case 'task_created': return 'Task Created';
+      case 'task_completed': return 'Task Completed';
+      default: return type;
     }
   };
 
@@ -713,15 +770,31 @@ export default function ContactDetail() {
                 );
               })()}
 
-              {((contact as any).status || (contact as any).category) && (
+              {/* Prominent Status & Category badges */}
+              {((contact as any).status || (contact as any).category) ? (
                 <div className="flex flex-wrap gap-2">
-                  {(contact as any).status && (
-                    <Badge variant="outline">Status: {(contact as any).status}</Badge>
-                  )}
+                  {(contact as any).status && (() => {
+                    const s = (contact as any).status as string;
+                    const color =
+                      s === 'Current' ? 'bg-success/15 text-success border-success/30' :
+                      s === 'Previous' ? 'bg-info/15 text-info border-info/30' :
+                      s === 'Prospect' ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' :
+                      'bg-muted text-muted-foreground border-border';
+                    return (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${color}`}>
+                        {s}
+                      </span>
+                    );
+                  })()}
                   {(contact as any).category && (
-                    <Badge variant="secondary">{(contact as any).category}</Badge>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                      <Tag className="h-3 w-3 mr-1" />
+                      {(contact as any).category}
+                    </span>
                   )}
                 </div>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">No status or category set</div>
               )}
 
               {/* Contact Details */}
@@ -750,9 +823,19 @@ export default function ContactDetail() {
                   </div>
                 </div>
 
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-muted-foreground text-xs mb-0.5">Location</div>
+                    {((contact as any).city || (contact as any).state) ? (
+                      <span>{[(contact as any).city, (contact as any).state].filter(Boolean).join(', ')}</span>
+                    ) : '-'}
+                  </div>
+                </div>
+
                 {contact.notes && (
                   <div className="pt-2 border-t">
-                    <div className="text-muted-foreground text-xs mb-1">Notes</div>
+                    <div className="text-muted-foreground text-xs mb-1">Quick Note</div>
                     <p className="text-sm">{contact.notes}</p>
                   </div>
                 )}
@@ -826,6 +909,7 @@ export default function ContactDetail() {
         {/* Right Column - Follow-up Tasks + Activity Timeline */}
         <div className="space-y-6">
         <ContactFollowUpTasksPanel contactId={id!} />
+        <ContactNotesPanel contactId={id!} />
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -1002,6 +1086,27 @@ export default function ContactDetail() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={2}
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_city">City</Label>
+                <Input
+                  id="edit_city"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="e.g. Melbourne"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_state">State</Label>
+                <Input
+                  id="edit_state"
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  placeholder="e.g. VIC"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

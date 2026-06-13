@@ -353,7 +353,7 @@ export default function ContactList() {
 
       // Incomplete-only filter
       if (incompleteOnly) {
-        const missing = !contact.email || contact.companies.length === 0 || !contact.status || !contact.category;
+        const missing = !contact.email || contact.companies.length === 0 || !contact.status || !contact.category || !contact.first_name;
         if (!missing) return false;
       }
 
@@ -798,6 +798,7 @@ export default function ContactList() {
                   <TableBody>
                     {filteredContacts.map((contact) => {
                       const missing: string[] = [];
+                      if (!contact.first_name) missing.push('First Name');
                       if (!contact.email) missing.push('Email');
                       if (contact.companies.length === 0) missing.push('Company');
                       if (!contact.status) missing.push('Status');
@@ -816,12 +817,17 @@ export default function ContactList() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/crm/contacts/${contact.id}`}
-                              className="font-medium hover:text-primary"
+                              className={`font-medium hover:text-primary ${!contact.first_name ? 'text-amber-600 italic' : ''}`}
                             >
                               {contact.first_name || contact.last_name 
                                 ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
                                 : contact.contact_name}
                             </Link>
+                            {!contact.first_name && (
+                              <Badge variant="outline" className="text-[10px] gap-1 border-amber-500/60 text-amber-600">
+                                <AlertCircle className="h-3 w-3" /> Missing first name
+                              </Badge>
+                            )}
                             {contact.is_primary && (
                               <Badge variant="outline" className="text-xs">
                                 Primary
