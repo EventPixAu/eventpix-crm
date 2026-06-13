@@ -25,6 +25,10 @@ import {
   PhoneCall,
   Calendar,
   Send,
+  MapPin,
+  CheckCircle2,
+  Circle,
+  Tag,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
