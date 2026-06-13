@@ -71,6 +71,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
   const [manualSearch, setManualSearch] = useState('');
+  const [audienceCleared, setAudienceCleared] = useState(false);
 
   // Step 2
   const [name, setName] = useState('');
@@ -146,6 +147,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   });
 
   const finalRecipients = useMemo(() => {
+    if (audienceCleared && manualIncludes.length === 0) return [];
     const excludeSet = new Set(manualExcludes);
     const seen = new Set<string>();
     const list: WizardContact[] = [];
@@ -161,12 +163,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       list.push(c);
     }
     return list;
-  }, [matched, manualIncludes, manualExcludes]);
+  }, [matched, manualIncludes, manualExcludes, audienceCleared]);
 
   const reset = () => {
     setStep(1);
     setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
+    setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
     setFollowUps([]);
     setScheduleMode('now'); setScheduledAt('');
@@ -175,6 +178,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   useEffect(() => { if (!open) reset(); }, [open]);
 
   const toggleFilter = (key: keyof AudienceFilters, value: string) => {
+    setAudienceCleared(false);
     setFilters((prev) => {
       const cur = new Set(prev[key]);
       if (cur.has(value)) cur.delete(value); else cur.add(value);
@@ -344,9 +348,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                         <button
                           type="button"
                           onClick={() => {
+                            setAudienceCleared(true);
                             setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
+                            setManualSearch('');
                           }}
                           className="text-xs text-destructive hover:underline"
                         >
@@ -383,6 +389,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onClick={() => {
+                              setAudienceCleared(false);
                               setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
@@ -395,6 +402,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onClick={() => {
+                              setAudienceCleared(false);
                               if (!manualIncludes.find((x) => x.id === c.id)) {
                                 setManualIncludes([...manualIncludes, c]);
                               }
