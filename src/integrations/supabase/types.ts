@@ -6989,6 +6989,14 @@ export type Database = {
         Args: { p_email: string; p_role: string }
         Returns: Json
       }
+      refresh_contact_status: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
+      refresh_contacts_for_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       regenerate_calendar_feed_token: {
         Args: { p_user_id: string }
         Returns: string

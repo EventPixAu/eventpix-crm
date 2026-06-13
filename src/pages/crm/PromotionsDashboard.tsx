@@ -340,7 +340,7 @@ export default function PromotionsDashboard() {
     };
   }, [clients]);
 
-  const statusOrder = ['Current', 'Previous', 'Old', 'Prospect', 'Unassigned'];
+  const statusOrder = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Archived', 'Unassigned'];
   const categoryOrder = [
     'Schools',
     'Event Management',
@@ -354,10 +354,12 @@ export default function PromotionsDashboard() {
   ];
 
   const statusIcons: Record<string, React.ElementType> = {
+    Active: Activity,
     Current: UserCheck,
     Previous: History,
     Old: Clock,
     Prospect: UserPlus,
+    Archived: Archive,
     Unassigned: HelpCircle,
   };
 

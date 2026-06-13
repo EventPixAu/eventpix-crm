@@ -52,6 +52,7 @@ interface ImportSummary {
   updated: number;
   created: number;
   skipped: number;
+  statusProtected: number;
   errors: string[];
 }
 
@@ -89,17 +90,19 @@ const HEADER_MAP: Record<string, keyof CsvRow> = {
   'lead source': 'source',
 };
 
-const VALID_STATUSES = new Set(['Current', 'Previous', 'Old', 'Prospect']);
+const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Archived']);
+const PROTECTED_STATUSES = new Set(['Active', 'Current']);
 
 function normaliseStatus(raw?: string): string | undefined {
   if (!raw) return undefined;
   const v = raw.trim().toLowerCase();
   if (!v) return undefined;
+  if (v.startsWith('active')) return 'Active';
   if (v.startsWith('current')) return 'Current';
   if (v.startsWith('previous')) return 'Previous';
   if (v.startsWith('old')) return 'Old';
   if (v.startsWith('prospect')) return 'Prospect';
-  // Case-insensitive exact match
+  if (v.startsWith('archiv')) return 'Archived';
   const cap = raw.trim().charAt(0).toUpperCase() + raw.trim().slice(1).toLowerCase();
   return VALID_STATUSES.has(cap) ? cap : undefined;
 }
@@ -169,7 +172,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
   const runImport = async () => {
     setProcessing(true);
-    const result: ImportSummary = { updated: 0, created: 0, skipped: 0, errors: [] };
+    const result: ImportSummary = { updated: 0, created: 0, skipped: 0, statusProtected: 0, errors: [] };
 
     try {
       // Pre-fetch existing contacts by email (case-insensitive)
@@ -209,8 +212,15 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
           if (existing) {
             const updates: Record<string, any> = {};
-            // Status — overwrite (per spec, status is in the update list)
-            if (newStatus && newStatus !== existing.status) updates.status = newStatus;
+            // Status — never overwrite existing Active or Current contacts
+            const statusProtected = PROTECTED_STATUSES.has(existing.status);
+            if (newStatus && newStatus !== existing.status) {
+              if (statusProtected) {
+                result.statusProtected++;
+              } else {
+                updates.status = newStatus;
+              }
+            }
             // State — only set if existing blank, else keep (never overwrite populated)
             if (row.state && !existing.state) updates.state = row.state;
             // Source — only if existing blank
@@ -380,7 +390,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
         {summary && (
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-green-600">{summary.updated}</div>
                 <div className="text-xs text-muted-foreground">Updated</div>
@@ -392,6 +402,10 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-amber-600">{summary.skipped}</div>
                 <div className="text-xs text-muted-foreground">Skipped (no email)</div>
+              </div>
+              <div className="rounded border p-3 text-center">
+                <div className="text-2xl font-semibold text-purple-600">{summary.statusProtected}</div>
+                <div className="text-xs text-muted-foreground">Retained Active/Current status</div>
               </div>
             </div>
             {summary.errors.length > 0 ? (
