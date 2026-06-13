@@ -476,6 +476,10 @@ export default function ContactList() {
               <Upload className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Import</span>
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setUpdateCsvOpen(true)}>
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Update from CSV</span>
+            </Button>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Add Contact</span>
