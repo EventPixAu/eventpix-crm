@@ -776,6 +776,7 @@ export default function ContactDetail() {
                   {(contact as any).status && (() => {
                     const s = (contact as any).status as string;
                     const color =
+                      s === 'Active' ? 'bg-green-500/15 text-green-700 border-green-500/30' :
                       s === 'Current' ? 'bg-success/15 text-success border-success/30' :
                       s === 'Previous' ? 'bg-info/15 text-info border-info/30' :
                       s === 'Prospect' ? 'bg-amber-500/15 text-amber-600 border-amber-500/30' :
