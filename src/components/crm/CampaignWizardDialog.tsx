@@ -492,9 +492,20 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               <TokenRow onInsert={(t) => insertToken(t, 'subject')} />
 
               <div className="space-y-2">
-                <Label>Email body (HTML)</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Email body (HTML)</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setBodyHtml("<p>Hi {{First Name}},</p><p>It's been a while since {{Last Event}}. We'd love to work with {{Company}} again…</p>")}
+                  >
+                    Use suggested template
+                  </Button>
+                </div>
                 <Textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={10}
-                  placeholder="<p>Hi {{First Name}},</p><p>It's been a while since {{Last Event}}. We'd love to work with {{Company}} again…</p>" />
+                  placeholder="Write your email body here, or click 'Use suggested template' above." />
               </div>
               <TokenRow onInsert={(t) => insertToken(t, 'body')} />
 
