@@ -456,6 +456,26 @@ export default function ContactList() {
     onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
   });
 
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const bulkDelete = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return 0;
+      const { error } = await supabase.from('client_contacts').delete().in('id', ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      setSelectedIds(new Set());
+      setConfirmDeleteOpen(false);
+      toast.success(`${count} contact${count === 1 ? '' : 's'} deleted`);
+    },
+    onError: (e: Error) => {
+      toast.error('Delete failed', { description: e.message });
+    },
+  });
+
   const toggleSelect = (id: string) => {
     setSelectedIds((s) => {
       const n = new Set(s);
