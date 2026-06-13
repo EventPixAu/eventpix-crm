@@ -73,6 +73,7 @@ import { ContactCompanyAssociationsPanel } from '@/components/crm/ContactCompany
 import { ContactFollowUpTasksPanel } from '@/components/ContactFollowUpTasksPanel';
 import { useContactAssociations } from '@/hooks/useContactCompanyAssociations';
 import { SendContactEmailDialog } from '@/components/crm/SendContactEmailDialog';
+import { ContactNotesPanel } from '@/components/crm/ContactNotesPanel';
 
 interface Contact {
   id: string;
