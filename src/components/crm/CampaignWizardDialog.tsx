@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, X, Users, Send, Calendar as CalIcon, Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Plus, Trash2, X, Users, Send, Calendar as CalIcon, Loader2, ChevronRight, ChevronLeft, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,7 +22,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 
@@ -203,6 +203,45 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       else setBodyHtml((b) => b + t);
     }
   };
+
+  function applyPreviewMergeFields(template: string): string {
+    return template
+      .replace(/\{\{\s*First Name\s*\}\}/gi, 'Jane')
+      .replace(/\{\{\s*Name\s*\}\}/gi, 'Jane')
+      .replace(/\{\{\s*Full Name\s*\}\}/gi, 'Jane Smith')
+      .replace(/\{\{\s*Company\s*\}\}/gi, 'Acme Corp')
+      .replace(/\{\{\s*Last Event\s*\}\}/gi, 'Annual Gala (15 Jun 2025)')
+      .replace(/\{\{\s*Unsubscribe\s*\}\}/gi, '#unsubscribe');
+  }
+
+  function buildPreviewFooter(): string {
+    const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/email-logo.png`;
+    return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;border-top:1px solid #e5e7eb;">
+        <tr>
+          <td style="padding:24px 16px 16px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9ca3af;line-height:1.6;">
+            <img src="${logoUrl}" alt="EventPix" width="120" style="display:block;margin:0 auto 12px;" />
+            <p style="margin:0 0 8px;font-weight:600;color:#6b7280;">Event Photography Australia-wide</p>
+            <p style="margin:0 0 4px;">5 Chelsea Close, Balmoral NSW 2283</p>
+            <p style="margin:0 0 4px;">Phone: 1300 850 021</p>
+            <p style="margin:0 0 12px;">
+              <a href="https://eventpix.com.au" style="color:#6b7280;text-decoration:underline;">eventpix.com.au</a>
+            </p>
+            <p style="margin:0;font-size:11px;color:#9ca3af;">
+              You're receiving this email because you've worked with EventPix.
+              <br/>
+              <a href="#unsubscribe" style="color:#6b7280;text-decoration:underline;">Unsubscribe from this list</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+
+  const previewHtml = useMemo(() => {
+    const body = applyPreviewMergeFields(bodyHtml || '<p>Start typing your email body…</p>');
+    return body + buildPreviewFooter();
+  }, [bodyHtml]);
 
   const createCampaign = useMutation({
     mutationFn: async () => {
@@ -454,13 +493,26 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
               <div className="space-y-2">
                 <Label>Email body (HTML)</Label>
-                <Textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={12}
+                <Textarea value={bodyHtml} onChange={(e) => setBodyHtml(e.target.value)} rows={10}
                   placeholder="<p>Hi {{First Name}},</p><p>It's been a while since {{Last Event}}. We'd love to work with {{Company}} again…</p>" />
               </div>
               <TokenRow onInsert={(t) => insertToken(t, 'body')} />
-              <p className="text-xs text-muted-foreground">
-                Unsubscribe link is automatically appended to every email.
-              </p>
+
+              <Card className="border">
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Eye className="h-4 w-4" />
+                    Email preview
+                  </div>
+                  <div className="text-sm font-medium border-b pb-2">
+                    {applyPreviewMergeFields(subject) || 'Subject line preview'}
+                  </div>
+                  <div
+                    className="text-sm leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: previewHtml }}
+                  />
+                </CardContent>
+              </Card>
             </div>
           )}
 
