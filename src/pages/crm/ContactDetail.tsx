@@ -117,6 +117,8 @@ export default function ContactDetail() {
     client_id: '',
     status: '',
     category: '',
+    city: '',
+    state: '',
   });
   const [activityData, setActivityData] = useState({
     activity_type: 'email' as 'email' | 'phone_call' | 'meeting',
