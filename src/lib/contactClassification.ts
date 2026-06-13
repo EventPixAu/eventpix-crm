@@ -5,10 +5,12 @@
  */
 
 export const CONTACT_STATUSES = [
+  { value: 'Active', label: 'Active', description: 'Linked to an open proposal/lead or active event (auto-assigned)' },
   { value: 'Current', label: 'Current', description: 'Clients with events in the past 12 months' },
   { value: 'Previous', label: 'Previous', description: 'Contacts dealt with in the past 5 years' },
   { value: 'Old', label: 'Old', description: 'No contact in over 5 years' },
   { value: 'Prospect', label: 'Prospect', description: 'Never booked, potential client' },
+  { value: 'Archived', label: 'Archived', description: 'No longer in use' },
 ] as const;
 
 export type ContactStatus = typeof CONTACT_STATUSES[number]['value'];
