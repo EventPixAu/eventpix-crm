@@ -253,7 +253,7 @@ export default function ContactDetail() {
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return items;
-  }, [activities, emailLogs]);
+  }, [activities, emailLogs, contactTasks]);
 
   const createContact = useMutation({
     mutationFn: async (data: {
