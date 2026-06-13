@@ -50,6 +50,7 @@ import {
   Archive,
   ArchiveRestore,
   AlertCircle,
+  AlertTriangle,
   Trash2,
 } from 'lucide-react';
 import {
@@ -114,6 +115,8 @@ interface Contact {
   status: string | null;
   category: string | null;
   archived: boolean | null;
+  bounce_status: string | null;
+  bounced_at: string | null;
 }
 
 
@@ -126,6 +129,7 @@ export default function ContactList() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [bounceFilter, setBounceFilter] = useState<string>('all');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -193,6 +197,8 @@ export default function ContactList() {
           status,
           category,
           archived,
+          bounce_status,
+          bounced_at,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
@@ -247,6 +253,8 @@ export default function ContactList() {
             status,
             category,
             archived,
+            bounce_status,
+            bounced_at,
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
@@ -352,6 +360,8 @@ export default function ContactList() {
           status: contact.status || null,
           category: contact.category || null,
           archived: (contact as any).archived ?? false,
+          bounce_status: (contact as any).bounce_status ?? null,
+          bounced_at: (contact as any).bounced_at ?? null,
         };
       }) as Contact[];
     },
@@ -360,8 +370,8 @@ export default function ContactList() {
   // Apply client-side filters
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
-      // Archived
-      if (!showArchived && contact.archived) return false;
+      // Archived (bypass if bounce filter is active so auto-archived bounces are visible)
+      if (!showArchived && contact.archived && bounceFilter === 'all') return false;
 
       // Incomplete-only filter
       if (incompleteOnly) {
@@ -411,9 +421,16 @@ export default function ContactList() {
         }
       }
 
+      // Bounce filter
+      if (bounceFilter !== 'all') {
+        if (bounceFilter === 'bounced' && contact.bounce_status !== 'bounced') return false;
+        if (bounceFilter === 'complained' && contact.bounce_status !== 'complained') return false;
+        if (bounceFilter === 'any' && !contact.bounce_status) return false;
+      }
+
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, incompleteOnly, showArchived]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, bounceFilter, incompleteOnly, showArchived]);
 
 
   const hasActiveFilters =
@@ -422,7 +439,8 @@ export default function ContactList() {
     standaloneFilter !== 'all' ||
     tagFilter !== 'all' ||
     statusFilter !== 'all' ||
-    categoryFilter !== 'all';
+    categoryFilter !== 'all' ||
+    bounceFilter !== 'all';
 
   const clearFilters = () => {
     setCompanyFilter('all');
@@ -431,6 +449,7 @@ export default function ContactList() {
     setTagFilter('all');
     setStatusFilter('all');
     setCategoryFilter('all');
+    setBounceFilter('all');
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -657,6 +676,21 @@ export default function ContactList() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* Bounce Filter */}
+              <Select value={bounceFilter} onValueChange={setBounceFilter}>
+                <SelectTrigger className="w-[160px] h-8 text-xs">
+                  <SelectValue placeholder="All Email Health" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Email Health</SelectItem>
+                  <SelectItem value="any">Bounced (any)</SelectItem>
+                  <SelectItem value="bounced">Hard bounced</SelectItem>
+                  <SelectItem value="complained">Spam complaint</SelectItem>
+                </SelectContent>
+              </Select>
+
+
 
 
               {hasActiveFilters && (
@@ -907,6 +941,18 @@ export default function ContactList() {
                             {contact.archived && (
                               <Badge variant="secondary" className="text-xs gap-1">
                                 <Archive className="h-3 w-3" /> Archived
+                              </Badge>
+                            )}
+                            {contact.bounce_status && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] gap-1 ${contact.bounce_status === 'bounced' ? 'border-destructive/60 text-destructive' : 'border-amber-500/60 text-amber-600'}`}
+                                title={contact.bounce_status === 'bounced'
+                                  ? `Hard bounce${contact.bounced_at ? ' on ' + new Date(contact.bounced_at).toLocaleDateString() : ''}`
+                                  : `Spam complaint${contact.bounced_at ? ' on ' + new Date(contact.bounced_at).toLocaleDateString() : ''}`}
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                {contact.bounce_status === 'bounced' ? 'Bounced' : 'Complaint'}
                               </Badge>
                             )}
                             {isMissing && (

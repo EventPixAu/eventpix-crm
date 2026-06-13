@@ -513,6 +513,8 @@ export type Database = {
         Row: {
           archived: boolean
           archived_at: string | null
+          bounce_status: string | null
+          bounced_at: string | null
           category: string | null
           city: string | null
           client_id: string | null
@@ -545,6 +547,8 @@ export type Database = {
         Insert: {
           archived?: boolean
           archived_at?: string | null
+          bounce_status?: string | null
+          bounced_at?: string | null
           category?: string | null
           city?: string | null
           client_id?: string | null
@@ -577,6 +581,8 @@ export type Database = {
         Update: {
           archived?: boolean
           archived_at?: string | null
+          bounce_status?: string | null
+          bounced_at?: string | null
           category?: string | null
           city?: string | null
           client_id?: string | null

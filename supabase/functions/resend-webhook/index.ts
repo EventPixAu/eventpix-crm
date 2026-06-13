@@ -196,6 +196,52 @@ serve(async (req) => {
 
     console.log(`Updated email log ${targetLog.id}: ${targetLog.status} -> ${newStatus}`);
 
+    // CRM contact handling for bounce / complaint events
+    if (eventType === "email.bounced" || eventType === "email.complained") {
+      try {
+        const isHardBounce = eventType === "email.bounced";
+        const bounceFlag = isHardBounce ? "bounced" : "complained";
+        const dateStr = new Date(now).toISOString().slice(0, 10);
+        const noteText = isHardBounce
+          ? `Auto-archived: Hard bounce received from Resend on ${dateStr}`
+          : `Flagged: Spam complaint received from Resend on ${dateStr}`;
+
+        const { data: contacts } = await supabase
+          .from("client_contacts")
+          .select("id")
+          .ilike("email", recipientEmail);
+
+        for (const contact of contacts ?? []) {
+          const update: Record<string, unknown> = {
+            bounce_status: bounceFlag,
+            bounced_at: now,
+          };
+          if (isHardBounce) {
+            update.status = "Archived";
+            update.archived = true;
+            update.archived_at = now;
+          }
+          await supabase.from("client_contacts").update(update).eq("id", contact.id);
+
+          await supabase.from("client_contact_notes").insert({
+            contact_id: contact.id,
+            note: noteText,
+          });
+
+          await supabase.from("contact_activities").insert({
+            contact_id: contact.id,
+            activity_type: "bounce",
+            activity_date: now,
+            subject: isHardBounce ? "Hard bounce (auto-archived)" : "Spam complaint flagged",
+            notes: `${noteText}. Email: ${recipientEmail}`,
+          });
+        }
+        console.log(`Processed ${contacts?.length ?? 0} CRM contact(s) for ${eventType} (${recipientEmail})`);
+      } catch (crmErr) {
+        console.error("CRM bounce handling error:", crmErr);
+      }
+    }
+
     return new Response(JSON.stringify({ ok: true, updated: targetLog.id, newStatus }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
