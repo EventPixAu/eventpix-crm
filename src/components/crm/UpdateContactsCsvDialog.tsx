@@ -212,8 +212,15 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
           if (existing) {
             const updates: Record<string, any> = {};
-            // Status — overwrite (per spec, status is in the update list)
-            if (newStatus && newStatus !== existing.status) updates.status = newStatus;
+            // Status — never overwrite existing Active or Current contacts
+            const statusProtected = PROTECTED_STATUSES.has(existing.status);
+            if (newStatus && newStatus !== existing.status) {
+              if (statusProtected) {
+                result.statusProtected++;
+              } else {
+                updates.status = newStatus;
+              }
+            }
             // State — only set if existing blank, else keep (never overwrite populated)
             if (row.state && !existing.state) updates.state = row.state;
             // Source — only if existing blank
