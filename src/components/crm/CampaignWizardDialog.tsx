@@ -204,6 +204,45 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     }
   };
 
+  function applyPreviewMergeFields(template: string): string {
+    return template
+      .replace(/\{\{\s*First Name\s*\}\}/gi, 'Jane')
+      .replace(/\{\{\s*Name\s*\}\}/gi, 'Jane')
+      .replace(/\{\{\s*Full Name\s*\}\}/gi, 'Jane Smith')
+      .replace(/\{\{\s*Company\s*\}\}/gi, 'Acme Corp')
+      .replace(/\{\{\s*Last Event\s*\}\}/gi, 'Annual Gala (15 Jun 2025)')
+      .replace(/\{\{\s*Unsubscribe\s*\}\}/gi, '#unsubscribe');
+  }
+
+  function buildPreviewFooter(): string {
+    const logoUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/email-logo.png`;
+    return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;border-top:1px solid #e5e7eb;">
+        <tr>
+          <td style="padding:24px 16px 16px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9ca3af;line-height:1.6;">
+            <img src="${logoUrl}" alt="EventPix" width="120" style="display:block;margin:0 auto 12px;" />
+            <p style="margin:0 0 8px;font-weight:600;color:#6b7280;">Event Photography Australia-wide</p>
+            <p style="margin:0 0 4px;">5 Chelsea Close, Balmoral NSW 2283</p>
+            <p style="margin:0 0 4px;">Phone: 1300 850 021</p>
+            <p style="margin:0 0 12px;">
+              <a href="https://eventpix.com.au" style="color:#6b7280;text-decoration:underline;">eventpix.com.au</a>
+            </p>
+            <p style="margin:0;font-size:11px;color:#9ca3af;">
+              You're receiving this email because you've worked with EventPix.
+              <br/>
+              <a href="#unsubscribe" style="color:#6b7280;text-decoration:underline;">Unsubscribe from this list</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+
+  const previewHtml = useMemo(() => {
+    const body = applyPreviewMergeFields(bodyHtml || '<p>Start typing your email body…</p>');
+    return body + buildPreviewFooter();
+  }, [bodyHtml]);
+
   const createCampaign = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error('Campaign name required');
