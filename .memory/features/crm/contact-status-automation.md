@@ -1,13 +1,24 @@
 ---
 name: Contact Status Automation
-description: Auto-assigns 'Active' CRM contact status based on linked open leads/active events; reverts to Current/Previous on close
+description: Auto-assigns 'Active' CRM contact status from open leads/active events. Protects Staff/Archived/Old.
 type: feature
 ---
-Contact statuses: Active, Current, Previous, Old, Prospect, Archived (in priority order).
+Contact statuses (order): Active, Current, Previous, Old, Prospect, Staff, Archived.
 
-DB triggers on leads, events, event_contacts, contact_company_associations call `public.refresh_contact_status(contact_id)`:
-- Sets status = 'Active' if any linked open lead (status NOT in won/lost) OR any linked active event (ops_status NOT in completed/delivered/archived/cancelled). Linkage = contact_company_associations OR event_contacts.client_contact_id.
-- When no longer active AND status was previously 'Active', reverts to 'Current' (last event within 12 months) or 'Previous' (older).
-- Never modifies contacts with status 'Old' or 'Archived'. Never touches 'Prospect'/'Previous'/blank unless promoting them to 'Active'.
+`public.refresh_contact_status(p_contact_id)` sets:
+- `Active` if any of: enquiry_contacts→lead (status NOT IN won/lost), contact_company_associations→leads (open), contact_company_associations→events (ops_status NOT IN completed/delivered/archived/cancelled), event_contacts→events (active).
+- Reverts Active → Current (last event ≤12mo) or Previous (older) when no longer active.
+- NEVER modifies contacts with status Staff, Archived, or Old.
 
-CSV Update tool (UpdateContactsCsvDialog) protects existing 'Active' and 'Current' contacts from status overwrite, counted as `statusProtected` in the import summary.
+Triggers calling it:
+- `leads_refresh_contact_status` on leads (status, client_id; also iterates enquiry_contacts for that lead)
+- `events_refresh_contact_status` on events (ops_status, client_id, event_date; iterates event_contacts)
+- `event_contacts_refresh_status` on event_contacts
+- `enquiry_contacts_refresh_status` on enquiry_contacts (direct lead↔contact links)
+- `cca_refresh_status` on contact_company_associations
+
+CSV import (UpdateContactsCsvDialog) protects existing Active, Current, and Staff contacts from status overwrite; counted as `statusProtected`.
+
+Staff exclusions in UI:
+- CampaignWizardDialog: when no status filter selected, query excludes status='Staff'.
+- PromotionsDashboard: categoryCounts and dataHealth computed from `clientContacts = allContacts.filter(c => c.status !== 'Staff')`. Staff still appears as its own bucket in statusCounts.

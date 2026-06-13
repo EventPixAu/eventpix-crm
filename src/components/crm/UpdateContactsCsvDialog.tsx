@@ -406,7 +406,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               </div>
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-purple-600">{summary.statusProtected}</div>
-                <div className="text-xs text-muted-foreground">Retained Active/Current status</div>
+                <div className="text-xs text-muted-foreground">Retained Active/Current/Staff status</div>
               </div>
             </div>
             {summary.errors.length > 0 ? (
