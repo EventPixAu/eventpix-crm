@@ -421,9 +421,16 @@ export default function ContactList() {
         }
       }
 
+      // Bounce filter
+      if (bounceFilter !== 'all') {
+        if (bounceFilter === 'bounced' && contact.bounce_status !== 'bounced') return false;
+        if (bounceFilter === 'complained' && contact.bounce_status !== 'complained') return false;
+        if (bounceFilter === 'any' && !contact.bounce_status) return false;
+      }
+
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, incompleteOnly, showArchived]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, bounceFilter, incompleteOnly, showArchived]);
 
 
   const hasActiveFilters =
