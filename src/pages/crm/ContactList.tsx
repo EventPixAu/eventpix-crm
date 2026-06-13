@@ -52,6 +52,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
+import { UpdateContactsCsvDialog } from '@/components/crm/UpdateContactsCsvDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
@@ -422,6 +423,7 @@ export default function ContactList() {
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [updateCsvOpen, setUpdateCsvOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const bulkUpdate = useMutation({
@@ -474,6 +476,10 @@ export default function ContactList() {
               <Upload className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Import</span>
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setUpdateCsvOpen(true)}>
+              <Upload className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Update from CSV</span>
+            </Button>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Add Contact</span>
@@ -485,6 +491,11 @@ export default function ContactList() {
       <ContactImportDialog 
         open={importDialogOpen} 
         onOpenChange={setImportDialogOpen} 
+      />
+
+      <UpdateContactsCsvDialog
+        open={updateCsvOpen}
+        onOpenChange={setUpdateCsvOpen}
       />
 
       <CreateStandaloneContactDialog
