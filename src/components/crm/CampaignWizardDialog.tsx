@@ -178,6 +178,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   useEffect(() => { if (!open) reset(); }, [open]);
 
   const toggleFilter = (key: keyof AudienceFilters, value: string) => {
+    setAudienceCleared(false);
     setFilters((prev) => {
       const cur = new Set(prev[key]);
       if (cur.has(value)) cur.delete(value); else cur.add(value);
