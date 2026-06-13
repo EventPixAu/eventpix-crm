@@ -353,10 +353,12 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                 <FilterGroup
                   label="Status"
                   options={[
+                    { value: 'Active', label: 'Active' },
                     { value: 'Current', label: 'Current' },
                     { value: 'Previous', label: 'Previous' },
                     { value: 'Old', label: 'Old' },
                     { value: 'Prospect', label: 'Prospect' },
+                    { value: 'Archived', label: 'Archived' },
                   ]}
                   selected={filters.statuses}
                   onToggle={(v) => toggleFilter('statuses', v)}
