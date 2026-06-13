@@ -208,7 +208,7 @@ export default function ContactDetail() {
         date: a.activity_date,
         subject: a.subject,
         notes: a.notes,
-        source: (a.activity_type === 'status_change' || a.activity_type === 'category_change') ? 'system' : 'manual',
+        source: ((a.activity_type as string) === 'status_change' || (a.activity_type as string) === 'category_change') ? 'system' : 'manual',
       });
     });
 
