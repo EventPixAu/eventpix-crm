@@ -88,7 +88,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   
   const { data: categories = [] } = useCompanyCategories();
 
-  // Distinct states from contacts
+  // Distinct states/cities/sources from contacts (auto-refreshes when dialog opens or contacts change)
   const { data: distinctMeta } = useQuery({
     queryKey: ['campaign-wizard-meta'],
     queryFn: async () => {
@@ -96,14 +96,21 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .from('client_contacts')
         .select('state, city, source')
         .eq('archived', false);
-      const states = Array.from(new Set((data || []).map((d) => d.state).filter(Boolean) as string[])).sort();
-      const cities = Array.from(new Set((data || []).map((d) => d.city).filter(Boolean) as string[])).sort();
+      const clean = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+      const states = Array.from(
+        new Set((data || []).map((d) => clean(d.state)).filter((v) => v.length > 0))
+      ).sort((a, b) => a.localeCompare(b));
+      const cities = Array.from(
+        new Set((data || []).map((d) => clean(d.city)).filter((v) => v.length > 0))
+      ).sort((a, b) => a.localeCompare(b));
       const sources = Array.from(new Set([
         ...SOURCE_OPTIONS,
-        ...(data || []).map((d) => d.source).filter(Boolean) as string[],
-      ])).sort();
+        ...((data || []).map((d) => clean(d.source)).filter((v) => v.length > 0)),
+      ])).sort((a, b) => a.localeCompare(b));
       return { states, cities, sources };
     },
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   // Live matched contacts
@@ -371,6 +378,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   options={(distinctMeta?.states || []).map((s) => ({ value: s, label: s }))}
                   selected={filters.states}
                   onToggle={(v) => toggleFilter('states', v)}
+                  emptyMessage="No locations assigned to contacts yet"
                 />
               </div>
 
@@ -619,17 +627,20 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   );
 }
 
-function FilterGroup({ label, options, selected, onToggle }: {
+function FilterGroup({ label, options, selected, onToggle, emptyMessage }: {
   label: string;
   options: { value: string; label: string }[];
   selected: string[];
   onToggle: (v: string) => void;
+  emptyMessage?: string;
 }) {
   return (
     <div className="space-y-2">
       <Label className="text-xs uppercase text-muted-foreground">{label}</Label>
       <div className="border rounded-md p-2 max-h-40 overflow-auto space-y-1">
-        {options.length === 0 && <p className="text-xs text-muted-foreground">No options</p>}
+        {options.length === 0 && (
+          <p className="text-xs text-muted-foreground">{emptyMessage || 'No options'}</p>
+        )}
         {options.map((o) => (
           <label key={o.value} className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={selected.includes(o.value)} onCheckedChange={() => onToggle(o.value)} />
