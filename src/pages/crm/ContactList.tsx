@@ -52,6 +52,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
+import { UpdateContactsCsvDialog } from '@/components/crm/UpdateContactsCsvDialog';
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
