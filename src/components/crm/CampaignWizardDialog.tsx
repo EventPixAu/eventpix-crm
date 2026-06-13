@@ -402,6 +402,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           <button
                             type="button"
                             onClick={() => {
+                              setAudienceCleared(false);
                               if (!manualIncludes.find((x) => x.id === c.id)) {
                                 setManualIncludes([...manualIncludes, c]);
                               }
