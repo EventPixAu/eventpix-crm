@@ -439,7 +439,8 @@ export default function ContactList() {
     standaloneFilter !== 'all' ||
     tagFilter !== 'all' ||
     statusFilter !== 'all' ||
-    categoryFilter !== 'all';
+    categoryFilter !== 'all' ||
+    bounceFilter !== 'all';
 
   const clearFilters = () => {
     setCompanyFilter('all');
@@ -448,6 +449,7 @@ export default function ContactList() {
     setTagFilter('all');
     setStatusFilter('all');
     setCategoryFilter('all');
+    setBounceFilter('all');
   };
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
