@@ -197,6 +197,8 @@ export default function ContactList() {
           status,
           category,
           archived,
+          bounce_status,
+          bounced_at,
           clients(id, business_name, is_training)
         `)
         .order('contact_name');
