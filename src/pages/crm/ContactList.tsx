@@ -817,12 +817,17 @@ export default function ContactList() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/crm/contacts/${contact.id}`}
-                              className="font-medium hover:text-primary"
+                              className={`font-medium hover:text-primary ${!contact.first_name ? 'text-amber-600 italic' : ''}`}
                             >
                               {contact.first_name || contact.last_name 
                                 ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim()
                                 : contact.contact_name}
                             </Link>
+                            {!contact.first_name && (
+                              <Badge variant="outline" className="text-[10px] gap-1 border-amber-500/60 text-amber-600">
+                                <AlertCircle className="h-3 w-3" /> Missing first name
+                              </Badge>
+                            )}
                             {contact.is_primary && (
                               <Badge variant="outline" className="text-xs">
                                 Primary
