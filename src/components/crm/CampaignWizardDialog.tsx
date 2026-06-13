@@ -147,6 +147,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   });
 
   const finalRecipients = useMemo(() => {
+    if (audienceCleared && manualIncludes.length === 0) return [];
     const excludeSet = new Set(manualExcludes);
     const seen = new Set<string>();
     const list: WizardContact[] = [];
@@ -162,7 +163,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       list.push(c);
     }
     return list;
-  }, [matched, manualIncludes, manualExcludes]);
+  }, [matched, manualIncludes, manualExcludes, audienceCleared]);
 
   const reset = () => {
     setStep(1);
