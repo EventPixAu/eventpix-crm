@@ -132,6 +132,23 @@ export default function ContactDetail() {
   const createActivity = useCreateContactActivity();
   const deleteActivity = useDeleteContactActivity();
 
+  // Tasks linked to this contact (for activity timeline)
+  const { data: contactTasks = [] } = useQuery({
+    queryKey: ['contact-tasks-timeline', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, title, description, status, created_at, completed_at, due_at')
+        .eq('related_type', 'contact')
+        .eq('related_id', id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   // Fetch companies for the dropdown when creating a new contact
   const { data: companies = [] } = useQuery({
     queryKey: ['companies-simple'],
