@@ -390,7 +390,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
         {summary && (
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-green-600">{summary.updated}</div>
                 <div className="text-xs text-muted-foreground">Updated</div>
@@ -402,6 +402,10 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-amber-600">{summary.skipped}</div>
                 <div className="text-xs text-muted-foreground">Skipped (no email)</div>
+              </div>
+              <div className="rounded border p-3 text-center">
+                <div className="text-2xl font-semibold text-purple-600">{summary.statusProtected}</div>
+                <div className="text-xs text-muted-foreground">Retained Active/Current status</div>
               </div>
             </div>
             {summary.errors.length > 0 ? (
