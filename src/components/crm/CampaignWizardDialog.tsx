@@ -378,6 +378,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   options={(distinctMeta?.states || []).map((s) => ({ value: s, label: s }))}
                   selected={filters.states}
                   onToggle={(v) => toggleFilter('states', v)}
+                  emptyMessage="No locations assigned to contacts yet"
                 />
               </div>
 
