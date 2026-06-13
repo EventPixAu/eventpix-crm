@@ -187,20 +187,19 @@ export default function ContactDetail() {
   // Fetch email logs after contact is loaded (needs email address for matching)
   const { data: emailLogs = [], isLoading: emailsLoading } = useContactEmailLogs(id, contact?.email);
 
-  // Combine activities and email logs into unified timeline
+  // Combine activities, email logs, and tasks into unified timeline
   const combinedTimeline = useMemo(() => {
     const items: Array<{
       id: string;
-      type: 'activity' | 'email_log';
+      type: 'activity' | 'email_log' | 'task';
       activity_type: string;
       date: string;
       subject: string | null;
       notes: string | null;
-      source?: 'manual' | 'sent';
+      source?: 'manual' | 'sent' | 'system';
       event_id?: string | null;
     }> = [];
 
-    // Add manual activities
     activities.forEach(a => {
       items.push({
         id: a.id,
@@ -209,11 +208,10 @@ export default function ContactDetail() {
         date: a.activity_date,
         subject: a.subject,
         notes: a.notes,
-        source: 'manual',
+        source: (a.activity_type === 'status_change' || a.activity_type === 'category_change') ? 'system' : 'manual',
       });
     });
 
-    // Add email logs (sent emails)
     emailLogs.forEach(e => {
       items.push({
         id: e.id,
@@ -226,6 +224,30 @@ export default function ContactDetail() {
         event_id: e.event_id,
       });
     });
+
+    contactTasks.forEach((t: any) => {
+      items.push({
+        id: `task-created-${t.id}`,
+        type: 'task',
+        activity_type: 'task_created',
+        date: t.created_at,
+        subject: `Task created: ${t.title}`,
+        notes: t.description || null,
+        source: 'system',
+      });
+      if (t.completed_at) {
+        items.push({
+          id: `task-completed-${t.id}`,
+          type: 'task',
+          activity_type: 'task_completed',
+          date: t.completed_at,
+          subject: `Task completed: ${t.title}`,
+          notes: null,
+          source: 'system',
+        });
+      }
+    });
+
 
     // Sort by date descending
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
