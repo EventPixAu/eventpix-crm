@@ -1238,8 +1238,51 @@ export default function EventDetail() {
                   }}
                   assignments={assignments}
                 />
-              )}
-              {/* Dress Code (admin-managed lookup) */}
+               )}
+               {/* Assigned Team (summary) */}
+               {canSeeSection('contacts') && assignments.length > 0 && (
+                 <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+                   <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-lg font-display font-semibold flex items-center gap-2">
+                       <Users className="h-4 w-4" />
+                       Assigned Team ({assignments.length})
+                     </h2>
+                     <Button variant="outline" size="sm" onClick={() => setActiveTab('assignments')}>
+                       Manage
+                     </Button>
+                   </div>
+                   <div className="space-y-2">
+                     {assignments.map((a: any) => {
+                       const name = a.profile?.full_name || a.staff?.name || 'Unknown';
+                       const role = a.staff_role?.name || a.role_on_event || a.staff?.role || 'Staff';
+                       const status = a.confirmation_status || 'pending';
+                       const initials = name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+                       return (
+                         <div key={a.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                           <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                             <span className="text-sm font-medium text-primary">{initials}</span>
+                           </div>
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2 flex-wrap">
+                               <Link to={`/staff/${a.user_id || a.staff_id}`} className="text-sm font-medium truncate hover:underline text-primary">
+                                 {name}
+                               </Link>
+                               <Badge
+                                 variant={status === 'confirmed' ? 'default' : status === 'declined' ? 'destructive' : 'secondary'}
+                                 className="text-xs shrink-0"
+                               >
+                                 {status === 'confirmed' ? 'Confirmed' : status === 'declined' ? 'Declined' : 'Pending'}
+                               </Badge>
+                             </div>
+                             <p className="text-xs text-muted-foreground capitalize truncate">{role}</p>
+                           </div>
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+               )}
+               {/* Dress Code (admin-managed lookup) */}
               {canSeeSection('contacts') && id && (
                 <EventDressCodeCard
                   eventId={id}
