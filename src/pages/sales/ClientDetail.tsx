@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { useClient, useUpdateClient, useDeleteClient, useClientEvents, useCreateClient } from '@/hooks/useSales';
 import { useCompanyCategories, useCreateCompanyCategory } from '@/hooks/useCompanyCategories';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import {
