@@ -282,8 +282,21 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
                               contactId: assoc.contact_id,
                               contactName: assoc.contact?.contact_name || 'this contact',
                             })}
+                            title="Unlink from company"
                           >
                             <Unlink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleteTarget({
+                              contactId: assoc.contact_id,
+                              contactName: assoc.contact?.contact_name || 'this contact',
+                            })}
+                            title="Delete contact"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
