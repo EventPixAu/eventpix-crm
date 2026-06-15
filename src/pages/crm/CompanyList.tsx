@@ -763,16 +763,6 @@ export default function CompanyList() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {company.category?.name ? (
-                        <Badge variant="outline" className="gap-1">
-                          <Tag className="h-3 w-3" />
-                          {company.category.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       {(() => {
                         const allSources = new Set<string>();
                         if (company.lead_source) allSources.add(company.lead_source);
@@ -801,6 +791,14 @@ export default function CompanyList() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>{company.contact_count}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <InlineCategoryEditor
+                        companyId={company.id}
+                        currentCategoryId={company.category_id}
+                        currentCategoryName={company.category?.name || null}
+                        onCategoryChange={handleRefresh}
+                      />
                     </TableCell>
                     <TableCell>
                       <InlineStatusEditor
