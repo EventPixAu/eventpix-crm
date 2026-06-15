@@ -166,6 +166,7 @@ export default function ClientDetail() {
       billing_address: formData.billing_address,
       website: formData.website,
       category_id: formData.category_id || null,
+      manual_status: formData.manual_status || null,
       lead_source: formData.lead_source || null,
       tags: tagsArray.length > 0 ? tagsArray : null,
     } as any);
