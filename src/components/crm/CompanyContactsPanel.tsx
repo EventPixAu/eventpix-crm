@@ -72,6 +72,7 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
   const deleteAssociation = useDeleteContactAssociation();
   const updateAssociation = useUpdateContactAssociation();
   
+  const queryClient = useQueryClient();
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [unlinkTarget, setUnlinkTarget] = useState<{
@@ -79,6 +80,28 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
     contactId: string;
     contactName: string;
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    contactId: string;
+    contactName: string;
+  } | null>(null);
+
+  const deleteContact = useMutation({
+    mutationFn: async (contactId: string) => {
+      const { error } = await supabase
+        .from('client_contacts')
+        .delete()
+        .eq('id', contactId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company-associations', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['client-contacts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contact deleted');
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete contact'),
+  });
 
   const handleUnlink = async () => {
     if (!unlinkTarget) return;
