@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { useClient, useUpdateClient, useDeleteClient, useClientEvents, useCreateClient } from '@/hooks/useSales';
 import { useCompanyCategories, useCreateCompanyCategory } from '@/hooks/useCompanyCategories';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import {
@@ -92,6 +93,7 @@ export default function ClientDetail() {
   const { data: client, isLoading, error } = useClient(id);
   const { data: events = [] } = useClientEvents(id);
   const { data: categories = [] } = useCompanyCategories();
+  const { data: companyStatuses = [] } = useCompanyStatuses();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createClient = useCreateClient();
@@ -114,6 +116,7 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     category_id: '',
+    manual_status: '',
     website: '',
     lead_source: '',
     tags: '' as string,
@@ -140,6 +143,7 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
+        manual_status: (client as any).manual_status || '',
         website: (client as any).website || '',
         lead_source: (client as any).lead_source || '',
         tags: clientTags?.join(', ') || '',
@@ -162,6 +166,7 @@ export default function ClientDetail() {
       billing_address: formData.billing_address,
       website: formData.website,
       category_id: formData.category_id || null,
+      manual_status: formData.manual_status || null,
       lead_source: formData.lead_source || null,
       tags: tagsArray.length > 0 ? tagsArray : null,
     } as any);
@@ -554,6 +559,27 @@ export default function ClientDetail() {
                   </SelectContent>
                 </Select>
               )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="manual_status">Status</Label>
+              <Select
+                value={formData.manual_status}
+                onValueChange={(value) => setFormData({ ...formData, manual_status: value === '__none__' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Auto-computed —</SelectItem>
+                  {companyStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.name}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Leave as auto-computed to let the system determine status from events and leads.</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
