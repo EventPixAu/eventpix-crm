@@ -93,6 +93,7 @@ export default function ClientDetail() {
   const { data: client, isLoading, error } = useClient(id);
   const { data: events = [] } = useClientEvents(id);
   const { data: categories = [] } = useCompanyCategories();
+  const { data: companyStatuses = [] } = useCompanyStatuses();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createClient = useCreateClient();
