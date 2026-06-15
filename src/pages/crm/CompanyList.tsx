@@ -71,6 +71,7 @@ import {
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
+import { InlineCategoryEditor } from '@/components/crm/InlineCategoryEditor';
 import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog';
 import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDialog';
 import { useAuth } from '@/lib/auth';
