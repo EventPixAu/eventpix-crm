@@ -760,12 +760,6 @@ export default function ContactDetail() {
                       </span>
                     );
                   })()}
-                  {(contact as any).category && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                      <Tag className="h-3 w-3 mr-1" />
-                      {(contact as any).category}
-                    </span>
-                  )}
                 </div>
               ) : (
                 <div className="text-xs text-muted-foreground italic">No status or category set</div>
