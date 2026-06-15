@@ -116,6 +116,7 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     category_id: '',
+    manual_status: '',
     website: '',
     lead_source: '',
     tags: '' as string,
