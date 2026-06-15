@@ -143,6 +143,7 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
+        manual_status: (client as any).manual_status || '',
         website: (client as any).website || '',
         lead_source: (client as any).lead_source || '',
         tags: clientTags?.join(', ') || '',
