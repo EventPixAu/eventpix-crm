@@ -664,15 +664,6 @@ export default function CompanyList() {
                   </TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort('category')}
-                  >
-                    <div className="flex items-center">
-                      Category
-                      <SortIcon column="category" />
-                    </div>
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('source')}
                   >
                     <div className="flex items-center">
@@ -681,6 +672,15 @@ export default function CompanyList() {
                     </div>
                   </TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('category')}
+                  >
+                    <div className="flex items-center">
+                      Category
+                      <SortIcon column="category" />
+                    </div>
+                  </TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
