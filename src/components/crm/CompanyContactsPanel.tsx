@@ -10,10 +10,14 @@
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 import { 
   User, 
   UserPlus, 
   Unlink, 
+  Trash2,
   Mail, 
   Phone, 
   ExternalLink,
@@ -68,6 +72,7 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
   const deleteAssociation = useDeleteContactAssociation();
   const updateAssociation = useUpdateContactAssociation();
   
+  const queryClient = useQueryClient();
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [unlinkTarget, setUnlinkTarget] = useState<{
@@ -75,6 +80,28 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
     contactId: string;
     contactName: string;
   } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    contactId: string;
+    contactName: string;
+  } | null>(null);
+
+  const deleteContact = useMutation({
+    mutationFn: async (contactId: string) => {
+      const { error } = await supabase
+        .from('client_contacts')
+        .delete()
+        .eq('id', contactId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company-associations', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['client-contacts', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contact deleted');
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete contact'),
+  });
 
   const handleUnlink = async () => {
     if (!unlinkTarget) return;
@@ -255,8 +282,21 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
                               contactId: assoc.contact_id,
                               contactName: assoc.contact?.contact_name || 'this contact',
                             })}
+                            title="Unlink from company"
                           >
                             <Unlink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleteTarget({
+                              contactId: assoc.contact_id,
+                              contactName: assoc.contact?.contact_name || 'this contact',
+                            })}
+                            title="Delete contact"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -303,6 +343,29 @@ export function CompanyContactsPanel({ companyId, companyName }: CompanyContacts
               disabled={deleteAssociation.isPending}
             >
               {deleteAssociation.isPending ? 'Unlinking...' : 'Unlink'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Contact Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contact</AlertDialogTitle>
+            <AlertDialogDescription>
+              Permanently delete "{deleteTarget?.contactName}"? This removes the contact
+              record from the CRM and cannot be undone. The company will not be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteContact.mutate(deleteTarget.contactId)}
+              disabled={deleteContact.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteContact.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
