@@ -71,6 +71,7 @@ import {
 } from 'lucide-react';
 import { ContactImportDialog } from '@/components/crm/ContactImportDialog';
 import { InlineStatusEditor } from '@/components/crm/InlineStatusEditor';
+import { InlineCategoryEditor } from '@/components/crm/InlineCategoryEditor';
 import { BulkStatusUpdateDialog } from '@/components/crm/BulkStatusUpdateDialog';
 import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDialog';
 import { useAuth } from '@/lib/auth';
@@ -664,15 +665,6 @@ export default function CompanyList() {
                   </TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
-                    onClick={() => handleSort('category')}
-                  >
-                    <div className="flex items-center">
-                      Category
-                      <SortIcon column="category" />
-                    </div>
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('source')}
                   >
                     <div className="flex items-center">
@@ -681,6 +673,15 @@ export default function CompanyList() {
                     </div>
                   </TableHead>
                   <TableHead className="text-center">Contacts</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-muted/50 select-none"
+                    onClick={() => handleSort('category')}
+                  >
+                    <div className="flex items-center">
+                      Category
+                      <SortIcon column="category" />
+                    </div>
+                  </TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
@@ -763,16 +764,6 @@ export default function CompanyList() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {company.category?.name ? (
-                        <Badge variant="outline" className="gap-1">
-                          <Tag className="h-3 w-3" />
-                          {company.category.name}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       {(() => {
                         const allSources = new Set<string>();
                         if (company.lead_source) allSources.add(company.lead_source);
@@ -801,6 +792,14 @@ export default function CompanyList() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>{company.contact_count}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <InlineCategoryEditor
+                        companyId={company.id}
+                        currentCategoryId={company.category_id}
+                        currentCategoryName={company.category?.name || null}
+                        onCategoryChange={handleRefresh}
+                      />
                     </TableCell>
                     <TableCell>
                       <InlineStatusEditor
