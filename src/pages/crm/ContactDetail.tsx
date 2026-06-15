@@ -587,38 +587,10 @@ export default function ContactDetail() {
               <p className="text-xs text-muted-foreground">For specific titles not in the dropdown</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="create_status">Status</Label>
-                <Select
-                  value={formData.status || '__none__'}
-                  onValueChange={(v) => setFormData({ ...formData, status: v === '__none__' ? '' : v })}
-                >
-                  <SelectTrigger id="create_status"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Unassigned</SelectItem>
-                    {CONTACT_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create_category">Category</Label>
-                <Select
-                  value={formData.category || '__none__'}
-                  onValueChange={(v) => setFormData({ ...formData, category: v === '__none__' ? '' : v })}
-                >
-                  <SelectTrigger id="create_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="__none__">Unassigned</SelectItem>
-                    {categoryOptions.map((opt) => (
-                      <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Status and Category are managed at the company level.
+            </p>
+
             
             
             <div className="space-y-2">
@@ -771,7 +743,7 @@ export default function ContactDetail() {
               })()}
 
               {/* Prominent Status & Category badges */}
-              {((contact as any).status || (contact as any).category) ? (
+              {(contact as any).status ? (
                 <div className="flex flex-wrap gap-2">
                   {(contact as any).status && (() => {
                     const s = (contact as any).status as string;
@@ -788,15 +760,9 @@ export default function ContactDetail() {
                       </span>
                     );
                   })()}
-                  {(contact as any).category && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-                      <Tag className="h-3 w-3 mr-1" />
-                      {(contact as any).category}
-                    </span>
-                  )}
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground italic">No status or category set</div>
+                <div className="text-xs text-muted-foreground italic">Status inherits from company</div>
               )}
 
               {/* Contact Details */}
@@ -1111,38 +1077,10 @@ export default function ContactDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit_status">Status</Label>
-                <Select
-                  value={formData.status || '__none__'}
-                  onValueChange={(v) => setFormData({ ...formData, status: v === '__none__' ? '' : v })}
-                >
-                  <SelectTrigger id="edit_status"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Unassigned</SelectItem>
-                    {CONTACT_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_category">Category</Label>
-                <Select
-                  value={formData.category || '__none__'}
-                  onValueChange={(v) => setFormData({ ...formData, category: v === '__none__' ? '' : v })}
-                >
-                  <SelectTrigger id="edit_category"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    <SelectItem value="__none__">Unassigned</SelectItem>
-                    {categoryOptions.map((opt) => (
-                      <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Status and Category are managed at the company level.
+            </p>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
