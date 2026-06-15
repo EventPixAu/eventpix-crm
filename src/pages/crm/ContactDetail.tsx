@@ -762,7 +762,7 @@ export default function ContactDetail() {
                   })()}
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground italic">No status or category set</div>
+                <div className="text-xs text-muted-foreground italic">Status inherits from company</div>
               )}
 
               {/* Contact Details */}
