@@ -743,7 +743,7 @@ export default function ContactDetail() {
               })()}
 
               {/* Prominent Status & Category badges */}
-              {((contact as any).status || (contact as any).category) ? (
+              {(contact as any).status ? (
                 <div className="flex flex-wrap gap-2">
                   {(contact as any).status && (() => {
                     const s = (contact as any).status as string;
