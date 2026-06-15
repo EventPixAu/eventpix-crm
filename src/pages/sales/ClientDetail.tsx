@@ -561,6 +561,27 @@ export default function ClientDetail() {
               )}
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="manual_status">Status</Label>
+              <Select
+                value={formData.manual_status}
+                onValueChange={(value) => setFormData({ ...formData, manual_status: value === '__none__' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Auto-computed —</SelectItem>
+                  {companyStatuses.map((status) => (
+                    <SelectItem key={status.id} value={status.name}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Leave as auto-computed to let the system determine status from events and leads.</p>
+            </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="company_phone">Company Phone</Label>
