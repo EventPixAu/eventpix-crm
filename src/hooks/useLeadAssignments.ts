@@ -86,7 +86,7 @@ export function useCreateLeadAssignment() {
           staff_role_id: params.staff_role_id || null,
           session_id: params.session_id || null,
           assignment_notes: params.assignment_notes || null,
-          confirmation_status: 'pending',
+          confirmation_status: 'on_hold',
         } as any)
         .select()
         .single();

@@ -216,7 +216,10 @@ export function useCreateEvent() {
             session_id: la.session_id || null,
             role_on_event: la.role_on_event,
             assignment_notes: la.assignment_notes,
-            confirmation_status: la.confirmation_status || 'pending',
+            confirmation_status:
+              la.confirmation_status === 'on_hold' || !la.confirmation_status
+                ? 'pending'
+                : la.confirmation_status,
           }));
           
           const { error: assignError } = await supabase
