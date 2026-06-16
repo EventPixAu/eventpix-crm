@@ -65,6 +65,7 @@ import { SortableQuoteItems } from '@/components/quote/SortableQuoteItems';
 import { QuoteDiscountDialog } from '@/components/quote/QuoteDiscountDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
+import { useQuery } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
