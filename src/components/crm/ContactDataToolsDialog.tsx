@@ -53,7 +53,7 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const duplicates = useMemo<DuplicatePair[]>(() => {
-    const activeContacts = contacts.filter((c) => !c.archived);
+    const activeContacts = contacts; // include archived so archived duplicates surface
     const pairs: DuplicatePair[] = [];
     const seenPairs = new Set<string>();
 
