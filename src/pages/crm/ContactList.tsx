@@ -265,9 +265,21 @@ export default function ContactList() {
         }
       }
 
-      // Filter out training company contacts
+      // Fetch Team member emails (profiles + staff) to exclude from CRM contacts
+      const [{ data: profileEmails }, { data: staffEmails }] = await Promise.all([
+        supabase.from('profiles').select('email'),
+        supabase.from('staff').select('email'),
+      ]);
+      const teamEmailSet = new Set<string>();
+      (profileEmails || []).forEach((p: any) => p.email && teamEmailSet.add(String(p.email).toLowerCase()));
+      (staffEmails || []).forEach((s: any) => s.email && teamEmailSet.add(String(s.email).toLowerCase()));
+
+      // Filter out training company contacts AND Team members
       const filteredData = allContacts.filter((contact: any) => {
         if (contact.client_id && contact.clients?.is_training) {
+          return false;
+        }
+        if (contact.email && teamEmailSet.has(String(contact.email).toLowerCase())) {
           return false;
         }
         return true;
