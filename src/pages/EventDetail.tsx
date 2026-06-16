@@ -1321,6 +1321,18 @@ export default function EventDetail() {
                   )}
                 </div>
               )}
+
+              {/* Proposed Services (Scope) — flows into budgets & contracts */}
+              {id && canSeeSection('additional_details') && (
+                <ProposedServicesEditor
+                  target="event"
+                  targetId={id}
+                  value={(event as any).proposed_services}
+                  invalidateKeys={[['event', id]]}
+                  disableAi={!(isAdmin || isOperations)}
+                />
+              )}
+
               
               {/* Team Brief (internal) */}
               {id && canSeeSection('team_brief') && (
