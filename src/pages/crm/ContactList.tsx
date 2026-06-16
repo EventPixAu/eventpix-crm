@@ -382,8 +382,9 @@ export default function ContactList() {
   // Apply client-side filters
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
-      // Archived (bypass if bounce filter is active so auto-archived bounces are visible)
-      if (!showArchived && contact.archived && bounceFilter === 'all') return false;
+      // Show archived toggle: OFF = active contacts only, ON = archived contacts only
+      if (!showArchived && contact.archived) return false;
+      if (showArchived && !contact.archived) return false;
 
       // Incomplete-only filter
       if (incompleteOnly) {
