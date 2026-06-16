@@ -72,11 +72,13 @@ import {
 } from '@/hooks/useContracts';
 import { 
   useActiveContractTemplates,
+  applyProposedServicesToContractHtml,
   useGenerateContractFromTemplate,
 } from '@/hooks/useContractTemplates';
 import { useQueryClient } from '@tanstack/react-query';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
+import { supabase } from '@/lib/supabase';
 
 interface ContractsPanelProps {
   leadId?: string;
@@ -218,6 +220,37 @@ export function ContractsPanel({
   const handlePlainTextChange = (plainText: string) => {
     setEditContractPlain(plainText);
     setEditContractHtml(plainTextToHtml(plainText));
+  };
+
+  const fetchProposedServicesForContract = async (contract: Contract) => {
+    if (contract.quote_id) {
+      const { data: quote } = await supabase
+        .from('quotes')
+        .select('proposed_services, event_id')
+        .eq('id', contract.quote_id)
+        .maybeSingle();
+      if ((quote as any)?.proposed_services) return (quote as any).proposed_services as string;
+      const quoteEventId = (quote as any)?.event_id;
+      if (quoteEventId) {
+        const { data: eventScope } = await supabase
+          .from('events')
+          .select('proposed_services')
+          .eq('id', quoteEventId)
+          .maybeSingle();
+        if ((eventScope as any)?.proposed_services) return (eventScope as any).proposed_services as string;
+      }
+    }
+
+    if (contract.event_id) {
+      const { data: eventScope } = await supabase
+        .from('events')
+        .select('proposed_services')
+        .eq('id', contract.event_id)
+        .maybeSingle();
+      if ((eventScope as any)?.proposed_services) return (eventScope as any).proposed_services as string;
+    }
+
+    return null;
   };
 
   // Combine contracts from lead and event
@@ -377,10 +410,11 @@ export function ContractsPanel({
   };
   
   // Open edit dialog for a draft contract
-  const openEditDialog = (contract: Contract) => {
+  const openEditDialog = async (contract: Contract) => {
     setSelectedContract(contract);
     setEditContractTitle(contract.title);
-    const html = contract.rendered_html || '';
+    const proposedServices = await fetchProposedServicesForContract(contract);
+    const html = applyProposedServicesToContractHtml(contract.rendered_html || '', proposedServices).html;
     setEditContractHtml(html);
     setEditContractPlain(htmlToPlainText(html));
     setIsEditOpen(true);
