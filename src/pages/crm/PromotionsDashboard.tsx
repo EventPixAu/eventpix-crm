@@ -56,7 +56,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
-import { CONTACT_STATUSES } from '@/lib/contactClassification';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 
 // Type for debug contact info
 interface DebugContactInfo {
