@@ -276,7 +276,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { type, event_id, user_id, assignment_id }: NotificationRequest = await req.json();
+    const { type, event_id, user_id, assignment_id, user_ids }: NotificationRequest = await req.json();
 
     const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).single();
     if (eventError || !event) throw new Error(`Event not found: ${eventError?.message}`);
