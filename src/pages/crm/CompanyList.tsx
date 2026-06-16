@@ -597,6 +597,7 @@ export default function CompanyList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">All Categories</SelectItem>
+                <SelectItem value="__none__">No Category</SelectItem>
                 {filterOptions.categories.map(c => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
