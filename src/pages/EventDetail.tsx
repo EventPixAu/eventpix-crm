@@ -60,6 +60,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
+import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
