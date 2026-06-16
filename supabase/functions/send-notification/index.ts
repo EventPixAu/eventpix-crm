@@ -12,6 +12,7 @@ interface NotificationRequest {
   event_id: string;
   user_id?: string;
   assignment_id?: string;
+  user_ids?: string[];
 }
 
 // ── Gmail API helpers ──
@@ -275,7 +276,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { type, event_id, user_id, assignment_id }: NotificationRequest = await req.json();
+    const { type, event_id, user_id, assignment_id, user_ids }: NotificationRequest = await req.json();
 
     const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).single();
     if (eventError || !event) throw new Error(`Event not found: ${eventError?.message}`);
@@ -347,8 +348,11 @@ const handler = async (req: Request): Promise<Response> => {
         await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
       }
     } else {
-      const { data: assignments, error: assignError } = await supabase
+      const assignQuery = supabase
         .from("event_assignments").select("user_id, profiles:user_id(email, full_name)").eq("event_id", event_id);
+      const { data: assignments, error: assignError } = user_ids && user_ids.length > 0
+        ? await assignQuery.in("user_id", user_ids)
+        : await assignQuery;
       if (assignError) throw new Error(`Failed to fetch assignments: ${assignError.message}`);
 
       subject = `Eventpix - Updated details: ${event.event_name} - ${formatDate(event.event_date)}`;

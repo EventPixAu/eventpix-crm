@@ -4,7 +4,7 @@
  * Shows a review dialog with the list of team members who will receive
  * the update notification before sending.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,12 +59,39 @@ export function SendTeamUpdateDialog({
     });
   }
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Default to all selected when dialog opens or membership changes
+  const memberIdsKey = teamMembers.map(m => m.id).join(',');
+  useEffect(() => {
+    if (open) {
+      setSelectedIds(new Set(teamMembers.map(m => m.id)));
+    }
+  }, [open, memberIdsKey]);
+
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = teamMembers.length > 0 && selectedIds.size === teamMembers.length;
+  const toggleAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(teamMembers.map(m => m.id)));
+  };
+
+  const selectedCount = selectedIds.size;
+
   const handleSend = async () => {
     setSending(true);
     try {
       await sendNotification.mutateAsync({
         type: 'event_update',
         event_id: eventId,
+        user_ids: Array.from(selectedIds),
       });
       onOpenChange(false);
     } finally {
@@ -81,21 +108,35 @@ export function SendTeamUpdateDialog({
             Send Updated Details to Team
           </DialogTitle>
           <DialogDescription>
-            This will send an update notification to all assigned team members for <strong>{eventName}</strong>.
+            This will send an update notification to selected team members for <strong>{eventName}</strong>.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-2">
-          <p className="text-sm font-medium text-muted-foreground">
-            Recipients ({teamMembers.length})
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground">
+              Recipients ({selectedCount} of {teamMembers.length})
+            </p>
+            {teamMembers.length > 0 && (
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="text-xs text-primary hover:underline"
+              >
+                {allSelected ? 'Deselect all' : 'Select all'}
+              </button>
+            )}
+          </div>
           <div className="space-y-1.5 max-h-64 overflow-y-auto">
             {teamMembers.map((member) => (
-              <div
+              <label
                 key={member.id}
-                className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50"
+                className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted"
               >
-                <Checkbox checked disabled className="opacity-70" />
+                <Checkbox
+                  checked={selectedIds.has(member.id)}
+                  onCheckedChange={() => toggleOne(member.id)}
+                />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-sm">{member.name}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -104,7 +145,7 @@ export function SendTeamUpdateDialog({
                     {member.email && <span className="truncate">{member.email}</span>}
                   </div>
                 </div>
-              </div>
+              </label>
             ))}
           </div>
           {teamMembers.length === 0 && (
@@ -120,14 +161,14 @@ export function SendTeamUpdateDialog({
           </Button>
           <Button 
             onClick={handleSend} 
-            disabled={sending || teamMembers.length === 0}
+            disabled={sending || selectedCount === 0}
           >
             {sending ? (
               <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
             ) : (
               <Send className="h-4 w-4 mr-1.5" />
             )}
-            {sending ? 'Sending...' : `Send to ${teamMembers.length} Team Member${teamMembers.length !== 1 ? 's' : ''}`}
+            {sending ? 'Sending...' : `Send to ${selectedCount} Team Member${selectedCount !== 1 ? 's' : ''}`}
           </Button>
         </DialogFooter>
       </DialogContent>
