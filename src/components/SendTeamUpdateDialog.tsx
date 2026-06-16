@@ -4,7 +4,7 @@
  * Shows a review dialog with the list of team members who will receive
  * the update notification before sending.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
