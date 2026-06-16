@@ -26,15 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
-
-type ComputedStatus = 'prospect' | 'active_event' | 'current_client' | 'previous_client';
-
-const STATUS_OPTIONS: { value: ComputedStatus; label: string }[] = [
-  { value: 'prospect', label: 'Prospect' },
-  { value: 'active_event', label: 'Active Event' },
-  { value: 'current_client', label: 'Current Client' },
-  { value: 'previous_client', label: 'Previous Client' },
-];
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 
 interface BulkStatusUpdateDialogProps {
   open: boolean;
@@ -52,7 +44,9 @@ export function BulkStatusUpdateDialog({
   onComplete,
 }: BulkStatusUpdateDialogProps) {
   const { isAdmin } = useAuth();
-  const [selectedStatus, setSelectedStatus] = useState<ComputedStatus | ''>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const { data: dbStatuses } = useCompanyStatuses();
+  const STATUS_OPTIONS = (dbStatuses ?? []).map(s => ({ value: s.name, label: s.label }));
   const [reason, setReason] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -134,7 +128,7 @@ export function BulkStatusUpdateDialog({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">New Status</label>
-            <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as ComputedStatus)}>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
