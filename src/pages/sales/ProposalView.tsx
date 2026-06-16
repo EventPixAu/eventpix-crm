@@ -280,15 +280,23 @@ export default function ProposalView() {
               </div>
             )}
 
-            {/* Scope of Work */}
-            {(quote as any).scope_text && (
+            {/* Scope of Services (proposed services HTML, falls back to event default) */}
+            {(proposedServicesHtml || (quote as any).scope_text) && (
               <div className="mb-8">
                 <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-2">
-                  Scope of Work
+                  Scope of Services
                 </h2>
-                <p className="text-black whitespace-pre-wrap">{(quote as any).scope_text}</p>
+                {proposedServicesHtml ? (
+                  <div
+                    className="text-black prose prose-sm max-w-none [&_*]:text-black"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(proposedServicesHtml) }}
+                  />
+                ) : (
+                  <p className="text-black whitespace-pre-wrap">{(quote as any).scope_text}</p>
+                )}
               </div>
             )}
+
 
             {/* Line Items - Grouped or Flat */}
             <div className="mb-8">
