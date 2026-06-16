@@ -547,16 +547,45 @@ export function useGenerateContractFromTemplate() {
         renderedHtml = renderMergeFields(template.body_html, context);
       }
 
-      // Auto-insert "Scope of Services" section using the resolved Proposed Services
+      // Replace the existing "Services" section body with the resolved Proposed Services.
+      // Falls back to prepending a "Scope of Services" block if no Services section is found.
       if (proposedServicesHtml && proposedServicesHtml.trim()) {
-        const scopeBlock = `
+        const scope = proposedServicesHtml.trim();
+        let replaced = false;
+
+        // Pattern A — HTML heading templates: <h1-6>...Services...</h1-6> followed by content
+        // up to the next heading. Replace the content between, keep the heading.
+        const headingRe = /(<h([1-6])[^>]*>\s*(?:\d+[.)]\s*)?[^<]*services\b[^<]*<\/h\2>)([\s\S]*?)(?=<h[1-6]\b|$)/i;
+        if (headingRe.test(renderedHtml)) {
+          renderedHtml = renderedHtml.replace(headingRe, (_m, heading) =>
+            `${heading}\n<div class="scope-of-services" style="font-size:14px;line-height:1.6;margin:8px 0 16px;">${scope}</div>\n`
+          );
+          replaced = true;
+        }
+
+        // Pattern B — plain-text templates converted to <br> separated lines:
+        // "2. Services<br>...<br>3. Next" — replace the paragraph after the Services heading
+        // up to the next numbered heading (e.g. "3. ...").
+        if (!replaced) {
+          const brRe = /((?:^|<br\s*\/?>)\s*(?:\d+[.)]\s*)?Services\s*(?:<br\s*\/?>\s*)+)([\s\S]*?)(?=<br\s*\/?>\s*\d+[.)]\s|$)/i;
+          if (brRe.test(renderedHtml)) {
+            renderedHtml = renderedHtml.replace(brRe, (_m, head) =>
+              `${head}<div class="scope-of-services" style="font-size:14px;line-height:1.6;">${scope}</div><br>`
+            );
+            replaced = true;
+          }
+        }
+
+        // Fallback — prepend a Scope of Services block so it is never lost.
+        if (!replaced) {
+          const scopeBlock = `
 <section class="scope-of-services" style="margin: 24px 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
   <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Scope of Services</h2>
-  <div style="font-size: 14px; line-height: 1.6;">${proposedServicesHtml}</div>
+  <div style="font-size: 14px; line-height: 1.6;">${scope}</div>
 </section>
 `;
-        // Prepend so it appears near the top of the contract, after any leading header
-        renderedHtml = scopeBlock + renderedHtml;
+          renderedHtml = scopeBlock + renderedHtml;
+        }
       }
 
 
