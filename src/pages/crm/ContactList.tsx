@@ -772,8 +772,8 @@ export default function ContactList() {
                   </SelectTrigger>
                   <SelectContent className="bg-popover z-50">
                     <SelectItem value="__clear__">Clear Status</SelectItem>
-                    {CONTACT_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    {companyStatuses.map((s) => (
+                      <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
