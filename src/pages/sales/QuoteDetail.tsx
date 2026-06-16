@@ -747,7 +747,20 @@ export default function QuoteDetail() {
             </div>
           </div>
 
+          {/* Proposed Services (Scope) — appears on the budget & generated contract */}
+          {id && !isNewQuote && (
+            <ProposedServicesEditor
+              target="quote"
+              targetId={id}
+              value={(quote as any).proposed_services}
+              eventFallback={linkedEventScope}
+              eventIdForAi={linkedEventIdForScope}
+              invalidateKeys={[['quote', id]]}
+            />
+          )}
+
           {/* Internal Notes (Admin/Sales only) */}
+
           {(quote as any).notes_internal && (
             <Card className="border-amber-200 bg-amber-50/50">
               <CardHeader>
