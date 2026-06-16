@@ -253,6 +253,12 @@ export function ContractsPanel({
     return null;
   };
 
+  const withProposedServicesApplied = async (contract: Contract): Promise<Contract> => {
+    const proposedServices = await fetchProposedServicesForContract(contract);
+    const html = applyProposedServicesToContractHtml(contract.rendered_html || '', proposedServices).html;
+    return html !== (contract.rendered_html || '') ? { ...contract, rendered_html: html } : contract;
+  };
+
   // Combine contracts from lead and event
   const contracts = leadId ? leadContracts : eventContracts;
 
@@ -297,13 +303,18 @@ export function ContractsPanel({
   // Open send email dialog for a contract
   // For draft contracts, mark as sent FIRST so the email contains the correct signing URL
   const openSendEmailDialog = async (contract: Contract) => {
+    const contractWithScope = await withProposedServicesApplied(contract);
+    if (contractWithScope.rendered_html !== contract.rendered_html) {
+      await updateContract.mutateAsync({ id: contract.id, rendered_html: contractWithScope.rendered_html } as any);
+    }
+
     if (contract.status === 'draft') {
       try {
-        const result = await markAsSent.mutateAsync(contract.id);
+        const result = await markAsSent.mutateAsync(contractWithScope.id);
         // Update contract with the new token and status
         const updatedContract = { 
-          ...contract, 
-          public_token: result.public_token || contract.public_token || null, 
+          ...contractWithScope,
+          public_token: result.public_token || contractWithScope.public_token || null, 
           status: 'sent' as const 
         };
         setSelectedContract(updatedContract);
@@ -316,7 +327,7 @@ export function ContractsPanel({
       }
     } else {
       // Contract already sent (resending)
-      setSelectedContract(contract);
+      setSelectedContract(contractWithScope);
       setIsSendEmailOpen(true);
     }
   };
@@ -374,8 +385,8 @@ export function ContractsPanel({
     }
   };
   
-  const openPreview = (contract: Contract) => {
-    setSelectedContract(contract);
+  const openPreview = async (contract: Contract) => {
+    setSelectedContract(await withProposedServicesApplied(contract));
     setIsPreviewOpen(true);
   };
   
@@ -413,8 +424,8 @@ export function ContractsPanel({
   const openEditDialog = async (contract: Contract) => {
     setSelectedContract(contract);
     setEditContractTitle(contract.title);
-    const proposedServices = await fetchProposedServicesForContract(contract);
-    const html = applyProposedServicesToContractHtml(contract.rendered_html || '', proposedServices).html;
+    const scopedContract = await withProposedServicesApplied(contract);
+    const html = scopedContract.rendered_html || '';
     setEditContractHtml(html);
     setEditContractPlain(htmlToPlainText(html));
     setIsEditOpen(true);
