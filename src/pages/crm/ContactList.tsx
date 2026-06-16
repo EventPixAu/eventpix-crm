@@ -68,7 +68,8 @@ import { UpdateContactsCsvDialog } from '@/components/crm/UpdateContactsCsvDialo
 import { CreateStandaloneContactDialog } from '@/components/crm/CreateStandaloneContactDialog';
 import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog';
 import { useJobTitles } from '@/hooks/useJobTitles';
-import { CONTACT_STATUSES, CONTACT_CATEGORIES } from '@/lib/contactClassification';
+import { CONTACT_CATEGORIES } from '@/lib/contactClassification';
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 
 
