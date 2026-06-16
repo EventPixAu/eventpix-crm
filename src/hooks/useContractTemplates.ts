@@ -244,6 +244,123 @@ export function convertPlainTextMarkdownToHtml(text: string): string {
   return html;
 }
 
+export function cleanProposedServicesHtml(scopeHtml: string): string {
+  if (!scopeHtml?.trim()) return '';
+  if (typeof DOMParser === 'undefined') return scopeHtml.trim();
+
+  try {
+    const doc = new DOMParser().parseFromString(scopeHtml, 'text/html');
+
+    doc.body.querySelectorAll<HTMLElement>('*').forEach((el) => {
+      el.removeAttribute('class');
+      el.removeAttribute('style');
+    });
+
+    doc.body.querySelectorAll('span').forEach((span) => {
+      const parent = span.parentNode;
+      if (!parent) return;
+      while (span.firstChild) parent.insertBefore(span.firstChild, span);
+      parent.removeChild(span);
+    });
+
+    return doc.body.innerHTML.trim();
+  } catch {
+    return scopeHtml.trim();
+  }
+}
+
+export function applyProposedServicesToContractHtml(
+  contractHtml: string,
+  proposedServicesHtml?: string | null,
+): { html: string; replaced: boolean } {
+  const scope = cleanProposedServicesHtml(proposedServicesHtml || '');
+  if (!scope) return { html: contractHtml, replaced: false };
+
+  const scopeBlockInline = `<div class="scope-of-services" style="font-size:14px;line-height:1.6;margin:8px 0 16px;white-space:pre-line;">${scope}</div>`;
+  const hasScopeBlock = /class=["'][^"']*scope-of-services/i.test(contractHtml);
+  let renderedHtml = contractHtml;
+  let replaced = false;
+
+  try {
+    if (typeof DOMParser !== 'undefined') {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div id="__root">${renderedHtml}</div>`, 'text/html');
+      const root = doc.getElementById('__root');
+
+      if (root) {
+        const headingTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'STRONG', 'B', 'P'];
+        const all = Array.from(root.querySelectorAll<HTMLElement>('*'));
+        const isServicesHeading = (el: HTMLElement) => {
+          if (!headingTags.includes(el.tagName)) return false;
+          const txt = (el.textContent || '').trim();
+          if (!txt || txt.length > 60) return false;
+          return /^(?:\d+[.)]\s*)?services\b\s*:?\s*$/i.test(txt);
+        };
+
+        const headingEl = all.find(isServicesHeading);
+        if (headingEl) {
+          const headingNode: HTMLElement =
+            (headingEl.tagName === 'STRONG' || headingEl.tagName === 'B') && headingEl.parentElement?.tagName === 'P'
+              ? (headingEl.parentElement as HTMLElement)
+              : headingEl;
+
+          const isNextHeading = (el: Element) => {
+            if (!(el instanceof HTMLElement)) return false;
+            if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(el.tagName)) return true;
+            if (el.tagName === 'P') {
+              const t = (el.textContent || '').trim();
+              if (/^\d+[.)]\s+\S/.test(t) && t.length < 80) return true;
+              const firstChild = el.firstElementChild;
+              return !!(firstChild && (firstChild.tagName === 'STRONG' || firstChild.tagName === 'B') && (firstChild.textContent || '').trim().length < 60);
+            }
+            return false;
+          };
+
+          const toRemove: Element[] = [];
+          let sib = headingNode.nextElementSibling;
+          while (sib && !isNextHeading(sib)) {
+            toRemove.push(sib);
+            sib = sib.nextElementSibling;
+          }
+
+          const wrapper = doc.createElement('div');
+          wrapper.innerHTML = scopeBlockInline;
+          const insertNode = wrapper.firstElementChild!;
+          headingNode.parentElement?.insertBefore(insertNode, headingNode.nextSibling);
+          toRemove.forEach((n) => n.remove());
+
+          renderedHtml = root.innerHTML;
+          replaced = true;
+        }
+      }
+    }
+  } catch {
+    // Fall through to regex handling.
+  }
+
+  if (!replaced) {
+    const pServicesPattern = /(<p[^>]*>\s*(?:\d+[.)]\s*)?Services\s*<\/p>)([\s\S]*?)(<p[^>]*>\s*\d+[.)]\s+[^<]+<\/p>)/i;
+    renderedHtml = renderedHtml.replace(pServicesPattern, (_match, heading, _body, nextHeading) => {
+      replaced = true;
+      return `${heading}${scopeBlockInline}${nextHeading}`;
+    });
+  }
+
+  if (!replaced) {
+    const brServicesPattern = /((?:^|<br\s*\/?\s*>\s*)(?:\d+[.)]\s*)?Services\s*(?:<br\s*\/?\s*>)+)([\s\S]*?)(<br\s*\/?\s*>\s*\d+[.)]\s+[^<]+(?:<br\s*\/?\s*>)?)/i;
+    renderedHtml = renderedHtml.replace(brServicesPattern, (_match, heading, _body, nextHeading) => {
+      replaced = true;
+      return `${heading}${scopeBlockInline}${nextHeading}`;
+    });
+  }
+
+  if (!replaced && !hasScopeBlock) {
+    renderedHtml = `\n<section class="scope-of-services" style="margin: 24px 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fafafa;">\n  <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Scope of Services</h2>\n  ${scopeBlockInline}\n</section>\n${renderedHtml}`;
+  }
+
+  return { html: renderedHtml, replaced };
+}
+
 // =============================================================
 // QUERY HOOKS
 // =============================================================
