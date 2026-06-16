@@ -7,6 +7,9 @@
  * NOTE: This view must NOT display notes_internal - it is for internal use only.
  */
 import { useMemo, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
