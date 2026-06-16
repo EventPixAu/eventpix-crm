@@ -12,6 +12,7 @@ interface NotificationRequest {
   event_id: string;
   user_id?: string;
   assignment_id?: string;
+  user_ids?: string[];
 }
 
 // ── Gmail API helpers ──
