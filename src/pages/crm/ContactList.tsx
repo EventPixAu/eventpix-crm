@@ -611,8 +611,9 @@ export default function ContactList() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'}
-                {hasActiveFilters && ` (filtered)`}
+                {hasActiveFilters
+                  ? `Showing ${filteredContacts.length.toLocaleString()} of ${totalCount.toLocaleString()} contacts`
+                  : `${totalCount.toLocaleString()} contacts`}
               </div>
             </div>
 
