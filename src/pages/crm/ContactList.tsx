@@ -172,10 +172,30 @@ export default function ContactList() {
     },
   });
 
+  // Total count query (accurate regardless of fetch limit)
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ['crm-contacts-count', search],
+    queryFn: async () => {
+      let countQuery = supabase
+        .from('client_contacts')
+        .select('*', { count: 'exact', head: true });
+
+      if (search) {
+        countQuery = countQuery.or(
+          `contact_name.ilike.%${search}%,email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`
+        );
+      }
+
+      const { count, error } = await countQuery;
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['crm-contacts', search],
     queryFn: async () => {
-      // Fetch all contacts from master table
+      // Fetch all contacts from master table (raise limit above default 1000)
       let query = supabase
         .from('client_contacts')
         .select(`
@@ -201,7 +221,8 @@ export default function ContactList() {
           bounced_at,
           clients(id, business_name, is_training)
         `)
-        .order('contact_name');
+        .order('contact_name')
+        .limit(10000);
 
       // Text-based search (name, email)
       if (search) {
@@ -258,7 +279,8 @@ export default function ContactList() {
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
-          .order('contact_name');
+          .order('contact_name')
+          .limit(10000);
 
         if (tagContacts) {
           allContacts = [...allContacts, ...tagContacts];
@@ -589,8 +611,9 @@ export default function ContactList() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {filteredContacts.length} {filteredContacts.length === 1 ? 'contact' : 'contacts'}
-                {hasActiveFilters && ` (filtered)`}
+                {hasActiveFilters
+                  ? `Showing ${filteredContacts.length.toLocaleString()} of ${totalCount.toLocaleString()} contacts`
+                  : `${totalCount.toLocaleString()} contacts`}
               </div>
             </div>
 
