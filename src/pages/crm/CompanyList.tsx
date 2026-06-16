@@ -620,12 +620,9 @@ export default function CompanyList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">All Statuses</SelectItem>
-                {filterOptions.statuses.map(s => {
-                  const statusDef = companyStatuses.find(cs => cs.name === s);
-                  return (
-                    <SelectItem key={s} value={s}>{statusDef?.label || s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>
-                  );
-                })}
+                {companyStatuses.map(cs => (
+                  <SelectItem key={cs.id} value={cs.name}>{cs.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {hasActiveFilters && (
