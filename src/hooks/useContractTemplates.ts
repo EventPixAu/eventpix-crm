@@ -547,6 +547,19 @@ export function useGenerateContractFromTemplate() {
         renderedHtml = renderMergeFields(template.body_html, context);
       }
 
+      // Auto-insert "Scope of Services" section using the resolved Proposed Services
+      if (proposedServicesHtml && proposedServicesHtml.trim()) {
+        const scopeBlock = `
+<section class="scope-of-services" style="margin: 24px 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
+  <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Scope of Services</h2>
+  <div style="font-size: 14px; line-height: 1.6;">${proposedServicesHtml}</div>
+</section>
+`;
+        // Prepend so it appears near the top of the contract, after any leading header
+        renderedHtml = scopeBlock + renderedHtml;
+      }
+
+
       // Create contract
       const { data: contract, error: contractError } = await supabase
         .from('contracts')
