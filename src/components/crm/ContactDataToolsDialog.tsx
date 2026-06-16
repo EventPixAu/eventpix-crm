@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Users, Merge, X as XIcon } from 'lucide-react';
+import { AlertTriangle, Users, Merge, X as XIcon, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Contact {
