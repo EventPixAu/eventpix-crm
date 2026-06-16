@@ -213,9 +213,10 @@ export default function PromotionsDashboard() {
   });
 
   // Contact Status counts
+  const { data: companyStatuses = [] } = useCompanyStatuses();
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    CONTACT_STATUSES.forEach(s => { counts[s.value] = 0; });
+    companyStatuses.forEach(s => { counts[s.label] = 0; });
     counts['Unassigned'] = 0;
     allContacts.forEach(c => {
       if (!c.status) {
@@ -227,7 +228,7 @@ export default function PromotionsDashboard() {
       }
     });
     return counts;
-  }, [allContacts]);
+  }, [allContacts, companyStatuses]);
 
   // Contact Category counts — exclude Staff contacts from client-side aggregates
   const clientContacts = useMemo(
