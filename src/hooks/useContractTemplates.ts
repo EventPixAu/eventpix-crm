@@ -276,7 +276,7 @@ export function applyProposedServicesToContractHtml(
   const scope = cleanProposedServicesHtml(proposedServicesHtml || '');
   if (!scope) return { html: contractHtml, replaced: false };
 
-  const scopeBlockInline = `<div class="scope-of-services" style="font-size:14px;line-height:1.6;margin:8px 0 16px;white-space:pre-line;">${scope}</div>`;
+  const scopeBlockInline = `<div class="scope-of-services" style="font-size:14px;line-height:1.6;margin:8px 0 16px 24px;white-space:pre-line;">${scope}</div>`;
   const hasScopeBlock = /class=["'][^"']*scope-of-services/i.test(contractHtml);
   let renderedHtml = contractHtml;
   let replaced = false;
