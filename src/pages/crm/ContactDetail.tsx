@@ -64,7 +64,7 @@ import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useJobTitles } from '@/hooks/useJobTitles';
-import { CONTACT_STATUSES } from '@/lib/contactClassification';
+
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
