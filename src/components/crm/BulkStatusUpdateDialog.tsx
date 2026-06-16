@@ -128,7 +128,7 @@ export function BulkStatusUpdateDialog({
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">New Status</label>
-            <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as ComputedStatus)}>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
