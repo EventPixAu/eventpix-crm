@@ -26,15 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth';
-
-type ComputedStatus = 'prospect' | 'active_event' | 'current_client' | 'previous_client';
-
-const STATUS_OPTIONS: { value: ComputedStatus; label: string }[] = [
-  { value: 'prospect', label: 'Prospect' },
-  { value: 'active_event', label: 'Active Event' },
-  { value: 'current_client', label: 'Current Client' },
-  { value: 'previous_client', label: 'Previous Client' },
-];
+import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 
 interface BulkStatusUpdateDialogProps {
   open: boolean;
