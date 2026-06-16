@@ -3232,6 +3232,7 @@ export type Database = {
           ops_status: string | null
           photography_brief: string | null
           pre_registration_link: string | null
+          proposed_services: string | null
           qr_file_name: string | null
           qr_file_path: string | null
           quote_id: string | null
@@ -3317,6 +3318,7 @@ export type Database = {
           ops_status?: string | null
           photography_brief?: string | null
           pre_registration_link?: string | null
+          proposed_services?: string | null
           qr_file_name?: string | null
           qr_file_path?: string | null
           quote_id?: string | null
@@ -3402,6 +3404,7 @@ export type Database = {
           ops_status?: string | null
           photography_brief?: string | null
           pre_registration_link?: string | null
+          proposed_services?: string | null
           qr_file_name?: string | null
           qr_file_path?: string | null
           quote_id?: string | null
@@ -4965,6 +4968,7 @@ export type Database = {
           notes: string | null
           notes_internal: string | null
           po_number: string | null
+          proposed_services: string | null
           public_token: string | null
           quote_name: string | null
           quote_number: string | null
@@ -5004,6 +5008,7 @@ export type Database = {
           notes?: string | null
           notes_internal?: string | null
           po_number?: string | null
+          proposed_services?: string | null
           public_token?: string | null
           quote_name?: string | null
           quote_number?: string | null
@@ -5043,6 +5048,7 @@ export type Database = {
           notes?: string | null
           notes_internal?: string | null
           po_number?: string | null
+          proposed_services?: string | null
           public_token?: string | null
           quote_name?: string | null
           quote_number?: string | null
