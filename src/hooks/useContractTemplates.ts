@@ -490,17 +490,31 @@ export function useGenerateContractFromTemplate() {
 
       // Fetch quote if available
       let quote = null;
+      let quoteProposedServices: string | null = null;
       if (params.quoteId) {
         const { data: quoteData } = await supabase
           .from('quotes')
-          .select('quote_number, subtotal, tax_total, total_estimate, expires_at')
+          .select('quote_number, subtotal, tax_total, total_estimate, expires_at, proposed_services')
           .eq('id', params.quoteId)
           .single();
         quote = quoteData ? {
           ...quoteData,
           valid_until: quoteData.expires_at,
         } : null;
+        quoteProposedServices = (quoteData as any)?.proposed_services || null;
       }
+
+      // Resolve Proposed Services (Scope of Services): quote override → event default
+      let proposedServicesHtml: string | null = quoteProposedServices;
+      if (!proposedServicesHtml && params.eventId) {
+        const { data: evScope } = await supabase
+          .from('events')
+          .select('proposed_services')
+          .eq('id', params.eventId)
+          .maybeSingle();
+        proposedServicesHtml = (evScope as any)?.proposed_services || null;
+      }
+
 
       // Build merge field context
       const todayFormatted = format(new Date(), 'd MMMM yyyy');
