@@ -50,6 +50,22 @@ export default function ProposalView() {
 
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
+
+  // Resolve Proposed Services: quote-level override, fallback to event-level
+  const linkedEventIdScope = (quote as any)?.event_id || (quote as any)?.linked_event_id || null;
+  const { data: eventScopeFallback } = useQuery({
+    queryKey: ['event-proposed-services', linkedEventIdScope],
+    enabled: !!linkedEventIdScope && !((quote as any)?.proposed_services),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('proposed_services')
+        .eq('id', linkedEventIdScope)
+        .maybeSingle();
+      return (data as any)?.proposed_services || null;
+    },
+  });
+  const proposedServicesHtml: string = (quote as any)?.proposed_services || eventScopeFallback || '';
   
   // Fetch lead contacts for primary contact info
   const { data: leadContacts } = useLeadContacts(leadData?.id);
