@@ -81,10 +81,10 @@ function AssignmentRow({
 
       <Badge
         variant="outline"
-        className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30"
+        className="text-xs bg-slate-500/10 text-slate-400 border-slate-500/30"
       >
         <Clock className="h-3 w-3 mr-1" />
-        Pending
+        On Hold
       </Badge>
 
       <Button
