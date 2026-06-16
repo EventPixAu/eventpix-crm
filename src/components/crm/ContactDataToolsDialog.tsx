@@ -263,7 +263,7 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
                         <div className="rounded border p-2">{renderContactSummary(pair.a)}</div>
                         <div className="rounded border p-2">{renderContactSummary(pair.b)}</div>
                       </div>
-                      <div className="flex gap-2 justify-end">
+                      <div className="flex gap-2 justify-end flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
@@ -279,6 +279,30 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
                           onClick={() => mergeMutation.mutate({ keep: pair.b, remove: pair.a })}
                         >
                           <Merge className="h-3.5 w-3.5 mr-1" /> Keep right, archive left
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={deleteMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Permanently delete "${pair.a.contact_name}"? This cannot be undone.`)) {
+                              deleteMutation.mutate(pair.a);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete left
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={deleteMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Permanently delete "${pair.b.contact_name}"? This cannot be undone.`)) {
+                              deleteMutation.mutate(pair.b);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete right
                         </Button>
                       </div>
                     </div>
