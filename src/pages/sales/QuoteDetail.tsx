@@ -64,6 +64,8 @@ import { EditQuoteItemDialog } from '@/components/quote/EditQuoteItemDialog';
 import { SortableQuoteItems } from '@/components/quote/SortableQuoteItems';
 import { QuoteDiscountDialog } from '@/components/quote/QuoteDiscountDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
+import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
+import { useQuery } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -110,6 +112,21 @@ export default function QuoteDetail() {
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
+
+  // Event-level proposed services fallback for the Scope section
+  const linkedEventIdForScope = (quote as any)?.event_id || (quote as any)?.linked_event_id || null;
+  const { data: linkedEventScope } = useQuery({
+    queryKey: ['event-proposed-services', linkedEventIdForScope],
+    enabled: !!linkedEventIdForScope,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('proposed_services')
+        .eq('id', linkedEventIdForScope)
+        .maybeSingle();
+      return (data as any)?.proposed_services || null;
+    },
+  });
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -730,7 +747,20 @@ export default function QuoteDetail() {
             </div>
           </div>
 
+          {/* Proposed Services (Scope) — appears on the budget & generated contract */}
+          {id && !isNewQuote && (
+            <ProposedServicesEditor
+              target="quote"
+              targetId={id}
+              value={(quote as any).proposed_services}
+              eventFallback={linkedEventScope}
+              eventIdForAi={linkedEventIdForScope}
+              invalidateKeys={[['quote', id]]}
+            />
+          )}
+
           {/* Internal Notes (Admin/Sales only) */}
+
           {(quote as any).notes_internal && (
             <Card className="border-amber-200 bg-amber-50/50">
               <CardHeader>

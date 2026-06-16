@@ -60,6 +60,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
+import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useAuditLog, getActivityDescription } from '@/hooks/useAuditLog';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
@@ -1321,6 +1322,18 @@ export default function EventDetail() {
                   )}
                 </div>
               )}
+
+              {/* Proposed Services (Scope) — flows into budgets & contracts */}
+              {id && canSeeSection('additional_details') && (
+                <ProposedServicesEditor
+                  target="event"
+                  targetId={id}
+                  value={(event as any).proposed_services}
+                  invalidateKeys={[['event', id]]}
+                  disableAi={!(isAdmin || isOperations)}
+                />
+              )}
+
               
               {/* Team Brief (internal) */}
               {id && canSeeSection('team_brief') && (

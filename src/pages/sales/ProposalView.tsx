@@ -7,6 +7,9 @@
  * NOTE: This view must NOT display notes_internal - it is for internal use only.
  */
 import { useMemo, useState } from 'react';
+import DOMPurify from 'dompurify';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -47,6 +50,22 @@ export default function ProposalView() {
 
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
+
+  // Resolve Proposed Services: quote-level override, fallback to event-level
+  const linkedEventIdScope = (quote as any)?.event_id || (quote as any)?.linked_event_id || null;
+  const { data: eventScopeFallback } = useQuery({
+    queryKey: ['event-proposed-services', linkedEventIdScope],
+    enabled: !!linkedEventIdScope && !((quote as any)?.proposed_services),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('proposed_services')
+        .eq('id', linkedEventIdScope)
+        .maybeSingle();
+      return (data as any)?.proposed_services || null;
+    },
+  });
+  const proposedServicesHtml: string = (quote as any)?.proposed_services || eventScopeFallback || '';
   
   // Fetch lead contacts for primary contact info
   const { data: leadContacts } = useLeadContacts(leadData?.id);
@@ -261,15 +280,23 @@ export default function ProposalView() {
               </div>
             )}
 
-            {/* Scope of Work */}
-            {(quote as any).scope_text && (
+            {/* Scope of Services (proposed services HTML, falls back to event default) */}
+            {(proposedServicesHtml || (quote as any).scope_text) && (
               <div className="mb-8">
                 <h2 className="text-sm font-semibold text-black uppercase tracking-wide mb-2">
-                  Scope of Work
+                  Scope of Services
                 </h2>
-                <p className="text-black whitespace-pre-wrap">{(quote as any).scope_text}</p>
+                {proposedServicesHtml ? (
+                  <div
+                    className="text-black prose prose-sm max-w-none [&_*]:text-black"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(proposedServicesHtml) }}
+                  />
+                ) : (
+                  <p className="text-black whitespace-pre-wrap">{(quote as any).scope_text}</p>
+                )}
               </div>
             )}
+
 
             {/* Line Items - Grouped or Flat */}
             <div className="mb-8">
