@@ -279,7 +279,8 @@ export default function ContactList() {
             clients(id, business_name, is_training)
           `)
           .in('id', additionalTagIds)
-          .order('contact_name');
+          .order('contact_name')
+          .limit(10000);
 
         if (tagContacts) {
           allContacts = [...allContacts, ...tagContacts];
