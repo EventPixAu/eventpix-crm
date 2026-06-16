@@ -7,6 +7,7 @@ interface SendNotificationParams {
   event_id: string;
   user_id?: string;
   assignment_id?: string;
+  user_ids?: string[];
 }
 
 export function useSendNotification() {
