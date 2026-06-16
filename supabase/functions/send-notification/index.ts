@@ -348,8 +348,11 @@ const handler = async (req: Request): Promise<Response> => {
         await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
       }
     } else {
-      const { data: assignments, error: assignError } = await supabase
+      const assignQuery = supabase
         .from("event_assignments").select("user_id, profiles:user_id(email, full_name)").eq("event_id", event_id);
+      const { data: assignments, error: assignError } = user_ids && user_ids.length > 0
+        ? await assignQuery.in("user_id", user_ids)
+        : await assignQuery;
       if (assignError) throw new Error(`Failed to fetch assignments: ${assignError.message}`);
 
       subject = `Eventpix - Updated details: ${event.event_name} - ${formatDate(event.event_date)}`;
