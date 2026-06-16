@@ -180,6 +180,21 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
     onError: (e: Error) => toast.error('Merge failed', { description: e.message }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (contact: Contact) => {
+      // Best-effort cleanup of associations & activities so FKs don't block delete
+      await supabase.from('contact_company_associations').delete().eq('contact_id', contact.id);
+      await supabase.from('contact_activities').delete().eq('contact_id', contact.id);
+      const { error } = await supabase.from('client_contacts').delete().eq('id', contact.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contact deleted');
+    },
+    onError: (e: Error) => toast.error('Delete failed', { description: e.message }),
+  });
+
   const renderContactSummary = (c: Contact) => (
     <div className="text-sm">
       <div className="font-medium">
