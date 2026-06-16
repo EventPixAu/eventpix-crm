@@ -421,7 +421,13 @@ export default function CompanyList() {
   const filteredCompanies = useMemo(() => {
     return sortedCompanies.filter(c => {
       if (filterTag && !c.tags.includes(filterTag)) return false;
-      if (filterCategory && c.category?.name !== filterCategory) return false;
+      if (filterCategory) {
+        if (filterCategory === '__none__') {
+          if (c.category) return false;
+        } else if (c.category?.name !== filterCategory) {
+          return false;
+        }
+      }
       if (filterSource) {
         const allSources = new Set<string>();
         if (c.lead_source) allSources.add(c.lead_source);
@@ -591,6 +597,7 @@ export default function CompanyList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">All Categories</SelectItem>
+                <SelectItem value="__none__">No Category</SelectItem>
                 {filterOptions.categories.map(c => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
