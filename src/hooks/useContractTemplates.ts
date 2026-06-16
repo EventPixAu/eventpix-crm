@@ -548,32 +548,73 @@ export function useGenerateContractFromTemplate() {
       }
 
       // Replace the existing "Services" section body with the resolved Proposed Services.
-      // Falls back to prepending a "Scope of Services" block if no Services section is found.
+      // Uses DOM parsing for robustness across heading/paragraph/strong templates, then
+      // falls back to prepending a "Scope of Services" block if no Services section is found.
       if (proposedServicesHtml && proposedServicesHtml.trim()) {
         const scope = proposedServicesHtml.trim();
+        const scopeBlockInline = `<div class="scope-of-services" style="font-size:14px;line-height:1.6;margin:8px 0 16px;">${scope}</div>`;
         let replaced = false;
 
-        // Pattern A — HTML heading templates: <h1-6>...Services...</h1-6> followed by content
-        // up to the next heading. Replace the content between, keep the heading.
-        const headingRe = /(<h([1-6])[^>]*>\s*(?:\d+[.)]\s*)?[^<]*services\b[^<]*<\/h\2>)([\s\S]*?)(?=<h[1-6]\b|$)/i;
-        if (headingRe.test(renderedHtml)) {
-          renderedHtml = renderedHtml.replace(headingRe, (_m, heading) =>
-            `${heading}\n<div class="scope-of-services" style="font-size:14px;line-height:1.6;margin:8px 0 16px;">${scope}</div>\n`
-          );
-          replaced = true;
-        }
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(`<div id="__root">${renderedHtml}</div>`, 'text/html');
+          const root = doc.getElementById('__root');
+          if (root) {
+            const headingTags = ['H1','H2','H3','H4','H5','H6','STRONG','B','P'];
+            const all = Array.from(root.querySelectorAll<HTMLElement>('*'));
+            // Find element whose text is essentially "Services" (allowing leading numbering)
+            const isServicesHeading = (el: HTMLElement) => {
+              if (!headingTags.includes(el.tagName)) return false;
+              const txt = (el.textContent || '').trim();
+              if (!txt) return false;
+              // Must be short heading-like text, not a paragraph that mentions services
+              if (txt.length > 60) return false;
+              return /^(?:\d+[.)]\s*)?services\b\s*:?\s*$/i.test(txt);
+            };
 
-        // Pattern B — plain-text templates converted to <br> separated lines:
-        // "2. Services<br>...<br>3. Next" — replace the paragraph after the Services heading
-        // up to the next numbered heading (e.g. "3. ...").
-        if (!replaced) {
-          const brRe = /((?:^|<br\s*\/?>)\s*(?:\d+[.)]\s*)?Services\s*(?:<br\s*\/?>\s*)+)([\s\S]*?)(?=<br\s*\/?>\s*\d+[.)]\s|$)/i;
-          if (brRe.test(renderedHtml)) {
-            renderedHtml = renderedHtml.replace(brRe, (_m, head) =>
-              `${head}<div class="scope-of-services" style="font-size:14px;line-height:1.6;">${scope}</div><br>`
-            );
-            replaced = true;
+            const headingEl = all.find(isServicesHeading);
+            if (headingEl) {
+              // If "Services" is inside a <p><strong>Services</strong></p>, treat the parent <p> as heading
+              const headingNode: HTMLElement =
+                (headingEl.tagName === 'STRONG' || headingEl.tagName === 'B') && headingEl.parentElement?.tagName === 'P'
+                  ? (headingEl.parentElement as HTMLElement)
+                  : headingEl;
+
+              // Collect siblings after the heading up to the next heading-like sibling
+              const isNextHeading = (el: Element) => {
+                if (!(el instanceof HTMLElement)) return false;
+                if (['H1','H2','H3','H4','H5','H6'].includes(el.tagName)) return true;
+                // numbered paragraph heading e.g. "3. Payment"
+                if (el.tagName === 'P') {
+                  const t = (el.textContent || '').trim();
+                  if (/^\d+[.)]\s+\S/.test(t) && t.length < 80) return true;
+                  const firstChild = el.firstElementChild;
+                  if (firstChild && (firstChild.tagName === 'STRONG' || firstChild.tagName === 'B') &&
+                      (firstChild.textContent || '').trim().length < 60) return true;
+                }
+                return false;
+              };
+
+              const toRemove: Element[] = [];
+              let sib = headingNode.nextElementSibling;
+              while (sib && !isNextHeading(sib)) {
+                toRemove.push(sib);
+                sib = sib.nextElementSibling;
+              }
+
+              // Insert scope block right after the heading
+              const wrapper = doc.createElement('div');
+              wrapper.innerHTML = scopeBlockInline;
+              const insertNode = wrapper.firstElementChild!;
+              headingNode.parentElement?.insertBefore(insertNode, headingNode.nextSibling);
+              toRemove.forEach(n => n.remove());
+
+              renderedHtml = root.innerHTML;
+              replaced = true;
+            }
           }
+        } catch {
+          // ignore, fall through to fallback
         }
 
         // Fallback — prepend a Scope of Services block so it is never lost.
