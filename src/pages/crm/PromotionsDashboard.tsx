@@ -108,8 +108,9 @@ export default function PromotionsDashboard() {
       // Get ALL contacts with null client_id to show debug info
       const { data: contactsWithoutClient, error: contactsError } = await supabase
         .from('client_contacts')
-        .select('id, contact_name, email, created_at, client_id')
+        .select('id, contact_name, email, created_at, client_id, archived')
         .is('client_id', null)
+        .or('archived.is.null,archived.eq.false')
         .order('created_at', { ascending: false });
       
       if (contactsError) throw contactsError;
