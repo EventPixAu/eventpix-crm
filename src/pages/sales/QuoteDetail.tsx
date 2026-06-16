@@ -111,6 +111,21 @@ export default function QuoteDetail() {
   const convertToEvent = useConvertQuoteToEvent();
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
+
+  // Event-level proposed services fallback for the Scope section
+  const linkedEventIdForScope = (quote as any)?.event_id || (quote as any)?.linked_event_id || null;
+  const { data: linkedEventScope } = useQuery({
+    queryKey: ['event-proposed-services', linkedEventIdForScope],
+    enabled: !!linkedEventIdForScope,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('proposed_services')
+        .eq('id', linkedEventIdForScope)
+        .maybeSingle();
+      return (data as any)?.proposed_services || null;
+    },
+  });
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
