@@ -44,7 +44,9 @@ export function BulkStatusUpdateDialog({
   onComplete,
 }: BulkStatusUpdateDialogProps) {
   const { isAdmin } = useAuth();
-  const [selectedStatus, setSelectedStatus] = useState<ComputedStatus | ''>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const { data: dbStatuses } = useCompanyStatuses();
+  const STATUS_OPTIONS = (dbStatuses ?? []).map(s => ({ value: s.name, label: s.label }));
   const [reason, setReason] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
