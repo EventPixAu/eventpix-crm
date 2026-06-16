@@ -123,6 +123,7 @@ interface Contact {
 
 export default function ContactList() {
   const { data: categoryOptions = [] } = useCompanyCategories();
+  const { data: companyStatuses = [] } = useCompanyStatuses();
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState<string>('all');
   const [jobTitleFilter, setJobTitleFilter] = useState<string>('all');
