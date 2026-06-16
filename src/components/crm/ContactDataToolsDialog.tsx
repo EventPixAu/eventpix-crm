@@ -190,6 +190,7 @@ export function ContactDataToolsDialog({ open, onOpenChange, contacts }: Props) 
         {c.companies.length ? c.companies.map((co) => co.company_name).join(', ') : 'Standalone'}
       </div>
       <div className="flex gap-1 mt-1 flex-wrap">
+        {c.archived && <Badge variant="destructive" className="text-[10px]">Archived</Badge>}
         {c.status && <Badge variant="outline" className="text-[10px]">{c.status}</Badge>}
         {c.category && <Badge variant="secondary" className="text-[10px]">{c.category}</Badge>}
       </div>
