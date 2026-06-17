@@ -618,7 +618,6 @@ export default function ClientDetail() {
                 </SelectContent>
               </Select>
             </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit_country">Country</Label>
@@ -629,6 +628,7 @@ export default function ClientDetail() {
                 placeholder="e.g. Australia"
               />
             </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancel
