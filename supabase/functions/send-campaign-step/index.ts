@@ -24,9 +24,11 @@ function applyMergeFields(template: string, ctx: {
   lastEventDate: string;
   unsubscribeUrl: string;
 }): string {
+  const firstNameOrFallback = ctx.firstName && ctx.firstName.trim() ? ctx.firstName.trim() : 'there';
   return template
-    .replace(/\{\{\s*First Name\s*\}\}/gi, ctx.firstName || "")
-    .replace(/\{\{\s*Name\s*\}\}/gi, ctx.firstName || "")
+    .replace(/\{\{\s*First Name\s*\}\}/gi, firstNameOrFallback)
+    .replace(/\{\{\s*Name\s*\}\}/gi, firstNameOrFallback)
+
     .replace(/\{\{\s*Full Name\s*\}\}/gi, ctx.fullName || "")
     .replace(/\{\{\s*Company\s*\}\}/gi, ctx.company || "")
     .replace(/\{\{\s*Last Event\s*\}\}/gi, ctx.lastEventName

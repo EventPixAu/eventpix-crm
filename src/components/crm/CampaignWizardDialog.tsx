@@ -25,6 +25,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
+import { AU_STATES } from '@/lib/auStates';
+
 
 interface AudienceFilters {
   statuses: string[];
@@ -438,11 +440,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                 />
                 <FilterGroup
                   label="State"
-                  options={(distinctMeta?.states || []).map((s) => ({ value: s, label: s }))}
+                  options={AU_STATES.map((s) => ({ value: s, label: s }))}
                   selected={filters.states}
                   onToggle={(v) => toggleFilter('states', v)}
-                  emptyMessage="No locations assigned to contacts yet"
                 />
+
               </div>
               <p className="text-xs text-muted-foreground">
                 EPX Supplier companies are excluded from campaigns by default. Select the EPX Supplier parent above to include them.
