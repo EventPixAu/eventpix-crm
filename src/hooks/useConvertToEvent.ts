@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { setClientStatusAuto } from '@/lib/clientStatusAuto';
 
 export interface ConvertToEventInput {
   enquiry_id: string;
@@ -90,6 +91,20 @@ export function useConvertToEvent() {
         if (updErr) console.error('Failed to apply post_event_fields', updErr);
       }
 
+      // Auto-bump client status → Active Event on successful conversion
+      if (params.client_id) {
+        await setClientStatusAuto(params.client_id, 'active_event', 'event_converted');
+      } else if (result.event_id) {
+        const { data: ev } = await supabase
+          .from('events')
+          .select('client_id')
+          .eq('id', result.event_id)
+          .maybeSingle();
+        if (ev?.client_id) {
+          await setClientStatusAuto(ev.client_id, 'active_event', 'event_converted');
+        }
+      }
+
       return result;
     },
     onSuccess: (result) => {
@@ -97,6 +112,8 @@ export function useConvertToEvent() {
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['venues'] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client'] });
       
       const warnings = result.warnings || [];
       const tasksCreated = result.created?.tasks || 0;
