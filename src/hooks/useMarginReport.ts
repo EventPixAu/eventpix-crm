@@ -2,7 +2,7 @@
  * MARGIN REPORTING HOOKS
  * 
  * Provides admin-only margin analysis.
- * Revenue: Only counts events where invoice_status = 'paid'
+ * Revenue: Only counts events where invoice_status = 'paid_in_full'
  * Costs: Staff assignments + expenses (travel, accommodation, sundry) from Xero
  * Access: Admin only (enforced in component)
  */
