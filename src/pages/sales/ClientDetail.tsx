@@ -603,6 +603,7 @@ export default function ClientDetail() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
