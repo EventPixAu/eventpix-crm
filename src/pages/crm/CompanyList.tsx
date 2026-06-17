@@ -740,6 +740,26 @@ export default function CompanyList() {
             >
               {showStateColumn ? 'Hide State column' : 'Show State column'}
             </Button>
+            <Select value={filterCountry || '__all__'} onValueChange={v => setFilterCountry(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Countries</SelectItem>
+                <SelectItem value="__none__">No Country</SelectItem>
+                {filterOptions.countries.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant={showCountryColumn ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setShowCountryColumn(v => !v)}
+              className="h-8 px-2 text-xs"
+            >
+              {showCountryColumn ? 'Hide Country column' : 'Show Country column'}
+            </Button>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-2 text-xs">
                 <X className="h-3 w-3 mr-1" />
@@ -803,6 +823,7 @@ export default function CompanyList() {
                   </TableHead>
                   <TableHead>Client Type</TableHead>
                   {showStateColumn && <TableHead>State</TableHead>}
+                  {showCountryColumn && <TableHead>Country</TableHead>}
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
