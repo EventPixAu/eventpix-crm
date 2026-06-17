@@ -963,6 +963,15 @@ export default function CompanyList() {
                         )}
                       </TableCell>
                     )}
+                    {showCountryColumn && (
+                      <TableCell>
+                        {company.country ? (
+                          <span className="text-sm">{company.country}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <InlineStatusEditor
                         companyId={company.id}
