@@ -116,6 +116,7 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     state: '' as string,
+    country: '' as string,
     category_id: '' as string,
     subcategory_id: '' as string,
     client_type: '' as '' | 'Direct' | 'Indirect',
