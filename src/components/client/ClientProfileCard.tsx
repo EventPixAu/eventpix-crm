@@ -187,6 +187,14 @@ export function ClientProfileCard({
               <span>{client.state || '-'}</span>
             </div>
           </div>
+
+          <div className="flex items-start gap-3">
+            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <div className="text-muted-foreground text-xs mb-0.5">Country</div>
+              <span>{client.country || '-'}</span>
+            </div>
+          </div>
         </div>
 
         {/* Actions */}
