@@ -70,7 +70,7 @@ export default function Workflows() {
         description="Reusable checklists for event and crew management"
       />
 
-      <Tabs defaultValue="operations" className="space-y-6">
+      <Tabs defaultValue={initialTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
