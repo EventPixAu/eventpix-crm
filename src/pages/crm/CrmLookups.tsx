@@ -388,6 +388,68 @@ export default function CrmLookups() {
                 itemLabel="Company Category"
               />
             </TabsContent>
+
+            <TabsContent value="company-subcategories" className="m-0">
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-2 p-3 bg-muted/40 rounded-lg border">
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm min-w-[200px]"
+                    value={newSubcategoryParentId}
+                    onChange={(e) => setNewSubcategoryParentId(e.target.value)}
+                  >
+                    <option value="">Select parent…</option>
+                    {companyCategories.filter(c => c.is_active).map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <Input
+                    placeholder="New sub-category name…"
+                    value={newSubcategoryName}
+                    onChange={(e) => setNewSubcategoryName(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!newSubcategoryParentId || !newSubcategoryName.trim() || createSubcategory.isPending}
+                    onClick={async () => {
+                      await createSubcategory.mutateAsync({ parent_id: newSubcategoryParentId, name: newSubcategoryName.trim() });
+                      setNewSubcategoryName('');
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {subLoading ? (
+                  <div className="p-6 text-center text-muted-foreground">Loading…</div>
+                ) : (
+                  <div className="space-y-6">
+                    {companyCategories.map((parent) => {
+                      const subs = subcategories
+                        .filter((s) => s.parent_id === parent.id)
+                        .sort((a, b) => a.name.localeCompare(b.name));
+                      if (subs.length === 0) return null;
+                      return (
+                        <div key={parent.id}>
+                          <h4 className="font-medium text-sm mb-2">{parent.name}</h4>
+                          <div className="border rounded-lg divide-y">
+                            {subs.map((s) => (
+                              <div key={s.id} className={`flex items-center justify-between p-2 px-3 ${!s.is_active ? 'opacity-60' : ''}`}>
+                                <span className={!s.is_active ? 'line-through text-sm' : 'text-sm'}>{s.name}</span>
+                                <Switch
+                                  checked={s.is_active}
+                                  onCheckedChange={() => updateSubcategory.mutate({ id: s.id, is_active: !s.is_active })}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
           </div>
         </Tabs>
       </div>
