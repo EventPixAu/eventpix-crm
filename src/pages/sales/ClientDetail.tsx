@@ -322,6 +322,16 @@ export default function ClientDetail() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="create_country">Country</Label>
+              <Input
+                id="create_country"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                placeholder="e.g. Australia"
+              />
+            </div>
+
 
             <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
               After creating the company, you can add contacts from the Contacts panel on the company detail page.
@@ -608,7 +618,17 @@ export default function ClientDetail() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_country">Country</Label>
+              <Input
+                id="edit_country"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                placeholder="e.g. Australia"
+              />
+            </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancel
