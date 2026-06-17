@@ -234,7 +234,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   const reset = () => {
     setStep(1);
-    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [] });
+    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
@@ -470,7 +470,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           type="button"
                           onClick={() => {
                             setAudienceCleared(true);
-                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [] });
+                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
                             setManualSearch('');
@@ -511,7 +511,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                             type="button"
                             onClick={() => {
                               setAudienceCleared(true);
-                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [] });
+                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
                               setManualSearch('');
