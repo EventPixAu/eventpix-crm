@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
         label: eventTypeName || null,
         venue_name: payload.location?.trim() || null,
         venue_address: payload.location?.trim() || null,
-        timezone: "Australia/Sydney",
+        timezone: guessTimezoneFromLocation(payload.location),
         sort_order: 0,
       });
       if (sessionError) console.error("Error creating event session:", sessionError);
@@ -477,3 +477,41 @@ function parseBudgetAmount(budget?: string): number | null {
   const amount = Number(match[0].replace(/,/g, ""));
   return Number.isFinite(amount) ? amount : null;
 }
+
+/**
+ * Guess an IANA timezone from a free-text Australian location string.
+ * Matches state codes/names and major cities. Falls back to Sydney.
+ */
+function guessTimezoneFromLocation(location?: string | null): string {
+  const DEFAULT_TZ = "Australia/Sydney";
+  if (!location) return DEFAULT_TZ;
+  const s = location.toLowerCase();
+
+  // City matches first (more specific)
+  const cityMap: Array<[RegExp, string]> = [
+    [/\bperth\b|\bfremantle\b|\bmandurah\b/, "Australia/Perth"],
+    [/\badelaide\b/, "Australia/Adelaide"],
+    [/\bdarwin\b|\balice springs\b|\bkatherine\b/, "Australia/Darwin"],
+    [/\bbrisbane\b|\bgold coast\b|\bsunshine coast\b|\bcairns\b|\btownsville\b|\btoowoomba\b/, "Australia/Brisbane"],
+    [/\bhobart\b|\blaunceston\b/, "Australia/Hobart"],
+    [/\bmelbourne\b|\bgeelong\b|\bballarat\b|\bbendigo\b/, "Australia/Melbourne"],
+    [/\bsydney\b|\bnewcastle\b|\bwollongong\b|\bcentral coast\b/, "Australia/Sydney"],
+    [/\bcanberra\b/, "Australia/Sydney"],
+  ];
+  for (const [re, tz] of cityMap) if (re.test(s)) return tz;
+
+  // State matches
+  const stateMap: Array<[RegExp, string]> = [
+    [/\b(wa|western australia)\b/, "Australia/Perth"],
+    [/\b(sa|south australia)\b/, "Australia/Adelaide"],
+    [/\b(nt|northern territory)\b/, "Australia/Darwin"],
+    [/\b(qld|queensland)\b/, "Australia/Brisbane"],
+    [/\b(tas|tasmania)\b/, "Australia/Hobart"],
+    [/\b(vic|victoria)\b/, "Australia/Melbourne"],
+    [/\b(nsw|new south wales|act|australian capital territory)\b/, "Australia/Sydney"],
+  ];
+  for (const [re, tz] of stateMap) if (re.test(s)) return tz;
+
+  return DEFAULT_TZ;
+}
+
