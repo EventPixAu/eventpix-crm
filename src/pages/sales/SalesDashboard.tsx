@@ -17,7 +17,9 @@ import {
   FileSignature,
   AlertTriangle,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Globe,
+  ChevronRight
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
