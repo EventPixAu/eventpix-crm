@@ -753,6 +753,7 @@ export default function CompanyList() {
                       <SortIcon column="category" />
                     </div>
                   </TableHead>
+                  <TableHead>Client Type</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
