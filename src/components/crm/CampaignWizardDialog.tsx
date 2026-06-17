@@ -171,6 +171,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitSubs = new Set(filters.subcategories);
       const explicitClientTypes = new Set(filters.clientTypes);
       const explicitCompanyStates = new Set(filters.companyStates);
+      const explicitCountries = new Set(filters.countries);
 
       return rows.filter((r) => {
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
@@ -190,6 +191,10 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         }
         if (explicitCompanyStates.size) {
           if (!info?.state || !explicitCompanyStates.has(info.state)) return false;
+        }
+        if (explicitCountries.size) {
+          const value = (info?.country || '').trim();
+          if (!value || !explicitCountries.has(value)) return false;
         }
         return true;
       });
