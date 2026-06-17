@@ -415,6 +415,7 @@ export default function CompanyList() {
     const subcategoriesByParent: Record<string, Map<string, string>> = {};
     const sources = new Set<string>();
     const statuses = new Set<string>();
+    const countries = new Set<string>();
 
     companies.forEach(c => {
       c.tags.forEach(t => tags.add(t));
@@ -428,6 +429,7 @@ export default function CompanyList() {
       if (c.lead_source) sources.add(c.lead_source);
       c.contact_sources.forEach(s => sources.add(s));
       statuses.add(c.display_status);
+      if (c.country && c.country.trim()) countries.add(c.country.trim());
     });
 
     return {
@@ -438,6 +440,7 @@ export default function CompanyList() {
       subcategoriesByParent,
       sources: Array.from(sources).sort(),
       statuses: Array.from(statuses).sort(),
+      countries: Array.from(countries).sort((a, b) => a.localeCompare(b)),
     };
   }, [companies]);
 
@@ -489,11 +492,18 @@ export default function CompanyList() {
           return false;
         }
       }
+      if (filterCountry) {
+        if (filterCountry === '__none__') {
+          if (c.country && c.country.trim()) return false;
+        } else if ((c.country || '').trim() !== filterCountry) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus, filterState]);
+  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus, filterState, filterCountry]);
 
-  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus || filterState;
+  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus || filterState || filterCountry;
 
   const clearAllFilters = () => {
     setFilterTag('');
@@ -503,6 +513,7 @@ export default function CompanyList() {
     setFilterSource('');
     setFilterStatus('');
     setFilterState('');
+    setFilterCountry('');
   };
 
   const handleRefresh = () => {
