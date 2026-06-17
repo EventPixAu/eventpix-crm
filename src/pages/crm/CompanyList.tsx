@@ -204,6 +204,7 @@ export default function CompanyList() {
           company_email,
           billing_address,
           state,
+          country,
           category_id,
           subcategory_id,
           client_type,
