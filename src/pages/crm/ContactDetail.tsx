@@ -66,6 +66,8 @@ import { supabase } from '@/lib/supabase';
 import { useJobTitles } from '@/hooks/useJobTitles';
 
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { AU_STATES } from '@/lib/auStates';
+
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
 import { useContactEmailLogs } from '@/hooks/useContactEmailLogs';
 import { toast } from 'sonner';
