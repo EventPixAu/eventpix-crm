@@ -25,6 +25,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
+import { AU_STATES } from '@/lib/auStates';
+
 
 interface AudienceFilters {
   statuses: string[];
