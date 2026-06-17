@@ -267,6 +267,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ─── 4b. Add note to lead's Notes panel ─────────────────────────────────
+    await supabase.from("lead_notes").insert({
+      lead_id: lead.id,
+      content: payload.message.trim(),
+    });
+
     // ─── 5. Activity log entry on the contact's timeline ───────────────────────
     if (contactId) {
       const dateStr = new Date().toLocaleDateString("en-AU", {
