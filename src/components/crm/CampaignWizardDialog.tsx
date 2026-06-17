@@ -416,10 +416,30 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   onToggle={(v) => toggleFilter('statuses', v)}
                 />
                 <FilterGroup
-                  label="Category"
-                  options={categories.map((c) => ({ value: c.name, label: c.name }))}
+                  label="Parent Category"
+                  options={categories.map((c) => ({
+                    value: c.id,
+                    label: c.excluded_from_campaigns ? `${c.name} (excluded by default)` : c.name,
+                  }))}
                   selected={filters.categories}
                   onToggle={(v) => toggleFilter('categories', v)}
+                />
+                <FilterGroup
+                  label={`Sub-Category${selectedParentForSub ? '' : ' (pick one parent)'}`}
+                  options={subcategories.map((s) => ({ value: s.id, label: s.name }))}
+                  selected={filters.subcategories}
+                  onToggle={(v) => toggleFilter('subcategories', v)}
+                  emptyMessage={selectedParentForSub ? 'No sub-categories' : 'Select a single parent category to filter by sub-category'}
+                />
+                <FilterGroup
+                  label="Client Type"
+                  options={[
+                    { value: 'Direct', label: 'Direct' },
+                    { value: 'Indirect', label: 'Indirect' },
+                    { value: 'Unassigned', label: 'Unassigned' },
+                  ]}
+                  selected={filters.clientTypes}
+                  onToggle={(v) => toggleFilter('clientTypes', v)}
                 />
                 <FilterGroup
                   label="Source"
@@ -435,6 +455,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   emptyMessage="No locations assigned to contacts yet"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                EPX Supplier companies are excluded from campaigns by default. Select the EPX Supplier parent above to include them.
+              </p>
 
               <Card className="bg-muted/40">
                 <CardContent className="pt-4">
