@@ -55,6 +55,7 @@ export function QuickCreateCompanyDialog({
   const [tags, setTags] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
   const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
 
   const queryClient = useQueryClient();
   const { data: companyStatuses = [] } = useCompanyStatuses();
@@ -83,6 +84,7 @@ export function QuickCreateCompanyDialog({
           tags: tagsArray.length > 0 ? tagsArray : null,
           billing_address: billingAddress.trim() || null,
           state: state || null,
+          country: country.trim() || null,
         } as any])
         .select('id, business_name')
         .single();
@@ -120,6 +122,7 @@ export function QuickCreateCompanyDialog({
     setTags('');
     setBillingAddress('');
     setState('');
+    setCountry('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
