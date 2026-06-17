@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Circle, ClipboardList } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { supabase } from '@/lib/supabase';
@@ -23,6 +24,9 @@ interface WorkflowTemplateItem {
 }
 
 export default function Workflows() {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'crew-checklists' ? 'crew' : 'operations';
+
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ['workflow-templates', 'operations'],
     queryFn: async () => {
@@ -66,7 +70,7 @@ export default function Workflows() {
         description="Reusable checklists for event and crew management"
       />
 
-      <Tabs defaultValue="operations" className="space-y-6">
+      <Tabs defaultValue={initialTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>

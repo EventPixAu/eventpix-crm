@@ -101,7 +101,7 @@ import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
-import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
+import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -114,91 +114,7 @@ function formatSessionTime(timeStr: string): string {
   }
 }
 
-function EditingInstructionsPanel({ value, templateId, onSave }: { value: string; templateId?: string | null; onSave: (val: string, templateId?: string | null) => Promise<void> }) {
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(value);
-  const [saving, setSaving] = useState(false);
-  const { data: templates = [] } = useEditingInstructionTemplates();
-
-  const handleTemplateChange = async (tid: string) => {
-    const template = templates.find((t) => t.id === tid);
-    if (!template) return;
-    setText(template.content);
-    setSaving(true);
-    try {
-      await onSave(template.content, tid);
-      toast.success('Editing instructions applied from template');
-    } catch {
-      toast.error('Failed to apply template');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onSave(text);
-      setEditing(false);
-      toast.success('Editing instructions saved');
-    } catch {
-      toast.error('Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-5 shadow-card">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Edit className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-display font-semibold">Editing Instructions</h3>
-          <Badge variant="outline" className="text-xs">Internal</Badge>
-        </div>
-        {!editing && (
-          <Button variant="ghost" size="sm" onClick={() => { setText(value); setEditing(true); }}>
-            <Edit className="h-4 w-4 mr-1" /> Edit
-          </Button>
-        )}
-      </div>
-      {!editing && templates.length > 0 && (
-        <div className="mb-3">
-          <Select value={templateId || ''} onValueChange={handleTemplateChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Apply a template..." />
-            </SelectTrigger>
-            <SelectContent>
-              {templates.map((t) => (
-                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      {editing ? (
-        <div className="space-y-2">
-          <textarea
-            className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Enter editing instructions for the post-production team..."
-          />
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-          {value || 'No editing instructions set.'}
-        </p>
-      )}
-    </div>
-  );
-}
+// EditingInstructionsPanel removed — replaced by Crew Checklists panel on Assignments tab.
 
 function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
   const canView = isAdmin || isOperations || isSelf;
@@ -1777,19 +1693,6 @@ export default function EventDetail() {
                 );
               })()}
 
-              {/* Editing Instructions - Internal Only */}
-              {(isAdmin || canSeeSection('editing_instructions')) && id && (
-                <EditingInstructionsPanel
-                  value={(event as any)?.editing_instructions || ''}
-                  templateId={(event as any)?.editing_instructions_template_id}
-                  onSave={async (val: string, tid?: string | null) => {
-                    const updateData: any = { editing_instructions: val };
-                    if (tid !== undefined) updateData.editing_instructions_template_id = tid;
-                    await supabase.from('events').update(updateData).eq('id', id);
-                    queryClient.invalidateQueries({ queryKey: ['events', id] });
-                  }}
-                />
-              )}
 
               {/* Mail History */}
               {(isAdmin || canSeeSection('mail_history')) && id && (
@@ -1885,6 +1788,11 @@ export default function EventDetail() {
               </div>
             )}
           </div>
+
+          {/* Crew Checklists - admin/ops only */}
+          {(isAdmin || isOperations) && id && assignments.length > 0 && (
+            <CrewChecklistsPanel eventId={id} assignments={assignments} />
+          )}
         </TabsContent>
 
         {/* Equipment Tab */}
