@@ -687,19 +687,8 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px] h-8 text-xs">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {companyStatuses.map((s) => (
-                    <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Status filter removed — status is now set at Company level */}
+
 
               {/* Category Filter */}
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
