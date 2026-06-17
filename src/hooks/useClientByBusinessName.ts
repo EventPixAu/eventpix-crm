@@ -7,6 +7,8 @@ export interface ClientPrimaryContactDetails {
   primary_contact_name: string | null;
   primary_contact_email: string | null;
   primary_contact_phone: string | null;
+  status?: string | null;
+  manual_status?: string | null;
 }
 
 /**
