@@ -689,6 +689,7 @@ export type Database = {
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
+          state: string | null
           status: string | null
           status_override_at: string | null
           status_override_by: string | null
@@ -719,6 +720,7 @@ export type Database = {
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          state?: string | null
           status?: string | null
           status_override_at?: string | null
           status_override_by?: string | null
@@ -749,6 +751,7 @@ export type Database = {
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          state?: string | null
           status?: string | null
           status_override_at?: string | null
           status_override_by?: string | null

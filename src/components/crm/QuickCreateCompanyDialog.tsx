@@ -30,6 +30,7 @@ import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { CompanyCategoryPicker } from './CompanyCategoryPicker';
 import { ClientTypePicker } from './ClientTypePicker';
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { AU_STATES } from '@/lib/auStates';
 
 interface QuickCreateCompanyDialogProps {
   open: boolean;
@@ -53,6 +54,7 @@ export function QuickCreateCompanyDialog({
   const [leadSource, setLeadSource] = useState('');
   const [tags, setTags] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
+  const [state, setState] = useState('');
 
   const queryClient = useQueryClient();
   const { data: companyStatuses = [] } = useCompanyStatuses();
@@ -80,6 +82,7 @@ export function QuickCreateCompanyDialog({
           lead_source: leadSource.trim() || null,
           tags: tagsArray.length > 0 ? tagsArray : null,
           billing_address: billingAddress.trim() || null,
+          state: state || null,
         } as any])
         .select('id, business_name')
         .single();
@@ -116,6 +119,7 @@ export function QuickCreateCompanyDialog({
     setLeadSource('');
     setTags('');
     setBillingAddress('');
+    setState('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -247,6 +251,21 @@ export function QuickCreateCompanyDialog({
                 rows={3}
                 placeholder="Street Address&#10;Suburb, State, Postcode&#10;Country"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quick_state">State</Label>
+              <Select value={state || '__none__'} onValueChange={(v) => setState(v === '__none__' ? '' : v)}>
+                <SelectTrigger id="quick_state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {AU_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

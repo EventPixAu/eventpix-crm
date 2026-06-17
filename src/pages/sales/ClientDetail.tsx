@@ -39,6 +39,7 @@ import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { CompanyCategoryPicker } from '@/components/crm/CompanyCategoryPicker';
 import { ClientTypePicker } from '@/components/crm/ClientTypePicker';
 import { useAuth } from '@/lib/auth';
+import { AU_STATES } from '@/lib/auStates';
 import { toast } from 'sonner';
 import {
   ClientProfileCard,
@@ -114,6 +115,7 @@ export default function ClientDetail() {
     company_phone: '',
     company_email: '',
     billing_address: '',
+    state: '' as string,
     category_id: '' as string,
     subcategory_id: '' as string,
     client_type: '' as '' | 'Direct' | 'Indirect',
@@ -131,6 +133,7 @@ export default function ClientDetail() {
         company_phone: (client as any).company_phone || '',
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
+        state: (client as any).state || '',
         category_id: (client as any).category_id || '',
         subcategory_id: (client as any).subcategory_id || '',
         client_type: ((client as any).client_type as '' | 'Direct' | 'Indirect') || '',
@@ -157,6 +160,7 @@ export default function ClientDetail() {
       company_phone: formData.company_phone,
       company_email: formData.company_email,
       billing_address: formData.billing_address,
+      state: formData.state || null,
       website: formData.website,
       category_id: formData.category_id || null,
       subcategory_id: formData.subcategory_id || null,
@@ -178,6 +182,7 @@ export default function ClientDetail() {
       company_phone: formData.company_phone || null,
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
+      state: formData.state || null,
       category_id: formData.category_id || null,
       subcategory_id: formData.subcategory_id || null,
       client_type: isEpxSupplier ? null : (formData.client_type || null),
@@ -294,6 +299,25 @@ export default function ClientDetail() {
                 placeholder="123 Main St, Sydney NSW 2000"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create_state">State</Label>
+              <Select
+                value={formData.state || '__none__'}
+                onValueChange={(v) => setFormData({ ...formData, state: v === '__none__' ? '' : v })}
+              >
+                <SelectTrigger id="create_state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {AU_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
 
             <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
               After creating the company, you can add contacts from the Contacts panel on the company detail page.
@@ -561,6 +585,24 @@ export default function ClientDetail() {
                 rows={3}
                 placeholder="Street Address&#10;Suburb, State, Postcode&#10;Country"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_state">State</Label>
+              <Select
+                value={formData.state || '__none__'}
+                onValueChange={(v) => setFormData({ ...formData, state: v === '__none__' ? '' : v })}
+              >
+                <SelectTrigger id="edit_state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {AU_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

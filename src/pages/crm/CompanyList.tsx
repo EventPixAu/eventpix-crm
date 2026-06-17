@@ -77,6 +77,7 @@ import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDia
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
+import { AU_STATES } from '@/lib/auStates';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type SortColumn = 'tags' | 'category' | 'source' | 'status' | null;
@@ -91,6 +92,7 @@ interface Company {
   company_phone: string | null;
   company_email: string | null;
   billing_address: string | null;
+  state: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
   subcategory_id: string | null;
@@ -153,6 +155,8 @@ export default function CompanyList() {
   const [filterClientType, setFilterClientType] = useState<string>('');
   const [filterSource, setFilterSource] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterState, setFilterState] = useState<string>('');
+  const [showStateColumn, setShowStateColumn] = useState<boolean>(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
@@ -196,6 +200,7 @@ export default function CompanyList() {
           company_phone,
           company_email,
           billing_address,
+          state,
           category_id,
           subcategory_id,
           client_type,
@@ -473,11 +478,18 @@ export default function CompanyList() {
         if (!allSources.has(filterSource)) return false;
       }
       if (filterStatus && c.display_status !== filterStatus) return false;
+      if (filterState) {
+        if (filterState === '__none__') {
+          if (c.state) return false;
+        } else if (c.state !== filterState) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus]);
+  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus, filterState]);
 
-  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus;
+  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus || filterState;
 
   const clearAllFilters = () => {
     setFilterTag('');
@@ -486,6 +498,7 @@ export default function CompanyList() {
     setFilterClientType('');
     setFilterSource('');
     setFilterStatus('');
+    setFilterState('');
   };
 
   const handleRefresh = () => {
@@ -692,6 +705,26 @@ export default function CompanyList() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterState || '__all__'} onValueChange={v => setFilterState(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All States</SelectItem>
+                <SelectItem value="__none__">No State</SelectItem>
+                {AU_STATES.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant={showStateColumn ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setShowStateColumn(v => !v)}
+              className="h-8 px-2 text-xs"
+            >
+              {showStateColumn ? 'Hide State column' : 'Show State column'}
+            </Button>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-2 text-xs">
                 <X className="h-3 w-3 mr-1" />
@@ -754,6 +787,7 @@ export default function CompanyList() {
                     </div>
                   </TableHead>
                   <TableHead>Client Type</TableHead>
+                  {showStateColumn && <TableHead>State</TableHead>}
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
@@ -884,6 +918,15 @@ export default function CompanyList() {
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </TableCell>
+                    {showStateColumn && (
+                      <TableCell>
+                        {company.state ? (
+                          <Badge variant="outline" className="text-xs">{company.state}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <InlineStatusEditor
                         companyId={company.id}
