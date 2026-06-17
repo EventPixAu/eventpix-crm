@@ -122,6 +122,8 @@ Deno.serve(async (req) => {
     const leadName = payload.company 
       ? `${payload.company} - Web Enquiry`
       : `${payload.name} - Web Enquiry`;
+    const budgetAmount = parseBudgetAmount(payload.budget);
+    const budgetNote = payload.budget?.trim() ? `\nBudget Range: ${payload.budget.trim()}` : "";
 
     const { data: lead, error: leadError } = await supabase
       .from("leads")
@@ -131,11 +133,11 @@ Deno.serve(async (req) => {
         event_type_id: payload.event_type_id || null,
         estimated_event_date: payload.event_date || null,
         venue_text: payload.location?.trim() || null,
-        budget: payload.budget?.trim() || null,
+        budget: budgetAmount,
         lead_source_id: leadSourceId,
         source: "Website",
         requirements_summary: payload.message.trim(),
-        notes: `Web enquiry from: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone || "Not provided"}\n\n${payload.message}`,
+        notes: `Web enquiry from: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone || "Not provided"}${budgetNote}\n\n${payload.message}`,
         status: "new",
       })
       .select("id")
@@ -398,4 +400,14 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function parseBudgetAmount(budget?: string): number | null {
+  if (!budget?.trim()) return null;
+
+  const match = budget.match(/[\d,]+/);
+  if (!match) return null;
+
+  const amount = Number(match[0].replace(/,/g, ""));
+  return Number.isFinite(amount) ? amount : null;
 }
