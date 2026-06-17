@@ -35,6 +35,9 @@ import {
   useAllCompanyCategories,
   useCreateCompanyCategory,
   useUpdateCompanyCategory,
+  useAllCompanySubcategories,
+  useCreateCompanySubcategory,
+  useUpdateCompanySubcategory,
 } from '@/hooks/useCompanyCategories';
 
 interface LookupItem {
