@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
         label: eventTypeName || null,
         venue_name: payload.location?.trim() || null,
         venue_address: payload.location?.trim() || null,
-        timezone: "Australia/Sydney",
+        timezone: guessTimezoneFromLocation(payload.location),
         sort_order: 0,
       });
       if (sessionError) console.error("Error creating event session:", sessionError);
