@@ -96,8 +96,8 @@ export default function InvoiceSync() {
   };
 
   const lastSync = syncLogs?.[0];
-  const paidCount = events?.filter(e => e.invoice_status === 'paid').length || 0;
-  const unpaidCount = events?.filter(e => e.invoice_status && e.invoice_status !== 'paid').length || 0;
+  const paidCount = events?.filter(e => e.invoice_status === 'paid_in_full').length || 0;
+  const unpaidCount = events?.filter(e => e.invoice_status && e.invoice_status !== 'paid_in_full').length || 0;
 
   const isConnected = xeroStatus?.connected && !xeroStatus?.isExpired;
 

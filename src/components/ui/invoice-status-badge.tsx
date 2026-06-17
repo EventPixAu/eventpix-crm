@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Clock, CheckCircle, Gift, Wallet } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, Gift, Wallet, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InvoiceStatusBadgeProps {
-  status: 'not_invoiced' | 'invoiced' | 'paid' | 'sponsored' | 'deposit' | null;
+  status: 'not_invoiced' | 'invoiced_deposit' | 'deposit_paid' | 'invoiced_full' | 'paid_in_full' | 'sponsored' | null;
   reference?: string | null;
   className?: string;
 }
@@ -16,14 +16,26 @@ export function InvoiceStatusBadge({ status, reference, className }: InvoiceStat
       variant: 'outline' as const,
       className: 'border-muted-foreground/50 text-muted-foreground',
     },
-    invoiced: {
-      label: 'Invoiced',
-      icon: DollarSign,
+    invoiced_deposit: {
+      label: 'Invoiced - Deposit',
+      icon: FileText,
       variant: 'secondary' as const,
       className: 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400',
     },
-    paid: {
-      label: 'Paid',
+    deposit_paid: {
+      label: 'Deposit Paid',
+      icon: Wallet,
+      variant: 'secondary' as const,
+      className: 'border-cyan-500/50 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400',
+    },
+    invoiced_full: {
+      label: 'Invoiced - Full',
+      icon: FileText,
+      variant: 'secondary' as const,
+      className: 'border-orange-500/50 bg-orange-500/10 text-orange-700 dark:text-orange-400',
+    },
+    paid_in_full: {
+      label: 'Paid in Full',
       icon: CheckCircle,
       variant: 'secondary' as const,
       className: 'border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400',
@@ -33,12 +45,6 @@ export function InvoiceStatusBadge({ status, reference, className }: InvoiceStat
       icon: Gift,
       variant: 'secondary' as const,
       className: 'border-purple-500/50 bg-purple-500/10 text-purple-700 dark:text-purple-400',
-    },
-    deposit: {
-      label: 'Deposit Paid',
-      icon: Wallet,
-      variant: 'secondary' as const,
-      className: 'border-cyan-500/50 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400',
     },
   };
 

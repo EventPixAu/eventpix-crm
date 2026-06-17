@@ -75,7 +75,7 @@ export function useMarginReport(filters?: MarginFilters) {
             status
           )
         `)
-        .eq('invoice_status', 'paid'); // Only paid invoices count as revenue
+        .eq('invoice_status', 'paid_in_full'); // Only paid in full invoices count as revenue
 
       if (filters?.startDate) {
         query = query.gte('event_date', filters.startDate);
@@ -197,7 +197,7 @@ export function useMarginReport(filters?: MarginFilters) {
           totalCost: eventTotalCost,
           margin,
           marginPercent,
-          isPaid: event.invoice_status === 'paid',
+          isPaid: event.invoice_status === 'paid_in_full',
         });
 
         totalRevenue += quotedTotal;
