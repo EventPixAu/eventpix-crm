@@ -95,6 +95,7 @@ import { useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { setClientStatusAuto } from '@/lib/clientStatusAuto';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
@@ -1382,6 +1383,10 @@ export default function EventDetail() {
                             id: event.id,
                             ops_status: value,
                           });
+                          // When event marked completed, return client to Active Client
+                          if (value === 'completed' && event.client_id) {
+                            await setClientStatusAuto(event.client_id, 'active', 'event_completed');
+                          }
                           setIsUpdatingStatus(false);
                         }}
                         disabled={isUpdatingStatus}
