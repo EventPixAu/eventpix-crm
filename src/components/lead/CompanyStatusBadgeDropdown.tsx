@@ -98,6 +98,9 @@ export function CompanyStatusBadgeDropdown({
       queryClient.invalidateQueries({ queryKey: ['client'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['client-by-business-name'] });
 
       toast.success('Status updated');
       setPendingStatus(null);
@@ -138,6 +141,9 @@ export function CompanyStatusBadgeDropdown({
       queryClient.invalidateQueries({ queryKey: ['client'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['client-by-business-name'] });
 
       toast.success('Override cleared - status will auto-compute');
       onStatusChange?.();
