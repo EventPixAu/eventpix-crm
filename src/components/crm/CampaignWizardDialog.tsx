@@ -89,8 +89,32 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   
   const { data: categories = [] } = useCompanyCategories();
+  const selectedParentForSub = filters.categories.length === 1 ? filters.categories[0] : undefined;
+  const { data: subcategories = [] } = useCompanySubcategories(selectedParentForSub);
 
-  // Distinct states/cities/sources from contacts (auto-refreshes when dialog opens or contacts change)
+  // Companies index: client_id → { category_id, subcategory_id, client_type, parent_excluded_from_campaigns }
+  const { data: companiesIndex } = useQuery({
+    queryKey: ['campaign-wizard-companies'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, category_id, subcategory_id, client_type, category:company_categories(excluded_from_campaigns)');
+      if (error) throw error;
+      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; excluded: boolean }>();
+      (data || []).forEach((c: any) => {
+        map.set(c.id, {
+          category_id: c.category_id,
+          subcategory_id: c.subcategory_id,
+          client_type: c.client_type,
+          excluded: !!c.category?.excluded_from_campaigns,
+        });
+      });
+      return map;
+    },
+    enabled: open,
+  });
+
+  // Distinct states/cities/sources from contacts
   const { data: distinctMeta } = useQuery({
     queryKey: ['campaign-wizard-meta'],
     queryFn: async () => {
@@ -117,7 +141,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Live matched contacts
   const { data: matched = [], isFetching: matchingLoading } = useQuery({
-    queryKey: ['campaign-wizard-matches', filters],
+    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex],
     queryFn: async () => {
       let q = supabase
         .from('client_contacts')
@@ -126,15 +150,38 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .eq('unsubscribed', false)
         .not('email', 'is', null);
       if (filters.statuses.length) q = q.in('status', filters.statuses);
-      // Exclude Staff contacts from campaigns by default unless explicitly chosen
       else q = q.or('status.is.null,status.neq.Staff');
-      if (filters.categories.length) q = q.in('category', filters.categories);
       if (filters.sources.length) q = q.in('source', filters.sources);
       if (filters.states.length) q = q.in('state', filters.states);
       if (filters.cities.length) q = q.in('city', filters.cities);
-      const { data, error } = await q.limit(2000);
+      const { data, error } = await q.limit(5000);
       if (error) throw error;
-      return (data || []) as WizardContact[];
+
+      const rows = (data || []) as WizardContact[];
+      if (!companiesIndex) return rows;
+
+      const explicitParents = new Set(filters.categories);
+      const explicitSubs = new Set(filters.subcategories);
+      const explicitClientTypes = new Set(filters.clientTypes);
+
+      return rows.filter((r) => {
+        const info = r.client_id ? companiesIndex.get(r.client_id) : null;
+        // Default-exclude EPX Supplier (excluded_from_campaigns) unless user explicitly picked that parent
+        if (info?.excluded && !(info.category_id && explicitParents.has(info.category_id))) {
+          return false;
+        }
+        if (explicitParents.size) {
+          if (!info?.category_id || !explicitParents.has(info.category_id)) return false;
+        }
+        if (explicitSubs.size) {
+          if (!info?.subcategory_id || !explicitSubs.has(info.subcategory_id)) return false;
+        }
+        if (explicitClientTypes.size) {
+          const value = info?.client_type || 'Unassigned';
+          if (!explicitClientTypes.has(value)) return false;
+        }
+        return true;
+      });
     },
     enabled: open,
   });
