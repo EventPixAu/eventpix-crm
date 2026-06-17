@@ -34,8 +34,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useClient, useUpdateClient, useDeleteClient, useClientEvents, useCreateClient } from '@/hooks/useSales';
-import { useCompanyCategories, useCreateCompanyCategory } from '@/hooks/useCompanyCategories';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
+import { CompanyCategoryPicker } from '@/components/crm/CompanyCategoryPicker';
+import { ClientTypePicker } from '@/components/crm/ClientTypePicker';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import {
