@@ -270,6 +270,16 @@ export function QuickCreateCompanyDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quick_country">Country</Label>
+              <Input
+                id="quick_country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="e.g. Australia"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
