@@ -402,13 +402,20 @@ export default function CompanyList() {
   // Compute unique filter options from data
   const filterOptions = useMemo(() => {
     const tags = new Set<string>();
-    const categories = new Set<string>();
+    const categories = new Map<string, string>(); // id->name
+    const subcategoriesByParent: Record<string, Map<string, string>> = {};
     const sources = new Set<string>();
     const statuses = new Set<string>();
 
     companies.forEach(c => {
       c.tags.forEach(t => tags.add(t));
-      if (c.category?.name) categories.add(c.category.name);
+      if (c.category?.id) categories.set(c.category.id, c.category.name);
+      if (c.subcategory?.id && c.subcategory.parent_id) {
+        if (!subcategoriesByParent[c.subcategory.parent_id]) {
+          subcategoriesByParent[c.subcategory.parent_id] = new Map();
+        }
+        subcategoriesByParent[c.subcategory.parent_id].set(c.subcategory.id, c.subcategory.name);
+      }
       if (c.lead_source) sources.add(c.lead_source);
       c.contact_sources.forEach(s => sources.add(s));
       statuses.add(c.display_status);
@@ -416,11 +423,23 @@ export default function CompanyList() {
 
     return {
       tags: Array.from(tags).sort(),
-      categories: Array.from(categories).sort(),
+      categories: Array.from(categories.entries())
+        .map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      subcategoriesByParent,
       sources: Array.from(sources).sort(),
       statuses: Array.from(statuses).sort(),
     };
   }, [companies]);
+
+  const subcategoryOptions = useMemo(() => {
+    if (!filterCategory || filterCategory === '__none__') return [];
+    const map = filterOptions.subcategoriesByParent[filterCategory];
+    if (!map) return [];
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filterCategory, filterOptions]);
 
   // Apply filters
   const filteredCompanies = useMemo(() => {
@@ -428,8 +447,22 @@ export default function CompanyList() {
       if (filterTag && !c.tags.includes(filterTag)) return false;
       if (filterCategory) {
         if (filterCategory === '__none__') {
-          if (c.category) return false;
-        } else if (c.category?.name !== filterCategory) {
+          if (c.category_id) return false;
+        } else if (c.category_id !== filterCategory) {
+          return false;
+        }
+      }
+      if (filterSubcategory) {
+        if (filterSubcategory === '__none__') {
+          if (c.subcategory_id) return false;
+        } else if (c.subcategory_id !== filterSubcategory) {
+          return false;
+        }
+      }
+      if (filterClientType) {
+        if (filterClientType === '__none__') {
+          if (c.client_type) return false;
+        } else if (c.client_type !== filterClientType) {
           return false;
         }
       }
@@ -442,13 +475,15 @@ export default function CompanyList() {
       if (filterStatus && c.display_status !== filterStatus) return false;
       return true;
     });
-  }, [sortedCompanies, filterTag, filterCategory, filterSource, filterStatus]);
+  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus]);
 
-  const hasActiveFilters = filterTag || filterCategory || filterSource || filterStatus;
+  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus;
 
   const clearAllFilters = () => {
     setFilterTag('');
     setFilterCategory('');
+    setFilterSubcategory('');
+    setFilterClientType('');
     setFilterSource('');
     setFilterStatus('');
   };
