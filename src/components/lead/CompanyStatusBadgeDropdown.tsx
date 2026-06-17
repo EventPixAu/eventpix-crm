@@ -71,50 +71,36 @@ export function CompanyStatusBadgeDropdown({
     variant: 'secondary' as const,
   };
 
-  const handleStatusClick = (newStatus: string) => {
+  const handleStatusClick = async (newStatus: string) => {
     if (newStatus === displayStatus) return;
     setPendingStatus(newStatus);
-    setIsReasonDialogOpen(true);
-  };
-
-  const handleConfirmStatusChange = async () => {
-    if (!pendingStatus || reason.trim().length < 10) {
-      toast.error('Reason required', { description: 'Please provide a reason (at least 10 characters)' });
-      return;
-    }
-
     setIsUpdating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Log to audit
       await supabase.from('company_status_audit').insert({
         company_id: companyId,
         action: 'status_override_set',
         old_status: displayStatus,
-        new_status: pendingStatus,
+        new_status: newStatus,
         changed_by: user?.id,
-        override_reason: reason.trim(),
+        override_reason: null,
       });
 
-      // Update client status
       await supabase.from('clients').update({
-        manual_status: pendingStatus,
+        manual_status: newStatus,
         status_override_at: new Date().toISOString(),
         status_override_by: user?.id,
-        status_override_reason: reason.trim(),
+        status_override_reason: null,
       }).eq('id', companyId);
 
-      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['lead'] });
       queryClient.invalidateQueries({ queryKey: ['client'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
 
-      toast.success('Status updated successfully');
-      setIsReasonDialogOpen(false);
+      toast.success('Status updated');
       setPendingStatus(null);
-      setReason('');
       onStatusChange?.();
     } catch (error) {
       console.error('Error updating status:', error);
