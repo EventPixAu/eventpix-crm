@@ -1048,13 +1048,22 @@ export default function ContactDetail() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit_state">State</Label>
-                <Input
-                  id="edit_state"
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  placeholder="e.g. VIC"
-                />
+                <Select
+                  value={formData.state || '__none__'}
+                  onValueChange={(v) => setFormData({ ...formData, state: v === '__none__' ? '' : v })}
+                >
+                  <SelectTrigger id="edit_state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="__none__">— Unassigned —</SelectItem>
+                    {AU_STATES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
             </div>
 
             <p className="text-xs text-muted-foreground">
