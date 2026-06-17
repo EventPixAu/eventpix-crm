@@ -197,10 +197,13 @@ export default function CompanyList() {
           company_email,
           billing_address,
           category_id,
+          subcategory_id,
+          client_type,
           lead_source,
           manual_status,
           status_override_reason,
-          category:company_categories(id, name)
+          category:company_categories(id, name),
+          subcategory:company_subcategories(id, name, parent_id)
         `)
         .eq('is_training', false)
         .order('business_name');
