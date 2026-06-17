@@ -41,6 +41,7 @@ import {
   CalendarCheck,
   ListTodo,
   ArrowRight,
+  FolderOpen,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
