@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
@@ -364,6 +365,24 @@ export default function WorkflowsAdmin() {
   
   // Master Steps Editor State
   const [editingStep, setEditingStep] = useState<WorkflowMasterStep | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const tabFromUrl =
+    tabParam === 'crew-checklists' || tabParam === 'crew' ? 'crew'
+    : tabParam === 'sales' ? 'sales'
+    : tabParam === 'event-types' ? 'event-types'
+    : tabParam === 'briefs' ? 'briefs'
+    : tabParam === 'event-briefs' ? 'event-briefs'
+    : tabParam === 'editing-instructions' ? 'editing-instructions'
+    : 'operations';
+  const [activeTab, setActiveTabState] = useState<string>(tabFromUrl);
+  useEffect(() => { setActiveTabState(tabFromUrl); }, [tabFromUrl]);
+  const setActiveTab = (v: string) => {
+    setActiveTabState(v);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', v);
+    setSearchParams(next, { replace: true });
+  };
   const [newStepDialog, setNewStepDialog] = useState(false);
   const [newStep, setNewStep] = useState<Partial<WorkflowMasterStep>>({
     label: '',
@@ -639,7 +658,7 @@ export default function WorkflowsAdmin() {
         description="Manage operations workflow steps and sales workflows"
       />
 
-      <Tabs defaultValue="operations" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Steps</TabsTrigger>
           <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
