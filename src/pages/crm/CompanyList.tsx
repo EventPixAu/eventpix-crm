@@ -93,6 +93,7 @@ interface Company {
   company_email: string | null;
   billing_address: string | null;
   state: string | null;
+  country: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
   subcategory_id: string | null;
@@ -156,7 +157,9 @@ export default function CompanyList() {
   const [filterSource, setFilterSource] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterState, setFilterState] = useState<string>('');
+  const [filterCountry, setFilterCountry] = useState<string>('');
   const [showStateColumn, setShowStateColumn] = useState<boolean>(false);
+  const [showCountryColumn, setShowCountryColumn] = useState<boolean>(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
@@ -201,6 +204,7 @@ export default function CompanyList() {
           company_email,
           billing_address,
           state,
+          country,
           category_id,
           subcategory_id,
           client_type,
@@ -411,6 +415,7 @@ export default function CompanyList() {
     const subcategoriesByParent: Record<string, Map<string, string>> = {};
     const sources = new Set<string>();
     const statuses = new Set<string>();
+    const countries = new Set<string>();
 
     companies.forEach(c => {
       c.tags.forEach(t => tags.add(t));
@@ -424,6 +429,7 @@ export default function CompanyList() {
       if (c.lead_source) sources.add(c.lead_source);
       c.contact_sources.forEach(s => sources.add(s));
       statuses.add(c.display_status);
+      if (c.country && c.country.trim()) countries.add(c.country.trim());
     });
 
     return {
@@ -434,6 +440,7 @@ export default function CompanyList() {
       subcategoriesByParent,
       sources: Array.from(sources).sort(),
       statuses: Array.from(statuses).sort(),
+      countries: Array.from(countries).sort((a, b) => a.localeCompare(b)),
     };
   }, [companies]);
 
@@ -485,11 +492,18 @@ export default function CompanyList() {
           return false;
         }
       }
+      if (filterCountry) {
+        if (filterCountry === '__none__') {
+          if (c.country && c.country.trim()) return false;
+        } else if ((c.country || '').trim() !== filterCountry) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus, filterState]);
+  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus, filterState, filterCountry]);
 
-  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus || filterState;
+  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus || filterState || filterCountry;
 
   const clearAllFilters = () => {
     setFilterTag('');
@@ -499,6 +513,7 @@ export default function CompanyList() {
     setFilterSource('');
     setFilterStatus('');
     setFilterState('');
+    setFilterCountry('');
   };
 
   const handleRefresh = () => {
@@ -725,6 +740,26 @@ export default function CompanyList() {
             >
               {showStateColumn ? 'Hide State column' : 'Show State column'}
             </Button>
+            <Select value={filterCountry || '__all__'} onValueChange={v => setFilterCountry(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Countries" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Countries</SelectItem>
+                <SelectItem value="__none__">No Country</SelectItem>
+                {filterOptions.countries.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant={showCountryColumn ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setShowCountryColumn(v => !v)}
+              className="h-8 px-2 text-xs"
+            >
+              {showCountryColumn ? 'Hide Country column' : 'Show Country column'}
+            </Button>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-2 text-xs">
                 <X className="h-3 w-3 mr-1" />
@@ -788,6 +823,7 @@ export default function CompanyList() {
                   </TableHead>
                   <TableHead>Client Type</TableHead>
                   {showStateColumn && <TableHead>State</TableHead>}
+                  {showCountryColumn && <TableHead>Country</TableHead>}
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
@@ -922,6 +958,15 @@ export default function CompanyList() {
                       <TableCell>
                         {company.state ? (
                           <Badge variant="outline" className="text-xs">{company.state}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                    )}
+                    {showCountryColumn && (
+                      <TableCell>
+                        {company.country ? (
+                          <span className="text-sm">{company.country}</span>
                         ) : (
                           <span className="text-muted-foreground text-sm">—</span>
                         )}

@@ -24,6 +24,7 @@ interface ClientProfileCardProps {
     primary_contact_phone?: string | null;
     billing_address?: string | null;
     state?: string | null;
+    country?: string | null;
     category_id?: string | null;
     category?: { id: string; name: string } | null;
     subcategory_id?: string | null;
@@ -184,6 +185,14 @@ export function ClientProfileCard({
             <div>
               <div className="text-muted-foreground text-xs mb-0.5">State</div>
               <span>{client.state || '-'}</span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <div className="text-muted-foreground text-xs mb-0.5">Country</div>
+              <span>{client.country || '-'}</span>
             </div>
           </div>
         </div>

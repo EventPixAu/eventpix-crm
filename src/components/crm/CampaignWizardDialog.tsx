@@ -36,6 +36,7 @@ interface AudienceFilters {
   sources: string[];
   states: string[];              // contact state
   companyStates: string[];       // company state
+  countries: string[];           // company country
   cities: string[];
 }
 
@@ -71,7 +72,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Step 1
   const [filters, setFilters] = useState<AudienceFilters>({
-    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [],
+    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [],
   });
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
@@ -101,15 +102,16 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, category_id, subcategory_id, client_type, state, category:company_categories(excluded_from_campaigns)');
+        .select('id, category_id, subcategory_id, client_type, state, country, category:company_categories(excluded_from_campaigns)');
       if (error) throw error;
-      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; state: string | null; excluded: boolean }>();
+      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; state: string | null; country: string | null; excluded: boolean }>();
       (data || []).forEach((c: any) => {
         map.set(c.id, {
           category_id: c.category_id,
           subcategory_id: c.subcategory_id,
           client_type: c.client_type,
           state: c.state,
+          country: c.country,
           excluded: !!c.category?.excluded_from_campaigns,
         });
       });
@@ -169,6 +171,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitSubs = new Set(filters.subcategories);
       const explicitClientTypes = new Set(filters.clientTypes);
       const explicitCompanyStates = new Set(filters.companyStates);
+      const explicitCountries = new Set(filters.countries);
 
       return rows.filter((r) => {
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
@@ -188,6 +191,10 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         }
         if (explicitCompanyStates.size) {
           if (!info?.state || !explicitCompanyStates.has(info.state)) return false;
+        }
+        if (explicitCountries.size) {
+          const value = (info?.country || '').trim();
+          if (!value || !explicitCountries.has(value)) return false;
         }
         return true;
       });
@@ -232,9 +239,20 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     return list;
   }, [matched, manualIncludes, manualExcludes, audienceCleared]);
 
+  const distinctCountries = useMemo(() => {
+    if (!companiesIndex) return [] as string[];
+    const set = new Set<string>();
+    companiesIndex.forEach((info) => {
+      const v = (info.country || '').trim();
+      if (v) set.add(v);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [companiesIndex]);
+
+
   const reset = () => {
     setStep(1);
-    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
+    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
@@ -456,6 +474,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   selected={filters.companyStates}
                   onToggle={(v) => toggleFilter('companyStates', v)}
                 />
+                <FilterGroup
+                  label="Country"
+                  options={distinctCountries.map((c) => ({ value: c, label: c }))}
+                  selected={filters.countries}
+                  onToggle={(v) => toggleFilter('countries', v)}
+                  emptyMessage="No countries on record yet"
+                />
 
               </div>
               <p className="text-xs text-muted-foreground">
@@ -476,7 +501,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           type="button"
                           onClick={() => {
                             setAudienceCleared(true);
-                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
+                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
                             setManualSearch('');
@@ -517,7 +542,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                             type="button"
                             onClick={() => {
                               setAudienceCleared(true);
-                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
+                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
                               setManualSearch('');

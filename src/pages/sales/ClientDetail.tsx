@@ -116,6 +116,7 @@ export default function ClientDetail() {
     company_email: '',
     billing_address: '',
     state: '' as string,
+    country: '' as string,
     category_id: '' as string,
     subcategory_id: '' as string,
     client_type: '' as '' | 'Direct' | 'Indirect',
@@ -134,6 +135,7 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         state: (client as any).state || '',
+        country: (client as any).country || '',
         category_id: (client as any).category_id || '',
         subcategory_id: (client as any).subcategory_id || '',
         client_type: ((client as any).client_type as '' | 'Direct' | 'Indirect') || '',
@@ -161,6 +163,7 @@ export default function ClientDetail() {
       company_email: formData.company_email,
       billing_address: formData.billing_address,
       state: formData.state || null,
+      country: formData.country || null,
       website: formData.website,
       category_id: formData.category_id || null,
       subcategory_id: formData.subcategory_id || null,
@@ -183,6 +186,7 @@ export default function ClientDetail() {
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
       state: formData.state || null,
+      country: formData.country || null,
       category_id: formData.category_id || null,
       subcategory_id: formData.subcategory_id || null,
       client_type: isEpxSupplier ? null : (formData.client_type || null),
@@ -316,6 +320,16 @@ export default function ClientDetail() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create_country">Country</Label>
+              <Input
+                id="create_country"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                placeholder="e.g. Australia"
+              />
             </div>
 
 
@@ -603,6 +617,16 @@ export default function ClientDetail() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_country">Country</Label>
+              <Input
+                id="edit_country"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                placeholder="e.g. Australia"
+              />
             </div>
           </div>
           <DialogFooter>
