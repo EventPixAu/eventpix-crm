@@ -75,7 +75,9 @@ export function useEvent(id: string | undefined) {
             business_name,
             primary_contact_name,
             primary_contact_email,
-            primary_contact_phone
+            primary_contact_phone,
+            status,
+            manual_status
           )
         `)
         .eq('id', id)
