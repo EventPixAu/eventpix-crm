@@ -907,6 +907,13 @@ export default function EventDetail() {
                   status={(event as any).invoice_status} 
                   reference={(event as any).invoice_reference}
                 />
+                {(event.client_id || (clientByName as any)?.id) && (
+                  <CompanyStatusBadgeDropdown
+                    companyId={event.client_id || (clientByName as any)?.id}
+                    currentStatus={((event as any).clients?.status) || ((clientByName as any)?.status) || 'prospect'}
+                    manualStatus={((event as any).clients?.manual_status) ?? ((clientByName as any)?.manual_status) ?? null}
+                  />
+                )}
               </>
             )}
           </div>
