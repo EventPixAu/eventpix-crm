@@ -30,6 +30,7 @@ import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { CompanyCategoryPicker } from './CompanyCategoryPicker';
 import { ClientTypePicker } from './ClientTypePicker';
 import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { AU_STATES } from '@/lib/auStates';
 
 interface QuickCreateCompanyDialogProps {
   open: boolean;
