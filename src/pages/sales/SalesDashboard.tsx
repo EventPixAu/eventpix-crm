@@ -17,7 +17,9 @@ import {
   FileSignature,
   AlertTriangle,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Globe,
+  ChevronRight
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -144,6 +146,15 @@ export default function SalesDashboard() {
       .slice(0, 5);
   }, [contracts]);
 
+  // New website enquiries (untouched new leads from website)
+  const newWebsiteEnquiries = useMemo(() => {
+    return leads.filter(l => {
+      const source = (l.source || '').toLowerCase();
+      const isWebsite = source.includes('website') || source.includes('enquiry') || source.includes('web');
+      return isWebsite && l.status === 'new';
+    });
+  }, [leads]);
+
   const getDaysAgo = (dateStr: string) => {
     return differenceInDays(new Date(), parseISO(dateStr));
   };
@@ -155,6 +166,47 @@ export default function SalesDashboard() {
         description="Track leads, quotes, and conversions"
         actions={<CreateLeadDialog />}
       />
+
+      {/* New Website Enquiries Alert */}
+      {newWebsiteEnquiries.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="border-primary/40 bg-primary/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Globe className="h-5 w-5 text-primary" />
+                New Website Enquiries
+                <Badge variant="default" className="ml-1">{newWebsiteEnquiries.length}</Badge>
+              </CardTitle>
+              <Link to="/sales/leads" className="text-sm text-primary hover:underline">
+                View all
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {newWebsiteEnquiries.slice(0, 6).map((lead) => (
+                  <Link
+                    key={lead.id}
+                    to={`/sales/leads/${lead.id}`}
+                    className="flex items-center gap-2 p-3 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors bg-card/50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate text-sm">{lead.lead_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {getDaysAgo(lead.created_at)}d ago · {lead.source || 'Website'}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
