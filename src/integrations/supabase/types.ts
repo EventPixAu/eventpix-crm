@@ -674,6 +674,7 @@ export type Database = {
           billing_address: string | null
           business_name: string
           category_id: string | null
+          client_type: string | null
           company_email: string | null
           company_phone: string | null
           created_at: string | null
@@ -692,6 +693,7 @@ export type Database = {
           status_override_at: string | null
           status_override_by: string | null
           status_override_reason: string | null
+          subcategory_id: string | null
           tags: string[] | null
           trading_name: string | null
           updated_at: string | null
@@ -702,6 +704,7 @@ export type Database = {
           billing_address?: string | null
           business_name: string
           category_id?: string | null
+          client_type?: string | null
           company_email?: string | null
           company_phone?: string | null
           created_at?: string | null
@@ -720,6 +723,7 @@ export type Database = {
           status_override_at?: string | null
           status_override_by?: string | null
           status_override_reason?: string | null
+          subcategory_id?: string | null
           tags?: string[] | null
           trading_name?: string | null
           updated_at?: string | null
@@ -730,6 +734,7 @@ export type Database = {
           billing_address?: string | null
           business_name?: string
           category_id?: string | null
+          client_type?: string | null
           company_email?: string | null
           company_phone?: string | null
           created_at?: string | null
@@ -748,6 +753,7 @@ export type Database = {
           status_override_at?: string | null
           status_override_by?: string | null
           status_override_reason?: string | null
+          subcategory_id?: string | null
           tags?: string[] | null
           trading_name?: string | null
           updated_at?: string | null
@@ -761,27 +767,40 @@ export type Database = {
             referencedRelation: "company_categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "clients_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "company_subcategories"
+            referencedColumns: ["id"]
+          },
         ]
       }
       company_categories: {
         Row: {
           created_at: string | null
+          excluded_from_campaigns: boolean
           id: string
           is_active: boolean | null
+          is_parent: boolean
           name: string
           sort_order: number | null
         }
         Insert: {
           created_at?: string | null
+          excluded_from_campaigns?: boolean
           id?: string
           is_active?: boolean | null
+          is_parent?: boolean
           name: string
           sort_order?: number | null
         }
         Update: {
           created_at?: string | null
+          excluded_from_campaigns?: boolean
           id?: string
           is_active?: boolean | null
+          is_parent?: boolean
           name?: string
           sort_order?: number | null
         }
@@ -911,6 +930,41 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      company_subcategories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_subcategories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "company_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       compliance_document_types: {
         Row: {

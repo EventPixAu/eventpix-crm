@@ -6,7 +6,7 @@
  * - Editable Company Status
  * - Edit/Delete buttons
  */
-import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag, Database, Loader2 } from 'lucide-react';
+import { Building2, Pencil, Trash2, Phone, Mail, MapPin, Tag, Database, Loader2, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,9 @@ interface ClientProfileCardProps {
     billing_address?: string | null;
     category_id?: string | null;
     category?: { id: string; name: string } | null;
+    subcategory_id?: string | null;
+    subcategory?: { id: string; name: string } | null;
+    client_type?: 'Direct' | 'Indirect' | null;
     lead_source?: string | null;
     manual_status?: string | null;
     status_override_at?: string | null;
@@ -87,6 +90,17 @@ export function ClientProfileCard({
                 <Badge variant="secondary">
                   <Tag className="h-3 w-3 mr-1" />
                   {client.category.name}
+                </Badge>
+              )}
+              {client.subcategory?.name && (
+                <Badge variant="outline" className="text-xs">
+                  {client.subcategory.name}
+                </Badge>
+              )}
+              {client.client_type && (
+                <Badge variant={client.client_type === 'Direct' ? 'default' : 'secondary'} className="text-xs">
+                  <Briefcase className="h-3 w-3 mr-1" />
+                  {client.client_type}
                 </Badge>
               )}
               {client.lead_source && (

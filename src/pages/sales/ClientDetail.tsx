@@ -34,8 +34,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useClient, useUpdateClient, useDeleteClient, useClientEvents, useCreateClient } from '@/hooks/useSales';
-import { useCompanyCategories, useCreateCompanyCategory } from '@/hooks/useCompanyCategories';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
+import { CompanyCategoryPicker } from '@/components/crm/CompanyCategoryPicker';
+import { ClientTypePicker } from '@/components/crm/ClientTypePicker';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import {
@@ -97,7 +99,6 @@ export default function ClientDetail() {
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createClient = useCreateClient();
-  const createCategory = useCreateCompanyCategory();
 
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ['client', id] });
@@ -108,31 +109,19 @@ export default function ClientDetail() {
   const isCreateMode = !id;
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
   const [formData, setFormData] = useState({
     business_name: '',
     company_phone: '',
     company_email: '',
     billing_address: '',
-    category_id: '',
+    category_id: '' as string,
+    subcategory_id: '' as string,
+    client_type: '' as '' | 'Direct' | 'Indirect',
     manual_status: '',
     website: '',
     lead_source: '',
     tags: '' as string,
   });
-
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    try {
-      const newCat = await createCategory.mutateAsync(newCategoryName.trim());
-      setFormData({ ...formData, category_id: newCat.id });
-      setNewCategoryName('');
-      setIsAddingCategory(false);
-    } catch (e) {
-      // Error handled in hook
-    }
-  };
 
   const handleOpenEdit = () => {
     if (client) {
@@ -143,6 +132,8 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
+        subcategory_id: (client as any).subcategory_id || '',
+        client_type: ((client as any).client_type as '' | 'Direct' | 'Indirect') || '',
         manual_status: (client as any).manual_status || '',
         website: (client as any).website || '',
         lead_source: (client as any).lead_source || '',
@@ -151,6 +142,8 @@ export default function ClientDetail() {
       setIsEditOpen(true);
     }
   };
+
+  const isEpxSupplier = !!formData.category_id && categories.find(c => c.id === formData.category_id)?.name === 'EPX Supplier';
 
   const handleUpdate = async () => {
     if (!id || !formData.business_name.trim()) return;
@@ -166,6 +159,8 @@ export default function ClientDetail() {
       billing_address: formData.billing_address,
       website: formData.website,
       category_id: formData.category_id || null,
+      subcategory_id: formData.subcategory_id || null,
+      client_type: isEpxSupplier ? null : (formData.client_type || null),
       manual_status: formData.manual_status || null,
       lead_source: formData.lead_source || null,
       tags: tagsArray.length > 0 ? tagsArray : null,
@@ -184,10 +179,13 @@ export default function ClientDetail() {
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
       category_id: formData.category_id || null,
+      subcategory_id: formData.subcategory_id || null,
+      client_type: isEpxSupplier ? null : (formData.client_type || null),
       website: formData.website || null,
-    });
+    } as any);
     navigate(`/crm/companies/${result.id}`);
   };
+
 
   const handleDelete = async () => {
     if (!id) return;
@@ -243,66 +241,26 @@ export default function ClientDetail() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="create_category_id">Category</Label>
-              {isAddingCategory ? (
-                <div className="flex gap-2">
-                  <Input
-                    autoFocus
-                    placeholder="New category name"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') {
-                        setIsAddingCategory(false);
-                        setNewCategoryName('');
-                      }
-                    }}
-                  />
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    onClick={handleAddCategory}
-                    disabled={!newCategoryName.trim() || createCategory.isPending}
-                  >
-                    {createCategory.isPending ? '...' : 'Add'}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={formData.category_id}
-                  onValueChange={(value) => {
-                    if (value === '__add_new__') {
-                      setIsAddingCategory(true);
-                    } else {
-                      setFormData({ ...formData, category_id: value });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__add_new__" className="text-primary font-medium">
-                      + Add new category
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              <Label>Category</Label>
+              <CompanyCategoryPicker
+                parentId={formData.category_id || null}
+                subcategoryId={formData.subcategory_id || null}
+                onChange={(p, s) => setFormData({ ...formData, category_id: p || '', subcategory_id: s || '' })}
+              />
             </div>
+
+            {!isEpxSupplier && (
+              <div className="space-y-2">
+                <Label>Client Type</Label>
+                <ClientTypePicker
+                  value={formData.client_type || null}
+                  onChange={(v) => setFormData({ ...formData, client_type: v || '' })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Direct = books EventPix for their own events. Indirect = books on behalf of clients.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -500,66 +458,26 @@ export default function ClientDetail() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category</Label>
-              {isAddingCategory ? (
-                <div className="flex gap-2">
-                  <Input
-                    autoFocus
-                    placeholder="New category name"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') {
-                        setIsAddingCategory(false);
-                        setNewCategoryName('');
-                      }
-                    }}
-                  />
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    onClick={handleAddCategory}
-                    disabled={!newCategoryName.trim() || createCategory.isPending}
-                  >
-                    {createCategory.isPending ? '...' : 'Add'}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={formData.category_id}
-                  onValueChange={(value) => {
-                    if (value === '__add_new__') {
-                      setIsAddingCategory(true);
-                    } else {
-                      setFormData({ ...formData, category_id: value });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__add_new__" className="text-primary font-medium">
-                      + Add new category
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              <Label>Category</Label>
+              <CompanyCategoryPicker
+                parentId={formData.category_id || null}
+                subcategoryId={formData.subcategory_id || null}
+                onChange={(p, s) => setFormData({ ...formData, category_id: p || '', subcategory_id: s || '' })}
+              />
             </div>
+
+            {!isEpxSupplier && (
+              <div className="space-y-2">
+                <Label>Client Type</Label>
+                <ClientTypePicker
+                  value={formData.client_type || null}
+                  onChange={(v) => setFormData({ ...formData, client_type: v || '' })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Direct = books EventPix for their own events. Indirect = books on behalf of clients.
+                </p>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="manual_status">Status</Label>

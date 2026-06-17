@@ -1,65 +1,74 @@
+# Company Categories Restructure + Client Type
+
 ## Goal
-Make it easy to make Nat (or anyone) the default assignee for specific editor workflow steps, and retro-assign existing open events in one click.
+- Replace flat company categories with **Parent → Sub-category** structure.
+- Add **Client Type** (Direct / Indirect) to companies.
+- Wire both into list views, filters, dashboards, and campaign audience.
 
-## How it will work for you
+## 1. Database changes (single migration)
 
-**On Nat's Team profile** (Team → Nat Franks → Edit):
-- New section: **Default workflow assignments**
-- A grouped checkbox list of master workflow steps, with the editor-related ones surfaced first (Editor LBA/SBC, Editor Zno, Editor SMP, Editor Post, Editor Video, etc.).
-- Tick the steps Nat should default to. Save.
+### `company_categories` (Parents — repurpose existing table)
+- Add `is_parent boolean default true`, `excluded_from_campaigns boolean default false`.
+- Wipe & re-seed with the 9 parents (CORPORATE … EPX SUPPLIER). EPX SUPPLIER gets `excluded_from_campaigns=true`.
 
-**What ticking a step does:**
-1. Any **new** event generated from now on auto-fills `assigned_to = Nat` on those steps.
-2. A button appears: **"Apply to existing open events"** — one click assigns Nat to every matching open step across all active events that currently have no assignee. Skips steps already assigned to someone else (so we don't trample manual overrides).
-
-**On the Workflows admin page** (`/admin/workflows`):
-- Each master step row gets a new **Default assignee** person picker (same data, second way in).
-
-## Technical details
-
-### Schema
-Add to `workflow_master_steps`:
-- `default_assignee_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL`
-
-Single-assignee per step is enough — matches Studio Ninja's model and keeps the UI simple. If two people should share, leave it blank and assign per-event.
-
-### Workflow generation
-Update the step-creation path (wherever `event_workflow_steps` rows are inserted from master/template — likely `InitializeWorkflowDialog` + any RPC) to copy `default_assignee_user_id` into `assigned_to` when the row is created and no explicit assignee is provided.
-
-### Bulk-apply RPC
-New function `apply_default_step_assignees(target_user_id uuid)`:
-```sql
-UPDATE event_workflow_steps ews
-SET assigned_to = wms.default_assignee_user_id
-FROM workflow_master_steps wms, events e
-WHERE ews.template_item_id IN (
-        SELECT id FROM workflow_template_items WHERE master_step_id = wms.id
-      )
-  AND wms.default_assignee_user_id = target_user_id
-  AND ews.assigned_to IS NULL
-  AND ews.is_completed = false
-  AND ews.event_id = e.id
-  AND e.ops_status NOT IN ('cancelled','closed');
+### `company_subcategories` (new table)
 ```
-(Exact join path through `workflow_template_items` will be verified against the live schema before writing.)
+id uuid pk
+parent_id uuid → company_categories(id)
+name text
+sort_order int
+is_active boolean default true
+```
++ GRANTs, RLS (admins manage, all authenticated read), seeded with full sub-cat list above.
 
-Returns the count of rows updated. Restricted to admin/operations.
+### `clients` table
+- Add `subcategory_id uuid → company_subcategories(id)`.
+- Add `client_type text check in ('Direct','Indirect') null`.
+- Keep existing `category_id` column (now points at the new Parent rows).
 
-### UI
-- `src/pages/admin/TeamMemberEdit.tsx` (or equivalent profile editor): new "Default workflow assignments" card with a grouped checkbox list driven by `useWorkflowMasterSteps`. Save = `UPDATE workflow_master_steps SET default_assignee_user_id = ?` for ticked rows, `= NULL` for un-ticked rows previously owned by this user.
-- "Apply to existing open events" button → calls the RPC → toast "Assigned Nat to N open steps".
-- `src/pages/admin/WorkflowsAdmin.tsx`: add a Default Assignee column with a person picker bound to the same column.
+### Data migration
+- Build a temp mapping table from existing flat names → (parent name, sub name).
+- For every existing `clients.category_id`, look up old name → upsert/find new parent + sub → set `clients.category_id` (parent) and `clients.subcategory_id` (sub).
+- Unmapped names → create "Uncategorised" parent + sub, assign there.
+- Drop the old flat category rows once nothing references them.
 
-### Out of scope
-- No new permissions changes (Nat's app role stays operations).
-- No change to event_assignments / crew rostering.
-- No backfill of completed or closed-event steps.
+## 2. Hooks
 
-## Files touched
-- `supabase/migrations/...` — column + RPC + RLS
-- `src/hooks/useWorkflowMasterSteps.ts` — include `default_assignee_user_id`
-- `src/pages/admin/WorkflowsAdmin.tsx` — assignee column
-- `src/pages/admin/...` Team member edit page — new section + bulk-apply button
-- Wherever event workflow steps are first generated — propagate default assignee
+- `useCompanyCategories` — return parents (already named so).
+- Add `useCompanySubcategories(parentId?)` — sub list, filterable by parent.
+- Add admin mutation hooks for sub CRUD (used in `CrmLookups`).
 
-Reply **go** and I'll build it.
+## 3. UI changes
+
+### Company record (CompanyList drawer / ClientProfileCard / QuickCreateCompanyDialog)
+- Replace single category picker with two-step: **Parent select** → **Sub-category select** (filtered by parent).
+- New **Client Type** radio/select (Direct / Indirect / Unassigned). Hidden when Parent = EPX Supplier.
+
+### Companies list (`CompanyList.tsx`)
+- New columns: Parent Category, Sub-category, Client Type.
+- New filters in toolbar: Parent, Sub-category (dependent on Parent), Client Type.
+
+### Inline editor
+- Update `InlineCategoryEditor` to a two-step popover (parent then sub).
+
+### Bulk update
+- Extend `BulkCategoryUpdateDialog` to set Parent + Sub; add Client Type bulk action.
+
+### CRM Lookups admin (`CrmLookups.tsx`)
+- Section for managing Parents and their Sub-categories (nested list with add/edit/archive).
+
+### Dashboard (`PromotionsDashboard.tsx`)
+- Category summary tiles roll up by **Parent**.
+
+### Campaign Audience (`CampaignWizardDialog.tsx`)
+- Add filters: Parent (multi), Sub-category (multi, scoped to selected parents), Client Type (Direct/Indirect/Any).
+- Default-exclude parents flagged `excluded_from_campaigns` (EPX Supplier) unless user explicitly selects them.
+
+## 4. Out of scope / preserved
+- No client/contact records deleted.
+- Contact-level category UI untouched (uses same parent list via existing hook; sub-category optional, left null).
+
+## Technical notes
+- Filter state in CompanyList: `parentId | 'all'`, `subcategoryId | 'all' | 'none'`, `clientType | 'all' | 'Direct' | 'Indirect' | 'unassigned'`.
+- Campaign filter persisted in existing `email_campaigns.audience_filters` jsonb.
+- Migration uses a single PL/pgSQL DO block to map names safely; preserves any unknown via "Uncategorised".

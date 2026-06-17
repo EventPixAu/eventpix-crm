@@ -41,6 +41,7 @@ import {
   CalendarCheck,
   ListTodo,
   ArrowRight,
+  FolderOpen,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -91,6 +92,7 @@ export default function PromotionsDashboard() {
         .from('clients')
         .select(`
           *,
+          category:company_categories(id, name),
           events:events(id, event_date, event_name)
         `)
         .eq('is_training', false)
@@ -100,6 +102,17 @@ export default function PromotionsDashboard() {
       return data || [];
     }
   });
+
+  // Companies grouped by Parent Category
+  const companiesByParent = useMemo(() => {
+    const counts = new Map<string, number>();
+    clients.forEach((c: any) => {
+      const name = c.category?.name || 'Uncategorised';
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1]);
+  }, [clients]);
 
   // Fetch truly unassigned contacts with debug info
   const { data: orphanContactsData } = useQuery({
@@ -459,6 +472,34 @@ export default function PromotionsDashboard() {
           />
         </motion.div>
       </div>
+
+      {/* Companies by Parent Category */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5 text-primary" />
+            Companies by Parent Category
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {companiesByParent.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No categorised companies yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {companiesByParent.map(([name, count]) => (
+                <Link
+                  key={name}
+                  to="/crm/companies"
+                  className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/60 transition-colors"
+                >
+                  <span className="text-sm font-medium truncate pr-2">{name}</span>
+                  <Badge variant="secondary">{count}</Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Main Content */}
       <div className="grid lg:grid-cols-2 gap-6">

@@ -93,6 +93,9 @@ interface Company {
   billing_address: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
+  subcategory_id: string | null;
+  subcategory: { id: string; name: string; parent_id: string } | null;
+  client_type: 'Direct' | 'Indirect' | null;
   lead_source: string | null;
   manual_status: string | null;
   status_override_reason: string | null;
@@ -100,12 +103,9 @@ interface Company {
   display_status: ComputedStatus;
   is_override: boolean;
   contact_count: number;
-  // Primary contact from linked contacts
   primary_contact_name: string | null;
   primary_contact_email: string | null;
-  // Aggregated tags from all linked contacts
   tags: string[];
-  // Aggregated sources from all linked contacts
   contact_sources: string[];
 }
 
@@ -149,6 +149,8 @@ export default function CompanyList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [filterTag, setFilterTag] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterSubcategory, setFilterSubcategory] = useState<string>('');
+  const [filterClientType, setFilterClientType] = useState<string>('');
   const [filterSource, setFilterSource] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
@@ -195,10 +197,13 @@ export default function CompanyList() {
           company_email,
           billing_address,
           category_id,
+          subcategory_id,
+          client_type,
           lead_source,
           manual_status,
           status_override_reason,
-          category:company_categories(id, name)
+          category:company_categories(id, name),
+          subcategory:company_subcategories(id, name, parent_id)
         `)
         .eq('is_training', false)
         .order('business_name');
@@ -397,13 +402,20 @@ export default function CompanyList() {
   // Compute unique filter options from data
   const filterOptions = useMemo(() => {
     const tags = new Set<string>();
-    const categories = new Set<string>();
+    const categories = new Map<string, string>(); // id->name
+    const subcategoriesByParent: Record<string, Map<string, string>> = {};
     const sources = new Set<string>();
     const statuses = new Set<string>();
 
     companies.forEach(c => {
       c.tags.forEach(t => tags.add(t));
-      if (c.category?.name) categories.add(c.category.name);
+      if (c.category?.id) categories.set(c.category.id, c.category.name);
+      if (c.subcategory?.id && c.subcategory.parent_id) {
+        if (!subcategoriesByParent[c.subcategory.parent_id]) {
+          subcategoriesByParent[c.subcategory.parent_id] = new Map();
+        }
+        subcategoriesByParent[c.subcategory.parent_id].set(c.subcategory.id, c.subcategory.name);
+      }
       if (c.lead_source) sources.add(c.lead_source);
       c.contact_sources.forEach(s => sources.add(s));
       statuses.add(c.display_status);
@@ -411,11 +423,23 @@ export default function CompanyList() {
 
     return {
       tags: Array.from(tags).sort(),
-      categories: Array.from(categories).sort(),
+      categories: Array.from(categories.entries())
+        .map(([id, name]) => ({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      subcategoriesByParent,
       sources: Array.from(sources).sort(),
       statuses: Array.from(statuses).sort(),
     };
   }, [companies]);
+
+  const subcategoryOptions = useMemo(() => {
+    if (!filterCategory || filterCategory === '__none__') return [];
+    const map = filterOptions.subcategoriesByParent[filterCategory];
+    if (!map) return [];
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filterCategory, filterOptions]);
 
   // Apply filters
   const filteredCompanies = useMemo(() => {
@@ -423,8 +447,22 @@ export default function CompanyList() {
       if (filterTag && !c.tags.includes(filterTag)) return false;
       if (filterCategory) {
         if (filterCategory === '__none__') {
-          if (c.category) return false;
-        } else if (c.category?.name !== filterCategory) {
+          if (c.category_id) return false;
+        } else if (c.category_id !== filterCategory) {
+          return false;
+        }
+      }
+      if (filterSubcategory) {
+        if (filterSubcategory === '__none__') {
+          if (c.subcategory_id) return false;
+        } else if (c.subcategory_id !== filterSubcategory) {
+          return false;
+        }
+      }
+      if (filterClientType) {
+        if (filterClientType === '__none__') {
+          if (c.client_type) return false;
+        } else if (c.client_type !== filterClientType) {
           return false;
         }
       }
@@ -437,13 +475,15 @@ export default function CompanyList() {
       if (filterStatus && c.display_status !== filterStatus) return false;
       return true;
     });
-  }, [sortedCompanies, filterTag, filterCategory, filterSource, filterStatus]);
+  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus]);
 
-  const hasActiveFilters = filterTag || filterCategory || filterSource || filterStatus;
+  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus;
 
   const clearAllFilters = () => {
     setFilterTag('');
     setFilterCategory('');
+    setFilterSubcategory('');
+    setFilterClientType('');
     setFilterSource('');
     setFilterStatus('');
   };
@@ -591,16 +631,43 @@ export default function CompanyList() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterCategory || '__all__'} onValueChange={v => setFilterCategory(v === '__all__' ? '' : v)}>
-              <SelectTrigger className="w-[160px] h-8 text-xs">
-                <SelectValue placeholder="All Categories" />
+            <Select value={filterCategory || '__all__'} onValueChange={v => { setFilterCategory(v === '__all__' ? '' : v); setFilterSubcategory(''); }}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="All Parents" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Categories</SelectItem>
+                <SelectItem value="__all__">All Parents</SelectItem>
                 <SelectItem value="__none__">No Category</SelectItem>
                 {filterOptions.categories.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filterSubcategory || '__all__'}
+              onValueChange={v => setFilterSubcategory(v === '__all__' ? '' : v)}
+              disabled={!filterCategory || filterCategory === '__none__'}
+            >
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder={filterCategory ? 'All Sub-categories' : 'Pick parent'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Sub-categories</SelectItem>
+                <SelectItem value="__none__">No Sub-category</SelectItem>
+                {subcategoryOptions.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterClientType || '__all__'} onValueChange={v => setFilterClientType(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Client Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Client Types</SelectItem>
+                <SelectItem value="Direct">Direct</SelectItem>
+                <SelectItem value="Indirect">Indirect</SelectItem>
+                <SelectItem value="__none__">Unassigned</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterSource || '__all__'} onValueChange={v => setFilterSource(v === '__all__' ? '' : v)}>
@@ -686,6 +753,7 @@ export default function CompanyList() {
                       <SortIcon column="category" />
                     </div>
                   </TableHead>
+                  <TableHead>Client Type</TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
@@ -802,8 +870,19 @@ export default function CompanyList() {
                         companyId={company.id}
                         currentCategoryId={company.category_id}
                         currentCategoryName={company.category?.name || null}
+                        currentSubcategoryId={company.subcategory_id}
+                        currentSubcategoryName={company.subcategory?.name || null}
                         onCategoryChange={handleRefresh}
                       />
+                    </TableCell>
+                    <TableCell>
+                      {company.client_type ? (
+                        <Badge variant={company.client_type === 'Direct' ? 'default' : 'secondary'} className="text-xs">
+                          {company.client_type}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <InlineStatusEditor

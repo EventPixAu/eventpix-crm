@@ -24,11 +24,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
 
 interface AudienceFilters {
   statuses: string[];
-  categories: string[];
+  categories: string[];          // parent category IDs
+  subcategories: string[];       // subcategory IDs
+  clientTypes: string[];         // 'Direct' | 'Indirect' | 'Unassigned'
   sources: string[];
   states: string[];
   cities: string[];
@@ -66,7 +68,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Step 1
   const [filters, setFilters] = useState<AudienceFilters>({
-    statuses: [], categories: [], sources: [], states: [], cities: [],
+    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [],
   });
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
@@ -87,8 +89,32 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   
   const { data: categories = [] } = useCompanyCategories();
+  const selectedParentForSub = filters.categories.length === 1 ? filters.categories[0] : undefined;
+  const { data: subcategories = [] } = useCompanySubcategories(selectedParentForSub);
 
-  // Distinct states/cities/sources from contacts (auto-refreshes when dialog opens or contacts change)
+  // Companies index: client_id → { category_id, subcategory_id, client_type, parent_excluded_from_campaigns }
+  const { data: companiesIndex } = useQuery({
+    queryKey: ['campaign-wizard-companies'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, category_id, subcategory_id, client_type, category:company_categories(excluded_from_campaigns)');
+      if (error) throw error;
+      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; excluded: boolean }>();
+      (data || []).forEach((c: any) => {
+        map.set(c.id, {
+          category_id: c.category_id,
+          subcategory_id: c.subcategory_id,
+          client_type: c.client_type,
+          excluded: !!c.category?.excluded_from_campaigns,
+        });
+      });
+      return map;
+    },
+    enabled: open,
+  });
+
+  // Distinct states/cities/sources from contacts
   const { data: distinctMeta } = useQuery({
     queryKey: ['campaign-wizard-meta'],
     queryFn: async () => {
@@ -115,7 +141,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Live matched contacts
   const { data: matched = [], isFetching: matchingLoading } = useQuery({
-    queryKey: ['campaign-wizard-matches', filters],
+    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex],
     queryFn: async () => {
       let q = supabase
         .from('client_contacts')
@@ -124,15 +150,38 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .eq('unsubscribed', false)
         .not('email', 'is', null);
       if (filters.statuses.length) q = q.in('status', filters.statuses);
-      // Exclude Staff contacts from campaigns by default unless explicitly chosen
       else q = q.or('status.is.null,status.neq.Staff');
-      if (filters.categories.length) q = q.in('category', filters.categories);
       if (filters.sources.length) q = q.in('source', filters.sources);
       if (filters.states.length) q = q.in('state', filters.states);
       if (filters.cities.length) q = q.in('city', filters.cities);
-      const { data, error } = await q.limit(2000);
+      const { data, error } = await q.limit(5000);
       if (error) throw error;
-      return (data || []) as WizardContact[];
+
+      const rows = (data || []) as WizardContact[];
+      if (!companiesIndex) return rows;
+
+      const explicitParents = new Set(filters.categories);
+      const explicitSubs = new Set(filters.subcategories);
+      const explicitClientTypes = new Set(filters.clientTypes);
+
+      return rows.filter((r) => {
+        const info = r.client_id ? companiesIndex.get(r.client_id) : null;
+        // Default-exclude EPX Supplier (excluded_from_campaigns) unless user explicitly picked that parent
+        if (info?.excluded && !(info.category_id && explicitParents.has(info.category_id))) {
+          return false;
+        }
+        if (explicitParents.size) {
+          if (!info?.category_id || !explicitParents.has(info.category_id)) return false;
+        }
+        if (explicitSubs.size) {
+          if (!info?.subcategory_id || !explicitSubs.has(info.subcategory_id)) return false;
+        }
+        if (explicitClientTypes.size) {
+          const value = info?.client_type || 'Unassigned';
+          if (!explicitClientTypes.has(value)) return false;
+        }
+        return true;
+      });
     },
     enabled: open,
   });
@@ -176,7 +225,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   const reset = () => {
     setStep(1);
-    setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
+    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
@@ -367,10 +416,30 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   onToggle={(v) => toggleFilter('statuses', v)}
                 />
                 <FilterGroup
-                  label="Category"
-                  options={categories.map((c) => ({ value: c.name, label: c.name }))}
+                  label="Parent Category"
+                  options={categories.map((c) => ({
+                    value: c.id,
+                    label: c.excluded_from_campaigns ? `${c.name} (excluded by default)` : c.name,
+                  }))}
                   selected={filters.categories}
                   onToggle={(v) => toggleFilter('categories', v)}
+                />
+                <FilterGroup
+                  label={`Sub-Category${selectedParentForSub ? '' : ' (pick one parent)'}`}
+                  options={subcategories.map((s) => ({ value: s.id, label: s.name }))}
+                  selected={filters.subcategories}
+                  onToggle={(v) => toggleFilter('subcategories', v)}
+                  emptyMessage={selectedParentForSub ? 'No sub-categories' : 'Select a single parent category to filter by sub-category'}
+                />
+                <FilterGroup
+                  label="Client Type"
+                  options={[
+                    { value: 'Direct', label: 'Direct' },
+                    { value: 'Indirect', label: 'Indirect' },
+                    { value: 'Unassigned', label: 'Unassigned' },
+                  ]}
+                  selected={filters.clientTypes}
+                  onToggle={(v) => toggleFilter('clientTypes', v)}
                 />
                 <FilterGroup
                   label="Source"
@@ -386,6 +455,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   emptyMessage="No locations assigned to contacts yet"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                EPX Supplier companies are excluded from campaigns by default. Select the EPX Supplier parent above to include them.
+              </p>
 
               <Card className="bg-muted/40">
                 <CardContent className="pt-4">
@@ -401,7 +473,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           type="button"
                           onClick={() => {
                             setAudienceCleared(true);
-                            setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
+                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
                             setManualSearch('');
@@ -442,7 +514,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                             type="button"
                             onClick={() => {
                               setAudienceCleared(true);
-                              setFilters({ statuses: [], categories: [], sources: [], states: [], cities: [] });
+                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
                               setManualSearch('');
