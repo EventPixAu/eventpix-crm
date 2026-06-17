@@ -24,6 +24,9 @@ interface WorkflowTemplateItem {
 }
 
 export default function Workflows() {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'crew-checklists' ? 'crew' : 'operations';
+
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ['workflow-templates', 'operations'],
     queryFn: async () => {
