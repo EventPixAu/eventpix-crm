@@ -1,11 +1,14 @@
 /**
  * PUBLIC ENQUIRY FORM HANDLER
- * 
+ *
  * Handles public enquiry form submissions:
- * 1. Creates a new lead in the database
- * 2. Sends notification email to the sales team
- * 
- * No authentication required - uses service role key for database access
+ * 1. Looks up or creates a CRM contact (by email)
+ * 2. Links/creates a company (if provided) and associates it
+ * 3. Creates a new Lead in the Sales Dashboard
+ * 4. Logs an activity entry on the contact's timeline
+ * 5. Sends internal notification email + auto-response
+ *
+ * No authentication required - uses service role key for database access.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -28,8 +31,10 @@ interface EnquiryPayload {
   message: string;
 }
 
+// Statuses considered "higher" than Prospect — don't overwrite
+const HIGHER_STATUSES = new Set(["Active", "Current", "Staff"]);
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -44,7 +49,6 @@ Deno.serve(async (req) => {
   try {
     const payload: EnquiryPayload = await req.json();
 
-    // Validate required fields
     if (!payload.name || !payload.email || !payload.message) {
       return new Response(
         JSON.stringify({ success: false, error: "Name, email, and message are required" }),
@@ -52,7 +56,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(payload.email)) {
       return new Response(
@@ -61,49 +64,132 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client with service role for public access
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if client already exists by company name or create new
+    const emailNormalised = payload.email.trim();
+    const phoneNormalised = payload.phone?.trim() || null;
+    const companyNormalised = payload.company?.trim() || null;
+
+    // ─── 1. Resolve / create COMPANY ───────────────────────────────────────────
     let clientId: string | null = null;
-    
-    if (payload.company) {
-      // Try to find existing client by company name
+    if (companyNormalised) {
       const { data: existingClient } = await supabase
         .from("clients")
         .select("id")
-        .ilike("business_name", payload.company.trim())
+        .ilike("business_name", companyNormalised)
         .limit(1)
         .maybeSingle();
 
       if (existingClient) {
         clientId = existingClient.id;
       } else {
-        // Create new client/company
         const { data: newClient, error: clientError } = await supabase
           .from("clients")
           .insert({
-            business_name: payload.company.trim(),
+            business_name: companyNormalised,
             primary_contact_name: payload.name.trim(),
-            primary_contact_email: payload.email.trim(),
-            primary_contact_phone: payload.phone?.trim() || null,
+            primary_contact_email: emailNormalised,
+            primary_contact_phone: phoneNormalised,
             lead_source: "Website Enquiry",
             status: "prospect",
           })
           .select("id")
-          .single();
+          .maybeSingle();
 
         if (clientError) {
           console.error("Error creating client:", clientError);
-        } else {
+        } else if (newClient) {
           clientId = newClient.id;
         }
       }
     }
 
-    // Parse lead source from form option to lead_source_id
+    // ─── 2. Lookup or create CONTACT (by email, globally) ──────────────────────
+    const nameParts = payload.name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    let contactId: string | null = null;
+    let contactIsNew = false;
+
+    const { data: existingContact } = await supabase
+      .from("client_contacts")
+      .select("id, phone, phone_mobile, client_id, status, first_name, last_name")
+      .ilike("email", emailNormalised)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingContact) {
+      contactId = existingContact.id;
+
+      // Update blank fields only — do not overwrite existing values
+      const updates: Record<string, unknown> = {};
+      if (!existingContact.phone && !existingContact.phone_mobile && phoneNormalised) {
+        updates.phone = phoneNormalised;
+      }
+      if (!existingContact.client_id && clientId) {
+        updates.client_id = clientId;
+      }
+      if (!existingContact.first_name && firstName) updates.first_name = firstName;
+      if (!existingContact.last_name && lastName) updates.last_name = lastName;
+      if (
+        !existingContact.status ||
+        (existingContact.status !== "Prospect" && !HIGHER_STATUSES.has(existingContact.status))
+      ) {
+        // leave alone if higher; otherwise no change (keep what's there)
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("client_contacts").update(updates).eq("id", contactId);
+      }
+    } else {
+      contactIsNew = true;
+      const { data: newContact, error: contactError } = await supabase
+        .from("client_contacts")
+        .insert({
+          client_id: clientId,
+          contact_name: payload.name.trim(),
+          first_name: firstName,
+          last_name: lastName,
+          email: emailNormalised,
+          phone: phoneNormalised,
+          source: "Website Enquiry",
+          status: "Prospect",
+          is_primary: !!clientId,
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (contactError) {
+        console.error("Error creating contact:", contactError);
+      } else if (newContact) {
+        contactId = newContact.id;
+      }
+    }
+
+    // Ensure contact↔company association exists
+    if (contactId && clientId) {
+      const { data: existingAssoc } = await supabase
+        .from("contact_company_associations")
+        .select("id")
+        .eq("contact_id", contactId)
+        .eq("company_id", clientId)
+        .maybeSingle();
+
+      if (!existingAssoc) {
+        await supabase.from("contact_company_associations").insert({
+          contact_id: contactId,
+          company_id: clientId,
+          is_primary: contactIsNew,
+          is_active: true,
+        });
+      }
+    }
+
+    // ─── 3. Resolve lookup IDs (lead source + event type name) ─────────────────
+    // The "How did you hear about us?" maps to lead_source_id
     let leadSourceId: string | null = null;
     if (payload.lead_source) {
       const { data: sourceData } = await supabase
@@ -112,16 +198,34 @@ Deno.serve(async (req) => {
         .ilike("name", payload.lead_source.trim())
         .limit(1)
         .maybeSingle();
-      
-      if (sourceData) {
-        leadSourceId = sourceData.id;
-      }
+      if (sourceData) leadSourceId = sourceData.id;
+    }
+    // Fallback to "Website" if none matched
+    if (!leadSourceId) {
+      const { data: websiteSource } = await supabase
+        .from("lead_sources")
+        .select("id")
+        .ilike("name", "Website")
+        .limit(1)
+        .maybeSingle();
+      if (websiteSource) leadSourceId = websiteSource.id;
     }
 
-    // Create the lead
-    const leadName = payload.company 
-      ? `${payload.company} - Web Enquiry`
-      : `${payload.name} - Web Enquiry`;
+    let eventTypeName: string | null = null;
+    if (payload.event_type_id) {
+      const { data: eventType } = await supabase
+        .from("event_types")
+        .select("name")
+        .eq("id", payload.event_type_id)
+        .maybeSingle();
+      if (eventType) eventTypeName = eventType.name;
+    }
+
+    // ─── 4. Create the LEAD ────────────────────────────────────────────────────
+    const titleLeft = eventTypeName || "Web Enquiry";
+    const titleRight = companyNormalised || payload.name.trim();
+    const leadName = `${titleLeft} — ${titleRight}`;
+
     const budgetAmount = parseBudgetAmount(payload.budget);
     const budgetNote = payload.budget?.trim() ? `\nBudget Range: ${payload.budget.trim()}` : "";
 
@@ -135,15 +239,15 @@ Deno.serve(async (req) => {
         venue_text: payload.location?.trim() || null,
         budget: budgetAmount,
         lead_source_id: leadSourceId,
-        source: "Website",
+        source: "Website Enquiry",
         requirements_summary: payload.message.trim(),
-        notes: `Web enquiry from: ${payload.name}\nEmail: ${payload.email}\nPhone: ${payload.phone || "Not provided"}${budgetNote}\n\n${payload.message}`,
+        notes: `Web enquiry from: ${payload.name}\nEmail: ${emailNormalised}\nPhone: ${phoneNormalised || "Not provided"}${budgetNote}\n\n${payload.message}`,
         status: "new",
       })
       .select("id")
-      .single();
+      .maybeSingle();
 
-    if (leadError) {
+    if (leadError || !lead) {
       console.error("Error creating lead:", leadError);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to submit enquiry" }),
@@ -151,113 +255,69 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create contact for the lead if we have a client
-    if (clientId) {
-      // Check if contact already exists
-      const { data: existingContact } = await supabase
-        .from("client_contacts")
-        .select("id")
-        .eq("client_id", clientId)
-        .ilike("email", payload.email.trim())
-        .limit(1)
-        .maybeSingle();
-
-      let contactId = existingContact?.id;
-
-      if (!existingContact) {
-        // Create new contact
-        const nameParts = payload.name.trim().split(" ");
-        const firstName = nameParts[0] || "";
-        const lastName = nameParts.slice(1).join(" ") || "";
-
-        const { data: newContact } = await supabase
-          .from("client_contacts")
-          .insert({
-            client_id: clientId,
-            contact_name: payload.name.trim(),
-            first_name: firstName,
-            last_name: lastName,
-            email: payload.email.trim(),
-            phone: payload.phone?.trim() || null,
-            is_primary: true,
-          })
-          .select("id")
-          .single();
-
-        contactId = newContact?.id;
-      }
-
-      // Link contact to lead via enquiry_contacts
-      if (contactId) {
-        await supabase
-          .from("enquiry_contacts")
-          .insert({
-            lead_id: lead.id,
-            contact_id: contactId,
-            role: "primary",
-            contact_name: payload.name.trim(),
-            contact_email: payload.email.trim(),
-            contact_phone: payload.phone?.trim() || null,
-          });
-      }
+    // Link contact to lead via enquiry_contacts
+    if (contactId) {
+      await supabase.from("enquiry_contacts").insert({
+        lead_id: lead.id,
+        contact_id: contactId,
+        role: "primary",
+        contact_name: payload.name.trim(),
+        contact_email: emailNormalised,
+        contact_phone: phoneNormalised,
+      });
     }
 
-    // Send notification email to sales team + auto-response to enquirer
+    // ─── 5. Activity log entry on the contact's timeline ───────────────────────
+    if (contactId) {
+      const dateStr = new Date().toLocaleDateString("en-AU", {
+        day: "numeric", month: "short", year: "numeric",
+      });
+      const eventDateStr = payload.event_date
+        ? new Date(payload.event_date).toLocaleDateString("en-AU", {
+            day: "numeric", month: "short", year: "numeric",
+          })
+        : "TBC";
+      const subject = `Website enquiry received on ${dateStr} — ${eventTypeName || "Enquiry"} on ${eventDateStr}`;
+
+      await supabase.from("contact_activities").insert({
+        contact_id: contactId,
+        activity_type: "system",
+        subject,
+        notes: payload.message.trim(),
+      });
+    }
+
+    // ─── 6. Notification email ─────────────────────────────────────────────────
+    const leadUrl = `https://app.eventpix.com.au/sales/leads/${lead.id}`;
+    const contactStatusLabel = contactIsNew
+      ? '<span style="color:#0a7d34;font-weight:bold;">New contact created in CRM</span>'
+      : '<span style="color:#1f4ec7;font-weight:bold;">Existing CRM contact matched</span>';
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (resendApiKey) {
-      // 1. Send internal notification to sales team
       const notificationHtml = `
         <h2>New Website Enquiry</h2>
+        <p>${contactStatusLabel}</p>
         <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Name</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.name)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Email</td>
-            <td style="padding: 8px; border: 1px solid #ddd;"><a href="mailto:${escapeHtml(payload.email)}">${escapeHtml(payload.email)}</a></td>
-          </tr>
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Phone</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.phone || "Not provided")}</td>
-          </tr>
-          ${payload.company ? `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Company</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.company)}</td>
-          </tr>
-          ` : ""}
-          ${payload.event_date ? `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Event Date</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.event_date)}</td>
-          </tr>
-          ` : ""}
-          ${payload.location ? `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Location</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.location)}</td>
-          </tr>
-          ` : ""}
-          ${payload.budget ? `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Budget</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.budget)}</td>
-          </tr>
-          ` : ""}
-          ${payload.lead_source ? `
-          <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">How they heard about us</td>
-            <td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(payload.lead_source)}</td>
-          </tr>
-          ` : ""}
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Name</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(payload.name)}</td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Email</td><td style="padding:8px;border:1px solid #ddd;"><a href="mailto:${escapeHtml(emailNormalised)}">${escapeHtml(emailNormalised)}</a></td></tr>
+          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Phone</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(payload.phone || "Not provided")}</td></tr>
+          ${companyNormalised ? `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Company</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(companyNormalised)}</td></tr>` : ""}
+          ${eventTypeName ? `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Event Type</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(eventTypeName)}</td></tr>` : ""}
+          ${payload.event_date ? `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Event Date</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(payload.event_date)}</td></tr>` : ""}
+          ${payload.location ? `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Location</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(payload.location)}</td></tr>` : ""}
+          ${payload.budget ? `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Budget</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(payload.budget)}</td></tr>` : ""}
+          ${payload.lead_source ? `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">How they heard about us</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(payload.lead_source)}</td></tr>` : ""}
         </table>
         <h3>Message</h3>
-        <p style="background: #f5f5f5; padding: 15px; border-radius: 4px; white-space: pre-wrap;">${escapeHtml(payload.message)}</p>
-        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-        <p style="color: #666; font-size: 12px;">
-          This lead has been automatically created in the CRM. 
-          <a href="https://app.eventpix.com.au/sales/leads/${lead.id}">View Lead →</a>
+        <p style="background:#f5f5f5;padding:15px;border-radius:4px;white-space:pre-wrap;">${escapeHtml(payload.message)}</p>
+        <p style="margin:20px 0;">
+          <a href="${leadUrl}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;">Open Lead in Sales Dashboard →</a>
+        </p>
+        <hr style="margin:20px 0;border:none;border-top:1px solid #ddd;">
+        <p style="color:#666;font-size:12px;">
+          ${contactIsNew ? "A new contact was created" : "Linked to an existing contact"} and a new lead has been added to the Sales Dashboard.<br>
+          <a href="${leadUrl}">${leadUrl}</a>
         </p>
       `;
 
@@ -271,22 +331,18 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: "EventPix <pix@rs.eventpix.com.au>",
             to: ["pix@eventpix.com.au"],
-            subject: `New Website Enquiry: ${payload.company || payload.name}`,
+            subject: `New Website Enquiry: ${companyNormalised || payload.name}`,
             html: notificationHtml,
           }),
         });
-
         const emailResult = await emailResponse.json();
-        if (!emailResponse.ok) {
-          console.error("Email notification failed:", emailResult);
-        } else {
-          console.log("Notification email sent:", emailResult.id);
-        }
+        if (!emailResponse.ok) console.error("Email notification failed:", emailResult);
+        else console.log("Notification email sent:", emailResult.id);
       } catch (emailError) {
         console.error("Error sending notification email:", emailError);
       }
 
-      // 2. Send auto-response to enquirer using template with trigger_type = 'enquiry_received'
+      // Auto-response to enquirer
       try {
         const { data: autoReplyTemplate } = await supabase
           .from("email_templates")
@@ -297,40 +353,33 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (autoReplyTemplate) {
-          // Replace merge fields in template
-          const firstName = payload.name.trim().split(" ")[0] || payload.name;
           const mergeContext: Record<string, string> = {
-            "{{contact.first_name}}": firstName,
+            "{{contact.first_name}}": firstName || "there",
             "{{contact.name}}": payload.name,
             "{{client.primary_contact_name}}": payload.name,
-            "{{lead_or_job_name}}": payload.company ? `${payload.company} - Web Enquiry` : `${payload.name} - Web Enquiry`,
-            "{{company_name}}": payload.company || "",
+            "{{lead_or_job_name}}": leadName,
+            "{{company_name}}": companyNormalised || "",
             "{{event_date}}": payload.event_date || "TBC",
           };
 
           let subject = autoReplyTemplate.subject;
           let body = autoReplyTemplate.body_text || autoReplyTemplate.body_html;
-
-          // Apply merge fields
           for (const [key, value] of Object.entries(mergeContext)) {
             subject = subject.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
             body = body.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
           }
 
-          // Convert text format to HTML (preserve line breaks)
-          const bodyHtml = autoReplyTemplate.format === "text" 
-            ? `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">${body.replace(/\n/g, "<br>")}</div>`
+          const bodyHtml = autoReplyTemplate.format === "text"
+            ? `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;">${body.replace(/\n/g, "<br>")}</div>`
             : body;
 
-          // Add standard footer
           const footer = `
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-            <p style="color: #666; font-size: 12px;">
+            <hr style="margin:20px 0;border:none;border-top:1px solid #ddd;">
+            <p style="color:#666;font-size:12px;">
               Trevor Connell, Operations Manager<br>
               Phone: 02 9056 3775<br>
               EventPix corporate and event photography Australia-wide
-            </p>
-          `;
+            </p>`;
 
           const autoReplyResponse = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -340,8 +389,8 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({
               from: "EventPix <pix@rs.eventpix.com.au>",
-              to: [payload.email],
-              subject: subject,
+              to: [emailNormalised],
+              subject,
               html: bodyHtml + footer,
             }),
           });
@@ -350,24 +399,20 @@ Deno.serve(async (req) => {
           if (!autoReplyResponse.ok) {
             console.error("Auto-response email failed:", autoReplyResult);
           } else {
-            console.log("Auto-response sent to:", payload.email, "id:", autoReplyResult.id);
-            
-            // Log the auto-response email
             await supabase.from("email_logs").insert({
               email_type: "enquiry_auto_response",
-              recipient_email: payload.email,
+              recipient_email: emailNormalised,
               recipient_name: payload.name,
-              subject: subject,
+              subject,
               body_html: bodyHtml,
               lead_id: lead.id,
               client_id: clientId,
+              contact_id: contactId,
               template_id: autoReplyTemplate.id,
               status: "sent",
               sent_at: new Date().toISOString(),
             });
           }
-        } else {
-          console.log("No active enquiry_received template found, skipping auto-response");
         }
       } catch (autoReplyError) {
         console.error("Error sending auto-response email:", autoReplyError);
@@ -377,13 +422,15 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Thank you for your enquiry. We'll be in touch soon!" 
+      JSON.stringify({
+        success: true,
+        message: "Thank you for your enquiry. We'll be in touch soon!",
+        lead_id: lead.id,
+        contact_id: contactId,
+        contact_is_new: contactIsNew,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
     console.error("Error processing enquiry:", error);
     return new Response(
@@ -404,10 +451,8 @@ function escapeHtml(str: string): string {
 
 function parseBudgetAmount(budget?: string): number | null {
   if (!budget?.trim()) return null;
-
   const match = budget.match(/[\d,]+/);
   if (!match) return null;
-
   const amount = Number(match[0].replace(/,/g, ""));
   return Number.isFinite(amount) ? amount : null;
 }
