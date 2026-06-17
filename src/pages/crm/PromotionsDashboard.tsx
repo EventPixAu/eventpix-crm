@@ -796,58 +796,9 @@ export default function PromotionsDashboard() {
 
       {/* NEW PANELS */}
       <div className="mt-8 space-y-6">
-        {/* Row 1: Contact Status & Category Summaries */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Contact Status Summary */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-primary" />
-                  Contact Status Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {statusOrder.map((status) => {
-                    const count = statusCounts[status] || 0;
-                    const total = allContacts.length || 1;
-                    const pct = Math.round((count / total) * 100);
-                    const Icon = statusIcons[status] || HelpCircle;
-                    return (
-                      <div key={status} className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${statusColors[status] || 'bg-muted'}`}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">{status}</span>
-                            <span className="text-sm font-bold">{count}</span>
-                          </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 pt-3 border-t text-center">
-                  <Link to="/crm/contacts" className="text-sm text-primary hover:underline">
-                    View all contacts
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {/* Row 1: Contact Category Summary (status moved to Company level) */}
+        <div className="grid gap-6">
+
 
           {/* Contact Category Summary */}
           <motion.div
