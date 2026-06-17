@@ -149,6 +149,8 @@ export default function CompanyList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [filterTag, setFilterTag] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterSubcategory, setFilterSubcategory] = useState<string>('');
+  const [filterClientType, setFilterClientType] = useState<string>('');
   const [filterSource, setFilterSource] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
