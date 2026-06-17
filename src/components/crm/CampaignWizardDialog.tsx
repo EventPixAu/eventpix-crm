@@ -72,7 +72,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Step 1
   const [filters, setFilters] = useState<AudienceFilters>({
-    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [],
+    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [],
   });
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
@@ -236,7 +236,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   const reset = () => {
     setStep(1);
-    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
+    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
@@ -478,7 +478,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           type="button"
                           onClick={() => {
                             setAudienceCleared(true);
-                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
+                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
                             setManualSearch('');
@@ -519,7 +519,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                             type="button"
                             onClick={() => {
                               setAudienceCleared(true);
-                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [] });
+                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
                               setManualSearch('');
