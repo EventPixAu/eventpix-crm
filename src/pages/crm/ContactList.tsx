@@ -755,17 +755,7 @@ export default function ContactList() {
             {selectedIds.size > 0 && (
               <div className="flex flex-wrap items-center gap-2 p-2 rounded-md border bg-muted/40">
                 <span className="text-sm font-medium">{selectedIds.size} selected</span>
-                <Select onValueChange={(v) => bulkUpdate.mutate({ status: v === '__clear__' ? null : v })}>
-                  <SelectTrigger className="h-8 w-[170px] text-xs">
-                    <SelectValue placeholder="Assign Status…" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="__clear__">Clear Status</SelectItem>
-                    {companyStatuses.map((s) => (
-                      <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
                 <Select onValueChange={(v) => bulkUpdate.mutate({ category: v === '__clear__' ? null : v })}>
                   <SelectTrigger className="h-8 w-[190px] text-xs">
                     <SelectValue placeholder="Assign Category…" />
