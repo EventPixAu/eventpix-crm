@@ -241,66 +241,26 @@ export default function ClientDetail() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="create_category_id">Category</Label>
-              {isAddingCategory ? (
-                <div className="flex gap-2">
-                  <Input
-                    autoFocus
-                    placeholder="New category name"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') {
-                        setIsAddingCategory(false);
-                        setNewCategoryName('');
-                      }
-                    }}
-                  />
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    onClick={handleAddCategory}
-                    disabled={!newCategoryName.trim() || createCategory.isPending}
-                  >
-                    {createCategory.isPending ? '...' : 'Add'}
-                  </Button>
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={formData.category_id}
-                  onValueChange={(value) => {
-                    if (value === '__add_new__') {
-                      setIsAddingCategory(true);
-                    } else {
-                      setFormData({ ...formData, category_id: value });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__add_new__" className="text-primary font-medium">
-                      + Add new category
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              <Label>Category</Label>
+              <CompanyCategoryPicker
+                parentId={formData.category_id || null}
+                subcategoryId={formData.subcategory_id || null}
+                onChange={(p, s) => setFormData({ ...formData, category_id: p || '', subcategory_id: s || '' })}
+              />
             </div>
+
+            {!isEpxSupplier && (
+              <div className="space-y-2">
+                <Label>Client Type</Label>
+                <ClientTypePicker
+                  value={formData.client_type || null}
+                  onChange={(v) => setFormData({ ...formData, client_type: v || '' })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Direct = books EventPix for their own events. Indirect = books on behalf of clients.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
