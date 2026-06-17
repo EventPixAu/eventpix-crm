@@ -1693,19 +1693,6 @@ export default function EventDetail() {
                 );
               })()}
 
-              {/* Editing Instructions - Internal Only */}
-              {(isAdmin || canSeeSection('editing_instructions')) && id && (
-                <EditingInstructionsPanel
-                  value={(event as any)?.editing_instructions || ''}
-                  templateId={(event as any)?.editing_instructions_template_id}
-                  onSave={async (val: string, tid?: string | null) => {
-                    const updateData: any = { editing_instructions: val };
-                    if (tid !== undefined) updateData.editing_instructions_template_id = tid;
-                    await supabase.from('events').update(updateData).eq('id', id);
-                    queryClient.invalidateQueries({ queryKey: ['events', id] });
-                  }}
-                />
-              )}
 
               {/* Mail History */}
               {(isAdmin || canSeeSection('mail_history')) && id && (
