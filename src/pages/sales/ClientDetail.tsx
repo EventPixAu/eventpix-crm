@@ -300,6 +300,23 @@ export default function ClientDetail() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="create_state">State</Label>
+              <Select
+                value={formData.state || '__none__'}
+                onValueChange={(v) => setFormData({ ...formData, state: v === '__none__' ? '' : v })}
+              >
+                <SelectTrigger id="create_state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {AU_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
             <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
               After creating the company, you can add contacts from the Contacts panel on the company detail page.
             </p>
@@ -567,6 +584,23 @@ export default function ClientDetail() {
                 placeholder="Street Address&#10;Suburb, State, Postcode&#10;Country"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_state">State</Label>
+              <Select
+                value={formData.state || '__none__'}
+                onValueChange={(v) => setFormData({ ...formData, state: v === '__none__' ? '' : v })}
+              >
+                <SelectTrigger id="edit_state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {AU_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
