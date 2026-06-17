@@ -2017,12 +2017,14 @@ export default function EventDetail() {
           initialSubject={`Live Access Details – ${event.event_name} – ${event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : ''}`}
           initialBody={(() => {
             const regLink = (event as any).pre_registration_link || '';
+            const liveFeedLink = (event as any).live_feed_link || '';
             return `<p>Hi {{client_name}},</p>` +
               `<p>Here are your links to access photos via RealTime delivery for ${event.event_name}.</p>` +
               ((event as any).qr_file_path
                 ? `<p>The QR code (attached) can be printed and displayed at the event so your guests can scan it to register and access their photos instantly.</p>`
                 : `<p>The QR code (provided separately) can be printed and displayed at the event so your guests can scan it to register and access their photos instantly.</p>`) +
-              (regLink ? `<p>This link can be used by your social media manager or team to access all photos during the event:<br/><a href="${regLink}">${regLink}</a></p>` : '') +
+              (regLink ? `<p><strong>Registration Link:</strong><br/><a href="${regLink}">${regLink}</a></p>` : '') +
+              (liveFeedLink ? `<p><strong>Live Feed Link</strong> (for your social media manager or team to access all photos during the event):<br/><a href="${liveFeedLink}">${liveFeedLink}</a></p>` : '') +
               `<p>If you have any questions, please don't hesitate to get in touch.</p>` +
               `<p>Kind regards,<br/>The Eventpix Team</p>`;
           })()}
