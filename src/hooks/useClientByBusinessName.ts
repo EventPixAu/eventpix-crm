@@ -24,7 +24,7 @@ export function useClientByBusinessName(businessName: string | null | undefined)
 
       const { data, error } = await supabase
         .from('clients')
-        .select('id, business_name, primary_contact_name, primary_contact_email, primary_contact_phone')
+        .select('id, business_name, primary_contact_name, primary_contact_email, primary_contact_phone, status, manual_status')
         .ilike('business_name', name)
         .limit(1);
 
