@@ -640,7 +640,7 @@ export default function WorkflowsAdmin() {
         description="Manage operations workflow steps and sales workflows"
       />
 
-      <Tabs defaultValue="operations" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Steps</TabsTrigger>
           <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
