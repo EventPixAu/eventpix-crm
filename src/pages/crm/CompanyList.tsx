@@ -787,6 +787,7 @@ export default function CompanyList() {
                     </div>
                   </TableHead>
                   <TableHead>Client Type</TableHead>
+                  {showStateColumn && <TableHead>State</TableHead>}
                   <TableHead 
                     className="cursor-pointer hover:bg-muted/50 select-none"
                     onClick={() => handleSort('status')}
@@ -917,6 +918,15 @@ export default function CompanyList() {
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </TableCell>
+                    {showStateColumn && (
+                      <TableCell>
+                        {company.state ? (
+                          <Badge variant="outline" className="text-xs">{company.state}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <InlineStatusEditor
                         companyId={company.id}
