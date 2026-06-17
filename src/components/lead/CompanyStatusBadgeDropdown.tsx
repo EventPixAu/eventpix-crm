@@ -200,50 +200,6 @@ export function CompanyStatusBadgeDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Reason Dialog */}
-      <Dialog open={isReasonDialogOpen} onOpenChange={setIsReasonDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Company Status</DialogTitle>
-            <DialogDescription>
-              You are changing the status from "{statusConfig.label}" to "
-              {STATUS_OPTIONS.find(s => s.value === pendingStatus)?.label || pendingStatus}".
-              Please provide a reason for this change.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <Textarea
-              placeholder="Enter reason for status change (min 10 characters)..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-            />
-            <p className="text-xs text-muted-foreground">
-              {reason.length}/10 characters minimum
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsReasonDialogOpen(false);
-                setPendingStatus(null);
-                setReason('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmStatusChange} 
-              disabled={isUpdating || reason.trim().length < 10}
-            >
-              {isUpdating ? 'Updating...' : 'Confirm Change'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
