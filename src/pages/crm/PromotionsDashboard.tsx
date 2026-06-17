@@ -91,6 +91,7 @@ export default function PromotionsDashboard() {
         .from('clients')
         .select(`
           *,
+          category:company_categories(id, name),
           events:events(id, event_date, event_name)
         `)
         .eq('is_training', false)
@@ -100,6 +101,17 @@ export default function PromotionsDashboard() {
       return data || [];
     }
   });
+
+  // Companies grouped by Parent Category
+  const companiesByParent = useMemo(() => {
+    const counts = new Map<string, number>();
+    clients.forEach((c: any) => {
+      const name = c.category?.name || 'Uncategorised';
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1]);
+  }, [clients]);
 
   // Fetch truly unassigned contacts with debug info
   const { data: orphanContactsData } = useQuery({
