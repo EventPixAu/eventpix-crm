@@ -1028,13 +1028,8 @@ export default function ContactList() {
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {contact.status ? (
-                            <Badge variant="outline" className="text-xs">{contact.status}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
-                        </TableCell>
+                        {/* Status cell removed — status set at Company level */}
+
                         <TableCell>
                           {contact.category ? (
                             <Badge variant="secondary" className="text-xs">{contact.category}</Badge>
