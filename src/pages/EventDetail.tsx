@@ -36,6 +36,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { InvoiceStatusBadge } from '@/components/ui/invoice-status-badge';
 import { OpsStatusBadge } from '@/components/ui/ops-status-badge';
+import { CompanyStatusBadgeDropdown } from '@/components/lead/CompanyStatusBadgeDropdown';
 import {
   AlertDialog,
   AlertDialogAction,
