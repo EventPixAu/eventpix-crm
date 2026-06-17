@@ -330,7 +330,14 @@ export default function CrmLookups() {
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <FolderOpen className="h-4 w-4 mr-2" />
-                Categories
+                Parent Categories
+              </TabsTrigger>
+              <TabsTrigger 
+                value="company-subcategories"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Sub-Categories
               </TabsTrigger>
             </TabsList>
           </div>
