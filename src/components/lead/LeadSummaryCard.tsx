@@ -21,6 +21,8 @@ import { useUpdateLead } from '@/hooks/useSales';
 import { useLeadStatuses } from '@/hooks/useLeadStatuses';
 import { toast } from 'sonner';
 import { useLostReasons } from '@/hooks/useLostReasons';
+import { setClientStatusAuto } from '@/lib/clientStatusAuto';
+import { useQueryClient } from '@tanstack/react-query';
 import { EditLeadDialog } from '@/components/EditLeadDialog';
 import {
   Dialog,
@@ -86,6 +88,7 @@ export function LeadSummaryCard({
 }: LeadSummaryCardProps) {
   const updateLead = useUpdateLead();
   const { data: leadStatuses = [] } = useLeadStatuses();
+  const queryClient = useQueryClient();
 
   const { data: lostReasons } = useLostReasons();
   const [lostOpen, setLostOpen] = useState(false);
@@ -106,6 +109,13 @@ export function LeadSummaryCard({
       return;
     }
     await updateLead.mutateAsync({ id: lead.id, status: newStatus as any });
+    // Auto-bump client status to Active Client when Budget Sent
+    if (newStatus === 'budget_sent' && (lead as any).client_id) {
+      await setClientStatusAuto((lead as any).client_id, 'active', 'lead_budget_sent');
+      queryClient.invalidateQueries({ queryKey: ['lead'] });
+      queryClient.invalidateQueries({ queryKey: ['client'] });
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    }
     toast.success(`Status updated to ${leadStatuses.find(s => s.name === newStatus)?.label || newStatus}`);
   };
 
