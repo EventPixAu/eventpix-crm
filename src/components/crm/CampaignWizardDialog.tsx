@@ -149,8 +149,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .eq('archived', false)
         .eq('unsubscribed', false)
         .not('email', 'is', null);
-      if (filters.statuses.length) q = q.in('status', filters.statuses);
-      else q = q.or('status.is.null,status.neq.Staff');
+      // Always exclude Staff contacts from campaigns
+      q = q.or('status.is.null,status.neq.Staff');
+
       if (filters.sources.length) q = q.in('source', filters.sources);
       if (filters.states.length) q = q.in('state', filters.states);
       if (filters.cities.length) q = q.in('city', filters.cities);
