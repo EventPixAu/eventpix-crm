@@ -55,6 +55,7 @@ export function useClient(id: string | undefined) {
         .select(`
           *,
           category:company_categories(id, name),
+          subcategory:company_subcategories(id, name, parent_id),
           client_contacts (*),
           client_notes (*),
           client_communications (*)
