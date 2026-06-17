@@ -52,7 +52,18 @@ export function useEvents() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+          *,
+          clients:client_id (
+            id,
+            business_name,
+            primary_contact_name,
+            primary_contact_email,
+            primary_contact_phone,
+            status,
+            manual_status
+          )
+        `)
         .order('event_date', { ascending: true });
       
       if (error) throw error;
