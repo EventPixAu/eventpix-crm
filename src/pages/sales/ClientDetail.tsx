@@ -99,7 +99,6 @@ export default function ClientDetail() {
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const createClient = useCreateClient();
-  const createCategory = useCreateCompanyCategory();
 
   const handleStatusChange = () => {
     queryClient.invalidateQueries({ queryKey: ['client', id] });
@@ -110,31 +109,19 @@ export default function ClientDetail() {
   const isCreateMode = !id;
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
   const [formData, setFormData] = useState({
     business_name: '',
     company_phone: '',
     company_email: '',
     billing_address: '',
-    category_id: '',
+    category_id: '' as string,
+    subcategory_id: '' as string,
+    client_type: '' as '' | 'Direct' | 'Indirect',
     manual_status: '',
     website: '',
     lead_source: '',
     tags: '' as string,
   });
-
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    try {
-      const newCat = await createCategory.mutateAsync(newCategoryName.trim());
-      setFormData({ ...formData, category_id: newCat.id });
-      setNewCategoryName('');
-      setIsAddingCategory(false);
-    } catch (e) {
-      // Error handled in hook
-    }
-  };
 
   const handleOpenEdit = () => {
     if (client) {
