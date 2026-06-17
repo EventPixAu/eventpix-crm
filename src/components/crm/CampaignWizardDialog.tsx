@@ -445,10 +445,16 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   onToggle={(v) => toggleFilter('sources', v)}
                 />
                 <FilterGroup
-                  label="State"
+                  label="Contact State"
                   options={AU_STATES.map((s) => ({ value: s, label: s }))}
                   selected={filters.states}
                   onToggle={(v) => toggleFilter('states', v)}
+                />
+                <FilterGroup
+                  label="Company State"
+                  options={AU_STATES.map((s) => ({ value: s, label: s }))}
+                  selected={filters.companyStates}
+                  onToggle={(v) => toggleFilter('companyStates', v)}
                 />
 
               </div>
