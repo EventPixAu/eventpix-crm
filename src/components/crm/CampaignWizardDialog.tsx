@@ -36,6 +36,7 @@ interface AudienceFilters {
   sources: string[];
   states: string[];              // contact state
   companyStates: string[];       // company state
+  countries: string[];           // company country
   cities: string[];
 }
 
