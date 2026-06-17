@@ -31,6 +31,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { CompanyStatusBadgeDropdown } from '@/components/lead/CompanyStatusBadgeDropdown';
 
 export default function Events() {
   const { isAdmin } = useAuth();
@@ -283,6 +284,13 @@ export default function Events() {
                             status={(event as any).invoice_status} 
                             reference={(event as any).invoice_reference}
                           />
+                          {(event as any).clients?.id && (
+                            <CompanyStatusBadgeDropdown
+                              companyId={(event as any).clients.id}
+                              currentStatus={(event as any).clients?.status || 'prospect'}
+                              manualStatus={(event as any).clients?.manual_status}
+                            />
+                          )}
                         </>
                       )}
                     </div>
