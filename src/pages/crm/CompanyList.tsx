@@ -631,16 +631,43 @@ export default function CompanyList() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterCategory || '__all__'} onValueChange={v => setFilterCategory(v === '__all__' ? '' : v)}>
-              <SelectTrigger className="w-[160px] h-8 text-xs">
-                <SelectValue placeholder="All Categories" />
+            <Select value={filterCategory || '__all__'} onValueChange={v => { setFilterCategory(v === '__all__' ? '' : v); setFilterSubcategory(''); }}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="All Parents" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Categories</SelectItem>
+                <SelectItem value="__all__">All Parents</SelectItem>
                 <SelectItem value="__none__">No Category</SelectItem>
                 {filterOptions.categories.map(c => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filterSubcategory || '__all__'}
+              onValueChange={v => setFilterSubcategory(v === '__all__' ? '' : v)}
+              disabled={!filterCategory || filterCategory === '__none__'}
+            >
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder={filterCategory ? 'All Sub-categories' : 'Pick parent'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Sub-categories</SelectItem>
+                <SelectItem value="__none__">No Sub-category</SelectItem>
+                {subcategoryOptions.map(s => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterClientType || '__all__'} onValueChange={v => setFilterClientType(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Client Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Client Types</SelectItem>
+                <SelectItem value="Direct">Direct</SelectItem>
+                <SelectItem value="Indirect">Indirect</SelectItem>
+                <SelectItem value="__none__">Unassigned</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterSource || '__all__'} onValueChange={v => setFilterSource(v === '__all__' ? '' : v)}>
