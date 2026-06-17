@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
         event_type_id: payload.event_type_id || null,
         estimated_event_date: payload.event_date || null,
         venue_text: payload.location?.trim() || null,
-        budget_range: payload.budget?.trim() || null,
+        budget: payload.budget?.trim() || null,
         lead_source_id: leadSourceId,
         source: "Website",
         requirements_summary: payload.message.trim(),
