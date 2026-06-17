@@ -24,6 +24,7 @@ interface ClientProfileCardProps {
     primary_contact_phone?: string | null;
     billing_address?: string | null;
     state?: string | null;
+    country?: string | null;
     category_id?: string | null;
     category?: { id: string; name: string } | null;
     subcategory_id?: string | null;
