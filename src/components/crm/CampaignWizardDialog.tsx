@@ -239,6 +239,17 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     return list;
   }, [matched, manualIncludes, manualExcludes, audienceCleared]);
 
+  const distinctCountries = useMemo(() => {
+    if (!companiesIndex) return [] as string[];
+    const set = new Set<string>();
+    companiesIndex.forEach((info) => {
+      const v = (info.country || '').trim();
+      if (v) set.add(v);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [companiesIndex]);
+
+
   const reset = () => {
     setStep(1);
     setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
@@ -462,6 +473,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   options={AU_STATES.map((s) => ({ value: s, label: s }))}
                   selected={filters.companyStates}
                   onToggle={(v) => toggleFilter('companyStates', v)}
+                />
+                <FilterGroup
+                  label="Country"
+                  options={distinctCountries.map((c) => ({ value: c, label: c }))}
+                  selected={filters.countries}
+                  onToggle={(v) => toggleFilter('countries', v)}
+                  emptyMessage="No countries on record yet"
                 />
 
               </div>
