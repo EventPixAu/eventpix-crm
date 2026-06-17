@@ -401,20 +401,8 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           {step === 1 && (
             <div className="space-y-5 py-2">
               <div className="grid grid-cols-2 gap-5">
-                <FilterGroup
-                  label="Status"
-                  options={[
-                    { value: 'Active', label: 'Active' },
-                    { value: 'Current', label: 'Current' },
-                    { value: 'Previous', label: 'Previous' },
-                    { value: 'Old', label: 'Old' },
-                    { value: 'Prospect', label: 'Prospect' },
-                    { value: 'Staff', label: 'Staff' },
-                    { value: 'Archived', label: 'Archived' },
-                  ]}
-                  selected={filters.statuses}
-                  onToggle={(v) => toggleFilter('statuses', v)}
-                />
+                {/* Status filter removed — status is at Company level. Staff contacts are always excluded. */}
+
                 <FilterGroup
                   label="Parent Category"
                   options={categories.map((c) => ({
