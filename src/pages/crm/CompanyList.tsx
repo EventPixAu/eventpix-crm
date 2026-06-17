@@ -93,6 +93,9 @@ interface Company {
   billing_address: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
+  subcategory_id: string | null;
+  subcategory: { id: string; name: string; parent_id: string } | null;
+  client_type: 'Direct' | 'Indirect' | null;
   lead_source: string | null;
   manual_status: string | null;
   status_override_reason: string | null;
@@ -100,12 +103,9 @@ interface Company {
   display_status: ComputedStatus;
   is_override: boolean;
   contact_count: number;
-  // Primary contact from linked contacts
   primary_contact_name: string | null;
   primary_contact_email: string | null;
-  // Aggregated tags from all linked contacts
   tags: string[];
-  // Aggregated sources from all linked contacts
   contact_sources: string[];
 }
 
