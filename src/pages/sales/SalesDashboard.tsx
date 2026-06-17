@@ -146,6 +146,15 @@ export default function SalesDashboard() {
       .slice(0, 5);
   }, [contracts]);
 
+  // New website enquiries (untouched new leads from website)
+  const newWebsiteEnquiries = useMemo(() => {
+    return leads.filter(l => {
+      const source = (l.source || '').toLowerCase();
+      const isWebsite = source.includes('website') || source.includes('enquiry') || source.includes('web');
+      return isWebsite && l.status === 'new';
+    });
+  }, [leads]);
+
   const getDaysAgo = (dateStr: string) => {
     return differenceInDays(new Date(), parseISO(dateStr));
   };
