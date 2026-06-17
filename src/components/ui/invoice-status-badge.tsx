@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Clock, CheckCircle, Gift } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle, Gift, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InvoiceStatusBadgeProps {
-  status: 'not_invoiced' | 'invoiced' | 'paid' | 'sponsored' | null;
+  status: 'not_invoiced' | 'invoiced' | 'paid' | 'sponsored' | 'deposit' | null;
   reference?: string | null;
   className?: string;
 }
@@ -33,6 +33,12 @@ export function InvoiceStatusBadge({ status, reference, className }: InvoiceStat
       icon: Gift,
       variant: 'secondary' as const,
       className: 'border-purple-500/50 bg-purple-500/10 text-purple-700 dark:text-purple-400',
+    },
+    deposit: {
+      label: 'Deposit Paid',
+      icon: Wallet,
+      variant: 'secondary' as const,
+      className: 'border-cyan-500/50 bg-cyan-500/10 text-cyan-700 dark:text-cyan-400',
     },
   };
 
