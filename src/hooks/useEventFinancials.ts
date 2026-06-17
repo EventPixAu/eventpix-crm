@@ -165,7 +165,7 @@ export function useEventFinancials(eventId: string | undefined) {
       const incomeSource: 'invoice' | 'quote' | 'payments' =
         matchedPaymentsTotal > 0 ? 'payments' : invoiceAmount ? 'invoice' : 'quote';
       const quotedTotal = matchedPaymentsTotal > 0 ? matchedPaymentsTotal : (invoiceAmount || quoteTotal || 0);
-      const isPaid = event.invoice_status === 'paid' || matchedPaymentsTotal > 0;
+      const isPaid = event.invoice_status === 'paid_in_full' || matchedPaymentsTotal > 0;
       
       // Build rate card lookup by staff_role_id
       const rateMap = new Map<string, { hourly_rate: number; minimum_paid_hours: number }>();
