@@ -923,7 +923,7 @@ export default function ContactList() {
                       if (!contact.first_name) missing.push('First Name');
                       if (!contact.email) missing.push('Email');
                       if (contact.companies.length === 0) missing.push('Company');
-                      if (!contact.status) missing.push('Status');
+                      // Status no longer tracked at contact level
                       if (!contact.category) missing.push('Category');
                       const isMissing = missing.length > 0;
                       return (
