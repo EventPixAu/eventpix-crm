@@ -440,14 +440,8 @@ export default function ContactList() {
         if (!hasTags) return false;
       }
 
-      // Status filter
-      if (statusFilter !== 'all') {
-        if (statusFilter === '__unassigned__') {
-          if (contact.status) return false;
-        } else if (contact.status !== statusFilter) {
-          return false;
-        }
-      }
+      // Status filter removed — set at Company level
+
 
       // Category filter
       if (categoryFilter !== 'all') {
@@ -687,19 +681,8 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px] h-8 text-xs">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {companyStatuses.map((s) => (
-                    <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Status filter removed — status is now set at Company level */}
+
 
               {/* Category Filter */}
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -766,17 +749,7 @@ export default function ContactList() {
             {selectedIds.size > 0 && (
               <div className="flex flex-wrap items-center gap-2 p-2 rounded-md border bg-muted/40">
                 <span className="text-sm font-medium">{selectedIds.size} selected</span>
-                <Select onValueChange={(v) => bulkUpdate.mutate({ status: v === '__clear__' ? null : v })}>
-                  <SelectTrigger className="h-8 w-[170px] text-xs">
-                    <SelectValue placeholder="Assign Status…" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="__clear__">Clear Status</SelectItem>
-                    {companyStatuses.map((s) => (
-                      <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
                 <Select onValueChange={(v) => bulkUpdate.mutate({ category: v === '__clear__' ? null : v })}>
                   <SelectTrigger className="h-8 w-[190px] text-xs">
                     <SelectValue placeholder="Assign Category…" />
@@ -931,7 +904,7 @@ export default function ContactList() {
                       <TableHead className="min-w-[200px]">Companies</TableHead>
                       <TableHead className="min-w-[120px]">Job Title</TableHead>
                       <TableHead className="min-w-[100px]">Source</TableHead>
-                      <TableHead className="min-w-[110px]">Status</TableHead>
+                      {/* Status column removed — status is at Company level */}
                       <TableHead className="min-w-[160px]">Category</TableHead>
                       <TableHead className="min-w-[180px]">Email</TableHead>
                       <TableHead className="min-w-[120px]">Mobile</TableHead>
@@ -944,7 +917,7 @@ export default function ContactList() {
                       if (!contact.first_name) missing.push('First Name');
                       if (!contact.email) missing.push('Email');
                       if (contact.companies.length === 0) missing.push('Company');
-                      if (!contact.status) missing.push('Status');
+                      // Status no longer tracked at contact level
                       if (!contact.category) missing.push('Category');
                       const isMissing = missing.length > 0;
                       return (
@@ -1049,13 +1022,8 @@ export default function ContactList() {
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          {contact.status ? (
-                            <Badge variant="outline" className="text-xs">{contact.status}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
-                        </TableCell>
+                        {/* Status cell removed — status set at Company level */}
+
                         <TableCell>
                           {contact.category ? (
                             <Badge variant="secondary" className="text-xs">{contact.category}</Badge>
