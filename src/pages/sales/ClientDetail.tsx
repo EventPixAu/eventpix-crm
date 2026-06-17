@@ -132,6 +132,8 @@ export default function ClientDetail() {
         company_email: (client as any).company_email || '',
         billing_address: client.billing_address || '',
         category_id: (client as any).category_id || '',
+        subcategory_id: (client as any).subcategory_id || '',
+        client_type: ((client as any).client_type as '' | 'Direct' | 'Indirect') || '',
         manual_status: (client as any).manual_status || '',
         website: (client as any).website || '',
         lead_source: (client as any).lead_source || '',
@@ -140,6 +142,8 @@ export default function ClientDetail() {
       setIsEditOpen(true);
     }
   };
+
+  const isEpxSupplier = !!formData.category_id && categories.find(c => c.id === formData.category_id)?.name === 'EPX Supplier';
 
   const handleUpdate = async () => {
     if (!id || !formData.business_name.trim()) return;
@@ -155,6 +159,8 @@ export default function ClientDetail() {
       billing_address: formData.billing_address,
       website: formData.website,
       category_id: formData.category_id || null,
+      subcategory_id: formData.subcategory_id || null,
+      client_type: isEpxSupplier ? null : (formData.client_type || null),
       manual_status: formData.manual_status || null,
       lead_source: formData.lead_source || null,
       tags: tagsArray.length > 0 ? tagsArray : null,
@@ -173,10 +179,13 @@ export default function ClientDetail() {
       company_email: formData.company_email || null,
       billing_address: formData.billing_address || null,
       category_id: formData.category_id || null,
+      subcategory_id: formData.subcategory_id || null,
+      client_type: isEpxSupplier ? null : (formData.client_type || null),
       website: formData.website || null,
-    });
+    } as any);
     navigate(`/crm/companies/${result.id}`);
   };
+
 
   const handleDelete = async () => {
     if (!id) return;
