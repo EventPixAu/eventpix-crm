@@ -316,6 +316,8 @@ export default function ClientDetail() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
 
             <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
               After creating the company, you can add contacts from the Contacts panel on the company detail page.
