@@ -252,6 +252,21 @@ export function QuickCreateCompanyDialog({
                 placeholder="Street Address&#10;Suburb, State, Postcode&#10;Country"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quick_state">State</Label>
+              <Select value={state || '__none__'} onValueChange={(v) => setState(v === '__none__' ? '' : v)}>
+                <SelectTrigger id="quick_state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Unassigned —</SelectItem>
+                  {AU_STATES.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
