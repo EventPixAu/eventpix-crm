@@ -438,11 +438,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                 />
                 <FilterGroup
                   label="State"
-                  options={(distinctMeta?.states || []).map((s) => ({ value: s, label: s }))}
+                  options={AU_STATES.map((s) => ({ value: s, label: s }))}
                   selected={filters.states}
                   onToggle={(v) => toggleFilter('states', v)}
-                  emptyMessage="No locations assigned to contacts yet"
                 />
+
               </div>
               <p className="text-xs text-muted-foreground">
                 EPX Supplier companies are excluded from campaigns by default. Select the EPX Supplier parent above to include them.
