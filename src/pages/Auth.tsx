@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,12 +22,22 @@ export default function Auth() {
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getRedirectTarget = () => {
+    const from = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+    if (from?.pathname && from.pathname !== '/auth') {
+      return `${from.pathname}${from.search || ''}${from.hash || ''}`;
+    }
+    return '/';
+  };
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/');
+      navigate(getRedirectTarget(), { replace: true });
     }
-  }, [user, loading, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +49,7 @@ export default function Auth() {
         if (error) {
           toast.error('Sign in failed', { description: error.message });
         } else {
-          navigate('/');
+          navigate(getRedirectTarget(), { replace: true });
         }
       } else {
         if (!fullName.trim()) {
