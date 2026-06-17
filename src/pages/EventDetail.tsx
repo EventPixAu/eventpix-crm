@@ -1788,6 +1788,11 @@ export default function EventDetail() {
               </div>
             )}
           </div>
+
+          {/* Crew Checklists - admin/ops only */}
+          {(isAdmin || isOperations) && id && assignments.length > 0 && (
+            <CrewChecklistsPanel eventId={id} assignments={assignments} />
+          )}
         </TabsContent>
 
         {/* Equipment Tab */}
