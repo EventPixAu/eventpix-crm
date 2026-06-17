@@ -101,7 +101,7 @@ import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
-import { useEditingInstructionTemplates } from '@/hooks/useEditingInstructionTemplates';
+import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
