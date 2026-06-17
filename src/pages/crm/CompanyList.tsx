@@ -77,6 +77,7 @@ import { BulkCategoryUpdateDialog } from '@/components/crm/BulkCategoryUpdateDia
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
+import { AU_STATES } from '@/lib/auStates';
 import { subMonths, isAfter, parseISO, isBefore, startOfDay } from 'date-fns';
 
 type SortColumn = 'tags' | 'category' | 'source' | 'status' | null;
@@ -91,6 +92,7 @@ interface Company {
   company_phone: string | null;
   company_email: string | null;
   billing_address: string | null;
+  state: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
   subcategory_id: string | null;
@@ -153,6 +155,8 @@ export default function CompanyList() {
   const [filterClientType, setFilterClientType] = useState<string>('');
   const [filterSource, setFilterSource] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterState, setFilterState] = useState<string>('');
+  const [showStateColumn, setShowStateColumn] = useState<boolean>(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
@@ -196,6 +200,7 @@ export default function CompanyList() {
           company_phone,
           company_email,
           billing_address,
+          state,
           category_id,
           subcategory_id,
           client_type,
