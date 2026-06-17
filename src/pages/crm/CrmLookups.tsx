@@ -284,10 +284,17 @@ export default function CrmLookups() {
   const createCompanyStatus = useCreateCompanyStatus();
   const updateCompanyStatus = useUpdateCompanyStatus();
 
-  // Company Categories
+  // Company Categories (parents)
   const { data: companyCategories = [], isLoading: companyCategoriesLoading } = useAllCompanyCategories();
   const createCompanyCategory = useCreateCompanyCategory();
   const updateCompanyCategory = useUpdateCompanyCategory();
+
+  // Sub-categories
+  const { data: subcategories = [], isLoading: subLoading } = useAllCompanySubcategories();
+  const createSubcategory = useCreateCompanySubcategory();
+  const updateSubcategory = useUpdateCompanySubcategory();
+  const [newSubcategoryParentId, setNewSubcategoryParentId] = useState<string>('');
+  const [newSubcategoryName, setNewSubcategoryName] = useState<string>('');
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
