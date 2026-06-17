@@ -870,8 +870,19 @@ export default function CompanyList() {
                         companyId={company.id}
                         currentCategoryId={company.category_id}
                         currentCategoryName={company.category?.name || null}
+                        currentSubcategoryId={company.subcategory_id}
+                        currentSubcategoryName={company.subcategory?.name || null}
                         onCategoryChange={handleRefresh}
                       />
+                    </TableCell>
+                    <TableCell>
+                      {company.client_type ? (
+                        <Badge variant={company.client_type === 'Direct' ? 'default' : 'secondary'} className="text-xs">
+                          {company.client_type}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <InlineStatusEditor
