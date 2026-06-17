@@ -705,6 +705,26 @@ export default function CompanyList() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filterState || '__all__'} onValueChange={v => setFilterState(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All States</SelectItem>
+                <SelectItem value="__none__">No State</SelectItem>
+                {AU_STATES.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant={showStateColumn ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setShowStateColumn(v => !v)}
+              className="h-8 px-2 text-xs"
+            >
+              {showStateColumn ? 'Hide State column' : 'Show State column'}
+            </Button>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-2 text-xs">
                 <X className="h-3 w-3 mr-1" />
