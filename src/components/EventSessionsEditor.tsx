@@ -319,15 +319,16 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
                   min="2020-01-01"
                   max="2099-12-31"
                   value={formData.session_date}
-                  onChange={(e) => {
+                  onChange={(e) => setFormData({ ...formData, session_date: e.target.value })}
+                  onBlur={(e) => {
                     const v = e.target.value;
-                    // Guard against typos producing wildly wrong years (e.g. 0026, 2006)
                     const yearMatch = v.match(/^(\d{4})-/);
                     if (yearMatch) {
                       const y = parseInt(yearMatch[1], 10);
-                      if (y < 2020 || y > 2099) return;
+                      if (y < 2020 || y > 2099) {
+                        setFormData((prev) => ({ ...prev, session_date: '' }));
+                      }
                     }
-                    setFormData({ ...formData, session_date: v });
                   }}
                 />
               </div>

@@ -184,13 +184,15 @@ export default function LeadDetail(): JSX.Element {
   const leadSource = lead.lead_source as any;
   const quotes = (lead as any).quotes || [];
 
-  // Get main shoot from first session
+  // Get main shoot from first session, falling back to the lead's estimated event date
   const mainSession = sessions[0];
-  const mainShootStart = mainSession 
-    ? `${mainSession.session_date}T${mainSession.start_time || '00:00'}` 
-    : null;
-  const mainShootEnd = mainSession?.end_time 
-    ? `${mainSession.session_date}T${mainSession.end_time}` 
+  const mainShootStart = mainSession
+    ? `${mainSession.session_date}T${mainSession.start_time || '00:00'}`
+    : (lead as any).estimated_event_date
+      ? `${(lead as any).estimated_event_date}T00:00`
+      : null;
+  const mainShootEnd = mainSession?.end_time
+    ? `${mainSession.session_date}T${mainSession.end_time}`
     : null;
 
   const handleApplyTemplate = async () => {
