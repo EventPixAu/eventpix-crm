@@ -26,8 +26,10 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useCompanyCategories, useCreateCompanyCategory } from '@/hooks/useCompanyCategories';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
+import { CompanyCategoryPicker } from './CompanyCategoryPicker';
+import { ClientTypePicker } from './ClientTypePicker';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 
 interface QuickCreateCompanyDialogProps {
   open: boolean;
@@ -41,7 +43,9 @@ export function QuickCreateCompanyDialog({
   onCompanyCreated,
 }: QuickCreateCompanyDialogProps) {
   const [businessName, setBusinessName] = useState('');
-  const [categoryId, setCategoryId] = useState('');
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subcategoryId, setSubcategoryId] = useState<string | null>(null);
+  const [clientType, setClientType] = useState<'Direct' | 'Indirect' | null>(null);
   const [manualStatus, setManualStatus] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [companyPhone, setCompanyPhone] = useState('');
@@ -50,21 +54,10 @@ export function QuickCreateCompanyDialog({
   const [tags, setTags] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
 
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-
   const queryClient = useQueryClient();
-  const { data: categories = [] } = useCompanyCategories();
   const { data: companyStatuses = [] } = useCompanyStatuses();
-  const createCategory = useCreateCompanyCategory();
-
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    const newCat = await createCategory.mutateAsync(newCategoryName.trim());
-    setCategoryId(newCat.id);
-    setIsAddingCategory(false);
-    setNewCategoryName('');
-  };
+  const { data: parents = [] } = useCompanyCategories();
+  const isEpxSupplier = !!categoryId && parents.find((p) => p.id === categoryId)?.name === 'EPX Supplier';
 
   const createCompany = useMutation({
     mutationFn: async () => {
@@ -78,6 +71,8 @@ export function QuickCreateCompanyDialog({
         .insert([{
           business_name: businessName.trim(),
           category_id: categoryId || null,
+          subcategory_id: subcategoryId || null,
+          client_type: isEpxSupplier ? null : clientType,
           manual_status: manualStatus || null,
           company_email: companyEmail.trim() || null,
           company_phone: companyPhone.trim() || null,
@@ -85,7 +80,7 @@ export function QuickCreateCompanyDialog({
           lead_source: leadSource.trim() || null,
           tags: tagsArray.length > 0 ? tagsArray : null,
           billing_address: billingAddress.trim() || null,
-        }])
+        } as any])
         .select('id, business_name')
         .single();
 
@@ -111,7 +106,9 @@ export function QuickCreateCompanyDialog({
 
   const resetForm = () => {
     setBusinessName('');
-    setCategoryId('');
+    setCategoryId(null);
+    setSubcategoryId(null);
+    setClientType(null);
     setManualStatus('');
     setCompanyEmail('');
     setCompanyPhone('');
@@ -148,72 +145,23 @@ export function QuickCreateCompanyDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category</Label>
-              {isAddingCategory ? (
-                <div className="flex gap-2">
-                  <Input
-                    autoFocus
-                    placeholder="New category name"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddCategory();
-                      }
-                      if (e.key === 'Escape') {
-                        setIsAddingCategory(false);
-                        setNewCategoryName('');
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleAddCategory}
-                    disabled={!newCategoryName.trim() || createCategory.isPending}
-                  >
-                    {createCategory.isPending ? '...' : 'Add'}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setIsAddingCategory(false);
-                      setNewCategoryName('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Select
-                  value={categoryId}
-                  onValueChange={(value) => {
-                    if (value === '__add_new__') {
-                      setIsAddingCategory(true);
-                    } else {
-                      setCategoryId(value);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__add_new__" className="text-primary font-medium">
-                      + Add new category
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              <Label>Category</Label>
+              <CompanyCategoryPicker
+                parentId={categoryId}
+                subcategoryId={subcategoryId}
+                onChange={(p, s) => { setCategoryId(p); setSubcategoryId(s); }}
+              />
             </div>
+
+            {!isEpxSupplier && (
+              <div className="space-y-2">
+                <Label>Client Type</Label>
+                <ClientTypePicker value={clientType} onChange={setClientType} />
+                <p className="text-xs text-muted-foreground">
+                  Direct = books EventPix for their own events. Indirect = books on behalf of clients.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="manual_status">Status</Label>
@@ -233,9 +181,6 @@ export function QuickCreateCompanyDialog({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Leave as auto-computed to let the system determine status from events and leads.
-              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
