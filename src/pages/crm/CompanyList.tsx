@@ -478,11 +478,18 @@ export default function CompanyList() {
         if (!allSources.has(filterSource)) return false;
       }
       if (filterStatus && c.display_status !== filterStatus) return false;
+      if (filterState) {
+        if (filterState === '__none__') {
+          if (c.state) return false;
+        } else if (c.state !== filterState) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus]);
+  }, [sortedCompanies, filterTag, filterCategory, filterSubcategory, filterClientType, filterSource, filterStatus, filterState]);
 
-  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus;
+  const hasActiveFilters = filterTag || filterCategory || filterSubcategory || filterClientType || filterSource || filterStatus || filterState;
 
   const clearAllFilters = () => {
     setFilterTag('');
@@ -491,6 +498,7 @@ export default function CompanyList() {
     setFilterClientType('');
     setFilterSource('');
     setFilterStatus('');
+    setFilterState('');
   };
 
   const handleRefresh = () => {
