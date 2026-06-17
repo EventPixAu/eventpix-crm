@@ -1430,12 +1430,13 @@ export default function EventDetail() {
                         <SelectTrigger id="invoice_status">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="not_invoiced">Not Invoiced</SelectItem>
-                          <SelectItem value="invoiced">Invoiced</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                          <SelectItem value="sponsored">Sponsored</SelectItem>
-                        </SelectContent>
+                          <SelectContent>
+                            <SelectItem value="not_invoiced">Not Invoiced</SelectItem>
+                            <SelectItem value="invoiced">Invoiced</SelectItem>
+                            <SelectItem value="deposit">Deposit Paid</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="sponsored">Sponsored</SelectItem>
+                          </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
