@@ -93,6 +93,7 @@ interface Company {
   company_email: string | null;
   billing_address: string | null;
   state: string | null;
+  country: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
   subcategory_id: string | null;
@@ -156,7 +157,9 @@ export default function CompanyList() {
   const [filterSource, setFilterSource] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterState, setFilterState] = useState<string>('');
+  const [filterCountry, setFilterCountry] = useState<string>('');
   const [showStateColumn, setShowStateColumn] = useState<boolean>(false);
+  const [showCountryColumn, setShowCountryColumn] = useState<boolean>(false);
   const [sortColumn, setSortColumn] = useState<SortColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
