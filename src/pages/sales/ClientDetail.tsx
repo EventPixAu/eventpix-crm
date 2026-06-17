@@ -39,6 +39,7 @@ import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
 import { CompanyCategoryPicker } from '@/components/crm/CompanyCategoryPicker';
 import { ClientTypePicker } from '@/components/crm/ClientTypePicker';
 import { useAuth } from '@/lib/auth';
+import { AU_STATES } from '@/lib/auStates';
 import { toast } from 'sonner';
 import {
   ClientProfileCard,
