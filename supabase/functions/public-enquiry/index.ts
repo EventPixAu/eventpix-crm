@@ -273,6 +273,21 @@ Deno.serve(async (req) => {
       content: payload.message.trim(),
     });
 
+    // ─── 4c. Auto-create an event session with submitted details ───────────
+    if (payload.event_date) {
+      const { error: sessionError } = await supabase.from("event_sessions").insert({
+        lead_id: lead.id,
+        session_date: payload.event_date,
+        session_type: "live",
+        label: eventTypeName || null,
+        venue_name: payload.location?.trim() || null,
+        venue_address: payload.location?.trim() || null,
+        timezone: "Australia/Sydney",
+        sort_order: 0,
+      });
+      if (sessionError) console.error("Error creating event session:", sessionError);
+    }
+
     // ─── 5. Activity log entry on the contact's timeline ───────────────────────
     if (contactId) {
       const dateStr = new Date().toLocaleDateString("en-AU", {
