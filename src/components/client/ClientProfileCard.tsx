@@ -171,6 +171,12 @@ export function ClientProfileCard({
                       {[addressFields.suburb, addressFields.state, addressFields.postcode]
                         .filter(Boolean)
                         .join(', ')}
+                    </div>
+                  )}
+                  {addressFields.country && <div>{addressFields.country}</div>}
+                </div>
+              ) : '-'}
+            </div>
           </div>
 
           <div className="flex items-start gap-3">
@@ -178,12 +184,6 @@ export function ClientProfileCard({
             <div>
               <div className="text-muted-foreground text-xs mb-0.5">State</div>
               <span>{client.state || '-'}</span>
-            </div>
-          </div>
-                  )}
-                  {addressFields.country && <div>{addressFields.country}</div>}
-                </div>
-              ) : '-'}
             </div>
           </div>
         </div>
