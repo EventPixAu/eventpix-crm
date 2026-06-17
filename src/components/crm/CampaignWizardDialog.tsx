@@ -24,11 +24,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
 
 interface AudienceFilters {
   statuses: string[];
-  categories: string[];
+  categories: string[];          // parent category IDs
+  subcategories: string[];       // subcategory IDs
+  clientTypes: string[];         // 'Direct' | 'Indirect' | 'Unassigned'
   sources: string[];
   states: string[];
   cities: string[];
