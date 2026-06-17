@@ -34,7 +34,8 @@ interface AudienceFilters {
   subcategories: string[];       // subcategory IDs
   clientTypes: string[];         // 'Direct' | 'Indirect' | 'Unassigned'
   sources: string[];
-  states: string[];
+  states: string[];              // contact state
+  companyStates: string[];       // company state
   cities: string[];
 }
 
@@ -70,7 +71,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Step 1
   const [filters, setFilters] = useState<AudienceFilters>({
-    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], cities: [],
+    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], cities: [],
   });
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
@@ -100,14 +101,15 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, category_id, subcategory_id, client_type, category:company_categories(excluded_from_campaigns)');
+        .select('id, category_id, subcategory_id, client_type, state, category:company_categories(excluded_from_campaigns)');
       if (error) throw error;
-      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; excluded: boolean }>();
+      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; state: string | null; excluded: boolean }>();
       (data || []).forEach((c: any) => {
         map.set(c.id, {
           category_id: c.category_id,
           subcategory_id: c.subcategory_id,
           client_type: c.client_type,
+          state: c.state,
           excluded: !!c.category?.excluded_from_campaigns,
         });
       });
@@ -166,6 +168,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitParents = new Set(filters.categories);
       const explicitSubs = new Set(filters.subcategories);
       const explicitClientTypes = new Set(filters.clientTypes);
+      const explicitCompanyStates = new Set(filters.companyStates);
 
       return rows.filter((r) => {
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
@@ -182,6 +185,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         if (explicitClientTypes.size) {
           const value = info?.client_type || 'Unassigned';
           if (!explicitClientTypes.has(value)) return false;
+        }
+        if (explicitCompanyStates.size) {
+          if (!info?.state || !explicitCompanyStates.has(info.state)) return false;
         }
         return true;
       });
