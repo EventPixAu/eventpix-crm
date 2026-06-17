@@ -71,50 +71,36 @@ export function CompanyStatusBadgeDropdown({
     variant: 'secondary' as const,
   };
 
-  const handleStatusClick = (newStatus: string) => {
+  const handleStatusClick = async (newStatus: string) => {
     if (newStatus === displayStatus) return;
     setPendingStatus(newStatus);
-    setIsReasonDialogOpen(true);
-  };
-
-  const handleConfirmStatusChange = async () => {
-    if (!pendingStatus || reason.trim().length < 10) {
-      toast.error('Reason required', { description: 'Please provide a reason (at least 10 characters)' });
-      return;
-    }
-
     setIsUpdating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Log to audit
       await supabase.from('company_status_audit').insert({
         company_id: companyId,
         action: 'status_override_set',
         old_status: displayStatus,
-        new_status: pendingStatus,
+        new_status: newStatus,
         changed_by: user?.id,
-        override_reason: reason.trim(),
+        override_reason: null,
       });
 
-      // Update client status
       await supabase.from('clients').update({
-        manual_status: pendingStatus,
+        manual_status: newStatus,
         status_override_at: new Date().toISOString(),
         status_override_by: user?.id,
-        status_override_reason: reason.trim(),
+        status_override_reason: null,
       }).eq('id', companyId);
 
-      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['lead'] });
       queryClient.invalidateQueries({ queryKey: ['client'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['crm-companies'] });
 
-      toast.success('Status updated successfully');
-      setIsReasonDialogOpen(false);
+      toast.success('Status updated');
       setPendingStatus(null);
-      setReason('');
       onStatusChange?.();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -214,50 +200,6 @@ export function CompanyStatusBadgeDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Reason Dialog */}
-      <Dialog open={isReasonDialogOpen} onOpenChange={setIsReasonDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Company Status</DialogTitle>
-            <DialogDescription>
-              You are changing the status from "{statusConfig.label}" to "
-              {STATUS_OPTIONS.find(s => s.value === pendingStatus)?.label || pendingStatus}".
-              Please provide a reason for this change.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <Textarea
-              placeholder="Enter reason for status change (min 10 characters)..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-            />
-            <p className="text-xs text-muted-foreground">
-              {reason.length}/10 characters minimum
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsReasonDialogOpen(false);
-                setPendingStatus(null);
-                setReason('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmStatusChange} 
-              disabled={isUpdating || reason.trim().length < 10}
-            >
-              {isUpdating ? 'Updating...' : 'Confirm Change'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
