@@ -314,7 +314,7 @@ export function useCreateCrewChecklistForUser() {
         
         if (roleTemplate) {
           console.log('Using role-specific template:', roleTemplate.id);
-          templateItems = roleTemplate.items as any[] || [];
+          templateItems = normalizeTemplateItems(roleTemplate.items);
           usedTemplateId = roleTemplate.id;
         }
       }
@@ -336,7 +336,7 @@ export function useCreateCrewChecklistForUser() {
         }
         
         if (defaultTemplate) {
-          templateItems = defaultTemplate.items as any[] || [];
+          templateItems = normalizeTemplateItems(defaultTemplate.items);
           usedTemplateId = defaultTemplate.id;
         }
       }
@@ -411,7 +411,7 @@ export function useInitializeCrewChecklist() {
           .single();
         
         if (templateError) throw templateError;
-        templateItems = template?.items as any[] || [];
+        templateItems = normalizeTemplateItems(template?.items);
         usedTemplateId = template?.id || null;
       } else if (staffRoleId) {
         // Try to find role-specific template first
@@ -424,7 +424,7 @@ export function useInitializeCrewChecklist() {
           .maybeSingle();
         
         if (roleTemplate) {
-          templateItems = roleTemplate.items as any[] || [];
+          templateItems = normalizeTemplateItems(roleTemplate.items);
           usedTemplateId = roleTemplate.id;
         } else {
           // Fallback to default (no role assigned) template
@@ -437,7 +437,7 @@ export function useInitializeCrewChecklist() {
             .maybeSingle();
           
           if (defaultTemplate) {
-            templateItems = defaultTemplate.items as any[] || [];
+            templateItems = normalizeTemplateItems(defaultTemplate.items);
             usedTemplateId = defaultTemplate.id;
           }
         }
@@ -452,7 +452,7 @@ export function useInitializeCrewChecklist() {
         
         if (templatesError) throw templatesError;
         if (templates && templates.length > 0) {
-          templateItems = (templates[0]?.items as any[]) || [];
+          templateItems = normalizeTemplateItems(templates[0]?.items);
           usedTemplateId = templates[0]?.id || null;
         }
       }
