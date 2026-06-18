@@ -173,6 +173,8 @@ export function useMyCrewChecklist(eventId: string | undefined) {
     queryFn: async (): Promise<CrewChecklist | null> => {
       if (!eventId || !user?.id) return null;
 
+      await supabase.rpc('sync_my_crew_checklist_from_template', { _event_id: eventId });
+
       const { data: checklist, error } = await supabase
         .from('crew_checklists')
         .select(`
