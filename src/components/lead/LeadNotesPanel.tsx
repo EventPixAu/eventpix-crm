@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { StickyNote, Plus, Trash2 } from 'lucide-react';
+import { StickyNote, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useLeadNotes, useAddLeadNote, useDeleteLeadNote } from '@/hooks/useLeadNotes';
+import { useLeadNotes, useAddLeadNote, useUpdateLeadNote, useDeleteLeadNote, LeadNote } from '@/hooks/useLeadNotes';
 import { toast } from 'sonner';
 
 interface LeadNotesPanelProps {
@@ -14,10 +14,13 @@ interface LeadNotesPanelProps {
 export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
   const { data: notes = [] } = useLeadNotes(leadId);
   const addNote = useAddLeadNote();
+  const updateNote = useUpdateLeadNote();
   const deleteNote = useDeleteLeadNote();
   const [isAdding, setIsAdding] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
 
   const handleAdd = async () => {
     if (!newNote.trim()) return;
@@ -35,6 +38,28 @@ export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
   const handleDelete = async (noteId: string) => {
     await deleteNote.mutateAsync({ id: noteId, leadId });
     toast.success('Note deleted');
+  };
+
+  const handleStartEdit = (note: LeadNote) => {
+    setEditingId(note.id);
+    setEditingText(note.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingText('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editingText.trim()) return;
+    try {
+      await updateNote.mutateAsync({ id: editingId, leadId, content: editingText.trim() });
+      setEditingId(null);
+      setEditingText('');
+      toast.success('Note updated');
+    } catch (e: any) {
+      toast.error('Failed to update note', { description: e.message });
+    }
   };
 
   return (
@@ -92,20 +117,51 @@ export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
             <div className="space-y-2 pt-3">
               {notes.map((note) => (
                 <div key={note.id} className="p-3 border rounded-lg bg-muted/30 group">
-                  <p className="text-sm whitespace-pre-wrap">{note.content}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(note.created_at), 'dd MMM yyyy, h:mm a')}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                      onClick={() => handleDelete(note.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  {editingId === note.id ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        rows={3}
+                        autoFocus
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="ghost" onClick={handleCancelEdit} disabled={updateNote.isPending}>
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button size="sm" onClick={handleSaveEdit} disabled={!editingText.trim() || updateNote.isPending}>
+                          <Check className="h-4 w-4 mr-1" /> {updateNote.isPending ? 'Saving…' : 'Save'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(note.created_at), 'dd MMM yyyy, h:mm a')}
+                        </span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleStartEdit(note)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(note.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
