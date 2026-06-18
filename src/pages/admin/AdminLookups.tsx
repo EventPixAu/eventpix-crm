@@ -244,7 +244,7 @@ function LookupTable({
           <tbody className="divide-y divide-border">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={extraToggle ? 5 : 4} className="p-8 text-center text-muted-foreground">
+                <td colSpan={extraToggle ? 4 : 3} className="p-8 text-center text-muted-foreground">
                   No {itemLabel.toLowerCase()}s yet. Add one above.
                 </td>
               </tr>
