@@ -127,6 +127,7 @@ function CrewChecklistRow({ person, eventId, checklist, templates = [] }: CrewCh
 
   const createChecklist = useCreateCrewChecklistFromTemplate();
   const deleteChecklist = useDeleteCrewChecklist();
+  const syncChecklist = useSyncCrewChecklistFromTemplate();
   const toggleItem = useToggleCrewChecklistItem();
   const deleteItem = useDeleteCrewChecklistItem();
 
