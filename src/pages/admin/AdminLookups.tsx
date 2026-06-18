@@ -169,19 +169,6 @@ function LookupTable({
     await onUpdate(item.id, { is_active: !item.is_active });
   };
 
-  const handleMoveUp = async (item: LookupItem, index: number) => {
-    if (index === 0) return;
-    const prevItem = items[index - 1];
-    await onUpdate(item.id, { sort_order: prevItem.sort_order });
-    await onUpdate(prevItem.id, { sort_order: item.sort_order });
-  };
-
-  const handleMoveDown = async (item: LookupItem, index: number) => {
-    if (index === items.length - 1) return;
-    const nextItem = items[index + 1];
-    await onUpdate(item.id, { sort_order: nextItem.sort_order });
-    await onUpdate(nextItem.id, { sort_order: item.sort_order });
-  };
 
   if (isLoading) {
     return (
