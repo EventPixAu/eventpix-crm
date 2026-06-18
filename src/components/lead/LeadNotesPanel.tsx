@@ -14,10 +14,13 @@ interface LeadNotesPanelProps {
 export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
   const { data: notes = [] } = useLeadNotes(leadId);
   const addNote = useAddLeadNote();
+  const updateNote = useUpdateLeadNote();
   const deleteNote = useDeleteLeadNote();
   const [isAdding, setIsAdding] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
 
   const handleAdd = async () => {
     if (!newNote.trim()) return;
