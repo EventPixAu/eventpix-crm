@@ -5,7 +5,6 @@
  * Checklists are independent from admin workflows.
  */
 
-import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -42,14 +41,27 @@ export interface CrewChecklistTemplate {
 }
 
 type TemplateChecklistItem = { item_text: string; sort_order: number };
+type TemplateEventLink = { event_type_id: string };
+type TemplateRowWithLinks = CrewChecklistTemplate & {
+  items: unknown;
+  event_type_links?: TemplateEventLink[] | null;
+};
+type ChecklistWithTemplate = CrewChecklist & {
+  items?: CrewChecklistItem[] | null;
+  template?: { id: string; items: unknown } | null;
+};
 
 function normalizeTemplateItems(items: unknown): TemplateChecklistItem[] {
   if (!Array.isArray(items)) return [];
   return items
-    .map((item: any, index) => ({
-      item_text: String(item?.item_text || '').trim(),
-      sort_order: Number.isFinite(Number(item?.sort_order)) ? Number(item.sort_order) : index,
-    }))
+    .map((item, index) => {
+      const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      const sortOrder = Number(record.sort_order);
+      return {
+        item_text: String(record.item_text || '').trim(),
+        sort_order: Number.isFinite(sortOrder) ? sortOrder : index,
+      };
+    })
     .filter((item) => item.item_text.length > 0);
 }
 
