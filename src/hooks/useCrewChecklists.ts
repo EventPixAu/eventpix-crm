@@ -42,7 +42,7 @@ export interface CrewChecklistTemplate {
 
 type TemplateChecklistItem = { item_text: string; sort_order: number };
 type TemplateEventLink = { event_type_id: string };
-type TemplateRowWithLinks = CrewChecklistTemplate & {
+type TemplateRowWithLinks = Omit<CrewChecklistTemplate, 'items'> & {
   items: unknown;
   event_type_links?: TemplateEventLink[] | null;
 };
@@ -146,7 +146,7 @@ export function useCrewChecklistTemplates(eventTypeId?: string | null) {
         .order('name');
 
       if (error) throw error;
-      const rows = ((data || []) as TemplateRowWithLinks[]).map(t => ({
+      const rows = ((data || []) as unknown as TemplateRowWithLinks[]).map(t => ({
         ...t,
         items: normalizeTemplateItems(t.items),
         event_type_ids: (t.event_type_links || []).map((l) => l.event_type_id),
