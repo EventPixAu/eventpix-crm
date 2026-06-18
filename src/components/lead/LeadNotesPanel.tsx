@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { StickyNote, Plus, Trash2 } from 'lucide-react';
+import { StickyNote, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useLeadNotes, useAddLeadNote, useDeleteLeadNote } from '@/hooks/useLeadNotes';
+import { useLeadNotes, useAddLeadNote, useUpdateLeadNote, useDeleteLeadNote } from '@/hooks/useLeadNotes';
 import { toast } from 'sonner';
 
 interface LeadNotesPanelProps {

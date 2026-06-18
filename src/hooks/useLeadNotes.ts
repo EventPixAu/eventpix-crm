@@ -44,6 +44,25 @@ export function useAddLeadNote() {
   });
 }
 
+export function useUpdateLeadNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, leadId, content }: { id: string; leadId: string; content: string }) => {
+      const { data, error } = await supabase
+        .from('lead_notes')
+        .update({ content })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, { leadId }) => {
+      qc.invalidateQueries({ queryKey: ['lead-notes', leadId] });
+    },
+  });
+}
+
 export function useDeleteLeadNote() {
   const qc = useQueryClient();
   return useMutation({
