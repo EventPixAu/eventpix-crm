@@ -273,10 +273,22 @@ function CrewChecklistRow({ person, eventId, checklist, templates = [] }: CrewCh
               <Button
                 size="sm"
                 variant="ghost"
+                onClick={() =>
+                  syncChecklist.mutate({ eventId, userId: person.userId })
+                }
+                disabled={isLoading || syncChecklist.isPending || !checklist.template_id}
+                className="h-7 text-xs"
+                title="Refresh items from the latest template (preserves ticked items by text)"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Sync from template
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={() => setChanging(true)}
                 className="h-7 text-xs"
               >
-                <RefreshCw className="h-3 w-3 mr-1" />
                 Change template
               </Button>
               <Button
