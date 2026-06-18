@@ -34,6 +34,7 @@ import {
   useDeleteCrewChecklist,
 } from '@/hooks/useCrewChecklists';
 import { useCreateCrewChecklistFromTemplate } from '@/hooks/useCreateCrewChecklistFromTemplate';
+import { useSyncCrewChecklistFromTemplate } from '@/hooks/useSyncCrewChecklistFromTemplate';
 import type { EventAssignment } from '@/hooks/useEvents';
 import { cn } from '@/lib/utils';
 
