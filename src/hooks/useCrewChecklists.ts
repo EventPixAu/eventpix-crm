@@ -5,6 +5,7 @@
  * Checklists are independent from admin workflows.
  */
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -38,6 +39,87 @@ export interface CrewChecklistTemplate {
   items: { item_text: string; sort_order: number }[];
   is_active: boolean;
   staff_role_id?: string | null;
+}
+
+type TemplateChecklistItem = { item_text: string; sort_order: number };
+
+function normalizeTemplateItems(items: unknown): TemplateChecklistItem[] {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item: any, index) => ({
+      item_text: String(item?.item_text || '').trim(),
+      sort_order: Number.isFinite(Number(item?.sort_order)) ? Number(item.sort_order) : index,
+    }))
+    .filter((item) => item.item_text.length > 0);
+}
+
+async function syncChecklistItemsToTemplate(
+  checklistId: string,
+  existingItems: CrewChecklistItem[],
+  templateItems: TemplateChecklistItem[]
+): Promise<CrewChecklistItem[]> {
+  const existingByText = new Map<string, CrewChecklistItem>();
+  existingItems.forEach((item) => {
+    if (!existingByText.has(item.item_text)) existingByText.set(item.item_text, item);
+  });
+
+  const templateTexts = new Set(templateItems.map((item) => item.item_text));
+  const missingItems = templateItems.filter((item) => !existingByText.has(item.item_text));
+  const staleItemIds = existingItems
+    .filter((item) => !templateTexts.has(item.item_text))
+    .map((item) => item.id);
+
+  let insertedItems: CrewChecklistItem[] = [];
+  if (missingItems.length > 0) {
+    const { data, error } = await supabase
+      .from('crew_checklist_items')
+      .insert(
+        missingItems.map((item) => ({
+          checklist_id: checklistId,
+          item_text: item.item_text,
+          sort_order: item.sort_order,
+          is_done: false,
+        }))
+      )
+      .select('*');
+    if (error) throw error;
+    insertedItems = (data || []) as CrewChecklistItem[];
+  }
+
+  const orderUpdates = templateItems
+    .map((item) => ({ item, existing: existingByText.get(item.item_text) }))
+    .filter(({ item, existing }) => existing && existing.sort_order !== item.sort_order)
+    .map(({ item, existing }) =>
+      supabase
+        .from('crew_checklist_items')
+        .update({ sort_order: item.sort_order })
+        .eq('id', existing!.id)
+    );
+
+  await Promise.all([
+    ...orderUpdates,
+    ...(staleItemIds.length > 0
+      ? [supabase.from('crew_checklist_items').delete().in('id', staleItemIds)]
+      : []),
+    supabase.from('crew_checklists').update({ updated_at: new Date().toISOString() }).eq('id', checklistId),
+  ]);
+
+  const insertedByText = new Map(insertedItems.map((item) => [item.item_text, item]));
+  return templateItems.map((templateItem, index) => {
+    const existing = existingByText.get(templateItem.item_text);
+    const inserted = insertedByText.get(templateItem.item_text);
+    return {
+      ...(inserted || existing!),
+      sort_order: templateItem.sort_order,
+      item_text: templateItem.item_text,
+      is_done: existing?.is_done ?? inserted?.is_done ?? false,
+      done_at: existing?.done_at ?? inserted?.done_at ?? null,
+      notes: existing?.notes ?? inserted?.notes ?? null,
+      created_at: existing?.created_at ?? inserted?.created_at ?? null,
+      checklist_id: checklistId,
+      id: existing?.id ?? inserted?.id ?? `template-${checklistId}-${index}`,
+    };
+  });
 }
 
 // Fetch crew checklist templates
