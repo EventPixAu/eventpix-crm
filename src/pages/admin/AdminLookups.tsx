@@ -189,10 +189,14 @@ function LookupTable({
     const currOrder = curr.sort_order ?? 0;
     await onUpdate(curr.id, { sort_order: nextOrder + 1 });
   };
+
+  if (isLoading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         Loading...
       </div>
+    );
+  }
     );
   }
 
