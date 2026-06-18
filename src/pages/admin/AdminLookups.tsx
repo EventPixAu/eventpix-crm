@@ -251,6 +251,7 @@ function LookupTable({
         <table className="w-full">
           <thead className="bg-muted/50">
             <tr>
+              <th className="text-left p-3 text-sm font-medium w-20">Order</th>
               <th className="text-left p-3 text-sm font-medium">Name</th>
               {extraToggle && (
                 <th className="text-center p-3 text-sm font-medium w-24" title={extraToggle.description}>
