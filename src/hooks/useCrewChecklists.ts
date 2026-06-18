@@ -146,10 +146,10 @@ export function useCrewChecklistTemplates(eventTypeId?: string | null) {
         .order('name');
 
       if (error) throw error;
-      const rows = (data || []).map(t => ({
+      const rows = ((data || []) as TemplateRowWithLinks[]).map(t => ({
         ...t,
-        items: (t.items as unknown as { item_text: string; sort_order: number }[]) || [],
-        event_type_ids: ((t as any).event_type_links || []).map((l: any) => l.event_type_id) as string[],
+        items: normalizeTemplateItems(t.items),
+        event_type_ids: (t.event_type_links || []).map((l) => l.event_type_id),
       }));
 
       // Filter: if eventTypeId provided, include templates that either have no linked
@@ -188,12 +188,13 @@ export function useMyCrewChecklist(eventId: string | undefined) {
       
       if (!checklist) return null;
 
-      const sortedItems = ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+      const checklistRow = checklist as ChecklistWithTemplate;
+      const sortedItems = (checklistRow.items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
         a.sort_order - b.sort_order
       );
-      const templateItems = normalizeTemplateItems((checklist as any).template?.items);
+      const templateItems = normalizeTemplateItems(checklistRow.template?.items);
 
-      if (checklist.template_id && (checklist as any).template) {
+      if (checklist.template_id && checklistRow.template) {
         const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
         const checklistSignature = sortedItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
 
@@ -234,12 +235,13 @@ export function useEventCrewChecklists(eventId: string | undefined) {
       if (error) throw error;
       
       const checklists = await Promise.all((data || []).map(async (checklist) => {
-        const sortedItems = ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+        const checklistRow = checklist as ChecklistWithTemplate;
+        const sortedItems = (checklistRow.items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
           a.sort_order - b.sort_order
         );
-        const templateItems = normalizeTemplateItems((checklist as any).template?.items);
+        const templateItems = normalizeTemplateItems(checklistRow.template?.items);
 
-        if (checklist.template_id && (checklist as any).template) {
+        if (checklist.template_id && checklistRow.template) {
           const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
           const checklistSignature = sortedItems.map((item: CrewChecklistItem) => `${item.sort_order}:${item.item_text}`).join('\n');
 
