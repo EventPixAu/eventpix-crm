@@ -40,6 +40,100 @@ export interface CrewChecklistTemplate {
   staff_role_id?: string | null;
 }
 
+type TemplateChecklistItem = { item_text: string; sort_order: number };
+type TemplateEventLink = { event_type_id: string };
+type TemplateRowWithLinks = Omit<CrewChecklistTemplate, 'items'> & {
+  items: unknown;
+  event_type_links?: TemplateEventLink[] | null;
+};
+type ChecklistWithTemplate = CrewChecklist & {
+  items?: CrewChecklistItem[] | null;
+  template?: { id: string; items: unknown } | null;
+};
+
+function normalizeTemplateItems(items: unknown): TemplateChecklistItem[] {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item, index) => {
+      const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+      const sortOrder = Number(record.sort_order);
+      return {
+        item_text: String(record.item_text || '').trim(),
+        sort_order: Number.isFinite(sortOrder) ? sortOrder : index,
+      };
+    })
+    .filter((item) => item.item_text.length > 0);
+}
+
+async function syncChecklistItemsToTemplate(
+  checklistId: string,
+  existingItems: CrewChecklistItem[],
+  templateItems: TemplateChecklistItem[]
+): Promise<CrewChecklistItem[]> {
+  const existingByText = new Map<string, CrewChecklistItem>();
+  existingItems.forEach((item) => {
+    if (!existingByText.has(item.item_text)) existingByText.set(item.item_text, item);
+  });
+
+  const templateTexts = new Set(templateItems.map((item) => item.item_text));
+  const missingItems = templateItems.filter((item) => !existingByText.has(item.item_text));
+  const staleItemIds = existingItems
+    .filter((item) => !templateTexts.has(item.item_text))
+    .map((item) => item.id);
+
+  let insertedItems: CrewChecklistItem[] = [];
+  if (missingItems.length > 0) {
+    const { data, error } = await supabase
+      .from('crew_checklist_items')
+      .insert(
+        missingItems.map((item) => ({
+          checklist_id: checklistId,
+          item_text: item.item_text,
+          sort_order: item.sort_order,
+          is_done: false,
+        }))
+      )
+      .select('*');
+    if (error) throw error;
+    insertedItems = (data || []) as CrewChecklistItem[];
+  }
+
+  const orderUpdates = templateItems
+    .map((item) => ({ item, existing: existingByText.get(item.item_text) }))
+    .filter(({ item, existing }) => existing && existing.sort_order !== item.sort_order)
+    .map(({ item, existing }) =>
+      supabase
+        .from('crew_checklist_items')
+        .update({ sort_order: item.sort_order })
+        .eq('id', existing!.id)
+    );
+
+  await Promise.all([
+    ...orderUpdates,
+    ...(staleItemIds.length > 0
+      ? [supabase.from('crew_checklist_items').delete().in('id', staleItemIds)]
+      : []),
+    supabase.from('crew_checklists').update({ updated_at: new Date().toISOString() }).eq('id', checklistId),
+  ]);
+
+  const insertedByText = new Map(insertedItems.map((item) => [item.item_text, item]));
+  return templateItems.map((templateItem, index) => {
+    const existing = existingByText.get(templateItem.item_text);
+    const inserted = insertedByText.get(templateItem.item_text);
+    return {
+      ...(inserted || existing!),
+      sort_order: templateItem.sort_order,
+      item_text: templateItem.item_text,
+      is_done: existing?.is_done ?? inserted?.is_done ?? false,
+      done_at: existing?.done_at ?? inserted?.done_at ?? null,
+      notes: existing?.notes ?? inserted?.notes ?? null,
+      created_at: existing?.created_at ?? inserted?.created_at ?? null,
+      checklist_id: checklistId,
+      id: existing?.id ?? inserted?.id ?? `template-${checklistId}-${index}`,
+    };
+  });
+}
+
 // Fetch crew checklist templates
 export function useCrewChecklistTemplates(eventTypeId?: string | null) {
   return useQuery({
@@ -52,10 +146,10 @@ export function useCrewChecklistTemplates(eventTypeId?: string | null) {
         .order('name');
 
       if (error) throw error;
-      const rows = (data || []).map(t => ({
+      const rows = ((data || []) as unknown as TemplateRowWithLinks[]).map(t => ({
         ...t,
-        items: (t.items as unknown as { item_text: string; sort_order: number }[]) || [],
-        event_type_ids: ((t as any).event_type_links || []).map((l: any) => l.event_type_id) as string[],
+        items: normalizeTemplateItems(t.items),
+        event_type_ids: (t.event_type_links || []).map((l) => l.event_type_id),
       }));
 
       // Filter: if eventTypeId provided, include templates that either have no linked
@@ -79,11 +173,14 @@ export function useMyCrewChecklist(eventId: string | undefined) {
     queryFn: async (): Promise<CrewChecklist | null> => {
       if (!eventId || !user?.id) return null;
 
+      await supabase.rpc('sync_my_crew_checklist_from_template', { _event_id: eventId });
+
       const { data: checklist, error } = await supabase
         .from('crew_checklists')
         .select(`
           *,
-          items:crew_checklist_items(*)
+          items:crew_checklist_items(*),
+          template:crew_checklist_templates(id, items)
         `)
         .eq('event_id', eventId)
         .eq('user_id', user.id)
@@ -92,15 +189,34 @@ export function useMyCrewChecklist(eventId: string | undefined) {
       if (error) throw error;
       
       if (!checklist) return null;
+
+      const checklistRow = checklist as ChecklistWithTemplate;
+      const sortedItems = (checklistRow.items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+        a.sort_order - b.sort_order
+      );
+      const templateItems = normalizeTemplateItems(checklistRow.template?.items);
+
+      if (checklist.template_id && checklistRow.template) {
+        const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
+        const checklistSignature = sortedItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
+
+        if (templateSignature !== checklistSignature) {
+          const syncedItems = await syncChecklistItemsToTemplate(checklist.id, sortedItems, templateItems);
+          return {
+            ...checklist,
+            items: syncedItems,
+          } as CrewChecklist;
+        }
+      }
       
       return {
         ...checklist,
-        items: ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
-          a.sort_order - b.sort_order
-        ),
+        items: sortedItems,
       } as CrewChecklist;
     },
     enabled: !!eventId && !!user?.id,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -115,18 +231,40 @@ export function useEventCrewChecklists(eventId: string | undefined) {
         .from('crew_checklists')
         .select(`
           *,
-          items:crew_checklist_items(*)
+          items:crew_checklist_items(*),
+          template:crew_checklist_templates(id, items)
         `)
         .eq('event_id', eventId);
 
       if (error) throw error;
       
-      return (data || []).map(checklist => ({
-        ...checklist,
-        items: ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+      const checklists = await Promise.all((data || []).map(async (checklist) => {
+        const checklistRow = checklist as ChecklistWithTemplate;
+        const sortedItems = (checklistRow.items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
           a.sort_order - b.sort_order
-        ),
-      })) as CrewChecklist[];
+        );
+        const templateItems = normalizeTemplateItems(checklistRow.template?.items);
+
+        if (checklist.template_id && checklistRow.template) {
+          const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
+          const checklistSignature = sortedItems.map((item: CrewChecklistItem) => `${item.sort_order}:${item.item_text}`).join('\n');
+
+          if (templateSignature !== checklistSignature) {
+            const syncedItems = await syncChecklistItemsToTemplate(checklist.id, sortedItems, templateItems);
+            return {
+              ...checklist,
+              items: syncedItems,
+            };
+          }
+        }
+
+        return {
+          ...checklist,
+          items: sortedItems,
+        };
+      }));
+
+      return checklists as CrewChecklist[];
     },
     enabled: !!eventId,
   });
@@ -180,7 +318,7 @@ export function useCreateCrewChecklistForUser() {
         
         if (roleTemplate) {
           console.log('Using role-specific template:', roleTemplate.id);
-          templateItems = roleTemplate.items as any[] || [];
+          templateItems = normalizeTemplateItems(roleTemplate.items);
           usedTemplateId = roleTemplate.id;
         }
       }
@@ -202,7 +340,7 @@ export function useCreateCrewChecklistForUser() {
         }
         
         if (defaultTemplate) {
-          templateItems = defaultTemplate.items as any[] || [];
+          templateItems = normalizeTemplateItems(defaultTemplate.items);
           usedTemplateId = defaultTemplate.id;
         }
       }
@@ -277,7 +415,7 @@ export function useInitializeCrewChecklist() {
           .single();
         
         if (templateError) throw templateError;
-        templateItems = template?.items as any[] || [];
+        templateItems = normalizeTemplateItems(template?.items);
         usedTemplateId = template?.id || null;
       } else if (staffRoleId) {
         // Try to find role-specific template first
@@ -290,7 +428,7 @@ export function useInitializeCrewChecklist() {
           .maybeSingle();
         
         if (roleTemplate) {
-          templateItems = roleTemplate.items as any[] || [];
+          templateItems = normalizeTemplateItems(roleTemplate.items);
           usedTemplateId = roleTemplate.id;
         } else {
           // Fallback to default (no role assigned) template
@@ -303,7 +441,7 @@ export function useInitializeCrewChecklist() {
             .maybeSingle();
           
           if (defaultTemplate) {
-            templateItems = defaultTemplate.items as any[] || [];
+            templateItems = normalizeTemplateItems(defaultTemplate.items);
             usedTemplateId = defaultTemplate.id;
           }
         }
@@ -318,7 +456,7 @@ export function useInitializeCrewChecklist() {
         
         if (templatesError) throw templatesError;
         if (templates && templates.length > 0) {
-          templateItems = (templates[0]?.items as any[]) || [];
+          templateItems = normalizeTemplateItems(templates[0]?.items);
           usedTemplateId = templates[0]?.id || null;
         }
       }

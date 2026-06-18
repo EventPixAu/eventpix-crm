@@ -7110,6 +7110,10 @@ export type Database = {
         Args: { p_event_type_id: string }
         Returns: Json
       }
+      sync_my_crew_checklist_from_template: {
+        Args: { _event_id: string }
+        Returns: undefined
+      }
       track_email_click: {
         Args: { p_email_log_id: string }
         Returns: undefined
