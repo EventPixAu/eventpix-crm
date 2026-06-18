@@ -65,6 +65,7 @@ import { SortableQuoteItems } from '@/components/quote/SortableQuoteItems';
 import { QuoteDiscountDialog } from '@/components/quote/QuoteDiscountDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
+import { QuoteFilesPanel } from '@/components/quote/QuoteFilesPanel';
 import { useQuery } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
@@ -758,6 +759,11 @@ export default function QuoteDetail() {
               invalidateKeys={[['quote', id]]}
             />
           )}
+
+          {/* Documents — internal PDF/file attachments for this budget */}
+          {id && !isNewQuote && <QuoteFilesPanel quoteId={id} />}
+
+
 
           {/* Internal Notes (Admin/Sales only) */}
 
