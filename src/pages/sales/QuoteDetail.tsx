@@ -748,14 +748,21 @@ export default function QuoteDetail() {
             </div>
           </div>
 
-          {/* Proposed Services (Scope) — appears on the budget & generated contract */}
-          {id && !isNewQuote && (
+          {/* Proposed Services (Scope) — shared with the linked event; appears on the budget & generated contract */}
+          {id && !isNewQuote && linkedEventIdForScope && (
+            <ProposedServicesEditor
+              target="event"
+              targetId={linkedEventIdForScope}
+              value={linkedEventScope}
+              eventIdForAi={linkedEventIdForScope}
+              invalidateKeys={[['quote', id], ['event-proposed-services', linkedEventIdForScope], ['event', linkedEventIdForScope]]}
+            />
+          )}
+          {id && !isNewQuote && !linkedEventIdForScope && (
             <ProposedServicesEditor
               target="quote"
               targetId={id}
               value={(quote as any).proposed_services}
-              eventFallback={linkedEventScope}
-              eventIdForAi={linkedEventIdForScope}
               invalidateKeys={[['quote', id]]}
             />
           )}
