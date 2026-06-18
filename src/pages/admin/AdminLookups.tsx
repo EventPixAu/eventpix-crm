@@ -132,11 +132,8 @@ function LookupTable({
   itemLabel,
   extraToggle,
 }: LookupTableProps) {
-  // Sort by sort_order so the up/down arrows actually reflect the displayed order.
+  // Sort alphabetically by name
   const items = [...itemsProp].sort((a, b) => {
-    const ao = a.sort_order ?? 0;
-    const bo = b.sort_order ?? 0;
-    if (ao !== bo) return ao - bo;
     return (a.name ?? '').localeCompare(b.name ?? '');
   });
   const [editingId, setEditingId] = useState<string | null>(null);
