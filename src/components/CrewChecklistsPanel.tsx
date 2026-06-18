@@ -77,8 +77,21 @@ export function CrewChecklistsPanel({ eventId, assignments }: CrewChecklistsPane
   const crew = useMemo(() => dedupeCrew(assignments), [assignments]);
   const { data: checklists = [] } = useEventCrewChecklists(eventId);
   const { data: templates = [] } = useCrewChecklistTemplates();
+  const syncAll = useSyncCrewChecklistFromTemplate();
 
   if (crew.length === 0) return null;
+
+  const syncableChecklists = checklists.filter((c) => !!c.template_id);
+
+  const handleSyncAll = async () => {
+    for (const c of syncableChecklists) {
+      try {
+        await syncAll.mutateAsync({ eventId, userId: c.user_id });
+      } catch {
+        // toasts handled in hook
+      }
+    }
+  };
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 shadow-card mt-4">
@@ -90,12 +103,26 @@ export function CrewChecklistsPanel({ eventId, assignments }: CrewChecklistsPane
             {checklists.length}/{crew.length} created
           </Badge>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/workflows?tab=crew-checklists">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Manage Templates
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {syncableChecklists.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={syncAll.isPending}
+              title="Refresh all checklists from their templates (preserves ticked items)"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Sync all from templates
+            </Button>
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/workflows?tab=crew-checklists">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Manage Templates
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="divide-y divide-border border border-border rounded-lg overflow-hidden">
