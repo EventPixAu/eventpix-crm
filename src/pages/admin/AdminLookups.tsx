@@ -172,8 +172,23 @@ function LookupTable({
     await onUpdate(item.id, { is_active: !item.is_active });
   };
 
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+    const prev = items[index - 1];
+    const curr = items[index];
+    const prevOrder = prev.sort_order ?? 0;
+    const currOrder = curr.sort_order ?? 0;
+    await onUpdate(curr.id, { sort_order: prevOrder - 1 });
+  };
 
-  if (isLoading) {
+  const handleMoveDown = async (index: number) => {
+    if (index === items.length - 1) return;
+    const next = items[index + 1];
+    const curr = items[index];
+    const nextOrder = next.sort_order ?? 0;
+    const currOrder = curr.sort_order ?? 0;
+    await onUpdate(curr.id, { sort_order: nextOrder + 1 });
+  };
     return (
       <div className="p-8 text-center text-muted-foreground">
         Loading...
