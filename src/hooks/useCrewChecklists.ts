@@ -155,6 +155,7 @@ export function useCrewChecklistTemplates(eventTypeId?: string | null) {
 // Fetch my checklist for a specific event
 export function useMyCrewChecklist(eventId: string | undefined) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['my-crew-checklist', eventId, user?.id],
@@ -165,7 +166,8 @@ export function useMyCrewChecklist(eventId: string | undefined) {
         .from('crew_checklists')
         .select(`
           *,
-          items:crew_checklist_items(*)
+          items:crew_checklist_items(*),
+          template:crew_checklist_templates(id, items)
         `)
         .eq('event_id', eventId)
         .eq('user_id', user.id)
@@ -174,12 +176,28 @@ export function useMyCrewChecklist(eventId: string | undefined) {
       if (error) throw error;
       
       if (!checklist) return null;
+
+      const sortedItems = ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+        a.sort_order - b.sort_order
+      );
+      const templateItems = normalizeTemplateItems((checklist as any).template?.items);
+
+      if (checklist.template_id && templateItems.length > 0) {
+        const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
+        const checklistSignature = sortedItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
+
+        if (templateSignature !== checklistSignature) {
+          const syncedItems = await syncChecklistItemsToTemplate(checklist.id, sortedItems, templateItems);
+          return {
+            ...checklist,
+            items: syncedItems,
+          } as CrewChecklist;
+        }
+      }
       
       return {
         ...checklist,
-        items: ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
-          a.sort_order - b.sort_order
-        ),
+        items: sortedItems,
       } as CrewChecklist;
     },
     enabled: !!eventId && !!user?.id,
