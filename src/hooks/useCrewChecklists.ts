@@ -155,7 +155,6 @@ export function useCrewChecklistTemplates(eventTypeId?: string | null) {
 // Fetch my checklist for a specific event
 export function useMyCrewChecklist(eventId: string | undefined) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['my-crew-checklist', eventId, user?.id],
@@ -182,7 +181,7 @@ export function useMyCrewChecklist(eventId: string | undefined) {
       );
       const templateItems = normalizeTemplateItems((checklist as any).template?.items);
 
-      if (checklist.template_id && templateItems.length > 0) {
+      if (checklist.template_id && (checklist as any).template) {
         const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
         const checklistSignature = sortedItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
 
