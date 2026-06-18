@@ -213,6 +213,8 @@ export function useMyCrewChecklist(eventId: string | undefined) {
       } as CrewChecklist;
     },
     enabled: !!eventId && !!user?.id,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 }
 
