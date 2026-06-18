@@ -40,6 +40,28 @@ export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
     toast.success('Note deleted');
   };
 
+  const handleStartEdit = (note: LeadNote) => {
+    setEditingId(note.id);
+    setEditingText(note.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingText('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editingText.trim()) return;
+    try {
+      await updateNote.mutateAsync({ id: editingId, leadId, content: editingText.trim() });
+      setEditingId(null);
+      setEditingText('');
+      toast.success('Note updated');
+    } catch (e: any) {
+      toast.error('Failed to update note', { description: e.message });
+    }
+  };
+
   return (
     <div className="border rounded-lg bg-card">
       <div
