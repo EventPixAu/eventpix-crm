@@ -29,9 +29,10 @@ export function useAddLeadNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ leadId, content }: { leadId: string; content: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('lead_notes')
-        .insert({ lead_id: leadId, content })
+        .insert({ lead_id: leadId, content, created_by: user?.id })
         .select()
         .single();
       if (error) throw error;
