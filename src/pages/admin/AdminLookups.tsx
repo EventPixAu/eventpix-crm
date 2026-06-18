@@ -316,28 +316,6 @@ function LookupTable({
                       disabled={updatePending}
                     />
                   </td>
-                  <td className="p-3">
-                    <div className="flex justify-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0"
-                        disabled={index === 0 || updatePending}
-                        onClick={() => handleMoveUp(item, index)}
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0"
-                        disabled={index === items.length - 1 || updatePending}
-                        onClick={() => handleMoveDown(item, index)}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
                   <td className="p-3 text-right">
                     {editingId !== item.id && (
                       <Button
