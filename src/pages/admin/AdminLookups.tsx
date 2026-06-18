@@ -132,8 +132,11 @@ function LookupTable({
   itemLabel,
   extraToggle,
 }: LookupTableProps) {
-  // Sort alphabetically by name
+  // Sort by sort_order then name
   const items = [...itemsProp].sort((a, b) => {
+    const ao = a.sort_order ?? 0;
+    const bo = b.sort_order ?? 0;
+    if (ao !== bo) return ao - bo;
     return (a.name ?? '').localeCompare(b.name ?? '');
   });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -169,6 +172,23 @@ function LookupTable({
     await onUpdate(item.id, { is_active: !item.is_active });
   };
 
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+    const prev = items[index - 1];
+    const curr = items[index];
+    const prevOrder = prev.sort_order ?? 0;
+    const currOrder = curr.sort_order ?? 0;
+    await onUpdate(curr.id, { sort_order: prevOrder - 1 });
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === items.length - 1) return;
+    const next = items[index + 1];
+    const curr = items[index];
+    const nextOrder = next.sort_order ?? 0;
+    const currOrder = curr.sort_order ?? 0;
+    await onUpdate(curr.id, { sort_order: nextOrder + 1 });
+  };
 
   if (isLoading) {
     return (
@@ -231,6 +251,7 @@ function LookupTable({
         <table className="w-full">
           <thead className="bg-muted/50">
             <tr>
+              <th className="text-left p-3 text-sm font-medium w-20">Order</th>
               <th className="text-left p-3 text-sm font-medium">Name</th>
               {extraToggle && (
                 <th className="text-center p-3 text-sm font-medium w-24" title={extraToggle.description}>
@@ -244,7 +265,7 @@ function LookupTable({
           <tbody className="divide-y divide-border">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={extraToggle ? 4 : 3} className="p-8 text-center text-muted-foreground">
+                <td colSpan={extraToggle ? 5 : 4} className="p-8 text-center text-muted-foreground">
                   No {itemLabel.toLowerCase()}s yet. Add one above.
                 </td>
               </tr>
@@ -254,6 +275,28 @@ function LookupTable({
                   key={item.id}
                   className={`transition-colors ${!item.is_active ? 'bg-muted/30 opacity-60' : 'hover:bg-muted/20'}`}
                 >
+                  <td className="p-3 text-center">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 min-w-0"
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0 || updatePending}
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 min-w-0"
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === items.length - 1 || updatePending}
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
                   <td className="p-3">
                     {editingId === item.id ? (
                       <div className="flex gap-2">
