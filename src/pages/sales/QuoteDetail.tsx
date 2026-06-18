@@ -657,9 +657,34 @@ export default function QuoteDetail() {
 
           {/* Products & Packages Section */}
           <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Products & Packages</h2>
-              <p className="text-sm text-muted-foreground">Add products and packages to this quote.</p>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">Products & Packages</h2>
+                <p className="text-sm text-muted-foreground">
+                  {(quote as any)?.selection_mode === 'single_choice'
+                    ? 'Client will pick ONE of the items below. Only the chosen option is kept on acceptance.'
+                    : 'Add products and packages to this quote.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                <Label htmlFor="selection-mode-toggle" className="text-sm">
+                  Client picks one option
+                </Label>
+                <input
+                  id="selection-mode-toggle"
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary cursor-pointer disabled:cursor-not-allowed"
+                  disabled={isLocked}
+                  checked={(quote as any)?.selection_mode === 'single_choice'}
+                  onChange={async (e) => {
+                    const mode = e.target.checked ? 'single_choice' : 'standard';
+                    await updateQuote.mutateAsync({ id: id!, selection_mode: mode } as any);
+                    toast.success(mode === 'single_choice'
+                      ? 'Switched to single-choice format'
+                      : 'Switched to standard format');
+                  }}
+                />
+              </div>
             </div>
 
             {!items?.length ? (

@@ -5049,6 +5049,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by_email: string | null
           accepted_by_name: string | null
+          accepted_item_id: string | null
           client_id: string | null
           created_at: string | null
           created_by: string | null
@@ -5076,6 +5077,7 @@ export type Database = {
           quote_status: string | null
           quote_version: number
           scope_text: string | null
+          selection_mode: string
           sent_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number | null
@@ -5089,6 +5091,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by_email?: string | null
           accepted_by_name?: string | null
+          accepted_item_id?: string | null
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -5116,6 +5119,7 @@ export type Database = {
           quote_status?: string | null
           quote_version?: number
           scope_text?: string | null
+          selection_mode?: string
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
@@ -5129,6 +5133,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by_email?: string | null
           accepted_by_name?: string | null
+          accepted_item_id?: string | null
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -5156,6 +5161,7 @@ export type Database = {
           quote_status?: string | null
           quote_version?: number
           scope_text?: string | null
+          selection_mode?: string
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number | null
@@ -5166,6 +5172,13 @@ export type Database = {
           valid_until?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quotes_accepted_item_id_fkey"
+            columns: ["accepted_item_id"]
+            isOneToOne: false
+            referencedRelation: "quote_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotes_client_id_fkey"
             columns: ["client_id"]
@@ -6873,11 +6886,17 @@ export type Database = {
           p_accepted_by_email?: string
           p_accepted_by_name?: string
           p_quote_id: string
+          p_selected_item_id?: string
         }
         Returns: Json
       }
       accept_quote_public: {
-        Args: { p_email: string; p_name: string; p_token: string }
+        Args: {
+          p_email: string
+          p_name: string
+          p_selected_item_id?: string
+          p_token: string
+        }
         Returns: Json
       }
       add_package_to_quote: {
@@ -7006,7 +7025,10 @@ export type Database = {
         Returns: {
           accepted_at: string
           id: string
+          intro_text: string
+          quote_name: string
           quote_number: string
+          selection_mode: string
           status: string
           subtotal: number
           tax_total: number
@@ -7020,6 +7042,7 @@ export type Database = {
         Returns: {
           description: string
           group_label: string
+          id: string
           line_total: number
           quantity: number
           sort_order: number
