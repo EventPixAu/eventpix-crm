@@ -214,18 +214,39 @@ export function useEventCrewChecklists(eventId: string | undefined) {
         .from('crew_checklists')
         .select(`
           *,
-          items:crew_checklist_items(*)
+          items:crew_checklist_items(*),
+          template:crew_checklist_templates(id, items)
         `)
         .eq('event_id', eventId);
 
       if (error) throw error;
       
-      return (data || []).map(checklist => ({
-        ...checklist,
-        items: ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
+      const checklists = await Promise.all((data || []).map(async (checklist) => {
+        const sortedItems = ((checklist as any).items || []).sort((a: CrewChecklistItem, b: CrewChecklistItem) => 
           a.sort_order - b.sort_order
-        ),
-      })) as CrewChecklist[];
+        );
+        const templateItems = normalizeTemplateItems((checklist as any).template?.items);
+
+        if (checklist.template_id && (checklist as any).template) {
+          const templateSignature = templateItems.map((item) => `${item.sort_order}:${item.item_text}`).join('\n');
+          const checklistSignature = sortedItems.map((item: CrewChecklistItem) => `${item.sort_order}:${item.item_text}`).join('\n');
+
+          if (templateSignature !== checklistSignature) {
+            const syncedItems = await syncChecklistItemsToTemplate(checklist.id, sortedItems, templateItems);
+            return {
+              ...checklist,
+              items: syncedItems,
+            };
+          }
+        }
+
+        return {
+          ...checklist,
+          items: sortedItems,
+        };
+      }));
+
+      return checklists as CrewChecklist[];
     },
     enabled: !!eventId,
   });
