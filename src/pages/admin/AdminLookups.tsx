@@ -238,7 +238,6 @@ function LookupTable({
                 </th>
               )}
               <th className="text-center p-3 text-sm font-medium w-24">Active</th>
-              <th className="text-center p-3 text-sm font-medium w-24">Order</th>
               <th className="text-right p-3 text-sm font-medium w-20">Edit</th>
             </tr>
           </thead>
