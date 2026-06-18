@@ -21,11 +21,15 @@ export function LeadNotesPanel({ leadId }: LeadNotesPanelProps) {
 
   const handleAdd = async () => {
     if (!newNote.trim()) return;
-    await addNote.mutateAsync({ leadId, content: newNote.trim() });
-    setNewNote('');
-    setIsAdding(false);
-    setIsOpen(true);
-    toast.success('Note added');
+    try {
+      await addNote.mutateAsync({ leadId, content: newNote.trim() });
+      setNewNote('');
+      setIsAdding(false);
+      setIsOpen(true);
+      toast.success('Note added');
+    } catch (e: any) {
+      toast.error('Failed to save note', { description: e.message });
+    }
   };
 
   const handleDelete = async (noteId: string) => {
