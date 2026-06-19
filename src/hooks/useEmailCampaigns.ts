@@ -217,6 +217,7 @@ interface EngagementLog {
   id: string;
   status: string | null;
   opened_at: string | null;
+  first_opened_at: string | null;
   open_count: number | null;
   sent_at: string | null;
   error_message: string | null;
@@ -233,6 +234,7 @@ export interface EngagementContact {
   id: string;
   recipient_email: string;
   recipient_name: string | null;
+  recipient_state: string | null;
   last_event_name: string | null;
   last_event_date: string | null;
   unsubscribed: boolean;
