@@ -114,6 +114,14 @@ serve(async (req) => {
           status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
+      case "email.received":
+      case "email.inbound": {
+        const result = await handleInboundEmail(supabase, data);
+        return new Response(JSON.stringify({ ok: true, ...result }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
       default:
         console.log(`Unhandled event type: ${eventType}`);
         return new Response(JSON.stringify({ ok: true }), {
