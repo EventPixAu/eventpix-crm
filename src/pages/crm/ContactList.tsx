@@ -440,7 +440,14 @@ export default function ContactList() {
         if (!hasTags) return false;
       }
 
-      // Status filter removed — set at Company level
+      // Status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === '__unassigned__') {
+          if (contact.status) return false;
+        } else if (contact.status !== statusFilter) {
+          return false;
+        }
+      }
 
 
       // Category filter
