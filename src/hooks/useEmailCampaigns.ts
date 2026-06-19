@@ -346,6 +346,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           .from('email_logs')
           .select('in_reply_to')
           .eq('direction', 'inbound')
+          .neq('email_type', 'auto_reply')
           .in('in_reply_to', allLogIds);
         (replyData || []).forEach((r: any) => {
           if (r.in_reply_to) repliedLogIds.add(r.in_reply_to);
