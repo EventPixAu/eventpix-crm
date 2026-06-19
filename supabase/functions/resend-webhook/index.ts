@@ -114,6 +114,14 @@ serve(async (req) => {
           status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
+      case "email.received":
+      case "email.inbound": {
+        const result = await handleInboundEmail(supabase, data);
+        return new Response(JSON.stringify({ ok: true, ...result }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
       default:
         console.log(`Unhandled event type: ${eventType}`);
         return new Response(JSON.stringify({ ok: true }), {
@@ -269,3 +277,182 @@ serve(async (req) => {
     });
   }
 });
+
+// ============================================================================
+// Inbound email handler (Resend "email.received" / inbound forwarding events)
+// ============================================================================
+function parseAddress(input: string | undefined | null): { email: string; name: string | null } {
+  const s = (input ?? "").toString().trim();
+  if (!s) return { email: "", name: null };
+  const m = s.match(/^(?:"?(.+?)"?\s*<)?([^<>]+)>?$/);
+  return {
+    email: (m?.[2] ?? s).trim().toLowerCase(),
+    name: m?.[1]?.trim() || null,
+  };
+}
+
+function normalizeSubject(subject: string | undefined | null): string {
+  return (subject ?? "")
+    .replace(/^\s*(re|fw|fwd|aw|antw|tr)\s*(\[\d+\])?\s*:\s*/gi, "")
+    .replace(/^\s*(re|fw|fwd|aw|antw|tr)\s*(\[\d+\])?\s*:\s*/gi, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isAutoReplySubject(subject: string | undefined | null): boolean {
+  const s = (subject ?? "").toLowerCase();
+  return (
+    s.includes("automatic reply") ||
+    s.includes("out of office") ||
+    s.includes("out-of-office") ||
+    s.includes("auto-response") ||
+    s.includes("auto response") ||
+    s.includes("autoreply") ||
+    s.includes("auto-reply")
+  );
+}
+
+async function handleInboundEmail(supabase: any, data: any): Promise<Record<string, unknown>> {
+  const fromRaw = Array.isArray(data.from) ? data.from[0] : data.from;
+  const toRaw = Array.isArray(data.to) ? data.to[0] : data.to;
+  const { email: fromEmail, name: fromName } = parseAddress(fromRaw);
+  const { email: toEmail } = parseAddress(toRaw);
+  const subject: string = data.subject ?? "(No Subject)";
+  const text: string | undefined = data.text;
+  const html: string | undefined = data.html;
+
+  const isAutoReply = isAutoReplySubject(subject);
+  const normalizedSubject = normalizeSubject(subject);
+
+  // Find related contact
+  const { data: contact } = await supabase
+    .from("client_contacts")
+    .select("id, client_id")
+    .ilike("email", fromEmail)
+    .maybeSingle();
+
+  // Find original outbound email — prefer subject match for accurate threading
+  let original: any = null;
+  if (normalizedSubject) {
+    const { data: subjMatches } = await supabase
+      .from("email_logs")
+      .select("id, event_id, lead_id, client_id, contact_id, subject, sent_at")
+      .ilike("recipient_email", fromEmail)
+      .eq("direction", "outbound")
+      .order("sent_at", { ascending: false })
+      .limit(25);
+    original = (subjMatches || []).find(
+      (l: any) => normalizeSubject(l.subject) === normalizedSubject,
+    ) || null;
+  }
+  if (!original) {
+    const { data: latest } = await supabase
+      .from("email_logs")
+      .select("id, event_id, lead_id, client_id, contact_id, subject, sent_at")
+      .ilike("recipient_email", fromEmail)
+      .eq("direction", "outbound")
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    original = latest;
+  }
+
+  const bodyPreview = text
+    ? text.substring(0, 200)
+    : html?.replace(/<[^>]*>/g, "").substring(0, 200) || null;
+
+  // For auto-replies we still log the inbound message but do NOT set in_reply_to
+  // (so it is excluded from campaign Replied stats) and we tag the email_type.
+  const insertRow: Record<string, unknown> = {
+    email_type: isAutoReply ? "auto_reply" : "inbound_reply",
+    direction: "inbound",
+    from_email: fromEmail,
+    from_name: fromName,
+    recipient_email: toEmail,
+    subject,
+    body_html: html || null,
+    body_preview: bodyPreview,
+    status: isAutoReply ? "auto_reply" : "received",
+    sent_at: new Date().toISOString(),
+    in_reply_to: isAutoReply ? null : (original?.id ?? null),
+    contact_id: contact?.id || original?.contact_id || null,
+    client_id: contact?.client_id || original?.client_id || null,
+    event_id: original?.event_id || null,
+    lead_id: original?.lead_id || null,
+  };
+
+  const { data: emailLog, error: logError } = await supabase
+    .from("email_logs")
+    .insert(insertRow)
+    .select("id")
+    .single();
+
+  if (logError) {
+    console.error("Failed to log inbound email:", logError);
+    return { matched: false, error: logError.message };
+  }
+
+  console.log(
+    `Inbound ${isAutoReply ? "auto-reply" : "reply"} logged ${emailLog.id} from ${fromEmail}` +
+      (original ? ` (in_reply_to=${original.id})` : ""),
+  );
+
+  // Campaign reply matching — only for genuine replies
+  let campaignUpdated = false;
+  if (!isAutoReply && original) {
+    // Match campaign_step_sends row by original email_log_id
+    const { data: stepSend } = await supabase
+      .from("campaign_step_sends")
+      .select("id, campaign_contact_id")
+      .eq("email_log_id", original.id)
+      .maybeSingle();
+
+    if (stepSend) {
+      await supabase
+        .from("campaign_step_sends")
+        .update({ status: "replied" })
+        .eq("id", stepSend.id);
+      await supabase
+        .from("campaign_contacts")
+        .update({ status: "replied" })
+        .eq("id", stepSend.campaign_contact_id);
+      campaignUpdated = true;
+    } else {
+      // Fallback: match campaign_contacts.email_log_id (single-step campaigns)
+      const { data: cc } = await supabase
+        .from("campaign_contacts")
+        .select("id")
+        .eq("email_log_id", original.id)
+        .maybeSingle();
+      if (cc) {
+        await supabase
+          .from("campaign_contacts")
+          .update({ status: "replied" })
+          .eq("id", cc.id);
+        campaignUpdated = true;
+      }
+    }
+  }
+
+  // Activity timeline — log for both genuine replies and auto-replies, with clear labels
+  const activityContactId = insertRow.contact_id as string | null;
+  if (activityContactId) {
+    await supabase.from("contact_activities").insert({
+      contact_id: activityContactId,
+      activity_type: isAutoReply ? "auto_reply" : "email",
+      activity_date: new Date().toISOString(),
+      subject: isAutoReply ? `Auto-reply: ${subject}` : `Reply: ${subject}`,
+      notes: isAutoReply
+        ? `Automatic / out-of-office response received from ${fromEmail}`
+        : `Inbound reply received from ${fromEmail}` +
+          (campaignUpdated ? " (matched to campaign send)" : ""),
+    });
+  }
+
+  return {
+    matched: !!original,
+    auto_reply: isAutoReply,
+    campaign_updated: campaignUpdated,
+    email_log_id: emailLog.id,
+  };
+}
