@@ -72,14 +72,17 @@ import {
   useScheduleCampaign,
   useCancelCampaign,
   useCampaignContacts,
+  useCampaignEngagement,
   CAMPAIGN_TYPE_LABELS,
   TARGET_SEGMENT_LABELS,
   CampaignType,
   TargetSegment,
   CampaignStatus,
   EmailCampaign,
+  RecipientEngagementStatus,
 } from '@/hooks/useEmailCampaigns';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Campaign type descriptions
 const CAMPAIGN_TYPE_DESCRIPTIONS: Record<CampaignType, string> = {
