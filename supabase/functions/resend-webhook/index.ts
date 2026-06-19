@@ -348,12 +348,14 @@ async function handleInboundEmail(supabase: any, data: any): Promise<Record<stri
     console.log(`Skipping CRM contact resolution: ${fromEmail} is internal/owner address`);
   }
 
-  // Find related contact
-  const { data: contact } = await supabase
-    .from("client_contacts")
-    .select("id, client_id")
-    .ilike("email", fromEmail)
-    .maybeSingle();
+  // Find related contact (skipped for internal/owner addresses)
+  const { data: contact } = internal
+    ? { data: null as any }
+    : await supabase
+        .from("client_contacts")
+        .select("id, client_id")
+        .ilike("email", fromEmail)
+        .maybeSingle();
 
   // Find original outbound email — prefer subject match for accurate threading
   let original: any = null;
@@ -385,10 +387,8 @@ async function handleInboundEmail(supabase: any, data: any): Promise<Record<stri
     ? text.substring(0, 200)
     : html?.replace(/<[^>]*>/g, "").substring(0, 200) || null;
 
-  // For auto-replies we still log the inbound message but do NOT set in_reply_to
-  // (so it is excluded from campaign Replied stats) and we tag the email_type.
   const insertRow: Record<string, unknown> = {
-    email_type: isAutoReply ? "auto_reply" : "inbound_reply",
+    email_type: internal ? "internal" : isAutoReply ? "auto_reply" : "inbound_reply",
     direction: "inbound",
     from_email: fromEmail,
     from_name: fromName,
@@ -398,11 +398,11 @@ async function handleInboundEmail(supabase: any, data: any): Promise<Record<stri
     body_preview: bodyPreview,
     status: isAutoReply ? "auto_reply" : "received",
     sent_at: new Date().toISOString(),
-    in_reply_to: isAutoReply ? null : (original?.id ?? null),
-    contact_id: contact?.id || original?.contact_id || null,
-    client_id: contact?.client_id || original?.client_id || null,
-    event_id: original?.event_id || null,
-    lead_id: original?.lead_id || null,
+    in_reply_to: isAutoReply || internal ? null : (original?.id ?? null),
+    contact_id: internal ? null : (contact?.id || original?.contact_id || null),
+    client_id: internal ? null : (contact?.client_id || original?.client_id || null),
+    event_id: internal ? null : (original?.event_id || null),
+    lead_id: internal ? null : (original?.lead_id || null),
   };
 
   const { data: emailLog, error: logError } = await supabase
