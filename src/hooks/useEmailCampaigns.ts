@@ -312,8 +312,8 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         .select(`
           id, recipient_email, recipient_name, last_event_name, last_event_date,
           status, email_log_id, contact_id,
-          client_contacts(unsubscribed, unsubscribed_at),
-          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, open_count, sent_at, error_message)
+          client_contacts(unsubscribed, unsubscribed_at, state),
+          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
         `)
         .eq('campaign_id', campaignId)
         .order('recipient_name', { nullsFirst: false });
@@ -328,7 +328,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           .from('campaign_step_sends')
           .select(`
             id, campaign_contact_id, step_id, status, sent_at, email_log_id,
-            email_logs(id, status, opened_at, open_count, sent_at, error_message)
+            email_logs(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
           `)
           .in('campaign_contact_id', contactIds);
         if (ssErr) throw ssErr;
