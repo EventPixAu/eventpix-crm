@@ -181,7 +181,7 @@ serve(async (req) => {
       : html?.replace(/<[^>]*>/g, "").substring(0, 200) || null;
 
     const insertRow: Record<string, unknown> = {
-      email_type: isAutoReply ? "auto_reply" : "inbound_reply",
+      email_type: internal ? "internal" : isAutoReply ? "auto_reply" : "inbound_reply",
       direction: "inbound",
       from_email: fromEmail,
       from_name: fromName,
@@ -191,12 +191,12 @@ serve(async (req) => {
       body_preview: bodyPreview,
       status: isAutoReply ? "auto_reply" : "received",
       sent_at: new Date().toISOString(),
-      // Auto-replies do NOT carry in_reply_to so they are excluded from campaign Replied stats
-      in_reply_to: isAutoReply ? null : original?.id ?? null,
-      contact_id: contact?.id || original?.contact_id || null,
-      client_id: contact?.client_id || original?.client_id || null,
-      event_id: original?.event_id || null,
-      lead_id: original?.lead_id || null,
+      // Auto-replies and internal mails do NOT carry in_reply_to so they are excluded from campaign Replied stats
+      in_reply_to: isAutoReply || internal ? null : original?.id ?? null,
+      contact_id: internal ? null : (contact?.id || original?.contact_id || null),
+      client_id: internal ? null : (contact?.client_id || original?.client_id || null),
+      event_id: internal ? null : (original?.event_id || null),
+      lead_id: internal ? null : (original?.lead_id || null),
     };
 
     const { data: emailLog, error: logError } = await supabase
