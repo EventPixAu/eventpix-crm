@@ -176,7 +176,7 @@ export default function ContactDetail() {
         .select(`
           *,
           job_title:job_titles(id, name),
-          client:clients(id, business_name)
+          client:clients(id, business_name, category_id, subcategory_id)
         `)
         .eq('id', id)
         .single();
