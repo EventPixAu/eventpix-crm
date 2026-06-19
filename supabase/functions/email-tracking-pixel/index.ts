@@ -32,23 +32,24 @@ serve(async (req) => {
       .update({
         status: "opened",
         opened_at: now,
-        open_count: supabase.rpc ? undefined : 1, // fallback
       })
       .eq("id", emailLogId)
       .in("status", ["sent", "delivered"]); // only upgrade, never downgrade (skip bounced/failed)
 
-    // Increment open_count via raw SQL-safe approach
+    // Increment open_count and set first_opened_at if missing
     const { data: current } = await supabase
       .from("email_logs")
-      .select("open_count")
+      .select("open_count, first_opened_at")
       .eq("id", emailLogId)
-      .single();
+      .maybeSingle();
 
     if (current) {
-      await supabase
-        .from("email_logs")
-        .update({ open_count: (current.open_count || 0) + 1 })
-        .eq("id", emailLogId);
+      const patch: Record<string, unknown> = {
+        open_count: (current.open_count || 0) + 1,
+        opened_at: now,
+      };
+      if (!current.first_opened_at) patch.first_opened_at = now;
+      await supabase.from("email_logs").update(patch).eq("id", emailLogId);
     }
 
     return new Response(PIXEL, {
