@@ -4,7 +4,7 @@
  * Create and manage email workflow campaigns for different client segments.
  */
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import {
   Users,
   Send,
@@ -18,6 +18,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  MailOpen,
+  MailX,
+  UserMinus,
+  Reply,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
