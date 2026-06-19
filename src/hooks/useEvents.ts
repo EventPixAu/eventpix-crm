@@ -25,6 +25,7 @@ export interface EventAssignment {
     id: string;
     full_name: string | null;
     email: string;
+    phone?: string | null;
   } | null;
   staff_role?: {
     id: string;
@@ -43,6 +44,7 @@ export interface EventAssignment {
     name: string;
     role: string;
     email: string;
+    phone?: string | null;
   } | null;
 }
 
@@ -135,7 +137,8 @@ export function useEventAssignments(eventId: string | undefined) {
             id,
             name,
             role,
-            email
+            email,
+            phone
           )
         `)
         .eq('event_id', eventId);
