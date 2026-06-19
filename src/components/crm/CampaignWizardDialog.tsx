@@ -388,7 +388,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         contact_id: c.id,
         client_id: c.client_id,
         recipient_email: c.email!,
-        recipient_name: c.contact_name,
+        recipient_name: c.contact_name && !c.contact_name.includes('@') ? c.contact_name : null,
         status: 'pending' as const,
       }));
       if (rows.length) {
