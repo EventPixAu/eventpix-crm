@@ -319,6 +319,8 @@ serve(async (req) => {
 
     // Campaign reply matching — only for genuine (non-internal) replies
     let campaignUpdated = false;
+    let matchedCampaignContactId: string | null = null;
+    let matchedCampaignId: string | null = null;
     if (!isAutoReply && !internal && original) {
       const { data: stepSend } = await supabase
         .from("campaign_step_sends")
@@ -336,6 +338,7 @@ serve(async (req) => {
           .update({ status: "replied" })
           .eq("id", stepSend.campaign_contact_id);
         campaignUpdated = true;
+        matchedCampaignContactId = stepSend.campaign_contact_id;
       } else {
         const { data: cc } = await supabase
           .from("campaign_contacts")
@@ -348,7 +351,16 @@ serve(async (req) => {
             .update({ status: "replied" })
             .eq("id", cc.id);
           campaignUpdated = true;
+          matchedCampaignContactId = cc.id;
         }
+      }
+      if (matchedCampaignContactId) {
+        const { data: ccRow } = await supabase
+          .from("campaign_contacts")
+          .select("campaign_id")
+          .eq("id", matchedCampaignContactId)
+          .maybeSingle();
+        matchedCampaignId = ccRow?.campaign_id ?? null;
       }
     }
 
@@ -366,6 +378,40 @@ serve(async (req) => {
             (campaignUpdated ? " (matched to campaign send)" : ""),
       });
     }
+
+    // Owner alert email — genuine, non-internal replies only, first reply per campaign/thread
+    if (!isAutoReply && !internal) {
+      try {
+        const isFirst = await isFirstReplyForThread(supabase, {
+          fromEmail,
+          currentInboundId: emailLog.id,
+          originalId: original?.id ?? null,
+          campaignContactId: matchedCampaignContactId,
+        });
+        if (isFirst) {
+          let campaignName: string | null = null;
+          if (matchedCampaignId) {
+            const { data: camp } = await supabase
+              .from("email_campaigns").select("name").eq("id", matchedCampaignId).maybeSingle();
+            campaignName = camp?.name ?? null;
+          }
+          const plainBody = text || (html ? html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ") : "");
+          await sendReplyAlertEmail(supabase, {
+            fromEmail,
+            fromName,
+            subject,
+            bodyText: plainBody,
+            campaignName,
+            contactId: activityContactId,
+          });
+        } else {
+          console.log(`Skipping reply alert — duplicate reply from ${fromEmail}`);
+        }
+      } catch (alertErr) {
+        console.error("Reply alert dispatch error:", alertErr);
+      }
+    }
+
 
     // Light-weight auto-confirmation for staff assignments (preserved from
     // earlier behaviour) — kept disabled for auto-replies.
