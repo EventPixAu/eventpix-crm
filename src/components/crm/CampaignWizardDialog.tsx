@@ -147,7 +147,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Live matched contacts
   const { data: matched = [], isFetching: matchingLoading } = useQuery({
-    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex],
+    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex, categories.length, subcategories.length],
     queryFn: async () => {
       let q = supabase
         .from('client_contacts')
