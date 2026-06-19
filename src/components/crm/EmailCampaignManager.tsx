@@ -650,14 +650,39 @@ export function EmailCampaignManager() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {campaign.status === 'scheduled' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => cancelCampaign.mutate(campaign.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                        {(campaign.status === 'scheduled' || campaign.status === 'in_progress') && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title={campaign.status === 'in_progress' ? 'Stop campaign' : 'Cancel scheduled campaign'}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {campaign.status === 'in_progress' ? 'Stop this campaign?' : 'Cancel scheduled campaign?'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {campaign.status === 'in_progress'
+                                    ? 'This will halt the campaign mid-send. Emails already sent cannot be recalled, but no further emails will go out.'
+                                    : 'This will cancel the scheduled send. The campaign will not be dispatched.'}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Keep</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => cancelCampaign.mutate(campaign.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  {campaign.status === 'in_progress' ? 'Stop now' : 'Cancel send'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                         {campaign.status === 'draft' && (
                           <AlertDialog>

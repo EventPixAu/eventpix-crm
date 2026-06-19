@@ -160,7 +160,17 @@ serve(async (req) => {
     let sent = 0, failed = 0, skipped = 0;
 
     for (const rec of (recipients || [])) {
-      // Already sent this step?
+      // Honor mid-send cancellation
+      const { data: liveStatus } = await supabase
+        .from("email_campaigns")
+        .select("status")
+        .eq("id", campaign.id)
+        .maybeSingle();
+      if (liveStatus?.status === "cancelled") {
+        skipped++;
+        continue;
+      }
+
       const { data: existingSend } = await supabase
         .from("campaign_step_sends")
         .select("id, status")
@@ -312,6 +322,12 @@ serve(async (req) => {
     else if (isLastStep) updates.status = "completed";
     else updates.current_step = stepOrder + 1;
 
+    // Don't overwrite a cancellation that landed mid-send
+    const { data: finalStatus } = await supabase
+      .from("email_campaigns").select("status").eq("id", campaign.id).maybeSingle();
+    if (finalStatus?.status === "cancelled") {
+      delete updates.status;
+    }
     await supabase.from("email_campaigns").update(updates).eq("id", campaign.id);
 
     return new Response(JSON.stringify({ success: true, sent, failed, skipped, stepOrder }), {
