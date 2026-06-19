@@ -516,6 +516,7 @@ export type Database = {
           bounce_status: string | null
           bounced_at: string | null
           category: string | null
+          category_id: string | null
           city: string | null
           client_id: string | null
           consent_source: string | null
@@ -540,6 +541,7 @@ export type Database = {
           source: string | null
           state: string | null
           status: string | null
+          subcategory_id: string | null
           tags: string[] | null
           unsubscribed: boolean
           unsubscribed_at: string | null
@@ -550,6 +552,7 @@ export type Database = {
           bounce_status?: string | null
           bounced_at?: string | null
           category?: string | null
+          category_id?: string | null
           city?: string | null
           client_id?: string | null
           consent_source?: string | null
@@ -574,6 +577,7 @@ export type Database = {
           source?: string | null
           state?: string | null
           status?: string | null
+          subcategory_id?: string | null
           tags?: string[] | null
           unsubscribed?: boolean
           unsubscribed_at?: string | null
@@ -584,6 +588,7 @@ export type Database = {
           bounce_status?: string | null
           bounced_at?: string | null
           category?: string | null
+          category_id?: string | null
           city?: string | null
           client_id?: string | null
           consent_source?: string | null
@@ -608,11 +613,19 @@ export type Database = {
           source?: string | null
           state?: string | null
           status?: string | null
+          subcategory_id?: string | null
           tags?: string[] | null
           unsubscribed?: boolean
           unsubscribed_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "client_contacts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "company_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_contacts_client_id_fkey"
             columns: ["client_id"]
@@ -632,6 +645,13 @@ export type Database = {
             columns: ["relationship_type_id"]
             isOneToOne: false
             referencedRelation: "contact_relationship_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contacts_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "company_subcategories"
             referencedColumns: ["id"]
           },
         ]
@@ -6908,6 +6928,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      apply_inherited_category_to_contact: {
+        Args: { _contact_id: string }
+        Returns: undefined
+      }
       apply_inherited_status_for_company: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -6997,6 +7021,10 @@ export type Database = {
       gen_random_bytes: { Args: { len: number }; Returns: string }
       gen_random_uuid: { Args: never; Returns: string }
       get_client_portal_data: { Args: never; Returns: Json }
+      get_contact_primary_company: {
+        Args: { _contact_id: string }
+        Returns: string
+      }
       get_contract_by_public_token: {
         Args: { p_token: string }
         Returns: {
