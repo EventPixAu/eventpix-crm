@@ -727,8 +727,8 @@ export default function ContactList() {
 
 
 
-              {/* Category Filter */}
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              {/* Category Filter (Parent — inherited from primary company) */}
+              <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setSubcategoryFilter('all'); }}>
                 <SelectTrigger className="w-[180px] h-8 text-xs">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
@@ -736,7 +736,25 @@ export default function ContactList() {
                   <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
                   {categoryOptions.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
+                    <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Sub-category Filter (depends on selected parent) */}
+              <Select
+                value={subcategoryFilter}
+                onValueChange={setSubcategoryFilter}
+                disabled={categoryFilter === 'all' || categoryFilter === '__unassigned__'}
+              >
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder={categoryFilter !== 'all' && categoryFilter !== '__unassigned__' ? 'All Sub-categories' : 'Pick category'} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-[300px]">
+                  <SelectItem value="all">All Sub-categories</SelectItem>
+                  <SelectItem value="__unassigned__">No Sub-category</SelectItem>
+                  {subcategoryOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
