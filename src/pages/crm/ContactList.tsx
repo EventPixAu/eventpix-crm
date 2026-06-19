@@ -462,11 +462,20 @@ export default function ContactList() {
       }
 
 
-      // Category filter
+      // Category filter (parent — inherited from primary company)
       if (categoryFilter !== 'all') {
         if (categoryFilter === '__unassigned__') {
-          if (contact.category) return false;
-        } else if (contact.category !== categoryFilter) {
+          if (contact.category_id) return false;
+        } else if (contact.category_id !== categoryFilter) {
+          return false;
+        }
+      }
+
+      // Sub-category filter
+      if (subcategoryFilter !== 'all') {
+        if (subcategoryFilter === '__unassigned__') {
+          if (contact.subcategory_id) return false;
+        } else if (contact.subcategory_id !== subcategoryFilter) {
           return false;
         }
       }
