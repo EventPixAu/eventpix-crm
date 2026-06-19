@@ -135,7 +135,8 @@ export function useEventAssignments(eventId: string | undefined) {
             id,
             name,
             role,
-            email
+            email,
+            phone
           )
         `)
         .eq('event_id', eventId);
