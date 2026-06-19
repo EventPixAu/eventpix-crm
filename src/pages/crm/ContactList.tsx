@@ -643,7 +643,7 @@ export default function ContactList() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {hasActiveFilters
+                {search || hasActiveFilters || incompleteOnly || showArchived
                   ? `Showing ${filteredContacts.length.toLocaleString()} of ${totalCount.toLocaleString()} contacts`
                   : `${totalCount.toLocaleString()} contacts`}
               </div>
