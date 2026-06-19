@@ -217,6 +217,7 @@ interface EngagementLog {
   id: string;
   status: string | null;
   opened_at: string | null;
+  first_opened_at: string | null;
   open_count: number | null;
   sent_at: string | null;
   error_message: string | null;
@@ -233,6 +234,7 @@ export interface EngagementContact {
   id: string;
   recipient_email: string;
   recipient_name: string | null;
+  recipient_state: string | null;
   last_event_name: string | null;
   last_event_date: string | null;
   unsubscribed: boolean;
@@ -310,8 +312,8 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         .select(`
           id, recipient_email, recipient_name, last_event_name, last_event_date,
           status, email_log_id, contact_id,
-          client_contacts(unsubscribed, unsubscribed_at),
-          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, open_count, sent_at, error_message)
+          client_contacts(unsubscribed, unsubscribed_at, state),
+          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
         `)
         .eq('campaign_id', campaignId)
         .order('recipient_name', { nullsFirst: false });
@@ -326,7 +328,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           .from('campaign_step_sends')
           .select(`
             id, campaign_contact_id, step_id, status, sent_at, email_log_id,
-            email_logs(id, status, opened_at, open_count, sent_at, error_message)
+            email_logs(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
           `)
           .in('campaign_contact_id', contactIds);
         if (ssErr) throw ssErr;
@@ -405,6 +407,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           id: c.id,
           recipient_email: c.recipient_email,
           recipient_name: c.recipient_name,
+          recipient_state: cc?.state ?? null,
           last_event_name: c.last_event_name,
           last_event_date: c.last_event_date,
           unsubscribed,

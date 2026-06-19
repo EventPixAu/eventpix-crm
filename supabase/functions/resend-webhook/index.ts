@@ -101,6 +101,7 @@ serve(async (req) => {
       case "email.opened":
         newStatus = "opened";
         updateFields.opened_at = data.created_at || now;
+        updateFields._isOpenEvent = true; // handled below
         break;
       case "email.clicked":
         newStatus = "clicked";
@@ -180,6 +181,19 @@ serve(async (req) => {
     }
 
     updateFields.status = newStatus;
+
+    // Handle open-specific fields: increment open_count, set first_opened_at if missing
+    const isOpenEvent = updateFields._isOpenEvent === true;
+    delete updateFields._isOpenEvent;
+    if (isOpenEvent) {
+      const { data: cur } = await supabase
+        .from("email_logs")
+        .select("open_count, first_opened_at")
+        .eq("id", targetLog.id)
+        .maybeSingle();
+      updateFields.open_count = ((cur?.open_count as number) || 0) + 1;
+      if (!cur?.first_opened_at) updateFields.first_opened_at = updateFields.opened_at;
+    }
 
     const { error: updateError } = await supabase
       .from("email_logs")

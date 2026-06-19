@@ -1937,6 +1937,7 @@ export type Database = {
           email_type: string
           error_message: string | null
           event_id: string | null
+          first_opened_at: string | null
           from_email: string | null
           from_name: string | null
           id: string
@@ -1968,6 +1969,7 @@ export type Database = {
           email_type: string
           error_message?: string | null
           event_id?: string | null
+          first_opened_at?: string | null
           from_email?: string | null
           from_name?: string | null
           id?: string
@@ -1999,6 +2001,7 @@ export type Database = {
           email_type?: string
           error_message?: string | null
           event_id?: string | null
+          first_opened_at?: string | null
           from_email?: string | null
           from_name?: string | null
           id?: string

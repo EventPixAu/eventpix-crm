@@ -1,0 +1,2 @@
+ALTER TABLE public.email_logs ADD COLUMN IF NOT EXISTS first_opened_at timestamp with time zone;
+UPDATE public.email_logs SET first_opened_at = opened_at WHERE first_opened_at IS NULL AND opened_at IS NOT NULL;
