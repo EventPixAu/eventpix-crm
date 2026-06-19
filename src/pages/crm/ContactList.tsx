@@ -405,6 +405,8 @@ export default function ContactList() {
           source: contact.source || null,
           status: contact.status || null,
           category: contact.category || null,
+          category_id: (contact as any).category_id || null,
+          subcategory_id: (contact as any).subcategory_id || null,
           archived: (contact as any).archived ?? false,
           bounce_status: (contact as any).bounce_status ?? null,
           bounced_at: (contact as any).bounced_at ?? null,
