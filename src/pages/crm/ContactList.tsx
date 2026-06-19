@@ -489,7 +489,7 @@ export default function ContactList() {
 
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, bounceFilter, incompleteOnly, showArchived]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, subcategoryFilter, bounceFilter, incompleteOnly, showArchived]);
 
 
   const hasActiveFilters =
@@ -499,6 +499,7 @@ export default function ContactList() {
     tagFilter !== 'all' ||
     statusFilter !== 'all' ||
     categoryFilter !== 'all' ||
+    subcategoryFilter !== 'all' ||
     bounceFilter !== 'all';
 
   const clearFilters = () => {
@@ -508,6 +509,7 @@ export default function ContactList() {
     setTagFilter('all');
     setStatusFilter('all');
     setCategoryFilter('all');
+    setSubcategoryFilter('all');
     setBounceFilter('all');
   };
 
