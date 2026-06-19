@@ -134,12 +134,20 @@ serve(async (req) => {
       `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply}`,
     );
 
-    // Resolve related contact
-    const { data: contact } = await supabase
-      .from("client_contacts")
-      .select("id, client_id")
-      .ilike("email", fromEmail)
-      .maybeSingle();
+    // Internal/owner address guard — do not create or resolve CRM contacts for these
+    const internal = await isInternalEmail(supabase, fromEmail);
+    if (internal) {
+      console.log(`Skipping CRM contact resolution: ${fromEmail} is internal/owner address`);
+    }
+
+    // Resolve related contact (skipped for internal addresses)
+    const { data: contact } = internal
+      ? { data: null as any }
+      : await supabase
+          .from("client_contacts")
+          .select("id, client_id")
+          .ilike("email", fromEmail)
+          .maybeSingle();
 
     // Find the original outbound email — prefer subject match
     let original: any = null;
