@@ -203,8 +203,10 @@ serve(async (req) => {
         }
       }
 
-      const firstName = (cc?.first_name || (cc?.contact_name || rec.recipient_name || "").split(" ")[0] || "").trim();
-      const fullName = cc?.contact_name || rec.recipient_name || "";
+      const rawName = (cc?.contact_name || rec.recipient_name || "").trim();
+      const nameForParse = looksLikeEmail(rawName) ? "" : rawName;
+      const firstName = (cc?.first_name || nameForParse.split(" ")[0] || "").trim();
+      const fullName = looksLikeEmail(cc?.contact_name || "") ? "" : (cc?.contact_name || (looksLikeEmail(rec.recipient_name || "") ? "" : rec.recipient_name) || "");
       const company = cc?.clients?.business_name || "";
       const unsubscribeUrl = `${publicBase}/unsubscribe?email=${encodeURIComponent(rec.recipient_email)}&c=${campaign.id}`;
 
