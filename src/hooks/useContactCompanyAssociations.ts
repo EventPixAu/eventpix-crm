@@ -29,6 +29,8 @@ export interface ContactCompanyAssociation {
   company?: {
     id: string;
     business_name: string;
+    category_id: string | null;
+    subcategory_id: string | null;
   };
   job_title?: {
     id: string;
