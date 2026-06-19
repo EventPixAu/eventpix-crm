@@ -133,6 +133,10 @@ export default function ContactList() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
+  const { data: subcategoryOptions = [] } = useCompanySubcategories(
+    categoryFilter !== 'all' && categoryFilter !== '__unassigned__' ? categoryFilter : undefined
+  );
   const [bounceFilter, setBounceFilter] = useState<string>('all');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
