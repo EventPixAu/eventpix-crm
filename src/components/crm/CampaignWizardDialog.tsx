@@ -28,16 +28,17 @@ import { AU_STATES } from '@/lib/auStates';
 
 
 interface AudienceFilters {
-  statuses: string[];
+  statuses: string[];            // contact status (inherited from company)
   categories: string[];          // parent category IDs
   subcategories: string[];       // subcategory IDs
   clientTypes: string[];         // 'Direct' | 'Indirect' | 'Unassigned'
   sources: string[];
   states: string[];              // contact state
-  companyStates: string[];       // company state
   countries: string[];           // company country
   cities: string[];
 }
+
+const CONTACT_STATUS_OPTIONS = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'];
 
 interface SequenceStep {
   delayDays: number;
