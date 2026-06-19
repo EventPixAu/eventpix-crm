@@ -312,6 +312,26 @@ function isAutoReplySubject(subject: string | undefined | null): boolean {
   );
 }
 
+async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
+  const e = (email || "").toLowerCase().trim();
+  if (!e) return false;
+  try {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["owner_email", "internal_email_domains"]);
+    const map: Record<string, string> = {};
+    for (const r of data ?? []) map[r.key] = (r.value ?? "").toLowerCase();
+    const owner = (map.owner_email || "trevor@eventpix.com.au").trim();
+    if (owner && e === owner) return true;
+    const domains = (map.internal_email_domains || "eventpix.com.au")
+      .split(",").map((d: string) => d.trim()).filter(Boolean);
+    return domains.some((d) => e.endsWith("@" + d) || e === d);
+  } catch {
+    return e.endsWith("@eventpix.com.au");
+  }
+}
+
 async function handleInboundEmail(supabase: any, data: any): Promise<Record<string, unknown>> {
   const fromRaw = Array.isArray(data.from) ? data.from[0] : data.from;
   const toRaw = Array.isArray(data.to) ? data.to[0] : data.to;
@@ -323,6 +343,10 @@ async function handleInboundEmail(supabase: any, data: any): Promise<Record<stri
 
   const isAutoReply = isAutoReplySubject(subject);
   const normalizedSubject = normalizeSubject(subject);
+  const internal = await isInternalEmail(supabase, fromEmail);
+  if (internal) {
+    console.log(`Skipping CRM contact resolution: ${fromEmail} is internal/owner address`);
+  }
 
   // Find related contact
   const { data: contact } = await supabase
