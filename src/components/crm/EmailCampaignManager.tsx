@@ -443,7 +443,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
           {/* Top-level stats */}
           <div className="grid gap-4 sm:grid-cols-4">
             <StatTile label="Total Recipients" value={summary.total} />
-            <StatTile label="Sent" value={summary.sent + summary.opened + summary.replied} pct={pct(summary.sent + summary.opened + summary.replied)} />
+            <StatTile label="Sent" value={summary.sent + summary.opened + summary.replied} />
             <StatTile label="Pending" value={summary.pending} tone="muted" />
             <StatTile label="Failed" value={summary.failed} tone="destructive" />
           </div>
@@ -520,7 +520,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   {steps.map((s) => (
                     <TabsTrigger key={s.id} value={s.id}>
-                      Email {s.step_order}
+                      Email {s.step_order + 1}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -528,7 +528,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
                 <TabsContent value="overview" className="mt-4">
                   <RecipientTable
                     contacts={contacts}
-                    columns={steps.map((s) => ({ key: s.id, label: `Email ${s.step_order}` }))}
+                    columns={steps.map((s) => ({ key: s.id, label: `Email ${s.step_order + 1}` }))}
                   />
                 </TabsContent>
 
