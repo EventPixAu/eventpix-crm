@@ -78,6 +78,110 @@ async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
   }
 }
 
+const APP_BASE_URL = "https://app.eventpix.com.au";
+const RESEND_FROM = "EventPix Alerts <pix@rs.eventpix.com.au>";
+
+function escapeHtml(s: string): string {
+  return (s || "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]!));
+}
+
+async function getOwnerEmail(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase.from("site_settings")
+      .select("value").eq("key", "owner_email").maybeSingle();
+    return ((data?.value as string) || "trevor@eventpix.com.au").trim();
+  } catch {
+    return "trevor@eventpix.com.au";
+  }
+}
+
+async function isFirstReplyForThread(
+  supabase: any,
+  params: { fromEmail: string; currentInboundId: string; originalId: string | null; campaignContactId: string | null },
+): Promise<boolean> {
+  const { fromEmail, currentInboundId, originalId, campaignContactId } = params;
+  let relatedIds: string[] = [];
+  if (campaignContactId) {
+    const { data: sends } = await supabase
+      .from("campaign_step_sends").select("email_log_id")
+      .eq("campaign_contact_id", campaignContactId);
+    relatedIds = (sends ?? []).map((s: any) => s.email_log_id).filter(Boolean);
+    const { data: cc } = await supabase
+      .from("campaign_contacts").select("email_log_id")
+      .eq("id", campaignContactId).maybeSingle();
+    if (cc?.email_log_id && !relatedIds.includes(cc.email_log_id)) relatedIds.push(cc.email_log_id);
+  } else if (originalId) {
+    relatedIds = [originalId];
+  } else {
+    return true;
+  }
+  if (relatedIds.length === 0) return true;
+  const { count } = await supabase
+    .from("email_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("direction", "inbound")
+    .eq("email_type", "inbound_reply")
+    .ilike("from_email", fromEmail)
+    .neq("id", currentInboundId)
+    .in("in_reply_to", relatedIds);
+  return (count ?? 0) === 0;
+}
+
+async function sendReplyAlertEmail(
+  supabase: any,
+  params: {
+    fromEmail: string;
+    fromName: string | null;
+    subject: string;
+    bodyText: string | null;
+    campaignName: string | null;
+    contactId: string | null;
+  },
+): Promise<void> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.warn("RESEND_API_KEY not set — skipping reply alert");
+    return;
+  }
+  const ownerEmail = await getOwnerEmail(supabase);
+  const senderLabel = params.fromName ? `${params.fromName} <${params.fromEmail}>` : params.fromEmail;
+  const alertSubject = `New reply from ${params.fromName || params.fromEmail} — ${params.subject}`;
+  const snippet = (params.bodyText || "").trim().slice(0, 300);
+  const truncated = (params.bodyText || "").length > 300;
+  const contactUrl = params.contactId ? `${APP_BASE_URL}/crm/contacts/${params.contactId}` : null;
+  const inboxUrl = `${APP_BASE_URL}/crm/emails`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;font-size:14px;color:#111;max-width:600px">
+      <h2 style="margin:0 0 12px">New campaign reply received</h2>
+      <p><strong>From:</strong> ${escapeHtml(senderLabel)}</p>
+      ${params.campaignName ? `<p><strong>Campaign:</strong> ${escapeHtml(params.campaignName)}</p>` : ""}
+      <p><strong>Subject:</strong> ${escapeHtml(params.subject)}</p>
+      <div style="background:#f6f6f6;padding:12px;border-radius:6px;white-space:pre-wrap;margin:12px 0">${escapeHtml(snippet)}${truncated ? "…" : ""}</div>
+      <p style="margin-top:16px">
+        ${contactUrl ? `<a href="${contactUrl}" style="margin-right:12px">Open contact</a>` : ""}
+        <a href="${inboxUrl}">Open CRM Inbox</a>
+      </p>
+    </div>`;
+  try {
+    const resp = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: RESEND_FROM, to: [ownerEmail], subject: alertSubject, html, reply_to: params.fromEmail }),
+    });
+    if (!resp.ok) {
+      console.error("Reply alert send failed:", resp.status, await resp.text());
+    } else {
+      console.log(`Reply alert sent to ${ownerEmail} for ${params.fromEmail}`);
+    }
+  } catch (e) {
+    console.error("Reply alert error:", e);
+  }
+}
+
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
