@@ -362,6 +362,90 @@ function StatusBadge({ status }: { status: RecipientEngagementStatus }) {
   );
 }
 
+// Map Australian state codes (from Contact State field) → IANA timezone identifiers.
+// Defaults to AEST (Australia/Sydney) when unknown.
+const AU_STATE_TZ: Record<string, { tz: string; abbr: string }> = {
+  NSW: { tz: 'Australia/Sydney', abbr: 'AEST' },
+  ACT: { tz: 'Australia/Sydney', abbr: 'AEST' },
+  VIC: { tz: 'Australia/Melbourne', abbr: 'AEST' },
+  TAS: { tz: 'Australia/Hobart', abbr: 'AEST' },
+  QLD: { tz: 'Australia/Brisbane', abbr: 'AEST' },
+  SA: { tz: 'Australia/Adelaide', abbr: 'ACST' },
+  NT: { tz: 'Australia/Darwin', abbr: 'ACST' },
+  WA: { tz: 'Australia/Perth', abbr: 'AWST' },
+};
+function resolveTz(state: string | null | undefined) {
+  const key = (state || '').trim().toUpperCase();
+  return AU_STATE_TZ[key] ?? { tz: 'Australia/Sydney', abbr: 'AEST' };
+}
+function formatInTz(iso: string, tz: string) {
+  try {
+    const d = new Date(iso);
+    const parts = new Intl.DateTimeFormat('en-AU', {
+      timeZone: tz,
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: 'numeric', minute: '2-digit', hour12: true,
+    }).formatToParts(d);
+    const get = (t: string) => parts.find(p => p.type === t)?.value ?? '';
+    const time = `${get('hour')}:${get('minute')}${get('dayPeriod').toLowerCase()}`;
+    return `${get('day')} ${get('month')} ${get('year')} ${time}`;
+  } catch {
+    return iso;
+  }
+}
+
+function OpenedStatusCell({
+  status,
+  log,
+  sentAt,
+  state,
+}: {
+  status: RecipientEngagementStatus;
+  log: { opened_at: string | null; first_opened_at: string | null; open_count: number | null } | null;
+  sentAt: string | null;
+  state: string | null | undefined;
+}) {
+  if (status !== 'opened' || !log) {
+    return <StatusBadge status={status} />;
+  }
+  const { tz, abbr } = resolveTz(state);
+  const first = log.first_opened_at || log.opened_at;
+  const last = log.opened_at || log.first_opened_at;
+  const count = Math.max(log.open_count || 0, first ? 1 : 0);
+  const suspicious =
+    !!first && !!sentAt && (new Date(first).getTime() - new Date(sentAt).getTime()) <= 30_000;
+
+  const single = count <= 1 || !first || !last || first === last;
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <StatusBadge status={status} />
+        {suspicious && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+              </TooltipTrigger>
+              <TooltipContent>
+                Opened immediately after send — may be automated
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+      <div className="text-[11px] text-muted-foreground leading-tight">
+        {single ? (
+          <>· {first ? formatInTz(first, tz) : '—'} {abbr}</>
+        ) : (
+          <>
+            {count}× · first {formatInTz(first!, tz)} · last {formatInTz(last!, tz)} {abbr}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StatTile({
   label, value, pct, tone,
 }: {
