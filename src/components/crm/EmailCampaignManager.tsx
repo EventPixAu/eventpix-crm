@@ -71,7 +71,7 @@ import {
   usePopulateCampaignRecipients,
   useScheduleCampaign,
   useCancelCampaign,
-  useCampaignContacts,
+  useCampaignEngagement as _useCampaignEngagement,
   useCampaignEngagement,
   CAMPAIGN_TYPE_LABELS,
   TARGET_SEGMENT_LABELS,
