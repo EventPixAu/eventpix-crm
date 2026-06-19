@@ -779,7 +779,26 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               </Button>
             )}
             {step === 4 && (
-              <Button onClick={() => createCampaign.mutate()} disabled={createCampaign.isPending || (scheduleMode === 'later' && !scheduledAt)}>
+              <Button
+                onClick={async () => {
+                  if (scheduleMode === 'later' && !scheduledAt) return;
+                  // Duplicate detection: same name + already sent / in progress / completed / scheduled
+                  setDuplicateInfo(null);
+                  if (name.trim()) {
+                    const { data: dupes } = await supabase
+                      .from('email_campaigns')
+                      .select('name, status')
+                      .ilike('name', name.trim())
+                      .in('status', ['in_progress', 'completed', 'scheduled'])
+                      .limit(1);
+                    if (dupes && dupes.length > 0) {
+                      setDuplicateInfo({ name: dupes[0].name as string, status: dupes[0].status as string });
+                    }
+                  }
+                  setConfirmOpen(true);
+                }}
+                disabled={createCampaign.isPending || (scheduleMode === 'later' && !scheduledAt)}
+              >
                 {createCampaign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                 {scheduleMode === 'now' ? <><Send className="h-4 w-4 mr-1" /> Launch campaign</> : <><CalIcon className="h-4 w-4 mr-1" /> Schedule</>}
               </Button>
@@ -787,6 +806,42 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {scheduleMode === 'now' ? 'Send campaign now?' : 'Schedule campaign?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  You are about to {scheduleMode === 'now' ? 'send' : 'schedule a send'} to{' '}
+                  <strong>{finalRecipients.length}</strong> recipient{finalRecipients.length === 1 ? '' : 's'}.
+                  This cannot be undone. Are you sure?
+                </p>
+                {duplicateInfo && (
+                  <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                    ⚠ A campaign named <strong>"{duplicateInfo.name}"</strong> already exists with status
+                    {' '}<strong>{duplicateInfo.status}</strong>. Sending again will create a duplicate.
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmOpen(false);
+                createCampaign.mutate();
+              }}
+            >
+              Confirm & {scheduleMode === 'now' ? 'Send' : 'Schedule'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
