@@ -1,0 +1,2 @@
+ALTER TABLE public.campaign_contacts DROP CONSTRAINT IF EXISTS campaign_contacts_status_check;
+ALTER TABLE public.campaign_contacts ADD CONSTRAINT campaign_contacts_status_check CHECK (status = ANY (ARRAY['pending'::text,'sent'::text,'failed'::text,'skipped'::text,'replied'::text,'bounced'::text,'unsubscribed'::text]));
