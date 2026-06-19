@@ -72,7 +72,7 @@ function buildCampaignFooter(unsubscribeUrl: string, supabaseUrl: string): strin
             <a href="https://eventpix.com.au" style="color:#6b7280;text-decoration:underline;">eventpix.com.au</a>
           </p>
           <p style="margin:0;font-size:11px;color:#9ca3af;">
-            You're receiving this email because you've worked with EventPix.
+            You're receiving this email because you've had previous communication with EventPix.
             <br/>
             <a href="${unsubscribeUrl}" style="color:#6b7280;text-decoration:underline;">Unsubscribe from this list</a>
           </p>
