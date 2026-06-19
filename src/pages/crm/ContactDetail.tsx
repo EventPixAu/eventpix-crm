@@ -92,14 +92,15 @@ interface Contact {
   notes: string | null;
   tags: string[] | null;
   client_id: string;
-  client: { id: string; business_name: string } | null;
+  client: { id: string; business_name: string; category_id: string | null; subcategory_id: string | null } | null;
 }
 
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: categoryOptions = [] } = useCompanyCategories();
+  const { data: allCategoryOptions = [] } = useAllCompanyCategories();
+  const { data: allSubcategoryOptions = [] } = useAllCompanySubcategories();
   
   const isCreateMode = !id;
   
