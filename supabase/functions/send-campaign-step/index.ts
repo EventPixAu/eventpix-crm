@@ -16,6 +16,24 @@ interface SendCampaignStepBody {
   stepOrder?: number; // defaults to campaigns.current_step
 }
 
+function looksLikeEmail(s: string): boolean {
+  return /@/.test(s || "");
+}
+
+function normalizeBodyToHtml(input: string): string {
+  if (!input) return "";
+  // If it already contains block-level HTML, leave it alone
+  if (/<\s*(p|br|div|table|ul|ol|h[1-6])\b/i.test(input)) return input;
+  const escaped = input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 16px;">${p.replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+}
+
 function applyMergeFields(template: string, ctx: {
   firstName: string;
   fullName: string;
@@ -24,12 +42,15 @@ function applyMergeFields(template: string, ctx: {
   lastEventDate: string;
   unsubscribeUrl: string;
 }): string {
-  const firstNameOrFallback = ctx.firstName && ctx.firstName.trim() ? ctx.firstName.trim() : 'there';
+  const cleanFirst = ctx.firstName && ctx.firstName.trim() && !looksLikeEmail(ctx.firstName)
+    ? ctx.firstName.trim() : '';
+  const firstNameOrFallback = cleanFirst || 'there';
+  const cleanFull = ctx.fullName && !looksLikeEmail(ctx.fullName) ? ctx.fullName : '';
   return template
     .replace(/\{\{\s*First Name\s*\}\}/gi, firstNameOrFallback)
     .replace(/\{\{\s*Name\s*\}\}/gi, firstNameOrFallback)
 
-    .replace(/\{\{\s*Full Name\s*\}\}/gi, ctx.fullName || "")
+    .replace(/\{\{\s*Full Name\s*\}\}/gi, cleanFull)
     .replace(/\{\{\s*Company\s*\}\}/gi, ctx.company || "")
     .replace(/\{\{\s*Last Event\s*\}\}/gi, ctx.lastEventName
       ? `${ctx.lastEventName}${ctx.lastEventDate ? ` (${ctx.lastEventDate})` : ""}`
