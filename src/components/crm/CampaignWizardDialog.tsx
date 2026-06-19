@@ -521,7 +521,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               <div className="space-y-2">
                 <Label>Manually add a contact</Label>
                 <Input
-                  placeholder="Search by name or email…"
+                  placeholder="Search by name or email, or enter a new email…"
                   value={manualSearch}
                   onChange={(e) => setManualSearch(e.target.value)}
                 />
@@ -568,6 +568,40 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                     ))}
                   </div>
                 )}
+                {(() => {
+                  const trimmed = manualSearch.trim();
+                  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+                  const lower = trimmed.toLowerCase();
+                  const alreadyAdded = manualIncludes.some((c) => (c.email || '').toLowerCase() === lower);
+                  const matchesExisting = searchResults.some((c) => (c.email || '').toLowerCase() === lower);
+                  if (!isEmail || alreadyAdded || matchesExisting) return null;
+                  return (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const { data, error } = await supabase
+                          .from('client_contacts')
+                          .insert({
+                            email: trimmed,
+                            contact_name: trimmed,
+                            source: 'Manual',
+                            status: 'Lead',
+                          })
+                          .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
+                          .maybeSingle();
+                        if (error || !data) {
+                          toast.error('Could not add contact', { description: error?.message || 'Unknown error' });
+                          return;
+                        }
+                        setManualIncludes((prev) => [...prev, data as WizardContact]);
+                        setManualSearch('');
+                      }}
+                      className="text-xs px-3 py-2 rounded border hover:bg-accent w-full text-left"
+                    >
+                      + Add new contact: <span className="font-medium">{trimmed}</span>
+                    </button>
+                  );
+                })()}
               </div>
 
               {finalRecipients.length > 0 && (
