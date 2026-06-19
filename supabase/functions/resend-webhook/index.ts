@@ -423,7 +423,7 @@ async function handleInboundEmail(supabase: any, data: any): Promise<Record<stri
 
   // Campaign reply matching — only for genuine replies
   let campaignUpdated = false;
-  if (!isAutoReply && original) {
+  if (!isAutoReply && !internal && original) {
     // Match campaign_step_sends row by original email_log_id
     const { data: stepSend } = await supabase
       .from("campaign_step_sends")
