@@ -347,8 +347,56 @@ interface CampaignDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const STATUS_BADGE: Record<RecipientEngagementStatus, { label: string; className: string }> = {
+  pending: { label: 'Pending', className: 'bg-muted text-muted-foreground border-border' },
+  sent: { label: 'Sent', className: 'bg-muted text-foreground border-border' },
+  opened: { label: 'Opened', className: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+  bounced: { label: 'Bounced', className: 'bg-destructive/20 text-destructive border-destructive/30' },
+  unsubscribed: { label: 'Unsubscribed', className: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30' },
+  replied: { label: 'Replied', className: 'bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-500/30' },
+  failed: { label: 'Failed', className: 'bg-destructive/20 text-destructive border-destructive/30' },
+  skipped: { label: 'Skipped', className: 'bg-muted text-muted-foreground border-border' },
+};
+
+function StatusBadge({ status }: { status: RecipientEngagementStatus }) {
+  const cfg = STATUS_BADGE[status];
+  return (
+    <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>
+  );
+}
+
+function StatTile({
+  label, value, pct, tone,
+}: {
+  label: string;
+  value: number;
+  pct?: number;
+  tone?: 'default' | 'success' | 'destructive' | 'warning' | 'muted' | 'info';
+}) {
+  const toneClass =
+    tone === 'success' ? 'text-emerald-600 dark:text-emerald-400' :
+    tone === 'destructive' ? 'text-destructive' :
+    tone === 'warning' ? 'text-amber-600 dark:text-amber-400' :
+    tone === 'info' ? 'text-sky-600 dark:text-sky-400' :
+    tone === 'muted' ? 'text-muted-foreground' :
+    'text-foreground';
+  return (
+    <Card>
+      <CardContent className="pt-4">
+        <div className={`text-2xl font-bold ${toneClass}`}>
+          {value}
+          {pct !== undefined && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">{pct}%</span>
+          )}
+        </div>
+        <div className="text-sm text-muted-foreground">{label}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDialogProps) {
-  const { data: contacts = [], isLoading } = useCampaignContacts(campaign?.id);
+  const { data: engagement, isLoading, refetch, isFetching } = useCampaignEngagement(campaign?.id);
   const scheduleCampaign = useScheduleCampaign();
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('09:00');
@@ -364,48 +412,53 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
 
   if (!campaign) return null;
 
-  const pendingCount = contacts.filter(c => c.status === 'pending').length;
-  const sentCount = contacts.filter(c => c.status === 'sent').length;
-  const failedCount = contacts.filter(c => c.status === 'failed').length;
-  const progress = campaign.total_recipients > 0 
-    ? ((sentCount + failedCount) / campaign.total_recipients) * 100 
-    : 0;
+  const summary = engagement?.summary ?? {
+    total: campaign.total_recipients, sent: 0, opened: 0, bounced: 0,
+    unsubscribed: 0, replied: 0, failed: 0, pending: 0, skipped: 0,
+  };
+  const contacts = engagement?.contacts ?? [];
+  const steps = engagement?.steps ?? [];
+  const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
+  const sentDenom = summary.sent + summary.opened + summary.replied;
+  const sentishTotal = sentDenom + summary.bounced + summary.failed;
+  const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{campaign.name}</DialogTitle>
           <DialogDescription>{campaign.description}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Stats */}
+          {/* Last updated */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              {engagement?.lastUpdated
+                ? `Last updated ${formatDistanceToNow(engagement.lastUpdated, { addSuffix: true })} · auto-refreshes every 5 min`
+                : 'Loading engagement data…'}
+            </span>
+            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-3 w-3 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+
+          {/* Top-level stats */}
           <div className="grid gap-4 sm:grid-cols-4">
-            <Card>
-              <CardContent className="pt-4">
-                <div className="text-2xl font-bold">{campaign.total_recipients}</div>
-                <div className="text-sm text-muted-foreground">Total Recipients</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <div className="text-2xl font-bold text-primary">{sentCount}</div>
-                <div className="text-sm text-muted-foreground">Sent</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <div className="text-2xl font-bold text-muted-foreground">{pendingCount}</div>
-                <div className="text-sm text-muted-foreground">Pending</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <div className="text-2xl font-bold text-destructive">{failedCount}</div>
-                <div className="text-sm text-muted-foreground">Failed</div>
-              </CardContent>
-            </Card>
+            <StatTile label="Total Recipients" value={summary.total} />
+            <StatTile label="Sent" value={summary.sent + summary.opened + summary.replied} pct={pct(summary.sent + summary.opened + summary.replied)} />
+            <StatTile label="Pending" value={summary.pending} tone="muted" />
+            <StatTile label="Failed" value={summary.failed} tone="destructive" />
+          </div>
+
+          {/* Engagement stats */}
+          <div className="grid gap-4 sm:grid-cols-4">
+            <StatTile label="Opened" value={summary.opened} pct={pct(summary.opened)} tone="success" />
+            <StatTile label="Bounced" value={summary.bounced} pct={pct(summary.bounced)} tone="destructive" />
+            <StatTile label="Unsubscribed" value={summary.unsubscribed} pct={pct(summary.unsubscribed)} tone="warning" />
+            <StatTile label="Replied" value={summary.replied} pct={pct(summary.replied)} tone="info" />
           </div>
 
           {campaign.status === 'in_progress' && (
@@ -461,72 +514,136 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
             </Card>
           )}
 
-          {/* Recipients Table */}
+          {/* Recipients + per-step reporting */}
           <div>
             <h4 className="font-medium mb-3">Recipients ({contacts.length})</h4>
             {isLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading...</div>
+            ) : steps.length > 0 ? (
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="flex-wrap h-auto">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  {steps.map((s) => (
+                    <TabsTrigger key={s.id} value={s.id}>
+                      Email {s.step_order}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                <TabsContent value="overview" className="mt-4">
+                  <RecipientTable
+                    contacts={contacts}
+                    columns={steps.map((s) => ({ key: s.id, label: `Email ${s.step_order}` }))}
+                  />
+                </TabsContent>
+
+                {steps.map((s) => {
+                  const ss = engagement?.perStepSummary[s.id];
+                  return (
+                    <TabsContent key={s.id} value={s.id} className="mt-4 space-y-4">
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{s.subject}</span>
+                        {s.delay_days > 0 && <> · sent {s.delay_days} day(s) after Email 1</>}
+                      </div>
+                      {ss && (
+                        <div className="grid gap-3 sm:grid-cols-4">
+                          <StatTile label="Sent" value={ss.sent + ss.opened + ss.replied} />
+                          <StatTile label="Opened" value={ss.opened} tone="success" />
+                          <StatTile label="Bounced" value={ss.bounced} tone="destructive" />
+                          <StatTile label="Unsubscribed" value={ss.unsubscribed} tone="warning" />
+                        </div>
+                      )}
+                      <RecipientTable
+                        contacts={contacts}
+                        stepId={s.id}
+                      />
+                    </TabsContent>
+                  );
+                })}
+              </Tabs>
             ) : (
-              <div className="border rounded-lg max-h-[300px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Last Event</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contacts.slice(0, 50).map((contact) => (
-                      <TableRow key={contact.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{contact.recipient_name || 'Unknown'}</div>
-                            <div className="text-sm text-muted-foreground">{contact.recipient_email}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {contact.last_event_name ? (
-                            <div>
-                              <div className="text-sm">{contact.last_event_name}</div>
-                              {contact.last_event_date && (
-                                <div className="text-xs text-muted-foreground">
-                                  {format(new Date(contact.last_event_date), 'PP')}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              contact.status === 'sent' ? 'default' :
-                              contact.status === 'failed' ? 'destructive' :
-                              'outline'
-                            }
-                          >
-                            {contact.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {contacts.length > 50 && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">
-                          ... and {contacts.length - 50} more
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              <RecipientTable contacts={contacts} />
             )}
           </div>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RecipientTable({
+  contacts,
+  stepId,
+  columns,
+}: {
+  contacts: import('@/hooks/useEmailCampaigns').EngagementContact[];
+  stepId?: string;
+  columns?: { key: string; label: string }[];
+}) {
+  return (
+    <div className="border rounded-lg max-h-[400px] overflow-y-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Contact</TableHead>
+            <TableHead>Last Event</TableHead>
+            {columns
+              ? columns.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)
+              : <TableHead>Status</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {contacts.slice(0, 100).map((c) => (
+            <TableRow key={c.id}>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{c.recipient_name || 'Unknown'}</div>
+                  <div className="text-sm text-muted-foreground">{c.recipient_email}</div>
+                </div>
+              </TableCell>
+              <TableCell>
+                {c.last_event_name ? (
+                  <div>
+                    <div className="text-sm">{c.last_event_name}</div>
+                    {c.last_event_date && (
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(c.last_event_date), 'PP')}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              {columns ? (
+                columns.map((col) => (
+                  <TableCell key={col.key}>
+                    <StatusBadge status={c.steps[col.key]?.derived ?? 'pending'} />
+                  </TableCell>
+                ))
+              ) : (
+                <TableCell>
+                  <StatusBadge
+                    status={
+                      stepId
+                        ? (c.steps[stepId]?.derived ?? 'pending')
+                        : c.base_derived
+                    }
+                  />
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+          {contacts.length > 100 && (
+            <TableRow>
+              <TableCell colSpan={columns ? columns.length + 2 : 3} className="text-center text-muted-foreground">
+                ... and {contacts.length - 100} more
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
