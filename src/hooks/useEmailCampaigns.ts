@@ -192,6 +192,243 @@ export function useEmailCampaign(id: string | undefined) {
   });
 }
 
+// =============================================================
+// ENGAGEMENT REPORTING (opens, bounces, unsubscribes, replies)
+// =============================================================
+
+export type RecipientEngagementStatus =
+  | 'pending'
+  | 'sent'
+  | 'opened'
+  | 'bounced'
+  | 'unsubscribed'
+  | 'replied'
+  | 'failed'
+  | 'skipped';
+
+export interface CampaignStepInfo {
+  id: string;
+  step_order: number;
+  subject: string;
+  delay_days: number;
+}
+
+interface EngagementLog {
+  id: string;
+  status: string | null;
+  opened_at: string | null;
+  open_count: number | null;
+  sent_at: string | null;
+  error_message: string | null;
+}
+
+export interface EngagementStepEntry {
+  status: 'pending' | 'sent' | 'failed' | 'skipped' | 'replied';
+  sent_at: string | null;
+  log: EngagementLog | null;
+  derived: RecipientEngagementStatus;
+}
+
+export interface EngagementContact {
+  id: string;
+  recipient_email: string;
+  recipient_name: string | null;
+  last_event_name: string | null;
+  last_event_date: string | null;
+  unsubscribed: boolean;
+  unsubscribed_at: string | null;
+  base_status: 'pending' | 'sent' | 'failed' | 'skipped';
+  base_log: EngagementLog | null;
+  base_derived: RecipientEngagementStatus;
+  steps: Record<string, EngagementStepEntry>;
+}
+
+export interface CampaignEngagement {
+  steps: CampaignStepInfo[];
+  contacts: EngagementContact[];
+  summary: {
+    total: number;
+    sent: number;
+    opened: number;
+    bounced: number;
+    unsubscribed: number;
+    replied: number;
+    failed: number;
+    pending: number;
+    skipped: number;
+  };
+  perStepSummary: Record<string, {
+    sent: number;
+    opened: number;
+    bounced: number;
+    unsubscribed: number;
+    replied: number;
+    failed: number;
+    pending: number;
+    skipped: number;
+  }>;
+  lastUpdated: number;
+}
+
+function deriveStatus(
+  rawStatus: string | null | undefined,
+  log: EngagementLog | null,
+  unsubscribed: boolean,
+  replied: boolean,
+): RecipientEngagementStatus {
+  if (unsubscribed) return 'unsubscribed';
+  if (replied) return 'replied';
+  const logStatus = log?.status;
+  if (logStatus === 'bounced') return 'bounced';
+  if (rawStatus === 'failed') return 'failed';
+  if (rawStatus === 'skipped') return 'skipped';
+  if (logStatus === 'opened' || logStatus === 'clicked') return 'opened';
+  if (rawStatus === 'sent' || logStatus === 'sent' || logStatus === 'delivered') return 'sent';
+  if (rawStatus === 'replied') return 'replied';
+  return 'pending';
+}
+
+export function useCampaignEngagement(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ['campaign-engagement', campaignId],
+    refetchInterval: 5 * 60 * 1000, // auto-refresh every 5 min
+    queryFn: async (): Promise<CampaignEngagement | null> => {
+      if (!campaignId) return null;
+
+      // Steps
+      const { data: stepsData, error: stepsErr } = await supabase
+        .from('email_campaign_steps')
+        .select('id, step_order, subject, delay_days')
+        .eq('campaign_id', campaignId)
+        .order('step_order');
+      if (stepsErr) throw stepsErr;
+      const steps = (stepsData || []) as CampaignStepInfo[];
+
+      // Contacts + base email log + linked client_contact unsubscribed flag
+      const { data: contactsData, error: contactsErr } = await supabase
+        .from('campaign_contacts')
+        .select(`
+          id, recipient_email, recipient_name, last_event_name, last_event_date,
+          status, email_log_id, contact_id,
+          client_contacts(unsubscribed, unsubscribed_at),
+          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, open_count, sent_at, error_message)
+        `)
+        .eq('campaign_id', campaignId)
+        .order('recipient_name', { nullsFirst: false });
+      if (contactsErr) throw contactsErr;
+      const rawContacts = contactsData || [];
+
+      // Step sends + their logs
+      const contactIds = rawContacts.map((c: any) => c.id);
+      let stepSends: any[] = [];
+      if (contactIds.length) {
+        const { data: ssData, error: ssErr } = await supabase
+          .from('campaign_step_sends')
+          .select(`
+            id, campaign_contact_id, step_id, status, sent_at, email_log_id,
+            email_logs(id, status, opened_at, open_count, sent_at, error_message)
+          `)
+          .in('campaign_contact_id', contactIds);
+        if (ssErr) throw ssErr;
+        stepSends = ssData || [];
+      }
+
+      // Replies — inbound emails replying to any campaign log
+      const allLogIds = [
+        ...rawContacts.map((c: any) => c.email_log_id),
+        ...stepSends.map((s) => s.email_log_id),
+      ].filter(Boolean) as string[];
+      const repliedLogIds = new Set<string>();
+      if (allLogIds.length) {
+        const { data: replyData } = await supabase
+          .from('email_logs')
+          .select('in_reply_to')
+          .eq('direction', 'inbound')
+          .in('in_reply_to', allLogIds);
+        (replyData || []).forEach((r: any) => {
+          if (r.in_reply_to) repliedLogIds.add(r.in_reply_to);
+        });
+      }
+
+      // Index step sends by contact -> step
+      const sendsByContact = new Map<string, Map<string, any>>();
+      for (const s of stepSends) {
+        if (!sendsByContact.has(s.campaign_contact_id)) {
+          sendsByContact.set(s.campaign_contact_id, new Map());
+        }
+        sendsByContact.get(s.campaign_contact_id)!.set(s.step_id, s);
+      }
+
+      const perStepSummary: CampaignEngagement['perStepSummary'] = {};
+      for (const st of steps) {
+        perStepSummary[st.id] = {
+          sent: 0, opened: 0, bounced: 0, unsubscribed: 0,
+          replied: 0, failed: 0, pending: 0, skipped: 0,
+        };
+      }
+
+      const summary = {
+        total: rawContacts.length,
+        sent: 0, opened: 0, bounced: 0, unsubscribed: 0,
+        replied: 0, failed: 0, pending: 0, skipped: 0,
+      };
+
+      const contacts: EngagementContact[] = rawContacts.map((c: any) => {
+        const cc = Array.isArray(c.client_contacts) ? c.client_contacts[0] : c.client_contacts;
+        const baseLog = (Array.isArray(c.email_logs) ? c.email_logs[0] : c.email_logs) || null;
+        const unsubscribed = !!cc?.unsubscribed;
+        const baseReplied = baseLog ? repliedLogIds.has(baseLog.id) : false;
+        const baseDerived = deriveStatus(c.status, baseLog, unsubscribed, baseReplied);
+
+        const stepsMap: Record<string, EngagementStepEntry> = {};
+        const stepSendMap = sendsByContact.get(c.id) || new Map();
+        for (const st of steps) {
+          const send = stepSendMap.get(st.id);
+          const log = send
+            ? (Array.isArray(send.email_logs) ? send.email_logs[0] : send.email_logs) || null
+            : null;
+          const stepReplied = (send?.status === 'replied') || (log ? repliedLogIds.has(log.id) : false);
+          const derived = deriveStatus(send?.status ?? 'pending', log, unsubscribed, stepReplied);
+          stepsMap[st.id] = {
+            status: (send?.status ?? 'pending') as EngagementStepEntry['status'],
+            sent_at: send?.sent_at ?? null,
+            log,
+            derived,
+          };
+          const bucket = perStepSummary[st.id];
+          bucket[derived] = (bucket[derived] || 0) + 1;
+        }
+
+        summary[baseDerived] = (summary[baseDerived] || 0) + 1;
+
+        return {
+          id: c.id,
+          recipient_email: c.recipient_email,
+          recipient_name: c.recipient_name,
+          last_event_name: c.last_event_name,
+          last_event_date: c.last_event_date,
+          unsubscribed,
+          unsubscribed_at: cc?.unsubscribed_at ?? null,
+          base_status: c.status,
+          base_log: baseLog,
+          base_derived: baseDerived,
+          steps: stepsMap,
+        };
+      });
+
+      return {
+        steps,
+        contacts,
+        summary,
+        perStepSummary,
+        lastUpdated: Date.now(),
+      };
+    },
+    enabled: !!campaignId,
+    staleTime: 60_000,
+  });
+}
+
 export function useCampaignContacts(campaignId: string | undefined) {
   return useQuery({
     queryKey: ['campaign-contacts', campaignId],
