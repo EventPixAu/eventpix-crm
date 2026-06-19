@@ -115,6 +115,8 @@ interface Contact {
   source: string | null;
   status: string | null;
   category: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
   archived: boolean | null;
   bounce_status: string | null;
   bounced_at: string | null;
