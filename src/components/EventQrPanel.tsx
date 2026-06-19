@@ -86,7 +86,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
         .eq('id', eventId);
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
       toast.success('QR file uploaded');
     } catch (err: any) {
       console.error(err);
@@ -121,7 +121,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
         .from('events')
         .update({ qr_file_path: null, qr_file_name: null })
         .eq('id', eventId);
-      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
       toast.success('QR file removed');
     } catch {
       toast.error('Failed to remove');
@@ -139,7 +139,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
         .update({ pre_registration_link: value } as any)
         .eq('id', eventId);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
       setEditingLink(false);
       toast.success(value ? 'Registration link saved' : 'Registration link removed');
     } catch {
@@ -166,7 +166,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
         .update({ [column]: v } as any)
         .eq('id', eventId);
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events', eventId] });
       setEditing(false);
       toast.success(v ? `${label} saved` : `${label} removed`);
     } catch {
