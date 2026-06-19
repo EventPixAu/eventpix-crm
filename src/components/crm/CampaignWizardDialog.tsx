@@ -94,6 +94,8 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   // Step 4
   const [scheduleMode, setScheduleMode] = useState<'now' | 'later'>('now');
   const [scheduledAt, setScheduledAt] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<{ name: string; status: string } | null>(null);
 
   
   const { data: categories = [] } = useCompanyCategories();
