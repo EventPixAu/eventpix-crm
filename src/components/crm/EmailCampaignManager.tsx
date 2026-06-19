@@ -697,20 +697,37 @@ function RecipientTable({
                 )}
               </TableCell>
               {columns ? (
-                columns.map((col) => (
-                  <TableCell key={col.key}>
-                    <StatusBadge status={c.steps[col.key]?.derived ?? 'pending'} />
-                  </TableCell>
-                ))
+                columns.map((col) => {
+                  const entry = c.steps[col.key];
+                  const st = entry?.derived ?? 'pending';
+                  return (
+                    <TableCell key={col.key}>
+                      <OpenedStatusCell
+                        status={st}
+                        log={entry?.log ?? null}
+                        sentAt={entry?.sent_at ?? entry?.log?.sent_at ?? null}
+                        state={c.recipient_state}
+                      />
+                    </TableCell>
+                  );
+                })
               ) : (
                 <TableCell>
-                  <StatusBadge
-                    status={
-                      stepId
-                        ? (c.steps[stepId]?.derived ?? 'pending')
-                        : c.base_derived
-                    }
-                  />
+                  {stepId ? (
+                    <OpenedStatusCell
+                      status={c.steps[stepId]?.derived ?? 'pending'}
+                      log={c.steps[stepId]?.log ?? null}
+                      sentAt={c.steps[stepId]?.sent_at ?? c.steps[stepId]?.log?.sent_at ?? null}
+                      state={c.recipient_state}
+                    />
+                  ) : (
+                    <OpenedStatusCell
+                      status={c.base_derived}
+                      log={c.base_log}
+                      sentAt={c.base_log?.sent_at ?? null}
+                      state={c.recipient_state}
+                    />
+                  )}
                 </TableCell>
               )}
             </TableRow>
