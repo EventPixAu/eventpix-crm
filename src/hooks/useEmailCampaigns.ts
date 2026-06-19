@@ -407,6 +407,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           id: c.id,
           recipient_email: c.recipient_email,
           recipient_name: c.recipient_name,
+          recipient_state: cc?.state ?? null,
           last_event_name: c.last_event_name,
           last_event_date: c.last_event_date,
           unsubscribed,
