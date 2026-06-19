@@ -623,6 +623,7 @@ export default function EventDayOf() {
                                       const name = a.profile?.full_name || a.staff?.name || 'Unknown';
                                       const role = a.staff_role?.name || a.role_on_event || '';
                                       const isMe = a.user_id === user?.id;
+                                      const phone = a.profile?.phone || a.staff?.phone || null;
                                       return (
                                         <span
                                           key={a.id}
@@ -636,6 +637,17 @@ export default function EventDayOf() {
                                           </span>
                                           <span className="font-medium">{name}{isMe && ' (You)'}</span>
                                           {role && <span className="text-muted-foreground">· {role}</span>}
+                                          {!isMe && phone && (
+                                            <a
+                                              href={`tel:${phone}`}
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="ml-1 inline-flex items-center gap-1 text-primary hover:underline"
+                                              aria-label={`Call ${name}`}
+                                            >
+                                              <Phone className="h-3 w-3" />
+                                              <span>{phone}</span>
+                                            </a>
+                                          )}
                                         </span>
                                       );
                                     })}
