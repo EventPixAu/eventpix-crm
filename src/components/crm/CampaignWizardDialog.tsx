@@ -424,9 +424,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
           {step === 1 && (
-            <div className="space-y-5 py-2">
+            <div className="space-y-5 py-2 pb-24">
               <div className="grid grid-cols-2 gap-5">
                 {/* Status filter removed — status is at Company level. Staff contacts are always excluded. */}
 
@@ -593,7 +593,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
 
           {step === 2 && (
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2 pb-24">
               <div className="space-y-2">
                 <Label>Campaign name (internal)</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. June 2026 prospect outreach" />
@@ -641,7 +641,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
 
           {step === 3 && (
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2 pb-24">
               <p className="text-sm text-muted-foreground">
                 Add up to 3 follow-up emails. They'll send only to recipients who haven't replied.
               </p>
@@ -677,7 +677,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
 
           {step === 4 && (
-            <div className="space-y-4 py-2">
+            <div className="space-y-4 py-2 pb-24">
               <Select value={scheduleMode} onValueChange={(v) => setScheduleMode(v as 'now' | 'later')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -704,7 +704,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
         </ScrollArea>
 
-        <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t">
+        <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t shrink-0">
           <div className="text-xs text-muted-foreground">
             {finalRecipients.length} recipients selected
           </div>
