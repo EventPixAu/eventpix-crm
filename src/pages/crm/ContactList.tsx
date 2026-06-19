@@ -180,9 +180,9 @@ export default function ContactList() {
     },
   });
 
-  // Total count query (accurate regardless of fetch limit)
+  // Total count query (accurate regardless of fetch limit, respects archived toggle)
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ['crm-contacts-count', search],
+    queryKey: ['crm-contacts-count', search, showArchived],
     queryFn: async () => {
       let countQuery = supabase
         .from('client_contacts')
@@ -192,6 +192,12 @@ export default function ContactList() {
         countQuery = countQuery.or(
           `contact_name.ilike.%${search}%,email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`
         );
+      }
+
+      if (showArchived) {
+        countQuery = countQuery.eq('archived', true);
+      } else {
+        countQuery = countQuery.or('archived.eq.false,archived.is.null');
       }
 
       const { count, error } = await countQuery;
@@ -637,7 +643,7 @@ export default function ContactList() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {hasActiveFilters
+                {search || hasActiveFilters || incompleteOnly || showArchived
                   ? `Showing ${filteredContacts.length.toLocaleString()} of ${totalCount.toLocaleString()} contacts`
                   : `${totalCount.toLocaleString()} contacts`}
               </div>
