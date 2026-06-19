@@ -70,7 +70,7 @@ import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog'
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { CONTACT_CATEGORIES } from '@/lib/contactClassification';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
-import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
 
 
 
