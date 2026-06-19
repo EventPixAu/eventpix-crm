@@ -101,6 +101,7 @@ serve(async (req) => {
       case "email.opened":
         newStatus = "opened";
         updateFields.opened_at = data.created_at || now;
+        updateFields._isOpenEvent = true; // handled below
         break;
       case "email.clicked":
         newStatus = "clicked";
