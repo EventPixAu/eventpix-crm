@@ -16,6 +16,8 @@ const SETTING_LABELS: Record<string, { label: string; type: 'text' | 'textarea' 
   business_name: { label: 'Business Name', type: 'text' },
   business_abn: { label: 'ABN', type: 'text' },
   business_email: { label: 'Contact Email', type: 'text' },
+  owner_email: { label: 'Owner / Admin Email', type: 'text' },
+  internal_email_domains: { label: 'Internal Email Domains (comma-separated)', type: 'text' },
   default_terms: { label: 'Default Terms & Conditions', type: 'textarea' },
 };
 

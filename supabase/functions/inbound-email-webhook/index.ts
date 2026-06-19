@@ -58,6 +58,26 @@ function isAutoReplySubject(subject: string | undefined | null): boolean {
   );
 }
 
+async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
+  const e = (email || "").toLowerCase().trim();
+  if (!e) return false;
+  try {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["owner_email", "internal_email_domains"]);
+    const map: Record<string, string> = {};
+    for (const r of data ?? []) map[r.key] = (r.value ?? "").toLowerCase();
+    const owner = (map.owner_email || "trevor@eventpix.com.au").trim();
+    if (owner && e === owner) return true;
+    const domains = (map.internal_email_domains || "eventpix.com.au")
+      .split(",").map((d: string) => d.trim()).filter(Boolean);
+    return domains.some((d) => e.endsWith("@" + d) || e === d);
+  } catch {
+    return e.endsWith("@eventpix.com.au");
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -114,12 +134,20 @@ serve(async (req) => {
       `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply}`,
     );
 
-    // Resolve related contact
-    const { data: contact } = await supabase
-      .from("client_contacts")
-      .select("id, client_id")
-      .ilike("email", fromEmail)
-      .maybeSingle();
+    // Internal/owner address guard — do not create or resolve CRM contacts for these
+    const internal = await isInternalEmail(supabase, fromEmail);
+    if (internal) {
+      console.log(`Skipping CRM contact resolution: ${fromEmail} is internal/owner address`);
+    }
+
+    // Resolve related contact (skipped for internal addresses)
+    const { data: contact } = internal
+      ? { data: null as any }
+      : await supabase
+          .from("client_contacts")
+          .select("id, client_id")
+          .ilike("email", fromEmail)
+          .maybeSingle();
 
     // Find the original outbound email — prefer subject match
     let original: any = null;
@@ -153,7 +181,7 @@ serve(async (req) => {
       : html?.replace(/<[^>]*>/g, "").substring(0, 200) || null;
 
     const insertRow: Record<string, unknown> = {
-      email_type: isAutoReply ? "auto_reply" : "inbound_reply",
+      email_type: internal ? "internal" : isAutoReply ? "auto_reply" : "inbound_reply",
       direction: "inbound",
       from_email: fromEmail,
       from_name: fromName,
@@ -163,12 +191,12 @@ serve(async (req) => {
       body_preview: bodyPreview,
       status: isAutoReply ? "auto_reply" : "received",
       sent_at: new Date().toISOString(),
-      // Auto-replies do NOT carry in_reply_to so they are excluded from campaign Replied stats
-      in_reply_to: isAutoReply ? null : original?.id ?? null,
-      contact_id: contact?.id || original?.contact_id || null,
-      client_id: contact?.client_id || original?.client_id || null,
-      event_id: original?.event_id || null,
-      lead_id: original?.lead_id || null,
+      // Auto-replies and internal mails do NOT carry in_reply_to so they are excluded from campaign Replied stats
+      in_reply_to: isAutoReply || internal ? null : original?.id ?? null,
+      contact_id: internal ? null : (contact?.id || original?.contact_id || null),
+      client_id: internal ? null : (contact?.client_id || original?.client_id || null),
+      event_id: internal ? null : (original?.event_id || null),
+      lead_id: internal ? null : (original?.lead_id || null),
     };
 
     const { data: emailLog, error: logError } = await supabase
@@ -185,9 +213,9 @@ serve(async (req) => {
       );
     }
 
-    // Campaign reply matching — only for genuine replies
+    // Campaign reply matching — only for genuine (non-internal) replies
     let campaignUpdated = false;
-    if (!isAutoReply && original) {
+    if (!isAutoReply && !internal && original) {
       const { data: stepSend } = await supabase
         .from("campaign_step_sends")
         .select("id, campaign_contact_id")
