@@ -790,6 +790,36 @@ export default function ContactDetail() {
                   </div>
                 )}
 
+                <div className="pt-2 border-t">
+                  <div className="text-muted-foreground text-xs mb-1.5">Status</div>
+                  <Select
+                    value={(contact as any).status || '__unassigned__'}
+                    onValueChange={async (value) => {
+                      const newStatus = value === '__unassigned__' ? null : value;
+                      const { error } = await supabase
+                        .from('client_contacts')
+                        .update({ status: newStatus })
+                        .eq('id', contact.id);
+                      if (error) {
+                        toast.error('Failed to update status');
+                      } else {
+                        toast.success('Status updated');
+                        queryClient.invalidateQueries({ queryKey: ['contact', id] });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="Unassigned" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                      {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'].map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {contact.tags && contact.tags.length > 0 && (
                   <div className="pt-2 border-t">
                     <div className="text-muted-foreground text-xs mb-1.5">Tags</div>
@@ -802,6 +832,7 @@ export default function ContactDetail() {
                     </div>
                   </div>
                 )}
+
               </div>
 
               {/* Actions */}
