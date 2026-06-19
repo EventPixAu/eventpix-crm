@@ -323,7 +323,18 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   }
 
   const previewHtml = useMemo(() => {
-    const body = applyPreviewMergeFields(bodyHtml || '<p>Start typing your email body…</p>');
+    const raw = bodyHtml || 'Start typing your email body…';
+    const hasHtml = /<\s*(p|br|div|table|ul|ol|h[1-6])\b/i.test(raw);
+    const asHtml = hasHtml
+      ? raw
+      : raw
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .split(/\n{2,}/)
+          .map((p) => `<p style="margin:0 0 16px;">${p.replace(/\n/g, '<br/>')}</p>`)
+          .join('');
+    const body = applyPreviewMergeFields(asHtml);
     return body + buildPreviewFooter();
   }, [bodyHtml]);
 
@@ -377,7 +388,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         contact_id: c.id,
         client_id: c.client_id,
         recipient_email: c.email!,
-        recipient_name: c.contact_name,
+        recipient_name: c.contact_name && !c.contact_name.includes('@') ? c.contact_name : null,
         status: 'pending' as const,
       }));
       if (rows.length) {

@@ -16,6 +16,24 @@ interface SendCampaignStepBody {
   stepOrder?: number; // defaults to campaigns.current_step
 }
 
+function looksLikeEmail(s: string): boolean {
+  return /@/.test(s || "");
+}
+
+function normalizeBodyToHtml(input: string): string {
+  if (!input) return "";
+  // If it already contains block-level HTML, leave it alone
+  if (/<\s*(p|br|div|table|ul|ol|h[1-6])\b/i.test(input)) return input;
+  const escaped = input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 16px;">${p.replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+}
+
 function applyMergeFields(template: string, ctx: {
   firstName: string;
   fullName: string;
@@ -24,12 +42,15 @@ function applyMergeFields(template: string, ctx: {
   lastEventDate: string;
   unsubscribeUrl: string;
 }): string {
-  const firstNameOrFallback = ctx.firstName && ctx.firstName.trim() ? ctx.firstName.trim() : 'there';
+  const cleanFirst = ctx.firstName && ctx.firstName.trim() && !looksLikeEmail(ctx.firstName)
+    ? ctx.firstName.trim() : '';
+  const firstNameOrFallback = cleanFirst || 'there';
+  const cleanFull = ctx.fullName && !looksLikeEmail(ctx.fullName) ? ctx.fullName : '';
   return template
     .replace(/\{\{\s*First Name\s*\}\}/gi, firstNameOrFallback)
     .replace(/\{\{\s*Name\s*\}\}/gi, firstNameOrFallback)
 
-    .replace(/\{\{\s*Full Name\s*\}\}/gi, ctx.fullName || "")
+    .replace(/\{\{\s*Full Name\s*\}\}/gi, cleanFull)
     .replace(/\{\{\s*Company\s*\}\}/gi, ctx.company || "")
     .replace(/\{\{\s*Last Event\s*\}\}/gi, ctx.lastEventName
       ? `${ctx.lastEventName}${ctx.lastEventDate ? ` (${ctx.lastEventDate})` : ""}`
@@ -182,8 +203,10 @@ serve(async (req) => {
         }
       }
 
-      const firstName = (cc?.first_name || (cc?.contact_name || rec.recipient_name || "").split(" ")[0] || "").trim();
-      const fullName = cc?.contact_name || rec.recipient_name || "";
+      const rawName = (cc?.contact_name || rec.recipient_name || "").trim();
+      const nameForParse = looksLikeEmail(rawName) ? "" : rawName;
+      const firstName = (cc?.first_name || nameForParse.split(" ")[0] || "").trim();
+      const fullName = looksLikeEmail(cc?.contact_name || "") ? "" : (cc?.contact_name || (looksLikeEmail(rec.recipient_name || "") ? "" : rec.recipient_name) || "");
       const company = cc?.clients?.business_name || "";
       const unsubscribeUrl = `${publicBase}/unsubscribe?email=${encodeURIComponent(rec.recipient_email)}&c=${campaign.id}`;
 
@@ -197,7 +220,8 @@ serve(async (req) => {
       };
 
       const subject = applyMergeFields(step.subject, ctx);
-      const html = applyMergeFields(step.body_html, ctx) + buildCampaignFooter(unsubscribeUrl, supabaseUrl);
+      const normalizedBody = normalizeBodyToHtml(step.body_html);
+      const html = applyMergeFields(normalizedBody, ctx) + buildCampaignFooter(unsubscribeUrl, supabaseUrl);
 
       // Log first
       const { data: logRow } = await supabase.from("email_logs").insert({
