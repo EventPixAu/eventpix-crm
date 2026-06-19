@@ -283,6 +283,8 @@ export default function ContactList() {
             source,
             status,
             category,
+            category_id,
+            subcategory_id,
             archived,
             bounce_status,
             bounced_at,
