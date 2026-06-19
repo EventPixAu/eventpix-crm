@@ -177,16 +177,21 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitClientTypes = new Set(filters.clientTypes);
       const explicitCountries = new Set(filters.countries);
 
+      // "All selected" === "no filter" so uncategorised contacts are not excluded
+      const parentsActive = explicitParents.size > 0 && explicitParents.size < categories.length;
+      const subsActive = explicitSubs.size > 0 && explicitSubs.size < subcategories.length;
+
       return rows.filter((r) => {
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
         // Default-exclude EPX Supplier (excluded_from_campaigns) unless user explicitly picked that parent
         if (info?.excluded && !(info.category_id && explicitParents.has(info.category_id))) {
           return false;
         }
-        if (explicitParents.size) {
+        if (parentsActive) {
+          // OR within group; uncategorised excluded when a parent filter is active
           if (!info?.category_id || !explicitParents.has(info.category_id)) return false;
         }
-        if (explicitSubs.size) {
+        if (subsActive) {
           if (!info?.subcategory_id || !explicitSubs.has(info.subcategory_id)) return false;
         }
         if (explicitClientTypes.size) {
