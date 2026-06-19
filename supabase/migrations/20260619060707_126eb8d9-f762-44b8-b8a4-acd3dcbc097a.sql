@@ -1,0 +1,1 @@
+DELETE FROM public.email_campaigns WHERE id IN ('ed7ba7c1-9e0e-4009-b0dc-1b1b2e5aea1c','220754da-137c-4902-9ce1-e5ee4ca5759a','aa147a91-4ce8-42cc-90f9-ccf169893c63','aeea9137-aab5-4afd-a1ea-df9b64cf84fb','95dc4ac8-812c-479c-ad5d-27f9b6123d95','2db722c3-4186-49e9-8cb0-3319687c8f86');
