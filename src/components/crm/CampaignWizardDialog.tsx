@@ -440,7 +440,15 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           {step === 1 && (
             <div className="space-y-5 py-2 pb-32">
               <div className="grid grid-cols-2 gap-5">
-                {/* Status filter removed — status is at Company level. Staff contacts are always excluded. */}
+                <FilterGroup
+                  label="Status"
+                  options={CONTACT_STATUS_OPTIONS.map((s) => ({
+                    value: s,
+                    label: (s === 'Staff' || s === 'Archived') ? `${s} (excluded by default)` : s,
+                  }))}
+                  selected={filters.statuses}
+                  onToggle={(v) => toggleFilter('statuses', v)}
+                />
 
                 <FilterGroup
                   label="Parent Category"
@@ -479,12 +487,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   options={AU_STATES.map((s) => ({ value: s, label: s }))}
                   selected={filters.states}
                   onToggle={(v) => toggleFilter('states', v)}
-                />
-                <FilterGroup
-                  label="Company State"
-                  options={AU_STATES.map((s) => ({ value: s, label: s }))}
-                  selected={filters.companyStates}
-                  onToggle={(v) => toggleFilter('companyStates', v)}
                 />
                 <FilterGroup
                   label="Country"
