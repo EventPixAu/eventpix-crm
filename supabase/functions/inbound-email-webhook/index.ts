@@ -213,9 +213,9 @@ serve(async (req) => {
       );
     }
 
-    // Campaign reply matching — only for genuine replies
+    // Campaign reply matching — only for genuine (non-internal) replies
     let campaignUpdated = false;
-    if (!isAutoReply && original) {
+    if (!isAutoReply && !internal && original) {
       const { data: stepSend } = await supabase
         .from("campaign_step_sends")
         .select("id, campaign_contact_id")
