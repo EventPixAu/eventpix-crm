@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -424,7 +423,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="min-h-0 -mx-6 px-6">
+        <div className="min-h-0 -mx-6 overflow-y-auto overscroll-contain px-6">
           {step === 1 && (
             <div className="space-y-5 py-2 pb-32">
               <div className="grid grid-cols-2 gap-5">
@@ -702,7 +701,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               </Card>
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t shrink-0">
           <div className="text-xs text-muted-foreground">
