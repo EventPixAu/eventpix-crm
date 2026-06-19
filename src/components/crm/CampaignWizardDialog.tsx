@@ -590,7 +590,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
                           .maybeSingle();
                         if (error || !data) {
-                          toast({ title: 'Could not add contact', description: error?.message || 'Unknown error', variant: 'destructive' });
+                          toast.error('Could not add contact', { description: error?.message || 'Unknown error' });
                           return;
                         }
                         setManualIncludes((prev) => [...prev, data as WizardContact]);
