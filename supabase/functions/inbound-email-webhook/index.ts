@@ -58,6 +58,26 @@ function isAutoReplySubject(subject: string | undefined | null): boolean {
   );
 }
 
+async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
+  const e = (email || "").toLowerCase().trim();
+  if (!e) return false;
+  try {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["owner_email", "internal_email_domains"]);
+    const map: Record<string, string> = {};
+    for (const r of data ?? []) map[r.key] = (r.value ?? "").toLowerCase();
+    const owner = (map.owner_email || "trevor@eventpix.com.au").trim();
+    if (owner && e === owner) return true;
+    const domains = (map.internal_email_domains || "eventpix.com.au")
+      .split(",").map((d: string) => d.trim()).filter(Boolean);
+    return domains.some((d) => e.endsWith("@" + d) || e === d);
+  } catch {
+    return e.endsWith("@eventpix.com.au");
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
