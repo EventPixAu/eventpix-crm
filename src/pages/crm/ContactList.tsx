@@ -70,7 +70,7 @@ import { ContactDataToolsDialog } from '@/components/crm/ContactDataToolsDialog'
 import { useJobTitles } from '@/hooks/useJobTitles';
 import { CONTACT_CATEGORIES } from '@/lib/contactClassification';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
-import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
 
 
 
@@ -115,6 +115,8 @@ interface Contact {
   source: string | null;
   status: string | null;
   category: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
   archived: boolean | null;
   bounce_status: string | null;
   bounced_at: string | null;
@@ -131,6 +133,10 @@ export default function ContactList() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
+  const { data: subcategoryOptions = [] } = useCompanySubcategories(
+    categoryFilter !== 'all' && categoryFilter !== '__unassigned__' ? categoryFilter : undefined
+  );
   const [bounceFilter, setBounceFilter] = useState<string>('all');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -218,6 +224,8 @@ export default function ContactList() {
           source,
           status,
           category,
+          category_id,
+          subcategory_id,
           archived,
           bounce_status,
           bounced_at,
@@ -275,6 +283,8 @@ export default function ContactList() {
             source,
             status,
             category,
+            category_id,
+            subcategory_id,
             archived,
             bounce_status,
             bounced_at,
@@ -395,6 +405,8 @@ export default function ContactList() {
           source: contact.source || null,
           status: contact.status || null,
           category: contact.category || null,
+          category_id: (contact as any).category_id || null,
+          subcategory_id: (contact as any).subcategory_id || null,
           archived: (contact as any).archived ?? false,
           bounce_status: (contact as any).bounce_status ?? null,
           bounced_at: (contact as any).bounced_at ?? null,
@@ -450,11 +462,20 @@ export default function ContactList() {
       }
 
 
-      // Category filter
+      // Category filter (parent — inherited from primary company)
       if (categoryFilter !== 'all') {
         if (categoryFilter === '__unassigned__') {
-          if (contact.category) return false;
-        } else if (contact.category !== categoryFilter) {
+          if (contact.category_id) return false;
+        } else if (contact.category_id !== categoryFilter) {
+          return false;
+        }
+      }
+
+      // Sub-category filter
+      if (subcategoryFilter !== 'all') {
+        if (subcategoryFilter === '__unassigned__') {
+          if (contact.subcategory_id) return false;
+        } else if (contact.subcategory_id !== subcategoryFilter) {
           return false;
         }
       }
@@ -468,7 +489,7 @@ export default function ContactList() {
 
       return true;
     });
-  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, bounceFilter, incompleteOnly, showArchived]);
+  }, [contacts, companyFilter, jobTitleFilter, standaloneFilter, tagFilter, statusFilter, categoryFilter, subcategoryFilter, bounceFilter, incompleteOnly, showArchived]);
 
 
   const hasActiveFilters =
@@ -478,6 +499,7 @@ export default function ContactList() {
     tagFilter !== 'all' ||
     statusFilter !== 'all' ||
     categoryFilter !== 'all' ||
+    subcategoryFilter !== 'all' ||
     bounceFilter !== 'all';
 
   const clearFilters = () => {
@@ -487,6 +509,7 @@ export default function ContactList() {
     setTagFilter('all');
     setStatusFilter('all');
     setCategoryFilter('all');
+    setSubcategoryFilter('all');
     setBounceFilter('all');
   };
 
@@ -704,8 +727,8 @@ export default function ContactList() {
 
 
 
-              {/* Category Filter */}
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              {/* Category Filter (Parent — inherited from primary company) */}
+              <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setSubcategoryFilter('all'); }}>
                 <SelectTrigger className="w-[180px] h-8 text-xs">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
@@ -713,7 +736,25 @@ export default function ContactList() {
                   <SelectItem value="all">All Categories</SelectItem>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
                   {categoryOptions.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
+                    <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Sub-category Filter (depends on selected parent) */}
+              <Select
+                value={subcategoryFilter}
+                onValueChange={setSubcategoryFilter}
+                disabled={categoryFilter === 'all' || categoryFilter === '__unassigned__'}
+              >
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder={categoryFilter !== 'all' && categoryFilter !== '__unassigned__' ? 'All Sub-categories' : 'Pick category'} />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-[300px]">
+                  <SelectItem value="all">All Sub-categories</SelectItem>
+                  <SelectItem value="__unassigned__">No Sub-category</SelectItem>
+                  {subcategoryOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
