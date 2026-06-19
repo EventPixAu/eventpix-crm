@@ -160,7 +160,17 @@ serve(async (req) => {
     let sent = 0, failed = 0, skipped = 0;
 
     for (const rec of (recipients || [])) {
-      // Already sent this step?
+      // Honor mid-send cancellation
+      const { data: liveStatus } = await supabase
+        .from("email_campaigns")
+        .select("status")
+        .eq("id", campaign.id)
+        .maybeSingle();
+      if (liveStatus?.status === "cancelled") {
+        skipped++;
+        continue;
+      }
+
       const { data: existingSend } = await supabase
         .from("campaign_step_sends")
         .select("id, status")
