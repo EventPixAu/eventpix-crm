@@ -185,6 +185,7 @@ export function useInboundReplies() {
           sent_by_profile:profiles!email_logs_sent_by_fkey(full_name, email)
         `)
         .eq('direction', 'inbound')
+        .neq('email_type', 'internal')
         .order('created_at', { ascending: false })
         .limit(200);
       
