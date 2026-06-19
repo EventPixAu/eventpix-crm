@@ -154,8 +154,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .eq('archived', false)
         .eq('unsubscribed', false)
         .not('email', 'is', null);
-      // Always exclude Staff contacts from campaigns
-      q = q.or('status.is.null,status.neq.Staff');
+
+      // Status filter: if user picked statuses, use those. Otherwise exclude Staff & Archived by default.
+      if (filters.statuses.length) {
+        q = q.in('status', filters.statuses);
+      } else {
+        q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived)');
+      }
 
       if (filters.sources.length) q = q.in('source', filters.sources);
       if (filters.states.length) q = q.in('state', filters.states);
@@ -169,7 +174,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitParents = new Set(filters.categories);
       const explicitSubs = new Set(filters.subcategories);
       const explicitClientTypes = new Set(filters.clientTypes);
-      const explicitCompanyStates = new Set(filters.companyStates);
       const explicitCountries = new Set(filters.countries);
 
       return rows.filter((r) => {
@@ -187,9 +191,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         if (explicitClientTypes.size) {
           const value = info?.client_type || 'Unassigned';
           if (!explicitClientTypes.has(value)) return false;
-        }
-        if (explicitCompanyStates.size) {
-          if (!info?.state || !explicitCompanyStates.has(info.state)) return false;
         }
         if (explicitCountries.size) {
           const value = (info?.country || '').trim();
