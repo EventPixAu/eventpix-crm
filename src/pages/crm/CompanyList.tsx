@@ -661,10 +661,10 @@ export default function CompanyList() {
             </Select>
             <Select value={filterCategory || '__all__'} onValueChange={v => { setFilterCategory(v === '__all__' ? '' : v); setFilterSubcategory(''); }}>
               <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue placeholder="All Parents" />
+                <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Parents</SelectItem>
+                <SelectItem value="__all__">All Categories</SelectItem>
                 <SelectItem value="__none__">No Category</SelectItem>
                 {filterOptions.categories.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
