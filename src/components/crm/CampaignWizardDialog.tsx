@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -413,7 +412,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto]">
         <DialogHeader>
           <DialogTitle>New Campaign — Step {step} of 4</DialogTitle>
           <DialogDescription>
@@ -424,9 +423,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
+        <div className="min-h-0 -mx-6 overflow-y-auto overscroll-contain px-6">
           {step === 1 && (
-            <div className="space-y-5 py-2 pb-24">
+            <div className="space-y-5 py-2 pb-32">
               <div className="grid grid-cols-2 gap-5">
                 {/* Status filter removed — status is at Company level. Staff contacts are always excluded. */}
 
@@ -593,7 +592,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
 
           {step === 2 && (
-            <div className="space-y-4 py-2 pb-24">
+            <div className="space-y-4 py-2 pb-32">
               <div className="space-y-2">
                 <Label>Campaign name (internal)</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. June 2026 prospect outreach" />
@@ -641,7 +640,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
 
           {step === 3 && (
-            <div className="space-y-4 py-2 pb-24">
+            <div className="space-y-4 py-2 pb-32">
               <p className="text-sm text-muted-foreground">
                 Add up to 3 follow-up emails. They'll send only to recipients who haven't replied.
               </p>
@@ -677,7 +676,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           )}
 
           {step === 4 && (
-            <div className="space-y-4 py-2 pb-24">
+            <div className="space-y-4 py-2 pb-32">
               <Select value={scheduleMode} onValueChange={(v) => setScheduleMode(v as 'now' | 'later')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -702,7 +701,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               </Card>
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t shrink-0">
           <div className="text-xs text-muted-foreground">
