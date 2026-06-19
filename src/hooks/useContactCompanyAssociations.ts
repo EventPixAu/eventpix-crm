@@ -51,7 +51,7 @@ export function useContactAssociations(contactId: string | undefined) {
         .from('contact_company_associations')
         .select(`
           *,
-          company:clients(id, business_name),
+          company:clients(id, business_name, category_id, subcategory_id),
           job_title:job_titles(id, name)
         `)
         .eq('contact_id', contactId)
@@ -66,7 +66,7 @@ export function useContactAssociations(contactId: string | undefined) {
         .select(`
           client_id,
           job_title:job_titles(id, name),
-          client:clients(id, business_name)
+          client:clients(id, business_name, category_id, subcategory_id)
         `)
         .eq('id', contactId)
         .single();
