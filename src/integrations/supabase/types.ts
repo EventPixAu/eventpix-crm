@@ -6908,6 +6908,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      apply_inherited_status_for_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      apply_inherited_status_to_contact: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
       auto_complete_workflow_step: {
         Args: {
           p_entity_id: string
@@ -6949,6 +6957,11 @@ export type Database = {
         Args: { p_is_complete: boolean; p_step_id: string }
         Returns: Json
       }
+      compute_inherited_contact_status: {
+        Args: { p_contact_id: string }
+        Returns: string
+      }
+      contact_status_priority: { Args: { p_status: string }; Returns: number }
       convert_enquiry_to_event:
         | { Args: { p_input: Json }; Returns: Json }
         | { Args: { p_lead_id: string }; Returns: Json }
@@ -7101,6 +7114,10 @@ export type Database = {
           p_subject: string
           p_template_id?: string
         }
+        Returns: string
+      }
+      map_company_status_to_contact_status: {
+        Args: { p_company_status: string }
         Returns: string
       }
       map_lead_role_to_event_contact_type: {

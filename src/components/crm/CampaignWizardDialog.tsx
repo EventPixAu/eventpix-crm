@@ -28,16 +28,17 @@ import { AU_STATES } from '@/lib/auStates';
 
 
 interface AudienceFilters {
-  statuses: string[];
+  statuses: string[];            // contact status (inherited from company)
   categories: string[];          // parent category IDs
   subcategories: string[];       // subcategory IDs
   clientTypes: string[];         // 'Direct' | 'Indirect' | 'Unassigned'
   sources: string[];
   states: string[];              // contact state
-  companyStates: string[];       // company state
   countries: string[];           // company country
   cities: string[];
 }
+
+const CONTACT_STATUS_OPTIONS = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'];
 
 interface SequenceStep {
   delayDays: number;
@@ -71,7 +72,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   // Step 1
   const [filters, setFilters] = useState<AudienceFilters>({
-    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [],
+    statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], countries: [], cities: [],
   });
   const [manualIncludes, setManualIncludes] = useState<WizardContact[]>([]);
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
@@ -154,8 +155,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .eq('archived', false)
         .eq('unsubscribed', false)
         .not('email', 'is', null);
-      // Always exclude Staff contacts from campaigns
-      q = q.or('status.is.null,status.neq.Staff');
+
+      // Status filter: if user picked statuses, use those. Otherwise exclude Staff & Archived by default.
+      if (filters.statuses.length) {
+        q = q.in('status', filters.statuses);
+      } else {
+        q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived)');
+      }
 
       if (filters.sources.length) q = q.in('source', filters.sources);
       if (filters.states.length) q = q.in('state', filters.states);
@@ -169,7 +175,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitParents = new Set(filters.categories);
       const explicitSubs = new Set(filters.subcategories);
       const explicitClientTypes = new Set(filters.clientTypes);
-      const explicitCompanyStates = new Set(filters.companyStates);
       const explicitCountries = new Set(filters.countries);
 
       return rows.filter((r) => {
@@ -187,9 +192,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         if (explicitClientTypes.size) {
           const value = info?.client_type || 'Unassigned';
           if (!explicitClientTypes.has(value)) return false;
-        }
-        if (explicitCompanyStates.size) {
-          if (!info?.state || !explicitCompanyStates.has(info.state)) return false;
         }
         if (explicitCountries.size) {
           const value = (info?.country || '').trim();
@@ -251,7 +253,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
   const reset = () => {
     setStep(1);
-    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
+    setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], countries: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
     setName(''); setSubject(''); setBodyHtml('');
@@ -438,7 +440,15 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           {step === 1 && (
             <div className="space-y-5 py-2 pb-32">
               <div className="grid grid-cols-2 gap-5">
-                {/* Status filter removed — status is at Company level. Staff contacts are always excluded. */}
+                <FilterGroup
+                  label="Status"
+                  options={CONTACT_STATUS_OPTIONS.map((s) => ({
+                    value: s,
+                    label: (s === 'Staff' || s === 'Archived') ? `${s} (excluded by default)` : s,
+                  }))}
+                  selected={filters.statuses}
+                  onToggle={(v) => toggleFilter('statuses', v)}
+                />
 
                 <FilterGroup
                   label="Parent Category"
@@ -479,12 +489,6 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   onToggle={(v) => toggleFilter('states', v)}
                 />
                 <FilterGroup
-                  label="Company State"
-                  options={AU_STATES.map((s) => ({ value: s, label: s }))}
-                  selected={filters.companyStates}
-                  onToggle={(v) => toggleFilter('companyStates', v)}
-                />
-                <FilterGroup
                   label="Country"
                   options={distinctCountries.map((c) => ({ value: c, label: c }))}
                   selected={filters.countries}
@@ -511,7 +515,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                           type="button"
                           onClick={() => {
                             setAudienceCleared(true);
-                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
+                            setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], countries: [], cities: [] });
                             setManualIncludes([]);
                             setManualExcludes([]);
                             setManualSearch('');
@@ -552,7 +556,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                             type="button"
                             onClick={() => {
                               setAudienceCleared(true);
-                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], companyStates: [], countries: [], cities: [] });
+                              setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], countries: [], cities: [] });
                               setManualExcludes([]);
                               setManualIncludes([c]);
                               setManualSearch('');

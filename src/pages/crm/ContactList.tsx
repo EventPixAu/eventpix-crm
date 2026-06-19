@@ -440,7 +440,14 @@ export default function ContactList() {
         if (!hasTags) return false;
       }
 
-      // Status filter removed — set at Company level
+      // Status filter
+      if (statusFilter !== 'all') {
+        if (statusFilter === '__unassigned__') {
+          if (contact.status) return false;
+        } else if (contact.status !== statusFilter) {
+          return false;
+        }
+      }
 
 
       // Category filter
@@ -681,7 +688,20 @@ export default function ContactList() {
                 </SelectContent>
               </Select>
 
-              {/* Status filter removed — status is now set at Company level */}
+              {/* Status Filter (contact status, inherited from company) */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50 max-h-[300px]">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                  {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'].map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
 
 
               {/* Category Filter */}
