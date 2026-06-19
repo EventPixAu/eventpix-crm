@@ -65,7 +65,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useJobTitles } from '@/hooks/useJobTitles';
 
-import { useCompanyCategories } from '@/hooks/useCompanyCategories';
+import { useAllCompanyCategories, useAllCompanySubcategories } from '@/hooks/useCompanyCategories';
 import { AU_STATES } from '@/lib/auStates';
 
 import { useContactActivities, useCreateContactActivity, useDeleteContactActivity } from '@/hooks/useContactActivities';
