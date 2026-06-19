@@ -718,7 +718,12 @@ export default function ContactDetail() {
                 const displayCompany = contact.client || (firstActiveAssociation?.company ? {
                   id: firstActiveAssociation.company.id,
                   business_name: firstActiveAssociation.company.business_name,
+                  category_id: firstActiveAssociation.company.category_id,
+                  subcategory_id: firstActiveAssociation.company.subcategory_id,
                 } : null);
+                
+                const primaryCategory = allCategoryOptions.find(c => c.id === displayCompany?.category_id);
+                const primarySubcategory = allSubcategoryOptions.find(s => s.id === displayCompany?.subcategory_id);
                 
                 if (hasCompanyLink && displayCompany) {
                   return (
@@ -728,6 +733,12 @@ export default function ContactDetail() {
                     >
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                       <span className="font-medium">{displayCompany.business_name}</span>
+                      {primaryCategory && (
+                        <Badge variant="secondary" className="text-xs">{primaryCategory.name}</Badge>
+                      )}
+                      {primarySubcategory && (
+                        <Badge variant="outline" className="text-xs">{primarySubcategory.name}</Badge>
+                      )}
                       {!contact.client && firstActiveAssociation && (
                         <Badge variant="outline" className="ml-auto text-xs">
                           {firstActiveAssociation.relationship_type}
