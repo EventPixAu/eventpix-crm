@@ -255,6 +255,7 @@ export interface CampaignEngagement {
     total: number;
     sent: number;
     opened: number;
+    clicked: number;
     bounced: number;
     unsubscribed: number;
     replied: number;
@@ -265,6 +266,7 @@ export interface CampaignEngagement {
   perStepSummary: Record<string, {
     sent: number;
     opened: number;
+    clicked: number;
     bounced: number;
     unsubscribed: number;
     replied: number;
