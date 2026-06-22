@@ -211,7 +211,7 @@ export function useSeriesDelivery(seriesId: string | undefined) {
       const { data: events, error } = await supabase
         .from('events')
         .select(`
-          id, event_name, event_date, venue_name, delivery_deadline,
+          id, event_name, event_date, venue_name, delivery_deadline, ops_status,
           delivery_records(id, delivery_link, delivered_at)
         `)
         .eq('event_series_id', seriesId)
@@ -219,10 +219,16 @@ export function useSeriesDelivery(seriesId: string | undefined) {
 
       if (error) throw error;
 
+      const TERMINAL_OPS_STATUSES = new Set(['delivered', 'completed', 'archived', 'cancelled']);
+
       return events.map(event => {
         const delivery = (event.delivery_records as any)?.[0];
         const hasDeliveryLink = !!(delivery?.delivery_link);
-        const deliveredAt = delivery?.delivered_at || null;
+        const opsStatus = (event as any).ops_status || null;
+        const isTerminal = opsStatus ? TERMINAL_OPS_STATUSES.has(opsStatus) : false;
+        // Treat events marked as delivered/completed/archived/cancelled as no longer
+        // requiring delivery attention, even if delivery_records.delivered_at is unset.
+        const deliveredAt = delivery?.delivered_at || (isTerminal ? (event.event_date || todayStr) : null);
 
         let daysUntilDeadline: number | null = null;
         let isOverdue = false;
