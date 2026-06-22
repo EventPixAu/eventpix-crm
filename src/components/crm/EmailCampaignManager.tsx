@@ -348,6 +348,7 @@ const STATUS_BADGE: Record<RecipientEngagementStatus, { label: string; className
   pending: { label: 'Pending', className: 'bg-muted text-muted-foreground border-border' },
   sent: { label: 'Sent', className: 'bg-muted text-foreground border-border' },
   opened: { label: 'Opened', className: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+  clicked: { label: 'Clicked', className: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' },
   bounced: { label: 'Bounced', className: 'bg-destructive/20 text-destructive border-destructive/30' },
   unsubscribed: { label: 'Unsubscribed', className: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30' },
   replied: { label: 'Replied', className: 'bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-500/30' },
