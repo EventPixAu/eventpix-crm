@@ -837,8 +837,8 @@ export default function PromotionsDashboard() {
                     })}
                   {/* Uncategorised */}
                   {(() => {
-                    const count = categoryCounts['Uncategorised'] || 0;
-                    const total = allContacts.length || 1;
+                    const count = categoryCounts['__uncategorised__'] || 0;
+                    const total = clientContacts.length || 1;
                     const pct = Math.round((count / total) * 100);
                     return (
                       <div className="flex items-center gap-3">
