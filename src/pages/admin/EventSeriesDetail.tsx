@@ -75,6 +75,7 @@ import {
   useSeriesNeedsAttention,
 } from '@/hooks/useSeriesControlCentre';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
+import { useActiveDressCodes } from '@/hooks/useAdminLookups';
 import { useOpsStatuses } from '@/hooks/useOpsStatuses';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
