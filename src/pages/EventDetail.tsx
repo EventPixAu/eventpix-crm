@@ -1163,7 +1163,6 @@ export default function EventDetail() {
                       .eq('id', id!);
                     queryClient.invalidateQueries({ queryKey: ['event', id] });
                   }}
-                  assignments={assignments}
                 />
                )}
                {/* Assigned Team (summary) */}
