@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Mail, Phone, User, Building2, Plus, Trash2, Pencil, Camera, ExternalLink } from 'lucide-react';
+import { Mail, Phone, User, Building2, Plus, Trash2, Pencil, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
