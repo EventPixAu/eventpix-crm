@@ -54,6 +54,7 @@ interface ImportSummary {
   created: number;
   skipped: number;
   statusProtected: number;
+  bounceProtected: number;
   errors: string[];
 }
 
