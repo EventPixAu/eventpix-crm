@@ -457,6 +457,8 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
         )}
 
       </div>
+        )}
+      </div>
 
       {/* Add Contact Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
