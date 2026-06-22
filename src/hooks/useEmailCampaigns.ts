@@ -200,6 +200,7 @@ export type RecipientEngagementStatus =
   | 'pending'
   | 'sent'
   | 'opened'
+  | 'clicked'
   | 'bounced'
   | 'unsubscribed'
   | 'replied'
@@ -219,6 +220,8 @@ interface EngagementLog {
   opened_at: string | null;
   first_opened_at: string | null;
   open_count: number | null;
+  clicked_at: string | null;
+  click_count: number | null;
   sent_at: string | null;
   error_message: string | null;
 }
