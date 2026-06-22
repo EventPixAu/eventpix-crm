@@ -58,6 +58,7 @@ import {
 } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
 import { useCompanyStatuses } from '@/hooks/useCompanyStatuses';
+import { useCompanyCategories } from '@/hooks/useCompanyCategories';
 
 // Type for debug contact info
 interface DebugContactInfo {
@@ -76,6 +77,7 @@ interface ContactSummary {
   email: string | null;
   status: string | null;
   category: string | null;
+  category_id: string | null;
   archived: boolean | null;
   client_id: string | null;
   has_associations: boolean;
