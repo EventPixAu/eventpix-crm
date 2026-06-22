@@ -561,7 +561,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                         </button>
                       )}
                       <div className="text-xs text-muted-foreground">
-                        Unsubscribed & archived contacts excluded automatically
+                        Unsubscribed, archived, and hard-bounced contacts excluded automatically
                       </div>
                     </div>
                   </div>
