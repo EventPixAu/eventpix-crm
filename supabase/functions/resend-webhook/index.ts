@@ -216,11 +216,8 @@ serve(async (req) => {
       .eq("id", targetLog.id);
 
     if (updateError) {
-      console.error("Error updating email log:", updateError);
-      return new Response(JSON.stringify({ error: "Update failed" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.error("Error updating email log (acknowledging anyway):", updateError);
+      return ok({ skipped: "db_update_error" });
     }
 
     console.log(`Updated email log ${targetLog.id}: ${targetLog.status} -> ${newStatus}`);
