@@ -324,6 +324,7 @@ export function useBulkCreateEvents() {
       delivery_deadline?: string;
       notes?: string;
       contact_ids?: string[];
+      dress_code?: string;
     }>) => {
       const results = {
         created: 0,
