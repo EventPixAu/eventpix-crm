@@ -1102,7 +1102,7 @@ export default function EventSeriesDetail() {
                     }
                     
                     const confirmed = window.confirm(
-                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, ops status, times, and default contact.`
+                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, ops status, dress code, times, and default contact.`
                     );
                     if (!confirmed) return;
                     
