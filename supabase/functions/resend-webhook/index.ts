@@ -352,9 +352,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Resend webhook error:", error);
-    return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 500,
+    console.error("Resend webhook error (acknowledging anyway to keep endpoint enabled):", error);
+    return new Response(JSON.stringify({ ok: true, skipped: "internal_error", error: String(error) }), {
+      status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
