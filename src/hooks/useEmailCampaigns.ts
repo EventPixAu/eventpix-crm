@@ -334,7 +334,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           .from('campaign_step_sends')
           .select(`
             id, campaign_contact_id, step_id, status, sent_at, email_log_id,
-            email_logs(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
+            email_logs(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message)
           `)
           .in('campaign_contact_id', contactIds);
         if (ssErr) throw ssErr;
