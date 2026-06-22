@@ -152,9 +152,17 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     staleTime: 0,
   });
 
+  // Hard-bounce protection — these contacts are permanently excluded from campaign sends
+  const { data: bounceIndex } = useQuery({
+    queryKey: ['campaign-wizard-bounce-index'],
+    queryFn: fetchHardBouncedContacts,
+    enabled: open,
+    staleTime: 60_000,
+  });
+
   // Live matched contacts
   const { data: matched = [], isFetching: matchingLoading } = useQuery({
-    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex, categories.length, subcategories.length],
+    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex, categories.length, subcategories.length, bounceIndex?.ids.size ?? 0],
     queryFn: async () => {
       let q = supabase
         .from('client_contacts')
