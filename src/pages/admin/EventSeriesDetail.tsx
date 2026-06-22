@@ -1120,6 +1120,7 @@ export default function EventSeriesDetail() {
                           coverage_details: editCoverage || null,
                           special_instructions: editNotesPublic || null,
                           city: editVenueCity || null,
+                          dress_code: editDressCode === '__none__' ? null : editDressCode || null,
                         } as any)
                         .eq('event_series_id', id);
                       
