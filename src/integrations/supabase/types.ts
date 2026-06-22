@@ -2905,6 +2905,7 @@ export type Database = {
           default_start_time: string | null
           default_venue_city: string | null
           default_workflow_step_ids: string[] | null
+          dress_code: string | null
           event_type_id: string | null
           id: string
           is_active: boolean | null
@@ -2930,6 +2931,7 @@ export type Database = {
           default_start_time?: string | null
           default_venue_city?: string | null
           default_workflow_step_ids?: string[] | null
+          dress_code?: string | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
@@ -2955,6 +2957,7 @@ export type Database = {
           default_start_time?: string | null
           default_venue_city?: string | null
           default_workflow_step_ids?: string[] | null
+          dress_code?: string | null
           event_type_id?: string | null
           id?: string
           is_active?: boolean | null
