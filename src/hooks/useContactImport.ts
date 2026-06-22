@@ -635,6 +635,8 @@ export function useContactImport() {
       if (result.companiesCreated > 0) parts.push(`${result.companiesCreated} companies created`);
       if (result.contactsCreated > 0) parts.push(`${result.contactsCreated} contacts created`);
       if (result.contactsUpdated > 0) parts.push(`${result.contactsUpdated} contacts updated`);
+      if (result.bounceProtected > 0) parts.push(`${result.bounceProtected} skipped — hard bounce protection`);
+
       
       toast.success('Import Complete', { description: parts.join(', ') || 'No changes made' });
     },
