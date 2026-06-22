@@ -371,14 +371,14 @@ export function useCampaignEngagement(campaignId: string | undefined) {
       const perStepSummary: CampaignEngagement['perStepSummary'] = {};
       for (const st of steps) {
         perStepSummary[st.id] = {
-          sent: 0, opened: 0, bounced: 0, unsubscribed: 0,
+          sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
           replied: 0, failed: 0, pending: 0, skipped: 0,
         };
       }
 
       const summary = {
         total: rawContacts.length,
-        sent: 0, opened: 0, bounced: 0, unsubscribed: 0,
+        sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
         replied: 0, failed: 0, pending: 0, skipped: 0,
       };
 
