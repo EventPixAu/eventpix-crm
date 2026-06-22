@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Upload, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
 interface Props {
   open: boolean;
@@ -53,6 +54,7 @@ interface ImportSummary {
   created: number;
   skipped: number;
   statusProtected: number;
+  bounceProtected: number;
   errors: string[];
 }
 
@@ -173,9 +175,12 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
   const runImport = async () => {
     setProcessing(true);
-    const result: ImportSummary = { updated: 0, created: 0, skipped: 0, statusProtected: 0, errors: [] };
+    const result: ImportSummary = { updated: 0, created: 0, skipped: 0, statusProtected: 0, bounceProtected: 0, errors: [] };
 
     try {
+      // Pre-fetch hard-bounced contacts so we never re-activate them
+      const bounceIndex = await fetchHardBouncedContacts();
+
       // Pre-fetch existing contacts by email (case-insensitive)
       const emailsLower = Array.from(
         new Set(rows.map((r) => r.email?.trim().toLowerCase()).filter(Boolean) as string[])
@@ -208,6 +213,12 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
           const key = email.toLowerCase();
           const existing = existingByEmail.get(key);
           const newStatus = normaliseStatus(row.status);
+
+          // Bounce protection — never re-activate or recreate a hard-bounced contact
+          if (bounceIndex.emails.has(key) || (existing && bounceIndex.ids.has(existing.id))) {
+            result.bounceProtected++;
+            continue;
+          }
 
           let contactId: string;
 
@@ -391,7 +402,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
         {summary && (
           <div className="space-y-3">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-5 gap-3">
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-green-600">{summary.updated}</div>
                 <div className="text-xs text-muted-foreground">Updated</div>
@@ -407,6 +418,10 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               <div className="rounded border p-3 text-center">
                 <div className="text-2xl font-semibold text-purple-600">{summary.statusProtected}</div>
                 <div className="text-xs text-muted-foreground">Retained Active/Current/Staff status</div>
+              </div>
+              <div className="rounded border border-destructive/40 p-3 text-center">
+                <div className="text-2xl font-semibold text-destructive">{summary.bounceProtected}</div>
+                <div className="text-xs text-muted-foreground">Skipped — hard bounce protection</div>
               </div>
             </div>
             {summary.errors.length > 0 ? (

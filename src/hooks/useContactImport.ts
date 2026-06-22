@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
 export interface ImportedContact {
   firstName?: string;
@@ -32,6 +33,7 @@ export interface ImportResult {
   contactsCreated: number;
   contactsUpdated: number;
   contactsSkipped: number;
+  bounceProtected: number;
   errors: string[];
 }
 
@@ -352,12 +354,16 @@ export function useContactImport() {
         contactsCreated: 0,
         contactsUpdated: 0,
         contactsSkipped: 0,
+        bounceProtected: 0,
         errors: [],
       };
 
       if (contacts.length === 0) {
         throw new Error('No contacts to import');
       }
+
+      setImportProgress({ current: 0, total: contacts.length, status: 'Loading bounce protection list...' });
+      const bounceIndex = await fetchHardBouncedContacts();
 
       setImportProgress({ current: 0, total: contacts.length, status: 'Fetching existing companies...' });
 
@@ -528,6 +534,13 @@ export function useContactImport() {
           }
 
           if (existingContact) {
+            // Bounce protection — never re-activate or modify a hard-bounced contact
+            const emailLower = (existingContact.email || contact.email || '').toLowerCase().trim();
+            if (bounceIndex.ids.has(existingContact.id) || (emailLower && bounceIndex.emails.has(emailLower))) {
+              result.bounceProtected++;
+              continue;
+            }
+
             // Update existing contact - merge tags
             const existingTags = existingContact.tags || [];
             const newTags = contact.tags || [];
@@ -572,8 +585,15 @@ export function useContactImport() {
               result.contactsSkipped++;
             }
           } else {
+            // Bounce protection — don't recreate a hard-bounced email
+            const emailLower = (contact.email || '').toLowerCase().trim();
+            if (emailLower && bounceIndex.emails.has(emailLower)) {
+              result.bounceProtected++;
+              continue;
+            }
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
+
 
             const { error: contactError } = await supabase
               .from('client_contacts')
@@ -615,6 +635,8 @@ export function useContactImport() {
       if (result.companiesCreated > 0) parts.push(`${result.companiesCreated} companies created`);
       if (result.contactsCreated > 0) parts.push(`${result.contactsCreated} contacts created`);
       if (result.contactsUpdated > 0) parts.push(`${result.contactsUpdated} contacts updated`);
+      if (result.bounceProtected > 0) parts.push(`${result.bounceProtected} skipped — hard bounce protection`);
+
       
       toast.success('Import Complete', { description: parts.join(', ') || 'No changes made' });
     },

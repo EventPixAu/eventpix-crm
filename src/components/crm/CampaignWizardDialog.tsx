@@ -29,6 +29,7 @@ import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
 import { AU_STATES } from '@/lib/auStates';
+import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
 
 interface AudienceFilters {
@@ -151,15 +152,24 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     staleTime: 0,
   });
 
+  // Hard-bounce protection — these contacts are permanently excluded from campaign sends
+  const { data: bounceIndex } = useQuery({
+    queryKey: ['campaign-wizard-bounce-index'],
+    queryFn: fetchHardBouncedContacts,
+    enabled: open,
+    staleTime: 60_000,
+  });
+
   // Live matched contacts
   const { data: matched = [], isFetching: matchingLoading } = useQuery({
-    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex, categories.length, subcategories.length],
+    queryKey: ['campaign-wizard-matches', filters, !!companiesIndex, categories.length, subcategories.length, bounceIndex?.ids.size ?? 0],
     queryFn: async () => {
       let q = supabase
         .from('client_contacts')
         .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
         .eq('archived', false)
         .eq('unsubscribed', false)
+        .is('bounce_status', null)
         .not('email', 'is', null);
 
       // Status filter: if user picked statuses, use those. Otherwise exclude Staff & Archived by default.
@@ -188,6 +198,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const subsActive = explicitSubs.size > 0 && explicitSubs.size < subcategories.length;
 
       return rows.filter((r) => {
+        // Hard-bounce protection — exclude even if note-only (not caught by bounce_status filter)
+        const emailLower = (r.email || '').toLowerCase().trim();
+        if (bounceIndex && (bounceIndex.ids.has(r.id) || (emailLower && bounceIndex.emails.has(emailLower)))) {
+          return false;
+        }
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
         // Default-exclude EPX Supplier (excluded_from_campaigns) unless user explicitly picked that parent
         if (info?.excluded && !(info.category_id && explicitParents.has(info.category_id))) {
@@ -224,10 +239,16 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
         .eq('archived', false)
         .eq('unsubscribed', false)
+        .is('bounce_status', null)
         .not('email', 'is', null)
         .or(`contact_name.ilike.%${manualSearch}%,email.ilike.%${manualSearch}%`)
         .limit(15);
-      return (data || []) as WizardContact[];
+      const rows = (data || []) as WizardContact[];
+      if (!bounceIndex) return rows;
+      return rows.filter((r) => {
+        const emailLower = (r.email || '').toLowerCase().trim();
+        return !bounceIndex.ids.has(r.id) && !(emailLower && bounceIndex.emails.has(emailLower));
+      });
     },
     enabled: manualSearch.trim().length >= 2,
   });
@@ -245,11 +266,14 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     }
     for (const c of manualIncludes) {
       if (excludeSet.has(c.id) || seen.has(c.id)) continue;
+      // Hard-bounce protection — never include a bounced contact, even manually
+      const emailLower = (c.email || '').toLowerCase().trim();
+      if (bounceIndex && (bounceIndex.ids.has(c.id) || (emailLower && bounceIndex.emails.has(emailLower)))) continue;
       seen.add(c.id);
       list.push(c);
     }
     return list;
-  }, [matched, manualIncludes, manualExcludes, audienceCleared]);
+  }, [matched, manualIncludes, manualExcludes, audienceCleared, bounceIndex]);
 
   const distinctCountries = useMemo(() => {
     if (!companiesIndex) return [] as string[];
@@ -537,7 +561,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                         </button>
                       )}
                       <div className="text-xs text-muted-foreground">
-                        Unsubscribed & archived contacts excluded automatically
+                        Unsubscribed, archived, and hard-bounced contacts excluded automatically
                       </div>
                     </div>
                   </div>

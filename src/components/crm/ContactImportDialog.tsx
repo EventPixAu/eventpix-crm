@@ -541,6 +541,11 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                 <span className="text-sm text-muted-foreground">Contacts Skipped</span>
                 <Badge variant="outline">{importResult.contactsSkipped}</Badge>
               </div>
+              <Separator className="my-2" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Skipped — hard bounce protection</span>
+                <Badge variant="outline" className="border-destructive/40 text-destructive">{importResult.bounceProtected}</Badge>
+              </div>
             </CardContent>
           </Card>
         </div>
