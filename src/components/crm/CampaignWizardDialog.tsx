@@ -198,6 +198,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const subsActive = explicitSubs.size > 0 && explicitSubs.size < subcategories.length;
 
       return rows.filter((r) => {
+        // Hard-bounce protection — exclude even if note-only (not caught by bounce_status filter)
+        const emailLower = (r.email || '').toLowerCase().trim();
+        if (bounceIndex && (bounceIndex.ids.has(r.id) || (emailLower && bounceIndex.emails.has(emailLower)))) {
+          return false;
+        }
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
         // Default-exclude EPX Supplier (excluded_from_campaigns) unless user explicitly picked that parent
         if (info?.excluded && !(info.category_id && explicitParents.has(info.category_id))) {
