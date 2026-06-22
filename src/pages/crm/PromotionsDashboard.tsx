@@ -230,7 +230,8 @@ export default function PromotionsDashboard() {
 
   // Contact Status counts
   const { data: companyStatuses = [] } = useCompanyStatuses();
-  const statusCounts = useMemo(() => {
+  const { data: realCategories = [] } = useCompanyCategories();
+
     const counts: Record<string, number> = {};
     companyStatuses.forEach(s => { counts[s.label] = 0; });
     counts['Unassigned'] = 0;
