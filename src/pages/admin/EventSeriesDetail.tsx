@@ -205,6 +205,7 @@ export default function EventSeriesDetail() {
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
         additional_contact_ids: editAdditionalContactIds.filter(Boolean),
+        dress_code: editDressCode === '__none__' ? null : editDressCode || null,
       } as any)
       .eq('id', id);
     
