@@ -937,7 +937,23 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Default Contact</Label>
+                  <Label>Dress Code</Label>
+                  <Select value={editDressCode} onValueChange={setEditDressCode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select dress code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {dressCodes.map((code) => (
+                        <SelectItem key={code.id} value={code.name}>
+                          {code.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <ContactSelector
                     value={editDefaultContactId}
                     onChange={(contactId) => setEditDefaultContactId(contactId)}
