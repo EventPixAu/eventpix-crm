@@ -180,7 +180,7 @@ export default function PromotionsDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('client_contacts')
-        .select('id, contact_name, email, status, category, archived, client_id')
+        .select('id, contact_name, email, status, category, category_id, archived, client_id')
         .order('contact_name');
       if (error) throw error;
 
@@ -206,6 +206,7 @@ export default function PromotionsDashboard() {
         email: c.email,
         status: c.status,
         category: c.category,
+        category_id: c.category_id,
         archived: c.archived,
         client_id: c.client_id,
         has_associations: assocSet.has(c.id) || !!c.client_id,
