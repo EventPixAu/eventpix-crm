@@ -129,6 +129,7 @@ export default function EventSeriesDetail() {
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
+  const [editDressCode, setEditDressCode] = useState<string>('__none__');
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
