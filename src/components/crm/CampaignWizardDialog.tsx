@@ -234,6 +234,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
         .eq('archived', false)
         .eq('unsubscribed', false)
+        .is('bounce_status', null)
         .not('email', 'is', null)
         .or(`contact_name.ilike.%${manualSearch}%,email.ilike.%${manualSearch}%`)
         .limit(15);
