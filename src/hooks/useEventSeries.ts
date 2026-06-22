@@ -16,7 +16,8 @@ export interface EventSeries {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-   default_workflow_step_ids: string[] | null;
+  default_workflow_step_ids: string[] | null;
+  dress_code: string | null;
 }
 
 export type CreateEventSeriesInput = {
@@ -29,7 +30,8 @@ export type CreateEventSeriesInput = {
   default_roles_json?: Json | null;
   notes?: string | null;
   is_active?: boolean;
-   default_workflow_step_ids?: string[] | null;
+  default_workflow_step_ids?: string[] | null;
+  dress_code?: string | null;
 };
 
 export interface EventSeriesWithStats extends EventSeries {
@@ -322,6 +324,7 @@ export function useBulkCreateEvents() {
       delivery_deadline?: string;
       notes?: string;
       contact_ids?: string[];
+      dress_code?: string;
     }>) => {
       const results = {
         created: 0,

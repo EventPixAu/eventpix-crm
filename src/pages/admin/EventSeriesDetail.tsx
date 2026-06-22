@@ -75,6 +75,7 @@ import {
   useSeriesNeedsAttention,
 } from '@/hooks/useSeriesControlCentre';
 import { useEventTypes, useDeliveryMethods, useStaffRoles } from '@/hooks/useLookups';
+import { useActiveDressCodes } from '@/hooks/useAdminLookups';
 import { useOpsStatuses } from '@/hooks/useOpsStatuses';
 import { BulkEventCreationDialog } from '@/components/BulkEventCreationDialog';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -105,6 +106,7 @@ export default function EventSeriesDetail() {
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const { data: staffRoles = [] } = useStaffRoles();
   const { data: opsStatuses = [] } = useOpsStatuses();
+  const { data: dressCodes = [] } = useActiveDressCodes();
   
   const updateSeries = useUpdateEventSeries();
   
@@ -127,6 +129,7 @@ export default function EventSeriesDetail() {
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
+  const [editDressCode, setEditDressCode] = useState<string>('__none__');
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
@@ -156,6 +159,7 @@ export default function EventSeriesDetail() {
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
+      setEditDressCode((series as any).dress_code || '__none__');
     }
   });
   
@@ -177,6 +181,7 @@ export default function EventSeriesDetail() {
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
+      setEditDressCode((series as any).dress_code || '__none__');
     }
   }, [series]);
   
@@ -200,6 +205,7 @@ export default function EventSeriesDetail() {
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
         additional_contact_ids: editAdditionalContactIds.filter(Boolean),
+        dress_code: editDressCode === '__none__' ? null : editDressCode || null,
       } as any)
       .eq('id', id);
     
@@ -931,7 +937,23 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Default Contact</Label>
+                  <Label>Dress Code</Label>
+                  <Select value={editDressCode} onValueChange={setEditDressCode}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select dress code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {dressCodes.map((code) => (
+                        <SelectItem key={code.id} value={code.name}>
+                          {code.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <ContactSelector
                     value={editDefaultContactId}
                     onChange={(contactId) => setEditDefaultContactId(contactId)}
@@ -1080,7 +1102,7 @@ export default function EventSeriesDetail() {
                     }
                     
                     const confirmed = window.confirm(
-                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, ops status, times, and default contact.`
+                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, ops status, dress code, times, and default contact.`
                     );
                     if (!confirmed) return;
                     
@@ -1098,6 +1120,7 @@ export default function EventSeriesDetail() {
                           coverage_details: editCoverage || null,
                           special_instructions: editNotesPublic || null,
                           city: editVenueCity || null,
+                          dress_code: editDressCode === '__none__' ? null : editDressCode || null,
                         } as any)
                         .eq('event_series_id', id);
                       
