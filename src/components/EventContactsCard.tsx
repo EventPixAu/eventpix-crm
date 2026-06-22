@@ -3,7 +3,7 @@ import { Mail, Phone, User, Building2, Plus, Trash2, Pencil, ExternalLink } from
 import { Link } from 'react-router-dom';
 import { useEventContacts, useCreateEventContact, useDeleteEventContact, useUpdateEventContact, CONTACT_TYPES, type ContactType } from '@/hooks/useEventContacts';
 import { Badge } from '@/components/ui/badge';
-import type { EventAssignment } from '@/hooks/useEvents';
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -41,10 +41,9 @@ interface EventContactsCardProps {
     phone?: string | null;
   };
   onClearOnsiteContact?: () => void;
-  assignments?: EventAssignment[];
 }
 
-export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact, assignments = [] }: EventContactsCardProps) {
+export function EventContactsCard({ eventId, clientId, clientName, clientDetails, onsiteContact, onClearOnsiteContact }: EventContactsCardProps) {
   const { data: contacts = [], isLoading } = useEventContacts(eventId);
   const createContact = useCreateEventContact();
   const deleteContact = useDeleteEventContact();
