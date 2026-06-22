@@ -200,6 +200,7 @@ export type RecipientEngagementStatus =
   | 'pending'
   | 'sent'
   | 'opened'
+  | 'clicked'
   | 'bounced'
   | 'unsubscribed'
   | 'replied'
@@ -219,6 +220,8 @@ interface EngagementLog {
   opened_at: string | null;
   first_opened_at: string | null;
   open_count: number | null;
+  clicked_at: string | null;
+  click_count: number | null;
   sent_at: string | null;
   error_message: string | null;
 }
@@ -252,6 +255,7 @@ export interface CampaignEngagement {
     total: number;
     sent: number;
     opened: number;
+    clicked: number;
     bounced: number;
     unsubscribed: number;
     replied: number;
@@ -262,6 +266,7 @@ export interface CampaignEngagement {
   perStepSummary: Record<string, {
     sent: number;
     opened: number;
+    clicked: number;
     bounced: number;
     unsubscribed: number;
     replied: number;
@@ -284,7 +289,8 @@ function deriveStatus(
   if (logStatus === 'bounced') return 'bounced';
   if (rawStatus === 'failed') return 'failed';
   if (rawStatus === 'skipped') return 'skipped';
-  if (logStatus === 'opened' || logStatus === 'clicked') return 'opened';
+  if (logStatus === 'clicked') return 'clicked';
+  if (logStatus === 'opened') return 'opened';
   if (rawStatus === 'sent' || logStatus === 'sent' || logStatus === 'delivered') return 'sent';
   if (rawStatus === 'replied') return 'replied';
   return 'pending';
@@ -313,7 +319,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           id, recipient_email, recipient_name, last_event_name, last_event_date,
           status, email_log_id, contact_id,
           client_contacts(unsubscribed, unsubscribed_at, state),
-          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
+          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message)
         `)
         .eq('campaign_id', campaignId)
         .order('recipient_name', { nullsFirst: false });
@@ -328,7 +334,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           .from('campaign_step_sends')
           .select(`
             id, campaign_contact_id, step_id, status, sent_at, email_log_id,
-            email_logs(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
+            email_logs(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message)
           `)
           .in('campaign_contact_id', contactIds);
         if (ssErr) throw ssErr;
@@ -365,14 +371,14 @@ export function useCampaignEngagement(campaignId: string | undefined) {
       const perStepSummary: CampaignEngagement['perStepSummary'] = {};
       for (const st of steps) {
         perStepSummary[st.id] = {
-          sent: 0, opened: 0, bounced: 0, unsubscribed: 0,
+          sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
           replied: 0, failed: 0, pending: 0, skipped: 0,
         };
       }
 
       const summary = {
         total: rawContacts.length,
-        sent: 0, opened: 0, bounced: 0, unsubscribed: 0,
+        sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
         replied: 0, failed: 0, pending: 0, skipped: 0,
       };
 

@@ -348,6 +348,7 @@ const STATUS_BADGE: Record<RecipientEngagementStatus, { label: string; className
   pending: { label: 'Pending', className: 'bg-muted text-muted-foreground border-border' },
   sent: { label: 'Sent', className: 'bg-muted text-foreground border-border' },
   opened: { label: 'Opened', className: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+  clicked: { label: 'Clicked', className: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' },
   bounced: { label: 'Bounced', className: 'bg-destructive/20 text-destructive border-destructive/30' },
   unsubscribed: { label: 'Unsubscribed', className: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30' },
   replied: { label: 'Replied', className: 'bg-sky-500/20 text-sky-600 dark:text-sky-400 border-sky-500/30' },
@@ -401,11 +402,11 @@ function OpenedStatusCell({
   state,
 }: {
   status: RecipientEngagementStatus;
-  log: { opened_at: string | null; first_opened_at: string | null; open_count: number | null } | null;
+  log: { opened_at: string | null; first_opened_at: string | null; open_count: number | null; clicked_at?: string | null; click_count?: number | null } | null;
   sentAt: string | null;
   state: string | null | undefined;
 }) {
-  if (status !== 'opened' || !log) {
+  if ((status !== 'opened' && status !== 'clicked') || !log) {
     return <StatusBadge status={status} />;
   }
   const { tz, abbr } = resolveTz(state);
@@ -494,13 +495,13 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   if (!campaign) return null;
 
   const summary = engagement?.summary ?? {
-    total: campaign.total_recipients, sent: 0, opened: 0, bounced: 0,
+    total: campaign.total_recipients, sent: 0, opened: 0, clicked: 0, bounced: 0,
     unsubscribed: 0, replied: 0, failed: 0, pending: 0, skipped: 0,
   };
   const contacts = engagement?.contacts ?? [];
   const steps = engagement?.steps ?? [];
   const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
-  const sentDenom = summary.sent + summary.opened + summary.replied;
+  const sentDenom = summary.sent + summary.opened + summary.clicked + summary.replied;
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
 
@@ -529,14 +530,15 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
           {/* Top-level stats */}
           <div className="grid gap-4 sm:grid-cols-4">
             <StatTile label="Total Recipients" value={summary.total} />
-            <StatTile label="Sent" value={summary.sent + summary.opened + summary.replied} />
+            <StatTile label="Sent" value={summary.sent + summary.opened + summary.clicked + summary.replied} />
             <StatTile label="Pending" value={summary.pending} tone="muted" />
             <StatTile label="Failed" value={summary.failed} tone="destructive" />
           </div>
 
           {/* Engagement stats */}
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-5">
             <StatTile label="Opened" value={summary.opened} pct={pct(summary.opened)} tone="success" />
+            <StatTile label="Clicked" value={summary.clicked} pct={pct(summary.clicked)} tone="info" />
             <StatTile label="Bounced" value={summary.bounced} pct={pct(summary.bounced)} tone="destructive" />
             <StatTile label="Unsubscribed" value={summary.unsubscribed} pct={pct(summary.unsubscribed)} tone="warning" />
             <StatTile label="Replied" value={summary.replied} pct={pct(summary.replied)} tone="info" />
@@ -627,9 +629,10 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
                         {s.delay_days > 0 && <> · sent {s.delay_days} day(s) after Email 1</>}
                       </div>
                       {ss && (
-                        <div className="grid gap-3 sm:grid-cols-4">
-                          <StatTile label="Sent" value={ss.sent + ss.opened + ss.replied} />
+                        <div className="grid gap-3 sm:grid-cols-5">
+                          <StatTile label="Sent" value={ss.sent + ss.opened + ss.clicked + ss.replied} />
                           <StatTile label="Opened" value={ss.opened} tone="success" />
+                          <StatTile label="Clicked" value={ss.clicked} tone="info" />
                           <StatTile label="Bounced" value={ss.bounced} tone="destructive" />
                           <StatTile label="Unsubscribed" value={ss.unsubscribed} tone="warning" />
                         </div>
