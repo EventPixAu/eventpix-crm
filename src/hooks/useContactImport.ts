@@ -585,8 +585,15 @@ export function useContactImport() {
               result.contactsSkipped++;
             }
           } else {
+            // Bounce protection — don't recreate a hard-bounced email
+            const emailLower = (contact.email || '').toLowerCase().trim();
+            if (emailLower && bounceIndex.emails.has(emailLower)) {
+              result.bounceProtected++;
+              continue;
+            }
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
+
 
             const { error: contactError } = await supabase
               .from('client_contacts')
