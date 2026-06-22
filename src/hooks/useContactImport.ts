@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
 export interface ImportedContact {
   firstName?: string;
