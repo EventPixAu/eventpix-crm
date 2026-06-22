@@ -266,11 +266,14 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     }
     for (const c of manualIncludes) {
       if (excludeSet.has(c.id) || seen.has(c.id)) continue;
+      // Hard-bounce protection — never include a bounced contact, even manually
+      const emailLower = (c.email || '').toLowerCase().trim();
+      if (bounceIndex && (bounceIndex.ids.has(c.id) || (emailLower && bounceIndex.emails.has(emailLower)))) continue;
       seen.add(c.id);
       list.push(c);
     }
     return list;
-  }, [matched, manualIncludes, manualExcludes, audienceCleared]);
+  }, [matched, manualIncludes, manualExcludes, audienceCleared, bounceIndex]);
 
   const distinctCountries = useMemo(() => {
     if (!companiesIndex) return [] as string[];
