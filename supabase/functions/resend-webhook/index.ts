@@ -161,11 +161,8 @@ serve(async (req) => {
       .limit(5);
 
     if (fetchError) {
-      console.error("Error fetching email logs:", fetchError);
-      return new Response(JSON.stringify({ error: "DB error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.error("Error fetching email logs (acknowledging anyway):", fetchError);
+      return ok({ skipped: "db_fetch_error" });
     }
 
     if (!logs || logs.length === 0) {
