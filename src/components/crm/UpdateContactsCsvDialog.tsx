@@ -175,7 +175,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
   const runImport = async () => {
     setProcessing(true);
-    const result: ImportSummary = { updated: 0, created: 0, skipped: 0, statusProtected: 0, errors: [] };
+    const result: ImportSummary = { updated: 0, created: 0, skipped: 0, statusProtected: 0, bounceProtected: 0, errors: [] };
 
     try {
       // Pre-fetch existing contacts by email (case-insensitive)
