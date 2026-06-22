@@ -495,13 +495,13 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   if (!campaign) return null;
 
   const summary = engagement?.summary ?? {
-    total: campaign.total_recipients, sent: 0, opened: 0, bounced: 0,
+    total: campaign.total_recipients, sent: 0, opened: 0, clicked: 0, bounced: 0,
     unsubscribed: 0, replied: 0, failed: 0, pending: 0, skipped: 0,
   };
   const contacts = engagement?.contacts ?? [];
   const steps = engagement?.steps ?? [];
   const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
-  const sentDenom = summary.sent + summary.opened + summary.replied;
+  const sentDenom = summary.sent + summary.opened + summary.clicked + summary.replied;
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
 
