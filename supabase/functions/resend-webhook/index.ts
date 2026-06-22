@@ -19,14 +19,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Helper — Resend disables endpoints that repeatedly return non-2xx.
+  // We always return 200 and surface the real outcome in the JSON body + logs.
+  const ok = (extra: Record<string, unknown> = {}) =>
+    new Response(JSON.stringify({ ok: true, ...extra }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+
   try {
     // Verify Svix signature
     const webhookSecret = Deno.env.get("RESEND_WEBHOOK_SECRET");
     const rawBody = await req.text();
     if (!webhookSecret) {
-      console.error("RESEND_WEBHOOK_SECRET not configured – rejecting webhook");
-      return new Response(JSON.stringify({ error: "Webhook secret not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      console.error("RESEND_WEBHOOK_SECRET not configured – acknowledging webhook to avoid endpoint disablement");
+      return ok({ skipped: "secret_not_configured" });
     }
     try {
       const wh = new Webhook(webhookSecret);
@@ -36,20 +43,23 @@ serve(async (req) => {
         "svix-signature": req.headers.get("svix-signature") ?? "",
       });
     } catch (e) {
-      console.error("Invalid webhook signature:", e);
-      return new Response(JSON.stringify({ error: "Invalid signature" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      console.error("Invalid webhook signature (acknowledging anyway):", e);
+      return ok({ skipped: "invalid_signature" });
     }
 
-    const body = JSON.parse(rawBody);
-    const eventType = body.type;
-    const data = body.data;
+    let body: any;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (e) {
+      console.error("Invalid JSON payload (acknowledging anyway):", e);
+      return ok({ skipped: "invalid_json" });
+    }
+    const eventType = body?.type;
+    const data = body?.data;
 
     if (!eventType || !data) {
-      return new Response(JSON.stringify({ error: "Invalid payload" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.warn("Webhook payload missing type/data — acknowledging");
+      return ok({ skipped: "invalid_payload" });
     }
 
     console.log(`Resend webhook received: ${eventType}`, JSON.stringify({ email_id: data.email_id, to: data.to }));
@@ -151,11 +161,8 @@ serve(async (req) => {
       .limit(5);
 
     if (fetchError) {
-      console.error("Error fetching email logs:", fetchError);
-      return new Response(JSON.stringify({ error: "DB error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.error("Error fetching email logs (acknowledging anyway):", fetchError);
+      return ok({ skipped: "db_fetch_error" });
     }
 
     if (!logs || logs.length === 0) {
@@ -209,11 +216,8 @@ serve(async (req) => {
       .eq("id", targetLog.id);
 
     if (updateError) {
-      console.error("Error updating email log:", updateError);
-      return new Response(JSON.stringify({ error: "Update failed" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      console.error("Error updating email log (acknowledging anyway):", updateError);
+      return ok({ skipped: "db_update_error" });
     }
 
     console.log(`Updated email log ${targetLog.id}: ${targetLog.status} -> ${newStatus}`);
@@ -348,9 +352,9 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Resend webhook error:", error);
-    return new Response(JSON.stringify({ error: "Internal error" }), {
-      status: 500,
+    console.error("Resend webhook error (acknowledging anyway to keep endpoint enabled):", error);
+    return new Response(JSON.stringify({ ok: true, skipped: "internal_error", error: String(error) }), {
+      status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
