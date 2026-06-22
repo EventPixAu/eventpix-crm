@@ -289,7 +289,8 @@ function deriveStatus(
   if (logStatus === 'bounced') return 'bounced';
   if (rawStatus === 'failed') return 'failed';
   if (rawStatus === 'skipped') return 'skipped';
-  if (logStatus === 'opened' || logStatus === 'clicked') return 'opened';
+  if (logStatus === 'clicked') return 'clicked';
+  if (logStatus === 'opened') return 'opened';
   if (rawStatus === 'sent' || logStatus === 'sent' || logStatus === 'delivered') return 'sent';
   if (rawStatus === 'replied') return 'replied';
   return 'pending';
