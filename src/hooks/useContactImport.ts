@@ -354,6 +354,7 @@ export function useContactImport() {
         contactsCreated: 0,
         contactsUpdated: 0,
         contactsSkipped: 0,
+        bounceProtected: 0,
         errors: [],
       };
 
