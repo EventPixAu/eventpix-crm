@@ -169,6 +169,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
         .eq('archived', false)
         .eq('unsubscribed', false)
+        .is('bounce_status', null)
         .not('email', 'is', null);
 
       // Status filter: if user picked statuses, use those. Otherwise exclude Staff & Archived by default.
