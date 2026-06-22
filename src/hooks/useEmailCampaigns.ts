@@ -319,7 +319,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           id, recipient_email, recipient_name, last_event_name, last_event_date,
           status, email_log_id, contact_id,
           client_contacts(unsubscribed, unsubscribed_at, state),
-          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, sent_at, error_message)
+          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message)
         `)
         .eq('campaign_id', campaignId)
         .order('recipient_name', { nullsFirst: false });
