@@ -1102,19 +1102,20 @@ export default function EventSeriesDetail() {
                     }
                     
                     const confirmed = window.confirm(
-                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, ops status, dress code, times, and default contact.`
+                      `Apply current settings to all ${eventIds.length} events in this series? This will update event type, delivery method, dress code, times, and default contact. Per-event Ops Status will be preserved.`
                     );
                     if (!confirmed) return;
                     
                     try {
                       // Update event fields from series defaults
+                      // NOTE: ops_status is intentionally NOT updated here — per-event
+                      // ops status (completed, cancelled, etc.) must be preserved.
                       const { error: updateError } = await supabase
                         .from('events')
                         .update({
                           event_type_id: editEventTypeId || null,
                           delivery_method_id: editDeliveryMethodId || null,
                           delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
-                          ops_status: editDefaultOpsStatus || 'confirmed',
                           start_time: editStartTime || null,
                           end_time: editEndTime || null,
                           coverage_details: editCoverage || null,
