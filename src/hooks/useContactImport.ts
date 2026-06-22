@@ -534,6 +534,13 @@ export function useContactImport() {
           }
 
           if (existingContact) {
+            // Bounce protection — never re-activate or modify a hard-bounced contact
+            const emailLower = (existingContact.email || contact.email || '').toLowerCase().trim();
+            if (bounceIndex.ids.has(existingContact.id) || (emailLower && bounceIndex.emails.has(emailLower))) {
+              result.bounceProtected++;
+              continue;
+            }
+
             // Update existing contact - merge tags
             const existingTags = existingContact.tags || [];
             const newTags = contact.tags || [];
