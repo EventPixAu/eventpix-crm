@@ -179,7 +179,28 @@ serve(async (req) => {
         .maybeSingle();
       if (existingSend && existingSend.status === "sent") continue;
 
-      const cc = rec.client_contacts as { unsubscribed?: boolean; first_name?: string; last_name?: string; contact_name?: string; clients?: { business_name?: string } } | null;
+      const cc = rec.client_contacts as { unsubscribed?: boolean; bounce_status?: string | null; archived?: boolean; status?: string | null; first_name?: string; last_name?: string; contact_name?: string; clients?: { business_name?: string } } | null;
+
+      // Skip bounced contacts (hard bounce protection — applies to all future sequence steps)
+      const isBouncedContact =
+        rec.status === "bounced" ||
+        !!cc?.bounce_status ||
+        !!cc?.archived ||
+        cc?.status === "Archived";
+      if (isBouncedContact) {
+        await supabase.from("campaign_step_sends").upsert({
+          campaign_contact_id: rec.id,
+          step_id: step.id,
+          status: "skipped",
+          error_message: "Recipient previously bounced — hard bounce protection",
+        }, { onConflict: "campaign_contact_id,step_id" });
+        // Ensure parent row reflects bounce so future steps short-circuit too
+        if (rec.status !== "bounced") {
+          await supabase.from("campaign_contacts").update({ status: "bounced" }).eq("id", rec.id);
+        }
+        skipped++;
+        continue;
+      }
 
       // Skip unsubscribed
       if (cc?.unsubscribed) {
