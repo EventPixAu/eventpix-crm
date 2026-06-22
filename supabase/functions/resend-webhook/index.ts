@@ -259,6 +259,84 @@ serve(async (req) => {
           });
         }
         console.log(`Processed ${contacts?.length ?? 0} CRM contact(s) for ${eventType} (${recipientEmail})`);
+
+        // Cascade bounce to ALL campaign sequence steps for this contact —
+        // mark every pending future step_send as skipped and flag campaign_contacts
+        // so the dispatcher never fires another email at them.
+        if (isHardBounce) {
+          try {
+            const contactIds = (contacts ?? []).map((c: any) => c.id).filter(Boolean);
+            // 1) Find all campaign_contacts rows for this recipient (by contact_id or raw email)
+            let ccRows: any[] = [];
+            if (contactIds.length) {
+              const { data } = await supabase
+                .from("campaign_contacts")
+                .select("id, campaign_id, status")
+                .in("contact_id", contactIds);
+              ccRows = data ?? [];
+            }
+            const { data: byEmail } = await supabase
+              .from("campaign_contacts")
+              .select("id, campaign_id, status")
+              .ilike("recipient_email", recipientEmail);
+            for (const r of byEmail ?? []) {
+              if (!ccRows.find((x) => x.id === r.id)) ccRows.push(r);
+            }
+
+            // 2) Flag parent rows as bounced so future dispatcher runs skip them
+            const toFlag = ccRows
+              .filter((r) => !["bounced", "unsubscribed", "replied"].includes(r.status))
+              .map((r) => r.id);
+            if (toFlag.length) {
+              await supabase.from("campaign_contacts")
+                .update({ status: "bounced", error_message: "Hard bounce received from Resend" })
+                .in("id", toFlag);
+            }
+
+            // 3) Mark every pending step_send (current + future) as skipped
+            const ccIds = ccRows.map((r) => r.id);
+            if (ccIds.length) {
+              await supabase.from("campaign_step_sends")
+                .update({ status: "skipped", error_message: "Recipient bounced — skipped remaining sequence" })
+                .in("campaign_contact_id", ccIds)
+                .eq("status", "pending");
+
+              // 4) Upsert a skipped row for any step that doesn't yet have a send row
+              //    so the timeline shows "Bounced/Skipped" instead of "Pending".
+              const campaignIds = Array.from(new Set(ccRows.map((r) => r.campaign_id)));
+              const { data: steps } = await supabase
+                .from("email_campaign_steps")
+                .select("id, campaign_id, step_order")
+                .in("campaign_id", campaignIds);
+              const { data: existing } = await supabase
+                .from("campaign_step_sends")
+                .select("campaign_contact_id, step_id")
+                .in("campaign_contact_id", ccIds);
+              const existingKey = new Set((existing ?? []).map((s: any) => `${s.campaign_contact_id}::${s.step_id}`));
+              const inserts: Array<Record<string, unknown>> = [];
+              for (const cc of ccRows) {
+                for (const s of steps ?? []) {
+                  if (s.campaign_id !== cc.campaign_id) continue;
+                  const key = `${cc.id}::${s.id}`;
+                  if (existingKey.has(key)) continue;
+                  inserts.push({
+                    campaign_contact_id: cc.id,
+                    step_id: s.id,
+                    status: "skipped",
+                    error_message: "Recipient bounced — skipped remaining sequence",
+                  });
+                }
+              }
+              if (inserts.length) {
+                await supabase.from("campaign_step_sends").insert(inserts);
+              }
+            }
+
+            console.log(`Cascaded bounce skip across ${ccRows.length} campaign_contact row(s) for ${recipientEmail}`);
+          } catch (cascadeErr) {
+            console.error("Bounce cascade error:", cascadeErr);
+          }
+        }
       } catch (crmErr) {
         console.error("CRM bounce handling error:", crmErr);
       }
