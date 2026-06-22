@@ -159,6 +159,7 @@ export default function EventSeriesDetail() {
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
+      setEditDressCode((series as any).dress_code || '__none__');
     }
   });
   
