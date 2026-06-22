@@ -29,6 +29,7 @@ import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useCompanyCategories, useCompanySubcategories } from '@/hooks/useCompanyCategories';
 import { AU_STATES } from '@/lib/auStates';
+import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
 
 interface AudienceFilters {
