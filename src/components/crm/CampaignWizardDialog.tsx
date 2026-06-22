@@ -243,7 +243,12 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         .not('email', 'is', null)
         .or(`contact_name.ilike.%${manualSearch}%,email.ilike.%${manualSearch}%`)
         .limit(15);
-      return (data || []) as WizardContact[];
+      const rows = (data || []) as WizardContact[];
+      if (!bounceIndex) return rows;
+      return rows.filter((r) => {
+        const emailLower = (r.email || '').toLowerCase().trim();
+        return !bounceIndex.ids.has(r.id) && !(emailLower && bounceIndex.emails.has(emailLower));
+      });
     },
     enabled: manualSearch.trim().length >= 2,
   });
