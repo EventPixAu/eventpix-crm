@@ -148,7 +148,7 @@ serve(async (req) => {
     // Get recipients
     const { data: recipients } = await supabase
       .from("campaign_contacts")
-      .select("*, client_contacts(id, first_name, last_name, contact_name, unsubscribed, client_id, clients(business_name))")
+      .select("*, client_contacts(id, first_name, last_name, contact_name, unsubscribed, bounce_status, archived, status, client_id, clients(business_name))")
       .eq("campaign_id", campaign.id);
 
     // Update campaign to in_progress
