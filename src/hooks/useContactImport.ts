@@ -362,6 +362,9 @@ export function useContactImport() {
         throw new Error('No contacts to import');
       }
 
+      setImportProgress({ current: 0, total: contacts.length, status: 'Loading bounce protection list...' });
+      const bounceIndex = await fetchHardBouncedContacts();
+
       setImportProgress({ current: 0, total: contacts.length, status: 'Fetching existing companies...' });
 
       // Fetch existing companies for duplicate detection
