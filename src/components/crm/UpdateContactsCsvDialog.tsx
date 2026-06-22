@@ -214,6 +214,12 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
           const existing = existingByEmail.get(key);
           const newStatus = normaliseStatus(row.status);
 
+          // Bounce protection — never re-activate or recreate a hard-bounced contact
+          if (bounceIndex.emails.has(key) || (existing && bounceIndex.ids.has(existing.id))) {
+            result.bounceProtected++;
+            continue;
+          }
+
           let contactId: string;
 
           if (existing) {
