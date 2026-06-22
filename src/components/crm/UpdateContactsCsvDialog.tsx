@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Upload, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
 interface Props {
   open: boolean;
