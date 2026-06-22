@@ -178,6 +178,9 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
     const result: ImportSummary = { updated: 0, created: 0, skipped: 0, statusProtected: 0, bounceProtected: 0, errors: [] };
 
     try {
+      // Pre-fetch hard-bounced contacts so we never re-activate them
+      const bounceIndex = await fetchHardBouncedContacts();
+
       // Pre-fetch existing contacts by email (case-insensitive)
       const emailsLower = Array.from(
         new Set(rows.map((r) => r.email?.trim().toLowerCase()).filter(Boolean) as string[])
