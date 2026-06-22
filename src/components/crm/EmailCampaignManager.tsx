@@ -402,11 +402,11 @@ function OpenedStatusCell({
   state,
 }: {
   status: RecipientEngagementStatus;
-  log: { opened_at: string | null; first_opened_at: string | null; open_count: number | null } | null;
+  log: { opened_at: string | null; first_opened_at: string | null; open_count: number | null; clicked_at?: string | null; click_count?: number | null } | null;
   sentAt: string | null;
   state: string | null | undefined;
 }) {
-  if (status !== 'opened' || !log) {
+  if ((status !== 'opened' && status !== 'clicked') || !log) {
     return <StatusBadge status={status} />;
   }
   const { tz, abbr } = resolveTz(state);
