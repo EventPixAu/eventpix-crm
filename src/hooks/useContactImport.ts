@@ -33,6 +33,7 @@ export interface ImportResult {
   contactsCreated: number;
   contactsUpdated: number;
   contactsSkipped: number;
+  bounceProtected: number;
   errors: string[];
 }
 
