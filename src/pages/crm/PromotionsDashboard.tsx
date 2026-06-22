@@ -232,6 +232,7 @@ export default function PromotionsDashboard() {
   const { data: companyStatuses = [] } = useCompanyStatuses();
   const { data: realCategories = [] } = useCompanyCategories();
 
+  const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     companyStatuses.forEach(s => { counts[s.label] = 0; });
     counts['Unassigned'] = 0;
@@ -253,42 +254,30 @@ export default function PromotionsDashboard() {
     [allContacts]
   );
 
+  // Count by real category_id (matches Individual Contacts filter logic).
+  // Contacts with no category_id (or assigned to the "Uncategorised" placeholder)
+  // are bucketed under '__uncategorised__'.
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    const knownCategories = [
-      'Schools',
-      'Event Management',
-      'Professional Conference Organiser (PCO)',
-      'PCO',
-      'Marketing and PR',
-      'Venue Management',
-      'Photographer',
-      'Videographer',
-      'AV Production',
-      'Event Supplier',
-    ];
-    knownCategories.forEach(cat => { counts[cat] = 0; });
-    counts['Uncategorised'] = 0;
+    const uncatPlaceholderIds = new Set(
+      realCategories.filter(c => c.name.toLowerCase() === 'uncategorised').map(c => c.id)
+    );
+    realCategories.forEach(cat => {
+      if (!uncatPlaceholderIds.has(cat.id)) counts[cat.id] = 0;
+    });
+    counts['__uncategorised__'] = 0;
     clientContacts.forEach(c => {
-      if (!c.category) {
-        counts['Uncategorised']++;
-      } else if (counts[c.category] !== undefined) {
-        counts[c.category]++;
+      if (!c.category_id || uncatPlaceholderIds.has(c.category_id)) {
+        counts['__uncategorised__']++;
+      } else if (counts[c.category_id] !== undefined) {
+        counts[c.category_id]++;
       } else {
-        // If it's a known variant (e.g. just "PCO")
-        const matched = knownCategories.find(k => 
-          c.category!.toLowerCase().includes(k.toLowerCase()) ||
-          k.toLowerCase().includes(c.category!.toLowerCase())
-        );
-        if (matched) {
-          counts[matched]++;
-        } else {
-          counts[c.category] = (counts[c.category] || 0) + 1;
-        }
+        counts['__uncategorised__']++;
       }
     });
     return counts;
-  }, [clientContacts]);
+  }, [clientContacts, realCategories]);
+
 
   // Data health — exclude Staff from client totals
   const dataHealth = useMemo(() => {
