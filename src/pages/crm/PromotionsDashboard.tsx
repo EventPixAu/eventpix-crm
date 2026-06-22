@@ -808,33 +808,33 @@ export default function PromotionsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {categoryOrder.map((cat) => {
-                    const count = categoryCounts[cat] || 0;
-                    const total = allContacts.length || 1;
-                    const pct = Math.round((count / total) * 100);
-                    const Icon = categoryIcons[cat] || Briefcase;
-                    const label = cat === 'Professional Conference Organiser (PCO)' ? 'PCO' : cat;
-                    return (
-                      <div key={cat} className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium truncate">{label}</span>
-                            <span className="text-sm font-bold">{count}</span>
+                  {realCategories
+                    .filter(cat => cat.name.toLowerCase() !== 'uncategorised')
+                    .map((cat) => {
+                      const count = categoryCounts[cat.id] || 0;
+                      const total = clientContacts.length || 1;
+                      const pct = Math.round((count / total) * 100);
+                      return (
+                        <div key={cat.id} className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
                           </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${pct}%` }}
-                            />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium truncate">{cat.name}</span>
+                              <span className="text-sm font-bold">{count}</span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full transition-all"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
                           </div>
+                          <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
                         </div>
-                        <span className="text-xs text-muted-foreground w-10 text-right">{pct}%</span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                   {/* Uncategorised */}
                   {(() => {
                     const count = categoryCounts['Uncategorised'] || 0;
