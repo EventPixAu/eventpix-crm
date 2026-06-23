@@ -1947,6 +1947,7 @@ export type Database = {
           open_count: number | null
           opened_at: string | null
           quote_id: string | null
+          read_at: string | null
           recipient_email: string
           recipient_name: string | null
           sent_at: string | null
@@ -1980,6 +1981,7 @@ export type Database = {
           open_count?: number | null
           opened_at?: string | null
           quote_id?: string | null
+          read_at?: string | null
           recipient_email: string
           recipient_name?: string | null
           sent_at?: string | null
@@ -2013,6 +2015,7 @@ export type Database = {
           open_count?: number | null
           opened_at?: string | null
           quote_id?: string | null
+          read_at?: string | null
           recipient_email?: string
           recipient_name?: string | null
           sent_at?: string | null

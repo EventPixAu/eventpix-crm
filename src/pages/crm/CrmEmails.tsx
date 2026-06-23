@@ -28,6 +28,8 @@ import DOMPurify from 'dompurify';
 import { EmailCampaignManager } from '@/components/crm/EmailCampaignManager';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { InboundReplyDialog } from '@/components/crm/InboundReplyDialog';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function CrmEmails() {
   const [searchParams] = useSearchParams();
@@ -38,6 +40,8 @@ export default function CrmEmails() {
     if (t) setActiveTab(t);
   }, [searchParams]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [openedReply, setOpenedReply] = useState<EmailLog | null>(null);
+  const queryClient = useQueryClient();
   
   // Compose state
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -321,21 +325,24 @@ export default function CrmEmails() {
                       return (
                         <div
                           key={reply.id}
-                          className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                          onClick={() => setPreviewHtml(reply.body_html || reply.body_preview || '')}
+                          className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${!(reply as any).read_at ? 'bg-primary/5 border-primary/20' : ''}`}
+                          onClick={() => setOpenedReply(reply)}
                         >
                           <div className="mt-0.5">
                             <ArrowDownLeft className="h-4 w-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <span className="font-medium text-sm truncate">
+                              <span className={`text-sm truncate ${!(reply as any).read_at ? 'font-bold' : 'font-medium'}`}>
                                 {reply.from_name || reply.from_email || reply.recipient_email}
                               </span>
                               <Badge variant={cat.variant} className="text-xs shrink-0">
                                 <CatIcon className="h-3 w-3 mr-1" />
                                 {cat.label}
                               </Badge>
+                              {!(reply as any).read_at && (
+                                <Badge variant="default" className="text-[10px] h-4 px-1.5 shrink-0">NEW</Badge>
+                              )}
                             </div>
                             <p className="text-sm font-medium truncate">{reply.subject}</p>
                             {reply.body_preview && (
@@ -358,7 +365,7 @@ export default function CrmEmails() {
                             className="shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setPreviewHtml(reply.body_html || reply.body_preview || '');
+                              setOpenedReply(reply);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -817,6 +824,25 @@ export default function CrmEmails() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <InboundReplyDialog
+          reply={openedReply}
+          open={!!openedReply}
+          onOpenChange={(o) => {
+            if (!o) {
+              setOpenedReply(null);
+              queryClient.invalidateQueries({ queryKey: ['email-logs', 'inbound-replies'] });
+            }
+          }}
+          onReply={({ to, toName, subject: subj, quotedBodyHtml }) => {
+            setRecipientEmail(to);
+            setRecipientName(toName);
+            setSubject(subj);
+            setBodyHtml(quotedBodyHtml);
+            setSelectedTemplateId('');
+            setActiveTab('compose');
+          }}
+        />
       </div>
     </AppLayout>
   );
