@@ -5,7 +5,7 @@
  * Pre-fills the recipient from the contact record.
  * Supports template selection and merge fields.
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { Send, Eye, Paperclip, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,30 @@ interface SendContactEmailDialogProps {
   companyName?: string | null;
 }
 
+const SIGNATURE_MARKER = '<!-- eventpix-signature-start -->';
+
+const PLAIN_TEXT_SIGNATURE = `Warm regards,
+Trevor Connell
+EventPix
+📞 1300 850 021
+🌐 eventpix.com.au`;
+
+/** Convert simple HTML into readable plain text for editing. */
+function htmlToPlainText(html: string): string {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+    .replace(/<\/div>\s*<div[^>]*>/gi, '\n')
+    .replace(/<\/tr>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '\n- ');
+  // Strip remaining tags and decode entities
+  const decoded = tmp.textContent || tmp.innerText || '';
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = decoded;
+  return textarea.value.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export function SendContactEmailDialog({
   open,
   onOpenChange,
@@ -56,12 +80,11 @@ export function SendContactEmailDialog({
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
 
-  const SIGNATURE_MARKER = '<!-- eventpix-signature-start -->';
-
-  const buildSignatureAndFooter = (): string => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    const logoUrl = `${supabaseUrl}/storage/v1/object/public/avatars/email-logo.png`;
-    return `${SIGNATURE_MARKER}
+  const buildSignatureAndFooter = useMemo(() => {
+    return (): string => {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const logoUrl = `${supabaseUrl}/storage/v1/object/public/avatars/email-logo.png`;
+      return `${SIGNATURE_MARKER}
 <p style="margin:24px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;line-height:1.5;">
   Warm regards,<br/>
   <strong>Trevor Connell</strong><br/>
@@ -82,6 +105,21 @@ export function SendContactEmailDialog({
     </td>
   </tr>
 </table>`;
+    };
+  }, []);
+
+  /** Convert the editable plain text body into the final HTML email body. */
+  const bodyToHtml = (body: string): string => {
+    const sigIndex = body.indexOf(PLAIN_TEXT_SIGNATURE);
+    if (sigIndex !== -1) {
+      const message = body.slice(0, sigIndex).trimEnd();
+      const messageHtml = message
+        ? `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;line-height:1.5;">${message.replace(/\n/g, '<br/>')}</p>`
+        : '';
+      return `${messageHtml}\n${buildSignatureAndFooter()}`;
+    }
+    // No auto-signature detected — send the user's plain text as simple HTML
+    return `<p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;line-height:1.5;">${body.replace(/\n/g, '<br/>')}</p>`;
   };
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -92,12 +130,12 @@ export function SendContactEmailDialog({
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset when dialog opens — pre-populate signature/footer below the cursor
+  // Reset when dialog opens — pre-populate plain text signature below the cursor
   useEffect(() => {
     if (open) {
       setSelectedTemplateId('');
       setSubject('');
-      setBody(`\n\n${buildSignatureAndFooter()}`);
+      setBody(`\n\n${PLAIN_TEXT_SIGNATURE}`);
       setShowPreview(false);
       setAttachments([]);
       setIsSending(false);
@@ -111,7 +149,7 @@ export function SendContactEmailDialog({
     if (!template) return;
 
     let processedSubject = template.subject || '';
-    let processedBody = template.body_html || template.body_text || '';
+    let processedBody = template.body_text || template.body_html || '';
 
     // Replace merge fields
     const firstName = contactFirstName || contactName.split(' ')[0] || '';
@@ -133,8 +171,11 @@ export function SendContactEmailDialog({
     const sigIdx = processedBody.indexOf(SIGNATURE_MARKER);
     if (sigIdx !== -1) processedBody = processedBody.slice(0, sigIdx).trimEnd();
 
+    // Convert template body to plain text for editing
+    const plainBody = htmlToPlainText(processedBody);
+
     setSubject(processedSubject);
-    setBody(`${processedBody}\n\n${buildSignatureAndFooter()}`);
+    setBody(`${plainBody}\n\n${PLAIN_TEXT_SIGNATURE}`);
   }, [selectedTemplateId, templates, contactName, contactFirstName, companyName]);
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +214,7 @@ export function SendContactEmailDialog({
         recipientEmail: contactEmail,
         recipientName: contactName,
         subject,
-        bodyHtml: body.includes('<') ? body : `<p>${body.replace(/\n/g, '<br/>')}</p>`,
+        bodyHtml: bodyToHtml(body),
         attachments: attachments.length > 0 ? attachments : undefined,
         contactId,
         clientId: clientId || undefined,
@@ -186,7 +227,7 @@ export function SendContactEmailDialog({
     }
   };
 
-  const previewHtml = body.includes('<') ? body : `<p>${body.replace(/\n/g, '<br/>')}</p>`;
+  const previewHtml = bodyToHtml(body);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -247,7 +288,7 @@ export function SendContactEmailDialog({
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 rows={10}
-                placeholder="Type your message... (supports HTML)"
+                placeholder="Type your message..."
                 className="bg-white text-slate-900 border-slate-300 placeholder:text-slate-400"
               />
             )}
