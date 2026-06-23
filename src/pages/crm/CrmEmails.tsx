@@ -824,6 +824,25 @@ export default function CrmEmails() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <InboundReplyDialog
+          reply={openedReply}
+          open={!!openedReply}
+          onOpenChange={(o) => {
+            if (!o) {
+              setOpenedReply(null);
+              queryClient.invalidateQueries({ queryKey: ['email-logs', 'inbound-replies'] });
+            }
+          }}
+          onReply={({ to, toName, subject: subj, quotedBodyHtml }) => {
+            setRecipientEmail(to);
+            setRecipientName(toName);
+            setSubject(subj);
+            setBodyHtml(quotedBodyHtml);
+            setSelectedTemplateId('');
+            setActiveTab('compose');
+          }}
+        />
       </div>
     </AppLayout>
   );
