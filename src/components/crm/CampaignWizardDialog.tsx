@@ -168,7 +168,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     queryFn: async () => {
       let q = supabase
         .from('client_contacts')
-        .select('id, contact_name, email, status, category, source, state, city, client_id, unsubscribed')
+        .select('id, contact_name, email, status, category, category_id, subcategory_id, source, state, city, client_id, unsubscribed')
         .eq('archived', false)
         .eq('unsubscribed', false)
         .is('bounce_status', null)
@@ -207,15 +207,18 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         }
         const info = r.client_id ? companiesIndex.get(r.client_id) : null;
         // Default-exclude EPX Supplier (excluded_from_campaigns) unless user explicitly picked that parent
-        if (info?.excluded && !(info.category_id && explicitParents.has(info.category_id))) {
+        // Check against contact's category OR company's category
+        const contactParent = r.category_id || info?.category_id || null;
+        const contactSub = r.subcategory_id || info?.subcategory_id || null;
+        if (info?.excluded && !(contactParent && explicitParents.has(contactParent))) {
           return false;
         }
         if (parentsActive) {
-          // OR within group; uncategorised excluded when a parent filter is active
-          if (!info?.category_id || !explicitParents.has(info.category_id)) return false;
+          // Match on contact's own category_id (falls back to company's) — mirrors Contact List filter
+          if (!contactParent || !explicitParents.has(contactParent)) return false;
         }
         if (subsActive) {
-          if (!info?.subcategory_id || !explicitSubs.has(info.subcategory_id)) return false;
+          if (!contactSub || !explicitSubs.has(contactSub)) return false;
         }
         if (explicitClientTypes.size) {
           const value = info?.client_type || 'Unassigned';
