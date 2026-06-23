@@ -41,7 +41,9 @@ serve(async (req) => {
   try {
     const nowIso = new Date().toISOString();
 
-    // 1) Scheduled campaigns due now
+    // 1) Scheduled campaigns due now — atomically claim each one by
+    // flipping status scheduled -> in_progress before invoking, so a
+    // second overlapping cron run can never re-fire the same campaign.
     const { data: dueScheduled } = await supabase
       .from("email_campaigns")
       .select("id, scheduled_at, current_step")
@@ -49,8 +51,20 @@ serve(async (req) => {
       .lte("scheduled_at", nowIso);
 
     for (const c of dueScheduled || []) {
+      const { data: claimed } = await supabase
+        .from("email_campaigns")
+        .update({ status: "in_progress" })
+        .eq("id", c.id)
+        .eq("status", "scheduled") // only succeeds if still scheduled
+        .select("id")
+        .maybeSingle();
+      if (!claimed) {
+        results.push({ campaignId: c.id, skipped: "already_claimed" });
+        continue;
+      }
       await invokeStep(c.id, c.current_step ?? 0);
     }
+
 
     // 2) Sequence follow-ups: in_progress, has next step, delay elapsed since last sent
     const { data: active } = await supabase
