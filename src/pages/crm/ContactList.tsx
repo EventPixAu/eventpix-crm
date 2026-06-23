@@ -1243,11 +1243,16 @@ export default function ContactList() {
                         {/* Status cell removed — status set at Company level */}
 
                         <TableCell>
-                          {contact.category ? (
-                            <Badge variant="secondary" className="text-xs">{contact.category}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
+                          {(() => {
+                            const resolvedCategory =
+                              categoryOptions.find(c => c.id === contact.category_id)?.name ||
+                              contact.category;
+                            return resolvedCategory ? (
+                              <Badge variant="secondary" className="text-xs">{resolvedCategory}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           {contact.email ? (
