@@ -19,7 +19,9 @@ import {
   AlertCircle,
   AlertTriangle,
   Clock,
+  Bot,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
