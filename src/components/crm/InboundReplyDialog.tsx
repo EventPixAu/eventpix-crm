@@ -144,10 +144,16 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
             </div>
           </div>
 
-          <div
-            className="prose prose-sm max-w-none break-words"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
-          />
+          {hasContent ? (
+            <div
+              className="prose prose-sm max-w-none break-words"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
+            />
+          ) : (
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs">
+              Content unavailable — reply received before fix was deployed.
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2">
