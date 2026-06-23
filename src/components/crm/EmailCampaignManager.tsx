@@ -533,7 +533,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
           {/* Top-level stats */}
           <div className="grid gap-4 sm:grid-cols-4">
             <StatTile label="Total Recipients" value={summary.total} />
-            <StatTile label="Sent" value={summary.sent + summary.opened + summary.clicked + summary.replied} />
+            <StatTile label="Sent" value={summary.sent + summary.replied} />
             <StatTile label="Pending" value={summary.pending} tone="muted" />
             <StatTile label="Failed" value={summary.failed} tone="destructive" />
           </div>
