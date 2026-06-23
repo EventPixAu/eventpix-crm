@@ -231,6 +231,8 @@ export interface EngagementStepEntry {
   sent_at: string | null;
   log: EngagementLog | null;
   derived: RecipientEngagementStatus;
+  hasOpened: boolean;
+  hasClicked: boolean;
 }
 
 export interface EngagementContact {
