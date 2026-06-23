@@ -171,13 +171,58 @@ serve(async (req) => {
         continue;
       }
 
+      // ============================================================
+      // DEDUPLICATION GUARD (race-condition safe)
+      // Any prior campaign_step_sends row (sent/pending/skipped/failed)
+      // means this slot was already processed — never send again.
+      // ============================================================
       const { data: existingSend } = await supabase
         .from("campaign_step_sends")
         .select("id, status")
         .eq("campaign_contact_id", rec.id)
         .eq("step_id", step.id)
         .maybeSingle();
-      if (existingSend && existingSend.status === "sent") continue;
+      if (existingSend) {
+        skipped++;
+        continue;
+      }
+
+      // Belt-and-braces: check email_logs for a recent send to the
+      // same recipient with the same subject in the last 24h. Protects
+      // against legacy rows where campaign_step_sends was not written.
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count: recentSendCount } = await supabase
+        .from("email_logs")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_email", rec.recipient_email)
+        .eq("email_type", "campaign")
+        .in("status", ["pending", "sent", "delivered", "opened", "clicked", "bounced"])
+        .eq("subject", step.subject)
+        .gte("created_at", since24h);
+      if ((recentSendCount ?? 0) > 0) {
+        await supabase.from("campaign_step_sends").upsert({
+          campaign_contact_id: rec.id,
+          step_id: step.id,
+          status: "skipped",
+          error_message: "Deduplicated — identical send already exists in last 24h",
+        }, { onConflict: "campaign_contact_id,step_id" });
+        skipped++;
+        continue;
+      }
+
+      // Atomic claim. If another worker races us, unique constraint
+      // (campaign_contact_id, step_id) rejects this insert → skip.
+      const { error: claimErr } = await supabase
+        .from("campaign_step_sends")
+        .insert({
+          campaign_contact_id: rec.id,
+          step_id: step.id,
+          status: "pending",
+        });
+      if (claimErr) {
+        skipped++;
+        continue;
+      }
 
       const cc = rec.client_contacts as { unsubscribed?: boolean; bounce_status?: string | null; archived?: boolean; status?: string | null; first_name?: string; last_name?: string; contact_name?: string; clients?: { business_name?: string } } | null;
 
