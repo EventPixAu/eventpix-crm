@@ -142,6 +142,9 @@ export default function ContactList() {
   const { data: subcategoryOptions = [] } = useCompanySubcategories(
     categoryFilter !== 'all' && categoryFilter !== '__unassigned__' ? categoryFilter : undefined
   );
+  const { data: bulkSubcategoryOptions = [] } = useCompanySubcategories(
+    bulkCategoryId || undefined
+  );
   const [bounceFilter, setBounceFilter] = useState<string>('all');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
