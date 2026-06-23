@@ -710,7 +710,21 @@ function RecipientTable({
             <TableRow key={c.id}>
               <TableCell>
                 <div>
-                  <div className="font-medium">{c.recipient_name || 'Unknown'}</div>
+                  <div className="font-medium flex items-center gap-1.5">
+                    {c.recipient_name || 'Unknown'}
+                    {c.hasBotActivity && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Bot className="h-3.5 w-3.5 text-amber-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Automated/bot engagement detected — likely a mail-security scanner
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">{c.recipient_email}</div>
                 </div>
               </TableCell>
