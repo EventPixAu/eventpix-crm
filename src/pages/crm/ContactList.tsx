@@ -866,10 +866,10 @@ export default function ContactList() {
                       <Select
                         value={bulkSubcategoryId}
                         onValueChange={setBulkSubcategoryId}
-                        disabled={!bulkCategoryId}
+                        disabled={!bulkCategoryId || bulkCategoryId === '__none__'}
                       >
                         <SelectTrigger id="bulk-subcategory" className="h-8 text-xs">
-                          <SelectValue placeholder={bulkCategoryId ? 'No sub-category' : 'Pick category first'} />
+                          <SelectValue placeholder={bulkCategoryId && bulkCategoryId !== '__none__' ? 'No sub-category' : 'Pick category first'} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50 max-h-[300px]">
                           <SelectItem value="__none__">No sub-category</SelectItem>
