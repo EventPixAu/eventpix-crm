@@ -560,6 +560,8 @@ export default function ContactList() {
       setBulkCategoryOpen(false);
       setBulkCategoryId('__none__');
       setBulkSubcategoryId('__none__');
+      setBulkStatusOpen(false);
+      setBulkStatus('__none__');
       toast.success('Contacts updated');
     },
     onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
