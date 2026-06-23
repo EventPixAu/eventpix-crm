@@ -883,14 +883,14 @@ export default function ContactList() {
                       <Button
                         size="sm"
                         className="h-8 text-xs"
-                        disabled={!bulkCategoryId}
+                        disabled={bulkCategoryId === '__none__'}
                         onClick={() => {
                           const category = categoryOptions.find(c => c.id === bulkCategoryId);
-                          if (!category) return;
+                          if (!category || bulkCategoryId === '__none__') return;
                           bulkUpdate.mutate({
                             category: category.name,
                             category_id: category.id,
-                            subcategory_id: bulkSubcategoryId || null,
+                            subcategory_id: bulkSubcategoryId === '__none__' ? null : bulkSubcategoryId,
                           });
                         }}
                       >
@@ -902,8 +902,8 @@ export default function ContactList() {
                         className="h-8 text-xs"
                         onClick={() => {
                           setBulkCategoryOpen(false);
-                          setBulkCategoryId('');
-                          setBulkSubcategoryId('');
+                          setBulkCategoryId('__none__');
+                          setBulkSubcategoryId('__none__');
                         }}
                       >
                         Cancel
