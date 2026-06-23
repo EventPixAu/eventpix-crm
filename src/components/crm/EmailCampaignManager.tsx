@@ -450,12 +450,13 @@ function OpenedStatusCell({
 }
 
 function StatTile({
-  label, value, pct, tone,
+  label, value, pct, tone, botFiltered,
 }: {
   label: string;
   value: number;
   pct?: number;
   tone?: 'default' | 'success' | 'destructive' | 'warning' | 'muted' | 'info';
+  botFiltered?: number;
 }) {
   const toneClass =
     tone === 'success' ? 'text-emerald-600 dark:text-emerald-400' :
@@ -474,10 +475,17 @@ function StatTile({
           )}
         </div>
         <div className="text-sm text-muted-foreground">{label}</div>
+        {botFiltered !== undefined && botFiltered > 0 && (
+          <div className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
+            <Bot className="h-3 w-3" />
+            +{botFiltered} bot {label.toLowerCase()} filtered
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
+
 
 function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDialogProps) {
   const [includeBots, setIncludeBots] = useState(false);
