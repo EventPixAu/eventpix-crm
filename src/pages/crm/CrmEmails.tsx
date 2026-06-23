@@ -28,6 +28,8 @@ import DOMPurify from 'dompurify';
 import { EmailCampaignManager } from '@/components/crm/EmailCampaignManager';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { InboundReplyDialog } from '@/components/crm/InboundReplyDialog';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function CrmEmails() {
   const [searchParams] = useSearchParams();
