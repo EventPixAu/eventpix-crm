@@ -678,14 +678,45 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="flex-wrap h-auto">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  {steps.map((s) => (
-                    <TabsTrigger key={s.id} value={s.id}>
-                      Email {s.step_order + 1}
-                    </TabsTrigger>
-                  ))}
+                  {steps.map((s) => {
+                    const info = stepDateInfo[s.id];
+                    const label = info?.date
+                      ? `Email ${s.step_order + 1} · ${info.isSent ? 'Sent' : 'Due'} ${formatStepDate(info.date)}`
+                      : `Email ${s.step_order + 1}`;
+                    return (
+                      <TabsTrigger key={s.id} value={s.id}>
+                        {label}
+                      </TabsTrigger>
+                    );
+                  })}
                 </TabsList>
 
-                <TabsContent value="overview" className="mt-4">
+                <TabsContent value="overview" className="mt-4 space-y-4">
+                  {steps.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Sequence timeline</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {steps.map((s) => {
+                          const info = stepDateInfo[s.id];
+                          const verb = info?.isSent ? 'Sent' : 'Due';
+                          return (
+                            <div key={s.id} className="flex items-start gap-3 text-sm">
+                              <div className="font-medium min-w-[70px]">Email {s.step_order + 1}:</div>
+                              <div className="flex-1">
+                                <span className="text-muted-foreground">{verb} </span>
+                                <span className="font-medium">{formatStepDate(info?.date ?? null)}</span>
+                                {s.subject && (
+                                  <span className="text-muted-foreground"> · {s.subject}</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  )}
                   <RecipientTable
                     contacts={contacts}
                     columns={steps.map((s) => ({ key: s.id, label: `Email ${s.step_order + 1}` }))}
@@ -694,12 +725,19 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
 
                 {steps.map((s) => {
                   const ss = engagement?.perStepSummary[s.id];
+                  const info = stepDateInfo[s.id];
+                  const dateSuffix = info?.date
+                    ? (info.isSent
+                        ? `${formatStepDate(info.date)}${s.delay_days > 0 ? ` (${s.delay_days} days after Email 1)` : ''}`
+                        : `due ${formatStepDate(info.date)}${s.delay_days > 0 ? ` (${s.delay_days} days after Email 1)` : ''}`)
+                    : (s.delay_days > 0 ? `sent ${s.delay_days} day(s) after Email 1` : '');
                   return (
                     <TabsContent key={s.id} value={s.id} className="mt-4 space-y-4">
                       <div className="text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">{s.subject}</span>
-                        {s.delay_days > 0 && <> · sent {s.delay_days} day(s) after Email 1</>}
+                        {dateSuffix && <> · {info?.isSent ? 'sent ' : ''}{dateSuffix}</>}
                       </div>
+
                       {ss && (
                         <div className="grid gap-3 sm:grid-cols-5">
                           <StatTile label="Sent" value={ss.sent + ss.replied} />
