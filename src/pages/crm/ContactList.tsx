@@ -848,7 +848,7 @@ export default function ContactList() {
                       <Label htmlFor="bulk-category" className="text-xs">Category</Label>
                       <Select
                         value={bulkCategoryId}
-                        onValueChange={(v) => { setBulkCategoryId(v); setBulkSubcategoryId(''); }}
+                        onValueChange={(v) => { setBulkCategoryId(v); setBulkSubcategoryId('__none__'); }}
                       >
                         <SelectTrigger id="bulk-category" className="h-8 text-xs">
                           <SelectValue placeholder="Select category" />
