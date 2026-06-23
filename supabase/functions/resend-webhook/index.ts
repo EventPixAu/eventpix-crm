@@ -190,6 +190,31 @@ serve(async (req) => {
     // clicks — we want both signals preserved).
     if (eventType === "email.clicked") {
       const eventAt = data.created_at || now;
+
+      // Evaluate bot/scanner suspicion for this click.
+      // Rules:
+      //   (a) click within 60s of delivered → bot
+      //   (b) OR no genuine human open recorded on the parent send before this click → bot
+      let botSuspected = false;
+      try {
+        const { data: parent } = await supabase
+          .from("email_logs")
+          .select("delivered_at, first_opened_at, opened_at, bot_suspected")
+          .eq("id", targetLog.id)
+          .maybeSingle();
+        const clickedMs = new Date(eventAt).getTime();
+        const deliveredMs = parent?.delivered_at ? new Date(parent.delivered_at).getTime() : null;
+        const firstOpen = parent?.first_opened_at || parent?.opened_at;
+        const firstOpenMs = firstOpen ? new Date(firstOpen).getTime() : null;
+        const openIsBot = !!parent?.bot_suspected;
+        const within60s = deliveredMs !== null && (clickedMs - deliveredMs) < 60_000;
+        const noHumanOpenBeforeClick =
+          firstOpenMs === null || openIsBot || firstOpenMs > clickedMs;
+        botSuspected = within60s || noHumanOpenBeforeClick;
+      } catch (e) {
+        console.error("Bot-suspect evaluation failed (defaulting to false):", e);
+      }
+
       const { error: insertErr } = await supabase.from("email_logs").insert({
         client_id: targetLog.client_id,
         lead_id: targetLog.lead_id,
@@ -211,17 +236,19 @@ serve(async (req) => {
         clicked_at: eventAt,
         click_count: 1,
         in_reply_to: targetLog.id,
+        bot_suspected: botSuspected,
       });
       if (insertErr) {
         console.error("Error inserting click event log (acknowledging anyway):", insertErr);
         return ok({ skipped: "db_insert_error" });
       }
-      console.log(`Inserted click event row for ${recipientEmail} (source send=${targetLog.id})`);
-      return new Response(JSON.stringify({ ok: true, inserted: true, eventType }), {
+      console.log(`Inserted click event row for ${recipientEmail} (source send=${targetLog.id}, bot_suspected=${botSuspected})`);
+      return new Response(JSON.stringify({ ok: true, inserted: true, eventType, bot_suspected: botSuspected }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
 
     // Check status priority - bounced/failed always overrides, otherwise only upgrade
     const currentPriority = statusPriority[targetLog.status] ?? 0;
