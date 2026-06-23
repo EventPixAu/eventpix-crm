@@ -501,7 +501,10 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   const contacts = engagement?.contacts ?? [];
   const steps = engagement?.steps ?? [];
   const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
-  const sentDenom = summary.sent + summary.opened + summary.clicked + summary.replied;
+  // Opened & Clicked are independent additive counts that can overlap with
+  // each other and with the "Sent" bucket — do NOT add them into Sent or it
+  // double-counts. summary.sent already covers anyone with a delivered send.
+  const sentDenom = summary.sent + summary.replied;
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
 
@@ -530,7 +533,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
           {/* Top-level stats */}
           <div className="grid gap-4 sm:grid-cols-4">
             <StatTile label="Total Recipients" value={summary.total} />
-            <StatTile label="Sent" value={summary.sent + summary.opened + summary.clicked + summary.replied} />
+            <StatTile label="Sent" value={summary.sent + summary.replied} />
             <StatTile label="Pending" value={summary.pending} tone="muted" />
             <StatTile label="Failed" value={summary.failed} tone="destructive" />
           </div>
@@ -630,7 +633,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
                       </div>
                       {ss && (
                         <div className="grid gap-3 sm:grid-cols-5">
-                          <StatTile label="Sent" value={ss.sent + ss.opened + ss.clicked + ss.replied} />
+                          <StatTile label="Sent" value={ss.sent + ss.replied} />
                           <StatTile label="Opened" value={ss.opened} tone="success" />
                           <StatTile label="Clicked" value={ss.clicked} tone="info" />
                           <StatTile label="Bounced" value={ss.bounced} tone="destructive" />

@@ -153,12 +153,12 @@ serve(async (req) => {
     
     const { data: logs, error: fetchError } = await supabase
       .from("email_logs")
-      .select("id, status, subject")
+      .select("id, status, subject, client_id, lead_id, event_id, quote_id, contract_id, contact_id, template_id, email_type, recipient_name, from_email, from_name, sent_by")
       .eq("recipient_email", recipientEmail)
       .eq("direction", "outbound")
       .gte("created_at", thirtyDaysAgo)
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(10);
 
     if (fetchError) {
       console.error("Error fetching email logs (acknowledging anyway):", fetchError);
@@ -173,11 +173,54 @@ serve(async (req) => {
       });
     }
 
-    // Try to match by subject if available
-    let targetLog = logs[0]; // default to most recent
+    // Prefer the original send row (not a prior engagement row) so subsequent
+    // events always anchor back to the actual send, never to an opened/clicked
+    // sibling we previously inserted.
+    const sendCandidates = logs.filter((l: any) => l.status !== "clicked" && l.status !== "opened");
+    const pool = sendCandidates.length ? sendCandidates : logs;
+    let targetLog: any = pool[0];
     if (data.subject) {
-      const subjectMatch = logs.find(l => l.subject === data.subject);
+      const subjectMatch = pool.find((l: any) => l.subject === data.subject);
       if (subjectMatch) targetLog = subjectMatch;
+    }
+
+    // CLICKED events: insert a NEW email_logs row instead of updating the
+    // existing send/opened row. Opens and clicks must coexist as separate rows
+    // so neither overwrites the other (Apple MPP suppresses opens but allows
+    // clicks — we want both signals preserved).
+    if (eventType === "email.clicked") {
+      const eventAt = data.created_at || now;
+      const { error: insertErr } = await supabase.from("email_logs").insert({
+        client_id: targetLog.client_id,
+        lead_id: targetLog.lead_id,
+        event_id: targetLog.event_id,
+        quote_id: targetLog.quote_id,
+        contract_id: targetLog.contract_id,
+        contact_id: targetLog.contact_id,
+        template_id: targetLog.template_id,
+        email_type: targetLog.email_type,
+        recipient_email: recipientEmail,
+        recipient_name: targetLog.recipient_name,
+        from_email: targetLog.from_email,
+        from_name: targetLog.from_name,
+        sent_by: targetLog.sent_by,
+        subject: targetLog.subject,
+        status: "clicked",
+        direction: "outbound",
+        sent_at: eventAt,
+        clicked_at: eventAt,
+        click_count: 1,
+        in_reply_to: targetLog.id,
+      });
+      if (insertErr) {
+        console.error("Error inserting click event log (acknowledging anyway):", insertErr);
+        return ok({ skipped: "db_insert_error" });
+      }
+      console.log(`Inserted click event row for ${recipientEmail} (source send=${targetLog.id})`);
+      return new Response(JSON.stringify({ ok: true, inserted: true, eventType }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     // Check status priority - bounced/failed always overrides, otherwise only upgrade
