@@ -480,7 +480,8 @@ function StatTile({
 }
 
 function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDialogProps) {
-  const { data: engagement, isLoading, refetch, isFetching } = useCampaignEngagement(campaign?.id);
+  const [includeBots, setIncludeBots] = useState(false);
+  const { data: engagement, isLoading, refetch, isFetching } = useCampaignEngagement(campaign?.id, { includeBots });
   const scheduleCampaign = useScheduleCampaign();
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('09:00');
