@@ -633,7 +633,7 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
                       </div>
                       {ss && (
                         <div className="grid gap-3 sm:grid-cols-5">
-                          <StatTile label="Sent" value={ss.sent + ss.opened + ss.clicked + ss.replied} />
+                          <StatTile label="Sent" value={ss.sent + ss.replied} />
                           <StatTile label="Opened" value={ss.opened} tone="success" />
                           <StatTile label="Clicked" value={ss.clicked} tone="info" />
                           <StatTile label="Bounced" value={ss.bounced} tone="destructive" />
