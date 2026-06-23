@@ -33,6 +33,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   User,
   Plus,
   Search,
@@ -142,6 +147,12 @@ export default function ContactList() {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dataToolsOpen, setDataToolsOpen] = useState(false);
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>('__none__');
+  const [bulkSubcategoryId, setBulkSubcategoryId] = useState<string>('__none__');
+  const { data: bulkSubcategoryOptions = [] } = useCompanySubcategories(
+    bulkCategoryId && bulkCategoryId !== '__none__' ? bulkCategoryId : undefined
+  );
   const queryClient = useQueryClient();
 
 
@@ -524,7 +535,13 @@ export default function ContactList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const bulkUpdate = useMutation({
-    mutationFn: async (updates: { status?: string | null; category?: string | null; archived?: boolean }) => {
+    mutationFn: async (updates: {
+      status?: string | null;
+      category?: string | null;
+      category_id?: string | null;
+      subcategory_id?: string | null;
+      archived?: boolean;
+    }) => {
       const ids = Array.from(selectedIds);
       if (!ids.length) return;
       const payload: Record<string, any> = { ...updates };
@@ -537,6 +554,9 @@ export default function ContactList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       setSelectedIds(new Set());
+      setBulkCategoryOpen(false);
+      setBulkCategoryId('__none__');
+      setBulkSubcategoryId('__none__');
       toast.success('Contacts updated');
     },
     onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
@@ -817,17 +837,88 @@ export default function ContactList() {
               <div className="flex flex-wrap items-center gap-2 p-2 rounded-md border bg-muted/40">
                 <span className="text-sm font-medium">{selectedIds.size} selected</span>
 
-                <Select onValueChange={(v) => bulkUpdate.mutate({ category: v === '__clear__' ? null : v })}>
-                  <SelectTrigger className="h-8 w-[190px] text-xs">
-                    <SelectValue placeholder="Assign Category…" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50 max-h-[300px]">
-                    <SelectItem value="__clear__">Clear Category</SelectItem>
-                    {categoryOptions.map((opt) => (
-                      <SelectItem key={opt.id} value={opt.name}>{opt.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                      Assign Category…
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-3 space-y-3" align="start">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="bulk-category" className="text-xs">Category</Label>
+                      <Select
+                        value={bulkCategoryId}
+                        onValueChange={(v) => { setBulkCategoryId(v); setBulkSubcategoryId('__none__'); }}
+                      >
+                        <SelectTrigger id="bulk-category" className="h-8 text-xs">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50 max-h-[300px]">
+                          <SelectItem value="__none__">Select category</SelectItem>
+                          {categoryOptions.map((opt) => (
+                            <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="bulk-subcategory" className="text-xs">Sub-category</Label>
+                      <Select
+                        value={bulkSubcategoryId}
+                        onValueChange={setBulkSubcategoryId}
+                        disabled={!bulkCategoryId || bulkCategoryId === '__none__'}
+                      >
+                        <SelectTrigger id="bulk-subcategory" className="h-8 text-xs">
+                          <SelectValue placeholder={bulkCategoryId && bulkCategoryId !== '__none__' ? 'No sub-category' : 'Pick category first'} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50 max-h-[300px]">
+                          <SelectItem value="__none__">No sub-category</SelectItem>
+                          {bulkSubcategoryOptions.map((opt) => (
+                            <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs"
+                        disabled={bulkCategoryId === '__none__'}
+                        onClick={() => {
+                          const category = categoryOptions.find(c => c.id === bulkCategoryId);
+                          if (!category || bulkCategoryId === '__none__') return;
+                          bulkUpdate.mutate({
+                            category: category.name,
+                            category_id: category.id,
+                            subcategory_id: bulkSubcategoryId === '__none__' ? null : bulkSubcategoryId,
+                          });
+                        }}
+                      >
+                        Apply
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          setBulkCategoryOpen(false);
+                          setBulkCategoryId('__none__');
+                          setBulkSubcategoryId('__none__');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs w-full justify-start text-muted-foreground hover:text-destructive"
+                      onClick={() => bulkUpdate.mutate({ category: null, category_id: null, subcategory_id: null })}
+                    >
+                      Clear category & sub-category
+                    </Button>
+                  </PopoverContent>
+                </Popover>
                 <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: true })}>
                   <Archive className="h-3.5 w-3.5 mr-1" /> Archive
                 </Button>
