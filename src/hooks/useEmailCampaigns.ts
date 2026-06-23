@@ -264,6 +264,8 @@ export interface CampaignEngagement {
     failed: number;
     pending: number;
     skipped: number;
+    botOpens: number;
+    botClicks: number;
   };
   perStepSummary: Record<string, {
     sent: number;
@@ -275,9 +277,12 @@ export interface CampaignEngagement {
     failed: number;
     pending: number;
     skipped: number;
+    botOpens: number;
+    botClicks: number;
   }>;
   lastUpdated: number;
 }
+
 
 function deriveStatus(
   rawStatus: string | null | undefined,
