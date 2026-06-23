@@ -145,6 +145,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, authLoading]);
 
+  // Reset role-resolution flag the moment the user identity changes so any
+  // guarded route waits for a fresh role lookup instead of acting on stale state.
+  useEffect(() => {
+    if (DEV_BYPASS) return;
+    setRoleResolved(false);
+  }, [user?.id]);
+
   useEffect(() => {
     if (DEV_BYPASS) return;
     let cancelled = false;
@@ -154,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!authLoading) {
         setRole(null);
         setRoleLoading(false);
+        setRoleResolved(true);
       }
       return;
     }
@@ -172,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!cancelled) {
               setRole(nextRole);
               setRoleLoading(false);
+              setRoleResolved(true);
             }
             return;
           }
@@ -189,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!cancelled) {
         setRole(null);
         setRoleLoading(false);
+        setRoleResolved(true);
       }
     })();
 
