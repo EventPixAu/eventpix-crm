@@ -273,12 +273,24 @@ serve(async (req) => {
     if (isOpenEvent) {
       const { data: cur } = await supabase
         .from("email_logs")
-        .select("open_count, first_opened_at")
+        .select("open_count, first_opened_at, delivered_at, bot_suspected")
         .eq("id", targetLog.id)
         .maybeSingle();
-      updateFields.open_count = ((cur?.open_count as number) || 0) + 1;
+      const newCount = ((cur?.open_count as number) || 0) + 1;
+      updateFields.open_count = newCount;
+      const firstOpenIso = (cur?.first_opened_at as string | null) || (updateFields.opened_at as string);
       if (!cur?.first_opened_at) updateFields.first_opened_at = updateFields.opened_at;
+      // Bot suspicion: first open within 30s of delivered_at AND only one open so far.
+      // Once a second open is recorded, treat as human (clear the flag).
+      const deliveredAt = cur?.delivered_at as string | null;
+      if (newCount > 1) {
+        updateFields.bot_suspected = false;
+      } else if (deliveredAt && firstOpenIso) {
+        const deltaMs = new Date(firstOpenIso).getTime() - new Date(deliveredAt).getTime();
+        updateFields.bot_suspected = deltaMs < 30_000;
+      }
     }
+
 
     const { error: updateError } = await supabase
       .from("email_logs")
