@@ -517,6 +517,49 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
 
+  // Compute per-step date info: actual sent date (earliest sent_at across contacts)
+  // or calculated due date (step 1 base + delay_days).
+  const stepDateInfo = (() => {
+    const orderedSteps = [...steps].sort((a, b) => a.step_order - b.step_order);
+    const actualEarliest: Record<string, Date | null> = {};
+    const sentCount: Record<string, number> = {};
+    for (const st of orderedSteps) {
+      actualEarliest[st.id] = null;
+      sentCount[st.id] = 0;
+      for (const c of contacts) {
+        const sa = c.steps[st.id]?.sent_at;
+        if (sa) {
+          sentCount[st.id] += 1;
+          const d = new Date(sa);
+          if (!actualEarliest[st.id] || d < actualEarliest[st.id]!) actualEarliest[st.id] = d;
+        }
+      }
+    }
+    const totalRecipients = contacts.length;
+    // Base for due-date calculation: earliest sent_at of step 1, else scheduled_at, else created_at
+    const step1 = orderedSteps[0];
+    const baseDate: Date | null = (step1 && actualEarliest[step1.id])
+      || (campaign.scheduled_at ? new Date(campaign.scheduled_at) : null)
+      || (campaign.created_at ? new Date(campaign.created_at) : null);
+
+    const result: Record<string, { date: Date | null; isSent: boolean; isFullySent: boolean }> = {};
+    for (const st of orderedSteps) {
+      const actual = actualEarliest[st.id];
+      const isFullySent = totalRecipients > 0 && sentCount[st.id] >= totalRecipients;
+      if (actual) {
+        result[st.id] = { date: actual, isSent: true, isFullySent };
+      } else if (baseDate) {
+        result[st.id] = { date: addDays(baseDate, st.delay_days || 0), isSent: false, isFullySent: false };
+      } else {
+        result[st.id] = { date: null, isSent: false, isFullySent: false };
+      }
+    }
+    return result;
+  })();
+
+  const formatStepDate = (d: Date | null) => d ? format(d, 'd MMM yyyy') : '—';
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
