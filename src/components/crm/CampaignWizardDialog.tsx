@@ -57,6 +57,8 @@ interface WizardContact {
   email: string | null;
   status: string | null;
   category: string | null;
+  category_id: string | null;
+  subcategory_id: string | null;
   source: string | null;
   state: string | null;
   city: string | null;
