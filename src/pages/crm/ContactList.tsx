@@ -151,6 +151,8 @@ export default function ContactList() {
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
   const [bulkCategoryId, setBulkCategoryId] = useState<string>('__none__');
   const [bulkSubcategoryId, setBulkSubcategoryId] = useState<string>('__none__');
+  const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<string>('__none__');
   const { data: bulkSubcategoryOptions = [] } = useCompanySubcategories(
     bulkCategoryId && bulkCategoryId !== '__none__' ? bulkCategoryId : undefined
   );
