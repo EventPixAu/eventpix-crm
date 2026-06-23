@@ -228,14 +228,21 @@ serve(async (req) => {
     const { email: fromEmail, name: fromName } = parseAddress(fromRaw);
     const { email: toEmail } = parseAddress(toRaw);
     const subject: string = data.subject ?? "(No Subject)";
-    const text: string | undefined = data.text;
-    const html: string | undefined = data.html;
+    // Resend inbound payloads have varied across versions — accept multiple field names.
+    const text: string | undefined =
+      data.text ?? data.text_body ?? data.body_text ?? data.plain ?? data.body_plain ?? undefined;
+    const html: string | undefined =
+      data.html ?? data.html_body ?? data.body_html ?? undefined;
+
+    if (!text && !html) {
+      console.warn("Inbound email has no text or html body — payload keys:", Object.keys(data || {}));
+    }
 
     const isAutoReply = isAutoReplySubject(subject);
     const normalizedSubject = normalizeSubject(subject);
 
     console.log(
-      `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply}`,
+      `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply} · text_len=${text?.length ?? 0} · html_len=${html?.length ?? 0}`,
     );
 
     // Internal/owner address guard — do not create or resolve CRM contacts for these
@@ -292,6 +299,7 @@ serve(async (req) => {
       recipient_email: toEmail,
       subject,
       body_html: html || null,
+      body_text: text || null,
       body_preview: bodyPreview,
       status: isAutoReply ? "auto_reply" : "received",
       sent_at: new Date().toISOString(),
@@ -302,6 +310,7 @@ serve(async (req) => {
       event_id: internal ? null : (original?.event_id || null),
       lead_id: internal ? null : (original?.lead_id || null),
     };
+
 
     const { data: emailLog, error: logError } = await supabase
       .from("email_logs")
