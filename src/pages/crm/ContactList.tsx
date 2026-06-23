@@ -924,6 +924,61 @@ export default function ContactList() {
                     </Button>
                   </PopoverContent>
                 </Popover>
+                <Popover open={bulkStatusOpen} onOpenChange={setBulkStatusOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                      <ListFilter className="h-3.5 w-3.5 mr-1.5" /> Change Status…
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-3 space-y-3" align="start">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="bulk-status" className="text-xs">Status</Label>
+                      <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                        <SelectTrigger id="bulk-status" className="h-8 text-xs">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50 max-h-[300px]">
+                          <SelectItem value="__none__">Select status</SelectItem>
+                          {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'].map((s) => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs"
+                        disabled={bulkStatus === '__none__'}
+                        onClick={() => {
+                          if (bulkStatus === '__none__') return;
+                          bulkUpdate.mutate({ status: bulkStatus });
+                        }}
+                      >
+                        Apply
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          setBulkStatusOpen(false);
+                          setBulkStatus('__none__');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs w-full justify-start text-muted-foreground hover:text-destructive"
+                      onClick={() => bulkUpdate.mutate({ status: null })}
+                    >
+                      Clear status
+                    </Button>
+                  </PopoverContent>
+                </Popover>
                 <Button size="sm" variant="outline" onClick={() => bulkUpdate.mutate({ archived: true })}>
                   <Archive className="h-3.5 w-3.5 mr-1" /> Archive
                 </Button>
