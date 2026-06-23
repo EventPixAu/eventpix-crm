@@ -4,7 +4,7 @@
  * Create and manage email workflow campaigns for different client segments.
  */
 import { useState } from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, addDays } from 'date-fns';
 import {
   Users,
   Send,
