@@ -40,6 +40,8 @@ export default function CrmEmails() {
     if (t) setActiveTab(t);
   }, [searchParams]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [openedReply, setOpenedReply] = useState<EmailLog | null>(null);
+  const queryClient = useQueryClient();
   
   // Compose state
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
