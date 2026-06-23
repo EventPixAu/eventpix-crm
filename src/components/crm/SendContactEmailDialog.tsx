@@ -56,6 +56,34 @@ export function SendContactEmailDialog({
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
 
+  const SIGNATURE_MARKER = '<!-- eventpix-signature-start -->';
+
+  const buildSignatureAndFooter = (): string => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+    const logoUrl = `${supabaseUrl}/storage/v1/object/public/avatars/email-logo.png`;
+    return `${SIGNATURE_MARKER}
+<p style="margin:24px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;line-height:1.5;">
+  Warm regards,<br/>
+  <strong>Trevor Connell</strong><br/>
+  EventPix<br/>
+  📞 1300 850 021<br/>
+  🌐 <a href="https://eventpix.com.au" style="color:#111827;text-decoration:underline;">eventpix.com.au</a>
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;border-top:1px solid #e5e7eb;">
+  <tr>
+    <td style="padding:24px 16px 16px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9ca3af;line-height:1.6;">
+      <img src="${logoUrl}" alt="EventPix" width="120" style="display:block;margin:0 auto 12px;" />
+      <p style="margin:0 0 8px;font-weight:600;color:#6b7280;">Event Photography Australia-wide</p>
+      <p style="margin:0 0 4px;">5 Chelsea Close, Balmoral NSW 2283</p>
+      <p style="margin:0 0 4px;">Phone: 1300 850 021</p>
+      <p style="margin:0 0 12px;">
+        <a href="https://eventpix.com.au" style="color:#6b7280;text-decoration:underline;">eventpix.com.au</a>
+      </p>
+    </td>
+  </tr>
+</table>`;
+  };
+
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -64,19 +92,19 @@ export function SendContactEmailDialog({
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset when dialog opens
+  // Reset when dialog opens — pre-populate signature/footer below the cursor
   useEffect(() => {
     if (open) {
       setSelectedTemplateId('');
       setSubject('');
-      setBody('');
+      setBody(`\n\n${buildSignatureAndFooter()}`);
       setShowPreview(false);
       setAttachments([]);
       setIsSending(false);
     }
   }, [open]);
 
-  // Apply template
+  // Apply template — preserve a single signature/footer below template content
   useEffect(() => {
     if (!selectedTemplateId || !templates) return;
     const template = templates.find(t => t.id === selectedTemplateId);
@@ -101,8 +129,12 @@ export function SendContactEmailDialog({
       processedBody = processedBody.split(field).join(value);
     });
 
+    // Strip any existing signature block in the template to avoid duplication
+    const sigIdx = processedBody.indexOf(SIGNATURE_MARKER);
+    if (sigIdx !== -1) processedBody = processedBody.slice(0, sigIdx).trimEnd();
+
     setSubject(processedSubject);
-    setBody(processedBody);
+    setBody(`${processedBody}\n\n${buildSignatureAndFooter()}`);
   }, [selectedTemplateId, templates, contactName, contactFirstName, companyName]);
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
