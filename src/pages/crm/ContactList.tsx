@@ -854,7 +854,7 @@ export default function ContactList() {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50 max-h-[300px]">
-                          <SelectItem value="">Select category</SelectItem>
+                          <SelectItem value="__none__">Select category</SelectItem>
                           {categoryOptions.map((opt) => (
                             <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
                           ))}
