@@ -223,10 +223,9 @@ export default function ContactList() {
   const { data: contacts = [], isLoading } = useQuery({
     queryKey: ['crm-contacts', search],
     queryFn: async () => {
-      // Fetch all contacts from master table (raise limit above default 1000)
-      let query = supabase
-        .from('client_contacts')
-        .select(`
+      // Paginate to bypass PostgREST's 1000-row cap; otherwise contacts beyond
+      // row 1000 (alphabetically) are missing and the duplicate detector misses pairs.
+      const CONTACT_SELECT = `
           id,
           contact_name,
           first_name,
@@ -250,19 +249,30 @@ export default function ContactList() {
           bounce_status,
           bounced_at,
           clients(id, business_name, is_training)
-        `)
-        .order('contact_name')
-        .limit(10000);
+        `;
 
-      // Text-based search (name, email)
-      if (search) {
-        query = query.or(
-          `contact_name.ilike.%${search}%,email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`
-        );
+      const PAGE_SIZE = 1000;
+      const textMatches: any[] = [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        let pageQuery = supabase
+          .from('client_contacts')
+          .select(CONTACT_SELECT)
+          .order('contact_name')
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (search) {
+          pageQuery = pageQuery.or(
+            `contact_name.ilike.%${search}%,email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`
+          );
+        }
+
+        const { data: pageRows, error } = await pageQuery;
+        if (error) throw error;
+        const rows = pageRows || [];
+        textMatches.push(...rows);
+        if (rows.length < PAGE_SIZE) break;
       }
 
-      const { data: textMatches, error } = await query;
-      if (error) throw error;
 
       // Also search by tags using the database function
       let tagMatchIds: string[] = [];
