@@ -239,7 +239,7 @@ export function SendContactEmailDialog({
             </div>
             {showPreview ? (
               <div
-                className="border rounded-md p-4 min-h-[200px] prose prose-sm max-w-none dark:prose-invert"
+                className="bg-white text-slate-900 border border-slate-300 rounded-md p-4 min-h-[200px] prose prose-slate prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
               />
             ) : (
@@ -248,6 +248,7 @@ export function SendContactEmailDialog({
                 onChange={e => setBody(e.target.value)}
                 rows={10}
                 placeholder="Type your message... (supports HTML)"
+                className="bg-white text-slate-900 border-slate-300 placeholder:text-slate-400"
               />
             )}
           </div>
