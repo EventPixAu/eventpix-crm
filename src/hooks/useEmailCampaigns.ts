@@ -224,6 +224,7 @@ interface EngagementLog {
   click_count: number | null;
   sent_at: string | null;
   error_message: string | null;
+  bot_suspected?: boolean | null;
 }
 
 export interface EngagementStepEntry {
@@ -233,6 +234,7 @@ export interface EngagementStepEntry {
   derived: RecipientEngagementStatus;
   hasOpened: boolean;
   hasClicked: boolean;
+  hasBotActivity: boolean;
 }
 
 export interface EngagementContact {
@@ -248,7 +250,9 @@ export interface EngagementContact {
   base_log: EngagementLog | null;
   base_derived: RecipientEngagementStatus;
   steps: Record<string, EngagementStepEntry>;
+  hasBotActivity: boolean;
 }
+
 
 export interface CampaignEngagement {
   steps: CampaignStepInfo[];
