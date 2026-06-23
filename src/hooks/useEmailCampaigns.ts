@@ -370,6 +370,42 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         sendsByContact.get(s.campaign_contact_id)!.set(s.step_id, s);
       }
 
+      // Fetch ALL sibling email_logs rows (opens + clicks) for the recipient
+      // emails in this campaign. Opens and clicks live as separate rows now,
+      // so we must aggregate them independently rather than relying on a
+      // single status on the primary send row.
+      const recipientEmails = Array.from(
+        new Set(rawContacts.map((c: any) => (c.recipient_email || '').toLowerCase()).filter(Boolean))
+      );
+      const allLogRecords: Array<{
+        recipient_email: string;
+        status: string | null;
+        sent_at: string | null;
+        opened_at: string | null;
+        clicked_at: string | null;
+        in_reply_to: string | null;
+      }> = [];
+      if (recipientEmails.length) {
+        // Chunk to keep query size reasonable
+        const chunkSize = 200;
+        for (let i = 0; i < recipientEmails.length; i += chunkSize) {
+          const chunk = recipientEmails.slice(i, i + chunkSize);
+          const { data: logRows } = await supabase
+            .from('email_logs')
+            .select('recipient_email, status, sent_at, opened_at, clicked_at, in_reply_to')
+            .eq('direction', 'outbound')
+            .in('recipient_email', chunk)
+            .in('status', ['opened', 'clicked']);
+          (logRows || []).forEach((r: any) => allLogRecords.push(r));
+        }
+      }
+      const logsByRecipient = new Map<string, typeof allLogRecords>();
+      for (const r of allLogRecords) {
+        const k = (r.recipient_email || '').toLowerCase();
+        if (!logsByRecipient.has(k)) logsByRecipient.set(k, []);
+        logsByRecipient.get(k)!.push(r);
+      }
+
       const perStepSummary: CampaignEngagement['perStepSummary'] = {};
       for (const st of steps) {
         perStepSummary[st.id] = {
@@ -391,26 +427,94 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         const baseReplied = baseLog ? repliedLogIds.has(baseLog.id) : false;
         const baseDerived = deriveStatus(c.status, baseLog, unsubscribed, baseReplied);
 
-        const stepsMap: Record<string, EngagementStepEntry> = {};
+        const recipientKey = (c.recipient_email || '').toLowerCase();
+        const recipientLogs = logsByRecipient.get(recipientKey) || [];
+
+        // Build per-step windows so we can attribute opens/clicks to the right step.
+        const stepWindows: Array<{ stepId: string; start: number; end: number }> = [];
         const stepSendMap = sendsByContact.get(c.id) || new Map();
+        const orderedSteps = [...steps].sort((a, b) => a.step_order - b.step_order);
+        for (let i = 0; i < orderedSteps.length; i++) {
+          const st = orderedSteps[i];
+          const send = stepSendMap.get(st.id);
+          const sentAt = send?.sent_at ? new Date(send.sent_at).getTime() : null;
+          if (!sentAt) continue;
+          // Next step's sent_at (if any) caps the window so we don't bleed
+          // opens/clicks from a later step into an earlier one.
+          let end = Number.POSITIVE_INFINITY;
+          for (let j = i + 1; j < orderedSteps.length; j++) {
+            const nextSend = stepSendMap.get(orderedSteps[j].id);
+            if (nextSend?.sent_at) { end = new Date(nextSend.sent_at).getTime(); break; }
+          }
+          stepWindows.push({ stepId: st.id, start: sentAt - 60_000, end });
+        }
+
+        const stepEngagement: Record<string, { hasOpened: boolean; hasClicked: boolean }> = {};
+        for (const w of stepWindows) {
+          stepEngagement[w.stepId] = { hasOpened: false, hasClicked: false };
+        }
+        for (const log of recipientLogs) {
+          const ts = log.sent_at || log.opened_at || log.clicked_at;
+          if (!ts) continue;
+          const t = new Date(ts).getTime();
+          // Attribute to the latest window whose start <= t < end
+          for (const w of stepWindows) {
+            if (t >= w.start && t < w.end) {
+              if (log.status === 'opened') stepEngagement[w.stepId].hasOpened = true;
+              if (log.status === 'clicked') stepEngagement[w.stepId].hasClicked = true;
+            }
+          }
+        }
+
+        const stepsMap: Record<string, EngagementStepEntry> = {};
         for (const st of steps) {
           const send = stepSendMap.get(st.id);
           const log = send
             ? (Array.isArray(send.email_logs) ? send.email_logs[0] : send.email_logs) || null
             : null;
           const stepReplied = (send?.status === 'replied') || (log ? repliedLogIds.has(log.id) : false);
-          const derived = deriveStatus(send?.status ?? 'pending', log, unsubscribed, stepReplied);
+          const eng = stepEngagement[st.id] || { hasOpened: false, hasClicked: false };
+          // Roll engagement booleans into the log we hand to deriveStatus so
+          // the primary status badge still reflects the strongest signal.
+          const enrichedLog: EngagementLog | null = log
+            ? { ...log, status: eng.hasClicked ? 'clicked' : eng.hasOpened ? 'opened' : log.status }
+            : (eng.hasClicked || eng.hasOpened)
+              ? { id: '', status: eng.hasClicked ? 'clicked' : 'opened', opened_at: null, first_opened_at: null, open_count: null, clicked_at: null, click_count: null, sent_at: null, error_message: null }
+              : null;
+          const derived = deriveStatus(send?.status ?? 'pending', enrichedLog, unsubscribed, stepReplied);
           stepsMap[st.id] = {
             status: (send?.status ?? 'pending') as EngagementStepEntry['status'],
             sent_at: send?.sent_at ?? null,
             log,
             derived,
+            hasOpened: eng.hasOpened || log?.status === 'opened',
+            hasClicked: eng.hasClicked || log?.status === 'clicked',
           };
           const bucket = perStepSummary[st.id];
-          bucket[derived] = (bucket[derived] || 0) + 1;
+          // Opened & Clicked are independent additive counts — a contact can
+          // appear in BOTH. All other statuses use the mutually-exclusive
+          // derived bucket so they don't double-count.
+          if (stepsMap[st.id].hasOpened) bucket.opened += 1;
+          if (stepsMap[st.id].hasClicked) bucket.clicked += 1;
+          if (derived !== 'opened' && derived !== 'clicked') {
+            bucket[derived] = (bucket[derived] || 0) + 1;
+          } else {
+            // Still count the underlying delivery as "sent" so the Sent tile
+            // (sent + opened + clicked + replied) doesn't lose this contact.
+            bucket.sent += 1;
+          }
         }
 
-        summary[baseDerived] = (summary[baseDerived] || 0) + 1;
+        // Campaign-level summary: opened/clicked counted if ANY step engaged.
+        const anyOpened = Object.values(stepsMap).some(s => s.hasOpened);
+        const anyClicked = Object.values(stepsMap).some(s => s.hasClicked);
+        if (anyOpened) summary.opened += 1;
+        if (anyClicked) summary.clicked += 1;
+        if (baseDerived !== 'opened' && baseDerived !== 'clicked') {
+          summary[baseDerived] = (summary[baseDerived] || 0) + 1;
+        } else {
+          summary.sent += 1;
+        }
 
         return {
           id: c.id,
