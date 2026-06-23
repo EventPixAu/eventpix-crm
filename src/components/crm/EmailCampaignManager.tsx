@@ -19,7 +19,9 @@ import {
   AlertCircle,
   AlertTriangle,
   Clock,
+  Bot,
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -448,12 +450,13 @@ function OpenedStatusCell({
 }
 
 function StatTile({
-  label, value, pct, tone,
+  label, value, pct, tone, botFiltered,
 }: {
   label: string;
   value: number;
   pct?: number;
   tone?: 'default' | 'success' | 'destructive' | 'warning' | 'muted' | 'info';
+  botFiltered?: number;
 }) {
   const toneClass =
     tone === 'success' ? 'text-emerald-600 dark:text-emerald-400' :
@@ -472,13 +475,21 @@ function StatTile({
           )}
         </div>
         <div className="text-sm text-muted-foreground">{label}</div>
+        {botFiltered !== undefined && botFiltered > 0 && (
+          <div className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
+            <Bot className="h-3 w-3" />
+            +{botFiltered} bot {label.toLowerCase()} filtered
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
+
 function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDialogProps) {
-  const { data: engagement, isLoading, refetch, isFetching } = useCampaignEngagement(campaign?.id);
+  const [includeBots, setIncludeBots] = useState(false);
+  const { data: engagement, isLoading, refetch, isFetching } = useCampaignEngagement(campaign?.id, { includeBots });
   const scheduleCampaign = useScheduleCampaign();
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('09:00');
@@ -497,13 +508,11 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   const summary = engagement?.summary ?? {
     total: campaign.total_recipients, sent: 0, opened: 0, clicked: 0, bounced: 0,
     unsubscribed: 0, replied: 0, failed: 0, pending: 0, skipped: 0,
+    botOpens: 0, botClicks: 0,
   };
   const contacts = engagement?.contacts ?? [];
   const steps = engagement?.steps ?? [];
   const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
-  // Opened & Clicked are independent additive counts that can overlap with
-  // each other and with the "Sent" bucket — do NOT add them into Sent or it
-  // double-counts. summary.sent already covers anyone with a delivered send.
   const sentDenom = summary.sent + summary.replied;
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
@@ -517,17 +526,33 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Last updated */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          {/* Last updated + bot toggle */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground gap-4 flex-wrap">
             <span>
               {engagement?.lastUpdated
                 ? `Last updated ${formatDistanceToNow(engagement.lastUpdated, { addSuffix: true })} · auto-refreshes every 5 min`
                 : 'Loading engagement data…'}
             </span>
-            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`h-3 w-3 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Bot className="h-3.5 w-3.5" />
+                      <span>Include bot clicks</span>
+                      <Switch checked={includeBots} onCheckedChange={setIncludeBots} />
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Bot/scanner clicks (within 60s of delivery, or before any open) are filtered by default.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`h-3 w-3 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {/* Top-level stats */}
@@ -540,12 +565,13 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
 
           {/* Engagement stats */}
           <div className="grid gap-4 sm:grid-cols-5">
-            <StatTile label="Opened" value={summary.opened} pct={pct(summary.opened)} tone="success" />
-            <StatTile label="Clicked" value={summary.clicked} pct={pct(summary.clicked)} tone="info" />
+            <StatTile label="Opened" value={summary.opened} pct={pct(summary.opened)} tone="success" botFiltered={!includeBots ? summary.botOpens : 0} />
+            <StatTile label="Clicked" value={summary.clicked} pct={pct(summary.clicked)} tone="info" botFiltered={!includeBots ? summary.botClicks : 0} />
             <StatTile label="Bounced" value={summary.bounced} pct={pct(summary.bounced)} tone="destructive" />
             <StatTile label="Unsubscribed" value={summary.unsubscribed} pct={pct(summary.unsubscribed)} tone="warning" />
             <StatTile label="Replied" value={summary.replied} pct={pct(summary.replied)} tone="info" />
           </div>
+
 
           {campaign.status === 'in_progress' && (
             <div className="space-y-2">
@@ -634,8 +660,8 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
                       {ss && (
                         <div className="grid gap-3 sm:grid-cols-5">
                           <StatTile label="Sent" value={ss.sent + ss.replied} />
-                          <StatTile label="Opened" value={ss.opened} tone="success" />
-                          <StatTile label="Clicked" value={ss.clicked} tone="info" />
+                          <StatTile label="Opened" value={ss.opened} tone="success" botFiltered={!includeBots ? ss.botOpens : 0} />
+                          <StatTile label="Clicked" value={ss.clicked} tone="info" botFiltered={!includeBots ? ss.botClicks : 0} />
                           <StatTile label="Bounced" value={ss.bounced} tone="destructive" />
                           <StatTile label="Unsubscribed" value={ss.unsubscribed} tone="warning" />
                         </div>
@@ -684,7 +710,21 @@ function RecipientTable({
             <TableRow key={c.id}>
               <TableCell>
                 <div>
-                  <div className="font-medium">{c.recipient_name || 'Unknown'}</div>
+                  <div className="font-medium flex items-center gap-1.5">
+                    {c.recipient_name || 'Unknown'}
+                    {c.hasBotActivity && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Bot className="h-3.5 w-3.5 text-amber-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Automated/bot engagement detected — likely a mail-security scanner
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">{c.recipient_email}</div>
                 </div>
               </TableCell>

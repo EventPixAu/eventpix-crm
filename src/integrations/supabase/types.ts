@@ -1926,6 +1926,7 @@ export type Database = {
         Row: {
           body_html: string | null
           body_preview: string | null
+          bot_suspected: boolean
           click_count: number | null
           clicked_at: string | null
           client_id: string | null
@@ -1958,6 +1959,7 @@ export type Database = {
         Insert: {
           body_html?: string | null
           body_preview?: string | null
+          bot_suspected?: boolean
           click_count?: number | null
           clicked_at?: string | null
           client_id?: string | null
@@ -1990,6 +1992,7 @@ export type Database = {
         Update: {
           body_html?: string | null
           body_preview?: string | null
+          bot_suspected?: boolean
           click_count?: number | null
           clicked_at?: string | null
           client_id?: string | null

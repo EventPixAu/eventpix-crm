@@ -224,6 +224,7 @@ interface EngagementLog {
   click_count: number | null;
   sent_at: string | null;
   error_message: string | null;
+  bot_suspected?: boolean | null;
 }
 
 export interface EngagementStepEntry {
@@ -233,6 +234,7 @@ export interface EngagementStepEntry {
   derived: RecipientEngagementStatus;
   hasOpened: boolean;
   hasClicked: boolean;
+  hasBotActivity: boolean;
 }
 
 export interface EngagementContact {
@@ -248,7 +250,9 @@ export interface EngagementContact {
   base_log: EngagementLog | null;
   base_derived: RecipientEngagementStatus;
   steps: Record<string, EngagementStepEntry>;
+  hasBotActivity: boolean;
 }
+
 
 export interface CampaignEngagement {
   steps: CampaignStepInfo[];
@@ -264,6 +268,8 @@ export interface CampaignEngagement {
     failed: number;
     pending: number;
     skipped: number;
+    botOpens: number;
+    botClicks: number;
   };
   perStepSummary: Record<string, {
     sent: number;
@@ -275,9 +281,12 @@ export interface CampaignEngagement {
     failed: number;
     pending: number;
     skipped: number;
+    botOpens: number;
+    botClicks: number;
   }>;
   lastUpdated: number;
 }
+
 
 function deriveStatus(
   rawStatus: string | null | undefined,
@@ -298,9 +307,13 @@ function deriveStatus(
   return 'pending';
 }
 
-export function useCampaignEngagement(campaignId: string | undefined) {
+export function useCampaignEngagement(
+  campaignId: string | undefined,
+  options?: { includeBots?: boolean },
+) {
+  const includeBots = !!options?.includeBots;
   return useQuery({
-    queryKey: ['campaign-engagement', campaignId],
+    queryKey: ['campaign-engagement', campaignId, includeBots],
     refetchInterval: 5 * 60 * 1000, // auto-refresh every 5 min
     queryFn: async (): Promise<CampaignEngagement | null> => {
       if (!campaignId) return null;
@@ -321,7 +334,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           id, recipient_email, recipient_name, last_event_name, last_event_date,
           status, email_log_id, contact_id,
           client_contacts(unsubscribed, unsubscribed_at, state),
-          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message)
+          email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message, bot_suspected)
         `)
         .eq('campaign_id', campaignId)
         .order('recipient_name', { nullsFirst: false });
@@ -336,7 +349,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           .from('campaign_step_sends')
           .select(`
             id, campaign_contact_id, step_id, status, sent_at, email_log_id,
-            email_logs(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message)
+            email_logs(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message, bot_suspected)
           `)
           .in('campaign_contact_id', contactIds);
         if (ssErr) throw ssErr;
@@ -374,9 +387,6 @@ export function useCampaignEngagement(campaignId: string | undefined) {
       // emails in this campaign. Opens and clicks live as separate rows now,
       // so we must aggregate them independently rather than relying on a
       // single status on the primary send row.
-      // Use original-case emails for the IN() query (Postgres equality is
-      // case-sensitive); we group by lowercase below so the lookup is still
-      // case-insensitive.
       const recipientEmails = Array.from(
         new Set(rawContacts.map((c: any) => c.recipient_email).filter(Boolean))
       );
@@ -387,15 +397,15 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         opened_at: string | null;
         clicked_at: string | null;
         in_reply_to: string | null;
+        bot_suspected: boolean | null;
       }> = [];
       if (recipientEmails.length) {
-        // Chunk to keep query size reasonable
         const chunkSize = 200;
         for (let i = 0; i < recipientEmails.length; i += chunkSize) {
           const chunk = recipientEmails.slice(i, i + chunkSize);
           const { data: logRows } = await supabase
             .from('email_logs')
-            .select('recipient_email, status, sent_at, opened_at, clicked_at, in_reply_to')
+            .select('recipient_email, status, sent_at, opened_at, clicked_at, in_reply_to, bot_suspected')
             .eq('direction', 'outbound')
             .in('recipient_email', chunk)
             .in('status', ['opened', 'clicked']);
@@ -414,6 +424,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         perStepSummary[st.id] = {
           sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
           replied: 0, failed: 0, pending: 0, skipped: 0,
+          botOpens: 0, botClicks: 0,
         };
       }
 
@@ -421,6 +432,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         total: rawContacts.length,
         sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
         replied: 0, failed: 0, pending: 0, skipped: 0,
+        botOpens: 0, botClicks: 0,
       };
 
       const contacts: EngagementContact[] = rawContacts.map((c: any) => {
@@ -428,7 +440,6 @@ export function useCampaignEngagement(campaignId: string | undefined) {
         const baseLog = (Array.isArray(c.email_logs) ? c.email_logs[0] : c.email_logs) || null;
         const unsubscribed = !!cc?.unsubscribed;
         const baseReplied = baseLog ? repliedLogIds.has(baseLog.id) : false;
-        const baseDerived = deriveStatus(c.status, baseLog, unsubscribed, baseReplied);
 
         const recipientKey = (c.recipient_email || '').toLowerCase();
         const recipientLogs = logsByRecipient.get(recipientKey) || [];
@@ -442,8 +453,6 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           const send = stepSendMap.get(st.id);
           const sentAt = send?.sent_at ? new Date(send.sent_at).getTime() : null;
           if (!sentAt) continue;
-          // Next step's sent_at (if any) caps the window so we don't bleed
-          // opens/clicks from a later step into an earlier one.
           let end = Number.POSITIVE_INFINITY;
           for (let j = i + 1; j < orderedSteps.length; j++) {
             const nextSend = stepSendMap.get(orderedSteps[j].id);
@@ -452,23 +461,36 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           stepWindows.push({ stepId: st.id, start: sentAt - 60_000, end });
         }
 
-        const stepEngagement: Record<string, { hasOpened: boolean; hasClicked: boolean }> = {};
+        // Track human and bot engagement separately per step
+        const stepEngagement: Record<string, {
+          humanOpen: boolean; humanClick: boolean;
+          botOpen: boolean; botClick: boolean;
+        }> = {};
         for (const w of stepWindows) {
-          stepEngagement[w.stepId] = { hasOpened: false, hasClicked: false };
+          stepEngagement[w.stepId] = {
+            humanOpen: false, humanClick: false, botOpen: false, botClick: false,
+          };
         }
         for (const log of recipientLogs) {
           const ts = log.sent_at || log.opened_at || log.clicked_at;
           if (!ts) continue;
           const t = new Date(ts).getTime();
-          // Attribute to the latest window whose start <= t < end
           for (const w of stepWindows) {
             if (t >= w.start && t < w.end) {
-              if (log.status === 'opened') stepEngagement[w.stepId].hasOpened = true;
-              if (log.status === 'clicked') stepEngagement[w.stepId].hasClicked = true;
+              const bucket = stepEngagement[w.stepId];
+              if (log.status === 'opened') {
+                if (log.bot_suspected) bucket.botOpen = true;
+                else bucket.humanOpen = true;
+              }
+              if (log.status === 'clicked') {
+                if (log.bot_suspected) bucket.botClick = true;
+                else bucket.humanClick = true;
+              }
             }
           }
         }
 
+        let contactBotActivity = false;
         const stepsMap: Record<string, EngagementStepEntry> = {};
         for (const st of steps) {
           const send = stepSendMap.get(st.id);
@@ -476,13 +498,30 @@ export function useCampaignEngagement(campaignId: string | undefined) {
             ? (Array.isArray(send.email_logs) ? send.email_logs[0] : send.email_logs) || null
             : null;
           const stepReplied = (send?.status === 'replied') || (log ? repliedLogIds.has(log.id) : false);
-          const eng = stepEngagement[st.id] || { hasOpened: false, hasClicked: false };
-          // Roll engagement booleans into the log we hand to deriveStatus so
-          // the primary status badge still reflects the strongest signal.
+          const eng = stepEngagement[st.id] || {
+            humanOpen: false, humanClick: false, botOpen: false, botClick: false,
+          };
+          // The send-row open status is on the row itself; honour its bot flag too.
+          const sendRowHumanOpen = log?.status === 'opened' && !log?.bot_suspected;
+          const sendRowBotOpen = log?.status === 'opened' && !!log?.bot_suspected;
+          const sendRowHumanClick = log?.status === 'clicked' && !log?.bot_suspected;
+          const sendRowBotClick = log?.status === 'clicked' && !!log?.bot_suspected;
+
+          const humanOpen = eng.humanOpen || sendRowHumanOpen;
+          const humanClick = eng.humanClick || sendRowHumanClick;
+          const botOpen = eng.botOpen || sendRowBotOpen;
+          const botClick = eng.botClick || sendRowBotClick;
+
+          const effOpen = includeBots ? (humanOpen || botOpen) : humanOpen;
+          const effClick = includeBots ? (humanClick || botClick) : humanClick;
+          const hasBotActivity = botOpen || botClick;
+          if (hasBotActivity) contactBotActivity = true;
+
+          // Build a synthetic log for derivation reflecting effective engagement
           const enrichedLog: EngagementLog | null = log
-            ? { ...log, status: eng.hasClicked ? 'clicked' : eng.hasOpened ? 'opened' : log.status }
-            : (eng.hasClicked || eng.hasOpened)
-              ? { id: '', status: eng.hasClicked ? 'clicked' : 'opened', opened_at: null, first_opened_at: null, open_count: null, clicked_at: null, click_count: null, sent_at: null, error_message: null }
+            ? { ...log, status: effClick ? 'clicked' : effOpen ? 'opened' : (log.status === 'opened' || log.status === 'clicked' ? 'sent' : log.status) }
+            : (effClick || effOpen)
+              ? { id: '', status: effClick ? 'clicked' : 'opened', opened_at: null, first_opened_at: null, open_count: null, clicked_at: null, click_count: null, sent_at: null, error_message: null }
               : null;
           const derived = deriveStatus(send?.status ?? 'pending', enrichedLog, unsubscribed, stepReplied);
           stepsMap[st.id] = {
@@ -490,34 +529,51 @@ export function useCampaignEngagement(campaignId: string | undefined) {
             sent_at: send?.sent_at ?? null,
             log,
             derived,
-            hasOpened: eng.hasOpened || log?.status === 'opened',
-            hasClicked: eng.hasClicked || log?.status === 'clicked',
+            hasOpened: effOpen,
+            hasClicked: effClick,
+            hasBotActivity,
           };
+
           const bucket = perStepSummary[st.id];
-          // Opened & Clicked are independent additive counts — a contact can
-          // appear in BOTH. All other statuses use the mutually-exclusive
-          // derived bucket so they don't double-count.
-          if (stepsMap[st.id].hasOpened) bucket.opened += 1;
-          if (stepsMap[st.id].hasClicked) bucket.clicked += 1;
+          if (effOpen) bucket.opened += 1;
+          if (effClick) bucket.clicked += 1;
+          if (botOpen && !humanOpen) bucket.botOpens += 1;
+          if (botClick && !humanClick) bucket.botClicks += 1;
           if (derived !== 'opened' && derived !== 'clicked') {
             bucket[derived] = (bucket[derived] || 0) + 1;
           } else {
-            // Still count the underlying delivery as "sent" so the Sent tile
-            // (sent + opened + clicked + replied) doesn't lose this contact.
             bucket.sent += 1;
           }
         }
 
+        // Base/overview derivation — honour bot flag on base log similarly
+        const baseRowHuman = baseLog && !baseLog.bot_suspected;
+        const baseEnrichedLog: EngagementLog | null = baseLog
+          ? (includeBots
+              ? baseLog
+              : (baseRowHuman ? baseLog : { ...baseLog, status: (baseLog.status === 'opened' || baseLog.status === 'clicked') ? 'sent' : baseLog.status }))
+          : null;
+        const baseDerived = deriveStatus(c.status, baseEnrichedLog, unsubscribed, baseReplied);
+
         // Campaign-level summary: opened/clicked counted if ANY step engaged.
         const anyOpened = Object.values(stepsMap).some(s => s.hasOpened);
         const anyClicked = Object.values(stepsMap).some(s => s.hasClicked);
+        // Bot-only contacts (no human opens but bot opens detected)
+        const anyHumanOpen = anyOpened;
+        const anyHumanClick = anyClicked;
+        const anyBotOpen = Object.values(stepEngagement).some(e => e.botOpen) || baseLog?.status === 'opened' && baseLog?.bot_suspected;
+        const anyBotClick = Object.values(stepEngagement).some(e => e.botClick) || baseLog?.status === 'clicked' && baseLog?.bot_suspected;
         if (anyOpened) summary.opened += 1;
         if (anyClicked) summary.clicked += 1;
+        if (anyBotOpen && !anyHumanOpen) summary.botOpens += 1;
+        if (anyBotClick && !anyHumanClick) summary.botClicks += 1;
         if (baseDerived !== 'opened' && baseDerived !== 'clicked') {
           summary[baseDerived] = (summary[baseDerived] || 0) + 1;
         } else {
           summary.sent += 1;
         }
+
+        if (anyBotOpen || anyBotClick) contactBotActivity = true;
 
         return {
           id: c.id,
@@ -532,6 +588,7 @@ export function useCampaignEngagement(campaignId: string | undefined) {
           base_log: baseLog,
           base_derived: baseDerived,
           steps: stepsMap,
+          hasBotActivity: contactBotActivity,
         };
       });
 
@@ -547,6 +604,8 @@ export function useCampaignEngagement(campaignId: string | undefined) {
     staleTime: 60_000,
   });
 }
+
+
 
 export function useCampaignContacts(campaignId: string | undefined) {
   return useQuery({
