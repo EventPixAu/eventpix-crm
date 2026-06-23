@@ -374,8 +374,11 @@ export function useCampaignEngagement(campaignId: string | undefined) {
       // emails in this campaign. Opens and clicks live as separate rows now,
       // so we must aggregate them independently rather than relying on a
       // single status on the primary send row.
+      // Use original-case emails for the IN() query (Postgres equality is
+      // case-sensitive); we group by lowercase below so the lookup is still
+      // case-insensitive.
       const recipientEmails = Array.from(
-        new Set(rawContacts.map((c: any) => (c.recipient_email || '').toLowerCase()).filter(Boolean))
+        new Set(rawContacts.map((c: any) => c.recipient_email).filter(Boolean))
       );
       const allLogRecords: Array<{
         recipient_email: string;
