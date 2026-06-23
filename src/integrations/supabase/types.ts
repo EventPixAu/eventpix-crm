@@ -6991,6 +6991,10 @@ export type Database = {
         Args: { p_contact_id: string }
         Returns: string
       }
+      contact_has_open_lead_or_active_event: {
+        Args: { p_contact_id: string }
+        Returns: boolean
+      }
       contact_status_priority: { Args: { p_status: string }; Returns: number }
       convert_enquiry_to_event:
         | { Args: { p_input: Json }; Returns: Json }
