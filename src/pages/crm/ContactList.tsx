@@ -872,7 +872,7 @@ export default function ContactList() {
                           <SelectValue placeholder={bulkCategoryId ? 'No sub-category' : 'Pick category first'} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50 max-h-[300px]">
-                          <SelectItem value="">No sub-category</SelectItem>
+                          <SelectItem value="__none__">No sub-category</SelectItem>
                           {bulkSubcategoryOptions.map((opt) => (
                             <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>
                           ))}
