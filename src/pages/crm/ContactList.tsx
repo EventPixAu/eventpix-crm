@@ -535,7 +535,13 @@ export default function ContactList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const bulkUpdate = useMutation({
-    mutationFn: async (updates: { status?: string | null; category?: string | null; archived?: boolean }) => {
+    mutationFn: async (updates: {
+      status?: string | null;
+      category?: string | null;
+      category_id?: string | null;
+      subcategory_id?: string | null;
+      archived?: boolean;
+    }) => {
       const ids = Array.from(selectedIds);
       if (!ids.length) return;
       const payload: Record<string, any> = { ...updates };
@@ -548,6 +554,9 @@ export default function ContactList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       setSelectedIds(new Set());
+      setBulkCategoryOpen(false);
+      setBulkCategoryId('');
+      setBulkSubcategoryId('');
       toast.success('Contacts updated');
     },
     onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
