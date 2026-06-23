@@ -148,10 +148,10 @@ export default function ContactList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dataToolsOpen, setDataToolsOpen] = useState(false);
   const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
-  const [bulkCategoryId, setBulkCategoryId] = useState<string>('');
-  const [bulkSubcategoryId, setBulkSubcategoryId] = useState<string>('');
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>('__none__');
+  const [bulkSubcategoryId, setBulkSubcategoryId] = useState<string>('__none__');
   const { data: bulkSubcategoryOptions = [] } = useCompanySubcategories(
-    bulkCategoryId || undefined
+    bulkCategoryId && bulkCategoryId !== '__none__' ? bulkCategoryId : undefined
   );
   const queryClient = useQueryClient();
 
