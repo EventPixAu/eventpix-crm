@@ -555,8 +555,8 @@ export default function ContactList() {
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
       setSelectedIds(new Set());
       setBulkCategoryOpen(false);
-      setBulkCategoryId('');
-      setBulkSubcategoryId('');
+      setBulkCategoryId('__none__');
+      setBulkSubcategoryId('__none__');
       toast.success('Contacts updated');
     },
     onError: (e: Error) => toast.error('Bulk update failed', { description: e.message }),
