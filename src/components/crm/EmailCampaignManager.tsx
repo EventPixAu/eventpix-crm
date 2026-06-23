@@ -501,7 +501,10 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   const contacts = engagement?.contacts ?? [];
   const steps = engagement?.steps ?? [];
   const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
-  const sentDenom = summary.sent + summary.opened + summary.clicked + summary.replied;
+  // Opened & Clicked are independent additive counts that can overlap with
+  // each other and with the "Sent" bucket — do NOT add them into Sent or it
+  // double-counts. summary.sent already covers anyone with a delivered send.
+  const sentDenom = summary.sent + summary.replied;
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
 
