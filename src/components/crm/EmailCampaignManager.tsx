@@ -500,13 +500,11 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
   const summary = engagement?.summary ?? {
     total: campaign.total_recipients, sent: 0, opened: 0, clicked: 0, bounced: 0,
     unsubscribed: 0, replied: 0, failed: 0, pending: 0, skipped: 0,
+    botOpens: 0, botClicks: 0,
   };
   const contacts = engagement?.contacts ?? [];
   const steps = engagement?.steps ?? [];
   const pct = (n: number) => summary.total > 0 ? Math.round((n / summary.total) * 100) : 0;
-  // Opened & Clicked are independent additive counts that can overlap with
-  // each other and with the "Sent" bucket — do NOT add them into Sent or it
-  // double-counts. summary.sent already covers anyone with a delivered send.
   const sentDenom = summary.sent + summary.replied;
   const sentishTotal = sentDenom + summary.bounced + summary.failed;
   const progress = summary.total > 0 ? (sentishTotal / summary.total) * 100 : 0;
@@ -520,17 +518,33 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Last updated */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          {/* Last updated + bot toggle */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground gap-4 flex-wrap">
             <span>
               {engagement?.lastUpdated
                 ? `Last updated ${formatDistanceToNow(engagement.lastUpdated, { addSuffix: true })} · auto-refreshes every 5 min`
                 : 'Loading engagement data…'}
             </span>
-            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`h-3 w-3 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-3">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Bot className="h-3.5 w-3.5" />
+                      <span>Include bot clicks</span>
+                      <Switch checked={includeBots} onCheckedChange={setIncludeBots} />
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Bot/scanner clicks (within 60s of delivery, or before any open) are filtered by default.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`h-3 w-3 mr-1 ${isFetching ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {/* Top-level stats */}
@@ -543,12 +557,13 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
 
           {/* Engagement stats */}
           <div className="grid gap-4 sm:grid-cols-5">
-            <StatTile label="Opened" value={summary.opened} pct={pct(summary.opened)} tone="success" />
-            <StatTile label="Clicked" value={summary.clicked} pct={pct(summary.clicked)} tone="info" />
+            <StatTile label="Opened" value={summary.opened} pct={pct(summary.opened)} tone="success" botFiltered={!includeBots ? summary.botOpens : 0} />
+            <StatTile label="Clicked" value={summary.clicked} pct={pct(summary.clicked)} tone="info" botFiltered={!includeBots ? summary.botClicks : 0} />
             <StatTile label="Bounced" value={summary.bounced} pct={pct(summary.bounced)} tone="destructive" />
             <StatTile label="Unsubscribed" value={summary.unsubscribed} pct={pct(summary.unsubscribed)} tone="warning" />
             <StatTile label="Replied" value={summary.replied} pct={pct(summary.replied)} tone="info" />
           </div>
+
 
           {campaign.status === 'in_progress' && (
             <div className="space-y-2">
