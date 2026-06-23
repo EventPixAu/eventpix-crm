@@ -71,7 +71,17 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
   const senderName = reply.from_name || reply.from_email || 'Unknown sender';
   const senderEmail = reply.from_email || '';
   const receivedAt = reply.created_at ? format(new Date(reply.created_at), 'EEE, d MMM yyyy, h:mm a') : '—';
-  const bodyHtml = reply.body_html || (reply.body_preview ? reply.body_preview.replace(/\n/g, '<br>') : '<em>No content</em>');
+  const bodyText = (reply as any).body_text as string | null | undefined;
+  const hasContent = !!(reply.body_html || bodyText || reply.body_preview);
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const bodyHtml = reply.body_html
+    ? reply.body_html
+    : bodyText
+    ? `<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">${escapeHtml(bodyText)}</pre>`
+    : reply.body_preview
+    ? escapeHtml(reply.body_preview).replace(/\n/g, '<br>')
+    : '';
 
   const contactHref = reply.contact_id
     ? `/crm/contacts/${reply.contact_id}`
@@ -134,10 +144,16 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
             </div>
           </div>
 
-          <div
-            className="prose prose-sm max-w-none break-words"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
-          />
+          {hasContent ? (
+            <div
+              className="prose prose-sm max-w-none break-words"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
+            />
+          ) : (
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs">
+              Content unavailable — reply received before fix was deployed.
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2">
