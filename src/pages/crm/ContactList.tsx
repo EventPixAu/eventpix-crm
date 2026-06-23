@@ -147,6 +147,9 @@ export default function ContactList() {
   const [showArchived, setShowArchived] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dataToolsOpen, setDataToolsOpen] = useState(false);
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>('');
+  const [bulkSubcategoryId, setBulkSubcategoryId] = useState<string>('');
   const queryClient = useQueryClient();
 
 
