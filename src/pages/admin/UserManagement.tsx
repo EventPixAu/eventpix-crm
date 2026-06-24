@@ -306,7 +306,16 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
+                    {user.registration_status === 'pending' && (
+                      <DropdownMenuItem
+                        onClick={() => handleSendAccessEmail(user)}
+                        disabled={sendingAccessEmail === user.id}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        {sendingAccessEmail === user.id ? 'Resending...' : 'Resend Invite'}
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
                       onClick={() => handleSendAccessEmail(user)}
                       disabled={sendingAccessEmail === user.id}
                     >
