@@ -195,6 +195,13 @@ export default function QuoteDetail() {
     }
   }, [quote, introLoaded]);
 
+  // Auto-open the Send Email dialog when navigated with ?action=send
+  useEffect(() => {
+    if (quote && searchParams.get('action') === 'send') {
+      setIsEmailDialogOpen(true);
+    }
+  }, [quote, searchParams]);
+
   const isLocked = quote?.status === 'accepted' || quote?.status === 'rejected';
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
