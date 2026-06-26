@@ -540,13 +540,13 @@ export function ContractsPanel({
                           <Eye className="h-4 w-4" />
                         </Button>
                         
-                        {/* Edit (only for draft contracts) */}
-                        {contract.status === 'draft' && (
+                        {/* Edit (available for draft and sent contracts) */}
+                        {(contract.status === 'draft' || contract.status === 'sent') && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditDialog(contract)}
-                            title="Edit Contract"
+                            title={contract.status === 'sent' ? 'Edit Contract (will need to be resent)' : 'Edit Contract'}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>

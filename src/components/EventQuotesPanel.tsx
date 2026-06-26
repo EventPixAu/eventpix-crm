@@ -5,7 +5,7 @@
  * Displayed on the Event Detail page below Contracts.
  */
 import { Link } from 'react-router-dom';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Pencil, Mail } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
@@ -124,7 +124,17 @@ export function EventQuotesPanel({ eventId, quoteId, leadId }: EventQuotesPanelP
               {quote.is_locked && (
                 <Badge variant="outline" className="text-xs">Locked</Badge>
               )}
-              <Link to={`/sales/quotes/${quote.id}`}>
+              <Link to={`/sales/quotes/${quote.id}`} title="Edit budget">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+              <Link to={`/sales/quotes/${quote.id}?action=send`} title="Resend budget">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <Mail className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+              <Link to={`/sales/quotes/${quote.id}`} title="Open budget">
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Button>
