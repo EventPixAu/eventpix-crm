@@ -142,6 +142,7 @@ export default function QuoteDetail() {
   const [sendingQuote, setSendingQuote] = useState(false);
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
+  const [isUnlockConfirmOpen, setIsUnlockConfirmOpen] = useState(false);
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -404,6 +405,17 @@ export default function QuoteDetail() {
     }
   };
 
+  const handleUnlockQuote = async () => {
+    if (!id) return;
+    try {
+      await updateQuote.mutateAsync({ id, status: 'draft' } as any);
+      toast.success('Budget unlocked for editing', { description: 'The budget status has been reset to Draft.' });
+      setIsUnlockConfirmOpen(false);
+    } catch (err: any) {
+      toast.error('Failed to unlock budget', { description: err.message });
+    }
+  };
+
   const handleConvertToEvent = async () => {
     if (!id || !eventData.event_name || !eventData.event_date) return;
     
@@ -502,6 +514,18 @@ export default function QuoteDetail() {
               View Proposal
             </Button>
           </Link>
+          {isLocked && (
+            <Button variant="outline" onClick={() => setIsUnlockConfirmOpen(true)}>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          )}
+          {isLocked && (
+            <Button onClick={() => setIsEmailDialogOpen(true)}>
+              <Mail className="h-4 w-4 mr-2" />
+              Resend
+            </Button>
+          )}
           {!isLocked && (
             <Button onClick={() => setIsEmailDialogOpen(true)}>
               <Mail className="h-4 w-4 mr-2" />
@@ -1191,6 +1215,27 @@ export default function QuoteDetail() {
             <Button variant="outline" onClick={() => setIsSendQuoteOpen(false)}>Cancel</Button>
             <Button onClick={handleSendQuote} disabled={sendingQuote}>
               {sendingQuote ? 'Sending...' : 'Mark as Sent & Copy Link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unlock Confirmation Dialog */}
+      <Dialog open={isUnlockConfirmOpen} onOpenChange={setIsUnlockConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="h-5 w-5" />
+              Unlock Budget for Editing
+            </DialogTitle>
+            <DialogDescription>
+              This budget is currently marked as {quote.status}. Unlocking it will reset the status to Draft so you can make changes. You can re-send and re-accept it later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUnlockConfirmOpen(false)}>Cancel</Button>
+            <Button onClick={handleUnlockQuote} disabled={updateQuote.isPending}>
+              {updateQuote.isPending ? 'Unlocking...' : 'Unlock & Edit'}
             </Button>
           </DialogFooter>
         </DialogContent>
