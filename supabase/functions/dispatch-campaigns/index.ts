@@ -74,8 +74,12 @@ serve(async (req) => {
       .eq("is_sequence", true);
 
     for (const c of active || []) {
-      const currentStep = c.current_step ?? 0;
-      const nextStepOrder = currentStep + 1;
+      // After sending step N, send-campaign-step sets current_step = N + 1.
+      // So `current_step` already points to the NEXT step to send, and the
+      // previously sent step is `current_step - 1`.
+      const nextStepOrder = c.current_step ?? 0;
+      const prevStepOrder = nextStepOrder - 1;
+      if (prevStepOrder < 0) continue; // step 0 is handled by the scheduled-campaign branch
 
       const { data: nextStep } = await supabase
         .from("email_campaign_steps")
@@ -85,19 +89,19 @@ serve(async (req) => {
         .maybeSingle();
       if (!nextStep) continue;
 
-      // Find the latest sent_at for the current (previous) step
-      const { data: currentStepRow } = await supabase
+      // Find the latest sent_at for the previously sent step
+      const { data: prevStepRow } = await supabase
         .from("email_campaign_steps")
         .select("id")
         .eq("campaign_id", c.id)
-        .eq("step_order", currentStep)
+        .eq("step_order", prevStepOrder)
         .maybeSingle();
-      if (!currentStepRow) continue;
+      if (!prevStepRow) continue;
 
       const { data: lastSend } = await supabase
         .from("campaign_step_sends")
         .select("sent_at")
-        .eq("step_id", currentStepRow.id)
+        .eq("step_id", prevStepRow.id)
         .eq("status", "sent")
         .order("sent_at", { ascending: false })
         .limit(1)
@@ -110,6 +114,7 @@ serve(async (req) => {
 
       await invokeStep(c.id, nextStepOrder);
     }
+
 
     return new Response(JSON.stringify({ success: true, dispatched: results.length, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
