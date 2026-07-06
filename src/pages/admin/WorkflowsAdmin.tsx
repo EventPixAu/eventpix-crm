@@ -582,54 +582,6 @@ export default function WorkflowsAdmin() {
     setHasChanges(true);
   };
 
-  const handleEditSalesWorkflow = (workflow: SalesWorkflowTemplate) => {
-    setEditingSalesWorkflow(workflow);
-    setSalesWorkflowItems([...workflow.items]);
-  };
-
-  const handleAddSalesItem = () => {
-    const maxOrder = salesWorkflowItems.reduce((max, i) => Math.max(max, i.sort_order), -1);
-    setSalesWorkflowItems([...salesWorkflowItems, { title: '', sort_order: maxOrder + 1 }]);
-  };
-
-  const handleUpdateSalesItem = (index: number, title: string) => {
-    const updated = [...salesWorkflowItems];
-    updated[index] = { ...updated[index], title };
-    setSalesWorkflowItems(updated);
-  };
-
-  const handleRemoveSalesItem = (index: number) => {
-    setSalesWorkflowItems(salesWorkflowItems.filter((_, i) => i !== index));
-  };
-
-  const handleSaveSalesWorkflow = async () => {
-    if (!editingSalesWorkflow) return;
-    
-    await updateSalesWorkflow.mutateAsync({
-      id: editingSalesWorkflow.id,
-      items: salesWorkflowItems.filter(i => i.title.trim()),
-    });
-    
-    setEditingSalesWorkflow(null);
-  };
-
-  const handleCreateSalesWorkflow = async () => {
-    if (!newSalesWorkflow.name.trim()) return;
-    
-    await createSalesWorkflow.mutateAsync({
-      name: newSalesWorkflow.name.trim(),
-      description: newSalesWorkflow.description.trim() || null,
-      items: [{ title: 'Step 1', sort_order: 0 }],
-    });
-    
-    setNewSalesWorkflowDialog(false);
-    setNewSalesWorkflow({ name: '', description: '' });
-  };
-
-  const handleDeleteSalesWorkflow = async (id: string, name: string) => {
-    if (!confirm(`Delete workflow "${name}"? This cannot be undone.`)) return;
-    await deleteSalesWorkflow.mutateAsync(id);
-  };
 
   const isLoading = typesLoading || stepsLoading || defaultsLoading;
 
