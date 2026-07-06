@@ -346,6 +346,13 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                       <Mail className="h-4 w-4 mr-2" />
                       {sendingAccessEmail === user.id ? 'Sending...' : 'Send Access Email'}
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleCopyInviteLink(user)}
+                      disabled={sendingAccessEmail === user.id}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Copy Invite Link
+                    </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => setUserActive.mutate({ userId: user.id, isActive: !user.is_active })}
                     >
