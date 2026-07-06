@@ -66,12 +66,43 @@ export default function CrmEmails() {
 
   // Inbox filter state
   const [inboxFilter, setInboxFilter] = useState<'all' | 'crm' | 'sales' | 'operations'>('all');
+  const [inboxKind, setInboxKind] = useState<'replies' | 'auto'>('replies');
   const [inboxSearch, setInboxSearch] = useState('');
   const [sentSearch, setSentSearch] = useState('');
   const [sentStatusFilter, setSentStatusFilter] = useState('all');
 
   // Outbound emails hook (after state declarations)
   const { data: outboundEmails = [], isLoading: loadingOutbound } = useOutboundEmails({ search: sentSearch, statusFilter: sentStatusFilter });
+
+  // Auto-reply detection (mirrors inbound-email-webhook logic so it also
+  // catches legacy rows that were logged before the webhook update).
+  const isAutoReplyMsg = (r: EmailLog): boolean => {
+    if ((r as any).status === 'auto_reply' || r.email_type === 'auto_reply') return true;
+    const s = (r.subject || '').toLowerCase();
+    if (
+      s.includes('automatic reply') ||
+      s.includes('out of office') ||
+      s.includes('out-of-office') ||
+      /\booo\b/.test(s) ||
+      s.includes('auto-response') ||
+      s.includes('auto response') ||
+      s.includes('autoreply') ||
+      s.includes('auto-reply')
+    ) return true;
+    const local = (r.from_email || '').toLowerCase().split('@')[0];
+    return /^(no[-_.]?reply|do[-_.]?not[-_.]?reply|noreply|donotreply|mailer[-_.]?daemon|postmaster|notifications?|bounce|bounces)$/.test(local);
+  };
+
+  // Effective "read" state — auto-replies auto-clear after 24h so they stop
+  // showing a NEW badge / unread count even if never opened.
+  const isEffectivelyUnread = (r: EmailLog): boolean => {
+    if ((r as any).read_at) return false;
+    if (isAutoReplyMsg(r)) {
+      const ageMs = Date.now() - new Date(r.created_at).getTime();
+      if (ageMs >= 24 * 60 * 60 * 1000) return false;
+    }
+    return true;
+  };
 
   // Categorize inbound replies
   const categorizedReplies = useMemo(() => {
@@ -80,12 +111,18 @@ export default function CrmEmails() {
       if (reply.event_id) category = 'operations';
       else if (reply.lead_id || reply.quote_id || reply.contract_id) category = 'sales';
       else if (reply.client_id || reply.contact_id) category = 'crm';
-      return { ...reply, category };
+      const auto = isAutoReplyMsg(reply);
+      return { ...reply, category, isAuto: auto, unread: isEffectivelyUnread(reply) };
     });
   }, [inboundReplies]);
 
+  const kindFilteredReplies = useMemo(
+    () => categorizedReplies.filter(r => (inboxKind === 'auto' ? r.isAuto : !r.isAuto)),
+    [categorizedReplies, inboxKind],
+  );
+
   const filteredReplies = useMemo(() => {
-    let list = categorizedReplies;
+    let list = kindFilteredReplies;
     if (inboxFilter !== 'all') {
       list = list.filter(r => r.category === inboxFilter);
     }
@@ -99,13 +136,18 @@ export default function CrmEmails() {
       );
     }
     return list;
-  }, [categorizedReplies, inboxFilter, inboxSearch]);
+  }, [kindFilteredReplies, inboxFilter, inboxSearch]);
 
   const inboxCounts = useMemo(() => ({
-    all: categorizedReplies.length,
-    crm: categorizedReplies.filter(r => r.category === 'crm').length,
-    sales: categorizedReplies.filter(r => r.category === 'sales').length,
-    operations: categorizedReplies.filter(r => r.category === 'operations').length,
+    all: kindFilteredReplies.length,
+    crm: kindFilteredReplies.filter(r => r.category === 'crm').length,
+    sales: kindFilteredReplies.filter(r => r.category === 'sales').length,
+    operations: kindFilteredReplies.filter(r => r.category === 'operations').length,
+  }), [kindFilteredReplies]);
+
+  const kindUnreadCounts = useMemo(() => ({
+    replies: categorizedReplies.filter(r => !r.isAuto && r.unread).length,
+    auto: categorizedReplies.filter(r => r.isAuto && r.unread).length,
   }), [categorizedReplies]);
 
   const handleTemplateSelect = (templateId: string) => {
@@ -264,6 +306,28 @@ export default function CrmEmails() {
                     className="max-w-xs"
                   />
                 </div>
+                <div className="flex gap-2 pt-2 flex-wrap border-b pb-3">
+                  <Button
+                    variant={inboxKind === 'replies' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setInboxKind('replies')}
+                  >
+                    Replies
+                    {kindUnreadCounts.replies > 0 && (
+                      <Badge variant="secondary" className="ml-1.5">{kindUnreadCounts.replies}</Badge>
+                    )}
+                  </Button>
+                  <Button
+                    variant={inboxKind === 'auto' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setInboxKind('auto')}
+                  >
+                    Auto-replies
+                    {kindUnreadCounts.auto > 0 && (
+                      <Badge variant="secondary" className="ml-1.5">{kindUnreadCounts.auto}</Badge>
+                    )}
+                  </Button>
+                </div>
                 <div className="flex gap-2 pt-2 flex-wrap">
                   <Button
                     variant={inboxFilter === 'all' ? 'default' : 'outline'}
@@ -308,8 +372,12 @@ export default function CrmEmails() {
                 ) : filteredReplies.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Inbox className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                    <p className="font-medium">No inbound replies</p>
-                    <p className="text-sm mt-1">Replies will appear here when clients respond to your emails</p>
+                    <p className="font-medium">No {inboxKind === 'auto' ? 'auto-replies' : 'inbound replies'}</p>
+                    <p className="text-sm mt-1">
+                      {inboxKind === 'auto'
+                        ? 'Out-of-office and no-reply messages will appear here'
+                        : 'Replies will appear here when clients respond to your emails'}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -321,11 +389,12 @@ export default function CrmEmails() {
                       };
                       const cat = categoryConfig[reply.category];
                       const CatIcon = cat.icon;
+                      const showNew = reply.unread && !reply.isAuto;
 
                       return (
                         <div
                           key={reply.id}
-                          className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${!(reply as any).read_at ? 'bg-primary/5 border-primary/20' : ''}`}
+                          className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${showNew ? 'bg-primary/5 border-primary/20' : ''}`}
                           onClick={() => setOpenedReply(reply)}
                         >
                           <div className="mt-0.5">
@@ -333,14 +402,17 @@ export default function CrmEmails() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <span className={`text-sm truncate ${!(reply as any).read_at ? 'font-bold' : 'font-medium'}`}>
+                              <span className={`text-sm truncate ${showNew ? 'font-bold' : 'font-medium'}`}>
                                 {reply.from_name || reply.from_email || reply.recipient_email}
                               </span>
                               <Badge variant={cat.variant} className="text-xs shrink-0">
                                 <CatIcon className="h-3 w-3 mr-1" />
                                 {cat.label}
                               </Badge>
-                              {!(reply as any).read_at && (
+                              {reply.isAuto && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 shrink-0">Auto</Badge>
+                              )}
+                              {showNew && (
                                 <Badge variant="default" className="text-[10px] h-4 px-1.5 shrink-0">NEW</Badge>
                               )}
                             </div>

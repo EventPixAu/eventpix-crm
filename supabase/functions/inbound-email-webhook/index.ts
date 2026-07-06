@@ -51,11 +51,26 @@ function isAutoReplySubject(subject: string | undefined | null): boolean {
     s.includes("automatic reply") ||
     s.includes("out of office") ||
     s.includes("out-of-office") ||
+    /\booo\b/.test(s) ||
     s.includes("auto-response") ||
     s.includes("auto response") ||
     s.includes("autoreply") ||
     s.includes("auto-reply")
   );
+}
+
+function isNoReplySender(email: string | undefined | null): boolean {
+  const local = (email ?? "").toLowerCase().split("@")[0] || "";
+  return /^(no[-_.]?reply|do[-_.]?not[-_.]?reply|noreply|donotreply|mailer[-_.]?daemon|postmaster|notifications?|bounce|bounces)$/.test(
+    local,
+  );
+}
+
+function detectAutoReply(
+  subject: string | undefined | null,
+  fromEmail: string | undefined | null,
+): boolean {
+  return isAutoReplySubject(subject) || isNoReplySender(fromEmail);
 }
 
 async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
@@ -238,7 +253,7 @@ serve(async (req) => {
       console.warn("Inbound email has no text or html body — payload keys:", Object.keys(data || {}));
     }
 
-    const isAutoReply = isAutoReplySubject(subject);
+    const isAutoReply = detectAutoReply(subject, fromEmail);
     const normalizedSubject = normalizeSubject(subject);
 
     console.log(
