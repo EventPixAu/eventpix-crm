@@ -111,9 +111,9 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, category_id, subcategory_id, client_type, state, country, category:company_categories(excluded_from_campaigns)');
+        .select('id, category_id, subcategory_id, client_type, state, country, lead_source, category:company_categories(excluded_from_campaigns)');
       if (error) throw error;
-      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; state: string | null; country: string | null; excluded: boolean }>();
+      const map = new Map<string, { category_id: string | null; subcategory_id: string | null; client_type: string | null; state: string | null; country: string | null; lead_source: string | null; excluded: boolean }>();
       (data || []).forEach((c: any) => {
         map.set(c.id, {
           category_id: c.category_id,
@@ -121,6 +121,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           client_type: c.client_type,
           state: c.state,
           country: c.country,
+          lead_source: c.lead_source,
           excluded: !!c.category?.excluded_from_campaigns,
         });
       });
