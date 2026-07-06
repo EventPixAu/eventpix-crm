@@ -38,24 +38,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEventTypes } from '@/hooks/useLookups';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 import {
-  useEditorWorkflowMasterSteps,
-  useAllEditorEventTypeStepDefaults,
-  useCreateEditorMasterStep,
-  useUpdateEditorMasterStep,
-  useDeleteEditorMasterStep,
-  useSetEditorEventTypeStepDefaults,
-  useReorderEditorMasterSteps,
+  useWorkflowMasterSteps,
+  useAllEventTypeStepDefaults,
+  useCreateMasterStep,
+  useUpdateMasterStep,
+  useDeleteMasterStep,
+  useSetEventTypeStepDefaults,
+  useReorderMasterSteps,
+  PHASE_CONFIG,
   type WorkflowMasterStep,
   type WorkflowPhase,
-} from '@/hooks/useEditorWorkflowMasterSteps';
-import { PHASE_CONFIG } from '@/hooks/useWorkflowMasterSteps';
+} from '@/hooks/useWorkflowMasterSteps';
 
 const phases: { key: WorkflowPhase; label: string; color: string }[] = [
   { key: 'pre_event', ...PHASE_CONFIG.pre_event },
   { key: 'day_of', ...PHASE_CONFIG.day_of },
   { key: 'post_event', ...PHASE_CONFIG.post_event },
 ];
+
+// Predicate: role name identifies an Editor (not Admin/Video)
+const isEditorRoleName = (name?: string | null) => {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return n.includes('editor') && !n.includes('admin') && !n.includes('video');
+};
 
 type StepForm = {
   id?: string;
@@ -132,13 +140,40 @@ function SortableEditorStepRow({
 
 export default function EditorWorkflowsPanel() {
   const { data: eventTypes = [] } = useEventTypes();
-  const { data: masterSteps = [], isLoading } = useEditorWorkflowMasterSteps();
-  const { data: allDefaults = [] } = useAllEditorEventTypeStepDefaults();
-  const createStep = useCreateEditorMasterStep();
-  const updateStep = useUpdateEditorMasterStep();
-  const deleteStep = useDeleteEditorMasterStep();
-  const setDefaults = useSetEditorEventTypeStepDefaults();
-  const reorderSteps = useReorderEditorMasterSteps();
+  const { data: allMasterSteps = [], isLoading } = useWorkflowMasterSteps();
+  const { data: allDefaults = [] } = useAllEventTypeStepDefaults();
+  const { data: staffRoles = [] } = useAllStaffRoles();
+  const createStep = useCreateMasterStep();
+  const updateStep = useUpdateMasterStep();
+  const deleteStep = useDeleteMasterStep();
+  const setDefaults = useSetEventTypeStepDefaults();
+  const reorderSteps = useReorderMasterSteps();
+
+  // Set of role IDs considered "Editor"
+  const editorRoleIds = useMemo(
+    () => new Set(staffRoles.filter((r) => isEditorRoleName(r.name)).map((r) => r.id)),
+    [staffRoles]
+  );
+
+  // Prefer plain "Staff Editor" for new steps, fall back to first editor role
+  const defaultEditorRoleId = useMemo(() => {
+    const plain = staffRoles.find((r) => r.name?.toLowerCase() === 'staff editor');
+    if (plain) return plain.id;
+    const first = staffRoles.find((r) => isEditorRoleName(r.name));
+    return first?.id ?? null;
+  }, [staffRoles]);
+
+  // Only Editor-role master steps
+  const editorMasterSteps = useMemo(
+    () => allMasterSteps.filter((s) => s.default_staff_role_id && editorRoleIds.has(s.default_staff_role_id)),
+    [allMasterSteps, editorRoleIds]
+  );
+  const editorStepIdSet = useMemo(() => new Set(editorMasterSteps.map((s) => s.id)), [editorMasterSteps]);
+
+  const activeSteps = useMemo(
+    () => editorMasterSteps.filter((s) => s.is_active),
+    [editorMasterSteps]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -148,7 +183,8 @@ export default function EditorWorkflowsPanel() {
   const handleDragEnd = (event: DragEndEvent, phase: WorkflowPhase) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const phaseSteps = activeSteps
+    // Reorder within the full phase (all master steps in that phase) so global sort_order stays coherent
+    const phaseSteps = allMasterSteps
       .filter((s) => s.phase === phase)
       .sort((a, b) => a.sort_order - b.sort_order);
     const oldIndex = phaseSteps.findIndex((s) => s.id === active.id);
@@ -164,19 +200,14 @@ export default function EditorWorkflowsPanel() {
   const [stepDialog, setStepDialog] = useState(false);
   const [stepForm, setStepForm] = useState<StepForm>(emptyForm);
 
-  const activeSteps = useMemo(
-    () => masterSteps.filter((s) => s.is_active),
-    [masterSteps]
-  );
-
   useEffect(() => {
     if (!selectedEventType) return;
     const ids = allDefaults
-      .filter((d) => d.event_type_id === selectedEventType)
+      .filter((d) => d.event_type_id === selectedEventType && editorStepIdSet.has(d.master_step_id))
       .map((d) => d.master_step_id);
     setSelectedSteps(ids);
     setInitialSelected(ids);
-  }, [selectedEventType, allDefaults]);
+  }, [selectedEventType, allDefaults, editorStepIdSet]);
 
   const hasChanges = useMemo(() => {
     if (selectedSteps.length !== initialSelected.length) return true;
@@ -186,7 +217,7 @@ export default function EditorWorkflowsPanel() {
   }, [selectedSteps, initialSelected]);
 
   const getDefaultCount = (etId: string) =>
-    allDefaults.filter((d) => d.event_type_id === etId).length;
+    allDefaults.filter((d) => d.event_type_id === etId && editorStepIdSet.has(d.master_step_id)).length;
 
   const toggleStep = (id: string) => {
     setSelectedSteps((prev) =>
@@ -196,9 +227,13 @@ export default function EditorWorkflowsPanel() {
 
   const handleSave = async () => {
     if (!selectedEventType) return;
+    // Preserve non-editor defaults for this event type; only rewrite editor selections
+    const preserved = allDefaults
+      .filter((d) => d.event_type_id === selectedEventType && !editorStepIdSet.has(d.master_step_id))
+      .map((d) => d.master_step_id);
     await setDefaults.mutateAsync({
       eventTypeId: selectedEventType,
-      stepIds: selectedSteps,
+      stepIds: [...preserved, ...selectedSteps],
     });
   };
 
@@ -219,9 +254,7 @@ export default function EditorWorkflowsPanel() {
   };
 
   const submitStep = async () => {
-    if (!stepForm.label.trim()) {
-      return;
-    }
+    if (!stepForm.label.trim()) return;
     if (stepForm.id) {
       await updateStep.mutateAsync({
         id: stepForm.id,
@@ -231,7 +264,7 @@ export default function EditorWorkflowsPanel() {
         is_active: stepForm.is_active,
       });
     } else {
-      const maxOrder = masterSteps
+      const maxOrder = allMasterSteps
         .filter((s) => s.phase === stepForm.phase)
         .reduce((m, s) => Math.max(m, s.sort_order), -1);
       await createStep.mutateAsync({
@@ -244,7 +277,7 @@ export default function EditorWorkflowsPanel() {
         date_offset_reference: null,
         help_text: stepForm.help_text.trim() || null,
         is_active: stepForm.is_active,
-        default_staff_role_id: null,
+        default_staff_role_id: defaultEditorRoleId,
         default_assignee_user_id: null,
       });
     }
@@ -252,7 +285,7 @@ export default function EditorWorkflowsPanel() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this editor step? This will remove it from all event type defaults.')) return;
+    if (!confirm('Delete this step from the Master Workflow? This will remove it everywhere.')) return;
     await deleteStep.mutateAsync(id);
     setSelectedSteps((prev) => prev.filter((s) => s !== id));
   };
@@ -304,7 +337,7 @@ export default function EditorWorkflowsPanel() {
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-xs text-muted-foreground">
-                        All steps
+                        None
                       </Badge>
                     )}
                   </button>
@@ -323,9 +356,8 @@ export default function EditorWorkflowsPanel() {
                     Editor Steps for {eventTypes.find((t) => t.id === selectedEventType)?.name}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {selectedSteps.length === 0
-                      ? 'No steps selected - all active editor steps will be used'
-                      : `${selectedSteps.length} step(s) selected`}
+                    Pulled from Master Workflow — Staff Editor steps only.{' '}
+                    {selectedSteps.length} selected.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -382,7 +414,9 @@ export default function EditorWorkflowsPanel() {
 
                 {activeSteps.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    No editor steps yet. Add one to get started.
+                    No Staff Editor steps found in the Master Workflow. Assign the
+                    Staff Editor role to steps in the Operations Steps tab, or add
+                    one here.
                   </div>
                 )}
               </div>
