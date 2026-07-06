@@ -74,6 +74,7 @@ import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistT
 import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplatesManager';
 import { ClientBriefTemplatesManager } from '@/components/admin/ClientBriefTemplatesManager';
 import { EditingInstructionTemplatesManager } from '@/components/admin/EditingInstructionTemplatesManager';
+import EditorWorkflowsPanel from '@/components/admin/EditorWorkflowsPanel';
 import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
 // Helper to format date offset display
@@ -846,7 +847,7 @@ export default function WorkflowsAdmin() {
 
         {/* Editor Workflows Tab */}
         <TabsContent value="editor">
-          <CrewChecklistTemplatesManager kind="editor" />
+          <EditorWorkflowsPanel />
         </TabsContent>
 
 
