@@ -138,6 +138,25 @@ export default function EditorWorkflowsPanel() {
   const updateStep = useUpdateEditorMasterStep();
   const deleteStep = useDeleteEditorMasterStep();
   const setDefaults = useSetEditorEventTypeStepDefaults();
+  const reorderSteps = useReorderEditorMasterSteps();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent, phase: WorkflowPhase) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const phaseSteps = activeSteps
+      .filter((s) => s.phase === phase)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const oldIndex = phaseSteps.findIndex((s) => s.id === active.id);
+    const newIndex = phaseSteps.findIndex((s) => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(phaseSteps, oldIndex, newIndex);
+    reorderSteps.mutate(reordered.map((step, index) => ({ id: step.id, sort_order: index })));
+  };
 
   const [selectedEventType, setSelectedEventType] = useState<string | null>(null);
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
