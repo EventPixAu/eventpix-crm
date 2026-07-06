@@ -359,7 +359,7 @@ export default function WorkflowsAdmin() {
   const tabParam = searchParams.get('tab');
   const tabFromUrl =
     tabParam === 'crew-checklists' || tabParam === 'crew' ? 'crew'
-    : tabParam === 'sales' ? 'sales'
+    : tabParam === 'editor' || tabParam === 'editor-workflows' ? 'editor'
     : tabParam === 'event-types' ? 'event-types'
     : tabParam === 'briefs' ? 'briefs'
     : tabParam === 'event-briefs' ? 'event-briefs'
