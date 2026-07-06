@@ -86,6 +86,7 @@ export function LeadSummaryCard({
   onArchive,
   onDelete,
   onConvert,
+  hasAcceptedQuote = false,
 }: LeadSummaryCardProps) {
   const updateLead = useUpdateLead();
   const { data: leadStatuses = [] } = useLeadStatuses();
