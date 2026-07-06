@@ -490,11 +490,11 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5" />
-            Crew Checklist Templates
+            {cardTitle}
           </CardTitle>
           <Button onClick={openCreate} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            New Template
+            {newButtonLabel}
           </Button>
         </CardHeader>
         <CardContent className="space-y-6">
