@@ -1787,6 +1787,86 @@ export type Database = {
         }
         Relationships: []
       }
+      editor_event_type_step_defaults: {
+        Row: {
+          created_at: string
+          event_type_id: string
+          id: string
+          master_step_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type_id: string
+          id?: string
+          master_step_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type_id?: string
+          id?: string
+          master_step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editor_event_type_step_defaults_master_step_id_fkey"
+            columns: ["master_step_id"]
+            isOneToOne: false
+            referencedRelation: "editor_workflow_master_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editor_workflow_master_steps: {
+        Row: {
+          auto_trigger_event: string | null
+          completion_type: string
+          created_at: string
+          date_offset_days: number | null
+          date_offset_reference: string | null
+          default_assignee_user_id: string | null
+          default_staff_role_id: string | null
+          help_text: string | null
+          id: string
+          is_active: boolean
+          label: string
+          phase: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          auto_trigger_event?: string | null
+          completion_type?: string
+          created_at?: string
+          date_offset_days?: number | null
+          date_offset_reference?: string | null
+          default_assignee_user_id?: string | null
+          default_staff_role_id?: string | null
+          help_text?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          phase: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_trigger_event?: string | null
+          completion_type?: string
+          created_at?: string
+          date_offset_days?: number | null
+          date_offset_reference?: string | null
+          default_assignee_user_id?: string | null
+          default_staff_role_id?: string | null
+          help_text?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          phase?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_campaign_steps: {
         Row: {
           body_html: string
