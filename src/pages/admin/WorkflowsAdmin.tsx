@@ -318,6 +318,12 @@ export default function WorkflowsAdmin() {
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
   
   const { data: staffRoles = [] } = useAllStaffRoles();
+  const assignableRoles = useMemo(
+    () => staffRoles.filter(r => DEFAULT_ASSIGNMENT_ROLE_NAMES.includes(r.name)).sort(
+      (a, b) => DEFAULT_ASSIGNMENT_ROLE_NAMES.indexOf(a.name) - DEFAULT_ASSIGNMENT_ROLE_NAMES.indexOf(b.name)
+    ),
+    [staffRoles]
+  );
   const { data: assignableUsers = [] } = useQuery({
     queryKey: ['assignable-staff-for-defaults'],
     queryFn: async () => {
