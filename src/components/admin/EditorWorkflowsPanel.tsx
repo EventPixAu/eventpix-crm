@@ -353,50 +353,29 @@ export default function EditorWorkflowsPanel() {
                       <h3 className={`text-sm font-medium mb-3 ${phase.color}`}>
                         {phase.label}
                       </h3>
-                      <div className="space-y-2">
-                        {phaseSteps.map((step) => {
-                          const checked = selectedSteps.includes(step.id);
-                          return (
-                            <div
-                              key={step.id}
-                              className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                                checked
-                                  ? 'border-primary/50 bg-primary/5'
-                                  : 'border-border bg-background'
-                              }`}
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={() => toggleStep(step.id)}
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(e) => handleDragEnd(e, phase.key)}
+                      >
+                        <SortableContext
+                          items={phaseSteps.map((s) => s.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2">
+                            {phaseSteps.map((step) => (
+                              <SortableEditorStepRow
+                                key={step.id}
+                                step={step}
+                                checked={selectedSteps.includes(step.id)}
+                                onToggle={() => toggleStep(step.id)}
+                                onEdit={() => openEditStep(step)}
+                                onDelete={() => handleDelete(step.id)}
                               />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm">{step.label}</div>
-                                {step.help_text && (
-                                  <div className="text-xs text-muted-foreground truncate">
-                                    {step.help_text}
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => openEditStep(step)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive"
-                                onClick={() => handleDelete(step.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          );
-                        })}
-                      </div>
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
                     </div>
                   );
                 })}
