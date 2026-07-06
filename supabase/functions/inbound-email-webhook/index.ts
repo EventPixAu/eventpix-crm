@@ -253,7 +253,7 @@ serve(async (req) => {
       console.warn("Inbound email has no text or html body — payload keys:", Object.keys(data || {}));
     }
 
-    const isAutoReply = isAutoReplySubject(subject);
+    const isAutoReply = detectAutoReply(subject, fromEmail);
     const normalizedSubject = normalizeSubject(subject);
 
     console.log(
