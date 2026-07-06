@@ -259,6 +259,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           const value = (info?.country || '').trim();
           if (!value || !explicitCountries.has(value)) return false;
         }
+        if (explicitSources.size) {
+          const contactSource = (r.source || '').trim();
+          const clientSource = (info?.lead_source || '').trim();
+          if (!explicitSources.has(contactSource) && !explicitSources.has(clientSource)) return false;
+        }
         return true;
       });
     },
