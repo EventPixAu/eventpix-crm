@@ -77,6 +77,8 @@ import { EditingInstructionTemplatesManager } from '@/components/admin/EditingIn
 import EditorWorkflowsPanel from '@/components/admin/EditorWorkflowsPanel';
 import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
+const DEFAULT_ASSIGNMENT_ROLE_NAMES = ['Staff Admin', 'Staff Editor', 'Photographer', 'Assistant'];
+
 // Helper to format date offset display
 function formatDateOffset(step: WorkflowMasterStep): string | null {
   if (step.date_offset_days === null || !step.date_offset_reference) {
@@ -316,6 +318,12 @@ export default function WorkflowsAdmin() {
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
   
   const { data: staffRoles = [] } = useAllStaffRoles();
+  const assignableRoles = useMemo(
+    () => staffRoles.filter(r => DEFAULT_ASSIGNMENT_ROLE_NAMES.includes(r.name)).sort(
+      (a, b) => DEFAULT_ASSIGNMENT_ROLE_NAMES.indexOf(a.name) - DEFAULT_ASSIGNMENT_ROLE_NAMES.indexOf(b.name)
+    ),
+    [staffRoles]
+  );
   const { data: assignableUsers = [] } = useQuery({
     queryKey: ['assignable-staff-for-defaults'],
     queryFn: async () => {
@@ -458,8 +466,8 @@ export default function WorkflowsAdmin() {
       .filter(s => s.phase === newStep.phase)
       .reduce((max, s) => Math.max(max, s.sort_order), -1);
     
-    // Find Admin role as default
-    const adminRole = staffRoles.find(r => r.name === 'Admin');
+    // Find Staff Admin role as default
+    const adminRole = assignableRoles.find(r => r.name === 'Staff Admin');
     
     const createdStep = await createStep.mutateAsync({
       label: newStep.label.trim(),
@@ -983,14 +991,14 @@ export default function WorkflowsAdmin() {
             <div>
               <Label>Default Assignment</Label>
               <Select
-                value={newStep.default_staff_role_id || staffRoles.find(r => r.name === 'Admin')?.id || ''}
+                value={newStep.default_staff_role_id || assignableRoles.find(r => r.name === 'Staff Admin')?.id || ''}
                 onValueChange={v => setNewStep({ ...newStep, default_staff_role_id: v || null })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select default role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {staffRoles.filter(r => r.is_active).map(role => (
+                  {assignableRoles.map(role => (
                     <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1139,7 +1147,7 @@ export default function WorkflowsAdmin() {
                     <SelectValue placeholder="Select default role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {staffRoles.filter(r => r.is_active).map(role => (
+                    {assignableRoles.map(role => (
                       <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
                     ))}
                   </SelectContent>
