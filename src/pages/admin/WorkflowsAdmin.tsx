@@ -333,9 +333,7 @@ export default function WorkflowsAdmin() {
   const updateStep = useUpdateMasterStep();
   const deleteStep = useDeleteMasterStep();
   const reorderSteps = useReorderMasterSteps();
-  const updateSalesWorkflow = useUpdateSalesWorkflowTemplate();
-  const createSalesWorkflow = useCreateSalesWorkflowTemplate();
-  const deleteSalesWorkflow = useDeleteSalesWorkflowTemplate();
+
   
   // DnD sensors
   const sensors = useSensors(
