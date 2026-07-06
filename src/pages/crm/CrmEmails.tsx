@@ -116,14 +116,26 @@ export default function CrmEmails() {
     });
   }, [inboundReplies]);
 
+  const genuineReplies = useMemo(
+    () => categorizedReplies.filter(r => !r.isAuto),
+    [categorizedReplies]
+  );
+  const autoReplies = useMemo(
+    () => categorizedReplies.filter(r => r.isAuto),
+    [categorizedReplies]
+  );
+
   const kindFilteredReplies = useMemo(
-    () => categorizedReplies.filter(r => (inboxKind === 'auto' ? r.isAuto : !r.isAuto)),
-    [categorizedReplies, inboxKind],
+    () => (inboxKind === 'auto' ? autoReplies : genuineReplies),
+    [inboxKind, genuineReplies, autoReplies]
   );
 
   const filteredReplies = useMemo(() => {
     let list = kindFilteredReplies;
-    if (inboxFilter !== 'all') {
+    if (inboxFilter === 'crm') {
+      // CRM tab shows genuine human replies only; auto-replies are excluded entirely
+      list = genuineReplies.filter(r => r.category === 'crm');
+    } else if (inboxFilter !== 'all') {
       list = list.filter(r => r.category === inboxFilter);
     }
     if (inboxSearch.trim()) {
@@ -136,19 +148,22 @@ export default function CrmEmails() {
       );
     }
     return list;
-  }, [kindFilteredReplies, inboxFilter, inboxSearch]);
+  }, [kindFilteredReplies, inboxFilter, inboxSearch, genuineReplies]);
 
-  const inboxCounts = useMemo(() => ({
-    all: kindFilteredReplies.length,
-    crm: kindFilteredReplies.filter(r => r.category === 'crm').length,
-    sales: kindFilteredReplies.filter(r => r.category === 'sales').length,
-    operations: kindFilteredReplies.filter(r => r.category === 'operations').length,
-  }), [kindFilteredReplies]);
+  const inboxCounts = useMemo(() => {
+    const base = inboxKind === 'auto' ? autoReplies : genuineReplies;
+    return {
+      all: base.length,
+      crm: genuineReplies.filter(r => r.category === 'crm').length,
+      sales: base.filter(r => r.category === 'sales').length,
+      operations: base.filter(r => r.category === 'operations').length,
+    };
+  }, [inboxKind, genuineReplies, autoReplies]);
 
   const kindUnreadCounts = useMemo(() => ({
-    replies: categorizedReplies.filter(r => !r.isAuto && r.unread).length,
-    auto: categorizedReplies.filter(r => r.isAuto && r.unread).length,
-  }), [categorizedReplies]);
+    replies: genuineReplies.filter(r => r.unread).length,
+    auto: autoReplies.filter(r => r.unread).length,
+  }), [genuineReplies, autoReplies]);
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId);
