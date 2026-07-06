@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, X, Users, Send, Calendar as CalIcon, Loader2, ChevronRight, ChevronLeft, Eye } from 'lucide-react';
+import { Plus, Trash2, X, Users, Send, Calendar as CalIcon, Loader2, ChevronRight, ChevronLeft, Eye, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
