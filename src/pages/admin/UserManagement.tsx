@@ -253,7 +253,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
 
   return (
     <>
-      <TableHeader>
+      <Table>
         <TableRow>
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
