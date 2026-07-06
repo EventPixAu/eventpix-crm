@@ -70,14 +70,6 @@ import {
   type WorkflowMasterStep,
   type WorkflowPhase,
 } from '@/hooks/useWorkflowMasterSteps';
-import { 
-  useSalesWorkflowTemplates,
-  useUpdateSalesWorkflowTemplate,
-  useCreateSalesWorkflowTemplate,
-  useDeleteSalesWorkflowTemplate,
-  type SalesWorkflowTemplate,
-  type SalesWorkflowItem,
-} from '@/hooks/useSalesWorkflowTemplates';
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplatesManager';
 import { ClientBriefTemplatesManager } from '@/components/admin/ClientBriefTemplatesManager';
