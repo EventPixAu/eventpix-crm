@@ -389,11 +389,12 @@ export default function CrmEmails() {
                       };
                       const cat = categoryConfig[reply.category];
                       const CatIcon = cat.icon;
+                      const showNew = reply.unread && !reply.isAuto;
 
                       return (
                         <div
                           key={reply.id}
-                          className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${!(reply as any).read_at ? 'bg-primary/5 border-primary/20' : ''}`}
+                          className={`flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${showNew ? 'bg-primary/5 border-primary/20' : ''}`}
                           onClick={() => setOpenedReply(reply)}
                         >
                           <div className="mt-0.5">
@@ -401,14 +402,17 @@ export default function CrmEmails() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <span className={`text-sm truncate ${!(reply as any).read_at ? 'font-bold' : 'font-medium'}`}>
+                              <span className={`text-sm truncate ${showNew ? 'font-bold' : 'font-medium'}`}>
                                 {reply.from_name || reply.from_email || reply.recipient_email}
                               </span>
                               <Badge variant={cat.variant} className="text-xs shrink-0">
                                 <CatIcon className="h-3 w-3 mr-1" />
                                 {cat.label}
                               </Badge>
-                              {!(reply as any).read_at && (
+                              {reply.isAuto && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1.5 shrink-0">Auto</Badge>
+                              )}
+                              {showNew && (
                                 <Badge variant="default" className="text-[10px] h-4 px-1.5 shrink-0">NEW</Badge>
                               )}
                             </div>
