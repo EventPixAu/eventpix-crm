@@ -843,10 +843,10 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
         <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t shrink-0">
           <div className="text-xs text-muted-foreground">
-            {finalRecipients.length} recipients selected
+            {step === 5 ? '' : `${finalRecipients.length} recipients selected`}
           </div>
           <div className="flex gap-2">
-            {step > 1 && (
+            {step > 1 && step < 5 && (
               <Button variant="outline" onClick={() => setStep(step - 1)} disabled={createCampaign.isPending}>
                 <ChevronLeft className="h-4 w-4 mr-1" /> Back
               </Button>
@@ -879,6 +879,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               >
                 {createCampaign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                 {scheduleMode === 'now' ? <><Send className="h-4 w-4 mr-1" /> Launch campaign</> : <><CalIcon className="h-4 w-4 mr-1" /> Schedule</>}
+              </Button>
+            )}
+            {step === 5 && (
+              <Button onClick={() => onOpenChange(false)}>
+                Close
               </Button>
             )}
           </div>
