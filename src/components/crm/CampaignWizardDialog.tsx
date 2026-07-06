@@ -827,6 +827,18 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               </Card>
             </div>
           )}
+
+          {step === 5 && (
+            <div className="flex flex-col items-center justify-center text-center py-16 space-y-4">
+              <CheckCircle2 className="h-16 w-16 text-green-500" />
+              <div className="text-2xl font-semibold">Campaign Launched</div>
+              <div className="text-muted-foreground max-w-md">
+                {scheduleMode === 'now'
+                  ? `Your campaign is being sent to ${finalRecipients.length} recipient${finalRecipients.length === 1 ? '' : 's'}. You may close this window.`
+                  : `Your campaign has been scheduled${scheduledAt ? ` for ${format(new Date(scheduledAt), 'PPp')}` : ''}. You may close this window.`}
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t shrink-0">
