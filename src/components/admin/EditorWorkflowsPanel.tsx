@@ -365,6 +365,15 @@ export default function EditorWorkflowsPanel() {
                     <Plus className="h-4 w-4 mr-1" />
                     Add Step
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedSteps(activeSteps.map((s) => s.id))}
+                    title="Select all active Staff Editor steps from the Master Workflow"
+                  >
+                    <Settings2 className="h-4 w-4 mr-1" />
+                    Sync from Master
+                  </Button>
                   {hasChanges && (
                     <Button onClick={handleSave} disabled={setDefaults.isPending}>
                       <Save className="h-4 w-4 mr-2" />
