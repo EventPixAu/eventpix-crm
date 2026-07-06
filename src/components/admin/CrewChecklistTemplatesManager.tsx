@@ -355,7 +355,9 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
           items: template.items as any,
           is_active: false, // Start as inactive
           staff_role_id: template.staff_role_id,
-        });
+          phase: template.phase,
+          template_kind: kind,
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => {
