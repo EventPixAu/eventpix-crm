@@ -379,6 +379,33 @@ function UsersTable({ users }: { users: UserProfile[] }) {
         )}
       </TableBody>
     </Table>
+
+    <Dialog open={!!confirmCopyUser} onOpenChange={(open) => !open && setConfirmCopyUser(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Copy invite link for {confirmCopyUser?.full_name || confirmCopyUser?.email}
+          </DialogTitle>
+          <DialogDescription className="space-y-3">
+            <p>
+              This link will sign whoever clicks it into <strong>{confirmCopyUser?.email}</strong>'s account.
+            </p>
+            <p>
+              Do not open it yourself in this browser — it will hijack your current admin session. Paste it into an email or message to the recipient, or test it in a private/incognito window.
+            </p>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setConfirmCopyUser(null)}>
+            Cancel
+          </Button>
+          <Button onClick={confirmCopyInviteLink}>
+            Copy Link to Clipboard
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
