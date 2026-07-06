@@ -500,7 +500,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
         <CardContent className="space-y-6">
           {templates.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              No checklist templates yet. Create one to get started.
+              {emptyStateText}
             </p>
           ) : (
             PHASE_CONFIG.map((phase) => {
