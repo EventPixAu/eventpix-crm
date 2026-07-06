@@ -503,12 +503,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto]">
         <DialogHeader>
-          <DialogTitle>New Campaign — Step {step} of 4</DialogTitle>
+          <DialogTitle>New Campaign — Step {step} of 5</DialogTitle>
           <DialogDescription>
             {step === 1 && 'Filter and select your audience'}
             {step === 2 && 'Compose the email content'}
             {step === 3 && 'Add optional follow-up emails'}
             {step === 4 && 'Send now or schedule for later'}
+            {step === 5 && 'Campaign launched'}
           </DialogDescription>
         </DialogHeader>
 
