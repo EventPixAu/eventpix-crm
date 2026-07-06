@@ -72,6 +72,64 @@ const emptyForm: StepForm = {
   is_active: true,
 };
 
+function SortableEditorStepRow({
+  step,
+  checked,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  step: WorkflowMasterStep;
+  checked: boolean;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: step.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+        checked ? 'border-primary/50 bg-primary/5' : 'border-border bg-background'
+      } ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </button>
+      <Checkbox checked={checked} onCheckedChange={onToggle} />
+      <div className="flex-1 min-w-0">
+        <div className="text-sm">{step.label}</div>
+        {step.help_text && (
+          <div className="text-xs text-muted-foreground truncate">{step.help_text}</div>
+        )}
+      </div>
+      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-destructive"
+        onClick={onDelete}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function EditorWorkflowsPanel() {
   const { data: eventTypes = [] } = useEventTypes();
   const { data: masterSteps = [], isLoading } = useEditorWorkflowMasterSteps();
