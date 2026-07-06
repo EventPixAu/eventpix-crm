@@ -139,16 +139,23 @@ export default function ProductList() {
     <AppLayout>
       <PageHeader
         title="Products & Services"
-        description="Manage your product catalog"
-        actions={
-          <Button onClick={handleOpenCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Product
-          </Button>
-        }
+        description="Manage your product catalog and sales workflows"
       />
 
-      <Card className="mt-6">
+      <Tabs defaultValue="products" className="mt-6 space-y-6">
+        <TabsList>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="sales-workflows">Sales Workflows</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="space-y-4">
+          <div className="flex justify-end">
+            <Button onClick={handleOpenCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Product
+            </Button>
+          </div>
+          <Card>
         <CardHeader>
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
