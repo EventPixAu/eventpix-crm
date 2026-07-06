@@ -360,7 +360,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                       {sendingAccessEmail === user.id ? 'Sending...' : 'Send Access Email'}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleCopyInviteLink(user)}
+                      onClick={() => promptCopyInviteLink(user)}
                       disabled={sendingAccessEmail === user.id}
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
