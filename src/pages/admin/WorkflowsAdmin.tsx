@@ -839,91 +839,16 @@ export default function WorkflowsAdmin() {
           )}
         </TabsContent>
 
-        {/* Sales Workflows Tab */}
-        <TabsContent value="sales">
-          <div className="bg-card border border-border rounded-xl">
-            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold">Sales Workflows</h2>
-                <p className="text-sm text-muted-foreground">
-                  Configure workflows for leads. Select one when creating a lead.
-                </p>
-              </div>
-              <Button onClick={() => setNewSalesWorkflowDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Workflow
-              </Button>
-            </div>
-            
-            <div className="p-4 grid md:grid-cols-2 gap-4">
-              {salesWorkflows.map(workflow => (
-                <div
-                  key={workflow.id}
-                  className="border border-border rounded-lg p-4 bg-background"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-medium">{workflow.name}</h3>
-                      {workflow.workflow_key && (
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {workflow.workflow_key === 'new_lead' ? 'New Leads' : 
-                           workflow.workflow_key === 'repeat_client' ? 'Repeat Clients' : ''}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditSalesWorkflow(workflow)}
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        Edit Steps
-                      </Button>
-                      {!workflow.workflow_key && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteSalesWorkflow(workflow.id, workflow.name)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  {workflow.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{workflow.description}</p>
-                  )}
-                  <div className="space-y-1">
-                    {workflow.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs">
-                          {index + 1}
-                        </span>
-                        <span className="text-muted-foreground">{item.title}</span>
-                      </div>
-                    ))}
-                    {workflow.items.length === 0 && (
-                      <p className="text-sm text-muted-foreground">No steps defined</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              {salesWorkflows.length === 0 && (
-                <div className="col-span-2 text-center py-8 text-muted-foreground">
-                  No sales workflows configured. Click "Add Workflow" to create one.
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
         {/* Crew Checklists Tab */}
         <TabsContent value="crew">
-          <CrewChecklistTemplatesManager />
+          <CrewChecklistTemplatesManager kind="crew" />
         </TabsContent>
+
+        {/* Editor Workflows Tab */}
+        <TabsContent value="editor">
+          <CrewChecklistTemplatesManager kind="editor" />
+        </TabsContent>
+
 
         {/* Team Briefs Tab */}
         <TabsContent value="briefs">
