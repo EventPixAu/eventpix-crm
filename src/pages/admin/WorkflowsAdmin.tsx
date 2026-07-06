@@ -466,8 +466,8 @@ export default function WorkflowsAdmin() {
       .filter(s => s.phase === newStep.phase)
       .reduce((max, s) => Math.max(max, s.sort_order), -1);
     
-    // Find Admin role as default
-    const adminRole = staffRoles.find(r => r.name === 'Admin');
+    // Find Staff Admin role as default
+    const adminRole = assignableRoles.find(r => r.name === 'Staff Admin');
     
     const createdStep = await createStep.mutateAsync({
       label: newStep.label.trim(),
