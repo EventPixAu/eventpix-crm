@@ -210,7 +210,8 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived)');
       }
 
-      if (filters.sources.length) q = q.in('source', filters.sources);
+      // Source filter is applied client-side so we can match on the contact's own source
+      // OR on the linked client's lead_source (mirrors the Contacts/Companies list behaviour).
       if (filters.states.length) q = q.in('state', filters.states);
       if (filters.cities.length) q = q.in('city', filters.cities);
       const { data, error } = await q.limit(5000);
