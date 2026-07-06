@@ -261,6 +261,12 @@ export default function ProductList() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="sales-workflows">
+          <SalesWorkflowsPanel />
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Product Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
