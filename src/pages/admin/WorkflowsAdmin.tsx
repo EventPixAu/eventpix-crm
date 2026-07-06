@@ -589,15 +589,15 @@ export default function WorkflowsAdmin() {
     <AppLayout>
       <PageHeader
         title="Workflow Configuration"
-        description="Manage operations workflow steps and sales workflows"
+        description="Manage operations workflow steps and templates"
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Steps</TabsTrigger>
           <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
-          <TabsTrigger value="sales">Sales Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
+          <TabsTrigger value="editor">Editor Workflows</TabsTrigger>
           <TabsTrigger value="briefs">Team Briefs</TabsTrigger>
           <TabsTrigger value="event-briefs">Event Briefs</TabsTrigger>
           <TabsTrigger value="editing-instructions">Editing Instructions</TabsTrigger>
