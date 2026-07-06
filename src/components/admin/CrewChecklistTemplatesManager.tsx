@@ -284,7 +284,8 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
             phase: data.phase,
-          })
+            template_kind: kind,
+          } as any)
           .select('id')
           .single();
         if (error) throw error;
