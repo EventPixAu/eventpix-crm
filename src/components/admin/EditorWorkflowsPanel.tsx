@@ -45,6 +45,7 @@ import {
   useUpdateEditorMasterStep,
   useDeleteEditorMasterStep,
   useSetEditorEventTypeStepDefaults,
+  useReorderEditorMasterSteps,
   type WorkflowMasterStep,
   type WorkflowPhase,
 } from '@/hooks/useEditorWorkflowMasterSteps';
