@@ -130,27 +130,55 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     enabled: open,
   });
 
-  // Distinct states/cities/sources from contacts
+  // Distinct states/cities/sources — pulled from ALL contacts (paginated to bypass the 1000-row default)
+  // and unioned with the client lead_source values so the wizard mirrors the Contacts/Companies list.
   const { data: distinctMeta } = useQuery({
     queryKey: ['campaign-wizard-meta'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('client_contacts')
-        .select('state, city, source')
-        .eq('archived', false);
       const clean = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+      const PAGE = 1000;
+      const contactRows: Array<{ state: string | null; city: string | null; source: string | null }> = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from('client_contacts')
+          .select('state, city, source')
+          .eq('archived', false)
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = data || [];
+        contactRows.push(...rows);
+        if (rows.length < PAGE) break;
+      }
+
+      // Also pull lead_source from every client so options match the Companies/Contacts list.
+      const clientLeadSources: string[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('lead_source')
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = data || [];
+        rows.forEach((r) => {
+          const v = clean((r as { lead_source: unknown }).lead_source);
+          if (v) clientLeadSources.push(v);
+        });
+        if (rows.length < PAGE) break;
+      }
+
       const states = Array.from(
-        new Set((data || []).map((d) => clean(d.state)).filter((v) => v.length > 0))
+        new Set(contactRows.map((d) => clean(d.state)).filter((v) => v.length > 0))
       ).sort((a, b) => a.localeCompare(b));
       const cities = Array.from(
-        new Set((data || []).map((d) => clean(d.city)).filter((v) => v.length > 0))
+        new Set(contactRows.map((d) => clean(d.city)).filter((v) => v.length > 0))
       ).sort((a, b) => a.localeCompare(b));
       const sources = Array.from(new Set([
-        ...SOURCE_OPTIONS,
-        ...((data || []).map((d) => clean(d.source)).filter((v) => v.length > 0)),
+        ...contactRows.map((d) => clean(d.source)).filter((v) => v.length > 0),
+        ...clientLeadSources,
       ])).sort((a, b) => a.localeCompare(b));
       return { states, cities, sources };
     },
+    enabled: open,
     refetchOnMount: 'always',
     staleTime: 0,
   });
