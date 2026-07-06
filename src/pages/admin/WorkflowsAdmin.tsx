@@ -991,14 +991,14 @@ export default function WorkflowsAdmin() {
             <div>
               <Label>Default Assignment</Label>
               <Select
-                value={newStep.default_staff_role_id || staffRoles.find(r => r.name === 'Admin')?.id || ''}
+                value={newStep.default_staff_role_id || assignableRoles.find(r => r.name === 'Staff Admin')?.id || ''}
                 onValueChange={v => setNewStep({ ...newStep, default_staff_role_id: v || null })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select default role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {staffRoles.filter(r => r.is_active).map(role => (
+                  {assignableRoles.map(role => (
                     <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
                   ))}
                 </SelectContent>
