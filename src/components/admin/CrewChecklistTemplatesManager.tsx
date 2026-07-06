@@ -763,9 +763,9 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Checklist Template?</AlertDialogTitle>
+            <AlertDialogTitle>{deleteTitleText}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this checklist template. Existing crew checklists that used this template will not be affected.
+              {deleteBodyText}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
