@@ -382,14 +382,6 @@ export default function WorkflowsAdmin() {
     date_offset_reference: 'event_date',
   });
 
-  // Sales Workflow Editor State
-  const [editingSalesWorkflow, setEditingSalesWorkflow] = useState<SalesWorkflowTemplate | null>(null);
-  const [salesWorkflowItems, setSalesWorkflowItems] = useState<SalesWorkflowItem[]>([]);
-  const [newSalesWorkflowDialog, setNewSalesWorkflowDialog] = useState(false);
-  const [newSalesWorkflow, setNewSalesWorkflow] = useState<{ name: string; description: string }>({
-    name: '',
-    description: '',
-  });
 
   // Active steps only
   const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
