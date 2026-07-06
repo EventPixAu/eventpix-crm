@@ -77,6 +77,8 @@ import { EditingInstructionTemplatesManager } from '@/components/admin/EditingIn
 import EditorWorkflowsPanel from '@/components/admin/EditorWorkflowsPanel';
 import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
+const DEFAULT_ASSIGNMENT_ROLE_NAMES = ['Staff Admin', 'Staff Editor', 'Photographer', 'Assistant'];
+
 // Helper to format date offset display
 function formatDateOffset(step: WorkflowMasterStep): string | null {
   if (step.date_offset_days === null || !step.date_offset_reference) {
