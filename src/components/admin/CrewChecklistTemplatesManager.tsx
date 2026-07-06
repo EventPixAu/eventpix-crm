@@ -205,10 +205,10 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['crew-checklist-templates-admin', kind],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('crew_checklist_templates')
-        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)')
-        .eq('template_kind' as any, kind)
+        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)') as any)
+        .eq('template_kind', kind)
         .order('name');
       if (error) throw error;
       return (data || []).map((t: any) => ({
