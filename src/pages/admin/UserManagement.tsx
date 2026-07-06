@@ -189,6 +189,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
   const { data: staffRoles = [] } = useAllStaffRoles();
   const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
   const [sendingAccessEmail, setSendingAccessEmail] = useState<string | null>(null);
+  const [confirmCopyUser, setConfirmCopyUser] = useState<UserProfile | null>(null);
 
   const handleSendAccessEmail = async (user: UserProfile) => {
     if (!user.email) {
@@ -238,10 +239,23 @@ function UsersTable({ users }: { users: UserProfile[] }) {
     }
   };
 
+  const promptCopyInviteLink = (user: UserProfile) => {
+    setConfirmCopyUser(user);
+  };
+
+  const confirmCopyInviteLink = () => {
+    if (confirmCopyUser) {
+      const user = confirmCopyUser;
+      setConfirmCopyUser(null);
+      handleCopyInviteLink(user);
+    }
+  };
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Role</TableHead>
@@ -347,7 +361,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
                       {sendingAccessEmail === user.id ? 'Sending...' : 'Send Access Email'}
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => handleCopyInviteLink(user)}
+                      onClick={() => promptCopyInviteLink(user)}
                       disabled={sendingAccessEmail === user.id}
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
@@ -366,6 +380,34 @@ function UsersTable({ users }: { users: UserProfile[] }) {
         )}
       </TableBody>
     </Table>
+
+    <Dialog open={!!confirmCopyUser} onOpenChange={(open) => !open && setConfirmCopyUser(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Copy invite link for {confirmCopyUser?.full_name || confirmCopyUser?.email}
+          </DialogTitle>
+          <DialogDescription className="space-y-3">
+            <p>
+              This link will sign whoever clicks it into <strong>{confirmCopyUser?.email}</strong>'s account.
+            </p>
+            <p>
+              Do not open it yourself in this browser — it will hijack your current admin session. Paste it into an email or message to the recipient, or test it in a private/incognito window.
+            </p>
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setConfirmCopyUser(null)}>
+            Cancel
+          </Button>
+          <Button onClick={confirmCopyInviteLink}>
+            Copy Link to Clipboard
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
