@@ -66,6 +66,7 @@ interface LeadSummaryCardProps {
   onArchive?: () => void;
   onDelete?: () => void;
   onConvert?: () => void;
+  hasAcceptedQuote?: boolean;
 }
 
 const VARIANT_MAP: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
