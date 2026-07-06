@@ -372,8 +372,12 @@ export default function CrmEmails() {
                 ) : filteredReplies.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Inbox className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                    <p className="font-medium">No inbound replies</p>
-                    <p className="text-sm mt-1">Replies will appear here when clients respond to your emails</p>
+                    <p className="font-medium">No {inboxKind === 'auto' ? 'auto-replies' : 'inbound replies'}</p>
+                    <p className="text-sm mt-1">
+                      {inboxKind === 'auto'
+                        ? 'Out-of-office and no-reply messages will appear here'
+                        : 'Replies will appear here when clients respond to your emails'}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
