@@ -189,6 +189,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
   const { data: staffRoles = [] } = useAllStaffRoles();
   const ROLES = staffRoles.filter(r => r.is_active).map(r => ({ value: r.name.toLowerCase(), label: r.name, description: r.description || '' }));
   const [sendingAccessEmail, setSendingAccessEmail] = useState<string | null>(null);
+  const [confirmCopyUser, setConfirmCopyUser] = useState<UserProfile | null>(null);
 
   const handleSendAccessEmail = async (user: UserProfile) => {
     if (!user.email) {
@@ -235,6 +236,18 @@ function UsersTable({ users }: { users: UserProfile[] }) {
       toast.error('Failed to generate link', { description: err.message });
     } finally {
       setSendingAccessEmail(null);
+    }
+  };
+
+  const promptCopyInviteLink = (user: UserProfile) => {
+    setConfirmCopyUser(user);
+  };
+
+  const confirmCopyInviteLink = () => {
+    if (confirmCopyUser) {
+      const user = confirmCopyUser;
+      setConfirmCopyUser(null);
+      handleCopyInviteLink(user);
     }
   };
 
