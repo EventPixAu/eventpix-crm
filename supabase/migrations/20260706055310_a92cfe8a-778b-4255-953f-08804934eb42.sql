@@ -1,0 +1,2 @@
+ALTER TABLE public.crew_checklist_templates ADD COLUMN IF NOT EXISTS template_kind text NOT NULL DEFAULT 'crew';
+CREATE INDEX IF NOT EXISTS crew_checklist_templates_template_kind_idx ON public.crew_checklist_templates(template_kind);
