@@ -70,14 +70,6 @@ import {
   type WorkflowMasterStep,
   type WorkflowPhase,
 } from '@/hooks/useWorkflowMasterSteps';
-import { 
-  useSalesWorkflowTemplates,
-  useUpdateSalesWorkflowTemplate,
-  useCreateSalesWorkflowTemplate,
-  useDeleteSalesWorkflowTemplate,
-  type SalesWorkflowTemplate,
-  type SalesWorkflowItem,
-} from '@/hooks/useSalesWorkflowTemplates';
 import { CrewChecklistTemplatesManager } from '@/components/admin/CrewChecklistTemplatesManager';
 import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplatesManager';
 import { ClientBriefTemplatesManager } from '@/components/admin/ClientBriefTemplatesManager';
@@ -321,7 +313,7 @@ export default function WorkflowsAdmin() {
   const { data: eventTypes = [], isLoading: typesLoading } = useEventTypes();
   const { data: masterSteps = [], isLoading: stepsLoading } = useWorkflowMasterSteps();
   const { data: allDefaults = [], isLoading: defaultsLoading } = useAllEventTypeStepDefaults();
-  const { data: salesWorkflows = [] } = useSalesWorkflowTemplates();
+  
   const { data: staffRoles = [] } = useAllStaffRoles();
   const { data: assignableUsers = [] } = useQuery({
     queryKey: ['assignable-staff-for-defaults'],
@@ -341,9 +333,7 @@ export default function WorkflowsAdmin() {
   const updateStep = useUpdateMasterStep();
   const deleteStep = useDeleteMasterStep();
   const reorderSteps = useReorderMasterSteps();
-  const updateSalesWorkflow = useUpdateSalesWorkflowTemplate();
-  const createSalesWorkflow = useCreateSalesWorkflowTemplate();
-  const deleteSalesWorkflow = useDeleteSalesWorkflowTemplate();
+
   
   // DnD sensors
   const sensors = useSensors(
@@ -369,7 +359,7 @@ export default function WorkflowsAdmin() {
   const tabParam = searchParams.get('tab');
   const tabFromUrl =
     tabParam === 'crew-checklists' || tabParam === 'crew' ? 'crew'
-    : tabParam === 'sales' ? 'sales'
+    : tabParam === 'editor' || tabParam === 'editor-workflows' ? 'editor'
     : tabParam === 'event-types' ? 'event-types'
     : tabParam === 'briefs' ? 'briefs'
     : tabParam === 'event-briefs' ? 'event-briefs'
@@ -392,14 +382,6 @@ export default function WorkflowsAdmin() {
     date_offset_reference: 'event_date',
   });
 
-  // Sales Workflow Editor State
-  const [editingSalesWorkflow, setEditingSalesWorkflow] = useState<SalesWorkflowTemplate | null>(null);
-  const [salesWorkflowItems, setSalesWorkflowItems] = useState<SalesWorkflowItem[]>([]);
-  const [newSalesWorkflowDialog, setNewSalesWorkflowDialog] = useState(false);
-  const [newSalesWorkflow, setNewSalesWorkflow] = useState<{ name: string; description: string }>({
-    name: '',
-    description: '',
-  });
 
   // Active steps only
   const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
@@ -600,54 +582,6 @@ export default function WorkflowsAdmin() {
     setHasChanges(true);
   };
 
-  const handleEditSalesWorkflow = (workflow: SalesWorkflowTemplate) => {
-    setEditingSalesWorkflow(workflow);
-    setSalesWorkflowItems([...workflow.items]);
-  };
-
-  const handleAddSalesItem = () => {
-    const maxOrder = salesWorkflowItems.reduce((max, i) => Math.max(max, i.sort_order), -1);
-    setSalesWorkflowItems([...salesWorkflowItems, { title: '', sort_order: maxOrder + 1 }]);
-  };
-
-  const handleUpdateSalesItem = (index: number, title: string) => {
-    const updated = [...salesWorkflowItems];
-    updated[index] = { ...updated[index], title };
-    setSalesWorkflowItems(updated);
-  };
-
-  const handleRemoveSalesItem = (index: number) => {
-    setSalesWorkflowItems(salesWorkflowItems.filter((_, i) => i !== index));
-  };
-
-  const handleSaveSalesWorkflow = async () => {
-    if (!editingSalesWorkflow) return;
-    
-    await updateSalesWorkflow.mutateAsync({
-      id: editingSalesWorkflow.id,
-      items: salesWorkflowItems.filter(i => i.title.trim()),
-    });
-    
-    setEditingSalesWorkflow(null);
-  };
-
-  const handleCreateSalesWorkflow = async () => {
-    if (!newSalesWorkflow.name.trim()) return;
-    
-    await createSalesWorkflow.mutateAsync({
-      name: newSalesWorkflow.name.trim(),
-      description: newSalesWorkflow.description.trim() || null,
-      items: [{ title: 'Step 1', sort_order: 0 }],
-    });
-    
-    setNewSalesWorkflowDialog(false);
-    setNewSalesWorkflow({ name: '', description: '' });
-  };
-
-  const handleDeleteSalesWorkflow = async (id: string, name: string) => {
-    if (!confirm(`Delete workflow "${name}"? This cannot be undone.`)) return;
-    await deleteSalesWorkflow.mutateAsync(id);
-  };
 
   const isLoading = typesLoading || stepsLoading || defaultsLoading;
 
@@ -655,15 +589,15 @@ export default function WorkflowsAdmin() {
     <AppLayout>
       <PageHeader
         title="Workflow Configuration"
-        description="Manage operations workflow steps and sales workflows"
+        description="Manage operations workflow steps and templates"
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Steps</TabsTrigger>
           <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
-          <TabsTrigger value="sales">Sales Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
+          <TabsTrigger value="editor">Editor Workflows</TabsTrigger>
           <TabsTrigger value="briefs">Team Briefs</TabsTrigger>
           <TabsTrigger value="event-briefs">Event Briefs</TabsTrigger>
           <TabsTrigger value="editing-instructions">Editing Instructions</TabsTrigger>
@@ -905,91 +839,16 @@ export default function WorkflowsAdmin() {
           )}
         </TabsContent>
 
-        {/* Sales Workflows Tab */}
-        <TabsContent value="sales">
-          <div className="bg-card border border-border rounded-xl">
-            <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold">Sales Workflows</h2>
-                <p className="text-sm text-muted-foreground">
-                  Configure workflows for leads. Select one when creating a lead.
-                </p>
-              </div>
-              <Button onClick={() => setNewSalesWorkflowDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Workflow
-              </Button>
-            </div>
-            
-            <div className="p-4 grid md:grid-cols-2 gap-4">
-              {salesWorkflows.map(workflow => (
-                <div
-                  key={workflow.id}
-                  className="border border-border rounded-lg p-4 bg-background"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-medium">{workflow.name}</h3>
-                      {workflow.workflow_key && (
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {workflow.workflow_key === 'new_lead' ? 'New Leads' : 
-                           workflow.workflow_key === 'repeat_client' ? 'Repeat Clients' : ''}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditSalesWorkflow(workflow)}
-                      >
-                        <Pencil className="h-4 w-4 mr-1" />
-                        Edit Steps
-                      </Button>
-                      {!workflow.workflow_key && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteSalesWorkflow(workflow.id, workflow.name)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  {workflow.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{workflow.description}</p>
-                  )}
-                  <div className="space-y-1">
-                    {workflow.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs">
-                          {index + 1}
-                        </span>
-                        <span className="text-muted-foreground">{item.title}</span>
-                      </div>
-                    ))}
-                    {workflow.items.length === 0 && (
-                      <p className="text-sm text-muted-foreground">No steps defined</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              {salesWorkflows.length === 0 && (
-                <div className="col-span-2 text-center py-8 text-muted-foreground">
-                  No sales workflows configured. Click "Add Workflow" to create one.
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
         {/* Crew Checklists Tab */}
         <TabsContent value="crew">
-          <CrewChecklistTemplatesManager />
+          <CrewChecklistTemplatesManager kind="crew" />
         </TabsContent>
+
+        {/* Editor Workflows Tab */}
+        <TabsContent value="editor">
+          <CrewChecklistTemplatesManager kind="editor" />
+        </TabsContent>
+
 
         {/* Team Briefs Tab */}
         <TabsContent value="briefs">
@@ -1345,88 +1204,6 @@ export default function WorkflowsAdmin() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Sales Workflow Dialog */}
-      <Dialog open={!!editingSalesWorkflow} onOpenChange={() => setEditingSalesWorkflow(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Sales Workflow</DialogTitle>
-            <DialogDescription>
-              {editingSalesWorkflow?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {salesWorkflowItems.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <span className="w-6 text-center text-sm text-muted-foreground">{index + 1}.</span>
-                <Input
-                  value={item.title}
-                  onChange={e => handleUpdateSalesItem(index, e.target.value)}
-                  placeholder="Step title..."
-                  className="flex-1"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveSalesItem(index)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            ))}
-            <Button variant="outline" onClick={handleAddSalesItem} className="w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Step
-            </Button>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingSalesWorkflow(null)}>Cancel</Button>
-            <Button onClick={handleSaveSalesWorkflow} disabled={updateSalesWorkflow.isPending}>
-              Save Workflow
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* New Sales Workflow Dialog */}
-      <Dialog open={newSalesWorkflowDialog} onOpenChange={setNewSalesWorkflowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Sales Workflow</DialogTitle>
-            <DialogDescription>
-              Create a new workflow template for leads
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Workflow Name *</Label>
-              <Input
-                value={newSalesWorkflow.name}
-                onChange={e => setNewSalesWorkflow(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Corporate Events"
-              />
-            </div>
-            <div>
-              <Label>Description (optional)</Label>
-              <Input
-                value={newSalesWorkflow.description}
-                onChange={e => setNewSalesWorkflow(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Brief description of this workflow..."
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNewSalesWorkflowDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateSalesWorkflow} 
-              disabled={!newSalesWorkflow.name.trim() || createSalesWorkflow.isPending}
-            >
-              Create Workflow
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Event Type Dialog */}
       <Dialog open={editEventTypeDialog} onOpenChange={setEditEventTypeDialog}>

@@ -168,12 +168,29 @@ interface EventType {
   name: string;
 }
 
-export function CrewChecklistTemplatesManager() {
+export interface CrewChecklistTemplatesManagerProps {
+  kind?: 'crew' | 'editor';
+}
+
+export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTemplatesManagerProps = {}) {
   const queryClient = useQueryClient();
   const [editingTemplate, setEditingTemplate] = useState<CrewChecklistTemplate | null>(null);
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
+
+  const isEditor = kind === 'editor';
+  const cardTitle = isEditor ? 'Editor Workflow Templates' : 'Crew Checklist Templates';
+  const newButtonLabel = isEditor ? 'New Workflow' : 'New Template';
+  const dialogCreateTitle = isEditor ? 'Create Editor Workflow' : 'Create Checklist Template';
+  const dialogEditTitle = isEditor ? 'Edit Editor Workflow' : 'Edit Checklist Template';
+  const emptyStateText = isEditor
+    ? 'No editor workflows yet. Create one to get started.'
+    : 'No checklist templates yet. Create one to get started.';
+  const deleteTitleText = isEditor ? 'Delete Editor Workflow?' : 'Delete Checklist Template?';
+  const deleteBodyText = isEditor
+    ? 'This will permanently delete this editor workflow template. Existing checklists that used it will not be affected.'
+    : 'This will permanently delete this checklist template. Existing crew checklists that used this template will not be affected.';
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -186,11 +203,12 @@ export function CrewChecklistTemplatesManager() {
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery({
-    queryKey: ['crew-checklist-templates-admin'],
+    queryKey: ['crew-checklist-templates-admin', kind],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('crew_checklist_templates')
-        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)')
+        .select('*, event_type_links:crew_checklist_template_event_types(event_type_id)') as any)
+        .eq('template_kind', kind)
         .order('name');
       if (error) throw error;
       return (data || []).map((t: any) => ({
@@ -266,7 +284,8 @@ export function CrewChecklistTemplatesManager() {
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
             phase: data.phase,
-          })
+            template_kind: kind,
+          } as any)
           .select('id')
           .single();
         if (error) throw error;
@@ -336,7 +355,9 @@ export function CrewChecklistTemplatesManager() {
           items: template.items as any,
           is_active: false, // Start as inactive
           staff_role_id: template.staff_role_id,
-        });
+          phase: template.phase,
+          template_kind: kind,
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -469,17 +490,17 @@ export function CrewChecklistTemplatesManager() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5" />
-            Crew Checklist Templates
+            {cardTitle}
           </CardTitle>
           <Button onClick={openCreate} size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            New Template
+            {newButtonLabel}
           </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           {templates.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              No checklist templates yet. Create one to get started.
+              {emptyStateText}
             </p>
           ) : (
             PHASE_CONFIG.map((phase) => {
@@ -597,7 +618,7 @@ export function CrewChecklistTemplatesManager() {
       <Dialog open={!!editingTemplate} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isCreateMode ? 'Create Checklist Template' : 'Edit Checklist Template'}</DialogTitle>
+            <DialogTitle>{isCreateMode ? dialogCreateTitle : dialogEditTitle}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -742,9 +763,9 @@ export function CrewChecklistTemplatesManager() {
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Checklist Template?</AlertDialogTitle>
+            <AlertDialogTitle>{deleteTitleText}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this checklist template. Existing crew checklists that used this template will not be affected.
+              {deleteBodyText}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

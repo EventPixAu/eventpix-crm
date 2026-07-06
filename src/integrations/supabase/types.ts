@@ -1555,6 +1555,7 @@ export type Database = {
           name: string
           phase: string
           staff_role_id: string | null
+          template_kind: string
           updated_at: string | null
         }
         Insert: {
@@ -1566,6 +1567,7 @@ export type Database = {
           name: string
           phase?: string
           staff_role_id?: string | null
+          template_kind?: string
           updated_at?: string | null
         }
         Update: {
@@ -1577,6 +1579,7 @@ export type Database = {
           name?: string
           phase?: string
           staff_role_id?: string | null
+          template_kind?: string
           updated_at?: string | null
         }
         Relationships: [
