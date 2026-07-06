@@ -214,6 +214,30 @@ function UsersTable({ users }: { users: UserProfile[] }) {
     }
   };
 
+  const handleCopyInviteLink = async (user: UserProfile) => {
+    if (!user.email) {
+      toast.error('No email address');
+      return;
+    }
+    setSendingAccessEmail(user.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-generate-invite-link', {
+        body: { email: user.email },
+      });
+      if (error) throw error;
+      if (!data?.link) throw new Error(data?.error || 'Failed to generate link');
+      await navigator.clipboard.writeText(data.link);
+      toast.success('Invite link copied to clipboard', {
+        description: `Paste into an email to ${user.email}. Link expires in ~1 hour.`,
+        duration: 10000,
+      });
+    } catch (err: any) {
+      toast.error('Failed to generate link', { description: err.message });
+    } finally {
+      setSendingAccessEmail(null);
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
