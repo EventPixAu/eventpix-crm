@@ -554,7 +554,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                 />
                 <FilterGroup
                   label="Source"
-                  options={(distinctMeta?.sources || SOURCE_OPTIONS).map((s) => ({ value: s, label: s }))}
+                  options={(distinctMeta?.sources || []).map((s) => ({ value: s, label: s }))}
                   selected={filters.sources}
                   onToggle={(v) => toggleFilter('sources', v)}
                 />
