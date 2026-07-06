@@ -487,7 +487,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['email-campaigns'] });
       toast.success(scheduleMode === 'now' ? 'Campaign launched' : 'Campaign scheduled');
-      onOpenChange(false);
+      setStep(5);
     },
     onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
