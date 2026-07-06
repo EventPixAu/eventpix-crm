@@ -1147,7 +1147,7 @@ export default function WorkflowsAdmin() {
                     <SelectValue placeholder="Select default role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {staffRoles.filter(r => r.is_active).map(role => (
+                    {assignableRoles.map(role => (
                       <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
                     ))}
                   </SelectContent>
