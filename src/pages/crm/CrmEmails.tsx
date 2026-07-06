@@ -306,6 +306,28 @@ export default function CrmEmails() {
                     className="max-w-xs"
                   />
                 </div>
+                <div className="flex gap-2 pt-2 flex-wrap border-b pb-3">
+                  <Button
+                    variant={inboxKind === 'replies' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setInboxKind('replies')}
+                  >
+                    Replies
+                    {kindUnreadCounts.replies > 0 && (
+                      <Badge variant="secondary" className="ml-1.5">{kindUnreadCounts.replies}</Badge>
+                    )}
+                  </Button>
+                  <Button
+                    variant={inboxKind === 'auto' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setInboxKind('auto')}
+                  >
+                    Auto-replies
+                    {kindUnreadCounts.auto > 0 && (
+                      <Badge variant="secondary" className="ml-1.5">{kindUnreadCounts.auto}</Badge>
+                    )}
+                  </Button>
+                </div>
                 <div className="flex gap-2 pt-2 flex-wrap">
                   <Button
                     variant={inboxFilter === 'all' ? 'default' : 'outline'}
