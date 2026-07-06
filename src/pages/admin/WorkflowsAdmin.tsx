@@ -846,7 +846,7 @@ export default function WorkflowsAdmin() {
 
         {/* Editor Workflows Tab */}
         <TabsContent value="editor">
-          <CrewChecklistTemplatesManager kind="editor" />
+          <EditorWorkflowsPanel />
         </TabsContent>
 
 
