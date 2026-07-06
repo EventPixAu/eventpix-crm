@@ -119,4 +119,48 @@ export function useSetEditorEventTypeStepDefaults() {
   });
 }
 
+export function useReorderEditorMasterSteps() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (steps: { id: string; sort_order: number }[]) => {
+      const updates = steps.map(({ id, sort_order }) =>
+        (supabase as any)
+          .from('editor_workflow_master_steps')
+          .update({ sort_order, updated_at: new Date().toISOString() })
+          .eq('id', id)
+      );
+      const results = await Promise.all(updates);
+      const error = results.find((r: any) => r.error)?.error;
+      if (error) throw error;
+      return steps;
+    },
+    onMutate: async (newOrder) => {
+      await qc.cancelQueries({ queryKey: MASTER_KEY });
+      const previous = qc.getQueryData<WorkflowMasterStep[]>(MASTER_KEY);
+      if (previous) {
+        const updated = previous.map((step) => {
+          const u = newOrder.find((x) => x.id === step.id);
+          return u ? { ...step, sort_order: u.sort_order } : step;
+        });
+        updated.sort((a, b) => {
+          if (a.phase !== b.phase) {
+            const order = { pre_event: 0, day_of: 1, post_event: 2 } as const;
+            return (order[a.phase] || 0) - (order[b.phase] || 0);
+          }
+          return a.sort_order - b.sort_order;
+        });
+        qc.setQueryData(MASTER_KEY, updated);
+      }
+      return { previous };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.previous) qc.setQueryData(MASTER_KEY, ctx.previous);
+      toast.error('Failed to reorder steps');
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: MASTER_KEY });
+    },
+  });
+}
+
 export type { WorkflowMasterStep, EventTypeStepDefault, WorkflowPhase };
