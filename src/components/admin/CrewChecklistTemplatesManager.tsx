@@ -618,7 +618,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       <Dialog open={!!editingTemplate} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isCreateMode ? 'Create Checklist Template' : 'Edit Checklist Template'}</DialogTitle>
+            <DialogTitle>{isCreateMode ? dialogCreateTitle : dialogEditTitle}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
