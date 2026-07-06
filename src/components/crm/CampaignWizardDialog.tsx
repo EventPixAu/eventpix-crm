@@ -66,7 +66,7 @@ interface WizardContact {
   unsubscribed: boolean;
 }
 
-const SOURCE_OPTIONS = ['Studio Ninja', 'Conferences & Events', 'Mailchimp', 'Manual'];
+
 
 interface Props {
   open: boolean;
