@@ -421,6 +421,7 @@ export default function LeadDetail(): JSX.Element {
             onArchive={() => navigate('/sales/leads')}
             onDelete={handleDelete}
             onConvert={() => setIsConvertDialogOpen(true)}
+            hasAcceptedQuote={quotes.some((q: any) => q.status === 'accepted')}
           />
 
           {/* Proposed Dates Panel */}

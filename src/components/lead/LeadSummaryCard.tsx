@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle, Globe } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle, Globe, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -66,6 +66,7 @@ interface LeadSummaryCardProps {
   onArchive?: () => void;
   onDelete?: () => void;
   onConvert?: () => void;
+  hasAcceptedQuote?: boolean;
 }
 
 const VARIANT_MAP: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -85,6 +86,7 @@ export function LeadSummaryCard({
   onArchive,
   onDelete,
   onConvert,
+  hasAcceptedQuote = false,
 }: LeadSummaryCardProps) {
   const updateLead = useUpdateLead();
   const { data: leadStatuses = [] } = useLeadStatuses();
@@ -327,10 +329,21 @@ export function LeadSummaryCard({
           </DialogContent>
         </Dialog>
 
-        {/* Actions */}
-        <div className="flex gap-2 pt-2 border-t">
+        <div className="flex flex-col gap-2 pt-2 border-t">
+          {hasAcceptedQuote && onConvert && (
+            <div className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span className="flex-1">Quote accepted — ready to convert to event.</span>
+            </div>
+          )}
+          <div className="flex gap-2">
           {onConvert && (
-            <Button variant="default" size="sm" onClick={onConvert}>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onConvert}
+              className={hasAcceptedQuote ? 'bg-emerald-500 hover:bg-emerald-600 text-white animate-pulse' : ''}
+            >
               <ArrowRightCircle className="h-4 w-4 mr-1.5" />
               Convert to Event
             </Button>
@@ -383,6 +396,7 @@ export function LeadSummaryCard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          </div>
         </div>
       </CardContent>
     </Card>
