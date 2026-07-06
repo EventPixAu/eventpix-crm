@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle, Globe } from 'lucide-react';
+import { Archive, Trash2, Target, Pencil, MapPin, ArrowRightCircle, Globe, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
