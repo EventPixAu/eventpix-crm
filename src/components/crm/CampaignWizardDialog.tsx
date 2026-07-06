@@ -224,6 +224,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const explicitSubs = new Set(filters.subcategories);
       const explicitClientTypes = new Set(filters.clientTypes);
       const explicitCountries = new Set(filters.countries);
+      const explicitSources = new Set(filters.sources);
 
       // "All selected" === "no filter" so uncategorised contacts are not excluded
       const parentsActive = explicitParents.size > 0 && explicitParents.size < categories.length;
