@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Trash2, X, Users, Send, Calendar as CalIcon, Loader2, ChevronRight, ChevronLeft, Eye } from 'lucide-react';
+import { Plus, Trash2, X, Users, Send, Calendar as CalIcon, Loader2, ChevronRight, ChevronLeft, Eye, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -487,7 +487,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['email-campaigns'] });
       toast.success(scheduleMode === 'now' ? 'Campaign launched' : 'Campaign scheduled');
-      onOpenChange(false);
+      setStep(5);
     },
     onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
@@ -503,12 +503,13 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto]">
         <DialogHeader>
-          <DialogTitle>New Campaign — Step {step} of 4</DialogTitle>
+          <DialogTitle>New Campaign — Step {step} of 5</DialogTitle>
           <DialogDescription>
             {step === 1 && 'Filter and select your audience'}
             {step === 2 && 'Compose the email content'}
             {step === 3 && 'Add optional follow-up emails'}
             {step === 4 && 'Send now or schedule for later'}
+            {step === 5 && 'Campaign launched'}
           </DialogDescription>
         </DialogHeader>
 
@@ -826,14 +827,26 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               </Card>
             </div>
           )}
+
+          {step === 5 && (
+            <div className="flex flex-col items-center justify-center text-center py-16 space-y-4">
+              <CheckCircle2 className="h-16 w-16 text-green-500" />
+              <div className="text-2xl font-semibold">Campaign Launched</div>
+              <div className="text-muted-foreground max-w-md">
+                {scheduleMode === 'now'
+                  ? `Your campaign is being sent to ${finalRecipients.length} recipient${finalRecipients.length === 1 ? '' : 's'}. You may close this window.`
+                  : `Your campaign has been scheduled${scheduledAt ? ` for ${format(new Date(scheduledAt), 'PPp')}` : ''}. You may close this window.`}
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex items-center justify-between gap-2 pt-2 border-t shrink-0">
           <div className="text-xs text-muted-foreground">
-            {finalRecipients.length} recipients selected
+            {step === 5 ? '' : `${finalRecipients.length} recipients selected`}
           </div>
           <div className="flex gap-2">
-            {step > 1 && (
+            {step > 1 && step < 5 && (
               <Button variant="outline" onClick={() => setStep(step - 1)} disabled={createCampaign.isPending}>
                 <ChevronLeft className="h-4 w-4 mr-1" /> Back
               </Button>
@@ -866,6 +879,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               >
                 {createCampaign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                 {scheduleMode === 'now' ? <><Send className="h-4 w-4 mr-1" /> Launch campaign</> : <><CalIcon className="h-4 w-4 mr-1" /> Schedule</>}
+              </Button>
+            )}
+            {step === 5 && (
+              <Button onClick={() => onOpenChange(false)}>
+                Close
               </Button>
             )}
           </div>
