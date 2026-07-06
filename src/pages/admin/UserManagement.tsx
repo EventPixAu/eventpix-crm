@@ -406,6 +406,7 @@ function UsersTable({ users }: { users: UserProfile[] }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 
