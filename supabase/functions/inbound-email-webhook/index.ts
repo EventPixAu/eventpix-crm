@@ -260,6 +260,40 @@ serve(async (req) => {
       `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply} · text_len=${text?.length ?? 0} · html_len=${html?.length ?? 0}`,
     );
 
+    // ── Website enquiry detection ────────────────────────────────────────
+    // WordPress/Elementor form emails follow the labelled "Field: value"
+    // pattern and their subjects contain "enquiry". Route these into the
+    // website-enquiry-ingest so they land as CRM contacts + Sales leads.
+    const plainForParse = text || (html ? html.replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]*>/g, "\n") : "");
+    const subjectLooksLikeEnquiry = /enquiry|contact\s*form|new\s*lead|website\s*form/i.test(subject);
+    const bodyLooksLikeForm = /^\s*(first\s*name|full\s*name|email)\s*:/im.test(plainForParse);
+    if (!isAutoReply && subjectLooksLikeEnquiry && bodyLooksLikeForm) {
+      try {
+        const parsed = parseEnquiryEmail(plainForParse);
+        console.log("Enquiry email detected — forwarding to ingest:", Object.keys(parsed));
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+        const resp = await fetch(`${supabaseUrl}/functions/v1/website-enquiry-ingest`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${anonKey}`,
+            "apikey": anonKey,
+          },
+          body: JSON.stringify(parsed),
+        });
+        const respText = await resp.text();
+        console.log("website-enquiry-ingest response:", resp.status, respText.slice(0, 200));
+        return new Response(
+          JSON.stringify({ success: resp.ok, routed: "website-enquiry-ingest", upstream_status: resp.status }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
+        );
+      } catch (parseErr) {
+        console.error("Enquiry email parse/forward failed — continuing as normal inbound:", parseErr);
+      }
+    }
+
+
     // Internal/owner address guard — do not create or resolve CRM contacts for these
     const internal = await isInternalEmail(supabase, fromEmail);
     if (internal) {
