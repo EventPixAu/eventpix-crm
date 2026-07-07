@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.dispatch-campaigns]
 verify_jwt = false
+
+[functions.website-enquiry-ingest]
+verify_jwt = false

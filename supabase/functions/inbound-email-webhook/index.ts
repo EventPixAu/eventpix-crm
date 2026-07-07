@@ -34,6 +34,41 @@ function parseAddress(input: string | undefined | null): { email: string; name: 
   };
 }
 
+/**
+ * Parse a labelled "Field: value" enquiry email body (as sent by
+ * Elementor / Contact Form 7 / WordPress form plugins) into a flat object
+ * that website-enquiry-ingest can normalise.
+ */
+function parseEnquiryEmail(body: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const lines = body.split(/\r?\n/);
+  // Cut off the WordPress plugin footer if present ("---", "Date:", "Powered by:")
+  let end = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*(-{3,}|Powered by:|Sent from|This e-mail was sent)/i.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  let currentKey: string | null = null;
+  for (let i = 0; i < end; i++) {
+    const line = lines[i];
+    const m = line.match(/^\s*([A-Za-z][A-Za-z0-9 _()./&'?-]{1,80}?)\s*:\s*(.*)$/);
+    if (m) {
+      currentKey = m[1].trim();
+      out[currentKey] = (m[2] || "").trim();
+    } else if (currentKey && line.trim()) {
+      out[currentKey] = `${out[currentKey]} ${line.trim()}`.trim();
+    }
+  }
+  // Drop skipped WordPress metadata that sometimes appears with labels
+  for (const k of ["Page URL", "User Agent", "Remote IP", "Powered by", "Date", "Time"]) {
+    delete out[k];
+  }
+  return out;
+}
+
+
 function normalizeSubject(subject: string | undefined | null): string {
   let s = (subject ?? "").trim();
   // Strip "Re:", "Fwd:", "Fw:", "Aw:", "Antw:", "Tr:" prefixes (repeated)
@@ -259,6 +294,40 @@ serve(async (req) => {
     console.log(
       `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply} · text_len=${text?.length ?? 0} · html_len=${html?.length ?? 0}`,
     );
+
+    // ── Website enquiry detection ────────────────────────────────────────
+    // WordPress/Elementor form emails follow the labelled "Field: value"
+    // pattern and their subjects contain "enquiry". Route these into the
+    // website-enquiry-ingest so they land as CRM contacts + Sales leads.
+    const plainForParse = text || (html ? html.replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]*>/g, "\n") : "");
+    const subjectLooksLikeEnquiry = /enquiry|contact\s*form|new\s*lead|website\s*form/i.test(subject);
+    const bodyLooksLikeForm = /^\s*(first\s*name|full\s*name|email)\s*:/im.test(plainForParse);
+    if (!isAutoReply && subjectLooksLikeEnquiry && bodyLooksLikeForm) {
+      try {
+        const parsed = parseEnquiryEmail(plainForParse);
+        console.log("Enquiry email detected — forwarding to ingest:", Object.keys(parsed));
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+        const resp = await fetch(`${supabaseUrl}/functions/v1/website-enquiry-ingest`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${anonKey}`,
+            "apikey": anonKey,
+          },
+          body: JSON.stringify(parsed),
+        });
+        const respText = await resp.text();
+        console.log("website-enquiry-ingest response:", resp.status, respText.slice(0, 200));
+        return new Response(
+          JSON.stringify({ success: resp.ok, routed: "website-enquiry-ingest", upstream_status: resp.status }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
+        );
+      } catch (parseErr) {
+        console.error("Enquiry email parse/forward failed — continuing as normal inbound:", parseErr);
+      }
+    }
+
 
     // Internal/owner address guard — do not create or resolve CRM contacts for these
     const internal = await isInternalEmail(supabase, fromEmail);
