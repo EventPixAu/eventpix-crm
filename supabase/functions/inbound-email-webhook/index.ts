@@ -34,6 +34,41 @@ function parseAddress(input: string | undefined | null): { email: string; name: 
   };
 }
 
+/**
+ * Parse a labelled "Field: value" enquiry email body (as sent by
+ * Elementor / Contact Form 7 / WordPress form plugins) into a flat object
+ * that website-enquiry-ingest can normalise.
+ */
+function parseEnquiryEmail(body: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const lines = body.split(/\r?\n/);
+  // Cut off the WordPress plugin footer if present ("---", "Date:", "Powered by:")
+  let end = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\s*(-{3,}|Powered by:|Sent from|This e-mail was sent)/i.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  let currentKey: string | null = null;
+  for (let i = 0; i < end; i++) {
+    const line = lines[i];
+    const m = line.match(/^\s*([A-Za-z][A-Za-z0-9 _()./&'?-]{1,80}?)\s*:\s*(.*)$/);
+    if (m) {
+      currentKey = m[1].trim();
+      out[currentKey] = (m[2] || "").trim();
+    } else if (currentKey && line.trim()) {
+      out[currentKey] = `${out[currentKey]} ${line.trim()}`.trim();
+    }
+  }
+  // Drop skipped WordPress metadata that sometimes appears with labels
+  for (const k of ["Page URL", "User Agent", "Remote IP", "Powered by", "Date", "Time"]) {
+    delete out[k];
+  }
+  return out;
+}
+
+
 function normalizeSubject(subject: string | undefined | null): string {
   let s = (subject ?? "").trim();
   // Strip "Re:", "Fwd:", "Fw:", "Aw:", "Antw:", "Tr:" prefixes (repeated)
