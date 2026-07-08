@@ -1867,6 +1867,7 @@ export default function EventDetail() {
             venue_address: event.venue_address,
             client_name: event.client_name,
             client_id: event.client_id,
+            client_portal_token: event.client_portal_token,
           }}
           recipients={emailRecipients}
         />
@@ -1887,6 +1888,7 @@ export default function EventDetail() {
             venue_address: event.venue_address,
             client_name: event.client_name,
             client_id: event.client_id,
+            client_portal_token: event.client_portal_token,
             primary_contact_name: primaryContactName,
             primary_contact_phone: primaryContactEmail,
             delivery_method: getDeliveryMethodName('delivery_method_id'),
@@ -1934,6 +1936,7 @@ export default function EventDetail() {
             venue_address: event.venue_address,
             client_name: event.client_name,
             client_id: event.client_id,
+            client_portal_token: event.client_portal_token,
           }}
           recipients={emailRecipients}
           initialSubject={`Live Access Details – ${event.event_name} – ${event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : ''}`}
@@ -1973,6 +1976,7 @@ export default function EventDetail() {
             venue_address: event.venue_address,
             client_name: event.client_name,
             client_id: event.client_id,
+            client_portal_token: event.client_portal_token,
           }}
           recipients={emailRecipients}
           initialSubject={`Your photos are ready – ${event.event_name}`}
@@ -2016,6 +2020,7 @@ export default function EventDetail() {
             venue_address: event.venue_address,
             client_name: event.client_name,
             client_id: event.client_id,
+            client_portal_token: event.client_portal_token,
           }}
           recipients={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant')}
           
