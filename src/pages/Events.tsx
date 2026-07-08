@@ -266,7 +266,7 @@ export default function Events() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="font-medium truncate">{event.event_name}</h3>
+                      <h3 className="font-medium truncate min-w-0 max-w-full flex-1 basis-full sm:basis-auto sm:flex-none sm:max-w-[40ch]">{event.event_name}</h3>
                       <StatusBadge status={getEventStatus(event.event_date, event)} />
                       {eventsWithDateMismatch[event.id] && (
                         <span
