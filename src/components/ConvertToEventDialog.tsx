@@ -144,7 +144,7 @@ export function ConvertToEventDialog({ open, onOpenChange, lead }: ConvertToEven
       for (let i = 1; i < sorted.length; i++) {
         const s = sorted[i];
         try {
-          const venueLabel = s.venue_name || (s as any).city || format(new Date(s.session_date), 'd MMM');
+          const venueLabel = (s as any).city || s.venue_name || format(new Date(s.session_date), 'd MMM');
           const { data: newEvent, error: insErr } = await supabase
             .from('events')
             .insert({
