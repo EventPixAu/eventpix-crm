@@ -56,6 +56,7 @@ export interface MergeFieldContext {
     event_type?: string | null;
     coverage_details?: string | null;
     notes?: string | null;
+    portal_url?: string | null;
   };
   sessions?: Array<{
     session_date: string;
@@ -154,6 +155,7 @@ export const AVAILABLE_MERGE_FIELDS = [
   { field: '{{event.event_type}}', label: 'Event Type', category: 'Job' },
   { field: '{{event.coverage_details}}', label: 'Coverage Details', category: 'Job' },
   { field: '{{event.sessions}}', label: 'All Sessions (formatted)', category: 'Job' },
+  { field: '{{event.portal_url}}', label: 'Client Portal URL', category: 'Job' },
   // Quote fields
   { field: '{{quote.quote_number}}', label: 'Quote Number', category: 'Quote' },
   { field: '{{quote.subtotal}}', label: 'Subtotal', category: 'Quote' },
@@ -196,6 +198,9 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   rendered = rendered.replace(/\{\{event\.event_type\}\}/g, context.event?.event_type || '');
   rendered = rendered.replace(/\{\{event\.coverage_details\}\}/g, context.event?.coverage_details || '');
   rendered = rendered.replace(/\{\{event\.sessions\}\}/g, formatSessions(context.sessions));
+  rendered = rendered.replace(/\{\{event\.portal_url\}\}/g, context.event?.portal_url || '');
+  rendered = rendered.replace(/\{\{portal_url\}\}/g, context.event?.portal_url || '');
+  
   
   // Quote fields
   rendered = rendered.replace(/\{\{quote\.quote_number\}\}/g, context.quote?.quote_number || '');

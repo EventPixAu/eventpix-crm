@@ -32,6 +32,7 @@ import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { getPublicBaseUrl } from '@/lib/utils';
 
 interface Recipient {
   id: string;
@@ -60,6 +61,7 @@ interface SendOpsEmailDialogProps {
     venue_address?: string | null;
     client_name: string;
     client_id?: string | null;
+    client_portal_token?: string | null;
     primary_contact_name?: string | null;
   };
   recipients: Recipient[];
@@ -152,6 +154,11 @@ export function SendOpsEmailDialog({
       recipients.find(r => r.type === 'client')?.name || 
       eventData.client_name;
     
+    const portalUrl = eventData.client_portal_token
+      ? `${getPublicBaseUrl()}/event/${eventData.client_portal_token}`
+      : `${getPublicBaseUrl()}/client-login`;
+    
+    
     return text
       // Event fields - both formats
       .replace(/\{\{event_name\}\}/gi, eventData.event_name)
@@ -172,6 +179,9 @@ export function SendOpsEmailDialog({
       .replace(/\{\{client\.name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
       .replace(/\{\{client\.business_name\}\}/gi, eventData.client_name)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, primaryContactName)
+      // Portal URL
+      .replace(/\{\{event\.portal_url\}\}/gi, portalUrl)
+      .replace(/\{\{portal_url\}\}/gi, portalUrl)
       // Photographer/recipient
       .replace(/\{\{photographer_name\}\}/gi, recipientName || 'Team Member')
       .replace(/\{\{recipient_name\}\}/gi, recipientName || 'Team Member');
