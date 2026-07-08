@@ -198,6 +198,9 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   rendered = rendered.replace(/\{\{event\.event_type\}\}/g, context.event?.event_type || '');
   rendered = rendered.replace(/\{\{event\.coverage_details\}\}/g, context.event?.coverage_details || '');
   rendered = rendered.replace(/\{\{event\.sessions\}\}/g, formatSessions(context.sessions));
+  rendered = rendered.replace(/\{\{event\.portal_url\}\}/g, context.event?.portal_url || '');
+  rendered = rendered.replace(/\{\{portal_url\}\}/g, context.event?.portal_url || '');
+  
   
   // Quote fields
   rendered = rendered.replace(/\{\{quote\.quote_number\}\}/g, context.quote?.quote_number || '');
