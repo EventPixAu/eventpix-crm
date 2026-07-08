@@ -556,8 +556,8 @@ export function SendOpsEmailDialog({
           </div>
         ) : (
           <div className="py-4">
-            <div className="border rounded-lg p-4 bg-muted/30">
-              <div className="space-y-2 mb-4">
+            <div className="border rounded-lg overflow-hidden bg-white text-slate-900">
+              <div className="space-y-2 p-4 border-b bg-slate-50">
                 <div className="text-sm">
                   <span className="font-medium">To:</span>{' '}
                   {recipients.filter(r => selectedRecipients.includes(r.id)).map(r => r.email).join(', ')}
@@ -566,10 +566,10 @@ export function SendOpsEmailDialog({
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
               </div>
-              <div className="border-t pt-4">
-                <div 
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(convertLinksToHtml(body.replace(/\n/g, '<br>')) || '<p class="text-muted-foreground">No message content</p>') }}
+              <div className="p-4">
+                <div
+                  className="prose prose-sm max-w-none prose-slate prose-a:text-blue-600"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(convertLinksToHtml(body.replace(/\n/g, '<br>')) || '<p class="text-slate-500">No message content</p>') }}
                 />
               </div>
             </div>
