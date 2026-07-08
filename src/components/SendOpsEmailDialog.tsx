@@ -154,6 +154,11 @@ export function SendOpsEmailDialog({
       recipients.find(r => r.type === 'client')?.name || 
       eventData.client_name;
     
+    const portalUrl = eventData.client_portal_token
+      ? `${getPublicBaseUrl()}/event/${eventData.client_portal_token}`
+      : `${getPublicBaseUrl()}/client-login`;
+    
+    
     return text
       // Event fields - both formats
       .replace(/\{\{event_name\}\}/gi, eventData.event_name)
