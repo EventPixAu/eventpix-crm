@@ -1895,7 +1895,6 @@ export default function EventDetail() {
             delivery_method_guests: getDeliveryMethodName('delivery_method_guests_id'),
             arrival_time: eventSessions[0]?.arrival_time || null,
             client_brief_content: (event as any).client_brief_content,
-            client_portal_token: event.client_portal_token,
             share_team_vehicle_info: !!(event as any).share_team_vehicle_info,
             share_team_dietary: !!(event as any).share_team_dietary,
           }}
