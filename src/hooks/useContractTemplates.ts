@@ -155,6 +155,7 @@ export const AVAILABLE_MERGE_FIELDS = [
   { field: '{{event.event_type}}', label: 'Event Type', category: 'Job' },
   { field: '{{event.coverage_details}}', label: 'Coverage Details', category: 'Job' },
   { field: '{{event.sessions}}', label: 'All Sessions (formatted)', category: 'Job' },
+  { field: '{{event.portal_url}}', label: 'Client Portal URL', category: 'Job' },
   // Quote fields
   { field: '{{quote.quote_number}}', label: 'Quote Number', category: 'Quote' },
   { field: '{{quote.subtotal}}', label: 'Subtotal', category: 'Quote' },
