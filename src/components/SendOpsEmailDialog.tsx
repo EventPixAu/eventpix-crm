@@ -32,6 +32,7 @@ import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
+import { getPublicBaseUrl } from '@/lib/utils';
 
 interface Recipient {
   id: string;
