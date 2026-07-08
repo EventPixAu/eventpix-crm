@@ -61,6 +61,7 @@ interface SendOpsEmailDialogProps {
     venue_address?: string | null;
     client_name: string;
     client_id?: string | null;
+    client_portal_token?: string | null;
     primary_contact_name?: string | null;
   };
   recipients: Recipient[];
