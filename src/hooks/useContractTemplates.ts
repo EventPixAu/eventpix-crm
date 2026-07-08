@@ -56,6 +56,7 @@ export interface MergeFieldContext {
     event_type?: string | null;
     coverage_details?: string | null;
     notes?: string | null;
+    portal_url?: string | null;
   };
   sessions?: Array<{
     session_date: string;
