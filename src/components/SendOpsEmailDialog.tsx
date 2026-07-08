@@ -179,6 +179,9 @@ export function SendOpsEmailDialog({
       .replace(/\{\{client\.name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
       .replace(/\{\{client\.business_name\}\}/gi, eventData.client_name)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, primaryContactName)
+      // Portal URL
+      .replace(/\{\{event\.portal_url\}\}/gi, portalUrl)
+      .replace(/\{\{portal_url\}\}/gi, portalUrl)
       // Photographer/recipient
       .replace(/\{\{photographer_name\}\}/gi, recipientName || 'Team Member')
       .replace(/\{\{recipient_name\}\}/gi, recipientName || 'Team Member');
