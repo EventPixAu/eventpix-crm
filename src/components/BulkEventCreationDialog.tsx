@@ -241,7 +241,7 @@ export function BulkEventCreationDialog({
       const contactIds = [primaryContactId, ...seriesAdditionalContactIds].filter((v): v is string => !!v);
 
       return {
-        event_name: `${series.name} - ${venueName}`,
+        event_name: `${series.name} - ${row.city || venueName}`,
         client_name: clientName || series.name,
         event_date: row.event_date,
         start_time: row.start_time || undefined,
