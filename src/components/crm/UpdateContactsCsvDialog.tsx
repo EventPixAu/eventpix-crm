@@ -22,6 +22,22 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/lib/supabase';
+
+// Case-insensitive tag merge — appends only tags that aren't already present.
+function mergeTagsCI(existing: string[] | null | undefined, additions: (string | null | undefined)[]) {
+  const base = Array.isArray(existing) ? existing.filter(Boolean) : [];
+  const seen = new Set(base.map(t => t.toLowerCase().trim()));
+  const merged = [...base];
+  for (const raw of additions) {
+    const t = (raw || '').trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(t);
+  }
+  return { merged, changed: merged.length !== base.length };
+}
 import { toast } from 'sonner';
 import { Upload, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
