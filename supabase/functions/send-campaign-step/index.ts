@@ -187,28 +187,51 @@ serve(async (req) => {
         continue;
       }
 
+      // Cross-row dedup: another campaign_contacts row for THIS same
+      // step + recipient email may have already sent (or be pending).
+      // The subject check below can miss this because email_logs stores
+      // merge-field-resolved subjects, not the template.
+      const { data: siblingSends } = await supabase
+        .from("campaign_step_sends")
+        .select("id, status, campaign_contacts!inner(recipient_email, campaign_id)")
+        .eq("step_id", step.id)
+        .eq("campaign_contacts.campaign_id", campaign.id)
+        .eq("campaign_contacts.recipient_email", rec.recipient_email)
+        .in("status", ["pending", "sent"])
+        .limit(1);
+      if (siblingSends && siblingSends.length > 0) {
+        await supabase.from("campaign_step_sends").upsert({
+          campaign_contact_id: rec.id,
+          step_id: step.id,
+          status: "skipped",
+          error_message: "Deduplicated — same recipient already sent this step",
+        }, { onConflict: "campaign_contact_id,step_id" });
+        skipped++;
+        continue;
+      }
+
       // Belt-and-braces: check email_logs for a recent send to the
-      // same recipient with the same subject in the last 24h. Protects
+      // same recipient in the last 10 minutes on this campaign. Protects
       // against legacy rows where campaign_step_sends was not written.
-      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const since10m = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { count: recentSendCount } = await supabase
         .from("email_logs")
         .select("id", { count: "exact", head: true })
         .eq("recipient_email", rec.recipient_email)
         .eq("email_type", "campaign")
         .in("status", ["pending", "sent", "delivered", "opened", "clicked", "bounced"])
-        .eq("subject", step.subject)
-        .gte("created_at", since24h);
+        .gte("created_at", since10m);
       if ((recentSendCount ?? 0) > 0) {
         await supabase.from("campaign_step_sends").upsert({
           campaign_contact_id: rec.id,
           step_id: step.id,
           status: "skipped",
-          error_message: "Deduplicated — identical send already exists in last 24h",
+          error_message: "Deduplicated — recent identical send exists",
         }, { onConflict: "campaign_contact_id,step_id" });
         skipped++;
         continue;
       }
+
 
       // Atomic claim. If another worker races us, unique constraint
       // (campaign_contact_id, step_id) rejects this insert → skip.
