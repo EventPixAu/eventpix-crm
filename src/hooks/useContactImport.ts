@@ -603,11 +603,9 @@ export function useContactImport() {
               continue;
             }
 
-            // Update existing contact - merge tags (also fold in source & category as tags)
+            // Update existing contact - merge tags only (source/category now live on company)
             const existingTags = existingContact.tags || [];
             const importTags = [...(contact.tags || [])];
-            if (contact.source) importTags.push(contact.source);
-            if (contact.category) importTags.push(contact.category);
             const mergedTags = [...new Set([...existingTags, ...importTags].map(t => t.trim()).filter(Boolean))];
 
             const updateData: Record<string, any> = {};
