@@ -609,35 +609,30 @@ export function useContactImport() {
               continue;
             }
 
-            // Update existing contact - merge tags only (source/category now live on company)
-            const existingTags = existingContact.tags || [];
-            const importTags = [...(contact.tags || [])];
-            const mergedTags = [...new Set([...existingTags, ...importTags].map(t => t.trim()).filter(Boolean))];
+            // Update existing contact — source tag lives on the contact.
+            // Merge imported tags + source (case-insensitive dedup).
+            const { merged: mergedTags, changed: tagsChanged } = mergeTagsCI(
+              existingContact.tags,
+              [...(contact.tags || []), contact.source]
+            );
 
             const updateData: Record<string, any> = {};
 
             // Empty-fields-only: only populate when the existing record is blank.
-            // Never overwrite populated first/last name, phone, mobile, job title.
             if (contact.firstName && !existingContact.first_name) updateData.first_name = contact.firstName;
             if (contact.lastName && !existingContact.last_name) updateData.last_name = contact.lastName;
             if (contact.mobile && !existingContact.phone_mobile) updateData.phone_mobile = contact.mobile;
             if (contact.phone && !existingContact.phone) updateData.phone = contact.phone;
             if (jobTitleId && !existingContact.job_title_id) updateData.job_title_id = jobTitleId;
 
-            // Always merge tags if there are any new ones
-            if (mergedTags.length !== existingTags.length ||
-                !mergedTags.every(t => existingTags.includes(t))) {
-              updateData.tags = mergedTags;
-            }
+            if (tagsChanged) updateData.tags = mergedTags;
 
             // Contact name — only fill when blank so we don't overwrite an existing display name.
             if (!existingContact.contact_name && (contact.firstName || contact.lastName)) {
               updateData.contact_name = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             }
 
-            // Source/category/status: set only if empty on existing (don't overwrite)
-            if (contact.source && !existingContact.source) updateData.source = contact.source;
-            if (contact.category && !existingContact.category) updateData.category = contact.category;
+            // Status only if empty (never downgrade). Category lives on the company now.
             if (contact.status && !existingContact.status) updateData.status = contact.status;
 
             if (Object.keys(updateData).length > 0) {
