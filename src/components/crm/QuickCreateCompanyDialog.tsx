@@ -225,7 +225,7 @@ export function QuickCreateCompanyDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lead_source">Source</Label>
+              <Label htmlFor="lead_source">Lead Source</Label>
               <Input
                 id="lead_source"
                 value={leadSource}

@@ -450,7 +450,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Expected columns: Date Added, First Name, Last Name, Phone, Email, Company Name,
-                Business Number, Street Address, Suburb/Town, Postcode, State, Country, Status, Source.
+                Business Number, Street Address, Suburb/Town, Postcode, State, Country, Status, Lead Source (or Source).
               </p>
             </div>
 
@@ -472,7 +472,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
                         <th className="text-left p-2">Company</th>
                         <th className="text-left p-2">State</th>
                         <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Source</th>
+                        <th className="text-left p-2">Lead Source</th>
                       </tr>
                     </thead>
                     <tbody>
