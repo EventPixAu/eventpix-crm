@@ -43,6 +43,9 @@ interface ExistingCompany {
   id: string;
   business_name: string;
   company_email: string | null;
+  tags?: string[] | null;
+  status?: string | null;
+  lead_source?: string | null;
 }
 
 interface ExistingContact {
@@ -394,7 +397,7 @@ export function useContactImport() {
       // Fetch existing companies for duplicate detection
       const { data: existingCompanies, error: fetchError } = await supabase
         .from('clients')
-        .select('id, business_name, company_email');
+        .select('id, business_name, company_email, tags, status, lead_source');
 
       if (fetchError) throw fetchError;
 
@@ -463,6 +466,11 @@ export function useContactImport() {
             const companyNameLower = contact.companyName.toLowerCase().trim();
             const companyEmailLower = contact.companyEmail?.toLowerCase().trim();
 
+            // Source and Category are COMPANY-level tags.
+            const companyTagAdditions = [contact.source, contact.category]
+              .map(t => (t || '').trim())
+              .filter(Boolean);
+
             // Check for existing company by name or email
             let existingCompany = companyByName.get(companyNameLower);
             if (!existingCompany && companyEmailLower) {
@@ -472,11 +480,47 @@ export function useContactImport() {
             if (existingCompany) {
               companyId = existingCompany.id;
               result.companiesSkipped++;
+
+              // Merge source/category into company tags. Never overwrite status.
+              if (companyTagAdditions.length) {
+                const existingTags = existingCompany.tags || [];
+                const mergedTags = Array.from(
+                  new Set([...existingTags, ...companyTagAdditions].map(t => t.trim()).filter(Boolean))
+                );
+                const changed =
+                  mergedTags.length !== existingTags.length ||
+                  !mergedTags.every(t => existingTags.includes(t));
+                if (changed) {
+                  const { error: coUpdErr } = await supabase
+                    .from('clients')
+                    .update({ tags: mergedTags })
+                    .eq('id', existingCompany.id);
+                  if (coUpdErr) {
+                    result.errors.push(`Failed to update tags on "${existingCompany.business_name}": ${coUpdErr.message}`);
+                  } else {
+                    existingCompany.tags = mergedTags;
+                  }
+                }
+              }
             } else if (newCompanyMap.has(companyNameLower)) {
-              // Company created earlier in this import batch
+              // Company created earlier in this import batch — append tags too
               companyId = newCompanyMap.get(companyNameLower)!;
+              const cachedCo = companyByName.get(companyNameLower);
+              if (cachedCo && companyTagAdditions.length) {
+                const existingTags = cachedCo.tags || [];
+                const mergedTags = Array.from(
+                  new Set([...existingTags, ...companyTagAdditions].map(t => t.trim()).filter(Boolean))
+                );
+                const changed =
+                  mergedTags.length !== existingTags.length ||
+                  !mergedTags.every(t => existingTags.includes(t));
+                if (changed) {
+                  await supabase.from('clients').update({ tags: mergedTags }).eq('id', cachedCo.id);
+                  cachedCo.tags = mergedTags;
+                }
+              }
             } else {
-              // Create new company
+              // Create new company — seed tags with source + category
               const { data: newCompany, error: companyError } = await supabase
                 .from('clients')
                 .insert({
@@ -484,8 +528,10 @@ export function useContactImport() {
                   company_email: contact.companyEmail || null,
                   company_phone: contact.companyPhone || null,
                   billing_address: contact.companyAddress || null,
-                  lead_source: contact.leadSource || null,
+                  lead_source: contact.leadSource || contact.source || null,
                   industry: contact.industry || null,
+                  tags: companyTagAdditions.length ? companyTagAdditions : null,
+                  status: contact.status || null,
                 })
                 .select('id')
                 .single();
@@ -495,16 +541,20 @@ export function useContactImport() {
               } else {
                 companyId = newCompany.id;
                 newCompanyMap.set(companyNameLower, companyId);
-                companyByName.set(companyNameLower, { 
-                  id: companyId, 
-                  business_name: contact.companyName, 
-                  company_email: contact.companyEmail || null 
+                companyByName.set(companyNameLower, {
+                  id: companyId,
+                  business_name: contact.companyName,
+                  company_email: contact.companyEmail || null,
+                  tags: companyTagAdditions,
+                  status: contact.status || null,
                 });
                 if (contact.companyEmail) {
-                  companyByEmail.set(contact.companyEmail.toLowerCase(), { 
-                    id: companyId, 
-                    business_name: contact.companyName, 
-                    company_email: contact.companyEmail 
+                  companyByEmail.set(contact.companyEmail.toLowerCase(), {
+                    id: companyId,
+                    business_name: contact.companyName,
+                    company_email: contact.companyEmail,
+                    tags: companyTagAdditions,
+                    status: contact.status || null,
                   });
                 }
                 result.companiesCreated++;
@@ -553,11 +603,9 @@ export function useContactImport() {
               continue;
             }
 
-            // Update existing contact - merge tags (also fold in source & category as tags)
+            // Update existing contact - merge tags only (source/category now live on company)
             const existingTags = existingContact.tags || [];
             const importTags = [...(contact.tags || [])];
-            if (contact.source) importTags.push(contact.source);
-            if (contact.category) importTags.push(contact.category);
             const mergedTags = [...new Set([...existingTags, ...importTags].map(t => t.trim()).filter(Boolean))];
 
             const updateData: Record<string, any> = {};
@@ -611,10 +659,8 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
-            // Fold source/category into tags for consistent multi-source tracking
+            // Source/Category now live on the company record — keep contact tags import-only
             const initialTags = [...(contact.tags || [])];
-            if (contact.source) initialTags.push(contact.source);
-            if (contact.category) initialTags.push(contact.category);
             const dedupedTags = [...new Set(initialTags.map(t => t.trim()).filter(Boolean))];
 
             const { data: inserted, error: contactError } = await supabase
