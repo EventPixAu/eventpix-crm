@@ -1131,7 +1131,7 @@ export default function ContactList() {
                       <TableHead className="min-w-[150px]">Name</TableHead>
                       <TableHead className="min-w-[200px]">Companies</TableHead>
                       <TableHead className="min-w-[120px]">Job Title</TableHead>
-                      <TableHead className="min-w-[100px]">Source</TableHead>
+                      <TableHead className="min-w-[100px]">Lead Source</TableHead>
                       {/* Status column removed — status is at Company level */}
                       <TableHead className="min-w-[160px]">Category</TableHead>
                       <TableHead className="min-w-[180px]">Email</TableHead>
