@@ -660,9 +660,8 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
-            // Source/Category now live on the company record — keep contact tags import-only
-            const initialTags = [...(contact.tags || [])];
-            const dedupedTags = [...new Set(initialTags.map(t => t.trim()).filter(Boolean))];
+            // Source lives on the contact — seed tags with the imported source.
+            const { merged: dedupedTags } = mergeTagsCI([], [...(contact.tags || []), contact.source]);
 
             const { data: inserted, error: contactError } = await supabase
               .from('client_contacts')
@@ -676,8 +675,6 @@ export function useContactImport() {
                 phone: contact.phone || null,
                 job_title_id: jobTitleId,
                 tags: dedupedTags,
-                source: contact.source || null,
-                category: contact.category || null,
                 status: contact.status || null,
               })
               .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name')
