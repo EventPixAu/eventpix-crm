@@ -569,7 +569,7 @@ export function useContactImport() {
                   business_name: contact.companyName,
                   company_email: contact.companyEmail || null,
                   tags: companyTagAdditions,
-                  status: contact.status || null,
+                  status: null,
                 });
                 if (contact.companyEmail) {
                   companyByEmail.set(contact.companyEmail.toLowerCase(), {
