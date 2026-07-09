@@ -551,7 +551,7 @@ export function useContactImport() {
                   company_email: contact.companyEmail || null,
                   company_phone: contact.companyPhone || null,
                   billing_address: contact.companyAddress || null,
-                  lead_source: contact.leadSource || null,
+                  lead_source: null,
                   industry: contact.industry || null,
                   tags: companyTagAdditions.length ? companyTagAdditions : null,
                   status: contact.status || null,
