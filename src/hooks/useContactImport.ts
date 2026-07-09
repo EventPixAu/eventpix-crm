@@ -577,7 +577,7 @@ export function useContactImport() {
                     business_name: contact.companyName,
                     company_email: contact.companyEmail,
                     tags: companyTagAdditions,
-                    status: contact.status || null,
+                    status: null,
                   });
                 }
                 result.companiesCreated++;
