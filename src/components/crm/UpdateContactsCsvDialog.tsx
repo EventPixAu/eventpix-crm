@@ -274,24 +274,9 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             // State — only set if existing blank
             if (row.state && !existing.state) updates.state = row.state;
 
-            // Source & Category — treat as multi-value tags. Append to existing tags.
-            const existingTags: string[] = Array.isArray(existing.tags) ? existing.tags : [];
-            const additions: string[] = [];
-            if (row.source) additions.push(row.source.trim());
-            if (row.category) additions.push(row.category.trim());
-            const mergedTags = Array.from(
-              new Set(
-                [...existingTags, ...additions]
-                  .map((t) => (t || '').trim())
-                  .filter(Boolean)
-              )
-            );
-            const tagsChanged =
-              mergedTags.length !== existingTags.length ||
-              !mergedTags.every((t) => existingTags.includes(t));
-            if (tagsChanged) updates.tags = mergedTags;
-
-            // Single-value source/category columns — fill-empty-only (never overwrite).
+            // Source and Category now live on the COMPANY record — not the contact.
+            // Do not merge them into contact.tags. Keep single-value contact source/category
+            // fill-empty-only for backwards compat.
             if (row.source && !existing.source) updates.source = row.source.trim();
             if (row.category && !existing.category) updates.category = row.category.trim();
 
