@@ -93,7 +93,18 @@ const HEADER_MAP: Record<string, keyof CsvRow> = {
   'status': 'status',
   'source': 'source',
   'lead source': 'source',
+  'category': 'category',
+  'contact category': 'category',
+  'contact_category': 'category',
+  'type': 'category',
+  'job title': 'jobTitle',
+  'jobtitle': 'jobTitle',
+  'job_title': 'jobTitle',
+  'title': 'jobTitle',
+  'position': 'jobTitle',
+  'role': 'jobTitle',
 };
+
 
 const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived']);
 const PROTECTED_STATUSES = new Set(['Active', 'Current', 'Staff']);
