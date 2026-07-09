@@ -547,33 +547,37 @@ export function useContactImport() {
               continue;
             }
 
-            // Update existing contact - merge tags
+            // Update existing contact - merge tags (also fold in source & category as tags)
             const existingTags = existingContact.tags || [];
-            const newTags = contact.tags || [];
-            const mergedTags = [...new Set([...existingTags, ...newTags])];
-            
+            const importTags = [...(contact.tags || [])];
+            if (contact.source) importTags.push(contact.source);
+            if (contact.category) importTags.push(contact.category);
+            const mergedTags = [...new Set([...existingTags, ...importTags].map(t => t.trim()).filter(Boolean))];
+
             const updateData: Record<string, any> = {};
-            
+
             // Only update fields that have values in the import
             if (contact.firstName) updateData.first_name = contact.firstName;
             if (contact.lastName) updateData.last_name = contact.lastName;
             if (contact.mobile) updateData.phone_mobile = contact.mobile;
             if (contact.phone) updateData.phone = contact.phone;
             if (jobTitleId) updateData.job_title_id = jobTitleId;
-            
+
             // Always merge tags if there are any new ones
-            if (mergedTags.length > existingTags.length || 
+            if (mergedTags.length !== existingTags.length ||
                 !mergedTags.every(t => existingTags.includes(t))) {
               updateData.tags = mergedTags;
             }
-            
+
             // Update contact name if first/last name changed
             if (contact.firstName || contact.lastName) {
               updateData.contact_name = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             }
 
-            // Set source if provided and not already set
-            if (contact.source) updateData.source = contact.source;
+            // Source/category/status: set only if empty on existing (don't overwrite)
+            if (contact.source && !existingContact.source) updateData.source = contact.source;
+            if (contact.category && !existingContact.category) updateData.category = contact.category;
+            if (contact.status && !existingContact.status) updateData.status = contact.status;
 
             if (Object.keys(updateData).length > 0) {
               const { error: updateError } = await supabase
@@ -600,8 +604,13 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
+            // Fold source/category into tags for consistent multi-source tracking
+            const initialTags = [...(contact.tags || [])];
+            if (contact.source) initialTags.push(contact.source);
+            if (contact.category) initialTags.push(contact.category);
+            const dedupedTags = [...new Set(initialTags.map(t => t.trim()).filter(Boolean))];
 
-            const { error: contactError } = await supabase
+            const { data: inserted, error: contactError } = await supabase
               .from('client_contacts')
               .insert({
                 client_id: companyId,
@@ -612,15 +621,31 @@ export function useContactImport() {
                 phone_mobile: contact.mobile || null,
                 phone: contact.phone || null,
                 job_title_id: jobTitleId,
-                tags: contact.tags || [],
+                tags: dedupedTags,
                 source: contact.source || null,
-              });
+                category: contact.category || null,
+                status: contact.status || null,
+              })
+              .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name')
+              .maybeSingle();
 
             if (contactError) {
               result.errors.push(`Failed to create contact "${contactName}": ${contactError.message}`);
               result.contactsSkipped++;
             } else {
               result.contactsCreated++;
+              // Register in in-memory indexes so subsequent rows in this
+              // batch don't create duplicates for the same person.
+              if (inserted) {
+                if (inserted.email) contactByEmail.set(String(inserted.email).toLowerCase().trim(), inserted as ExistingContact);
+                if (inserted.client_id) {
+                  const fl = (inserted.first_name || '').toLowerCase().trim();
+                  const ll = (inserted.last_name || '').toLowerCase().trim();
+                  const cn = (inserted.contact_name || '').toLowerCase().trim();
+                  if (fl || ll) contactByCompanyName.set(`${inserted.client_id}::${fl}|${ll}`, inserted as ExistingContact);
+                  if (cn) contactByCompanyName.set(`${inserted.client_id}::name::${cn}`, inserted as ExistingContact);
+                }
+              }
             }
           }
         } catch (err: any) {
