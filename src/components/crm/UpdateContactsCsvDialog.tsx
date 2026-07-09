@@ -46,8 +46,11 @@ interface CsvRow {
   country?: string;
   status?: string;
   source?: string;
+  category?: string;
+  jobTitle?: string;
   _rowNum: number;
 }
+
 
 interface ImportSummary {
   updated: number;
@@ -90,7 +93,18 @@ const HEADER_MAP: Record<string, keyof CsvRow> = {
   'status': 'status',
   'source': 'source',
   'lead source': 'source',
+  'category': 'category',
+  'contact category': 'category',
+  'contact_category': 'category',
+  'type': 'category',
+  'job title': 'jobTitle',
+  'jobtitle': 'jobTitle',
+  'job_title': 'jobTitle',
+  'title': 'jobTitle',
+  'position': 'jobTitle',
+  'role': 'jobTitle',
 };
+
 
 const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived']);
 const PROTECTED_STATUSES = new Set(['Active', 'Current', 'Staff']);
@@ -197,7 +211,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
           const orExpr = chunk.map((e) => `email.ilike.${escapeIlike(e)}`).join(',');
           const { data, error } = await supabase
             .from('client_contacts')
-            .select('id, email, phone, phone_mobile, phone_office, status, state, source, first_name, last_name')
+            .select('id, email, phone, phone_mobile, phone_office, status, state, source, category, tags, job_title_id, first_name, last_name')
             .or(orExpr);
           if (error) throw error;
           (data || []).forEach((c: any) => {
@@ -205,6 +219,30 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
           });
         }
       }
+
+      // Pre-load job titles for lookup / create-on-demand
+      const jobTitleCache = new Map<string, string>(); // lowercased title -> id
+      {
+        const { data: jts } = await supabase.from('job_titles').select('id, name');
+        (jts || []).forEach((jt: any) => {
+          if (jt.name) jobTitleCache.set(String(jt.name).toLowerCase().trim(), jt.id);
+        });
+      }
+      const resolveJobTitleId = async (raw?: string): Promise<string | null> => {
+        const name = raw?.trim();
+        if (!name) return null;
+        const key = name.toLowerCase();
+        const cached = jobTitleCache.get(key);
+        if (cached) return cached;
+        const { data, error } = await supabase
+          .from('job_titles')
+          .insert({ name })
+          .select('id')
+          .maybeSingle();
+        if (error || !data) return null;
+        jobTitleCache.set(key, data.id);
+        return data.id;
+      };
 
       for (const row of rows) {
         try {
@@ -227,19 +265,42 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
           if (existing) {
             const updates: Record<string, any> = {};
-            // Status — never overwrite existing Active or Current contacts
-            const statusProtected = PROTECTED_STATUSES.has(existing.status);
-            if (newStatus && newStatus !== existing.status) {
-              if (statusProtected) {
-                result.statusProtected++;
-              } else {
-                updates.status = newStatus;
-              }
+            // Status — never overwrite existing status on any existing contact
+            if (newStatus && existing.status && newStatus !== existing.status) {
+              result.statusProtected++;
+            } else if (newStatus && !existing.status) {
+              updates.status = newStatus;
             }
-            // State — only set if existing blank, else keep (never overwrite populated)
+            // State — only set if existing blank
             if (row.state && !existing.state) updates.state = row.state;
-            // Source — only if existing blank
-            if (row.source && !existing.source) updates.source = row.source;
+
+            // Source & Category — treat as multi-value tags. Append to existing tags.
+            const existingTags: string[] = Array.isArray(existing.tags) ? existing.tags : [];
+            const additions: string[] = [];
+            if (row.source) additions.push(row.source.trim());
+            if (row.category) additions.push(row.category.trim());
+            const mergedTags = Array.from(
+              new Set(
+                [...existingTags, ...additions]
+                  .map((t) => (t || '').trim())
+                  .filter(Boolean)
+              )
+            );
+            const tagsChanged =
+              mergedTags.length !== existingTags.length ||
+              !mergedTags.every((t) => existingTags.includes(t));
+            if (tagsChanged) updates.tags = mergedTags;
+
+            // Single-value source/category columns — fill-empty-only (never overwrite).
+            if (row.source && !existing.source) updates.source = row.source.trim();
+            if (row.category && !existing.category) updates.category = row.category.trim();
+
+            // Job title — fill-empty-only
+            if (row.jobTitle && !existing.job_title_id) {
+              const jtId = await resolveJobTitleId(row.jobTitle);
+              if (jtId) updates.job_title_id = jtId;
+            }
+
             // Phone — only if existing has no phone
             const hasPhone = existing.phone || existing.phone_mobile || existing.phone_office;
             if (row.phone && !hasPhone) updates.phone = row.phone;
@@ -255,6 +316,14 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             result.updated++;
           } else {
             // Create new contact
+            const initialTags = Array.from(
+              new Set(
+                [row.source, row.category]
+                  .map((t) => (t || '').trim())
+                  .filter(Boolean)
+              )
+            );
+            const jtId = await resolveJobTitleId(row.jobTitle);
             const insertRow: Record<string, any> = {
               email,
               first_name: row.firstName || null,
@@ -264,6 +333,9 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               phone: row.phone || null,
               state: row.state || null,
               source: row.source || null,
+              category: row.category || null,
+              tags: initialTags.length ? initialTags : null,
+              job_title_id: jtId,
               status: newStatus || 'Prospect',
             };
             const { data, error } = await supabase
@@ -275,6 +347,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             contactId = data.id;
             result.created++;
           }
+
 
           // Company linkage — only if no existing company assoc on this contact
           if (row.companyName) {
