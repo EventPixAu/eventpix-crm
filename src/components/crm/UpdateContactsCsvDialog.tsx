@@ -290,11 +290,13 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             // State — only set if existing blank
             if (row.state && !existing.state) updates.state = row.state;
 
-            // Source and Category now live on the COMPANY record — not the contact.
-            // Do not merge them into contact.tags. Keep single-value contact source/category
-            // fill-empty-only for backwards compat.
-            if (row.source && !existing.source) updates.source = row.source.trim();
-            if (row.category && !existing.category) updates.category = row.category.trim();
+            // Source lives on the CONTACT record as a tag — append (case-insensitive dedup).
+            // Category lives on the COMPANY record and is handled below.
+            const { merged: mergedContactTags, changed: contactTagsChanged } = mergeTagsCI(
+              existing.tags,
+              [row.source]
+            );
+            if (contactTagsChanged) updates.tags = mergedContactTags;
 
             // Job title — fill-empty-only
             if (row.jobTitle && !existing.job_title_id) {
@@ -316,8 +318,9 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             contactId = existing.id;
             result.updated++;
           } else {
-            // Create new contact (source/category live on company, not contact.tags)
+            // Create new contact — source seeded as a tag on the contact.
             const jtId = await resolveJobTitleId(row.jobTitle);
+            const { merged: seedTags } = mergeTagsCI([], [row.source]);
             const insertRow: Record<string, any> = {
               email,
               first_name: row.firstName || null,
@@ -326,8 +329,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
                 [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,
               phone: row.phone || null,
               state: row.state || null,
-              source: row.source || null,
-              category: row.category || null,
+              tags: seedTags.length ? seedTags : null,
               job_title_id: jtId,
               status: newStatus || 'Prospect',
             };
