@@ -397,7 +397,7 @@ export function useContactImport() {
       // Fetch existing companies for duplicate detection
       const { data: existingCompanies, error: fetchError } = await supabase
         .from('clients')
-        .select('id, business_name, company_email');
+        .select('id, business_name, company_email, tags, status, lead_source');
 
       if (fetchError) throw fetchError;
 
