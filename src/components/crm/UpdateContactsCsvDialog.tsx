@@ -46,8 +46,11 @@ interface CsvRow {
   country?: string;
   status?: string;
   source?: string;
+  category?: string;
+  jobTitle?: string;
   _rowNum: number;
 }
+
 
 interface ImportSummary {
   updated: number;
