@@ -442,6 +442,23 @@ export function useContactImport() {
         jobTitleMap.set(jt.name.toLowerCase(), jt.id);
       });
 
+      // Auto-create missing job titles on demand (matches Update dialog behaviour).
+      const resolveJobTitleId = async (raw?: string): Promise<string | null> => {
+        const name = raw?.trim();
+        if (!name) return null;
+        const key = name.toLowerCase();
+        const cached = jobTitleMap.get(key);
+        if (cached) return cached;
+        const { data, error } = await supabase
+          .from('job_titles')
+          .insert({ name })
+          .select('id')
+          .maybeSingle();
+        if (error || !data) return null;
+        jobTitleMap.set(key, data.id);
+        return data.id;
+      };
+
       // Track newly created companies in this import
       const newCompanyMap = new Map<string, string>();
 
