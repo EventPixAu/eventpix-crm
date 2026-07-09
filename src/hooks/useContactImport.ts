@@ -25,6 +25,8 @@ export interface ImportedContact {
   industry?: string;
   tags?: string[];
   source?: string;
+  category?: string;
+  status?: string;
 }
 
 export interface ImportResult {
@@ -47,6 +49,10 @@ interface ExistingContact {
   id: string;
   email: string | null;
   tags: string[] | null;
+  source: string | null;
+  category: string | null;
+  status: string | null;
+  client_id: string | null;
 }
 
 // Parse CSV file with Zoho-compatible format
