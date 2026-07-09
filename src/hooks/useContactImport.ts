@@ -554,7 +554,7 @@ export function useContactImport() {
                   lead_source: null,
                   industry: contact.industry || null,
                   tags: companyTagAdditions.length ? companyTagAdditions : null,
-                  status: contact.status || null,
+                  status: null,
                 })
                 .select('id')
                 .single();
