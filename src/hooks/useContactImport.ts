@@ -674,8 +674,8 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
-            // Source lives on the contact — seed tags with the imported source.
-            const { merged: dedupedTags } = mergeTagsCI([], [...(contact.tags || []), contact.source]);
+            // Source & Lead Source live on the contact — seed tags with both.
+            const { merged: dedupedTags } = mergeTagsCI([], [...(contact.tags || []), contact.source, contact.leadSource]);
 
             const { data: inserted, error: contactError } = await supabase
               .from('client_contacts')
