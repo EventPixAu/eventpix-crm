@@ -176,6 +176,24 @@ export function parseCSV(csvContent: string): ImportedContact[] {
     const values = parseCSVLine(lines[i]);
     if (values.length === 0) continue;
 
+    // Skip duplicate header rows. Some exports repeat the header on row 2,
+    // or the file contains a title row above the real headers — in either
+    // case, a data row whose values (normalised) match the header labels
+    // in the same columns is not real data.
+    const normalisedValues = values.map(v =>
+      (v ?? '').trim().toLowerCase().replace(/["\s]/g, '')
+    );
+    let matchingHeaderCols = 0;
+    let populatedCols = 0;
+    normalisedValues.forEach((v, idx) => {
+      if (!v) return;
+      populatedCols++;
+      if (headers[idx] && headers[idx] === v) matchingHeaderCols++;
+    });
+    if (populatedCols >= 2 && matchingHeaderCols === populatedCols) {
+      continue;
+    }
+
     const contact: ImportedContact = {};
 
     headers.forEach((header, index) => {
