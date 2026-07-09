@@ -300,14 +300,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             contactId = existing.id;
             result.updated++;
           } else {
-            // Create new contact
-            const initialTags = Array.from(
-              new Set(
-                [row.source, row.category]
-                  .map((t) => (t || '').trim())
-                  .filter(Boolean)
-              )
-            );
+            // Create new contact (source/category live on company, not contact.tags)
             const jtId = await resolveJobTitleId(row.jobTitle);
             const insertRow: Record<string, any> = {
               email,
@@ -319,7 +312,6 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               state: row.state || null,
               source: row.source || null,
               category: row.category || null,
-              tags: initialTags.length ? initialTags : null,
               job_title_id: jtId,
               status: newStatus || 'Prospect',
             };
@@ -334,8 +326,58 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
           }
 
 
-          // Company linkage — only if no existing company assoc on this contact
+          // Company linkage — always resolve company for tag merging, even when
+          // the contact already has an association. Source/Category live on the
+          // COMPANY record and must be appended to its tags.
           if (row.companyName) {
+            const tagAdditions = [row.source, row.category]
+              .map((t) => (t || '').trim())
+              .filter(Boolean);
+
+            // Find or create client/company by business_name (case-insensitive)
+            const { data: matchedCo } = await supabase
+              .from('clients')
+              .select('id, tags, status')
+              .ilike('business_name', row.companyName)
+              .limit(1)
+              .maybeSingle();
+
+            let companyId: string | undefined = matchedCo?.id;
+
+            if (companyId) {
+              // Existing company — merge tags, never touch status
+              if (tagAdditions.length) {
+                const existingTags: string[] = Array.isArray(matchedCo?.tags) ? matchedCo!.tags : [];
+                const mergedTags = Array.from(
+                  new Set([...existingTags, ...tagAdditions].map((t) => t.trim()).filter(Boolean))
+                );
+                const changed =
+                  mergedTags.length !== existingTags.length ||
+                  !mergedTags.every((t) => existingTags.includes(t));
+                if (changed) {
+                  const { error: coUpdErr } = await supabase
+                    .from('clients')
+                    .update({ tags: mergedTags })
+                    .eq('id', companyId);
+                  if (coUpdErr) throw coUpdErr;
+                }
+              }
+            } else {
+              // New company — seed tags with source + category, set status if provided
+              const { data: newCo, error: cErr } = await supabase
+                .from('clients')
+                .insert({
+                  business_name: row.companyName,
+                  tags: tagAdditions.length ? tagAdditions : null,
+                  status: newStatus || null,
+                })
+                .select('id')
+                .single();
+              if (cErr) throw cErr;
+              companyId = newCo.id;
+            }
+
+            // Only create the association if the contact doesn't already have one
             const { data: existingAssocs, error: aErr } = await supabase
               .from('contact_company_associations')
               .select('id')
@@ -343,23 +385,6 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
               .limit(1);
             if (aErr) throw aErr;
             if (!existingAssocs || existingAssocs.length === 0) {
-              // Find or create client/company by business_name (case-insensitive)
-              const { data: matchedCo } = await supabase
-                .from('clients')
-                .select('id')
-                .ilike('business_name', row.companyName)
-                .limit(1)
-                .maybeSingle();
-              let companyId = matchedCo?.id;
-              if (!companyId) {
-                const { data: newCo, error: cErr } = await supabase
-                  .from('clients')
-                  .insert({ business_name: row.companyName })
-                  .select('id')
-                  .single();
-                if (cErr) throw cErr;
-                companyId = newCo.id;
-              }
               const { error: linkErr } = await supabase
                 .from('contact_company_associations')
                 .insert({ contact_id: contactId, company_id: companyId, is_primary: true });
