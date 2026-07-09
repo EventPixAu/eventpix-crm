@@ -382,16 +382,11 @@ export default function CompanyList() {
           bVal = (b.category?.name || '').toLowerCase();
           break;
         case 'source': {
-          const aSources = new Set<string>();
-          if (a.lead_source) aSources.add(a.lead_source);
-          a.contact_sources.forEach(s => aSources.add(s));
-          const bSources = new Set<string>();
-          if (b.lead_source) bSources.add(b.lead_source);
-          b.contact_sources.forEach(s => bSources.add(s));
-          aVal = Array.from(aSources).join(',').toLowerCase();
-          bVal = Array.from(bSources).join(',').toLowerCase();
+          aVal = a.contact_sources.slice().sort().join(',').toLowerCase();
+          bVal = b.contact_sources.slice().sort().join(',').toLowerCase();
           break;
         }
+
         case 'status':
           aVal = a.display_status.toLowerCase();
           bVal = b.display_status.toLowerCase();
@@ -426,8 +421,8 @@ export default function CompanyList() {
         }
         subcategoriesByParent[c.subcategory.parent_id].set(c.subcategory.id, c.subcategory.name);
       }
-      if (c.lead_source) sources.add(c.lead_source);
       c.contact_sources.forEach(s => sources.add(s));
+
       statuses.add(c.display_status);
       if (c.country && c.country.trim()) countries.add(c.country.trim());
     });
@@ -479,11 +474,9 @@ export default function CompanyList() {
         }
       }
       if (filterSource) {
-        const allSources = new Set<string>();
-        if (c.lead_source) allSources.add(c.lead_source);
-        c.contact_sources.forEach(s => allSources.add(s));
-        if (!allSources.has(filterSource)) return false;
+        if (!c.contact_sources.includes(filterSource)) return false;
       }
+
       if (filterStatus && c.display_status !== filterStatus) return false;
       if (filterState) {
         if (filterState === '__none__') {
@@ -807,7 +800,8 @@ export default function CompanyList() {
                     onClick={() => handleSort('source')}
                   >
                     <div className="flex items-center">
-                      Source
+                      Lead Source
+
                       <SortIcon column="source" />
                     </div>
                   </TableHead>
@@ -907,10 +901,7 @@ export default function CompanyList() {
                     </TableCell>
                     <TableCell>
                       {(() => {
-                        const allSources = new Set<string>();
-                        if (company.lead_source) allSources.add(company.lead_source);
-                        company.contact_sources.forEach(s => allSources.add(s));
-                        const sources = Array.from(allSources);
+                        const sources = company.contact_sources;
                         if (sources.length === 0) return <span className="text-muted-foreground text-sm">—</span>;
                         return (
                           <div className="flex flex-wrap gap-1 max-w-[200px]">
@@ -928,6 +919,7 @@ export default function CompanyList() {
                           </div>
                         );
                       })()}
+
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
