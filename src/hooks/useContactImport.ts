@@ -53,6 +53,12 @@ interface ExistingContact {
   category: string | null;
   status: string | null;
   client_id: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  contact_name?: string | null;
+  phone?: string | null;
+  phone_mobile?: string | null;
+  job_title_id?: string | null;
 }
 
 // Parse CSV file with Zoho-compatible format
