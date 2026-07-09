@@ -418,6 +418,29 @@ export function useContactImport() {
       // Track newly created companies in this import
       const newCompanyMap = new Map<string, string>();
 
+      // Pre-fetch ALL existing contacts for case-insensitive email dedup
+      // and to prevent duplicate primary contacts within a company.
+      setImportProgress({ current: 0, total: contacts.length, status: 'Loading existing contacts...' });
+      const { data: allExisting } = await supabase
+        .from('client_contacts')
+        .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name');
+
+      const contactByEmail = new Map<string, ExistingContact>();
+      const contactByCompanyName = new Map<string, ExistingContact>(); // key: `${clientId}::${firstLower}|${lastLower}`
+      (allExisting || []).forEach((c: any) => {
+        if (c.email) {
+          contactByEmail.set(String(c.email).toLowerCase().trim(), c as ExistingContact);
+        }
+        if (c.client_id) {
+          const fl = (c.first_name || '').toLowerCase().trim();
+          const ll = (c.last_name || '').toLowerCase().trim();
+          const cn = (c.contact_name || '').toLowerCase().trim();
+          if (fl || ll) contactByCompanyName.set(`${c.client_id}::${fl}|${ll}`, c as ExistingContact);
+          if (cn) contactByCompanyName.set(`${c.client_id}::name::${cn}`, c as ExistingContact);
+        }
+      });
+
+
       for (let i = 0; i < contacts.length; i++) {
         const contact = contacts[i];
         setImportProgress({ 
