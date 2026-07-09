@@ -484,8 +484,8 @@ export function useContactImport() {
             const companyNameLower = contact.companyName.toLowerCase().trim();
             const companyEmailLower = contact.companyEmail?.toLowerCase().trim();
 
-            // Source and Category are COMPANY-level tags.
-            const companyTagAdditions = [contact.source, contact.category]
+            // Category is a COMPANY-level tag. Source lives on the contact.
+            const companyTagAdditions = [contact.category]
               .map(t => (t || '').trim())
               .filter(Boolean);
 
@@ -499,24 +499,18 @@ export function useContactImport() {
               companyId = existingCompany.id;
               result.companiesSkipped++;
 
-              // Merge source/category into company tags. Never overwrite status.
+              // Merge category into company tags (case-insensitive). Never overwrite status.
               if (companyTagAdditions.length) {
-                const existingTags = existingCompany.tags || [];
-                const mergedTags = Array.from(
-                  new Set([...existingTags, ...companyTagAdditions].map(t => t.trim()).filter(Boolean))
-                );
-                const changed =
-                  mergedTags.length !== existingTags.length ||
-                  !mergedTags.every(t => existingTags.includes(t));
+                const { merged, changed } = mergeTagsCI(existingCompany.tags, companyTagAdditions);
                 if (changed) {
                   const { error: coUpdErr } = await supabase
                     .from('clients')
-                    .update({ tags: mergedTags })
+                    .update({ tags: merged })
                     .eq('id', existingCompany.id);
                   if (coUpdErr) {
                     result.errors.push(`Failed to update tags on "${existingCompany.business_name}": ${coUpdErr.message}`);
                   } else {
-                    existingCompany.tags = mergedTags;
+                    existingCompany.tags = merged;
                   }
                 }
               }
@@ -525,20 +519,14 @@ export function useContactImport() {
               companyId = newCompanyMap.get(companyNameLower)!;
               const cachedCo = companyByName.get(companyNameLower);
               if (cachedCo && companyTagAdditions.length) {
-                const existingTags = cachedCo.tags || [];
-                const mergedTags = Array.from(
-                  new Set([...existingTags, ...companyTagAdditions].map(t => t.trim()).filter(Boolean))
-                );
-                const changed =
-                  mergedTags.length !== existingTags.length ||
-                  !mergedTags.every(t => existingTags.includes(t));
+                const { merged, changed } = mergeTagsCI(cachedCo.tags, companyTagAdditions);
                 if (changed) {
-                  await supabase.from('clients').update({ tags: mergedTags }).eq('id', cachedCo.id);
-                  cachedCo.tags = mergedTags;
+                  await supabase.from('clients').update({ tags: merged }).eq('id', cachedCo.id);
+                  cachedCo.tags = merged;
                 }
               }
             } else {
-              // Create new company — seed tags with source + category
+              // Create new company — seed tags with category only
               const { data: newCompany, error: companyError } = await supabase
                 .from('clients')
                 .insert({
@@ -546,7 +534,7 @@ export function useContactImport() {
                   company_email: contact.companyEmail || null,
                   company_phone: contact.companyPhone || null,
                   billing_address: contact.companyAddress || null,
-                  lead_source: contact.leadSource || contact.source || null,
+                  lead_source: contact.leadSource || null,
                   industry: contact.industry || null,
                   tags: companyTagAdditions.length ? companyTagAdditions : null,
                   status: contact.status || null,
