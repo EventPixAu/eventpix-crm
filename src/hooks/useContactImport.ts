@@ -25,6 +25,8 @@ export interface ImportedContact {
   industry?: string;
   tags?: string[];
   source?: string;
+  category?: string;
+  status?: string;
 }
 
 export interface ImportResult {
@@ -47,6 +49,10 @@ interface ExistingContact {
   id: string;
   email: string | null;
   tags: string[] | null;
+  source: string | null;
+  category: string | null;
+  status: string | null;
+  client_id: string | null;
 }
 
 // Parse CSV file with Zoho-compatible format
@@ -90,11 +96,23 @@ export function parseCSV(csvContent: string): ImportedContact[] {
     'company_address': 'companyAddress',
     'billingaddress': 'companyAddress',
     'billing_address': 'companyAddress',
-    // Lead Source mappings
+    // Lead Source (company-level) mappings
     'leadsource': 'leadSource',
     'lead_source': 'leadSource',
     'lead source': 'leadSource',
-    'source': 'leadSource',
+    // Contact-level Source tag (e.g. "Answers 2026")
+    'source': 'source',
+    'contactsource': 'source',
+    'contact_source': 'source',
+    // Category (contact-level)
+    'category': 'category',
+    'contactcategory': 'category',
+    'contact_category': 'category',
+    'type': 'category',
+    // Status (contact-level)
+    'status': 'status',
+    'contactstatus': 'status',
+    'contact_status': 'status',
     // Industry mappings
     'industry': 'industry',
     'industrytype': 'industry',
@@ -400,6 +418,29 @@ export function useContactImport() {
       // Track newly created companies in this import
       const newCompanyMap = new Map<string, string>();
 
+      // Pre-fetch ALL existing contacts for case-insensitive email dedup
+      // and to prevent duplicate primary contacts within a company.
+      setImportProgress({ current: 0, total: contacts.length, status: 'Loading existing contacts...' });
+      const { data: allExisting } = await supabase
+        .from('client_contacts')
+        .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name');
+
+      const contactByEmail = new Map<string, ExistingContact>();
+      const contactByCompanyName = new Map<string, ExistingContact>(); // key: `${clientId}::${firstLower}|${lastLower}`
+      (allExisting || []).forEach((c: any) => {
+        if (c.email) {
+          contactByEmail.set(String(c.email).toLowerCase().trim(), c as ExistingContact);
+        }
+        if (c.client_id) {
+          const fl = (c.first_name || '').toLowerCase().trim();
+          const ll = (c.last_name || '').toLowerCase().trim();
+          const cn = (c.contact_name || '').toLowerCase().trim();
+          if (fl || ll) contactByCompanyName.set(`${c.client_id}::${fl}|${ll}`, c as ExistingContact);
+          if (cn) contactByCompanyName.set(`${c.client_id}::name::${cn}`, c as ExistingContact);
+        }
+      });
+
+
       for (let i = 0; i < contacts.length; i++) {
         const contact = contacts[i];
         setImportProgress({ 
@@ -465,60 +506,25 @@ export function useContactImport() {
             }
           }
 
-          // Check for existing contact — scoped to company if we have one, or global search
+          // Check for existing contact using pre-fetched in-memory indexes.
+          // PRIMARY: case-insensitive email match (global).
           let existingContact: ExistingContact | null = null;
-
-          if (companyId && contact.email) {
-            const { data } = await supabase
-              .from('client_contacts')
-              .select('id, email, tags')
-              .eq('client_id', companyId)
-              .eq('email', contact.email)
-              .maybeSingle();
-            existingContact = data as ExistingContact | null;
+          const emailKey = contact.email?.toLowerCase().trim() || '';
+          if (emailKey) {
+            existingContact = contactByEmail.get(emailKey) || null;
           }
 
-          // Fallback: match by first+last name within the company
+          // Prevent duplicate primary contacts: within the same company,
+          // match by (first_name, last_name) or contact_name.
           if (!existingContact && companyId && (contact.firstName || contact.lastName)) {
-            const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
-            let nameQuery = supabase
-              .from('client_contacts')
-              .select('id, email, tags')
-              .eq('client_id', companyId);
-            if (contact.firstName && contact.lastName) {
-              nameQuery = nameQuery.eq('first_name', contact.firstName).eq('last_name', contact.lastName);
-            } else {
-              nameQuery = nameQuery.eq('contact_name', contactName);
-            }
-            const { data } = await nameQuery.maybeSingle();
-            existingContact = data as ExistingContact | null;
+            const fl = (contact.firstName || '').toLowerCase().trim();
+            const ll = (contact.lastName || '').toLowerCase().trim();
+            const cn = [contact.firstName, contact.lastName].filter(Boolean).join(' ').toLowerCase().trim();
+            existingContact =
+              contactByCompanyName.get(`${companyId}::${fl}|${ll}`) ||
+              (cn ? contactByCompanyName.get(`${companyId}::name::${cn}`) || null : null);
           }
 
-          // No company — search globally by email
-          if (!existingContact && !companyId && contact.email) {
-            const { data } = await supabase
-              .from('client_contacts')
-              .select('id, email, tags')
-              .eq('email', contact.email)
-              .limit(1)
-              .maybeSingle();
-            existingContact = data as ExistingContact | null;
-          }
-
-          // No company, no email match — search globally by name
-          if (!existingContact && !companyId && (contact.firstName || contact.lastName)) {
-            const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
-            let nameQuery = supabase
-              .from('client_contacts')
-              .select('id, email, tags');
-            if (contact.firstName && contact.lastName) {
-              nameQuery = nameQuery.eq('first_name', contact.firstName).eq('last_name', contact.lastName);
-            } else {
-              nameQuery = nameQuery.eq('contact_name', contactName);
-            }
-            const { data } = await nameQuery.limit(1).maybeSingle();
-            existingContact = data as ExistingContact | null;
-          }
 
           // If still no match and no company, skip creation (can't create without a company)
           if (!existingContact && !companyId) {
@@ -541,33 +547,37 @@ export function useContactImport() {
               continue;
             }
 
-            // Update existing contact - merge tags
+            // Update existing contact - merge tags (also fold in source & category as tags)
             const existingTags = existingContact.tags || [];
-            const newTags = contact.tags || [];
-            const mergedTags = [...new Set([...existingTags, ...newTags])];
-            
+            const importTags = [...(contact.tags || [])];
+            if (contact.source) importTags.push(contact.source);
+            if (contact.category) importTags.push(contact.category);
+            const mergedTags = [...new Set([...existingTags, ...importTags].map(t => t.trim()).filter(Boolean))];
+
             const updateData: Record<string, any> = {};
-            
+
             // Only update fields that have values in the import
             if (contact.firstName) updateData.first_name = contact.firstName;
             if (contact.lastName) updateData.last_name = contact.lastName;
             if (contact.mobile) updateData.phone_mobile = contact.mobile;
             if (contact.phone) updateData.phone = contact.phone;
             if (jobTitleId) updateData.job_title_id = jobTitleId;
-            
+
             // Always merge tags if there are any new ones
-            if (mergedTags.length > existingTags.length || 
+            if (mergedTags.length !== existingTags.length ||
                 !mergedTags.every(t => existingTags.includes(t))) {
               updateData.tags = mergedTags;
             }
-            
+
             // Update contact name if first/last name changed
             if (contact.firstName || contact.lastName) {
               updateData.contact_name = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             }
 
-            // Set source if provided and not already set
-            if (contact.source) updateData.source = contact.source;
+            // Source/category/status: set only if empty on existing (don't overwrite)
+            if (contact.source && !existingContact.source) updateData.source = contact.source;
+            if (contact.category && !existingContact.category) updateData.category = contact.category;
+            if (contact.status && !existingContact.status) updateData.status = contact.status;
 
             if (Object.keys(updateData).length > 0) {
               const { error: updateError } = await supabase
@@ -594,8 +604,13 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
+            // Fold source/category into tags for consistent multi-source tracking
+            const initialTags = [...(contact.tags || [])];
+            if (contact.source) initialTags.push(contact.source);
+            if (contact.category) initialTags.push(contact.category);
+            const dedupedTags = [...new Set(initialTags.map(t => t.trim()).filter(Boolean))];
 
-            const { error: contactError } = await supabase
+            const { data: inserted, error: contactError } = await supabase
               .from('client_contacts')
               .insert({
                 client_id: companyId,
@@ -606,15 +621,31 @@ export function useContactImport() {
                 phone_mobile: contact.mobile || null,
                 phone: contact.phone || null,
                 job_title_id: jobTitleId,
-                tags: contact.tags || [],
+                tags: dedupedTags,
                 source: contact.source || null,
-              });
+                category: contact.category || null,
+                status: contact.status || null,
+              })
+              .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name')
+              .maybeSingle();
 
             if (contactError) {
               result.errors.push(`Failed to create contact "${contactName}": ${contactError.message}`);
               result.contactsSkipped++;
             } else {
               result.contactsCreated++;
+              // Register in in-memory indexes so subsequent rows in this
+              // batch don't create duplicates for the same person.
+              if (inserted) {
+                if (inserted.email) contactByEmail.set(String(inserted.email).toLowerCase().trim(), inserted as ExistingContact);
+                if (inserted.client_id) {
+                  const fl = (inserted.first_name || '').toLowerCase().trim();
+                  const ll = (inserted.last_name || '').toLowerCase().trim();
+                  const cn = (inserted.contact_name || '').toLowerCase().trim();
+                  if (fl || ll) contactByCompanyName.set(`${inserted.client_id}::${fl}|${ll}`, inserted as ExistingContact);
+                  if (cn) contactByCompanyName.set(`${inserted.client_id}::name::${cn}`, inserted as ExistingContact);
+                }
+              }
             }
           }
         } catch (err: any) {
