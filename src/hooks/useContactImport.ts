@@ -442,6 +442,23 @@ export function useContactImport() {
         jobTitleMap.set(jt.name.toLowerCase(), jt.id);
       });
 
+      // Auto-create missing job titles on demand (matches Update dialog behaviour).
+      const resolveJobTitleId = async (raw?: string): Promise<string | null> => {
+        const name = raw?.trim();
+        if (!name) return null;
+        const key = name.toLowerCase();
+        const cached = jobTitleMap.get(key);
+        if (cached) return cached;
+        const { data, error } = await supabase
+          .from('job_titles')
+          .insert({ name })
+          .select('id')
+          .maybeSingle();
+        if (error || !data) return null;
+        jobTitleMap.set(key, data.id);
+        return data.id;
+      };
+
       // Track newly created companies in this import
       const newCompanyMap = new Map<string, string>();
 
@@ -534,7 +551,7 @@ export function useContactImport() {
                   company_email: contact.companyEmail || null,
                   company_phone: contact.companyPhone || null,
                   billing_address: contact.companyAddress || null,
-                  lead_source: contact.leadSource || null,
+                  lead_source: null,
                   industry: contact.industry || null,
                   tags: companyTagAdditions.length ? companyTagAdditions : null,
                   status: contact.status || null,
@@ -595,11 +612,8 @@ export function useContactImport() {
             continue;
           }
 
-          // Map job title
-          let jobTitleId: string | null = null;
-          if (contact.jobTitle) {
-            jobTitleId = jobTitleMap.get(contact.jobTitle.toLowerCase()) || null;
-          }
+          // Map job title (auto-create if missing)
+          const jobTitleId: string | null = await resolveJobTitleId(contact.jobTitle);
 
           if (existingContact) {
             // Bounce protection — never re-activate or modify a hard-bounced contact
@@ -613,7 +627,7 @@ export function useContactImport() {
             // Merge imported tags + source (case-insensitive dedup).
             const { merged: mergedTags, changed: tagsChanged } = mergeTagsCI(
               existingContact.tags,
-              [...(contact.tags || []), contact.source]
+              [...(contact.tags || []), contact.source, contact.leadSource]
             );
 
             const updateData: Record<string, any> = {};
@@ -660,8 +674,8 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
-            // Source lives on the contact — seed tags with the imported source.
-            const { merged: dedupedTags } = mergeTagsCI([], [...(contact.tags || []), contact.source]);
+            // Source & Lead Source live on the contact — seed tags with both.
+            const { merged: dedupedTags } = mergeTagsCI([], [...(contact.tags || []), contact.source, contact.leadSource]);
 
             const { data: inserted, error: contactError } = await supabase
               .from('client_contacts')
