@@ -562,12 +562,13 @@ export function useContactImport() {
 
             const updateData: Record<string, any> = {};
 
-            // Only update fields that have values in the import
-            if (contact.firstName) updateData.first_name = contact.firstName;
-            if (contact.lastName) updateData.last_name = contact.lastName;
-            if (contact.mobile) updateData.phone_mobile = contact.mobile;
-            if (contact.phone) updateData.phone = contact.phone;
-            if (jobTitleId) updateData.job_title_id = jobTitleId;
+            // Empty-fields-only: only populate when the existing record is blank.
+            // Never overwrite populated first/last name, phone, mobile, job title.
+            if (contact.firstName && !existingContact.first_name) updateData.first_name = contact.firstName;
+            if (contact.lastName && !existingContact.last_name) updateData.last_name = contact.lastName;
+            if (contact.mobile && !existingContact.phone_mobile) updateData.phone_mobile = contact.mobile;
+            if (contact.phone && !existingContact.phone) updateData.phone = contact.phone;
+            if (jobTitleId && !existingContact.job_title_id) updateData.job_title_id = jobTitleId;
 
             // Always merge tags if there are any new ones
             if (mergedTags.length !== existingTags.length ||
@@ -575,8 +576,8 @@ export function useContactImport() {
               updateData.tags = mergedTags;
             }
 
-            // Update contact name if first/last name changed
-            if (contact.firstName || contact.lastName) {
+            // Contact name — only fill when blank so we don't overwrite an existing display name.
+            if (!existingContact.contact_name && (contact.firstName || contact.lastName)) {
               updateData.contact_name = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             }
 
