@@ -22,6 +22,22 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/lib/supabase';
+
+// Case-insensitive tag merge — appends only tags that aren't already present.
+function mergeTagsCI(existing: string[] | null | undefined, additions: (string | null | undefined)[]) {
+  const base = Array.isArray(existing) ? existing.filter(Boolean) : [];
+  const seen = new Set(base.map(t => t.toLowerCase().trim()));
+  const merged = [...base];
+  for (const raw of additions) {
+    const t = (raw || '').trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(t);
+  }
+  return { merged, changed: merged.length !== base.length };
+}
 import { toast } from 'sonner';
 import { Upload, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
@@ -274,11 +290,13 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             // State — only set if existing blank
             if (row.state && !existing.state) updates.state = row.state;
 
-            // Source and Category now live on the COMPANY record — not the contact.
-            // Do not merge them into contact.tags. Keep single-value contact source/category
-            // fill-empty-only for backwards compat.
-            if (row.source && !existing.source) updates.source = row.source.trim();
-            if (row.category && !existing.category) updates.category = row.category.trim();
+            // Source lives on the CONTACT record as a tag — append (case-insensitive dedup).
+            // Category lives on the COMPANY record and is handled below.
+            const { merged: mergedContactTags, changed: contactTagsChanged } = mergeTagsCI(
+              existing.tags,
+              [row.source]
+            );
+            if (contactTagsChanged) updates.tags = mergedContactTags;
 
             // Job title — fill-empty-only
             if (row.jobTitle && !existing.job_title_id) {
@@ -300,8 +318,9 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             contactId = existing.id;
             result.updated++;
           } else {
-            // Create new contact (source/category live on company, not contact.tags)
+            // Create new contact — source seeded as a tag on the contact.
             const jtId = await resolveJobTitleId(row.jobTitle);
+            const { merged: seedTags } = mergeTagsCI([], [row.source]);
             const insertRow: Record<string, any> = {
               email,
               first_name: row.firstName || null,
@@ -310,8 +329,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
                 [row.firstName, row.lastName].filter(Boolean).join(' ').trim() || email,
               phone: row.phone || null,
               state: row.state || null,
-              source: row.source || null,
-              category: row.category || null,
+              tags: seedTags.length ? seedTags : null,
               job_title_id: jtId,
               status: newStatus || 'Prospect',
             };
@@ -327,10 +345,10 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
 
           // Company linkage — always resolve company for tag merging, even when
-          // the contact already has an association. Source/Category live on the
-          // COMPANY record and must be appended to its tags.
+          // the contact already has an association. Category lives on the
+          // COMPANY record; source lives on the contact (handled above).
           if (row.companyName) {
-            const tagAdditions = [row.source, row.category]
+            const companyTagAdditions = [row.category]
               .map((t) => (t || '').trim())
               .filter(Boolean);
 
@@ -345,30 +363,24 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
             let companyId: string | undefined = matchedCo?.id;
 
             if (companyId) {
-              // Existing company — merge tags, never touch status
-              if (tagAdditions.length) {
-                const existingTags: string[] = Array.isArray(matchedCo?.tags) ? matchedCo!.tags : [];
-                const mergedTags = Array.from(
-                  new Set([...existingTags, ...tagAdditions].map((t) => t.trim()).filter(Boolean))
-                );
-                const changed =
-                  mergedTags.length !== existingTags.length ||
-                  !mergedTags.every((t) => existingTags.includes(t));
+              // Existing company — merge category into tags (case-insensitive). Never touch status.
+              if (companyTagAdditions.length) {
+                const { merged, changed } = mergeTagsCI(matchedCo?.tags, companyTagAdditions);
                 if (changed) {
                   const { error: coUpdErr } = await supabase
                     .from('clients')
-                    .update({ tags: mergedTags })
+                    .update({ tags: merged })
                     .eq('id', companyId);
                   if (coUpdErr) throw coUpdErr;
                 }
               }
             } else {
-              // New company — seed tags with source + category, set status if provided
+              // New company — seed tags with category, set status if provided
               const { data: newCo, error: cErr } = await supabase
                 .from('clients')
                 .insert({
                   business_name: row.companyName,
-                  tags: tagAdditions.length ? tagAdditions : null,
+                  tags: companyTagAdditions.length ? companyTagAdditions : null,
                   status: newStatus || null,
                 })
                 .select('id')

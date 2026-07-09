@@ -10,6 +10,24 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
+// Case-insensitive tag merge — appends new tags that don't already exist
+// on the record (comparing lowercased/trimmed values). Returns the merged
+// list plus whether anything actually changed.
+function mergeTagsCI(existing: string[] | null | undefined, additions: (string | null | undefined)[]) {
+  const base = Array.isArray(existing) ? existing.filter(Boolean) : [];
+  const seen = new Set(base.map(t => t.toLowerCase().trim()));
+  const merged = [...base];
+  for (const raw of additions) {
+    const t = (raw || '').trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(t);
+  }
+  return { merged, changed: merged.length !== base.length };
+}
+
 export interface ImportedContact {
   firstName?: string;
   lastName?: string;
@@ -466,8 +484,8 @@ export function useContactImport() {
             const companyNameLower = contact.companyName.toLowerCase().trim();
             const companyEmailLower = contact.companyEmail?.toLowerCase().trim();
 
-            // Source and Category are COMPANY-level tags.
-            const companyTagAdditions = [contact.source, contact.category]
+            // Category is a COMPANY-level tag. Source lives on the contact.
+            const companyTagAdditions = [contact.category]
               .map(t => (t || '').trim())
               .filter(Boolean);
 
@@ -481,24 +499,18 @@ export function useContactImport() {
               companyId = existingCompany.id;
               result.companiesSkipped++;
 
-              // Merge source/category into company tags. Never overwrite status.
+              // Merge category into company tags (case-insensitive). Never overwrite status.
               if (companyTagAdditions.length) {
-                const existingTags = existingCompany.tags || [];
-                const mergedTags = Array.from(
-                  new Set([...existingTags, ...companyTagAdditions].map(t => t.trim()).filter(Boolean))
-                );
-                const changed =
-                  mergedTags.length !== existingTags.length ||
-                  !mergedTags.every(t => existingTags.includes(t));
+                const { merged, changed } = mergeTagsCI(existingCompany.tags, companyTagAdditions);
                 if (changed) {
                   const { error: coUpdErr } = await supabase
                     .from('clients')
-                    .update({ tags: mergedTags })
+                    .update({ tags: merged })
                     .eq('id', existingCompany.id);
                   if (coUpdErr) {
                     result.errors.push(`Failed to update tags on "${existingCompany.business_name}": ${coUpdErr.message}`);
                   } else {
-                    existingCompany.tags = mergedTags;
+                    existingCompany.tags = merged;
                   }
                 }
               }
@@ -507,20 +519,14 @@ export function useContactImport() {
               companyId = newCompanyMap.get(companyNameLower)!;
               const cachedCo = companyByName.get(companyNameLower);
               if (cachedCo && companyTagAdditions.length) {
-                const existingTags = cachedCo.tags || [];
-                const mergedTags = Array.from(
-                  new Set([...existingTags, ...companyTagAdditions].map(t => t.trim()).filter(Boolean))
-                );
-                const changed =
-                  mergedTags.length !== existingTags.length ||
-                  !mergedTags.every(t => existingTags.includes(t));
+                const { merged, changed } = mergeTagsCI(cachedCo.tags, companyTagAdditions);
                 if (changed) {
-                  await supabase.from('clients').update({ tags: mergedTags }).eq('id', cachedCo.id);
-                  cachedCo.tags = mergedTags;
+                  await supabase.from('clients').update({ tags: merged }).eq('id', cachedCo.id);
+                  cachedCo.tags = merged;
                 }
               }
             } else {
-              // Create new company — seed tags with source + category
+              // Create new company — seed tags with category only
               const { data: newCompany, error: companyError } = await supabase
                 .from('clients')
                 .insert({
@@ -528,7 +534,7 @@ export function useContactImport() {
                   company_email: contact.companyEmail || null,
                   company_phone: contact.companyPhone || null,
                   billing_address: contact.companyAddress || null,
-                  lead_source: contact.leadSource || contact.source || null,
+                  lead_source: contact.leadSource || null,
                   industry: contact.industry || null,
                   tags: companyTagAdditions.length ? companyTagAdditions : null,
                   status: contact.status || null,
@@ -603,35 +609,30 @@ export function useContactImport() {
               continue;
             }
 
-            // Update existing contact - merge tags only (source/category now live on company)
-            const existingTags = existingContact.tags || [];
-            const importTags = [...(contact.tags || [])];
-            const mergedTags = [...new Set([...existingTags, ...importTags].map(t => t.trim()).filter(Boolean))];
+            // Update existing contact — source tag lives on the contact.
+            // Merge imported tags + source (case-insensitive dedup).
+            const { merged: mergedTags, changed: tagsChanged } = mergeTagsCI(
+              existingContact.tags,
+              [...(contact.tags || []), contact.source]
+            );
 
             const updateData: Record<string, any> = {};
 
             // Empty-fields-only: only populate when the existing record is blank.
-            // Never overwrite populated first/last name, phone, mobile, job title.
             if (contact.firstName && !existingContact.first_name) updateData.first_name = contact.firstName;
             if (contact.lastName && !existingContact.last_name) updateData.last_name = contact.lastName;
             if (contact.mobile && !existingContact.phone_mobile) updateData.phone_mobile = contact.mobile;
             if (contact.phone && !existingContact.phone) updateData.phone = contact.phone;
             if (jobTitleId && !existingContact.job_title_id) updateData.job_title_id = jobTitleId;
 
-            // Always merge tags if there are any new ones
-            if (mergedTags.length !== existingTags.length ||
-                !mergedTags.every(t => existingTags.includes(t))) {
-              updateData.tags = mergedTags;
-            }
+            if (tagsChanged) updateData.tags = mergedTags;
 
             // Contact name — only fill when blank so we don't overwrite an existing display name.
             if (!existingContact.contact_name && (contact.firstName || contact.lastName)) {
               updateData.contact_name = [contact.firstName, contact.lastName].filter(Boolean).join(' ');
             }
 
-            // Source/category/status: set only if empty on existing (don't overwrite)
-            if (contact.source && !existingContact.source) updateData.source = contact.source;
-            if (contact.category && !existingContact.category) updateData.category = contact.category;
+            // Status only if empty (never downgrade). Category lives on the company now.
             if (contact.status && !existingContact.status) updateData.status = contact.status;
 
             if (Object.keys(updateData).length > 0) {
@@ -659,9 +660,8 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
-            // Source/Category now live on the company record — keep contact tags import-only
-            const initialTags = [...(contact.tags || [])];
-            const dedupedTags = [...new Set(initialTags.map(t => t.trim()).filter(Boolean))];
+            // Source lives on the contact — seed tags with the imported source.
+            const { merged: dedupedTags } = mergeTagsCI([], [...(contact.tags || []), contact.source]);
 
             const { data: inserted, error: contactError } = await supabase
               .from('client_contacts')
@@ -675,8 +675,6 @@ export function useContactImport() {
                 phone: contact.phone || null,
                 job_title_id: jobTitleId,
                 tags: dedupedTags,
-                source: contact.source || null,
-                category: contact.category || null,
                 status: contact.status || null,
               })
               .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name')
