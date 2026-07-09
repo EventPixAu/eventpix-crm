@@ -1241,14 +1241,22 @@ export default function ContactList() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {contact.source ? (
-                            <Badge variant="secondary" className="gap-1 text-xs">
-                              <Database className="h-3 w-3" />
-                              {contact.source}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
+                          {(() => {
+                            const sourceTags = (contact.tags || []).filter(Boolean);
+                            if (sourceTags.length === 0) {
+                              return <span className="text-muted-foreground text-sm">—</span>;
+                            }
+                            return (
+                              <div className="flex flex-wrap gap-1">
+                                {sourceTags.map((t) => (
+                                  <Badge key={t} variant="secondary" className="gap-1 text-xs">
+                                    <Database className="h-3 w-3" />
+                                    {t}
+                                  </Badge>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         {/* Status cell removed — status set at Company level */}
 
