@@ -223,9 +223,9 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
       // Pre-load job titles for lookup / create-on-demand
       const jobTitleCache = new Map<string, string>(); // lowercased title -> id
       {
-        const { data: jts } = await supabase.from('job_titles').select('id, title');
+        const { data: jts } = await supabase.from('job_titles').select('id, name');
         (jts || []).forEach((jt: any) => {
-          if (jt.title) jobTitleCache.set(String(jt.title).toLowerCase().trim(), jt.id);
+          if (jt.name) jobTitleCache.set(String(jt.name).toLowerCase().trim(), jt.id);
         });
       }
       const resolveJobTitleId = async (raw?: string): Promise<string | null> => {
@@ -236,7 +236,7 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
         if (cached) return cached;
         const { data, error } = await supabase
           .from('job_titles')
-          .insert({ title: name })
+          .insert({ name })
           .select('id')
           .maybeSingle();
         if (error || !data) return null;
