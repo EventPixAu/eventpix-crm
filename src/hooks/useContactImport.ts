@@ -64,7 +64,25 @@ interface ExistingCompany {
   tags?: string[] | null;
   status?: string | null;
   lead_source?: string | null;
+  category_id?: string | null;
+  subcategory_id?: string | null;
 }
+
+// CSV Category value → { parent name, subcategory name } (case-insensitive keys).
+// Only values listed here are assigned; anything else is logged as a warning
+// and left unset. Never create categories on the fly.
+export const CSV_CATEGORY_MAPPING: Record<string, { parent: string; sub: string }> = {
+  'association': { parent: 'Not-for-Profit', sub: 'Association' },
+  'corporate': { parent: 'Corporate', sub: 'Corporate' },
+  'government': { parent: 'Corporate', sub: 'Government' },
+  'pco': { parent: 'Event Industry', sub: 'PCO' },
+  'marketing, pr & communications': { parent: 'Marketing & PR', sub: 'Communications' },
+  'convention / business events bureau': { parent: 'Marketing & PR', sub: 'Business Events Bureau' },
+  'consultants': { parent: 'Marketing & PR', sub: 'Consultant' },
+  'it': { parent: 'Event Suppliers', sub: 'IT' },
+  'speaker': { parent: 'Event Suppliers', sub: 'Speaker' },
+  'recruitment': { parent: 'Event Suppliers', sub: 'Recruitment' },
+};
 
 interface ExistingContact {
   id: string;
