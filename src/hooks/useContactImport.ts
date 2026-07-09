@@ -627,7 +627,7 @@ export function useContactImport() {
             // Merge imported tags + source (case-insensitive dedup).
             const { merged: mergedTags, changed: tagsChanged } = mergeTagsCI(
               existingContact.tags,
-              [...(contact.tags || []), contact.source]
+              [...(contact.tags || []), contact.source, contact.leadSource]
             );
 
             const updateData: Record<string, any> = {};
