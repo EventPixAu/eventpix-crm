@@ -556,10 +556,8 @@ export function useContactImport() {
             const companyNameLower = contact.companyName.toLowerCase().trim();
             const companyEmailLower = contact.companyEmail?.toLowerCase().trim();
 
-            // Category is a COMPANY-level tag. Source lives on the contact.
-            const companyTagAdditions = [contact.category]
-              .map(t => (t || '').trim())
-              .filter(Boolean);
+            // Resolve CSV Category → structured taxonomy IDs (never a tag).
+            const resolvedCat = resolveCategory(contact.category, i);
 
             // Check for existing company by name or email
             let existingCompany = companyByName.get(companyNameLower);
@@ -571,34 +569,32 @@ export function useContactImport() {
               companyId = existingCompany.id;
               result.companiesSkipped++;
 
-              // Merge category into company tags (case-insensitive). Never overwrite status.
-              if (companyTagAdditions.length) {
-                const { merged, changed } = mergeTagsCI(existingCompany.tags, companyTagAdditions);
-                if (changed) {
-                  const { error: coUpdErr } = await supabase
-                    .from('clients')
-                    .update({ tags: merged })
-                    .eq('id', existingCompany.id);
-                  if (coUpdErr) {
-                    result.errors.push(`Failed to update tags on "${existingCompany.business_name}": ${coUpdErr.message}`);
-                  } else {
-                    existingCompany.tags = merged;
-                  }
+              // Only set category on existing company if BOTH fields are empty.
+              // Never overwrite an existing category assignment.
+              if (
+                resolvedCat &&
+                !existingCompany.category_id &&
+                !existingCompany.subcategory_id
+              ) {
+                const { error: coUpdErr } = await supabase
+                  .from('clients')
+                  .update({
+                    category_id: resolvedCat.category_id,
+                    subcategory_id: resolvedCat.subcategory_id,
+                  } as any)
+                  .eq('id', existingCompany.id);
+                if (coUpdErr) {
+                  result.errors.push(`Failed to set category on "${existingCompany.business_name}": ${coUpdErr.message}`);
+                } else {
+                  existingCompany.category_id = resolvedCat.category_id;
+                  existingCompany.subcategory_id = resolvedCat.subcategory_id;
                 }
               }
             } else if (newCompanyMap.has(companyNameLower)) {
-              // Company created earlier in this import batch — append tags too
+              // Company created earlier in this import batch — leave category untouched.
               companyId = newCompanyMap.get(companyNameLower)!;
-              const cachedCo = companyByName.get(companyNameLower);
-              if (cachedCo && companyTagAdditions.length) {
-                const { merged, changed } = mergeTagsCI(cachedCo.tags, companyTagAdditions);
-                if (changed) {
-                  await supabase.from('clients').update({ tags: merged }).eq('id', cachedCo.id);
-                  cachedCo.tags = merged;
-                }
-              }
             } else {
-              // Create new company — seed tags with category only
+              // Create new company with structured category (no tag fallback)
               const { data: newCompany, error: companyError } = await supabase
                 .from('clients')
                 .insert({
@@ -608,9 +604,11 @@ export function useContactImport() {
                   billing_address: contact.companyAddress || null,
                   lead_source: null,
                   industry: contact.industry || null,
-                  tags: companyTagAdditions.length ? companyTagAdditions : null,
+                  tags: null,
                   status: null,
-                })
+                  category_id: resolvedCat?.category_id ?? null,
+                  subcategory_id: resolvedCat?.subcategory_id ?? null,
+                } as any)
                 .select('id')
                 .single();
 
@@ -623,16 +621,20 @@ export function useContactImport() {
                   id: companyId,
                   business_name: contact.companyName,
                   company_email: contact.companyEmail || null,
-                  tags: companyTagAdditions,
+                  tags: null,
                   status: null,
+                  category_id: resolvedCat?.category_id ?? null,
+                  subcategory_id: resolvedCat?.subcategory_id ?? null,
                 });
                 if (contact.companyEmail) {
                   companyByEmail.set(contact.companyEmail.toLowerCase(), {
                     id: companyId,
                     business_name: contact.companyName,
                     company_email: contact.companyEmail,
-                    tags: companyTagAdditions,
+                    tags: null,
                     status: null,
+                    category_id: resolvedCat?.category_id ?? null,
+                    subcategory_id: resolvedCat?.subcategory_id ?? null,
                   });
                 }
                 result.companiesCreated++;
