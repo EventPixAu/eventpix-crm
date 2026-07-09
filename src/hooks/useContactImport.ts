@@ -433,7 +433,7 @@ export function useContactImport() {
       // Fetch existing companies for duplicate detection
       const { data: existingCompanies, error: fetchError } = await supabase
         .from('clients')
-        .select('id, business_name, company_email, tags, status, lead_source');
+        .select('id, business_name, company_email, tags, status, lead_source, category_id, subcategory_id');
 
       if (fetchError) throw fetchError;
 
@@ -448,6 +448,43 @@ export function useContactImport() {
           companyByEmail.set(c.company_email.toLowerCase().trim(), c);
         }
       });
+
+      // Fetch category + subcategory taxonomy for structured assignment
+      const [{ data: parentCats }, { data: subCats }] = await Promise.all([
+        supabase.from('company_categories').select('id, name'),
+        supabase.from('company_subcategories' as any).select('id, name, parent_id'),
+      ]);
+      const parentByName = new Map<string, string>();
+      (parentCats || []).forEach((p: any) => parentByName.set(p.name.toLowerCase().trim(), p.id));
+      const subByParentAndName = new Map<string, string>();
+      (subCats as any[] || []).forEach((s: any) =>
+        subByParentAndName.set(`${s.parent_id}::${s.name.toLowerCase().trim()}`, s.id)
+      );
+
+      // Resolve a CSV Category string to { category_id, subcategory_id } or null.
+      const resolveCategory = (raw: string | undefined, rowIndex: number):
+        { category_id: string; subcategory_id: string } | null => {
+        const key = (raw || '').toLowerCase().trim();
+        if (!key) return null;
+        const mapping = CSV_CATEGORY_MAPPING[key];
+        if (!mapping) {
+          console.warn(`[import] Row ${rowIndex + 1}: unrecognised Category "${raw}" — skipping category assignment`);
+          result.errors.push(`Row ${rowIndex + 1}: unrecognised Category "${raw}" — no category assigned`);
+          return null;
+        }
+        const parentId = parentByName.get(mapping.parent.toLowerCase());
+        if (!parentId) {
+          console.warn(`[import] Row ${rowIndex + 1}: parent "${mapping.parent}" not found in DB`);
+          return null;
+        }
+        const subId = subByParentAndName.get(`${parentId}::${mapping.sub.toLowerCase()}`);
+        if (!subId) {
+          console.warn(`[import] Row ${rowIndex + 1}: subcategory "${mapping.sub}" not found under parent "${mapping.parent}"`);
+          return null;
+        }
+        return { category_id: parentId, subcategory_id: subId };
+      };
+
 
       // Fetch job titles for mapping
       const { data: jobTitles } = await supabase
