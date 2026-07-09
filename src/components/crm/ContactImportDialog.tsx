@@ -422,20 +422,29 @@ export function ContactImportDialog({ open, onOpenChange }: ContactImportDialogP
                       ) : '—'}
                     </TableCell>
                     <TableCell>
-                      {contact.tags && contact.tags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {contact.tags.slice(0, 3).map((tag, tagIdx) => (
-                            <Badge key={tagIdx} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {contact.tags.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{contact.tags.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : '—'}
+                      {(() => {
+                        const displayTags = [
+                          ...new Set([
+                            ...(contact.tags || []),
+                            ...(contact.source ? [contact.source] : []),
+                            ...(contact.leadSource ? [contact.leadSource] : []),
+                          ]),
+                        ];
+                        return displayTags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {displayTags.slice(0, 3).map((tag, tagIdx) => (
+                              <Badge key={tagIdx} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {displayTags.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{displayTags.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : '—';
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}
