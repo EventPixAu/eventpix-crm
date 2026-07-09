@@ -10,6 +10,24 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { fetchHardBouncedContacts } from '@/lib/bounceProtection';
 
+// Case-insensitive tag merge — appends new tags that don't already exist
+// on the record (comparing lowercased/trimmed values). Returns the merged
+// list plus whether anything actually changed.
+function mergeTagsCI(existing: string[] | null | undefined, additions: (string | null | undefined)[]) {
+  const base = Array.isArray(existing) ? existing.filter(Boolean) : [];
+  const seen = new Set(base.map(t => t.toLowerCase().trim()));
+  const merged = [...base];
+  for (const raw of additions) {
+    const t = (raw || '').trim();
+    if (!t) continue;
+    const key = t.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(t);
+  }
+  return { merged, changed: merged.length !== base.length };
+}
+
 export interface ImportedContact {
   firstName?: string;
   lastName?: string;
