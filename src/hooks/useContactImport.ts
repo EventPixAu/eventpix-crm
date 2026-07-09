@@ -554,7 +554,7 @@ export function useContactImport() {
                   lead_source: null,
                   industry: contact.industry || null,
                   tags: companyTagAdditions.length ? companyTagAdditions : null,
-                  status: contact.status || null,
+                  status: null,
                 })
                 .select('id')
                 .single();
@@ -569,7 +569,7 @@ export function useContactImport() {
                   business_name: contact.companyName,
                   company_email: contact.companyEmail || null,
                   tags: companyTagAdditions,
-                  status: contact.status || null,
+                  status: null,
                 });
                 if (contact.companyEmail) {
                   companyByEmail.set(contact.companyEmail.toLowerCase(), {
@@ -577,7 +577,7 @@ export function useContactImport() {
                     business_name: contact.companyName,
                     company_email: contact.companyEmail,
                     tags: companyTagAdditions,
-                    status: contact.status || null,
+                    status: null,
                   });
                 }
                 result.companiesCreated++;
