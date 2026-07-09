@@ -612,11 +612,8 @@ export function useContactImport() {
             continue;
           }
 
-          // Map job title
-          let jobTitleId: string | null = null;
-          if (contact.jobTitle) {
-            jobTitleId = jobTitleMap.get(contact.jobTitle.toLowerCase()) || null;
-          }
+          // Map job title (auto-create if missing)
+          const jobTitleId: string | null = await resolveJobTitleId(contact.jobTitle);
 
           if (existingContact) {
             // Bounce protection — never re-activate or modify a hard-bounced contact
