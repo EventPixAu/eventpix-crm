@@ -188,17 +188,20 @@ export function UpdateContactsCsvDialog({ open, onOpenChange }: Props) {
 
       const existingByEmail = new Map<string, any>();
       if (emailsLower.length) {
-        // chunk to avoid massive .in()
-        const chunkSize = 200;
+        // Case-insensitive match: query per-email chunk using ilike OR filter
+        // so we match "Andrew.Hiebl@…" when CSV has "andrew.hiebl@…".
+        const escapeIlike = (s: string) => s.replace(/([%,()])/g, '\\$1');
+        const chunkSize = 50;
         for (let i = 0; i < emailsLower.length; i += chunkSize) {
           const chunk = emailsLower.slice(i, i + chunkSize);
+          const orExpr = chunk.map((e) => `email.ilike.${escapeIlike(e)}`).join(',');
           const { data, error } = await supabase
             .from('client_contacts')
             .select('id, email, phone, phone_mobile, phone_office, status, state, source, first_name, last_name')
-            .in('email', chunk);
+            .or(orExpr);
           if (error) throw error;
           (data || []).forEach((c: any) => {
-            if (c.email) existingByEmail.set(c.email.toLowerCase(), c);
+            if (c.email) existingByEmail.set(String(c.email).toLowerCase().trim(), c);
           });
         }
       }
