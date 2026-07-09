@@ -43,6 +43,9 @@ interface ExistingCompany {
   id: string;
   business_name: string;
   company_email: string | null;
+  tags?: string[] | null;
+  status?: string | null;
+  lead_source?: string | null;
 }
 
 interface ExistingContact {
