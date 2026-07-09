@@ -659,10 +659,8 @@ export function useContactImport() {
             // Create new contact
             const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || contact.email || 'Unknown';
 
-            // Fold source/category into tags for consistent multi-source tracking
+            // Source/Category now live on the company record — keep contact tags import-only
             const initialTags = [...(contact.tags || [])];
-            if (contact.source) initialTags.push(contact.source);
-            if (contact.category) initialTags.push(contact.category);
             const dedupedTags = [...new Set(initialTags.map(t => t.trim()).filter(Boolean))];
 
             const { data: inserted, error: contactError } = await supabase
