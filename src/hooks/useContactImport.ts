@@ -429,7 +429,7 @@ export function useContactImport() {
       setImportProgress({ current: 0, total: contacts.length, status: 'Loading existing contacts...' });
       const { data: allExisting } = await supabase
         .from('client_contacts')
-        .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name');
+        .select('id, email, tags, source, category, status, client_id, first_name, last_name, contact_name, phone, phone_mobile, job_title_id');
 
       const contactByEmail = new Map<string, ExistingContact>();
       const contactByCompanyName = new Map<string, ExistingContact>(); // key: `${clientId}::${firstLower}|${lastLower}`
