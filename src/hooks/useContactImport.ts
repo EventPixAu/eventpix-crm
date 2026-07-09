@@ -96,11 +96,23 @@ export function parseCSV(csvContent: string): ImportedContact[] {
     'company_address': 'companyAddress',
     'billingaddress': 'companyAddress',
     'billing_address': 'companyAddress',
-    // Lead Source mappings
+    // Lead Source (company-level) mappings
     'leadsource': 'leadSource',
     'lead_source': 'leadSource',
     'lead source': 'leadSource',
-    'source': 'leadSource',
+    // Contact-level Source tag (e.g. "Answers 2026")
+    'source': 'source',
+    'contactsource': 'source',
+    'contact_source': 'source',
+    // Category (contact-level)
+    'category': 'category',
+    'contactcategory': 'category',
+    'contact_category': 'category',
+    'type': 'category',
+    // Status (contact-level)
+    'status': 'status',
+    'contactstatus': 'status',
+    'contact_status': 'status',
     // Industry mappings
     'industry': 'industry',
     'industrytype': 'industry',
