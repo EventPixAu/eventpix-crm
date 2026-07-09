@@ -554,7 +554,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   onToggle={(v) => toggleFilter('clientTypes', v)}
                 />
                 <FilterGroup
-                  label="Source"
+                  label="Lead Source"
                   options={(distinctMeta?.sources || []).map((s) => ({ value: s, label: s }))}
                   selected={filters.sources}
                   onToggle={(v) => toggleFilter('sources', v)}
