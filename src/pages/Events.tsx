@@ -293,6 +293,15 @@ export default function Events() {
                               manualStatus={(event as any).clients?.manual_status}
                             />
                           )}
+                          {(assignmentCounts[event.id] || 0) > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                              title="Crew assigned (excludes editors)"
+                            >
+                              <Users className="h-3 w-3" />
+                              Assigned x {assignmentCounts[event.id]}
+                            </span>
+                          )}
                         </>
                       )}
                     </div>
