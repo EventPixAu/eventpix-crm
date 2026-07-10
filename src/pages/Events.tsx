@@ -55,16 +55,18 @@ export default function Events() {
     },
   });
 
-  // Fetch assignment counts for all events
+  // Fetch assignment counts for all events (excludes offsite editor roles)
   const { data: assignmentCounts = {} } = useQuery({
     queryKey: ['event-assignment-counts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_assignments')
-        .select('event_id, user_id, staff_id');
+        .select('event_id, user_id, staff_id, role_on_event, staff_roles(name)');
       if (error) throw error;
       const counts: Record<string, number> = {};
-      (data || []).forEach((a) => {
+      (data || []).forEach((a: any) => {
+        const roleName: string = a.staff_roles?.name || a.role_on_event || '';
+        if (/editor|retoucher/i.test(roleName)) return;
         counts[a.event_id] = (counts[a.event_id] || 0) + 1;
       });
       return counts;
@@ -290,6 +292,15 @@ export default function Events() {
                               currentStatus={(event as any).clients?.status || 'prospect'}
                               manualStatus={(event as any).clients?.manual_status}
                             />
+                          )}
+                          {(assignmentCounts[event.id] || 0) > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                              title="Crew assigned (excludes editors)"
+                            >
+                              <Users className="h-3 w-3" />
+                              Assigned x {assignmentCounts[event.id]}
+                            </span>
                           )}
                         </>
                       )}
