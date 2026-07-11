@@ -551,6 +551,11 @@ export default function EventSeriesDetail() {
          <TabsContent value="workflow">
            <SeriesWorkflowPanel seriesId={id!} />
          </TabsContent>
+
+         {/* Equipment Tab */}
+         <TabsContent value="equipment">
+           <SeriesDefaultEquipmentPanel seriesId={id!} />
+         </TabsContent>
  
         {/* Coverage Tab */}
         <TabsContent value="coverage" className="space-y-4">
