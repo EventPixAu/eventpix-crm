@@ -88,6 +88,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
+ import { SeriesDefaultEquipmentPanel } from '@/components/SeriesDefaultEquipmentPanel';
  import { ListChecks } from 'lucide-react';
 
 export default function EventSeriesDetail() {
