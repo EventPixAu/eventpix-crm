@@ -88,6 +88,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
+ import { SeriesDefaultEquipmentPanel } from '@/components/SeriesDefaultEquipmentPanel';
  import { ListChecks } from 'lucide-react';
 
 export default function EventSeriesDetail() {
@@ -373,7 +374,7 @@ export default function EventSeriesDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-7 w-full max-w-4xl">
+          <TabsList className="grid grid-cols-8 w-full max-w-5xl">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -385,6 +386,10 @@ export default function EventSeriesDetail() {
            <TabsTrigger value="workflow" className="flex items-center gap-2">
              <ListChecks className="h-4 w-4" />
              Workflow
+           </TabsTrigger>
+           <TabsTrigger value="equipment" className="flex items-center gap-2">
+             <Package className="h-4 w-4" />
+             Equipment
            </TabsTrigger>
           <TabsTrigger value="coverage" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -545,6 +550,11 @@ export default function EventSeriesDetail() {
          {/* Workflow Tab */}
          <TabsContent value="workflow">
            <SeriesWorkflowPanel seriesId={id!} />
+         </TabsContent>
+
+         {/* Equipment Tab */}
+         <TabsContent value="equipment">
+           <SeriesDefaultEquipmentPanel seriesId={id!} />
          </TabsContent>
  
         {/* Coverage Tab */}

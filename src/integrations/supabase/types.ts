@@ -5663,6 +5663,61 @@ export type Database = {
           },
         ]
       }
+      series_default_equipment: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          equipment_item_id: string | null
+          id: string
+          kit_id: string | null
+          notes: string | null
+          series_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          equipment_item_id?: string | null
+          id?: string
+          kit_id?: string | null
+          notes?: string | null
+          series_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          equipment_item_id?: string | null
+          id?: string
+          kit_id?: string | null
+          notes?: string | null
+          series_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_default_equipment_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_equipment_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_default_equipment_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       series_fixed_rates: {
         Row: {
           created_at: string
