@@ -514,10 +514,13 @@ Deno.serve(async (req) => {
               if (row.RowType !== 'Row') continue;
               const cells = row.Cells || [];
               const accountName = String(cells[0]?.Value || '').trim();
-              const amount = Math.abs(parseReportAmount(cells[1]?.Value));
+              const amount = parseReportAmount(cells[1]?.Value);
               const accountLower = accountName.toLowerCase();
 
-              if (!accountName || !amount || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
+              if (!accountName || accountLower.includes('total') || accountLower.includes('gross profit')) continue;
+              // Skip zero or negative rows — a negative in the income section indicates
+              // a refund or a Spend Money coded to an income account, not real income.
+              if (amount <= 0) continue;
               incomeRows.push({ accountName, amount });
             }
           }
