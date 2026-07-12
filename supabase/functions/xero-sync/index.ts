@@ -503,10 +503,16 @@ Deno.serve(async (req) => {
 
           for (const section of report?.Rows || []) {
             const sectionTitleLower = String(section.Title || '').toLowerCase();
-            const isIncomeSection = section.RowType === 'Section' && (
+            // Only true income sections. Exclude "Cost of Sales", "Less …" expense sections, etc.
+            const isExpenseLike = sectionTitleLower.includes('cost') ||
+              sectionTitleLower.includes('expense') ||
+              sectionTitleLower.includes('overhead') ||
+              sectionTitleLower.startsWith('less');
+            const isIncomeSection = section.RowType === 'Section' && !isExpenseLike && (
               sectionTitleLower.includes('income') ||
               sectionTitleLower.includes('revenue') ||
-              sectionTitleLower.includes('sales')
+              sectionTitleLower === 'sales' ||
+              sectionTitleLower.includes('trading income')
             );
             if (!isIncomeSection) continue;
 
