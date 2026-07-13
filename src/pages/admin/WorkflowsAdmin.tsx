@@ -706,11 +706,24 @@ export default function WorkflowsAdmin() {
               {/* Event Types List */}
               <div className="lg:col-span-1">
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="p-4 border-b border-border bg-muted/30">
-                    <h2 className="font-semibold">Event Types</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Select to configure workflow steps
-                    </p>
+                  <div className="p-4 border-b border-border bg-muted/30 flex items-start justify-between gap-2">
+                    <div>
+                      <h2 className="font-semibold">Event Types</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Select to configure workflow steps
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setNewEventTypeName('');
+                        setNewEventTypeCopyFrom('__none__');
+                        setNewEventTypeDialog(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
                   </div>
                   
                   <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
