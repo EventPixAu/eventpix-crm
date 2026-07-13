@@ -804,7 +804,7 @@ export default function WorkflowsAdmin() {
 
                     <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
                       {phases.map(phase => {
-                        const phaseSteps = activeSteps
+                        const phaseSteps = adminActiveSteps
                           .filter(s => s.phase === phase.key)
                           .sort(compareStepsBySortOrder);
                         if (phaseSteps.length === 0) return null;
