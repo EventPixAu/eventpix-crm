@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Info, Save, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +49,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
   const { data: staffRoles = [] } = useAllStaffRoles();
   const { data: events = [] } = useSeriesEvents(seriesId);
   const updateSeries = useUpdateEventSeries();
+  const queryClient = useQueryClient();
 
   const [adminEventTypeId, setAdminEventTypeId] = useState<string>(NONE);
   const [editorEventTypeId, setEditorEventTypeId] = useState<string>(NONE);
@@ -257,6 +259,9 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
 
       setInitialAdmin(adminEventTypeId);
       setInitialEditor(editorEventTypeId);
+      // Invalidate any cached event workflow queries so the events reflect the new steps
+      await queryClient.invalidateQueries({ queryKey: ['event-workflow-steps'] });
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
       toast.success(
         `Synced workflow to ${synced} event(s)` +
           (preserved > 0 ? `, preserved ${preserved} completed step(s)` : '') +
