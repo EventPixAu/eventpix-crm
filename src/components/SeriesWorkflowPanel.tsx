@@ -93,12 +93,8 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
   const editorEventTypeIds = useMemo(() => {
     const s = new Set<string>();
     editorDefaults.forEach(d => s.add(d.event_type_id));
-    // Also include event types whose admin defaults reference editor steps (legacy)
-    adminDefaults.forEach(d => {
-      if (editorStepIdSet.has(d.master_step_id)) s.add(d.event_type_id);
-    });
     return s;
-  }, [editorDefaults, adminDefaults, editorStepIdSet]);
+  }, [editorDefaults]);
 
   // Reverse-derive the selected event type from currently-saved step IDs
   useEffect(() => {
