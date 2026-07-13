@@ -604,7 +604,7 @@ export default function WorkflowsAdmin() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Steps</TabsTrigger>
-          <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
+          <TabsTrigger value="event-types">Admin Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
           <TabsTrigger value="editor">Editor Workflows</TabsTrigger>
           <TabsTrigger value="briefs">Team Briefs</TabsTrigger>
