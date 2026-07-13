@@ -1249,6 +1249,80 @@ export default function WorkflowsAdmin() {
       </Dialog>
 
 
+      {/* New Event Type Dialog */}
+      <Dialog open={newEventTypeDialog} onOpenChange={setNewEventTypeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Event Type</DialogTitle>
+            <DialogDescription>
+              Create a new event type. Optionally copy workflow step defaults from an existing type.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Event Type Name *</Label>
+              <Input
+                value={newEventTypeName}
+                onChange={e => setNewEventTypeName(e.target.value)}
+                placeholder="e.g., Corporate - Highlights"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label>Copy defaults from</Label>
+              <Select value={newEventTypeCopyFrom} onValueChange={setNewEventTypeCopyFrom}>
+                <SelectTrigger>
+                  <SelectValue placeholder="None (start empty)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">None (start empty)</SelectItem>
+                  {eventTypes.map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({getDefaultCount(t.id)} steps)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Copies all selected workflow steps from the chosen event type.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewEventTypeDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                const name = newEventTypeName.trim();
+                if (!name) return;
+                try {
+                  const created = await createEventType.mutateAsync(name);
+                  if (newEventTypeCopyFrom !== '__none__' && created?.id) {
+                    const stepIds = allDefaults
+                      .filter(d => d.event_type_id === newEventTypeCopyFrom)
+                      .map(d => d.master_step_id);
+                    if (stepIds.length > 0) {
+                      await setDefaults.mutateAsync({
+                        eventTypeId: created.id,
+                        stepIds,
+                      });
+                    }
+                  }
+                  setNewEventTypeDialog(false);
+                  if (created?.id) setSelectedEventType(created.id);
+                } catch (e) {
+                  // toast handled in mutation
+                }
+              }}
+              disabled={!newEventTypeName.trim() || createEventType.isPending || setDefaults.isPending}
+            >
+              Create Event Type
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Event Type Dialog */}
       <Dialog open={editEventTypeDialog} onOpenChange={setEditEventTypeDialog}>
         <DialogContent>
