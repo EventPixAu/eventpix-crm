@@ -852,7 +852,8 @@ export default function QuoteDetail() {
               target="quote"
               targetId={id}
               value={(quote as any).proposed_services}
-              invalidateKeys={[['quote', id]]}
+              eventFallback={resolvedEventFallback}
+              invalidateKeys={[['quote', id], ['quote-scope-fallback', id, resolvedLeadId, resolvedClientId]]}
             />
           )}
 
