@@ -110,7 +110,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
 
     const savedSet = new Set(savedIds);
     const savedAdmin = savedIds.filter(id => adminStepIdSet.has(id) && !editorStepIdSet.has(id));
-    const savedEditor = savedIds.filter(id => editorMasterStepIdSet.has(id) || editorStepIdSet.has(id));
+    const savedEditor = savedIds.filter(id => editorMasterStepIdSet.has(id));
 
     // Find an event type whose admin defaults exactly match savedAdmin
     const matchType = (defaults: typeof adminDefaults, target: string[], filterFn?: (id: string) => boolean) => {
@@ -129,9 +129,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
     };
 
     const admin = matchType(adminDefaults, savedAdmin, (id) => !editorStepIdSet.has(id));
-    // Editor could come from editorDefaults OR legacy adminDefaults (editor-role steps)
-    let editor = matchType(editorDefaults, savedEditor);
-    if (editor === NONE) editor = matchType(adminDefaults, savedEditor, (id) => editorStepIdSet.has(id));
+    const editor = matchType(editorDefaults, savedEditor);
 
     setAdminEventTypeId(admin);
     setEditorEventTypeId(editor);
@@ -149,10 +147,6 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
     if (editorEventTypeId !== NONE) {
       editorDefaults
         .filter(d => d.event_type_id === editorEventTypeId)
-        .forEach(d => ids.add(d.master_step_id));
-      // Also pull legacy editor-role steps from admin defaults on this event type
-      adminDefaults
-        .filter(d => d.event_type_id === editorEventTypeId && editorStepIdSet.has(d.master_step_id))
         .forEach(d => ids.add(d.master_step_id));
     }
     // Only keep step IDs that still exist as active admin or editor master steps
