@@ -361,6 +361,12 @@ export default function WorkflowsAdmin() {
   const [editEventTypeDialog, setEditEventTypeDialog] = useState(false);
   const [editEventTypeName, setEditEventTypeName] = useState('');
   const updateEventType = useUpdateEventType();
+  const createEventType = useCreateEventType();
+
+  // New Event Type State
+  const [newEventTypeDialog, setNewEventTypeDialog] = useState(false);
+  const [newEventTypeName, setNewEventTypeName] = useState('');
+  const [newEventTypeCopyFrom, setNewEventTypeCopyFrom] = useState<string>('__none__');
   
   // Master Steps Editor State
   const [editingStep, setEditingStep] = useState<WorkflowMasterStep | null>(null);
