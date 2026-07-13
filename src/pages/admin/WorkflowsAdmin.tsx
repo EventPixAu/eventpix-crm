@@ -57,7 +57,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useEventTypes } from '@/hooks/useLookups';
-import { useUpdateEventType } from '@/hooks/useAdminLookups';
+import { useUpdateEventType, useCreateEventType } from '@/hooks/useAdminLookups';
 import { 
   useWorkflowMasterSteps, 
   useAllEventTypeStepDefaults, 
