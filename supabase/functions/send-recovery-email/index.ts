@@ -37,9 +37,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { email, secret } = await req.json();
-    if (secret !== Deno.env.get("RECOVERY_SECRET")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const { email } = await req.json();
+    if (!email || typeof email !== 'string') {
+      return new Response(JSON.stringify({ error: "Email required" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
