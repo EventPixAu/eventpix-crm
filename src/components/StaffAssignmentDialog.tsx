@@ -323,7 +323,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           Manage
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Manage Staff Assignments</DialogTitle>
           <DialogDescription>
