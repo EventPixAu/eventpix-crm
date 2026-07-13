@@ -11,16 +11,14 @@ import { supabase } from '@/lib/supabase';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  
-  const { signIn, signUp, user, loading } = useAuth();
+
+  const { signIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,26 +42,11 @@ export default function Auth() {
     setIsSubmitting(true);
 
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast.error('Sign in failed', { description: error.message });
-        } else {
-          navigate(getRedirectTarget(), { replace: true });
-        }
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast.error('Sign in failed', { description: error.message });
       } else {
-        if (!fullName.trim()) {
-          toast.error('Name required', { description: 'Please enter your full name.' });
-          setIsSubmitting(false);
-          return;
-        }
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          toast.error('Sign up failed', { description: error.message });
-        } else {
-          toast.success('Account created', { description: 'Please contact an admin to assign your role.' });
-          setIsLogin(true);
-        }
+        navigate(getRedirectTarget(), { replace: true });
       }
     } finally {
       setIsSubmitting(false);
@@ -123,9 +106,9 @@ export default function Auth() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="mb-6"
           >
-            <img 
-              src={eventpixLogo} 
-              alt="Eventpixii" 
+            <img
+              src={eventpixLogo}
+              alt="Eventpixii"
               className="h-12 mx-auto"
             />
           </motion.div>
@@ -198,116 +181,68 @@ export default function Auth() {
               )}
             </>
           ) : (
-            // Login/Signup Form
-            <>
-              <div className="flex mb-6 bg-secondary/50 rounded-lg p-1">
-                <button
-                  onClick={() => setIsLogin(true)}
-                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-                    isLogin 
-                      ? 'bg-primary text-primary-foreground shadow-sm' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => setIsLogin(false)}
-                  className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-                    !isLogin 
-                      ? 'bg-primary text-primary-foreground shadow-sm' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Sign Up
-                </button>
+            // Login Form
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-secondary/50 border-border focus:border-primary focus:ring-primary"
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-2"
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPassword(true)}
+                    className="text-xs text-primary hover:underline"
                   >
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="John Smith"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="bg-secondary/50 border-border focus:border-primary focus:ring-primary"
-                    />
-                  </motion.div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="bg-secondary/50 border-border focus:border-primary focus:ring-primary"
+                    minLength={6}
+                    className="bg-secondary/50 border-border pr-12 focus:border-primary focus:ring-primary [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
                   />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation z-10"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    {isLogin && (
-                      <button
-                        type="button"
-                        onClick={() => setIsForgotPassword(true)}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="bg-secondary/50 border-border pr-12 focus:border-primary focus:ring-primary [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-strong-password-auto-fill-button]:hidden"
-                    />
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      onPointerDown={(e) => e.preventDefault()}
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground transition-colors touch-manipulation z-10"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-glow"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : isLogin ? (
-                    'Sign In'
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-            </>
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-glow"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
           )}
         </div>
 
