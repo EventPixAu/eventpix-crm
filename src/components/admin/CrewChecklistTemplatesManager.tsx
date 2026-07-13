@@ -73,17 +73,31 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
+type CrewPhase = 'pre_event' | 'event' | 'post_event';
+
+const PHASE_CONFIG = [
+  { key: 'pre_event' as CrewPhase, label: 'Pre-Event', color: 'text-info' },
+  { key: 'event' as CrewPhase, label: 'Event', color: 'text-warning' },
+  { key: 'post_event' as CrewPhase, label: 'Post-Event', color: 'text-success' },
+] as const;
+
+function phaseLabel(p: CrewPhase) {
+  return PHASE_CONFIG.find((c) => c.key === p)?.label || 'Pre-Event';
+}
+
 // Sortable item component for drag-and-drop
 interface SortableItemProps {
   id: string;
   index: number;
   itemText: string;
+  itemPhase: CrewPhase;
   onUpdate: (index: number, text: string) => void;
+  onUpdatePhase: (index: number, phase: CrewPhase) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
 }
 
-function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRemove }: SortableItemProps) {
+function SortableChecklistItem({ id, index, itemText, itemPhase, onUpdate, onUpdatePhase, onRemove, canRemove }: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -120,6 +134,16 @@ function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRem
         placeholder="Checklist item text"
         className="flex-1"
       />
+      <Select value={itemPhase} onValueChange={(v) => onUpdatePhase(index, v as CrewPhase)}>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PHASE_CONFIG.map((p) => (
+            <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Button
         type="button"
         variant="ghost"
@@ -136,9 +160,8 @@ function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRem
 interface ChecklistItem {
   item_text: string;
   sort_order: number;
+  phase: CrewPhase;
 }
-
-type CrewPhase = 'pre_event' | 'event' | 'post_event';
 
 interface CrewChecklistTemplate {
   id: string;
@@ -147,16 +170,10 @@ interface CrewChecklistTemplate {
   items: ChecklistItem[];
   is_active: boolean;
   staff_role_id: string | null;
-  phase: CrewPhase;
   created_at: string | null;
   event_type_ids: string[];
 }
 
-const PHASE_CONFIG = [
-  { key: 'pre_event' as CrewPhase, label: 'Pre-Event', color: 'text-info' },
-  { key: 'event' as CrewPhase, label: 'Event', color: 'text-warning' },
-  { key: 'post_event' as CrewPhase, label: 'Post-Event', color: 'text-success' },
-] as const;
 
 interface StaffRole {
   id: string;
@@ -196,10 +213,10 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formRoleId, setFormRoleId] = useState<string>('');
-  const [formPhase, setFormPhase] = useState<CrewPhase>('pre_event');
   const [formIsActive, setFormIsActive] = useState(true);
   const [formItems, setFormItems] = useState<ChecklistItem[]>([]);
   const [formEventTypeIds, setFormEventTypeIds] = useState<string[]>([]);
+
 
   // Fetch templates
   const { data: templates = [], isLoading } = useQuery({
@@ -256,7 +273,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       items: ChecklistItem[];
       is_active: boolean;
       staff_role_id: string | null;
-      phase: CrewPhase;
       event_type_ids: string[];
     }) => {
       let templateId = data.id;
@@ -269,7 +285,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
-            phase: data.phase,
             updated_at: new Date().toISOString(),
           })
           .eq('id', data.id);
@@ -283,7 +298,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
-            phase: data.phase,
             template_kind: kind,
           } as any)
           .select('id')
@@ -355,7 +369,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
           items: template.items as any,
           is_active: false, // Start as inactive
           staff_role_id: template.staff_role_id,
-          phase: template.phase,
           template_kind: kind,
         } as any);
       if (error) throw error;
@@ -370,14 +383,14 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
     },
   });
 
+
   const openCreate = () => {
     setIsCreateMode(true);
     setFormName('');
     setFormDescription('');
     setFormRoleId('');
-    setFormPhase('pre_event');
     setFormIsActive(true);
-    setFormItems([{ item_text: '', sort_order: 1 }]);
+    setFormItems([{ item_text: '', sort_order: 1, phase: 'pre_event' }]);
     setFormEventTypeIds([]);
     setEditingTemplate({} as CrewChecklistTemplate);
   };
@@ -387,9 +400,13 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
     setFormName(template.name);
     setFormDescription(template.description || '');
     setFormRoleId(template.staff_role_id || '');
-    setFormPhase(template.phase || 'pre_event');
     setFormIsActive(template.is_active);
-    setFormItems(template.items.length > 0 ? template.items : [{ item_text: '', sort_order: 1 }]);
+    const normalized: ChecklistItem[] = (template.items || []).map((it, i) => ({
+      item_text: it.item_text,
+      sort_order: it.sort_order ?? i + 1,
+      phase: (it as any).phase || 'pre_event',
+    }));
+    setFormItems(normalized.length > 0 ? normalized : [{ item_text: '', sort_order: 1, phase: 'pre_event' }]);
     setFormEventTypeIds(template.event_type_ids || []);
     setEditingTemplate(template);
   };
@@ -405,9 +422,13 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       return;
     }
 
-    const validItems = formItems
+    const validItems: ChecklistItem[] = formItems
       .filter((item) => item.item_text.trim())
-      .map((item, index) => ({ item_text: item.item_text.trim(), sort_order: index + 1 }));
+      .map((item, index) => ({
+        item_text: item.item_text.trim(),
+        sort_order: index + 1,
+        phase: item.phase || 'pre_event',
+      }));
 
     if (validItems.length === 0) {
       toast.error('At least one checklist item is required');
@@ -421,7 +442,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       items: validItems,
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
-      phase: formPhase,
       event_type_ids: formEventTypeIds,
     });
   };
@@ -444,7 +464,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
   };
 
   const addItem = () => {
-    setFormItems([...formItems, { item_text: '', sort_order: formItems.length + 1 }]);
+    setFormItems([...formItems, { item_text: '', sort_order: formItems.length + 1, phase: 'pre_event' }]);
   };
 
   const updateItem = (index: number, text: string) => {
@@ -452,6 +472,13 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
     updated[index] = { ...updated[index], item_text: text };
     setFormItems(updated);
   };
+
+  const updateItemPhase = (index: number, phase: CrewPhase) => {
+    const updated = [...formItems];
+    updated[index] = { ...updated[index], phase };
+    setFormItems(updated);
+  };
+
 
   const removeItem = (index: number) => {
     if (formItems.length > 1) {
@@ -503,113 +530,117 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
               {emptyStateText}
             </p>
           ) : (
-            PHASE_CONFIG.map((phase) => {
-              const phaseTemplates = templates.filter((t) => (t.phase || 'pre_event') === phase.key);
-              if (phaseTemplates.length === 0) return null;
-
-              return (
-                <div key={phase.key} className="space-y-3">
-                  <h3 className={`text-sm font-semibold uppercase tracking-wider ${phase.color}`}>
-                    {phase.label}
-                  </h3>
-                  {phaseTemplates.map((template) => (
-                    <Collapsible
-                      key={template.id}
-                      open={expandedTemplates.has(template.id)}
-                      onOpenChange={() => toggleExpanded(template.id)}
-                    >
-                      <div className="border border-border rounded-lg">
-                        <CollapsibleTrigger asChild>
-                          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
-                            <div className="flex items-center gap-3">
-                              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <span className="font-medium">{template.name}</span>
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                  <Badge variant="outline" className="text-xs">
-                                    <Users className="h-3 w-3 mr-1" />
-                                    {getRoleName(template.staff_role_id)}
-                                  </Badge>
-                                  {template.event_type_ids.length > 0 ? (
-                                    <Badge variant="outline" className="text-xs">
-                                      {template.event_type_ids.length} event type{template.event_type_ids.length === 1 ? '' : 's'}
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-xs">All event types</Badge>
-                                  )}
-                                  <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
-                                    {template.is_active ? 'Active' : 'Inactive'}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {template.items.length} items
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Duplicate"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  duplicateMutation.mutate(template);
-                                }}
-                                disabled={duplicateMutation.isPending}
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Edit"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEdit(template);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Delete"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteConfirmId(template.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                              {expandedTemplates.has(template.id) ? (
-                                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <div className="space-y-3">
+              {templates.map((template) => (
+                <Collapsible
+                  key={template.id}
+                  open={expandedTemplates.has(template.id)}
+                  onOpenChange={() => toggleExpanded(template.id)}
+                >
+                  <div className="border border-border rounded-lg">
+                    <CollapsibleTrigger asChild>
+                      <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
+                        <div className="flex items-center gap-3">
+                          <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <span className="font-medium">{template.name}</span>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <Badge variant="outline" className="text-xs">
+                                <Users className="h-3 w-3 mr-1" />
+                                {getRoleName(template.staff_role_id)}
+                              </Badge>
+                              {template.event_type_ids.length > 0 ? (
+                                <Badge variant="outline" className="text-xs">
+                                  {template.event_type_ids.length} event type{template.event_type_ids.length === 1 ? '' : 's'}
+                                </Badge>
                               ) : (
-                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                <Badge variant="outline" className="text-xs">All event types</Badge>
                               )}
-                            </div>
-                          </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-4 pb-4 pt-2 border-t border-border">
-                            {template.description && (
-                              <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                            )}
-                            <div className="space-y-2">
-                              {template.items.map((item, index) => (
-                                <div key={index} className="flex items-center gap-2 text-sm">
-                                  <span className="text-muted-foreground w-6">{index + 1}.</span>
-                                  <span>{item.item_text}</span>
-                                </div>
-                              ))}
+                              <Badge variant={template.is_active ? 'default' : 'secondary'} className="text-xs">
+                                {template.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {template.items.length} items
+                              </span>
                             </div>
                           </div>
-                        </CollapsibleContent>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Duplicate"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              duplicateMutation.mutate(template);
+                            }}
+                            disabled={duplicateMutation.isPending}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Edit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEdit(template);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Delete"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirmId(template.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                          {expandedTemplates.has(template.id) ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="px-4 pb-4 pt-2 border-t border-border space-y-3">
+                        {template.description && (
+                          <p className="text-sm text-muted-foreground">{template.description}</p>
+                        )}
+                        {PHASE_CONFIG.map((phase) => {
+                          const phaseItems = template.items.filter(
+                            (it) => ((it as any).phase || 'pre_event') === phase.key
+                          );
+                          if (phaseItems.length === 0) return null;
+                          return (
+                            <div key={phase.key} className="space-y-1">
+                              <h4 className={`text-xs font-semibold uppercase tracking-wider ${phase.color}`}>
+                                {phase.label}
+                              </h4>
+                              <div className="space-y-1 pl-2">
+                                {phaseItems.map((item, index) => (
+                                  <div key={index} className="flex items-center gap-2 text-sm">
+                                    <span className="text-muted-foreground w-6">{index + 1}.</span>
+                                    <span>{item.item_text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </Collapsible>
-                  ))}
-                </div>
-              );
-            })
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+              ))}
+            </div>
+
           )}
         </CardContent>
       </Card>
@@ -622,7 +653,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Template Name *</Label>
                 <Input
@@ -631,19 +662,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g., Lead Photographer Checklist"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phase">Phase *</Label>
-                <Select value={formPhase} onValueChange={(val) => setFormPhase(val as CrewPhase)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PHASE_CONFIG.map((p) => (
-                      <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Assigned Role</Label>
@@ -662,6 +680,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
                 </Select>
               </div>
             </div>
+
 
             <div className="space-y-2">
               <Label>Applies to Event Types</Label>
@@ -736,11 +755,14 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
                         id={`item-${index}`}
                         index={index}
                         itemText={item.item_text}
+                        itemPhase={item.phase || 'pre_event'}
                         onUpdate={updateItem}
+                        onUpdatePhase={updateItemPhase}
                         onRemove={removeItem}
                         canRemove={formItems.length > 1}
                       />
                     ))}
+
                   </div>
                 </SortableContext>
               </DndContext>
