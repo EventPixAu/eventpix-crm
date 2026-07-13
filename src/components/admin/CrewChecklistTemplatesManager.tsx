@@ -389,9 +389,8 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
     setFormName('');
     setFormDescription('');
     setFormRoleId('');
-    setFormPhase('pre_event');
     setFormIsActive(true);
-    setFormItems([{ item_text: '', sort_order: 1 }]);
+    setFormItems([{ item_text: '', sort_order: 1, phase: 'pre_event' }]);
     setFormEventTypeIds([]);
     setEditingTemplate({} as CrewChecklistTemplate);
   };
@@ -401,9 +400,13 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
     setFormName(template.name);
     setFormDescription(template.description || '');
     setFormRoleId(template.staff_role_id || '');
-    setFormPhase(template.phase || 'pre_event');
     setFormIsActive(template.is_active);
-    setFormItems(template.items.length > 0 ? template.items : [{ item_text: '', sort_order: 1 }]);
+    const normalized: ChecklistItem[] = (template.items || []).map((it, i) => ({
+      item_text: it.item_text,
+      sort_order: it.sort_order ?? i + 1,
+      phase: (it as any).phase || 'pre_event',
+    }));
+    setFormItems(normalized.length > 0 ? normalized : [{ item_text: '', sort_order: 1, phase: 'pre_event' }]);
     setFormEventTypeIds(template.event_type_ids || []);
     setEditingTemplate(template);
   };
@@ -419,9 +422,13 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       return;
     }
 
-    const validItems = formItems
+    const validItems: ChecklistItem[] = formItems
       .filter((item) => item.item_text.trim())
-      .map((item, index) => ({ item_text: item.item_text.trim(), sort_order: index + 1 }));
+      .map((item, index) => ({
+        item_text: item.item_text.trim(),
+        sort_order: index + 1,
+        phase: item.phase || 'pre_event',
+      }));
 
     if (validItems.length === 0) {
       toast.error('At least one checklist item is required');
@@ -435,7 +442,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       items: validItems,
       is_active: formIsActive,
       staff_role_id: formRoleId || null,
-      phase: formPhase,
       event_type_ids: formEventTypeIds,
     });
   };
@@ -458,7 +464,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
   };
 
   const addItem = () => {
-    setFormItems([...formItems, { item_text: '', sort_order: formItems.length + 1 }]);
+    setFormItems([...formItems, { item_text: '', sort_order: formItems.length + 1, phase: 'pre_event' }]);
   };
 
   const updateItem = (index: number, text: string) => {
@@ -466,6 +472,13 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
     updated[index] = { ...updated[index], item_text: text };
     setFormItems(updated);
   };
+
+  const updateItemPhase = (index: number, phase: CrewPhase) => {
+    const updated = [...formItems];
+    updated[index] = { ...updated[index], phase };
+    setFormItems(updated);
+  };
+
 
   const removeItem = (index: number) => {
     if (formItems.length > 1) {
