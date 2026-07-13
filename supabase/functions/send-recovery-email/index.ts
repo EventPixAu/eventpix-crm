@@ -50,11 +50,20 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: linkErr?.message ?? "Failed to generate link" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    await sendViaGmailApi(email, "Reset your EventPix password", `
-      <h2>Password Reset</h2>
-      <p>Click the button below to reset your password:</p>
-      <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset My Password</a></p>
-      <p>If you didn't request this, you can safely ignore this email.</p>
+    await sendViaGmailApi(email, "Set your EventPix password & start onboarding", `
+      <h2>Welcome to EventPix</h2>
+      <p>Your team account is ready. Click the button below to set (or reset) your password and sign in:</p>
+      <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set My Password</a></p>
+      <h3>Getting started</h3>
+      <ol>
+        <li>Click the button above and choose a password.</li>
+        <li>You'll be signed in to the EventPix dashboard at <a href="https://app.eventpix.com.au">app.eventpix.com.au</a>.</li>
+        <li>Read the <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a> — this covers everything you need before your first shift.</li>
+        <li>Complete your details under <strong>My Profile</strong> so an admin can approve you for assignments.</li>
+      </ol>
+      <p>If the button doesn't work, paste this link into your browser:<br><a href="${linkData.properties.action_link}">${linkData.properties.action_link}</a></p>
+      <p>If you didn't expect this email, you can safely ignore it.</p>
+      <hr><p>Looking forward to working with you,<br><strong>Trevor Connell</strong><br>EventPix Operations</p>
     `);
 
     await admin.from("email_logs").insert({
