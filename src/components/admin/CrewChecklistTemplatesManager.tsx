@@ -273,7 +273,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       items: ChecklistItem[];
       is_active: boolean;
       staff_role_id: string | null;
-      phase: CrewPhase;
       event_type_ids: string[];
     }) => {
       let templateId = data.id;
@@ -286,7 +285,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
-            phase: data.phase,
             updated_at: new Date().toISOString(),
           })
           .eq('id', data.id);
@@ -300,7 +298,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
             items: data.items as any,
             is_active: data.is_active,
             staff_role_id: data.staff_role_id,
-            phase: data.phase,
             template_kind: kind,
           } as any)
           .select('id')
@@ -372,7 +369,6 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
           items: template.items as any,
           is_active: false, // Start as inactive
           staff_role_id: template.staff_role_id,
-          phase: template.phase,
           template_kind: kind,
         } as any);
       if (error) throw error;
@@ -386,6 +382,7 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
       toast.error('Error duplicating template', { description: error.message });
     },
   });
+
 
   const openCreate = () => {
     setIsCreateMode(true);
