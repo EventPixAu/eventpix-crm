@@ -49,6 +49,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
   const { data: staffRoles = [] } = useAllStaffRoles();
   const { data: events = [] } = useSeriesEvents(seriesId);
   const updateSeries = useUpdateEventSeries();
+  const queryClient = useQueryClient();
 
   const [adminEventTypeId, setAdminEventTypeId] = useState<string>(NONE);
   const [editorEventTypeId, setEditorEventTypeId] = useState<string>(NONE);
