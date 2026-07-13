@@ -261,126 +261,161 @@ const isEditorRoleName = (name?: string | null) => {
      );
    }
  
-   const allSelected = masterSteps.length > 0 && masterSteps.length === selectedStepIds.length;
- 
-   return (
-     <div className="space-y-6">
-       <Alert>
-         <Info className="h-4 w-4" />
-         <AlertTitle>Series Workflow</AlertTitle>
-         <AlertDescription>
-           Select the workflow steps that will be initialized for all events in this series.
-           Individual events can still modify their workflow after creation.
-         </AlertDescription>
-       </Alert>
- 
-       <Card>
-         <CardHeader>
-           <div className="flex items-center justify-between">
-             <div>
-               <CardTitle>Default Workflow Steps</CardTitle>
-               <CardDescription>
-                 {selectedStepIds.length} of {masterSteps.length} steps selected
-               </CardDescription>
-             </div>
-             <div className="flex gap-2">
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={handleSelectAll}
-               >
-                 {allSelected ? 'Deselect All' : 'Select All'}
-               </Button>
-               {hasChanges && (
-                 <Button size="sm" onClick={handleSave} disabled={updateSeries.isPending}>
-                   <Save className="h-4 w-4 mr-2" />
-                   Save
-                 </Button>
-               )}
-             </div>
-           </div>
-         </CardHeader>
-         <CardContent>
-           <Accordion type="multiple" defaultValue={['pre_event', 'day_of', 'post_event']} className="space-y-2">
-             {(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(phase => {
-               const phaseSteps = stepsByPhase[phase];
-               const selectedInPhase = phaseSteps.filter(s => selectedStepIds.includes(s.id)).length;
-               const allPhaseSelected = phaseSteps.length > 0 && selectedInPhase === phaseSteps.length;
-               
-               return (
-                 <AccordionItem key={phase} value={phase} className="border rounded-lg px-4">
-                   <AccordionTrigger className="hover:no-underline">
-                     <div className="flex items-center gap-3">
-                       <Checkbox
-                         checked={allPhaseSelected}
-                         onCheckedChange={() => handleTogglePhase(phase)}
-                         onClick={(e) => e.stopPropagation()}
-                       />
-                       <span className={cn('font-medium', PHASE_CONFIG[phase].color)}>
-                         {PHASE_CONFIG[phase].label}
-                       </span>
-                       <Badge variant="secondary" className="ml-2">
-                         {selectedInPhase}/{phaseSteps.length}
-                       </Badge>
-                     </div>
-                   </AccordionTrigger>
-                   <AccordionContent>
-                     <div className="space-y-2 pt-2">
-                       {phaseSteps.length === 0 ? (
-                         <p className="text-sm text-muted-foreground py-2">
-                           No steps configured for this phase
-                         </p>
-                       ) : (
-                         phaseSteps.map(step => (
-                           <div
-                             key={step.id}
-                             className={cn(
-                               'flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer',
-                               selectedStepIds.includes(step.id) && 'bg-primary/5'
-                             )}
-                             onClick={() => handleToggleStep(step.id)}
-                           >
-                             <Checkbox
-                               checked={selectedStepIds.includes(step.id)}
-                               onCheckedChange={() => handleToggleStep(step.id)}
-                               onClick={(e) => e.stopPropagation()}
-                               className="mt-0.5"
-                             />
-                             <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 {selectedStepIds.includes(step.id) ? (
-                                   <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                                 ) : (
-                                   <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
-                                 )}
-                                 <span className="text-sm font-medium">{step.label}</span>
-                                 {step.completion_type === 'auto' && (
-                                   <Badge variant="outline" className="text-xs">Auto</Badge>
-                                 )}
-                               </div>
-                               {step.date_offset_days !== null && step.date_offset_reference && (
-                                 <p className="text-xs text-muted-foreground mt-1 ml-6">
-                                   {step.date_offset_days >= 0 ? '+' : ''}{step.date_offset_days} days from{' '}
-                                   {step.date_offset_reference.replace(/_/g, ' ')}
-                                 </p>
-                               )}
-                               {step.help_text && (
-                                 <p className="text-xs text-muted-foreground mt-1 ml-6 line-clamp-1">
-                                   {step.help_text}
-                                 </p>
-                               )}
-                             </div>
-                           </div>
-                         ))
-                       )}
-                     </div>
-                   </AccordionContent>
-                 </AccordionItem>
-               );
-             })}
-           </Accordion>
-         </CardContent>
-       </Card>
+  const renderScopeCard = (
+    title: string,
+    description: string,
+    scopeSteps: typeof masterSteps,
+    scopeByPhase: Record<WorkflowPhase, typeof masterSteps>,
+    accordionKey: string,
+  ) => {
+    const scopeIds = scopeSteps.map(s => s.id);
+    const scopeSelected = scopeIds.filter(id => selectedStepIds.includes(id)).length;
+    const allScopeSelected = scopeIds.length > 0 && scopeSelected === scopeIds.length;
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>
+                {description} — {scopeSelected} of {scopeIds.length} steps selected
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSelectAllScoped(scopeSteps)}
+              disabled={scopeIds.length === 0}
+            >
+              {allScopeSelected ? 'Deselect All' : 'Select All'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Accordion
+            type="multiple"
+            defaultValue={(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(p => `${accordionKey}-${p}`)}
+            className="space-y-2"
+          >
+            {(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(phase => {
+              const phaseSteps = scopeByPhase[phase];
+              const phaseIds = phaseSteps.map(s => s.id);
+              const selectedInPhase = phaseSteps.filter(s => selectedStepIds.includes(s.id)).length;
+              const allPhaseSelected = phaseSteps.length > 0 && selectedInPhase === phaseSteps.length;
+
+              return (
+                <AccordionItem key={phase} value={`${accordionKey}-${phase}`} className="border rounded-lg px-4">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={allPhaseSelected}
+                        onCheckedChange={() => handleTogglePhaseScoped(phaseIds)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className={cn('font-medium', PHASE_CONFIG[phase].color)}>
+                        {PHASE_CONFIG[phase].label}
+                      </span>
+                      <Badge variant="secondary" className="ml-2">
+                        {selectedInPhase}/{phaseSteps.length}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 pt-2">
+                      {phaseSteps.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">
+                          No steps configured for this phase
+                        </p>
+                      ) : (
+                        phaseSteps.map(step => (
+                          <div
+                            key={step.id}
+                            className={cn(
+                              'flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer',
+                              selectedStepIds.includes(step.id) && 'bg-primary/5'
+                            )}
+                            onClick={() => handleToggleStep(step.id)}
+                          >
+                            <Checkbox
+                              checked={selectedStepIds.includes(step.id)}
+                              onCheckedChange={() => handleToggleStep(step.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                {selectedStepIds.includes(step.id) ? (
+                                  <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                                ) : (
+                                  <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
+                                )}
+                                <span className="text-sm font-medium">{step.label}</span>
+                                {step.completion_type === 'auto' && (
+                                  <Badge variant="outline" className="text-xs">Auto</Badge>
+                                )}
+                              </div>
+                              {step.date_offset_days !== null && step.date_offset_reference && (
+                                <p className="text-xs text-muted-foreground mt-1 ml-6">
+                                  {step.date_offset_days >= 0 ? '+' : ''}{step.date_offset_days} days from{' '}
+                                  {step.date_offset_reference.replace(/_/g, ' ')}
+                                </p>
+                              )}
+                              {step.help_text && (
+                                <p className="text-xs text-muted-foreground mt-1 ml-6 line-clamp-1">
+                                  {step.help_text}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Series Workflow</AlertTitle>
+        <AlertDescription>
+          Select the workflow steps that will be initialized for all events in this series.
+          Individual events can still modify their workflow after creation.
+        </AlertDescription>
+      </Alert>
+
+      {hasChanges && (
+        <div className="flex justify-end">
+          <Button size="sm" onClick={handleSave} disabled={updateSeries.isPending}>
+            <Save className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+        </div>
+      )}
+
+      {renderScopeCard(
+        'Admin Workflow Steps',
+        'Steps from the Admin operations workflow',
+        adminSteps,
+        adminByPhase,
+        'admin',
+      )}
+
+      {renderScopeCard(
+        'Editor Workflow Steps',
+        'Steps from the Editor workflow',
+        editorSteps,
+        editorByPhase,
+        'editor',
+      )}
  
        <Separator />
  
