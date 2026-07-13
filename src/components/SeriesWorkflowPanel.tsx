@@ -7,11 +7,19 @@
  import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
  import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
  import { Separator } from '@/components/ui/separator';
- import { useActiveWorkflowMasterSteps, PHASE_CONFIG, WorkflowPhase } from '@/hooks/useWorkflowMasterSteps';
- import { useEventSeriesDetail, useUpdateEventSeries, useSeriesEvents } from '@/hooks/useEventSeries';
- import { supabase } from '@/lib/supabase';
- import { toast } from 'sonner';
- import { cn } from '@/lib/utils';
+import { useActiveWorkflowMasterSteps, PHASE_CONFIG, WorkflowPhase } from '@/hooks/useWorkflowMasterSteps';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
+import { useEventSeriesDetail, useUpdateEventSeries, useSeriesEvents } from '@/hooks/useEventSeries';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+// Match admin/editor split used in WorkflowsAdmin
+const isEditorRoleName = (name?: string | null) => {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return n.includes('editor') && !n.includes('admin') && !n.includes('video');
+};
  
  interface SeriesWorkflowPanelProps {
    seriesId: string;
@@ -23,75 +31,79 @@
    const { data: events = [] } = useSeriesEvents(seriesId);
    const updateSeries = useUpdateEventSeries();
  
+   const { data: staffRoles = [] } = useAllStaffRoles();
    const [selectedStepIds, setSelectedStepIds] = useState<string[]>([]);
    const [hasChanges, setHasChanges] = useState(false);
    const [isSyncing, setIsSyncing] = useState(false);
+
+  const editorRoleIds = useMemo(
+    () => new Set(staffRoles.filter((r: any) => isEditorRoleName(r.name)).map((r: any) => r.id)),
+    [staffRoles]
+  );
+
+  // Split master steps into Admin vs Editor by default role
+  const adminSteps = useMemo(
+    () => masterSteps.filter(s => !s.default_staff_role_id || !editorRoleIds.has(s.default_staff_role_id)),
+    [masterSteps, editorRoleIds]
+  );
+  const editorSteps = useMemo(
+    () => masterSteps.filter(s => s.default_staff_role_id && editorRoleIds.has(s.default_staff_role_id)),
+    [masterSteps, editorRoleIds]
+  );
+
+  // Load existing selections when series data loads
+  useEffect(() => {
+    if (series) {
+      const existingIds = (series as any).default_workflow_step_ids || [];
+      setSelectedStepIds(existingIds);
+      setHasChanges(false);
+    }
+  }, [series]);
  
-   // Load existing selections when series data loads
-   useEffect(() => {
-     if (series) {
-       const existingIds = (series as any).default_workflow_step_ids || [];
-       setSelectedStepIds(existingIds);
-       setHasChanges(false);
-     }
-   }, [series]);
- 
-   // Group steps by phase
-   const stepsByPhase = useMemo(() => {
-     const grouped: Record<WorkflowPhase, typeof masterSteps> = {
-       pre_event: [],
-       day_of: [],
-       post_event: [],
-     };
-     
-     masterSteps.forEach(step => {
-       if (grouped[step.phase]) {
-         grouped[step.phase].push(step);
-       }
-     });
-     
-     return grouped;
-   }, [masterSteps]);
- 
-   const handleToggleStep = (stepId: string) => {
-     setSelectedStepIds(prev => {
-       const next = prev.includes(stepId)
-         ? prev.filter(id => id !== stepId)
-         : [...prev, stepId];
-       setHasChanges(true);
-       return next;
-     });
-   };
- 
-   const handleTogglePhase = (phase: WorkflowPhase) => {
-     const phaseStepIds = stepsByPhase[phase].map(s => s.id);
-     const allSelected = phaseStepIds.every(id => selectedStepIds.includes(id));
-     
-     setSelectedStepIds(prev => {
-       let next: string[];
-       if (allSelected) {
-         // Deselect all in phase
-         next = prev.filter(id => !phaseStepIds.includes(id));
-       } else {
-         // Select all in phase
-         next = [...new Set([...prev, ...phaseStepIds])];
-       }
-       setHasChanges(true);
-       return next;
-     });
-   };
- 
-   const handleSelectAll = () => {
-     const allIds = masterSteps.map(s => s.id);
-     const allSelected = allIds.length === selectedStepIds.length;
-     
-     if (allSelected) {
-       setSelectedStepIds([]);
-     } else {
-       setSelectedStepIds(allIds);
-     }
-     setHasChanges(true);
-   };
+  // Group any list of steps by phase
+  const groupByPhase = (steps: typeof masterSteps) => {
+    const grouped: Record<WorkflowPhase, typeof masterSteps> = {
+      pre_event: [], day_of: [], post_event: [],
+    };
+    steps.forEach(step => { if (grouped[step.phase]) grouped[step.phase].push(step); });
+    return grouped;
+  };
+
+  const adminByPhase = useMemo(() => groupByPhase(adminSteps), [adminSteps]);
+  const editorByPhase = useMemo(() => groupByPhase(editorSteps), [editorSteps]);
+
+  const handleToggleStep = (stepId: string) => {
+    setSelectedStepIds(prev => {
+      const next = prev.includes(stepId)
+        ? prev.filter(id => id !== stepId)
+        : [...prev, stepId];
+      setHasChanges(true);
+      return next;
+    });
+  };
+
+  const handleTogglePhaseScoped = (phaseStepIds: string[]) => {
+    const allSelected = phaseStepIds.length > 0 && phaseStepIds.every(id => selectedStepIds.includes(id));
+    setSelectedStepIds(prev => {
+      const next = allSelected
+        ? prev.filter(id => !phaseStepIds.includes(id))
+        : [...new Set([...prev, ...phaseStepIds])];
+      setHasChanges(true);
+      return next;
+    });
+  };
+
+  const handleSelectAllScoped = (scopeSteps: typeof masterSteps) => {
+    const scopeIds = scopeSteps.map(s => s.id);
+    const allSelected = scopeIds.length > 0 && scopeIds.every(id => selectedStepIds.includes(id));
+    setSelectedStepIds(prev => {
+      const next = allSelected
+        ? prev.filter(id => !scopeIds.includes(id))
+        : [...new Set([...prev, ...scopeIds])];
+      setHasChanges(true);
+      return next;
+    });
+  };
  
    const handleSave = async () => {
      try {
@@ -249,126 +261,161 @@
      );
    }
  
-   const allSelected = masterSteps.length > 0 && masterSteps.length === selectedStepIds.length;
- 
-   return (
-     <div className="space-y-6">
-       <Alert>
-         <Info className="h-4 w-4" />
-         <AlertTitle>Series Workflow</AlertTitle>
-         <AlertDescription>
-           Select the workflow steps that will be initialized for all events in this series.
-           Individual events can still modify their workflow after creation.
-         </AlertDescription>
-       </Alert>
- 
-       <Card>
-         <CardHeader>
-           <div className="flex items-center justify-between">
-             <div>
-               <CardTitle>Default Workflow Steps</CardTitle>
-               <CardDescription>
-                 {selectedStepIds.length} of {masterSteps.length} steps selected
-               </CardDescription>
-             </div>
-             <div className="flex gap-2">
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={handleSelectAll}
-               >
-                 {allSelected ? 'Deselect All' : 'Select All'}
-               </Button>
-               {hasChanges && (
-                 <Button size="sm" onClick={handleSave} disabled={updateSeries.isPending}>
-                   <Save className="h-4 w-4 mr-2" />
-                   Save
-                 </Button>
-               )}
-             </div>
-           </div>
-         </CardHeader>
-         <CardContent>
-           <Accordion type="multiple" defaultValue={['pre_event', 'day_of', 'post_event']} className="space-y-2">
-             {(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(phase => {
-               const phaseSteps = stepsByPhase[phase];
-               const selectedInPhase = phaseSteps.filter(s => selectedStepIds.includes(s.id)).length;
-               const allPhaseSelected = phaseSteps.length > 0 && selectedInPhase === phaseSteps.length;
-               
-               return (
-                 <AccordionItem key={phase} value={phase} className="border rounded-lg px-4">
-                   <AccordionTrigger className="hover:no-underline">
-                     <div className="flex items-center gap-3">
-                       <Checkbox
-                         checked={allPhaseSelected}
-                         onCheckedChange={() => handleTogglePhase(phase)}
-                         onClick={(e) => e.stopPropagation()}
-                       />
-                       <span className={cn('font-medium', PHASE_CONFIG[phase].color)}>
-                         {PHASE_CONFIG[phase].label}
-                       </span>
-                       <Badge variant="secondary" className="ml-2">
-                         {selectedInPhase}/{phaseSteps.length}
-                       </Badge>
-                     </div>
-                   </AccordionTrigger>
-                   <AccordionContent>
-                     <div className="space-y-2 pt-2">
-                       {phaseSteps.length === 0 ? (
-                         <p className="text-sm text-muted-foreground py-2">
-                           No steps configured for this phase
-                         </p>
-                       ) : (
-                         phaseSteps.map(step => (
-                           <div
-                             key={step.id}
-                             className={cn(
-                               'flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer',
-                               selectedStepIds.includes(step.id) && 'bg-primary/5'
-                             )}
-                             onClick={() => handleToggleStep(step.id)}
-                           >
-                             <Checkbox
-                               checked={selectedStepIds.includes(step.id)}
-                               onCheckedChange={() => handleToggleStep(step.id)}
-                               onClick={(e) => e.stopPropagation()}
-                               className="mt-0.5"
-                             />
-                             <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-2">
-                                 {selectedStepIds.includes(step.id) ? (
-                                   <CheckCircle className="h-4 w-4 text-primary shrink-0" />
-                                 ) : (
-                                   <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
-                                 )}
-                                 <span className="text-sm font-medium">{step.label}</span>
-                                 {step.completion_type === 'auto' && (
-                                   <Badge variant="outline" className="text-xs">Auto</Badge>
-                                 )}
-                               </div>
-                               {step.date_offset_days !== null && step.date_offset_reference && (
-                                 <p className="text-xs text-muted-foreground mt-1 ml-6">
-                                   {step.date_offset_days >= 0 ? '+' : ''}{step.date_offset_days} days from{' '}
-                                   {step.date_offset_reference.replace(/_/g, ' ')}
-                                 </p>
-                               )}
-                               {step.help_text && (
-                                 <p className="text-xs text-muted-foreground mt-1 ml-6 line-clamp-1">
-                                   {step.help_text}
-                                 </p>
-                               )}
-                             </div>
-                           </div>
-                         ))
-                       )}
-                     </div>
-                   </AccordionContent>
-                 </AccordionItem>
-               );
-             })}
-           </Accordion>
-         </CardContent>
-       </Card>
+  const renderScopeCard = (
+    title: string,
+    description: string,
+    scopeSteps: typeof masterSteps,
+    scopeByPhase: Record<WorkflowPhase, typeof masterSteps>,
+    accordionKey: string,
+  ) => {
+    const scopeIds = scopeSteps.map(s => s.id);
+    const scopeSelected = scopeIds.filter(id => selectedStepIds.includes(id)).length;
+    const allScopeSelected = scopeIds.length > 0 && scopeSelected === scopeIds.length;
+
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{title}</CardTitle>
+              <CardDescription>
+                {description} — {scopeSelected} of {scopeIds.length} steps selected
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleSelectAllScoped(scopeSteps)}
+              disabled={scopeIds.length === 0}
+            >
+              {allScopeSelected ? 'Deselect All' : 'Select All'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Accordion
+            type="multiple"
+            defaultValue={(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(p => `${accordionKey}-${p}`)}
+            className="space-y-2"
+          >
+            {(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(phase => {
+              const phaseSteps = scopeByPhase[phase];
+              const phaseIds = phaseSteps.map(s => s.id);
+              const selectedInPhase = phaseSteps.filter(s => selectedStepIds.includes(s.id)).length;
+              const allPhaseSelected = phaseSteps.length > 0 && selectedInPhase === phaseSteps.length;
+
+              return (
+                <AccordionItem key={phase} value={`${accordionKey}-${phase}`} className="border rounded-lg px-4">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={allPhaseSelected}
+                        onCheckedChange={() => handleTogglePhaseScoped(phaseIds)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className={cn('font-medium', PHASE_CONFIG[phase].color)}>
+                        {PHASE_CONFIG[phase].label}
+                      </span>
+                      <Badge variant="secondary" className="ml-2">
+                        {selectedInPhase}/{phaseSteps.length}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 pt-2">
+                      {phaseSteps.length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-2">
+                          No steps configured for this phase
+                        </p>
+                      ) : (
+                        phaseSteps.map(step => (
+                          <div
+                            key={step.id}
+                            className={cn(
+                              'flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer',
+                              selectedStepIds.includes(step.id) && 'bg-primary/5'
+                            )}
+                            onClick={() => handleToggleStep(step.id)}
+                          >
+                            <Checkbox
+                              checked={selectedStepIds.includes(step.id)}
+                              onCheckedChange={() => handleToggleStep(step.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                {selectedStepIds.includes(step.id) ? (
+                                  <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                                ) : (
+                                  <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
+                                )}
+                                <span className="text-sm font-medium">{step.label}</span>
+                                {step.completion_type === 'auto' && (
+                                  <Badge variant="outline" className="text-xs">Auto</Badge>
+                                )}
+                              </div>
+                              {step.date_offset_days !== null && step.date_offset_reference && (
+                                <p className="text-xs text-muted-foreground mt-1 ml-6">
+                                  {step.date_offset_days >= 0 ? '+' : ''}{step.date_offset_days} days from{' '}
+                                  {step.date_offset_reference.replace(/_/g, ' ')}
+                                </p>
+                              )}
+                              {step.help_text && (
+                                <p className="text-xs text-muted-foreground mt-1 ml-6 line-clamp-1">
+                                  {step.help_text}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Series Workflow</AlertTitle>
+        <AlertDescription>
+          Select the workflow steps that will be initialized for all events in this series.
+          Individual events can still modify their workflow after creation.
+        </AlertDescription>
+      </Alert>
+
+      {hasChanges && (
+        <div className="flex justify-end">
+          <Button size="sm" onClick={handleSave} disabled={updateSeries.isPending}>
+            <Save className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+        </div>
+      )}
+
+      {renderScopeCard(
+        'Admin Workflow Steps',
+        'Steps from the Admin operations workflow',
+        adminSteps,
+        adminByPhase,
+        'admin',
+      )}
+
+      {renderScopeCard(
+        'Editor Workflow Steps',
+        'Steps from the Editor workflow',
+        editorSteps,
+        editorByPhase,
+        'editor',
+      )}
  
        <Separator />
  
