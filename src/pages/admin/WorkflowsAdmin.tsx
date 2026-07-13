@@ -1299,9 +1299,11 @@ export default function WorkflowsAdmin() {
                 try {
                   const created = await createEventType.mutateAsync(name);
                   if (newEventTypeCopyFrom !== '__none__' && created?.id) {
+                    const validIds = new Set((masterSteps || []).map((s: any) => s.id));
                     const stepIds = allDefaults
                       .filter(d => d.event_type_id === newEventTypeCopyFrom)
-                      .map(d => d.master_step_id);
+                      .map(d => d.master_step_id)
+                      .filter(id => validIds.has(id));
                     if (stepIds.length > 0) {
                       await setDefaults.mutateAsync({
                         eventTypeId: created.id,
