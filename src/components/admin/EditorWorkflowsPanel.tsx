@@ -401,6 +401,16 @@ export default function EditorWorkflowsPanel() {
                     <Settings2 className="h-4 w-4 mr-1" />
                     Sync from Master
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSyncToUpcoming}
+                    disabled={isSyncing || hasChanges}
+                    title={hasChanges ? 'Save changes first' : 'Apply current defaults to all upcoming events of this event type'}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                    Apply to upcoming events
+                  </Button>
                   {hasChanges && (
                     <Button onClick={handleSave} disabled={setDefaults.isPending}>
                       <Save className="h-4 w-4 mr-2" />
