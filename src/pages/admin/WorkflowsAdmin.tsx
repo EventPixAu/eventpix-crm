@@ -395,6 +395,21 @@ export default function WorkflowsAdmin() {
   // Active steps only
   const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
 
+  // Admin-role steps only (for Admin Workflows tab) — excludes Editor/Video roles
+  const adminRoleIds = useMemo(() => {
+    const isAdminRoleName = (name?: string | null) => {
+      if (!name) return false;
+      const n = name.toLowerCase();
+      // Admin roles include "Staff Admin"; exclude editor/video roles
+      return !n.includes('editor') && !n.includes('video');
+    };
+    return new Set(staffRoles.filter(r => isAdminRoleName(r.name)).map(r => r.id));
+  }, [staffRoles]);
+  const adminActiveSteps = useMemo(
+    () => activeSteps.filter(s => s.default_staff_role_id && adminRoleIds.has(s.default_staff_role_id)),
+    [activeSteps, adminRoleIds]
+  );
+
   // Load defaults when event type is selected
   useEffect(() => {
     if (selectedEventType && allDefaults) {
