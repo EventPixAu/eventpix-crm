@@ -73,17 +73,31 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
+type CrewPhase = 'pre_event' | 'event' | 'post_event';
+
+const PHASE_CONFIG = [
+  { key: 'pre_event' as CrewPhase, label: 'Pre-Event', color: 'text-info' },
+  { key: 'event' as CrewPhase, label: 'Event', color: 'text-warning' },
+  { key: 'post_event' as CrewPhase, label: 'Post-Event', color: 'text-success' },
+] as const;
+
+function phaseLabel(p: CrewPhase) {
+  return PHASE_CONFIG.find((c) => c.key === p)?.label || 'Pre-Event';
+}
+
 // Sortable item component for drag-and-drop
 interface SortableItemProps {
   id: string;
   index: number;
   itemText: string;
+  itemPhase: CrewPhase;
   onUpdate: (index: number, text: string) => void;
+  onUpdatePhase: (index: number, phase: CrewPhase) => void;
   onRemove: (index: number) => void;
   canRemove: boolean;
 }
 
-function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRemove }: SortableItemProps) {
+function SortableChecklistItem({ id, index, itemText, itemPhase, onUpdate, onUpdatePhase, onRemove, canRemove }: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -120,6 +134,16 @@ function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRem
         placeholder="Checklist item text"
         className="flex-1"
       />
+      <Select value={itemPhase} onValueChange={(v) => onUpdatePhase(index, v as CrewPhase)}>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {PHASE_CONFIG.map((p) => (
+            <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Button
         type="button"
         variant="ghost"
@@ -136,9 +160,8 @@ function SortableChecklistItem({ id, index, itemText, onUpdate, onRemove, canRem
 interface ChecklistItem {
   item_text: string;
   sort_order: number;
+  phase: CrewPhase;
 }
-
-type CrewPhase = 'pre_event' | 'event' | 'post_event';
 
 interface CrewChecklistTemplate {
   id: string;
@@ -147,16 +170,10 @@ interface CrewChecklistTemplate {
   items: ChecklistItem[];
   is_active: boolean;
   staff_role_id: string | null;
-  phase: CrewPhase;
   created_at: string | null;
   event_type_ids: string[];
 }
 
-const PHASE_CONFIG = [
-  { key: 'pre_event' as CrewPhase, label: 'Pre-Event', color: 'text-info' },
-  { key: 'event' as CrewPhase, label: 'Event', color: 'text-warning' },
-  { key: 'post_event' as CrewPhase, label: 'Post-Event', color: 'text-success' },
-] as const;
 
 interface StaffRole {
   id: string;
