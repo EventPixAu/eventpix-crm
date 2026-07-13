@@ -60,62 +60,50 @@ const isEditorRoleName = (name?: string | null) => {
     }
   }, [series]);
  
-   // Group steps by phase
-   const stepsByPhase = useMemo(() => {
-     const grouped: Record<WorkflowPhase, typeof masterSteps> = {
-       pre_event: [],
-       day_of: [],
-       post_event: [],
-     };
-     
-     masterSteps.forEach(step => {
-       if (grouped[step.phase]) {
-         grouped[step.phase].push(step);
-       }
-     });
-     
-     return grouped;
-   }, [masterSteps]);
- 
-   const handleToggleStep = (stepId: string) => {
-     setSelectedStepIds(prev => {
-       const next = prev.includes(stepId)
-         ? prev.filter(id => id !== stepId)
-         : [...prev, stepId];
-       setHasChanges(true);
-       return next;
-     });
-   };
- 
-   const handleTogglePhase = (phase: WorkflowPhase) => {
-     const phaseStepIds = stepsByPhase[phase].map(s => s.id);
-     const allSelected = phaseStepIds.every(id => selectedStepIds.includes(id));
-     
-     setSelectedStepIds(prev => {
-       let next: string[];
-       if (allSelected) {
-         // Deselect all in phase
-         next = prev.filter(id => !phaseStepIds.includes(id));
-       } else {
-         // Select all in phase
-         next = [...new Set([...prev, ...phaseStepIds])];
-       }
-       setHasChanges(true);
-       return next;
-     });
-   };
- 
-   const handleSelectAll = () => {
-     const allIds = masterSteps.map(s => s.id);
-     const allSelected = allIds.length === selectedStepIds.length;
-     
-     if (allSelected) {
-       setSelectedStepIds([]);
-     } else {
-       setSelectedStepIds(allIds);
-     }
-     setHasChanges(true);
-   };
+  // Group any list of steps by phase
+  const groupByPhase = (steps: typeof masterSteps) => {
+    const grouped: Record<WorkflowPhase, typeof masterSteps> = {
+      pre_event: [], day_of: [], post_event: [],
+    };
+    steps.forEach(step => { if (grouped[step.phase]) grouped[step.phase].push(step); });
+    return grouped;
+  };
+
+  const adminByPhase = useMemo(() => groupByPhase(adminSteps), [adminSteps]);
+  const editorByPhase = useMemo(() => groupByPhase(editorSteps), [editorSteps]);
+
+  const handleToggleStep = (stepId: string) => {
+    setSelectedStepIds(prev => {
+      const next = prev.includes(stepId)
+        ? prev.filter(id => id !== stepId)
+        : [...prev, stepId];
+      setHasChanges(true);
+      return next;
+    });
+  };
+
+  const handleTogglePhaseScoped = (phaseStepIds: string[]) => {
+    const allSelected = phaseStepIds.length > 0 && phaseStepIds.every(id => selectedStepIds.includes(id));
+    setSelectedStepIds(prev => {
+      const next = allSelected
+        ? prev.filter(id => !phaseStepIds.includes(id))
+        : [...new Set([...prev, ...phaseStepIds])];
+      setHasChanges(true);
+      return next;
+    });
+  };
+
+  const handleSelectAllScoped = (scopeSteps: typeof masterSteps) => {
+    const scopeIds = scopeSteps.map(s => s.id);
+    const allSelected = scopeIds.length > 0 && scopeIds.every(id => selectedStepIds.includes(id));
+    setSelectedStepIds(prev => {
+      const next = allSelected
+        ? prev.filter(id => !scopeIds.includes(id))
+        : [...new Set([...prev, ...scopeIds])];
+      setHasChanges(true);
+      return next;
+    });
+  };
  
    const handleSave = async () => {
      try {
