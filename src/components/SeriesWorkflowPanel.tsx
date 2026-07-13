@@ -31,14 +31,10 @@ const isEditorRoleName = (name?: string | null) => {
    const { data: events = [] } = useSeriesEvents(seriesId);
    const updateSeries = useUpdateEventSeries();
  
+   const { data: staffRoles = [] } = useAllStaffRoles();
    const [selectedStepIds, setSelectedStepIds] = useState<string[]>([]);
    const [hasChanges, setHasChanges] = useState(false);
    const [isSyncing, setIsSyncing] = useState(false);
- 
-  const { data: staffRoles = [] } = useAllStaffRoles();
-  const [selectedStepIds, setSelectedStepIds] = useState<string[]>([]);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const editorRoleIds = useMemo(
     () => new Set(staffRoles.filter((r: any) => isEditorRoleName(r.name)).map((r: any) => r.id)),
