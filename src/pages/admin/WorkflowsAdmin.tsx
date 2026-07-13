@@ -395,6 +395,21 @@ export default function WorkflowsAdmin() {
   // Active steps only
   const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
 
+  // Admin-role steps only (for Admin Workflows tab) — excludes Editor/Video roles
+  const adminRoleIds = useMemo(() => {
+    const isAdminRoleName = (name?: string | null) => {
+      if (!name) return false;
+      const n = name.toLowerCase();
+      // Admin roles include "Staff Admin"; exclude editor/video roles
+      return !n.includes('editor') && !n.includes('video');
+    };
+    return new Set(staffRoles.filter(r => isAdminRoleName(r.name)).map(r => r.id));
+  }, [staffRoles]);
+  const adminActiveSteps = useMemo(
+    () => activeSteps.filter(s => s.default_staff_role_id && adminRoleIds.has(s.default_staff_role_id)),
+    [activeSteps, adminRoleIds]
+  );
+
   // Load defaults when event type is selected
   useEffect(() => {
     if (selectedEventType && allDefaults) {
@@ -604,7 +619,7 @@ export default function WorkflowsAdmin() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="operations">Operations Steps</TabsTrigger>
-          <TabsTrigger value="event-types">Event Type Defaults</TabsTrigger>
+          <TabsTrigger value="event-types">Admin Workflows</TabsTrigger>
           <TabsTrigger value="crew">Crew Checklists</TabsTrigger>
           <TabsTrigger value="editor">Editor Workflows</TabsTrigger>
           <TabsTrigger value="briefs">Team Briefs</TabsTrigger>
@@ -789,7 +804,7 @@ export default function WorkflowsAdmin() {
 
                     <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
                       {phases.map(phase => {
-                        const phaseSteps = activeSteps
+                        const phaseSteps = adminActiveSteps
                           .filter(s => s.phase === phase.key)
                           .sort(compareStepsBySortOrder);
                         if (phaseSteps.length === 0) return null;
@@ -830,9 +845,10 @@ export default function WorkflowsAdmin() {
                         );
                       })}
 
-                      {activeSteps.length === 0 && (
+                      {adminActiveSteps.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
-                          No active steps available. Create steps in the Operations Steps tab.
+                          No Admin steps found in the Master Workflow. Assign a
+                          Staff Admin role to steps in the Operations Steps tab.
                         </div>
                       )}
                     </div>
