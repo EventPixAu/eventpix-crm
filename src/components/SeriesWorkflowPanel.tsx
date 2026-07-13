@@ -259,6 +259,9 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
 
       setInitialAdmin(adminEventTypeId);
       setInitialEditor(editorEventTypeId);
+      // Invalidate any cached event workflow queries so the events reflect the new steps
+      await queryClient.invalidateQueries({ queryKey: ['event-workflow-steps'] });
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
       toast.success(
         `Synced workflow to ${synced} event(s)` +
           (preserved > 0 ? `, preserved ${preserved} completed step(s)` : '') +
