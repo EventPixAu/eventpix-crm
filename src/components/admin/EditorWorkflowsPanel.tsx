@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Save, Settings2, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Save, Settings2, Pencil, Trash2, GripVertical, RefreshCw } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
