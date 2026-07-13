@@ -7,11 +7,19 @@
  import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
  import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
  import { Separator } from '@/components/ui/separator';
- import { useActiveWorkflowMasterSteps, PHASE_CONFIG, WorkflowPhase } from '@/hooks/useWorkflowMasterSteps';
- import { useEventSeriesDetail, useUpdateEventSeries, useSeriesEvents } from '@/hooks/useEventSeries';
- import { supabase } from '@/lib/supabase';
- import { toast } from 'sonner';
- import { cn } from '@/lib/utils';
+import { useActiveWorkflowMasterSteps, PHASE_CONFIG, WorkflowPhase } from '@/hooks/useWorkflowMasterSteps';
+import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
+import { useEventSeriesDetail, useUpdateEventSeries, useSeriesEvents } from '@/hooks/useEventSeries';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+// Match admin/editor split used in WorkflowsAdmin
+const isEditorRoleName = (name?: string | null) => {
+  if (!name) return false;
+  const n = name.toLowerCase();
+  return n.includes('editor') && !n.includes('admin') && !n.includes('video');
+};
  
  interface SeriesWorkflowPanelProps {
    seriesId: string;
