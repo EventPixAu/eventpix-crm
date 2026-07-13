@@ -755,11 +755,14 @@ export function CrewChecklistTemplatesManager({ kind = 'crew' }: CrewChecklistTe
                         id={`item-${index}`}
                         index={index}
                         itemText={item.item_text}
+                        itemPhase={item.phase || 'pre_event'}
                         onUpdate={updateItem}
+                        onUpdatePhase={updateItemPhase}
                         onRemove={removeItem}
                         canRemove={formItems.length > 1}
                       />
                     ))}
+
                   </div>
                 </SortableContext>
               </DndContext>
