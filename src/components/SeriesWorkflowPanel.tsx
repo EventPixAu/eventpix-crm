@@ -35,14 +35,34 @@ const isEditorRoleName = (name?: string | null) => {
    const [hasChanges, setHasChanges] = useState(false);
    const [isSyncing, setIsSyncing] = useState(false);
  
-   // Load existing selections when series data loads
-   useEffect(() => {
-     if (series) {
-       const existingIds = (series as any).default_workflow_step_ids || [];
-       setSelectedStepIds(existingIds);
-       setHasChanges(false);
-     }
-   }, [series]);
+  const { data: staffRoles = [] } = useAllStaffRoles();
+  const [selectedStepIds, setSelectedStepIds] = useState<string[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const editorRoleIds = useMemo(
+    () => new Set(staffRoles.filter((r: any) => isEditorRoleName(r.name)).map((r: any) => r.id)),
+    [staffRoles]
+  );
+
+  // Split master steps into Admin vs Editor by default role
+  const adminSteps = useMemo(
+    () => masterSteps.filter(s => !s.default_staff_role_id || !editorRoleIds.has(s.default_staff_role_id)),
+    [masterSteps, editorRoleIds]
+  );
+  const editorSteps = useMemo(
+    () => masterSteps.filter(s => s.default_staff_role_id && editorRoleIds.has(s.default_staff_role_id)),
+    [masterSteps, editorRoleIds]
+  );
+
+  // Load existing selections when series data loads
+  useEffect(() => {
+    if (series) {
+      const existingIds = (series as any).default_workflow_step_ids || [];
+      setSelectedStepIds(existingIds);
+      setHasChanges(false);
+    }
+  }, [series]);
  
    // Group steps by phase
    const stepsByPhase = useMemo(() => {
