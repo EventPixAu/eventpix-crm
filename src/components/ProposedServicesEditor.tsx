@@ -146,7 +146,7 @@ export function ProposedServicesEditor({
         {mode === 'preview' ? (
           <div
             ref={editableRef}
-            className="border rounded-md p-3 bg-background min-h-[140px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="border rounded-md p-3 bg-background text-foreground min-h-[140px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm focus:outline-none focus:ring-2 focus:ring-ring [&_*]:text-foreground"
             contentEditable
             suppressContentEditableWarning
             onBlur={(e) => setDraft(e.currentTarget.innerHTML)}
