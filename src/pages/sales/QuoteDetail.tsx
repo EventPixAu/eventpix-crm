@@ -128,6 +128,39 @@ export default function QuoteDetail() {
       return (data as any)?.proposed_services || null;
     },
   });
+
+  // Resolve an event fallback via lead / client when the quote isn't directly linked to an event
+  const resolvedLeadId = (quote as any)?.lead_id || null;
+  const resolvedClientId = (quote as any)?.client_id || null;
+  const { data: resolvedEventFallback } = useQuery({
+    queryKey: ['quote-scope-fallback', id, resolvedLeadId, resolvedClientId],
+    enabled: !!id && !linkedEventIdForScope && (!!resolvedLeadId || !!resolvedClientId),
+    queryFn: async () => {
+      if (resolvedLeadId) {
+        const { data } = await supabase
+          .from('events')
+          .select('proposed_services, event_date')
+          .eq('lead_id', resolvedLeadId)
+          .not('proposed_services', 'is', null)
+          .order('event_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if ((data as any)?.proposed_services) return (data as any).proposed_services as string;
+      }
+      if (resolvedClientId) {
+        const { data } = await supabase
+          .from('events')
+          .select('proposed_services, event_date')
+          .eq('client_id', resolvedClientId)
+          .not('proposed_services', 'is', null)
+          .order('event_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if ((data as any)?.proposed_services) return (data as any).proposed_services as string;
+      }
+      return null;
+    },
+  });
   
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
