@@ -44,26 +44,11 @@ export default function Auth() {
     setIsSubmitting(true);
 
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast.error('Sign in failed', { description: error.message });
-        } else {
-          navigate(getRedirectTarget(), { replace: true });
-        }
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast.error('Sign in failed', { description: error.message });
       } else {
-        if (!fullName.trim()) {
-          toast.error('Name required', { description: 'Please enter your full name.' });
-          setIsSubmitting(false);
-          return;
-        }
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          toast.error('Sign up failed', { description: error.message });
-        } else {
-          toast.success('Account created', { description: 'Please contact an admin to assign your role.' });
-          setIsLogin(true);
-        }
+        navigate(getRedirectTarget(), { replace: true });
       }
     } finally {
       setIsSubmitting(false);
