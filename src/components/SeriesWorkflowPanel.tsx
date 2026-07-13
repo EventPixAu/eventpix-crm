@@ -21,7 +21,6 @@ import {
   WorkflowPhase,
   WorkflowMasterStep,
 } from '@/hooks/useWorkflowMasterSteps';
-import { useAllEditorEventTypeStepDefaults, useEditorWorkflowMasterSteps } from '@/hooks/useEditorWorkflowMasterSteps';
 import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 import { useEventTypes } from '@/hooks/useLookups';
 import { useEventSeriesDetail, useUpdateEventSeries, useSeriesEvents } from '@/hooks/useEventSeries';
@@ -46,9 +45,7 @@ interface SeriesWorkflowPanelProps {
 export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
   const { data: series, isLoading: seriesLoading } = useEventSeriesDetail(seriesId);
   const { data: masterSteps = [], isLoading: stepsLoading } = useActiveWorkflowMasterSteps();
-  const { data: editorMasterStepsRaw = [], isLoading: editorStepsLoading } = useEditorWorkflowMasterSteps();
   const { data: adminDefaults = [] } = useAllEventTypeStepDefaults();
-  const { data: editorDefaults = [] } = useAllEditorEventTypeStepDefaults();
   const { data: eventTypes = [] } = useEventTypes();
   const { data: staffRoles = [] } = useAllStaffRoles();
   const { data: events = [] } = useSeriesEvents(seriesId);
@@ -69,16 +66,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
     () => new Set(masterSteps.filter(s => s.default_staff_role_id && editorRoleIds.has(s.default_staff_role_id)).map(s => s.id)),
     [masterSteps, editorRoleIds]
   );
-  const editorMasterSteps = useMemo(
-    () => editorMasterStepsRaw.filter((s: any) => s.is_active !== false),
-    [editorMasterStepsRaw]
-  );
   const adminStepIdSet = useMemo(() => new Set(masterSteps.map(s => s.id)), [masterSteps]);
-  const editorMasterStepIdSet = useMemo(() => new Set(editorMasterSteps.map(s => s.id)), [editorMasterSteps]);
-  const allActiveStepIds = useMemo(
-    () => new Set([...adminStepIdSet, ...editorMasterStepIdSet]),
-    [adminStepIdSet, editorMasterStepIdSet]
-  );
 
   // Event types that actually have admin/editor defaults configured
   const adminEventTypeIds = useMemo(() => {
@@ -92,9 +80,12 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
 
   const editorEventTypeIds = useMemo(() => {
     const s = new Set<string>();
-    editorDefaults.forEach(d => s.add(d.event_type_id));
+    adminDefaults.forEach(d => {
+      // Admin → Workflows → Editor Workflows stores Staff Editor steps in the main defaults table.
+      if (editorStepIdSet.has(d.master_step_id)) s.add(d.event_type_id);
+    });
     return s;
-  }, [editorDefaults]);
+  }, [adminDefaults, editorStepIdSet]);
 
   // Reverse-derive the selected event type from currently-saved step IDs
   useEffect(() => {
@@ -110,7 +101,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
 
     const savedSet = new Set(savedIds);
     const savedAdmin = savedIds.filter(id => adminStepIdSet.has(id) && !editorStepIdSet.has(id));
-    const savedEditor = savedIds.filter(id => editorMasterStepIdSet.has(id));
+    const savedEditor = savedIds.filter(id => editorStepIdSet.has(id));
 
     // Find an event type whose admin defaults exactly match savedAdmin
     const matchType = (defaults: typeof adminDefaults, target: string[], filterFn?: (id: string) => boolean) => {
@@ -129,13 +120,13 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
     };
 
     const admin = matchType(adminDefaults, savedAdmin, (id) => !editorStepIdSet.has(id));
-    const editor = matchType(editorDefaults, savedEditor);
+    const editor = matchType(adminDefaults, savedEditor, (id) => editorStepIdSet.has(id));
 
     setAdminEventTypeId(admin);
     setEditorEventTypeId(editor);
     setInitialAdmin(admin);
     setInitialEditor(editor);
-  }, [series, masterSteps, adminDefaults, editorDefaults, editorStepIdSet, adminStepIdSet, editorMasterStepIdSet]);
+  }, [series, masterSteps, adminDefaults, editorStepIdSet, adminStepIdSet]);
 
   const resolvedStepIds = useMemo(() => {
     const ids = new Set<string>();
@@ -145,30 +136,27 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
         .forEach(d => ids.add(d.master_step_id));
     }
     if (editorEventTypeId !== NONE) {
-      editorDefaults
-        .filter(d => d.event_type_id === editorEventTypeId)
+      adminDefaults
+        .filter(d => d.event_type_id === editorEventTypeId && editorStepIdSet.has(d.master_step_id))
         .forEach(d => ids.add(d.master_step_id));
     }
-    // Only keep step IDs that still exist as active admin or editor master steps
-    return [...ids].filter(id => allActiveStepIds.has(id));
-  }, [adminEventTypeId, editorEventTypeId, adminDefaults, editorDefaults, editorStepIdSet, allActiveStepIds]);
+    // Only keep step IDs that still exist as active master steps.
+    return [...ids].filter(id => adminStepIdSet.has(id));
+  }, [adminEventTypeId, editorEventTypeId, adminDefaults, editorStepIdSet, adminStepIdSet]);
 
   const selectedSteps = useMemo<ScopedWorkflowStep[]>(() => {
     const selected = new Set(resolvedStepIds);
-    const adminSelected = masterSteps
+    const selectedMasterSteps = masterSteps
       .filter(s => selected.has(s.id))
       .map(s => ({ ...s, workflowScope: editorStepIdSet.has(s.id) ? 'editor' : 'admin' } as ScopedWorkflowStep));
-    const editorSelected = editorMasterSteps
-      .filter(s => selected.has(s.id))
-      .map(s => ({ ...s, workflowScope: 'editor' } as ScopedWorkflowStep));
 
     const phaseOrder: Record<WorkflowPhase, number> = { pre_event: 0, day_of: 1, post_event: 2 };
-    return [...adminSelected, ...editorSelected].sort((a, b) => {
+    return selectedMasterSteps.sort((a, b) => {
       if (a.phase !== b.phase) return (phaseOrder[a.phase] || 0) - (phaseOrder[b.phase] || 0);
       if (a.workflowScope !== b.workflowScope) return a.workflowScope === 'admin' ? -1 : 1;
       return a.sort_order - b.sort_order;
     });
-  }, [resolvedStepIds, masterSteps, editorMasterSteps, editorStepIdSet]);
+  }, [resolvedStepIds, masterSteps, editorStepIdSet]);
 
   const hasChanges = adminEventTypeId !== initialAdmin || editorEventTypeId !== initialEditor;
 
@@ -285,7 +273,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
     }
   };
 
-  if (seriesLoading || stepsLoading || editorStepsLoading) {
+  if (seriesLoading || stepsLoading) {
     return (
       <div className="py-8 text-center text-muted-foreground">
         Loading workflow configuration...
