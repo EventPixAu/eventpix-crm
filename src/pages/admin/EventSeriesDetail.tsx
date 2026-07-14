@@ -869,6 +869,13 @@ export default function EventSeriesDetail() {
           )}
         </TabsContent>
 
+        {/* Budget Tab */}
+        <TabsContent value="budget" className="space-y-4">
+          {id && series && (
+            <SeriesBudgetAgreementPanel seriesId={id} seriesName={series.name} />
+          )}
+        </TabsContent>
+
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
           <div className="grid lg:grid-cols-2 gap-6">
