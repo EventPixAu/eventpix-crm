@@ -450,19 +450,11 @@ export default function LeadDetail(): JSX.Element {
             ) : undefined}
             onAdd={async () => {
               try {
-                const primaryContact = leadContacts.find(c => c.role === 'primary') || leadContacts[0];
-                const contactName = primaryContact?.client_contact?.contact_name || primaryContact?.contact_name || null;
-                const contactEmail = primaryContact?.client_contact?.email || primaryContact?.contact_email || null;
-                const venueText = (lead as any).venue_text || (lead as any).venue_address || null;
                 const newQuote = await createQuote.mutateAsync({
                   status: 'draft',
                   lead_id: id!,
                   client_id: client?.id ?? null,
-                  event_name: lead.lead_name ?? null,
-                  event_date: mainSession?.session_date ?? null,
-                  venue: venueText,
-                  contact_name: contactName,
-                  contact_email: contactEmail,
+                  quote_name: lead.lead_name ?? null,
                 } as any);
                 navigate(`/sales/quotes/${newQuote.id}`);
               } catch (err) {
