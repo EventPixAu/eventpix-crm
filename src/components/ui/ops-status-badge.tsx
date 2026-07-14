@@ -44,6 +44,11 @@ export function OpsStatusBadge({ status, className }: OpsStatusBadgeProps) {
       icon: Archive,
       className: 'border-gray-500/50 bg-gray-500/10 text-gray-500 dark:text-gray-400',
     },
+    postponed: {
+      label: 'Event Postponed',
+      icon: CalendarX,
+      className: 'border-orange-500/50 bg-orange-500/10 text-orange-700 dark:text-orange-400',
+    },
   };
 
   const currentStatus = status || 'awaiting_details';
