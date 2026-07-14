@@ -1450,6 +1450,8 @@ export default function EventDetail() {
                   eventId={id!}
                   quoteId={(event as any).quote_id}
                   leadId={(event as any).lead_id}
+                  eventSeriesId={(event as any).event_series_id}
+                  clientId={(event as any).client_id}
                 />
               )}
 
