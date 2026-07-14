@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle, Play, Truck, Archive } from 'lucide-react';
+import { Clock, CheckCircle, Play, Truck, Archive, CalendarX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OpsStatusBadgeProps {
-  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | null;
+  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | 'postponed' | null;
   className?: string;
 }
 
