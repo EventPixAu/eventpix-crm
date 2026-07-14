@@ -36,7 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUpdateQuote, useDeleteQuote } from '@/hooks/useSales';
+import { useUpdateQuote, useDeleteQuote, useCreateQuote } from '@/hooks/useSales';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
