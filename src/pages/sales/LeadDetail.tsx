@@ -101,6 +101,7 @@ export default function LeadDetail(): JSX.Element {
   const updateLead = useUpdateLead();
   const updateQuote = useUpdateQuote();
   const deleteQuote = useDeleteQuote();
+  const createQuote = useCreateQuote();
   
   // Workflow state
   const { data: workflowItems = [] } = useLeadWorkflowItems(isCreateMode ? undefined : id);
