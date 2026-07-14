@@ -617,6 +617,7 @@ export default function EventDetail() {
   const queryClient = useQueryClient();
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [postponeConfirmOpen, setPostponeConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
@@ -1301,6 +1302,10 @@ export default function EventDetail() {
                       <Select
                         value={(event as any).ops_status || 'awaiting_details'}
                         onValueChange={async (value) => {
+                          if (value === 'postponed') {
+                            setPostponeConfirmOpen(true);
+                            return;
+                          }
                           setIsUpdatingStatus(true);
                           await updateEvent.mutateAsync({
                             id: event.id,
@@ -1324,9 +1329,65 @@ export default function EventDetail() {
                           <SelectItem value="in_progress">In Progress</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="postponed">Event Postponed</SelectItem>
                           <SelectItem value="archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
+                      <AlertDialog open={postponeConfirmOpen} onOpenChange={setPostponeConfirmOpen}>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Postpone this event?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will clear the event date and times and move the event back into Sales.
+                              {(event as any).lead_id
+                                ? ' The linked lead will be reopened to "New Lead".'
+                                : ' No linked lead was found — the event will remain here with its date cleared.'}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                setIsUpdatingStatus(true);
+                                try {
+                                  await updateEvent.mutateAsync({
+                                    id: event.id,
+                                    ops_status: 'postponed',
+                                    event_date: null as any,
+                                    start_time: null as any,
+                                    end_time: null as any,
+                                    start_at: null as any,
+                                    end_at: null as any,
+                                  });
+                                  const leadId = (event as any).lead_id as string | null;
+                                  if (leadId) {
+                                    await supabase
+                                      .from('leads')
+                                      .update({ status: 'new' })
+                                      .eq('id', leadId);
+                                    if (event.client_id) {
+                                      await setClientStatusAuto(event.client_id, 'prospect', 'event_postponed');
+                                    }
+                                    queryClient.invalidateQueries({ queryKey: ['leads'] });
+                                    toast.success('Event postponed', { description: 'Moved back to Sales — opening lead.' });
+                                    setPostponeConfirmOpen(false);
+                                    navigate(`/sales/leads/${leadId}`);
+                                    return;
+                                  }
+                                  toast.success('Event postponed', { description: 'Date cleared. No linked lead to reopen.' });
+                                  setPostponeConfirmOpen(false);
+                                } catch (err: any) {
+                                  toast.error('Failed to postpone event', { description: err?.message });
+                                } finally {
+                                  setIsUpdatingStatus(false);
+                                }
+                              }}
+                            >
+                              Postpone event
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="invoice_status">Invoice Status</Label>

@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle, Play, Truck, Archive } from 'lucide-react';
+import { Clock, CheckCircle, Play, Truck, Archive, CalendarX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OpsStatusBadgeProps {
-  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | null;
+  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | 'postponed' | null;
   className?: string;
 }
 
@@ -43,6 +43,11 @@ export function OpsStatusBadge({ status, className }: OpsStatusBadgeProps) {
       label: 'Archived',
       icon: Archive,
       className: 'border-gray-500/50 bg-gray-500/10 text-gray-500 dark:text-gray-400',
+    },
+    postponed: {
+      label: 'Event Postponed',
+      icon: CalendarX,
+      className: 'border-orange-500/50 bg-orange-500/10 text-orange-700 dark:text-orange-400',
     },
   };
 
