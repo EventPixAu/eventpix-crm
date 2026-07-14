@@ -617,6 +617,7 @@ export default function EventDetail() {
   const queryClient = useQueryClient();
   // Status update state
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [postponeConfirmOpen, setPostponeConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [recommendCrewOpen, setRecommendCrewOpen] = useState(false);
   const [sendEmailOpen, setSendEmailOpen] = useState(false);
