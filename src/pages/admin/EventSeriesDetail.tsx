@@ -375,7 +375,7 @@ export default function EventSeriesDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-8 w-full max-w-5xl">
+          <TabsList className="grid grid-cols-9 w-full max-w-6xl">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
