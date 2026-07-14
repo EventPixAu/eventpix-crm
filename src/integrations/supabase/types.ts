@@ -7386,6 +7386,10 @@ export type Database = {
         Returns: Json
       }
       regenerate_quote_token: { Args: { p_quote_id: string }; Returns: Json }
+      resolve_workflow_step_default_assignee: {
+        Args: { p_step_label: string }
+        Returns: string
+      }
       return_event_equipment: { Args: { p_event_id: string }; Returns: number }
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: Json }
       search_contacts_by_tag: {
@@ -7430,6 +7434,10 @@ export type Database = {
       uncomplete_assigned_workflow_step: {
         Args: { p_event_id: string; p_step_id: string }
         Returns: undefined
+      }
+      workflow_role_to_app_role: {
+        Args: { p_role_name: string }
+        Returns: Database["public"]["Enums"]["app_role"]
       }
     }
     Enums: {
