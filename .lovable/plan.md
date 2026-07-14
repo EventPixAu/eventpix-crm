@@ -1,74 +1,66 @@
-# Company Categories Restructure + Client Type
+## Series-Level Budgets & Agreements
 
-## Goal
-- Replace flat company categories with **Parent → Sub-category** structure.
-- Add **Client Type** (Direct / Indirect) to companies.
-- Wire both into list views, filters, dashboards, and campaign audience.
+Enable one budget and one contract that cover an entire event series, priced "per event × N events", with the option to add per-event addendum quotes for client-requested extras.
 
-## 1. Database changes (single migration)
+### 1. Data model changes
 
-### `company_categories` (Parents — repurpose existing table)
-- Add `is_parent boolean default true`, `excluded_from_campaigns boolean default false`.
-- Wipe & re-seed with the 9 parents (CORPORATE … EPX SUPPLIER). EPX SUPPLIER gets `excluded_from_campaigns=true`.
+Add series-scoping to `quotes` and `contracts` (both currently event-scoped):
 
-### `company_subcategories` (new table)
-```
-id uuid pk
-parent_id uuid → company_categories(id)
-name text
-sort_order int
-is_active boolean default true
-```
-+ GRANTs, RLS (admins manage, all authenticated read), seeded with full sub-cat list above.
+- `quotes`
+  - `event_series_id UUID NULL` → FK to `event_series`
+  - `scope TEXT NOT NULL DEFAULT 'event'` → `'event' | 'series' | 'addendum'`
+  - `parent_quote_id UUID NULL` → FK to `quotes` (used when `scope = 'addendum'`)
+  - Constraint: `scope='series'` requires `event_series_id NOT NULL` and `event_id NULL`.
+  - Constraint: `scope='addendum'` requires `event_id NOT NULL` and `parent_quote_id NOT NULL`.
+- `quote_items`
+  - `pricing_basis TEXT NOT NULL DEFAULT 'flat'` → `'flat' | 'per_event'`
+  - `event_count INT NULL` (snapshot used at accept time for per_event lines)
+- `contracts`
+  - `event_series_id UUID NULL` → FK
+  - `scope TEXT NOT NULL DEFAULT 'event'` → `'event' | 'series'`
+  - Same nullability constraint as quotes.
 
-### `clients` table
-- Add `subcategory_id uuid → company_subcategories(id)`.
-- Add `client_type text check in ('Direct','Indirect') null`.
-- Keep existing `category_id` column (now points at the new Parent rows).
+RLS: mirror existing quote/contract policies (owners + admin/ops) — no policy structure change.
 
-### Data migration
-- Build a temp mapping table from existing flat names → (parent name, sub name).
-- For every existing `clients.category_id`, look up old name → upsert/find new parent + sub → set `clients.category_id` (parent) and `clients.subcategory_id` (sub).
-- Unmapped names → create "Uncategorised" parent + sub, assign there.
-- Drop the old flat category rows once nothing references them.
+### 2. Series budget builder
 
-## 2. Hooks
+New tab on the series Program Control Centre (`Mastercard 2026` screenshot): **Budget & Agreement**.
 
-- `useCompanyCategories` — return parents (already named so).
-- Add `useCompanySubcategories(parentId?)` — sub list, filterable by parent.
-- Add admin mutation hooks for sub CRUD (used in `CrmLookups`).
+- Create/edit a single Series Quote for the series.
+- Line items each mark **Per event** or **Flat** (checkbox). Per-event lines display `unit × N events = subtotal` where N = count of non-cancelled events currently in the series.
+- Live totals panel: `Per-event subtotal`, `Flat subtotal`, `Number of events`, `Grand total`.
+- Standard note auto-inserted (editable): *"Fees marked 'per event' apply to each scheduled event in this series. Additional services requested for a specific event will be quoted separately as an addendum."*
+- Actions: Save draft · Send for acceptance · Download PDF (reuses existing proposal PDF pipeline with series header).
 
-## 3. UI changes
+### 3. Series contract
 
-### Company record (CompanyList drawer / ClientProfileCard / QuickCreateCompanyDialog)
-- Replace single category picker with two-step: **Parent select** → **Sub-category select** (filtered by parent).
-- New **Client Type** radio/select (Direct / Indirect / Unassigned). Hidden when Parent = EPX Supplier.
+- New Series Contract type built off existing `contract_templates` with `{{series_name}}`, `{{event_count}}`, `{{per_event_total}}`, `{{flat_total}}`, `{{grand_total}}` merge fields.
+- Same public accept flow as event contracts (`PublicAcceptContract.tsx`), scoped to series.
+- Once accepted, the series shows a green "Agreement in place" badge; each event in the series inherits an "Under series agreement" indicator on its detail page (replaces the "needs individual quote/contract" nag).
 
-### Companies list (`CompanyList.tsx`)
-- New columns: Parent Category, Sub-category, Client Type.
-- New filters in toolbar: Parent, Sub-category (dependent on Parent), Client Type.
+### 4. Per-event addendum quotes
 
-### Inline editor
-- Update `InlineCategoryEditor` to a two-step popover (parent then sub).
+- On any event that belongs to a series with an accepted series quote, the QuoteList shows a new button **"Add addendum quote"** instead of "New quote".
+- Addendum quotes copy client/contact from event, set `parent_quote_id` to the series quote, and only contain the extra line items for that event.
+- Event financials roll up = (its share of series quote) + (accepted addendum quotes).
 
-### Bulk update
-- Extend `BulkCategoryUpdateDialog` to set Parent + Sub; add Client Type bulk action.
+### 5. UI touchpoints
 
-### CRM Lookups admin (`CrmLookups.tsx`)
-- Section for managing Parents and their Sub-categories (nested list with add/edit/archive).
+- `src/pages/admin/EventSeriesList.tsx` → open series → new **Budget & Agreement** tab.
+- New `src/components/series/SeriesQuoteBuilder.tsx`, `SeriesContractPanel.tsx`.
+- `QuoteDetail.tsx` → render per-event breakdown when `scope='series'`; render "Addendum to #Q-xxx" banner when `scope='addendum'`.
+- `EventDetail` financial panel → show "Covered by series agreement Q-xxx" plus any addendum totals.
 
-### Dashboard (`PromotionsDashboard.tsx`)
-- Category summary tiles roll up by **Parent**.
+### 6. Out of scope for this pass
 
-### Campaign Audience (`CampaignWizardDialog.tsx`)
-- Add filters: Parent (multi), Sub-category (multi, scoped to selected parents), Client Type (Direct/Indirect/Any).
-- Default-exclude parents flagged `excluded_from_campaigns` (EPX Supplier) unless user explicitly selects them.
+- Invoicing/Xero split across events (kept as-is; series quote invoices as one line for now — happy to add per-event invoice generation next).
+- Retroactive migration of already-issued per-event quotes into a series quote.
 
-## 4. Out of scope / preserved
-- No client/contact records deleted.
-- Contact-level category UI untouched (uses same parent list via existing hook; sub-category optional, left null).
+### Technical notes
 
-## Technical notes
-- Filter state in CompanyList: `parentId | 'all'`, `subcategoryId | 'all' | 'none'`, `clientType | 'all' | 'Direct' | 'Indirect' | 'unassigned'`.
-- Campaign filter persisted in existing `email_campaigns.audience_filters` jsonb.
-- Migration uses a single PL/pgSQL DO block to map names safely; preserves any unknown via "Uncategorised".
+- Migration adds the columns above with defaults so existing rows stay `scope='event'`.
+- `event_count` on a per-event line is recalculated whenever the series quote is edited **before** acceptance; frozen at acceptance so later event additions/removals don't silently change the signed amount.
+- PDF generator (`generate-proposal-pdf`) gets a `scope` branch to render the series header, event list, and per-event math table.
+- Addendum quotes reuse the existing quote acceptance edge function; only the UI entry point differs.
+
+Confirm and I'll ship it — starting with the migration, then the builder UI, then the PDF/accept flow updates.

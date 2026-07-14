@@ -89,7 +89,8 @@ import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
  import { SeriesDefaultEquipmentPanel } from '@/components/SeriesDefaultEquipmentPanel';
- import { ListChecks } from 'lucide-react';
+ import { ListChecks, DollarSign } from 'lucide-react';
+ import { SeriesBudgetAgreementPanel } from '@/components/series/SeriesBudgetAgreementPanel';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -374,7 +375,7 @@ export default function EventSeriesDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-8 w-full max-w-5xl">
+          <TabsList className="grid grid-cols-9 w-full max-w-6xl">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -417,6 +418,10 @@ export default function EventSeriesDetail() {
                 {needsAttention.length}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="budget" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Budget
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />
@@ -861,6 +866,13 @@ export default function EventSeriesDetail() {
                 </Card>
               ))}
             </div>
+          )}
+        </TabsContent>
+
+        {/* Budget Tab */}
+        <TabsContent value="budget" className="space-y-4">
+          {id && series && (
+            <SeriesBudgetAgreementPanel seriesId={id} seriesName={series.name} />
           )}
         </TabsContent>
 

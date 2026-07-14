@@ -1333,12 +1333,14 @@ export type Database = {
           contract_status: string | null
           created_at: string | null
           event_id: string | null
+          event_series_id: string | null
           file_url: string | null
           id: string
           lead_id: string | null
           public_token: string | null
           quote_id: string | null
           rendered_html: string | null
+          scope: string
           sent_at: string | null
           signature_data: string | null
           signature_ip: string | null
@@ -1356,12 +1358,14 @@ export type Database = {
           contract_status?: string | null
           created_at?: string | null
           event_id?: string | null
+          event_series_id?: string | null
           file_url?: string | null
           id?: string
           lead_id?: string | null
           public_token?: string | null
           quote_id?: string | null
           rendered_html?: string | null
+          scope?: string
           sent_at?: string | null
           signature_data?: string | null
           signature_ip?: string | null
@@ -1379,12 +1383,14 @@ export type Database = {
           contract_status?: string | null
           created_at?: string | null
           event_id?: string | null
+          event_series_id?: string | null
           file_url?: string | null
           id?: string
           lead_id?: string | null
           public_token?: string | null
           quote_id?: string | null
           rendered_html?: string | null
+          scope?: string
           sent_at?: string | null
           signature_data?: string | null
           signature_ip?: string | null
@@ -1410,6 +1416,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_event_series_id_fkey"
+            columns: ["event_series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
             referencedColumns: ["id"]
           },
           {
@@ -5032,12 +5045,14 @@ export type Database = {
           description: string
           discount_amount: number | null
           discount_percent: number | null
+          event_count: number | null
           group_label: string | null
           id: string
           is_package_item: boolean | null
           line_total: number | null
           locked_snapshot: Json | null
           package_source_id: string | null
+          pricing_basis: string
           product_id: string | null
           quantity: number
           quote_id: string
@@ -5050,12 +5065,14 @@ export type Database = {
           description: string
           discount_amount?: number | null
           discount_percent?: number | null
+          event_count?: number | null
           group_label?: string | null
           id?: string
           is_package_item?: boolean | null
           line_total?: number | null
           locked_snapshot?: Json | null
           package_source_id?: string | null
+          pricing_basis?: string
           product_id?: string | null
           quantity?: number
           quote_id: string
@@ -5068,12 +5085,14 @@ export type Database = {
           description?: string
           discount_amount?: number | null
           discount_percent?: number | null
+          event_count?: number | null
           group_label?: string | null
           id?: string
           is_package_item?: boolean | null
           line_total?: number | null
           locked_snapshot?: Json | null
           package_source_id?: string | null
+          pricing_basis?: string
           product_id?: string | null
           quantity?: number
           quote_id?: string
@@ -5177,6 +5196,7 @@ export type Database = {
           discount_label: string | null
           discount_percent: number | null
           event_id: string | null
+          event_series_id: string | null
           expires_at: string | null
           id: string
           intro_text: string | null
@@ -5187,6 +5207,7 @@ export type Database = {
           locked_at: string | null
           notes: string | null
           notes_internal: string | null
+          parent_quote_id: string | null
           po_number: string | null
           proposed_services: string | null
           public_token: string | null
@@ -5194,6 +5215,7 @@ export type Database = {
           quote_number: string | null
           quote_status: string | null
           quote_version: number
+          scope: string
           scope_text: string | null
           selection_mode: string
           sent_at: string | null
@@ -5219,6 +5241,7 @@ export type Database = {
           discount_label?: string | null
           discount_percent?: number | null
           event_id?: string | null
+          event_series_id?: string | null
           expires_at?: string | null
           id?: string
           intro_text?: string | null
@@ -5229,6 +5252,7 @@ export type Database = {
           locked_at?: string | null
           notes?: string | null
           notes_internal?: string | null
+          parent_quote_id?: string | null
           po_number?: string | null
           proposed_services?: string | null
           public_token?: string | null
@@ -5236,6 +5260,7 @@ export type Database = {
           quote_number?: string | null
           quote_status?: string | null
           quote_version?: number
+          scope?: string
           scope_text?: string | null
           selection_mode?: string
           sent_at?: string | null
@@ -5261,6 +5286,7 @@ export type Database = {
           discount_label?: string | null
           discount_percent?: number | null
           event_id?: string | null
+          event_series_id?: string | null
           expires_at?: string | null
           id?: string
           intro_text?: string | null
@@ -5271,6 +5297,7 @@ export type Database = {
           locked_at?: string | null
           notes?: string | null
           notes_internal?: string | null
+          parent_quote_id?: string | null
           po_number?: string | null
           proposed_services?: string | null
           public_token?: string | null
@@ -5278,6 +5305,7 @@ export type Database = {
           quote_number?: string | null
           quote_status?: string | null
           quote_version?: number
+          scope?: string
           scope_text?: string | null
           selection_mode?: string
           sent_at?: string | null
@@ -5312,6 +5340,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quotes_event_series_id_fkey"
+            columns: ["event_series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quotes_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -5323,6 +5358,13 @@ export type Database = {
             columns: ["linked_event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_parent_quote_id_fkey"
+            columns: ["parent_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
