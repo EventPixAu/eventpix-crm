@@ -419,6 +419,10 @@ export default function EventSeriesDetail() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="budget" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Budget
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />
             Settings
