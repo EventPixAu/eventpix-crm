@@ -89,7 +89,8 @@ import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
  import { SeriesDefaultEquipmentPanel } from '@/components/SeriesDefaultEquipmentPanel';
- import { ListChecks } from 'lucide-react';
+ import { ListChecks, DollarSign } from 'lucide-react';
+ import { SeriesBudgetAgreementPanel } from '@/components/series/SeriesBudgetAgreementPanel';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
