@@ -448,27 +448,26 @@ export default function LeadDetail(): JSX.Element {
                 {isSendingBudgets ? 'Preparing...' : quotes.length === 1 ? 'Send Budget' : 'Send Budgets'}
               </Button>
             ) : undefined}
-            onAdd={() => {
-              // Pass lead context to quote creation
-              const params = new URLSearchParams();
-              params.set('lead_id', id!);
-              if (client?.id) params.set('client_id', client.id);
-              if (client?.business_name) params.set('company', client.business_name);
-              if (lead.lead_name) params.set('event_name', lead.lead_name);
-              // Get primary date from first session
-              if (mainSession?.session_date) params.set('event_date', mainSession.session_date);
-              // Use venue from lead
-              const venueText = (lead as any).venue_text || (lead as any).venue_address;
-              if (venueText) params.set('venue', venueText);
-              // Get primary contact info
-              const primaryContact = leadContacts.find(c => c.role === 'primary') || leadContacts[0];
-              if (primaryContact) {
-                const contactName = primaryContact.client_contact?.contact_name || primaryContact.contact_name;
-                const contactEmail = primaryContact.client_contact?.email || primaryContact.contact_email;
-                if (contactName) params.set('contact_name', contactName);
-                if (contactEmail) params.set('contact_email', contactEmail);
+            onAdd={async () => {
+              try {
+                const primaryContact = leadContacts.find(c => c.role === 'primary') || leadContacts[0];
+                const contactName = primaryContact?.client_contact?.contact_name || primaryContact?.contact_name || null;
+                const contactEmail = primaryContact?.client_contact?.email || primaryContact?.contact_email || null;
+                const venueText = (lead as any).venue_text || (lead as any).venue_address || null;
+                const newQuote = await createQuote.mutateAsync({
+                  status: 'draft',
+                  lead_id: id!,
+                  client_id: client?.id ?? null,
+                  event_name: lead.lead_name ?? null,
+                  event_date: mainSession?.session_date ?? null,
+                  venue: venueText,
+                  contact_name: contactName,
+                  contact_email: contactEmail,
+                } as any);
+                navigate(`/sales/quotes/${newQuote.id}`);
+              } catch (err) {
+                // toast handled by hook
               }
-              navigate(`/sales/quotes/new?${params.toString()}`);
             }}
             isEmpty={quotes.length === 0}
             emptyMessage="No budgets yet"
