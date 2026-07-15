@@ -1340,10 +1340,10 @@ export default function EventDetail() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Postpone this event?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will clear the event date and times and move the event back into Sales.
+                              This will mark the event as postponed and move it back into Sales. The event's current date will be kept until you set a new one.
                               {(event as any).lead_id
                                 ? ' The linked lead will be reopened to "New Lead".'
-                                : ' No linked lead was found — the event will remain here with its date cleared.'}
+                                : ' No linked lead was found — the event will remain here as postponed.'}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -1355,11 +1355,6 @@ export default function EventDetail() {
                                   await updateEvent.mutateAsync({
                                     id: event.id,
                                     ops_status: 'postponed',
-                                    event_date: null as any,
-                                    start_time: null as any,
-                                    end_time: null as any,
-                                    start_at: null as any,
-                                    end_at: null as any,
                                   });
                                   const leadId = (event as any).lead_id as string | null;
                                   if (leadId) {
