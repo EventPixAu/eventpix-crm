@@ -796,7 +796,7 @@ export default function EventDetail() {
     );
   }
 
-  const date = parseISO(event.event_date);
+  const date = event.event_date ? parseISO(event.event_date) : null;
 
   return (
     <AppLayout>
