@@ -30,6 +30,7 @@ import {
   useRegenerateContractToken 
 } from '@/hooks/useContracts';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { useClientContacts } from '@/hooks/useClientContacts';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive'; icon: React.ComponentType<any> }> = {
   draft: { label: 'Draft', variant: 'secondary', icon: FileText },
@@ -89,6 +90,17 @@ export default function ContractDetail() {
   const isLocked = contract?.status === 'signed' || contract?.status === 'cancelled';
   const clientData = contract?.client as any;
   const leadData = contract?.lead as any;
+
+  // Fallback: resolve a primary contact from client_contacts when the client
+  // record itself has no primary_contact_email populated.
+  const { data: clientContacts } = useClientContacts(clientData?.id);
+  const fallbackContact = (clientContacts || []).find(c => !!c.email) || null;
+  const resolvedClientEmail = clientData?.primary_contact_email || fallbackContact?.email || undefined;
+  const resolvedClientName =
+    clientData?.primary_contact_name ||
+    fallbackContact?.contact_name ||
+    clientData?.business_name ||
+    undefined;
   
   // Generate the public signing URL using published domain for client-facing links
   const getPublicSigningUrl = () => {
@@ -503,8 +515,8 @@ export default function ContractDetail() {
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
         clientId={contract.client_id}
-        clientEmail={clientData?.primary_contact_email}
-        clientName={clientData?.primary_contact_name || clientData?.business_name}
+        clientEmail={resolvedClientEmail}
+        clientName={resolvedClientName}
         relatedContractId={contract.id}
         defaultSubject={`Contract: ${contract.title}`}
         context="contract"
