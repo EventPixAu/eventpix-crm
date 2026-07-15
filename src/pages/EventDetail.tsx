@@ -1371,7 +1371,7 @@ export default function EventDetail() {
                                     navigate(`/sales/leads/${leadId}`);
                                     return;
                                   }
-                                  toast.success('Event postponed', { description: 'Date cleared. No linked lead to reopen.' });
+                                  toast.success('Event postponed', { description: 'Marked as postponed. No linked lead to reopen.' });
                                   setPostponeConfirmOpen(false);
                                 } catch (err: any) {
                                   toast.error('Failed to postpone event', { description: err?.message });
