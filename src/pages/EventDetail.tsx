@@ -814,9 +814,11 @@ export default function EventDetail() {
             <h1 className="text-2xl lg:text-3xl font-display font-bold">
               {event.event_name}
             </h1>
-            <StatusBadge
-              status={new Date() < date ? 'upcoming' : new Date().toDateString() === date.toDateString() ? 'today' : 'past'}
-            />
+            {date && (
+              <StatusBadge
+                status={new Date() < date ? 'upcoming' : new Date().toDateString() === date.toDateString() ? 'today' : 'past'}
+              />
+            )}
             {isAdmin && (
               <>
                 <OpsStatusBadge status={(event as any).ops_status} />
