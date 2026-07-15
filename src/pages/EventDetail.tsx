@@ -921,7 +921,7 @@ export default function EventDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Start Date</p>
-                      <p className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</p>
+                      <p className="font-medium">{date ? format(date, 'EEEE, MMMM d, yyyy') : '—'}</p>
                     </div>
                   </div>
 
