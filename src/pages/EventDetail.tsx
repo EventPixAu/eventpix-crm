@@ -796,7 +796,7 @@ export default function EventDetail() {
     );
   }
 
-  const date = parseISO(event.event_date);
+  const date = event.event_date ? parseISO(event.event_date) : null;
 
   return (
     <AppLayout>
@@ -814,9 +814,11 @@ export default function EventDetail() {
             <h1 className="text-2xl lg:text-3xl font-display font-bold">
               {event.event_name}
             </h1>
-            <StatusBadge
-              status={new Date() < date ? 'upcoming' : new Date().toDateString() === date.toDateString() ? 'today' : 'past'}
-            />
+            {date && (
+              <StatusBadge
+                status={new Date() < date ? 'upcoming' : new Date().toDateString() === date.toDateString() ? 'today' : 'past'}
+              />
+            )}
             {isAdmin && (
               <>
                 <OpsStatusBadge status={(event as any).ops_status} />
@@ -919,7 +921,7 @@ export default function EventDetail() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Start Date</p>
-                      <p className="font-medium">{format(date, 'EEEE, MMMM d, yyyy')}</p>
+                      <p className="font-medium">{date ? format(date, 'EEEE, MMMM d, yyyy') : '—'}</p>
                     </div>
                   </div>
 

@@ -260,16 +260,16 @@ export default function Events() {
                 >
                   <div className="flex-shrink-0 w-14 h-14 bg-primary/10 rounded-xl flex flex-col items-center justify-center">
                     <span className="text-xs text-muted-foreground uppercase">
-                      {format(parseISO(event.event_date), 'MMM')}
+                      {event.event_date ? format(parseISO(event.event_date), 'MMM') : '—'}
                     </span>
                     <span className="text-lg font-display font-bold text-primary">
-                      {format(parseISO(event.event_date), 'd')}
+                      {event.event_date ? format(parseISO(event.event_date), 'd') : ''}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium truncate min-w-0 max-w-full flex-1 basis-full sm:basis-auto sm:flex-none sm:max-w-[40ch]">{event.event_name}</h3>
-                      <StatusBadge status={getEventStatus(event.event_date, event)} />
+                      {event.event_date && <StatusBadge status={getEventStatus(event.event_date, event)} />}
                       {eventsWithDateMismatch[event.id] && (
                         <span
                           className="inline-flex items-center gap-1 rounded-full border border-destructive/50 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
