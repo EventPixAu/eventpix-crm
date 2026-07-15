@@ -3400,7 +3400,7 @@ export type Database = {
           end_at: string | null
           end_time: string | null
           enquiry_source: string | null
-          event_date: string
+          event_date: string | null
           event_name: string
           event_series_id: string | null
           event_type: Database["public"]["Enums"]["event_type"]
@@ -3486,7 +3486,7 @@ export type Database = {
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
-          event_date: string
+          event_date?: string | null
           event_name: string
           event_series_id?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
@@ -3572,7 +3572,7 @@ export type Database = {
           end_at?: string | null
           end_time?: string | null
           enquiry_source?: string | null
-          event_date?: string
+          event_date?: string | null
           event_name?: string
           event_series_id?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]

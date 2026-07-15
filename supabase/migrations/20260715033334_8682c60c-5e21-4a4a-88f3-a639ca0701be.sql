@@ -1,0 +1,1 @@
+ALTER TABLE public.events ALTER COLUMN event_date DROP NOT NULL;
