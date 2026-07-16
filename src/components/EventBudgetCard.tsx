@@ -59,6 +59,7 @@ export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardPro
   }
 
   if (!quote) return null;
+  const q = quote as any;
 
   const statusVariant = (s: string | null) => {
     switch (s) {
