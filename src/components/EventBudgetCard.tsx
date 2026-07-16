@@ -12,23 +12,41 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 interface EventBudgetCardProps {
-  quoteId: string;
+  quoteId?: string | null;
+  eventId?: string | null;
   leadId?: string | null;
 }
 
-export function EventBudgetCard({ quoteId, leadId }: EventBudgetCardProps) {
+export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardProps) {
   const { data: quote, isLoading } = useQuery({
-    queryKey: ['quotes', quoteId],
+    queryKey: ['event-budget-quote', quoteId, eventId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('quotes')
-        .select('id, quote_number, status, subtotal, total_estimate, discount_amount, notes, created_at, is_locked')
-        .eq('id', quoteId)
-        .single();
-      if (error) throw error;
-      return data;
+      const cols = 'id, quote_number, status, subtotal, total_estimate, discount_amount, notes, created_at, is_locked';
+      if (quoteId) {
+        const { data, error } = await supabase
+          .from('quotes')
+          .select(cols)
+          .eq('id', quoteId)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      }
+      if (eventId) {
+        // Prefer accepted quote, else latest non-addendum quote linked to this event
+        const { data, error } = await supabase
+          .from('quotes')
+          .select(cols + ', scope, status')
+          .eq('event_id', eventId)
+          .neq('scope', 'addendum')
+          .order('status', { ascending: false }) // accepted sorts before draft/sent alphabetically? fallback below
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const list = data || [];
+        return list.find((q: any) => q.status === 'accepted') || list[0] || null;
+      }
+      return null;
     },
-    enabled: !!quoteId,
+    enabled: !!(quoteId || eventId),
   });
 
   if (isLoading) {
