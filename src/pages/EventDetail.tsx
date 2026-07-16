@@ -1467,8 +1467,8 @@ export default function EventDetail() {
               )}
 
               {/* Budget (Quote) Panel */}
-              {(isAdmin || canSeeSection('budget')) && (event as any).quote_id && (
-                <EventBudgetCard quoteId={(event as any).quote_id} leadId={(event as any).lead_id} />
+              {(isAdmin || canSeeSection('budget')) && (
+                <EventBudgetCard quoteId={(event as any).quote_id} eventId={id} leadId={(event as any).lead_id} />
               )}
 
               {/* QR Registration */}
