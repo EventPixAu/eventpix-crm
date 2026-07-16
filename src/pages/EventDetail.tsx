@@ -1468,7 +1468,7 @@ export default function EventDetail() {
 
               {/* Budget (Quote) Panel */}
               {(isAdmin || canSeeSection('budget')) && (
-                <EventBudgetCard quoteId={(event as any).quote_id} eventId={id} leadId={(event as any).lead_id} />
+                <EventBudgetCard quoteId={(event as any).quote_id} eventId={id} leadId={(event as any).lead_id} clientId={(event as any).client_id} />
               )}
 
               {/* QR Registration */}
