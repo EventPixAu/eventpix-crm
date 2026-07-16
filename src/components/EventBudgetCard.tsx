@@ -1,12 +1,15 @@
 /**
  * EVENT BUDGET CARD
- * 
+ *
  * Shows the linked quote/budget on the event detail page.
- * Displays key financials and a link to the full budget detail.
+ * When no quote exists (e.g. direct booking that skipped Sales),
+ * renders an empty state with a "Create budget" action so a quote
+ * can be created inline and linked to the event.
  */
-import { Link } from 'react-router-dom';
-import { DollarSign, ExternalLink } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
+import { DollarSign, ExternalLink, Plus } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,9 +18,13 @@ interface EventBudgetCardProps {
   quoteId?: string | null;
   eventId?: string | null;
   leadId?: string | null;
+  clientId?: string | null;
 }
 
-export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardProps) {
+export function EventBudgetCard({ quoteId, eventId, leadId, clientId }: EventBudgetCardProps) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
   const { data: quote, isLoading } = useQuery({
     queryKey: ['event-budget-quote', quoteId, eventId],
     queryFn: async () => {
@@ -32,13 +39,11 @@ export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardPro
         return data;
       }
       if (eventId) {
-        // Prefer accepted quote, else latest non-addendum quote linked to this event
         const { data, error } = await supabase
           .from('quotes')
           .select(cols + ', scope, status')
           .eq('event_id', eventId)
           .neq('scope', 'addendum')
-          .order('status', { ascending: false }) // accepted sorts before draft/sent alphabetically? fallback below
           .order('created_at', { ascending: false });
         if (error) throw error;
         const list = data || [];
@@ -47,6 +52,43 @@ export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardPro
       return null;
     },
     enabled: !!(quoteId || eventId),
+  });
+
+  const createBudget = useMutation({
+    mutationFn: async () => {
+      if (!eventId) throw new Error('Missing event');
+      // Pull event context for a sensible default name / client link
+      const { data: ev } = await supabase
+        .from('events')
+        .select('id, event_name, client_id, lead_id')
+        .eq('id', eventId)
+        .maybeSingle();
+      const payload: any = {
+        scope: 'event',
+        event_id: eventId,
+        client_id: clientId || ev?.client_id || null,
+        lead_id: leadId || ev?.lead_id || null,
+        quote_name: ev?.event_name ? `Budget — ${ev.event_name}` : 'Event Budget',
+        status: 'draft',
+        quote_status: 'draft',
+      };
+      const { data, error } = await supabase
+        .from('quotes')
+        .insert(payload)
+        .select('id')
+        .single();
+      if (error) throw error;
+      // Best-effort back-link on the event
+      await supabase.from('events').update({ quote_id: data.id }).eq('id', eventId);
+      return data.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success('Budget created');
+      qc.invalidateQueries({ queryKey: ['event-budget-quote'] });
+      qc.invalidateQueries({ queryKey: ['event-quotes', eventId] });
+      navigate(`/sales/quotes/${id}`);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to create budget'),
   });
 
   if (isLoading) {
@@ -58,20 +100,47 @@ export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardPro
     );
   }
 
-  if (!quote) return null;
-  const q = quote as any;
-
   const statusVariant = (s: string | null) => {
     switch (s) {
-      case 'accepted': return 'default';
-      case 'sent': return 'secondary';
-      case 'rejected': case 'declined': return 'destructive';
-      default: return 'outline';
+      case 'accepted': return 'default' as const;
+      case 'sent': return 'secondary' as const;
+      case 'rejected': case 'declined': return 'destructive' as const;
+      default: return 'outline' as const;
     }
   };
 
   const formatCurrency = (v: number | null) =>
     new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0 }).format(v || 0);
+
+  // Empty state — event booked direct without a Sales quote
+  if (!quote) {
+    return (
+      <div className="bg-card border border-border rounded-xl p-5 shadow-card">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-display font-semibold">Budget</h3>
+          </div>
+          {eventId && (
+            <Button
+              size="sm"
+              onClick={() => createBudget.mutate()}
+              disabled={createBudget.isPending}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {createBudget.isPending ? 'Creating…' : 'Create budget'}
+            </Button>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          No budget linked to this event yet. Create one to track pricing and totals — useful
+          when the event was booked directly without going through Sales.
+        </p>
+      </div>
+    );
+  }
+
+  const q = quote as any;
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 shadow-card">
