@@ -79,14 +79,14 @@ export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardPro
         <div className="flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-display font-semibold">Budget</h3>
-          <Badge variant={statusVariant(quote.status)} className="capitalize">
-            {quote.status || 'draft'}
+          <Badge variant={statusVariant(q.status)} className="capitalize">
+            {q.status || 'draft'}
           </Badge>
-          {quote.is_locked && (
+          {q.is_locked && (
             <Badge variant="outline" className="text-xs">Locked</Badge>
           )}
         </div>
-        <Link to={`/sales/quotes/${quote.id}`}>
+        <Link to={`/sales/quotes/${q.id}`}>
           <Button variant="ghost" size="sm">
             <ExternalLink className="h-4 w-4 mr-1" />
             View
@@ -95,25 +95,25 @@ export function EventBudgetCard({ quoteId, eventId, leadId }: EventBudgetCardPro
       </div>
 
       <div className="space-y-2 text-sm">
-        {quote.quote_number && (
+        {q.quote_number && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Reference</span>
-            <span className="font-medium">{quote.quote_number}</span>
+            <span className="font-medium">{q.quote_number}</span>
           </div>
         )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Subtotal (ex GST)</span>
-          <span className="font-medium">{formatCurrency(quote.subtotal)}</span>
+          <span className="font-medium">{formatCurrency(q.subtotal)}</span>
         </div>
-        {(quote.discount_amount ?? 0) > 0 && (
+        {(q.discount_amount ?? 0) > 0 && (
           <div className="flex justify-between text-muted-foreground">
             <span>Discount</span>
-            <span>-{formatCurrency(quote.discount_amount)}</span>
+            <span>-{formatCurrency(q.discount_amount)}</span>
           </div>
         )}
         <div className="flex justify-between border-t border-border pt-2 font-semibold">
           <span>Total (incl GST)</span>
-          <span>{formatCurrency(quote.total_estimate)}</span>
+          <span>{formatCurrency(q.total_estimate)}</span>
         </div>
       </div>
     </div>
