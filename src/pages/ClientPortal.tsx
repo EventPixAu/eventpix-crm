@@ -344,11 +344,9 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                         🚗 {[member.vehicle_make_model, member.vehicle_registration].filter(Boolean).join(' · ')}
                       </p>
                     )}
-                    {member.dietary_requirements && (
-                      <p className="text-white/60 text-xs mt-0.5">
-                        🍽️ {member.dietary_requirements}
-                      </p>
-                    )}
+                    <p className="text-white/60 text-xs mt-0.5">
+                      🍽️ {member.dietary_requirements?.trim() ? member.dietary_requirements : 'No dietary requirements'}
+                    </p>
                   </div>
                 </div>
               ))}
