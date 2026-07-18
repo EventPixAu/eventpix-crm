@@ -566,7 +566,9 @@ async function handleInboundEmail(supabase: any, data: any): Promise<Record<stri
     recipient_email: toEmail,
     subject,
     body_html: html || null,
+    body_text: text || null,
     body_preview: bodyPreview,
+
     status: isAutoReply ? "auto_reply" : "received",
     sent_at: new Date().toISOString(),
     in_reply_to: isAutoReply || internal ? null : (original?.id ?? null),
