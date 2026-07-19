@@ -108,6 +108,86 @@ function detectAutoReply(
   return isAutoReplySubject(subject) || isNoReplySender(fromEmail);
 }
 
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return undefined;
+}
+
+async function resolveInboundBody(data: any): Promise<{ text?: string; html?: string; retrieved: boolean }> {
+  const embeddedText = firstString(
+    data.text,
+    data.text_body,
+    data.body_text,
+    data.plain,
+    data.body_plain,
+    data.plain_text,
+  );
+  const embeddedHtml = firstString(
+    data.html,
+    data.html_body,
+    data.body_html,
+    data.html_content,
+  );
+  if (embeddedText || embeddedHtml) return { text: embeddedText, html: embeddedHtml, retrieved: false };
+
+  const emailId = firstString(data.email_id, data.emailId, data.id);
+  if (!emailId) {
+    console.warn("Inbound email has no embedded body and no email_id — payload keys:", Object.keys(data || {}));
+    return { retrieved: false };
+  }
+
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.warn("Inbound email body requires Resend Receiving API lookup, but RESEND_API_KEY is not configured");
+    return { retrieved: false };
+  }
+
+  try {
+    const resp = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const responseText = await resp.text();
+    if (!resp.ok) {
+      console.error("Failed to retrieve inbound email body from Resend:", resp.status, responseText.slice(0, 300));
+      return { retrieved: false };
+    }
+
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Resend inbound body response was not valid JSON:", e);
+      return { retrieved: false };
+    }
+
+    const email = parsed?.data ?? parsed;
+    const text = firstString(
+      email.text,
+      email.text_body,
+      email.body_text,
+      email.plain,
+      email.body_plain,
+      email.plain_text,
+    );
+    const html = firstString(
+      email.html,
+      email.html_body,
+      email.body_html,
+      email.html_content,
+    );
+
+    if (!text && !html) {
+      console.warn("Retrieved inbound email still has no body — response keys:", Object.keys(email || {}));
+    }
+    return { text, html, retrieved: true };
+  } catch (e) {
+    console.error("Error retrieving inbound email body from Resend:", e);
+    return { retrieved: false };
+  }
+}
+
 async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
   const e = (email || "").toLowerCase().trim();
   if (!e) return false;
@@ -278,11 +358,7 @@ serve(async (req) => {
     const { email: fromEmail, name: fromName } = parseAddress(fromRaw);
     const { email: toEmail } = parseAddress(toRaw);
     const subject: string = data.subject ?? "(No Subject)";
-    // Resend inbound payloads have varied across versions — accept multiple field names.
-    const text: string | undefined =
-      data.text ?? data.text_body ?? data.body_text ?? data.plain ?? data.body_plain ?? undefined;
-    const html: string | undefined =
-      data.html ?? data.html_body ?? data.body_html ?? undefined;
+    const { text, html, retrieved } = await resolveInboundBody(data);
 
     if (!text && !html) {
       console.warn("Inbound email has no text or html body — payload keys:", Object.keys(data || {}));
@@ -292,7 +368,7 @@ serve(async (req) => {
     const normalizedSubject = normalizeSubject(subject);
 
     console.log(
-      `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply} · text_len=${text?.length ?? 0} · html_len=${html?.length ?? 0}`,
+      `Inbound from ${fromEmail} → ${toEmail} · subject="${subject}" · auto_reply=${isAutoReply} · text_len=${text?.length ?? 0} · html_len=${html?.length ?? 0} · body_retrieved=${retrieved}`,
     );
 
     // ── Website enquiry detection ────────────────────────────────────────
