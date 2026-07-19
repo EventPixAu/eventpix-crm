@@ -151,7 +151,7 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
             />
           ) : (
             <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs">
-              Content unavailable — reply received before fix was deployed.
+              Content unavailable — the email body was not stored for this reply.
             </div>
           )}
         </div>
