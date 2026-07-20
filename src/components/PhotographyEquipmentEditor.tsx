@@ -116,6 +116,17 @@ export function PhotographyEquipmentEditor({
     }
   }, [initialData]);
 
+  // Warn on browser unload if there are unsaved changes
+  useEffect(() => {
+    if (!hasChanges) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasChanges]);
+
   const update = (newData: PhotographyEquipmentV2) => {
     setData(newData);
     setHasChanges(true);
