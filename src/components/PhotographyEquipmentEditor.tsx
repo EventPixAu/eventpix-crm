@@ -369,10 +369,15 @@ export function PhotographyEquipmentEditor({
             })}
           </Accordion>
 
-          {/* Save button */}
-          {!readOnly && onSave && hasChanges && (
-            <div className="flex justify-end pt-2">
-              <Button onClick={handleSave} disabled={isSaving}>
+          {/* Save button — always visible so users don't lose changes on navigation */}
+          {!readOnly && onSave && (
+            <div className="sticky bottom-0 -mx-6 -mb-6 px-6 py-3 bg-background/95 backdrop-blur border-t flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                {hasChanges
+                  ? 'You have unsaved changes. Click Save to keep them.'
+                  : 'All changes saved.'}
+              </p>
+              <Button onClick={handleSave} disabled={isSaving || !hasChanges} size="sm">
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
