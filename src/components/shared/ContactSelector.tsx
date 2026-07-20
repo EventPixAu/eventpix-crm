@@ -323,8 +323,15 @@ export function ContactSelector({
           </div>
         </PopoverTrigger>
 
-        <PopoverContent className="w-[400px] p-0 z-50 bg-popover" align="start">
-          <div className="p-3 border-b">
+        <PopoverContent
+          className="w-[400px] p-0 z-50 bg-popover flex flex-col max-h-[min(400px,var(--radix-popover-content-available-height))]"
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          collisionPadding={16}
+          avoidCollisions
+        >
+          <div className="p-3 border-b shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -337,7 +344,8 @@ export function ContactSelector({
             </div>
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+
             {isSearching ? (
               <div className="p-4 text-center text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
