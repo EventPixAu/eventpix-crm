@@ -66,13 +66,15 @@ export function ContactFollowUpTasksPanel({ contactId }: ContactFollowUpTasksPan
     related_id: contactId,
   });
 
+  // Follow-up tasks can only be assigned to salaried staff
   const { data: assignees = [] } = useQuery({
-    queryKey: ['task-assignee-options'],
+    queryKey: ['task-assignee-options', 'salaried'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name, email, is_salaried')
         .eq('is_active', true)
+        .eq('is_salaried', true)
         .order('full_name', { ascending: true });
       if (error) throw error;
       return data ?? [];
