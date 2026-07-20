@@ -479,7 +479,7 @@ export function ContactSelector({
           </div>
 
           {/* Create New Contact */}
-          <div className="p-2 border-t">
+          <div className="p-2 border-t shrink-0">
             <Button
               variant="ghost"
               className="w-full justify-start gap-2 text-primary"
