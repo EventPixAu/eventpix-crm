@@ -215,14 +215,14 @@ serve(async (req) => {
       briefAttachmentSignedUrl = data?.signedUrl || null;
     }
 
-    // Company insurance policies (only active + with an uploaded CoC file)
+    // Company insurance policies (all active; CoC download shown only if file uploaded)
     const { data: insuranceRows } = await supabase
       .from("company_insurance_policies")
       .select("id, insurance_type, insurer_name, policy_number, renewal_due_date, coc_file_path, coc_file_name, sort_order")
       .eq("is_active", true)
-      .not("coc_file_path", "is", null)
       .order("sort_order", { ascending: true })
       .order("insurance_type", { ascending: true });
+
 
     const insurance_policies = await Promise.all(
       (insuranceRows || []).map(async (p: any) => {
