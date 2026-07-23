@@ -18,6 +18,7 @@ import {
   Phone,
   Mail,
   QrCode,
+  ShieldCheck,
   User,
   Users,
   ExternalLink,
