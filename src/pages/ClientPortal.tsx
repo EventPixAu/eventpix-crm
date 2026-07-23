@@ -18,6 +18,7 @@ import {
   Phone,
   Mail,
   QrCode,
+  ShieldCheck,
   User,
   Users,
   ExternalLink,
@@ -100,6 +101,15 @@ interface PortalData {
   pre_registration_link: string | null;
   live_feed_link: string | null;
   event_web_page_link: string | null;
+  insurance_policies: Array<{
+    id: string;
+    insurance_type: string;
+    insurer_name: string | null;
+    policy_number: string | null;
+    renewal_due_date: string | null;
+    coc_file_name: string | null;
+    coc_signed_url: string | null;
+  }>;
 }
 
 function formatTime(time: string | null): string {
@@ -600,6 +610,56 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                         View Budget
                       </Button>
                     </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Compliance & Insurance */}
+        {(data.insurance_policies?.length ?? 0) > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white/5 border border-white/10 rounded-xl p-5 backdrop-blur-sm"
+          >
+            <h2 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-emerald-400" />
+              Compliance & Insurance
+            </h2>
+            <p className="text-white/50 text-xs mb-4">
+              EventPix maintains the following current insurance policies. Certificates of currency are available below.
+            </p>
+            <div className="space-y-2">
+              {data.insurance_policies.map((policy) => (
+                <div
+                  key={policy.id}
+                  className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/5 gap-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm font-medium truncate">{policy.insurance_type}</p>
+                    <div className="text-white/50 text-xs mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                      {policy.insurer_name && <span>{policy.insurer_name}</span>}
+                      {policy.policy_number && <span className="font-mono">#{policy.policy_number}</span>}
+                      {policy.renewal_due_date && (
+                        <span>Valid to {format(parseISO(policy.renewal_due_date), 'MMM d, yyyy')}</span>
+                      )}
+                    </div>
+                  </div>
+                  {policy.coc_signed_url && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      asChild
+                      className="bg-white/10 text-white hover:bg-white/15 border border-white/10 shrink-0"
+                    >
+                      <a href={policy.coc_signed_url} target="_blank" rel="noopener noreferrer">
+                        <Download className="h-4 w-4 mr-1.5" />
+                        Certificate
+                      </a>
+                    </Button>
                   )}
                 </div>
               ))}
