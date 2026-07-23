@@ -278,6 +278,7 @@ serve(async (req) => {
       pre_registration_link: event.pre_registration_link || null,
       live_feed_link: (event as any).live_feed_link || null,
       event_web_page_link: (event as any).event_web_page_link || null,
+      insurance_policies,
     };
 
     return new Response(JSON.stringify(response), {
