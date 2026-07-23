@@ -215,6 +215,36 @@ serve(async (req) => {
       briefAttachmentSignedUrl = data?.signedUrl || null;
     }
 
+    // Company insurance policies (only active + with an uploaded CoC file)
+    const { data: insuranceRows } = await supabase
+      .from("company_insurance_policies")
+      .select("id, insurance_type, insurer_name, policy_number, renewal_due_date, coc_file_path, coc_file_name, sort_order")
+      .eq("is_active", true)
+      .not("coc_file_path", "is", null)
+      .order("sort_order", { ascending: true })
+      .order("insurance_type", { ascending: true });
+
+    const insurance_policies = await Promise.all(
+      (insuranceRows || []).map(async (p: any) => {
+        let signedUrl: string | null = null;
+        if (p.coc_file_path) {
+          const { data } = await supabase.storage
+            .from("insurance-documents")
+            .createSignedUrl(p.coc_file_path, 3600);
+          signedUrl = data?.signedUrl || null;
+        }
+        return {
+          id: p.id,
+          insurance_type: p.insurance_type,
+          insurer_name: p.insurer_name,
+          policy_number: p.policy_number,
+          renewal_due_date: p.renewal_due_date,
+          coc_file_name: p.coc_file_name,
+          coc_signed_url: signedUrl,
+        };
+      })
+    );
+
     const response = {
       event_name: event.event_name,
       event_date: event.event_date,
