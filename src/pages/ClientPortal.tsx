@@ -101,6 +101,15 @@ interface PortalData {
   pre_registration_link: string | null;
   live_feed_link: string | null;
   event_web_page_link: string | null;
+  insurance_policies: Array<{
+    id: string;
+    insurance_type: string;
+    insurer_name: string | null;
+    policy_number: string | null;
+    renewal_due_date: string | null;
+    coc_file_name: string | null;
+    coc_signed_url: string | null;
+  }>;
 }
 
 function formatTime(time: string | null): string {
