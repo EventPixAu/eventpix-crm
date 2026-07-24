@@ -246,6 +246,8 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${anonKey}`,
         "apikey": anonKey,
+        "x-original-forwarded-for":
+          req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "",
       },
       body: JSON.stringify(forwardPayload),
     });
