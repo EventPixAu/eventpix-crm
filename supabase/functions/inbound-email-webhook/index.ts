@@ -115,7 +115,9 @@ function firstString(...values: unknown[]): string | undefined {
   return undefined;
 }
 
-async function resolveInboundBody(data: any): Promise<{ text?: string; html?: string; retrieved: boolean }> {
+async function resolveInboundBody(data: any): Promise<{ text?: string; html?: string; retrieved: boolean; emailId?: string }> {
+  const emailId = firstString(data.email_id, data.emailId, data.id);
+
   const embeddedText = firstString(
     data.text,
     data.text_body,
@@ -130,62 +132,48 @@ async function resolveInboundBody(data: any): Promise<{ text?: string; html?: st
     data.body_html,
     data.html_content,
   );
-  if (embeddedText || embeddedHtml) return { text: embeddedText, html: embeddedHtml, retrieved: false };
+  if (embeddedText || embeddedHtml) return { text: embeddedText, html: embeddedHtml, retrieved: false, emailId };
 
-  const emailId = firstString(data.email_id, data.emailId, data.id);
   if (!emailId) {
     console.warn("Inbound email has no embedded body and no email_id — payload keys:", Object.keys(data || {}));
-    return { retrieved: false };
+    return { retrieved: false, emailId };
   }
 
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
     console.warn("Inbound email body requires Resend Receiving API lookup, but RESEND_API_KEY is not configured");
-    return { retrieved: false };
+    return { retrieved: false, emailId };
   }
 
-  try {
-    const resp = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    const responseText = await resp.text();
-    if (!resp.ok) {
-      console.error("Failed to retrieve inbound email body from Resend:", resp.status, responseText.slice(0, 300));
-      return { retrieved: false };
-    }
-
-    let parsed: any = {};
+  const delays = [0, 1000, 2000];
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (delays[attempt] > 0) await new Promise((r) => setTimeout(r, delays[attempt]));
     try {
-      parsed = JSON.parse(responseText);
+      const resp = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      const responseText = await resp.text();
+      if (!resp.ok) {
+        console.error(`Retrieve inbound body attempt ${attempt + 1} failed:`, resp.status, responseText.slice(0, 300));
+        continue;
+      }
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Resend inbound body response was not valid JSON:", e);
+        continue;
+      }
+      const email = parsed?.data ?? parsed;
+      const text = firstString(email.text, email.text_body, email.body_text, email.plain, email.body_plain, email.plain_text);
+      const html = firstString(email.html, email.html_body, email.body_html, email.html_content);
+      if (text || html) return { text, html, retrieved: true, emailId };
+      console.warn(`Retrieved inbound email attempt ${attempt + 1} still empty — keys:`, Object.keys(email || {}));
     } catch (e) {
-      console.error("Resend inbound body response was not valid JSON:", e);
-      return { retrieved: false };
+      console.error(`Error retrieving inbound body attempt ${attempt + 1}:`, e);
     }
-
-    const email = parsed?.data ?? parsed;
-    const text = firstString(
-      email.text,
-      email.text_body,
-      email.body_text,
-      email.plain,
-      email.body_plain,
-      email.plain_text,
-    );
-    const html = firstString(
-      email.html,
-      email.html_body,
-      email.body_html,
-      email.html_content,
-    );
-
-    if (!text && !html) {
-      console.warn("Retrieved inbound email still has no body — response keys:", Object.keys(email || {}));
-    }
-    return { text, html, retrieved: true };
-  } catch (e) {
-    console.error("Error retrieving inbound email body from Resend:", e);
-    return { retrieved: false };
   }
+  return { retrieved: false, emailId };
 }
 
 async function isInternalEmail(supabase: any, email: string): Promise<boolean> {
