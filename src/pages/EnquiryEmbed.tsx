@@ -27,6 +27,7 @@ const enquirySchema = z.object({
   budget: z.string().optional(),
   lead_source: z.string().optional(),
   message: z.string().min(10, 'Message must be at least 10 characters').max(2000),
+  website: z.string().max(200).optional(), // honeypot
 });
 
 type EnquiryFormData = z.infer<typeof enquirySchema>;
@@ -118,6 +119,15 @@ export default function EnquiryEmbed() {
   return (
     <div className="p-4 max-w-lg mx-auto">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Honeypot — hidden from real users */}
+        <input
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0 }}
+          {...register('website')}
+        />
         {/* Contact Details */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
