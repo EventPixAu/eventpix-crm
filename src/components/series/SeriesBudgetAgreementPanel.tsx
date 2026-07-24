@@ -271,6 +271,19 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     ]);
     setDirty(true);
   };
+  const handleAddCatalogItems = (selected: CatalogSelectedItem[]) => {
+    setItems((prev) => [
+      ...prev,
+      ...selected.map((s, i) => ({
+        description: s.name + (s.description ? ` — ${s.description}` : ''),
+        unit_price: s.unit_price,
+        tax_rate: s.tax_rate,
+        pricing_basis: 'per_event' as const,
+        sort_order: prev.length + i,
+      })),
+    ]);
+    setDirty(true);
+  };
   const updateItem = <K extends keyof LocalItem>(
     idx: number,
     key: K,
