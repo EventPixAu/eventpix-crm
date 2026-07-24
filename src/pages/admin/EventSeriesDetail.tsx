@@ -116,6 +116,19 @@ export default function EventSeriesDetail() {
     queryKey: ['series-primary-contact', seriesClientId],
     enabled: !!seriesClientId,
     queryFn: async () => {
+      // Prefer contact_company_associations (newer model)
+      const { data: assocs } = await supabase
+        .from('contact_company_associations')
+        .select('is_primary, created_at, contact:client_contacts(id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title)')
+        .eq('company_id', seriesClientId)
+        .order('created_at', { ascending: true });
+      const assocContacts = (assocs || [])
+        .map((a: any) => ({ ...a.contact, is_primary: a.is_primary }))
+        .filter((c: any) => c && c.id);
+      if (assocContacts.length > 0) {
+        return assocContacts.find((c: any) => c.is_primary) || assocContacts[0];
+      }
+      // Fallback: legacy client_contacts.client_id
       const { data } = await supabase
         .from('client_contacts')
         .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title, is_primary, created_at')
@@ -123,7 +136,6 @@ export default function EventSeriesDetail() {
         .order('created_at', { ascending: true });
       if (!data || data.length === 0) return null;
       return data.find((c: any) => c.is_primary) || data[0];
-
     },
   });
 
