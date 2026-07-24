@@ -836,8 +836,9 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           </div>
 
           {contract?.rendered_html && (
-            <div className="rounded-md border p-4 max-h-80 overflow-auto text-sm prose prose-sm max-w-none dark:prose-invert">
+            <div className="rounded-md border p-4 max-h-80 overflow-auto bg-white text-black">
               <div
+                className="prose prose-sm max-w-none text-black"
                 dangerouslySetInnerHTML={{ __html: contract.rendered_html }}
               />
             </div>
