@@ -25,6 +25,16 @@ interface Props {
 
 export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props) {
   const [campaign, setCampaign] = useState<CampaignInfo | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const [fetchedBody, setFetchedBody] = useState<{ html?: string | null; text?: string | null; preview?: string | null } | null>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setFetchedBody(null);
+    setRetryError(null);
+    setRetrying(false);
+  }, [reply?.id]);
 
   useEffect(() => {
     if (!reply || !open) return;
