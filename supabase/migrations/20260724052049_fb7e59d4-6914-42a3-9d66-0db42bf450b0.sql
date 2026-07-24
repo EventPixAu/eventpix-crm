@@ -1,0 +1,1 @@
+ALTER TABLE public.event_series ADD COLUMN IF NOT EXISTS program_status text;
