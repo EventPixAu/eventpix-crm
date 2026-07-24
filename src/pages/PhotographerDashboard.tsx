@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 type FilterType = 'all' | 'today' | 'upcoming' | 'past';
 
 function JobCard({ job, showFullDate = false }: { job: MyJobSheet; showFullDate?: boolean }) {
+  if (!job.event_date) return null;
   const eventDate = parseISO(job.event_date);
   const eventToday = isToday(eventDate);
   const eventTomorrow = isTomorrow(eventDate);
@@ -163,7 +164,7 @@ export default function PhotographerDashboard() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return jobs.filter((job) => {
+    return jobs.filter((job) => job.event_date).filter((job) => {
       const eventDate = parseISO(job.event_date);
 
       switch (filter) {
@@ -186,14 +187,15 @@ export default function PhotographerDashboard() {
   // Counts for filter badges
   const counts = useMemo(() => {
     const today = new Date();
+    const datedJobs = jobs.filter((j) => j.event_date);
     return {
       all: jobs.length,
-      today: jobs.filter((j) => isToday(parseISO(j.event_date))).length,
-      upcoming: jobs.filter((j) => {
+      today: datedJobs.filter((j) => isToday(parseISO(j.event_date))).length,
+      upcoming: datedJobs.filter((j) => {
         const d = parseISO(j.event_date);
         return isFuture(d) || isToday(d);
       }).length,
-      past: jobs.filter((j) => {
+      past: datedJobs.filter((j) => {
         const d = parseISO(j.event_date);
         return isPast(d) && !isToday(d);
       }).length,
