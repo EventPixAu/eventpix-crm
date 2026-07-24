@@ -1052,7 +1052,8 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           contractHtml={contract.rendered_html || ''}
           contractTitle={contract.title || seriesName}
           mergeContext={{
-            eventName: seriesName,
+            eventName: `${seriesName}${seriesCommencingDate ? ` — series commencing ${seriesCommencingDate}` : ''}`,
+            eventDate: earliestEventIso || undefined,
             contractSignUrl: contract.public_token
               ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
               : undefined,
