@@ -343,10 +343,10 @@ export default function ContactList() {
         }
       }
 
-      // Fetch Team member emails (profiles + staff) to exclude from CRM contacts
+      // Fetch active Team member emails (profiles + staff) to exclude from CRM contacts
       const [{ data: profileEmails }, { data: staffEmails }] = await Promise.all([
-        supabase.from('profiles').select('email'),
-        supabase.from('staff').select('email'),
+        supabase.from('profiles').select('email').eq('status', 'active'),
+        supabase.from('staff').select('email').eq('status', 'active'),
       ]);
       const teamEmailSet = new Set<string>();
       (profileEmails || []).forEach((p: any) => p.email && teamEmailSet.add(String(p.email).toLowerCase()));
