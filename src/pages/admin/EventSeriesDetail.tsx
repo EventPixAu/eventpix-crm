@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -109,6 +109,34 @@ export default function EventSeriesDetail() {
   const { data: staffRoles = [] } = useStaffRoles();
   const { data: opsStatuses = [] } = useOpsStatuses();
   const { data: dressCodes = [] } = useActiveDressCodes();
+
+  // Primary contact for the series's client (from first event)
+  const seriesClientId = events?.[0]?.client_id || null;
+  const { data: primaryContact } = useQuery({
+    queryKey: ['series-primary-contact', seriesClientId],
+    enabled: !!seriesClientId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title')
+        .eq('client_id', seriesClientId)
+        .eq('is_primary', true)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const { data: seriesClient } = useQuery({
+    queryKey: ['series-client', seriesClientId],
+    enabled: !!seriesClientId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, business_name')
+        .eq('id', seriesClientId)
+        .maybeSingle();
+      return data;
+    },
+  });
   
   const updateSeries = useUpdateEventSeries();
   
@@ -433,6 +461,65 @@ export default function EventSeriesDetail() {
         <TabsContent value="overview" className="space-y-6">
           {/* Repeat Revenue Indicators */}
           {id && <SeriesRepeatIndicators seriesId={id} />}
+
+          {/* Primary Contact for the Series */}
+          {seriesClientId && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Primary Contact
+                  {seriesClient?.business_name && (
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      {seriesClient.business_name}
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {primaryContact ? (
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                    <div>
+                      <div className="font-medium">
+                        {primaryContact.contact_name ||
+                          [primaryContact.first_name, primaryContact.last_name].filter(Boolean).join(' ') ||
+                          '—'}
+                      </div>
+                      {primaryContact.role_title && (
+                        <div className="text-xs text-muted-foreground">{primaryContact.role_title}</div>
+                      )}
+                    </div>
+                    {primaryContact.email && (
+                      <a href={`mailto:${primaryContact.email}`} className="text-primary hover:underline">
+                        {primaryContact.email}
+                      </a>
+                    )}
+                    {(primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office) && (
+                      <a
+                        href={`tel:${primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office}`}
+                        className="text-primary hover:underline"
+                      >
+                        {primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office}
+                      </a>
+                    )}
+                    <Link
+                      to={`/sales/clients/${seriesClientId}`}
+                      className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      View client →
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No primary contact set on this client.{' '}
+                    <Link to={`/sales/clients/${seriesClientId}`} className="text-primary hover:underline">
+                      Manage contacts
+                    </Link>
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatCard
