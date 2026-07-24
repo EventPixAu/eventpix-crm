@@ -115,7 +115,8 @@ export default function ContractTemplates() {
       body_html: formData.body_text, // Store same content in both fields
       format: formData.format,
       is_active: formData.is_active,
-    });
+      scope: formData.scope,
+    } as any);
 
     setIsCreateOpen(false);
     resetForm();
@@ -132,6 +133,7 @@ export default function ContractTemplates() {
       body_html: template.body_html,
       format: templateFormat,
       is_active: template.is_active,
+      scope: ((template as any).scope as 'event' | 'series' | 'both') || 'event',
     });
     setIsEditOpen(true);
   };
@@ -151,7 +153,8 @@ export default function ContractTemplates() {
       // For text templates, sync to body_html for legacy compatibility
       body_html: templateFormat === 'text' ? formData.body_text : formData.body_text,
       is_active: formData.is_active,
-    });
+      scope: formData.scope,
+    } as any);
 
     setIsEditOpen(false);
     setSelectedTemplate(null);
