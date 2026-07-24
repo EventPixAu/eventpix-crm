@@ -1045,9 +1045,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             ''
           }
           relatedContractId={contract.id}
-          defaultSubject={`Agreement: ${contract.title || seriesName}${
-            seriesCommencingDate ? ` — series commencing ${seriesCommencingDate}` : ''
-          }`}
+          defaultSubject={`Agreement: ${contract.title || seriesName}`}
           context="contract"
           contractHtml={contract.rendered_html || ''}
           contractTitle={contract.title || seriesName}
