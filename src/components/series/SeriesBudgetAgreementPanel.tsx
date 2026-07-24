@@ -708,9 +708,23 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           </div>
 
           {!isLocked && (
-            <Button variant="outline" size="sm" onClick={addItem}>
-              <Plus className="h-4 w-4 mr-1" /> Add line item
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsProductsDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Add line item
+              </Button>
+              <Button variant="ghost" size="sm" onClick={addItem}>
+                Add custom line
+              </Button>
+            </div>
+          )}
+
+          <AddProductsPackagesDialog
+            open={isProductsDialogOpen}
+            onOpenChange={setIsProductsDialogOpen}
+            onAdd={handleAddCatalogItems}
+          />
+
+          {false && (
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
