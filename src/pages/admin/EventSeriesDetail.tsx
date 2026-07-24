@@ -116,17 +116,26 @@ export default function EventSeriesDetail() {
     queryKey: ['series-primary-contact', seriesClientId],
     enabled: !!seriesClientId,
     queryFn: async () => {
-      // Prefer contact_company_associations (newer model)
+      // Prefer contact_company_associations (newer model) — no FK exists so fetch in 2 steps
       const { data: assocs } = await supabase
         .from('contact_company_associations')
-        .select('is_primary, created_at, contact:client_contacts(id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title)')
+        .select('contact_id, is_primary, created_at')
         .eq('company_id', seriesClientId)
         .order('created_at', { ascending: true });
-      const assocContacts = (assocs || [])
-        .map((a: any) => ({ ...a.contact, is_primary: a.is_primary }))
-        .filter((c: any) => c && c.id);
-      if (assocContacts.length > 0) {
-        return assocContacts.find((c: any) => c.is_primary) || assocContacts[0];
+      const contactIds = (assocs || []).map((a: any) => a.contact_id).filter(Boolean);
+      if (contactIds.length > 0) {
+        const { data: contacts } = await supabase
+          .from('client_contacts')
+          .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title')
+          .in('id', contactIds);
+        const byId: Record<string, any> = {};
+        (contacts || []).forEach((c: any) => { byId[c.id] = c; });
+        const merged = (assocs || [])
+          .map((a: any) => byId[a.contact_id] ? { ...byId[a.contact_id], is_primary: a.is_primary } : null)
+          .filter(Boolean) as any[];
+        if (merged.length > 0) {
+          return merged.find((c: any) => c.is_primary) || merged[0];
+        }
       }
       // Fallback: legacy client_contacts.client_id
       const { data } = await supabase
