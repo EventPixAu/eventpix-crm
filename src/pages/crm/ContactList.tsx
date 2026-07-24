@@ -194,10 +194,20 @@ export default function ContactList() {
     },
   });
 
-  // Total count query (accurate regardless of fetch limit, respects archived toggle)
+  // Total count query (accurate regardless of fetch limit, respects archived toggle and team-member exclusion)
   const { data: totalCount = 0 } = useQuery({
     queryKey: ['crm-contacts-count', search, showArchived],
     queryFn: async () => {
+      // Fetch team member emails to exclude them from the CRM count (matches the contacts list filter)
+      const [{ data: profileEmails }, { data: staffEmails }] = await Promise.all([
+        supabase.from('profiles').select('email'),
+        supabase.from('staff').select('email'),
+      ]);
+      const teamEmailSet = new Set<string>();
+      (profileEmails || []).forEach((p: any) => p.email && teamEmailSet.add(String(p.email).toLowerCase()));
+      (staffEmails || []).forEach((s: any) => s.email && teamEmailSet.add(String(s.email).toLowerCase()));
+      const teamEmails = Array.from(teamEmailSet);
+
       let countQuery = supabase
         .from('client_contacts')
         .select('*', { count: 'exact', head: true });
@@ -212,6 +222,10 @@ export default function ContactList() {
         countQuery = countQuery.eq('archived', true);
       } else {
         countQuery = countQuery.or('archived.eq.false,archived.is.null');
+      }
+
+      if (teamEmails.length > 0) {
+        countQuery = countQuery.not('email', 'in', teamEmails);
       }
 
       const { count, error } = await countQuery;
