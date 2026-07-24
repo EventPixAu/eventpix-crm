@@ -89,6 +89,7 @@ export default function ContractTemplates() {
     body_html: '',
     format: 'text' as TemplateFormat,
     is_active: true,
+    scope: 'event' as 'event' | 'series' | 'both',
   });
 
   const resetForm = () => {
@@ -98,6 +99,7 @@ export default function ContractTemplates() {
       body_html: '',
       format: 'text',
       is_active: true,
+      scope: 'event',
     });
   };
 
