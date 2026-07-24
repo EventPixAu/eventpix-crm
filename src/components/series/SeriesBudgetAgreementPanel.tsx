@@ -801,6 +801,9 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             the template body:{' '}
             <code>{'{{series_name}}'}</code>,{' '}
             <code>{'{{event_count}}'}</code>,{' '}
+            <code>{'{{events_table}}'}</code> (renders a table of every event
+            with name, date, venue and per-event fee),{' '}
+            <code>{'{{per_event_fee}}'}</code>,{' '}
             <code>{'{{per_event_total}}'}</code>,{' '}
             <code>{'{{flat_total}}'}</code>,{' '}
             <code>{'{{grand_total}}'}</code>.
