@@ -564,11 +564,27 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       return token;
     },
     onSuccess: () => {
-      toast.success('Agreement marked as sent — share the link below');
       qc.invalidateQueries({ queryKey: ['series-contract', seriesId] });
     },
     onError: (e: any) => toast.error(e.message || 'Send failed'),
   });
+
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+
+  const handleSendAgreement = async () => {
+    if (!contract?.id) {
+      toast.error('Save the agreement first');
+      return;
+    }
+    if (!contract.public_token) {
+      try {
+        await sendContract.mutateAsync();
+      } catch {
+        return;
+      }
+    }
+    setIsEmailDialogOpen(true);
+  };
 
   const contractLink = contract?.public_token
     ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
