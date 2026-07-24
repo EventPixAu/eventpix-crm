@@ -87,8 +87,9 @@ function useSeriesEventsMeta(seriesId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, client_id, ops_status')
-        .eq('event_series_id', seriesId);
+        .select('id, client_id, ops_status, event_name, event_date, venue_name')
+        .eq('event_series_id', seriesId)
+        .order('event_date', { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
