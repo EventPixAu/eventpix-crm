@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Reply, ExternalLink, Megaphone } from 'lucide-react';
+import { Reply, ExternalLink, Megaphone, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { EmailLog } from '@/hooks/useEmailLogs';
+
 
 interface CampaignInfo {
   campaignId: string;
