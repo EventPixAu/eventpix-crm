@@ -187,9 +187,29 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
             />
           ) : (
-            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs">
-              Content unavailable — the email body was not stored for this reply.
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs space-y-2">
+              <div>Content unavailable — the email body wasn't stored for this reply. It may still be available from the email provider.</div>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  onClick={handleRetry}
+                  disabled={retrying}
+                >
+                  {retrying ? (
+                    <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Retrying…</>
+                  ) : (
+                    <><RefreshCw className="h-3 w-3 mr-1" />Retry fetching content</>
+                  )}
+                </Button>
+                {retryError && (
+                  <div className="text-red-600 mt-1">{retryError}</div>
+                )}
+              </div>
             </div>
+
           )}
         </div>
 
