@@ -29,6 +29,7 @@ const enquirySchema = z.object({
   budget: z.string().optional(),
   lead_source: z.string().optional(),
   message: z.string().min(10, 'Message must be at least 10 characters').max(2000),
+  website: z.string().max(200).optional(), // honeypot
 });
 
 type EnquiryFormData = z.infer<typeof enquirySchema>;
