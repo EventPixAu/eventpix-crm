@@ -118,13 +118,15 @@ export default function EventSeriesDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from('client_contacts')
-        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title')
+        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title, is_primary, created_at')
         .eq('client_id', seriesClientId)
-        .eq('is_primary', true)
-        .maybeSingle();
-      return data;
+        .order('created_at', { ascending: true });
+      if (!data || data.length === 0) return null;
+      return data.find((c: any) => c.is_primary) || data[0];
+
     },
   });
+
   const { data: seriesClient } = useQuery({
     queryKey: ['series-client', seriesClientId],
     enabled: !!seriesClientId,
@@ -503,7 +505,7 @@ export default function EventSeriesDetail() {
                       </a>
                     )}
                     <Link
-                      to={`/sales/clients/${seriesClientId}`}
+                      to={`/crm/companies/${seriesClientId}`}
                       className="ml-auto text-xs text-muted-foreground hover:text-foreground"
                     >
                       View client →
@@ -512,7 +514,7 @@ export default function EventSeriesDetail() {
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     No primary contact set on this client.{' '}
-                    <Link to={`/sales/clients/${seriesClientId}`} className="text-primary hover:underline">
+                    <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
                       Manage contacts
                     </Link>
                   </p>
