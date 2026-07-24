@@ -150,13 +150,16 @@ function useSeriesContract(seriesId: string) {
 
 function useContractTemplates() {
   return useQuery({
-    queryKey: ['contract-templates-active'],
+    queryKey: ['contract-templates-series'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Only show templates flagged as series-compatible (scope = 'series' or 'both')
+      // to prevent accidentally picking a single-event template for a whole series.
+      const { data, error } = await (supabase as any)
         .from('contract_templates')
-        .select('id, name, body_html, format')
+        .select('id, name, body_html, format, scope')
         .eq('is_active', true)
         .is('archived_at', null)
+        .in('scope', ['series', 'both'])
         .order('name');
       if (error) throw error;
       return data ?? [];
