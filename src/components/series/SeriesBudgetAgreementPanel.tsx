@@ -885,14 +885,41 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             )}
           </div>
 
-          {contract?.rendered_html && (
-            <div className="rounded-md border p-4 max-h-80 overflow-auto bg-white text-black">
-              <div
-                className="prose prose-sm max-w-none text-black"
-                dangerouslySetInnerHTML={{ __html: contract.rendered_html }}
-              />
-            </div>
-          )}
+          {contract?.rendered_html && (() => {
+            const unresolved = Array.from(
+              new Set(
+                (contract.rendered_html.match(/\{\{\s*[^{}]+?\s*\}\}/g) || []).map((t: string) =>
+                  t.replace(/\s+/g, ''),
+                ),
+              ),
+            );
+            return (
+              <>
+                {unresolved.length > 0 && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm">
+                    <div className="font-semibold mb-1">
+                      {unresolved.length} unresolved merge field
+                      {unresolved.length === 1 ? '' : 's'} remain — this document
+                      may be incomplete
+                    </div>
+                    <div className="font-mono text-xs break-all">
+                      {unresolved.join(', ')}
+                    </div>
+                    <div className="mt-1 text-xs">
+                      Edit the template in Admin → Contract Templates to remove
+                      or replace these tokens, then re-save the agreement.
+                    </div>
+                  </div>
+                )}
+                <div className="rounded-md border p-4 max-h-80 overflow-auto bg-white text-black">
+                  <div
+                    className="prose prose-sm max-w-none text-black"
+                    dangerouslySetInnerHTML={{ __html: contract.rendered_html }}
+                  />
+                </div>
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>
