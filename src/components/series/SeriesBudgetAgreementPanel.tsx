@@ -203,6 +203,21 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     [seriesEvents],
   );
 
+  const { data: client } = useQuery({
+    queryKey: ['series-client', inferredClientId],
+    queryFn: async () => {
+      if (!inferredClientId) return null;
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, business_name, primary_contact_name, primary_contact_email')
+        .eq('id', inferredClientId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!inferredClientId,
+  });
+
   // ---------- quote form state ----------
   const [items, setItems] = useState<LocalItem[]>([]);
   const [notes, setNotes] = useState('');
