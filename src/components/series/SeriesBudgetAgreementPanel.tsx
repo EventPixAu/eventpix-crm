@@ -47,6 +47,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
+
+interface CatalogSelectedItem {
+  type: 'product' | 'package';
+  id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  tax_rate: number;
+  quantity: number;
+  group_label?: string | null;
+}
 import {
   DollarSign,
   FileSignature,
