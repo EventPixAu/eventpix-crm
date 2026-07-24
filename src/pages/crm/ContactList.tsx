@@ -198,10 +198,10 @@ export default function ContactList() {
   const { data: totalCount = 0 } = useQuery({
     queryKey: ['crm-contacts-count', search, showArchived],
     queryFn: async () => {
-      // Fetch team member emails to exclude them from the CRM count (matches the contacts list filter)
+      // Fetch active team member emails to exclude from the CRM count (matches the contacts list filter)
       const [{ data: profileEmails }, { data: staffEmails }] = await Promise.all([
-        supabase.from('profiles').select('email'),
-        supabase.from('staff').select('email'),
+        supabase.from('profiles').select('email').eq('status', 'active'),
+        supabase.from('staff').select('email').eq('status', 'active'),
       ]);
       const teamEmailSet = new Set<string>();
       (profileEmails || []).forEach((p: any) => p.email && teamEmailSet.add(String(p.email).toLowerCase()));
@@ -343,10 +343,10 @@ export default function ContactList() {
         }
       }
 
-      // Fetch Team member emails (profiles + staff) to exclude from CRM contacts
+      // Fetch active Team member emails (profiles + staff) to exclude from CRM contacts
       const [{ data: profileEmails }, { data: staffEmails }] = await Promise.all([
-        supabase.from('profiles').select('email'),
-        supabase.from('staff').select('email'),
+        supabase.from('profiles').select('email').eq('status', 'active'),
+        supabase.from('staff').select('email').eq('status', 'active'),
       ]);
       const teamEmailSet = new Set<string>();
       (profileEmails || []).forEach((p: any) => p.email && teamEmailSet.add(String(p.email).toLowerCase()));
