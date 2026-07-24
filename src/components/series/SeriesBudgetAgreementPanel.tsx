@@ -218,6 +218,38 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     enabled: !!inferredClientId,
   });
 
+  const { data: primaryContact } = useQuery({
+    queryKey: ['series-primary-contact', inferredClientId],
+    queryFn: async () => {
+      if (!inferredClientId) return null;
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .select('contact_name, email, first_name, last_name')
+        .eq('client_id', inferredClientId)
+        .eq('is_primary', true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!inferredClientId,
+  });
+
+  const seriesCommencingDate = useMemo(() => {
+    const dates = seriesEvents
+      .map((e: any) => e.event_date)
+      .filter((d: string | null): d is string => !!d)
+      .sort();
+    if (!dates.length) return null;
+    const d = new Date(dates[0] + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }, [seriesEvents]);
+
+
   // ---------- quote form state ----------
   const [items, setItems] = useState<LocalItem[]>([]);
   const [notes, setNotes] = useState('');
@@ -1000,10 +1032,18 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           open={isEmailDialogOpen}
           onOpenChange={setIsEmailDialogOpen}
           clientId={client.id}
-          clientEmail={client.primary_contact_email || ''}
-          clientName={client.primary_contact_name || client.business_name || ''}
+          clientEmail={primaryContact?.email || client.primary_contact_email || ''}
+          clientName={
+            primaryContact?.contact_name ||
+            [primaryContact?.first_name, primaryContact?.last_name].filter(Boolean).join(' ') ||
+            client.primary_contact_name ||
+            client.business_name ||
+            ''
+          }
           relatedContractId={contract.id}
-          defaultSubject={`Agreement: ${contract.title || seriesName}`}
+          defaultSubject={`Agreement: ${contract.title || seriesName}${
+            seriesCommencingDate ? ` — series commencing ${seriesCommencingDate}` : ''
+          }`}
           context="contract"
           contractHtml={contract.rendered_html || ''}
           contractTitle={contract.title || seriesName}
@@ -1015,6 +1055,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           }}
         />
       )}
+
     </div>
   );
 }
