@@ -1032,10 +1032,18 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           open={isEmailDialogOpen}
           onOpenChange={setIsEmailDialogOpen}
           clientId={client.id}
-          clientEmail={client.primary_contact_email || ''}
-          clientName={client.primary_contact_name || client.business_name || ''}
+          clientEmail={primaryContact?.email || client.primary_contact_email || ''}
+          clientName={
+            primaryContact?.contact_name ||
+            [primaryContact?.first_name, primaryContact?.last_name].filter(Boolean).join(' ') ||
+            client.primary_contact_name ||
+            client.business_name ||
+            ''
+          }
           relatedContractId={contract.id}
-          defaultSubject={`Agreement: ${contract.title || seriesName}`}
+          defaultSubject={`Agreement: ${contract.title || seriesName}${
+            seriesCommencingDate ? ` — series commencing ${seriesCommencingDate}` : ''
+          }`}
           context="contract"
           contractHtml={contract.rendered_html || ''}
           contractTitle={contract.title || seriesName}
@@ -1047,6 +1055,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           }}
         />
       )}
+
     </div>
   );
 }
