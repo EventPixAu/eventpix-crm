@@ -35,8 +35,9 @@ export default function OperationsDashboard() {
   const { data: events = [], isLoading: eventsLoading } = useEvents();
 
   const stats = useMemo(() => {
-    const todayEvents = events.filter(e => isToday(parseISO(e.event_date)));
-    const upcomingEvents = events.filter(e => isFuture(parseISO(e.event_date)));
+    const datedEvents = events.filter(e => e.event_date);
+    const todayEvents = datedEvents.filter(e => isToday(parseISO(e.event_date)));
+    const upcomingEvents = datedEvents.filter(e => isFuture(parseISO(e.event_date)));
 
     return {
       totalEvents: events.length,
@@ -47,6 +48,7 @@ export default function OperationsDashboard() {
 
   const upcomingEvents = useMemo(() => {
     return events
+      .filter(e => e.event_date)
       .filter(e => {
         const date = parseISO(e.event_date);
         return isToday(date) || isFuture(date);
