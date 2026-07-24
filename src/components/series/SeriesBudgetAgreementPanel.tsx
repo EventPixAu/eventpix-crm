@@ -928,7 +928,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             </Button>
             <Button
               variant="secondary"
-              onClick={() => sendContract.mutate()}
+              onClick={handleSendAgreement}
               disabled={
                 sendContract.isPending ||
                 !contract?.id ||
@@ -936,7 +936,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
               }
             >
               <Send className="h-4 w-4 mr-1" />
-              {contract?.public_token ? 'Re-send' : 'Send for signing'}
+              {contract?.public_token ? 'Re-send agreement' : 'Send agreement'}
             </Button>
             {contractLink && (
               <div className="flex items-center gap-2 ml-auto">
