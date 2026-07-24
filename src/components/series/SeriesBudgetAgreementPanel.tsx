@@ -208,6 +208,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   const [termsText, setTermsText] = useState(DEFAULT_TERMS);
   const [quoteName, setQuoteName] = useState('');
   const [dirty, setDirty] = useState(false);
+  const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (quote) {
