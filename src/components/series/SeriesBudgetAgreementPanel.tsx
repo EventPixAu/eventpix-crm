@@ -994,6 +994,27 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           })()}
         </CardContent>
       </Card>
+
+      {contract && client && (
+        <SendEmailDialog
+          open={isEmailDialogOpen}
+          onOpenChange={setIsEmailDialogOpen}
+          clientId={client.id}
+          clientEmail={client.primary_contact_email || ''}
+          clientName={client.primary_contact_name || client.business_name || ''}
+          relatedContractId={contract.id}
+          defaultSubject={`Agreement: ${contract.title || seriesName}`}
+          context="contract"
+          contractHtml={contract.rendered_html || ''}
+          contractTitle={contract.title || seriesName}
+          mergeContext={{
+            eventName: seriesName,
+            contractSignUrl: contract.public_token
+              ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
+              : undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
