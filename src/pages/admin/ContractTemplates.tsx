@@ -89,6 +89,7 @@ export default function ContractTemplates() {
     body_html: '',
     format: 'text' as TemplateFormat,
     is_active: true,
+    scope: 'event' as 'event' | 'series' | 'both',
   });
 
   const resetForm = () => {
@@ -98,6 +99,7 @@ export default function ContractTemplates() {
       body_html: '',
       format: 'text',
       is_active: true,
+      scope: 'event',
     });
   };
 
@@ -113,7 +115,8 @@ export default function ContractTemplates() {
       body_html: formData.body_text, // Store same content in both fields
       format: formData.format,
       is_active: formData.is_active,
-    });
+      scope: formData.scope,
+    } as any);
 
     setIsCreateOpen(false);
     resetForm();
@@ -130,6 +133,7 @@ export default function ContractTemplates() {
       body_html: template.body_html,
       format: templateFormat,
       is_active: template.is_active,
+      scope: ((template as any).scope as 'event' | 'series' | 'both') || 'event',
     });
     setIsEditOpen(true);
   };
@@ -149,7 +153,8 @@ export default function ContractTemplates() {
       // For text templates, sync to body_html for legacy compatibility
       body_html: templateFormat === 'text' ? formData.body_text : formData.body_text,
       is_active: formData.is_active,
-    });
+      scope: formData.scope,
+    } as any);
 
     setIsEditOpen(false);
     setSelectedTemplate(null);
@@ -560,13 +565,28 @@ Date: {{today}}`}
               />
             )}
 
-            <div className="flex items-center gap-2">
-              <Switch
-                id="is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-              />
-              <Label htmlFor="is_active">Active</Label>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="is_active">Active</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="create-scope" className="text-sm">Use for</Label>
+                <select
+                  id="create-scope"
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  value={formData.scope}
+                  onChange={(e) => setFormData({ ...formData, scope: e.target.value as any })}
+                >
+                  <option value="event">Single events</option>
+                  <option value="series">Series agreements</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -638,13 +658,28 @@ Date: {{today}}`}
               />
             )}
 
-            <div className="flex items-center gap-2">
-              <Switch
-                id="edit-is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-              />
-              <Label htmlFor="edit-is_active">Active</Label>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="edit-is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="edit-is_active">Active</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="edit-scope" className="text-sm">Use for</Label>
+                <select
+                  id="edit-scope"
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  value={formData.scope}
+                  onChange={(e) => setFormData({ ...formData, scope: e.target.value as any })}
+                >
+                  <option value="event">Single events</option>
+                  <option value="series">Series agreements</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
             </div>
           </div>
           <DialogFooter>
