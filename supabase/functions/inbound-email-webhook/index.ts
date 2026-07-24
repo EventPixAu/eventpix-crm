@@ -346,7 +346,7 @@ serve(async (req) => {
     const { email: fromEmail, name: fromName } = parseAddress(fromRaw);
     const { email: toEmail } = parseAddress(toRaw);
     const subject: string = data.subject ?? "(No Subject)";
-    const { text, html, retrieved } = await resolveInboundBody(data);
+    const { text, html, retrieved, emailId } = await resolveInboundBody(data);
 
     if (!text && !html) {
       console.warn("Inbound email has no text or html body — payload keys:", Object.keys(data || {}));
