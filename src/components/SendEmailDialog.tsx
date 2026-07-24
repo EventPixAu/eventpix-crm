@@ -316,7 +316,8 @@ export function SendEmailDialog({
     if (template) {
       setSubject(processMergeFields(template.subject));
       const rawBody = template.body_text || template.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      setBody(rawBody);
+      const processedBody = processMergeFields(rawBody).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+      setBody(processedBody);
     }
   };
 
