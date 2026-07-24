@@ -457,6 +457,7 @@ serve(async (req) => {
       client_id: internal ? null : (contact?.client_id || original?.client_id || null),
       event_id: internal ? null : (original?.event_id || null),
       lead_id: internal ? null : (original?.lead_id || null),
+      resend_email_id: emailId || null,
     };
 
 
