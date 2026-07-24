@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 
 interface CatalogSelectedItem {
   type: 'product' | 'package';
@@ -201,6 +202,21 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     () => seriesEvents[0]?.client_id || null,
     [seriesEvents],
   );
+
+  const { data: client } = useQuery({
+    queryKey: ['series-client', inferredClientId],
+    queryFn: async () => {
+      if (!inferredClientId) return null;
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, business_name, primary_contact_name, primary_contact_email')
+        .eq('id', inferredClientId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!inferredClientId,
+  });
 
   // ---------- quote form state ----------
   const [items, setItems] = useState<LocalItem[]>([]);
@@ -548,11 +564,27 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       return token;
     },
     onSuccess: () => {
-      toast.success('Agreement marked as sent — share the link below');
       qc.invalidateQueries({ queryKey: ['series-contract', seriesId] });
     },
     onError: (e: any) => toast.error(e.message || 'Send failed'),
   });
+
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+
+  const handleSendAgreement = async () => {
+    if (!contract?.id) {
+      toast.error('Save the agreement first');
+      return;
+    }
+    if (!contract.public_token) {
+      try {
+        await sendContract.mutateAsync();
+      } catch {
+        return;
+      }
+    }
+    setIsEmailDialogOpen(true);
+  };
 
   const contractLink = contract?.public_token
     ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
@@ -896,7 +928,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             </Button>
             <Button
               variant="secondary"
-              onClick={() => sendContract.mutate()}
+              onClick={handleSendAgreement}
               disabled={
                 sendContract.isPending ||
                 !contract?.id ||
@@ -904,7 +936,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
               }
             >
               <Send className="h-4 w-4 mr-1" />
-              {contract?.public_token ? 'Re-send' : 'Send for signing'}
+              {contract?.public_token ? 'Re-send agreement' : 'Send agreement'}
             </Button>
             {contractLink && (
               <div className="flex items-center gap-2 ml-auto">
@@ -962,6 +994,27 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           })()}
         </CardContent>
       </Card>
+
+      {contract && client && (
+        <SendEmailDialog
+          open={isEmailDialogOpen}
+          onOpenChange={setIsEmailDialogOpen}
+          clientId={client.id}
+          clientEmail={client.primary_contact_email || ''}
+          clientName={client.primary_contact_name || client.business_name || ''}
+          relatedContractId={contract.id}
+          defaultSubject={`Agreement: ${contract.title || seriesName}`}
+          context="contract"
+          contractHtml={contract.rendered_html || ''}
+          contractTitle={contract.title || seriesName}
+          mergeContext={{
+            eventName: seriesName,
+            contractSignUrl: contract.public_token
+              ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
+              : undefined,
+          }}
+        />
+      )}
     </div>
   );
 }
