@@ -185,7 +185,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   const qc = useQueryClient();
   const { data: seriesEvents = [] } = useSeriesEventsMeta(seriesId);
   const { data: quote, isLoading: quoteLoading } = useSeriesQuote(seriesId);
-  const { data: existingItems = [] } = useSeriesQuoteItems(quote?.id);
+  const { data: existingItems } = useSeriesQuoteItems(quote?.id);
   const { data: contract } = useSeriesContract(seriesId);
   const { data: templates = [] } = useContractTemplates();
 
