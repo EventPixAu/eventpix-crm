@@ -47,6 +47,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
+
+interface CatalogSelectedItem {
+  type: 'product' | 'package';
+  id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  tax_rate: number;
+  quantity: number;
+  group_label?: string | null;
+}
 import {
   DollarSign,
   FileSignature,
@@ -196,6 +208,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   const [termsText, setTermsText] = useState(DEFAULT_TERMS);
   const [quoteName, setQuoteName] = useState('');
   const [dirty, setDirty] = useState(false);
+  const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
 
   useEffect(() => {
     if (quote) {
@@ -255,6 +268,19 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
         pricing_basis: 'per_event',
         sort_order: prev.length,
       },
+    ]);
+    setDirty(true);
+  };
+  const handleAddCatalogItems = (selected: CatalogSelectedItem[]) => {
+    setItems((prev) => [
+      ...prev,
+      ...selected.map((s, i) => ({
+        description: s.name + (s.description ? ` — ${s.description}` : ''),
+        unit_price: s.unit_price,
+        tax_rate: s.tax_rate,
+        pricing_basis: 'per_event' as const,
+        sort_order: prev.length + i,
+      })),
     ]);
     setDirty(true);
   };
@@ -682,10 +708,22 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           </div>
 
           {!isLocked && (
-            <Button variant="outline" size="sm" onClick={addItem}>
-              <Plus className="h-4 w-4 mr-1" /> Add line item
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsProductsDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Add line item
+              </Button>
+              <Button variant="ghost" size="sm" onClick={addItem}>
+                Add custom line
+              </Button>
+            </div>
           )}
+
+          <AddProductsPackagesDialog
+            open={isProductsDialogOpen}
+            onOpenChange={setIsProductsDialogOpen}
+            onAdd={handleAddCatalogItems}
+          />
+
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
