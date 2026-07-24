@@ -185,7 +185,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   const qc = useQueryClient();
   const { data: seriesEvents = [] } = useSeriesEventsMeta(seriesId);
   const { data: quote, isLoading: quoteLoading } = useSeriesQuote(seriesId);
-  const { data: existingItems = [] } = useSeriesQuoteItems(quote?.id);
+  const { data: existingItems } = useSeriesQuoteItems(quote?.id);
   const { data: contract } = useSeriesContract(seriesId);
   const { data: templates = [] } = useContractTemplates();
 
@@ -221,7 +221,11 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   }, [quote, seriesName]);
 
   useEffect(() => {
-    if (existingItems.length) {
+    // Only hydrate local items from the server when the query has actually
+    // returned rows. Never clobber unsaved local items with an empty array
+    // just because the query hasn't run (or returned no rows) yet — that was
+    // wiping catalog selections on every re-render.
+    if (existingItems && existingItems.length) {
       setItems(
         existingItems.map((it: any, idx: number) => ({
           id: it.id,
@@ -233,10 +237,8 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
         })),
       );
       setDirty(false);
-    } else if (!quote) {
-      setItems([]);
     }
-  }, [existingItems, quote]);
+  }, [existingItems]);
 
   const totals = useMemo(() => {
     let perEventSubtotal = 0;
