@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 
 interface CatalogSelectedItem {
   type: 'product' | 'package';
