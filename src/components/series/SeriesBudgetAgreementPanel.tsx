@@ -234,20 +234,24 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     enabled: !!inferredClientId,
   });
 
-  const seriesCommencingDate = useMemo(() => {
+  const earliestEventIso = useMemo(() => {
     const dates = seriesEvents
       .map((e: any) => e.event_date)
       .filter((d: string | null): d is string => !!d)
       .sort();
-    if (!dates.length) return null;
-    const d = new Date(dates[0] + 'T00:00:00');
+    return dates[0] || null;
+  }, [seriesEvents]);
+
+  const seriesCommencingDate = useMemo(() => {
+    if (!earliestEventIso) return null;
+    const d = new Date(earliestEventIso + 'T00:00:00');
     return d.toLocaleDateString('en-AU', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
-  }, [seriesEvents]);
+  }, [earliestEventIso]);
 
 
   // ---------- quote form state ----------
