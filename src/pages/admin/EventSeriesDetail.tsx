@@ -109,6 +109,34 @@ export default function EventSeriesDetail() {
   const { data: staffRoles = [] } = useStaffRoles();
   const { data: opsStatuses = [] } = useOpsStatuses();
   const { data: dressCodes = [] } = useActiveDressCodes();
+
+  // Primary contact for the series's client (from first event)
+  const seriesClientId = events?.[0]?.client_id || null;
+  const { data: primaryContact } = useQuery({
+    queryKey: ['series-primary-contact', seriesClientId],
+    enabled: !!seriesClientId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title')
+        .eq('client_id', seriesClientId)
+        .eq('is_primary', true)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const { data: seriesClient } = useQuery({
+    queryKey: ['series-client', seriesClientId],
+    enabled: !!seriesClientId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('id, business_name')
+        .eq('id', seriesClientId)
+        .maybeSingle();
+      return data;
+    },
+  });
   
   const updateSeries = useUpdateEventSeries();
   
