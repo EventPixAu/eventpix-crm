@@ -118,13 +118,18 @@ export default function EventSeriesDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from('client_contacts')
-        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title')
+        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title, is_primary, contact_type, created_at')
         .eq('client_id', seriesClientId)
-        .eq('is_primary', true)
-        .maybeSingle();
-      return data;
+        .order('created_at', { ascending: true });
+      if (!data || data.length === 0) return null;
+      return (
+        data.find((c: any) => c.is_primary) ||
+        data.find((c: any) => (c.contact_type || '').toLowerCase() === 'primary') ||
+        data[0]
+      );
     },
   });
+
   const { data: seriesClient } = useQuery({
     queryKey: ['series-client', seriesClientId],
     enabled: !!seriesClientId,
