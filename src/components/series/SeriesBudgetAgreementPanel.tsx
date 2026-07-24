@@ -218,6 +218,38 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     enabled: !!inferredClientId,
   });
 
+  const { data: primaryContact } = useQuery({
+    queryKey: ['series-primary-contact', inferredClientId],
+    queryFn: async () => {
+      if (!inferredClientId) return null;
+      const { data, error } = await supabase
+        .from('client_contacts')
+        .select('contact_name, email, first_name, last_name')
+        .eq('client_id', inferredClientId)
+        .eq('is_primary', true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!inferredClientId,
+  });
+
+  const seriesCommencingDate = useMemo(() => {
+    const dates = seriesEvents
+      .map((e: any) => e.event_date)
+      .filter((d: string | null): d is string => !!d)
+      .sort();
+    if (!dates.length) return null;
+    const d = new Date(dates[0] + 'T00:00:00');
+    return d.toLocaleDateString('en-AU', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }, [seriesEvents]);
+
+
   // ---------- quote form state ----------
   const [items, setItems] = useState<LocalItem[]>([]);
   const [notes, setNotes] = useState('');
