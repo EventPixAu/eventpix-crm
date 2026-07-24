@@ -658,13 +658,28 @@ Date: {{today}}`}
               />
             )}
 
-            <div className="flex items-center gap-2">
-              <Switch
-                id="edit-is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-              />
-              <Label htmlFor="edit-is_active">Active</Label>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="edit-is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                />
+                <Label htmlFor="edit-is_active">Active</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="edit-scope" className="text-sm">Use for</Label>
+                <select
+                  id="edit-scope"
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  value={formData.scope}
+                  onChange={(e) => setFormData({ ...formData, scope: e.target.value as any })}
+                >
+                  <option value="event">Single events</option>
+                  <option value="series">Series agreements</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
             </div>
           </div>
           <DialogFooter>
