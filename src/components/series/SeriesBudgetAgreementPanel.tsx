@@ -724,8 +724,6 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             onAdd={handleAddCatalogItems}
           />
 
-          {false && (
-          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
