@@ -87,8 +87,9 @@ function useSeriesEventsMeta(seriesId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('id, client_id, ops_status')
-        .eq('event_series_id', seriesId);
+        .select('id, client_id, ops_status, event_name, event_date, venue_name')
+        .eq('event_series_id', seriesId)
+        .order('event_date', { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
@@ -396,14 +397,57 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
 
   const renderContract = (bodyHtml: string) => {
     const money = (n: number) =>
-      n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+      n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' });
+    const activeEvents = seriesEvents.filter(
+      (e: any) => !['cancelled', 'archived'].includes(e.ops_status || ''),
+    );
+    const perEventFee = activeEventCount
+      ? totals.perEventSubtotal / activeEventCount
+      : 0;
+    const fmtDate = (d: string | null) => {
+      if (!d) return 'TBC';
+      try {
+        return new Date(d + 'T00:00:00').toLocaleDateString('en-AU', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+      } catch {
+        return d;
+      }
+    };
+    const rows = activeEvents
+      .map(
+        (e: any) => `
+          <tr>
+            <td style="padding:6px 10px;border:1px solid #ddd;">${e.event_name || 'Event'}</td>
+            <td style="padding:6px 10px;border:1px solid #ddd;">${fmtDate(e.event_date)}</td>
+            <td style="padding:6px 10px;border:1px solid #ddd;">${e.venue_name || 'TBC'}</td>
+            <td style="padding:6px 10px;border:1px solid #ddd;text-align:right;">${money(perEventFee)}</td>
+          </tr>`,
+      )
+      .join('');
+    const eventsTable = `
+      <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;">
+        <thead>
+          <tr style="background:#f3f4f6;">
+            <th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Event</th>
+            <th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Date</th>
+            <th style="padding:6px 10px;border:1px solid #ddd;text-align:left;">Venue</th>
+            <th style="padding:6px 10px;border:1px solid #ddd;text-align:right;">Fee (per event)</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
     return bodyHtml
       .replace(/\{\{\s*series_name\s*\}\}/g, seriesName)
       .replace(/\{\{\s*event_count\s*\}\}/g, String(activeEventCount))
+      .replace(/\{\{\s*events_table\s*\}\}/g, eventsTable)
       .replace(
         /\{\{\s*per_event_total\s*\}\}/g,
         money(totals.perEventSubtotal),
       )
+      .replace(/\{\{\s*per_event_fee\s*\}\}/g, money(perEventFee))
       .replace(/\{\{\s*flat_total\s*\}\}/g, money(totals.flatSubtotal))
       .replace(/\{\{\s*grand_total\s*\}\}/g, money(totals.grandTotal));
   };
@@ -757,6 +801,9 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
             the template body:{' '}
             <code>{'{{series_name}}'}</code>,{' '}
             <code>{'{{event_count}}'}</code>,{' '}
+            <code>{'{{events_table}}'}</code> (renders a table of every event
+            with name, date, venue and per-event fee),{' '}
+            <code>{'{{per_event_fee}}'}</code>,{' '}
             <code>{'{{per_event_total}}'}</code>,{' '}
             <code>{'{{flat_total}}'}</code>,{' '}
             <code>{'{{grand_total}}'}</code>.
