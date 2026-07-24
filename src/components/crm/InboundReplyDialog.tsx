@@ -183,7 +183,8 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
 
           {hasContent ? (
             <div
-              className="prose prose-sm max-w-none break-words"
+              className="rounded-md border bg-white p-4 text-black prose prose-sm max-w-none break-words"
+              style={{ color: '#000000' }}
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
             />
           ) : (
