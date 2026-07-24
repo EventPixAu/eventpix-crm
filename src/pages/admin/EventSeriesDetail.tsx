@@ -505,7 +505,7 @@ export default function EventSeriesDetail() {
                       </a>
                     )}
                     <Link
-                      to={`/sales/clients/${seriesClientId}`}
+                      to={`/crm/companies/${seriesClientId}`}
                       className="ml-auto text-xs text-muted-foreground hover:text-foreground"
                     >
                       View client →
@@ -514,7 +514,7 @@ export default function EventSeriesDetail() {
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     No primary contact set on this client.{' '}
-                    <Link to={`/sales/clients/${seriesClientId}`} className="text-primary hover:underline">
+                    <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
                       Manage contacts
                     </Link>
                   </p>
