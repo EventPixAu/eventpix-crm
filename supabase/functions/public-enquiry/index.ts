@@ -55,6 +55,14 @@ Deno.serve(async (req) => {
   try {
     const payload: EnquiryPayload = await req.json();
 
+    // Honeypot — silently swallow bot submissions
+    if (typeof payload.website === "string" && payload.website.trim() !== "") {
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!payload.name || !payload.email || !payload.message) {
       return new Response(
         JSON.stringify({ success: false, error: "Name, email, and message are required" }),
@@ -73,6 +81,30 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ─── Rate limiting by hashed IP ─────────────────────────────────────────
+    const rawIp =
+      req.headers.get("x-original-forwarded-for") ??
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+    const ipHash = await sha256Hex(rawIp);
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+    const { count: recentCount } = await supabase
+      .from("enquiry_rate_limits")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", ipHash)
+      .gt("created_at", tenMinAgo);
+
+    if ((recentCount ?? 0) >= 8) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Too many submissions. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    await supabase.from("enquiry_rate_limits").insert({ ip_hash: ipHash });
 
     const emailNormalised = payload.email.trim();
     const phoneNormalised = payload.phone?.trim() || null;
