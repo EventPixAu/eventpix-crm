@@ -160,6 +160,15 @@ export default function PublicEnquiry() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Honeypot — hidden from real users */}
+              <input
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', opacity: 0 }}
+                {...register('website')}
+              />
               {/* Contact Details */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
