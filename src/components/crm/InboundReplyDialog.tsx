@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Reply, ExternalLink, Megaphone } from 'lucide-react';
+import { Reply, ExternalLink, Megaphone, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { EmailLog } from '@/hooks/useEmailLogs';
+
 
 interface CampaignInfo {
   campaignId: string;
@@ -23,6 +25,16 @@ interface Props {
 
 export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props) {
   const [campaign, setCampaign] = useState<CampaignInfo | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const [fetchedBody, setFetchedBody] = useState<{ html?: string | null; text?: string | null; preview?: string | null } | null>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setFetchedBody(null);
+    setRetryError(null);
+    setRetrying(false);
+  }, [reply?.id]);
 
   useEffect(() => {
     if (!reply || !open) return;
@@ -71,17 +83,42 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
   const senderName = reply.from_name || reply.from_email || 'Unknown sender';
   const senderEmail = reply.from_email || '';
   const receivedAt = reply.created_at ? format(new Date(reply.created_at), 'EEE, d MMM yyyy, h:mm a') : '—';
-  const bodyText = (reply as any).body_text as string | null | undefined;
-  const hasContent = !!(reply.body_html || bodyText || reply.body_preview);
+  const bodyText = (fetchedBody?.text ?? (reply as any).body_text) as string | null | undefined;
+  const effectiveHtml = fetchedBody?.html ?? reply.body_html;
+  const effectivePreview = fetchedBody?.preview ?? reply.body_preview;
+  const hasContent = !!(effectiveHtml || bodyText || effectivePreview);
   const escapeHtml = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const bodyHtml = reply.body_html
-    ? reply.body_html
+  const bodyHtml = effectiveHtml
+    ? effectiveHtml
     : bodyText
     ? `<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">${escapeHtml(bodyText)}</pre>`
-    : reply.body_preview
-    ? escapeHtml(reply.body_preview).replace(/\n/g, '<br>')
+    : effectivePreview
+    ? escapeHtml(effectivePreview).replace(/\n/g, '<br>')
     : '';
+
+  const handleRetry = async () => {
+    if (!reply) return;
+    setRetrying(true);
+    setRetryError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('retry-inbound-email-body', {
+        body: { email_log_id: reply.id },
+      });
+      if (error) {
+        setRetryError(error.message || 'Retry failed.');
+      } else if (data?.success) {
+        setFetchedBody({ html: data.body_html, text: data.body_text, preview: data.body_preview });
+        queryClient.invalidateQueries({ queryKey: ['email-logs'] });
+      } else {
+        setRetryError(data?.error || 'Retry failed.');
+      }
+    } catch (e: any) {
+      setRetryError(e?.message || 'Retry failed.');
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const contactHref = reply.contact_id
     ? `/crm/contacts/${reply.contact_id}`
@@ -150,9 +187,29 @@ export function InboundReplyDialog({ reply, open, onOpenChange, onReply }: Props
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
             />
           ) : (
-            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs">
-              Content unavailable — the email body was not stored for this reply.
+            <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 px-3 py-2 text-xs space-y-2">
+              <div>Content unavailable — the email body wasn't stored for this reply. It may still be available from the email provider.</div>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  onClick={handleRetry}
+                  disabled={retrying}
+                >
+                  {retrying ? (
+                    <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Retrying…</>
+                  ) : (
+                    <><RefreshCw className="h-3 w-3 mr-1" />Retry fetching content</>
+                  )}
+                </Button>
+                {retryError && (
+                  <div className="text-red-600 mt-1">{retryError}</div>
+                )}
+              </div>
             </div>
+
           )}
         </div>
 

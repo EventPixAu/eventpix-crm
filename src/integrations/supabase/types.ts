@@ -2047,6 +2047,7 @@ export type Database = {
           read_at: string | null
           recipient_email: string
           recipient_name: string | null
+          resend_email_id: string | null
           sent_at: string | null
           sent_by: string | null
           status: string
@@ -2082,6 +2083,7 @@ export type Database = {
           read_at?: string | null
           recipient_email: string
           recipient_name?: string | null
+          resend_email_id?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
@@ -2117,6 +2119,7 @@ export type Database = {
           read_at?: string | null
           recipient_email?: string
           recipient_name?: string | null
+          resend_email_id?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
