@@ -150,7 +150,9 @@ export function SendEmailDialog({
       setSelectedTemplateId(match.id);
       setSubject(processMergeFields(match.subject));
       const rawBody = match.body_text || match.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      setBody(rawBody);
+      // Resolve merge fields in the editable body so users see final text (e.g. series commencing date)
+      const processedBody = processMergeFields(rawBody).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
+      setBody(processedBody);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, templates, context]);
