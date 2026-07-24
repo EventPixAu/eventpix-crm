@@ -485,64 +485,107 @@ export default function EventSeriesDetail() {
           {/* Repeat Revenue Indicators */}
           {id && <SeriesRepeatIndicators seriesId={id} />}
 
-          {/* Primary Contact for the Series */}
-          {seriesClientId && (
+          {/* Primary Contact + Program Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {seriesClientId && (
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Primary Contact
+                    {seriesClient?.business_name && (
+                      <span className="text-sm font-normal text-muted-foreground ml-2">
+                        {seriesClient.business_name}
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {primaryContact ? (
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                      <div>
+                        <div className="font-medium">
+                          {primaryContact.contact_name ||
+                            [primaryContact.first_name, primaryContact.last_name].filter(Boolean).join(' ') ||
+                            '—'}
+                        </div>
+                        {primaryContact.role_title && (
+                          <div className="text-xs text-muted-foreground">{primaryContact.role_title}</div>
+                        )}
+                      </div>
+                      {primaryContact.email && (
+                        <a href={`mailto:${primaryContact.email}`} className="text-primary hover:underline">
+                          {primaryContact.email}
+                        </a>
+                      )}
+                      {(primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office) && (
+                        <a
+                          href={`tel:${primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office}`}
+                          className="text-primary hover:underline"
+                        >
+                          {primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office}
+                        </a>
+                      )}
+                      <Link
+                        to={`/crm/companies/${seriesClientId}`}
+                        className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        View client →
+                      </Link>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No primary contact set on this client.{' '}
+                      <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
+                        Manage contacts
+                      </Link>
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Primary Contact
-                  {seriesClient?.business_name && (
-                    <span className="text-sm font-normal text-muted-foreground ml-2">
-                      {seriesClient.business_name}
-                    </span>
-                  )}
+                  <CheckCircle2 className="h-4 w-4" />
+                  Program Status
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {primaryContact ? (
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                    <div>
-                      <div className="font-medium">
-                        {primaryContact.contact_name ||
-                          [primaryContact.first_name, primaryContact.last_name].filter(Boolean).join(' ') ||
-                          '—'}
-                      </div>
-                      {primaryContact.role_title && (
-                        <div className="text-xs text-muted-foreground">{primaryContact.role_title}</div>
-                      )}
-                    </div>
-                    {primaryContact.email && (
-                      <a href={`mailto:${primaryContact.email}`} className="text-primary hover:underline">
-                        {primaryContact.email}
-                      </a>
-                    )}
-                    {(primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office) && (
-                      <a
-                        href={`tel:${primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office}`}
-                        className="text-primary hover:underline"
-                      >
-                        {primaryContact.phone_mobile || primaryContact.phone || primaryContact.phone_office}
-                      </a>
-                    )}
-                    <Link
-                      to={`/crm/companies/${seriesClientId}`}
-                      className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      View client →
-                    </Link>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No primary contact set on this client.{' '}
-                    <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
-                      Manage contacts
-                    </Link>
-                  </p>
-                )}
+                <Select
+                  value={(series as any).program_status || '__none__'}
+                  onValueChange={async (val) => {
+                    const newVal = val === '__none__' ? null : val;
+                    const { error } = await supabase
+                      .from('event_series')
+                      .update({ program_status: newVal } as any)
+                      .eq('id', id!);
+                    if (error) {
+                      toast.error('Failed to update status');
+                    } else {
+                      queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                      toast.success('Status updated');
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Set status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Not set</SelectItem>
+                    <SelectItem value="budget_sent">Budget Sent</SelectItem>
+                    <SelectItem value="budget_approved">Budget Approved</SelectItem>
+                    <SelectItem value="agreement_sent">Agreement Sent</SelectItem>
+                    <SelectItem value="agreement_approved">Agreement Approved</SelectItem>
+                    <SelectItem value="invoice_sent">Invoice Sent</SelectItem>
+                    <SelectItem value="invoice_paid">Invoice Paid</SelectItem>
+                    <SelectItem value="event_completed">Event Completed</SelectItem>
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
-          )}
+          </div>
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatCard
