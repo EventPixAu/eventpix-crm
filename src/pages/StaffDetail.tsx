@@ -46,6 +46,7 @@ import { AvatarUpload } from '@/components/AvatarUpload';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
 import { StaffWorkflowDefaults } from '@/components/StaffWorkflowDefaults';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
+import { PhotographerAgreementCard } from '@/components/PhotographerAgreementCard';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
@@ -1030,7 +1031,14 @@ export default function StaffDetail() {
 
         {/* Compliance Tab (Admin only) */}
         {isAdmin && (
-          <TabsContent value="compliance">
+          <TabsContent value="compliance" className="space-y-4">
+            <PhotographerAgreementCard
+              photographerId={profile.id}
+              photographerName={profile.full_name || profile.email}
+              photographerEmail={profile.email}
+              businessName={profile.business_name}
+              abn={profile.abn}
+            />
             <StaffCompliancePanel 
               userId={id} 
               currentOnboardingStatus={onboardingStatus}

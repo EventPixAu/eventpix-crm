@@ -4775,6 +4775,144 @@ export type Database = {
           },
         ]
       }
+      photographer_contract_audit: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by_user_id: string | null
+          event_description: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by_user_id?: string | null
+          event_description?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          event_description?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_contract_audit_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "photographer_contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photographer_contracts: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          ip_address: string | null
+          photographer_id: string
+          rendered_html: string
+          sent_at: string | null
+          signature_data: string | null
+          signed_at: string | null
+          signed_by_email: string | null
+          signed_by_name: string | null
+          signed_html_snapshot: string | null
+          signing_token: string | null
+          signing_token_expires_at: string | null
+          status: string
+          template_id: string | null
+          template_name: string | null
+          title: string
+          updated_at: string
+          user_agent: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address?: string | null
+          photographer_id: string
+          rendered_html: string
+          sent_at?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by_email?: string | null
+          signed_by_name?: string | null
+          signed_html_snapshot?: string | null
+          signing_token?: string | null
+          signing_token_expires_at?: string | null
+          status?: string
+          template_id?: string | null
+          template_name?: string | null
+          title?: string
+          updated_at?: string
+          user_agent?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address?: string | null
+          photographer_id?: string
+          rendered_html?: string
+          sent_at?: string | null
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by_email?: string | null
+          signed_by_name?: string | null
+          signed_html_snapshot?: string | null
+          signing_token?: string | null
+          signing_token_expires_at?: string | null
+          status?: string
+          template_id?: string | null
+          template_name?: string | null
+          title?: string
+          updated_at?: string
+          user_agent?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_contracts_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photographer_contracts_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "staff_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photographer_contracts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_categories: {
         Row: {
           created_at: string | null

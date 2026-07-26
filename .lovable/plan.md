@@ -1,66 +1,56 @@
-## Series-Level Budgets & Agreements
 
-Enable one budget and one contract that cover an entire event series, priced "per event × N events", with the option to add per-event addendum quotes for client-requested extras.
+# Photographer Services Agreement Workflow
 
-### 1. Data model changes
+Add a new signing workflow so admins can generate, send and track a Photographer Services Agreement against a Team Member profile — independent of any client, event or job.
 
-Add series-scoping to `quotes` and `contracts` (both currently event-scoped):
+## 1. Database (migration)
 
-- `quotes`
-  - `event_series_id UUID NULL` → FK to `event_series`
-  - `scope TEXT NOT NULL DEFAULT 'event'` → `'event' | 'series' | 'addendum'`
-  - `parent_quote_id UUID NULL` → FK to `quotes` (used when `scope = 'addendum'`)
-  - Constraint: `scope='series'` requires `event_series_id NOT NULL` and `event_id NULL`.
-  - Constraint: `scope='addendum'` requires `event_id NOT NULL` and `parent_quote_id NOT NULL`.
-- `quote_items`
-  - `pricing_basis TEXT NOT NULL DEFAULT 'flat'` → `'flat' | 'per_event'`
-  - `event_count INT NULL` (snapshot used at accept time for per_event lines)
-- `contracts`
-  - `event_series_id UUID NULL` → FK
-  - `scope TEXT NOT NULL DEFAULT 'event'` → `'event' | 'series'`
-  - Same nullability constraint as quotes.
+New table `public.photographer_contracts`:
+- `id`, `photographer_id` (references `profiles.id`), `template_id`, `template_name`
+- `rendered_html` (locked snapshot on signing)
+- `status` enum: `draft | sent | viewed | signed | cancelled | expired`
+- `sent_at`, `signed_at`, `signed_by_name`, `signed_by_email`, `signature_data`
+- `signing_token` (unique, uuid), `signing_token_expires_at`
+- `ip_address`, `user_agent`
+- `created_at`, `updated_at`, `created_by`
 
-RLS: mirror existing quote/contract policies (owners + admin/ops) — no policy structure change.
+New table `public.photographer_contract_audit` (optional trail):
+- `id`, `contract_id`, `event_type`, `event_description`, `created_at`, `created_by_user_id`, `ip_address`, `user_agent`
 
-### 2. Series budget builder
+New template scope value: extend existing `contract_templates.scope` to allow `photographer` (or add a boolean `is_photographer_agreement`). Seed one starter template **"Photographer Services Agreement"** with merge fields `{{photographer.name|business_name|abn|email|phone|address|state}}` and `{{contract.created_date}}`.
 
-New tab on the series Program Control Centre (`Mastercard 2026` screenshot): **Budget & Agreement**.
+RLS + GRANTs:
+- Admin/Sales can manage all rows.
+- Public read of a single row via `signing_token` handled through an edge function (service role) — no anon RLS.
+- Audit table: admin read only, inserts via edge function.
 
-- Create/edit a single Series Quote for the series.
-- Line items each mark **Per event** or **Flat** (checkbox). Per-event lines display `unit × N events = subtotal` where N = count of non-cancelled events currently in the series.
-- Live totals panel: `Per-event subtotal`, `Flat subtotal`, `Number of events`, `Grand total`.
-- Standard note auto-inserted (editable): *"Fees marked 'per event' apply to each scheduled event in this series. Additional services requested for a specific event will be quoted separately as an addendum."*
-- Actions: Save draft · Send for acceptance · Download PDF (reuses existing proposal PDF pipeline with series header).
+## 2. Backend edge functions
 
-### 3. Series contract
+- `send-photographer-agreement`: authenticated admin action. Loads photographer + template, renders HTML with photographer merge fields, upserts a `photographer_contracts` row (reuse existing draft when resending), issues a new signing token (30 days), sets `status=sent`, sends email via Gmail (`send-crm-email` pattern) with signing link `{PUBLIC_BASE_URL}/sign/photographer-agreement/{token}`.
+- `photographer-agreement-sign`: public (verify_jwt=false). GET returns the rendered HTML + photographer/business summary for a valid token. POST accepts `{ full_name, email, signature_data }`, validates token not expired/signed/cancelled, snapshots HTML, sets `status=signed`, records IP + user agent, writes audit row.
+- Resend and cancel are handled inline by `send-photographer-agreement` with an `action` param.
 
-- New Series Contract type built off existing `contract_templates` with `{{series_name}}`, `{{event_count}}`, `{{per_event_total}}`, `{{flat_total}}`, `{{grand_total}}` merge fields.
-- Same public accept flow as event contracts (`PublicAcceptContract.tsx`), scoped to series.
-- Once accepted, the series shows a green "Agreement in place" badge; each event in the series inherits an "Under series agreement" indicator on its detail page (replaces the "needs individual quote/contract" nag).
+## 3. Frontend
 
-### 4. Per-event addendum quotes
+- **Team member detail (`StaffDetail.tsx`)** – add a "Photographer Services Agreement" card in the Compliance tab (visible when the profile is a photographer/contractor):
+  - Shows status, sent_at, signed_at.
+  - Buttons vary by status: Send Agreement / View Agreement / Resend Agreement / Copy Signing Link / Cancel Agreement / View Signed Agreement.
+- **`SendPhotographerAgreementDialog`** (new component): shows photographer name/email/business/ABN, template name, scrollable rendered preview, Cancel + Send for Signature buttons; disables send with the required message when email is missing.
+- **`SignedAgreementDialog`** (new component): read-only display of the stored signed HTML with signed metadata.
+- **`PublicSignPhotographerAgreement.tsx`** (new route `/sign/photographer-agreement/:token`): fetches via edge function, shows agreement, name/email fields, acceptance checkbox, typed-signature (name = signature), Sign Agreement button, success confirmation and locked view after signing/expiry.
+- Add hook `usePhotographerAgreements(photographerId)` for status + actions (send/resend/cancel/copy link) using `supabase.functions.invoke` and query invalidation.
 
-- On any event that belongs to a series with an accepted series quote, the QuoteList shows a new button **"Add addendum quote"** instead of "New quote".
-- Addendum quotes copy client/contact from event, set `parent_quote_id` to the series quote, and only contain the extra line items for that event.
-- Event financials roll up = (its share of series quote) + (accepted addendum quotes).
+## 4. Merge-field rendering
 
-### 5. UI touchpoints
+Reuse existing merge-field renderer (`renderMergeFields` in `useContractTemplates`) with a new context shape mapping `photographer.*` and `contract.created_date`. Server-side rendering happens in the edge function so the signed snapshot is authoritative.
 
-- `src/pages/admin/EventSeriesList.tsx` → open series → new **Budget & Agreement** tab.
-- New `src/components/series/SeriesQuoteBuilder.tsx`, `SeriesContractPanel.tsx`.
-- `QuoteDetail.tsx` → render per-event breakdown when `scope='series'`; render "Addendum to #Q-xxx" banner when `scope='addendum'`.
-- `EventDetail` financial panel → show "Covered by series agreement Q-xxx" plus any addendum totals.
+## 5. Wording & AU English
 
-### 6. Out of scope for this pass
+Use exact labels from the request: "Send Photographer Agreement", "View Agreement", "Resend Agreement", "Copy Signing Link", "View Signed Agreement", statuses "Sent / Not sent / Signed / Cancelled / Expired".
 
-- Invoicing/Xero split across events (kept as-is; series quote invoices as one line for now — happy to add per-event invoice generation next).
-- Retroactive migration of already-issued per-event quotes into a series quote.
-
-### Technical notes
-
-- Migration adds the columns above with defaults so existing rows stay `scope='event'`.
-- `event_count` on a per-event line is recalculated whenever the series quote is edited **before** acceptance; frozen at acceptance so later event additions/removals don't silently change the signed amount.
-- PDF generator (`generate-proposal-pdf`) gets a `scope` branch to render the series header, event list, and per-event math table.
-- Addendum quotes reuse the existing quote acceptance edge function; only the UI entry point differs.
-
-Confirm and I'll ship it — starting with the migration, then the builder UI, then the PDF/accept flow updates.
+## Technical notes
+- Public signing page never touches `profiles` directly — edge function returns only display-safe fields.
+- Signed rows are immutable in the UI; regeneration only allowed while unsigned and warns before overwriting.
+- Signing token: `gen_random_uuid()`, 30-day expiry, single use.
+- Emails via existing Gmail-backed `send-crm-email` pattern to stay consistent with the hybrid email architecture.
+- PDF: v1 offers "Print / Save as PDF" via browser print styles on the signed dialog; native PDF generation can follow.
