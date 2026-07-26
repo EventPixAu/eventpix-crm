@@ -92,6 +92,7 @@ import EnquiryEmbed from "./pages/EnquiryEmbed";
 import ClientPortal from "./pages/ClientPortal";
 import ClientLogin from "./pages/ClientLogin";
 import ClientPortalDashboard from "./pages/ClientPortalDashboard";
+import PublicSignPhotographerAgreement from "./pages/PublicSignPhotographerAgreement";
 
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -219,6 +220,7 @@ function AppRoutes() {
       <Route path="/client-login" element={<ClientLogin />} />
       <Route path="/portal" element={<ClientPortalDashboard />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/sign/photographer-agreement/:token" element={<PublicSignPhotographerAgreement />} />
       
       
       {/* Dashboard - role-based: Admin gets full dashboard, Crew gets photographer dashboard */}

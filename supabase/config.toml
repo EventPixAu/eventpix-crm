@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.website-enquiry-ingest]
 verify_jwt = false
+
+[functions.photographer-agreement-sign]
+verify_jwt = false
