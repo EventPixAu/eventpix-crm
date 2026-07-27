@@ -107,10 +107,11 @@ serve(async (req) => {
     if (!isAdmin) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json();
-    const action = body.action || "preview"; // preview | send | resend | cancel | regenerate
+    const action = body.action || "preview"; // preview | send | resend | cancel | regenerate | preview_email
     const photographerId: string | undefined = body.photographerId;
     const templateId: string | undefined = body.templateId;
     const contractId: string | undefined = body.contractId;
+    const emailTemplateId: string | undefined = body.emailTemplateId;
     const publicBaseUrl: string = body.publicBaseUrl || "https://app.eventpix.com.au";
 
     if (action === "cancel") {
@@ -125,7 +126,7 @@ serve(async (req) => {
     const { data: profile, error: profileErr } = await admin.from("profiles").select("*").eq("id", photographerId).maybeSingle();
     if (profileErr || !profile) return new Response(JSON.stringify({ error: "Photographer not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Pick template
+    // Pick contract template
     let template: any = null;
     if (templateId) {
       const { data } = await admin.from("contract_templates").select("*").eq("id", templateId).maybeSingle();
@@ -137,11 +138,27 @@ serve(async (req) => {
     }
     if (!template) return new Response(JSON.stringify({ error: "No Photographer Services Agreement template found" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const ctx = buildPhotographerContext(profile);
+    const ctx: any = buildPhotographerContext(profile);
+    ctx.contract.template_name = template.name;
     const rendered = renderMergeFields(template.body_html, ctx);
+
+    // Optional email template lookup (for preview & send)
+    let emailTemplate: any = null;
+    if (emailTemplateId) {
+      const { data } = await admin.from("email_templates").select("*").eq("id", emailTemplateId).maybeSingle();
+      emailTemplate = data;
+    }
 
     if (action === "preview") {
       return new Response(JSON.stringify({ success: true, rendered_html: rendered, template_name: template.name, photographer: ctx.photographer }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (action === "preview_email") {
+      const placeholderLink = `${publicBaseUrl}/sign/photographer-agreement/PREVIEW-TOKEN`;
+      const emCtx = { ...ctx, signing_link: placeholderLink };
+      const subject = emailTemplate ? renderMergeFields(emailTemplate.subject || "", emCtx) : "EventPix Photographer Services Agreement for signature";
+      const bodyHtml = emailTemplate ? renderMergeFields(emailTemplate.body_html || "", emCtx) : "";
+      return new Response(JSON.stringify({ success: true, subject, body_html: bodyHtml, signing_link: placeholderLink, template_name: emailTemplate?.name || null }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Find/create the contract row
@@ -166,9 +183,10 @@ serve(async (req) => {
         signing_token_expires_at: expiresIso,
         template_id: template.id,
         template_name: template.name,
+        email_template_id: emailTemplate?.id || null,
+        email_template_name: emailTemplate?.name || null,
       };
       if (regenerate) patch.rendered_html = rendered;
-      // Reissue token if expired or missing
       if (!existing.signing_token || (existing.signing_token_expires_at && new Date(existing.signing_token_expires_at) < new Date())) {
         patch.signing_token = crypto.randomUUID();
       }
@@ -185,28 +203,40 @@ serve(async (req) => {
         signing_token: crypto.randomUUID(),
         signing_token_expires_at: expiresIso,
         created_by: userId,
+        email_template_id: emailTemplate?.id || null,
+        email_template_name: emailTemplate?.name || null,
       }).select().single();
       row = data;
     }
 
     const signingLink = `${publicBaseUrl}/sign/photographer-agreement/${row.signing_token}`;
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
-        <p>Hi ${ctx.photographer.name.split(" ")[0] || ctx.photographer.name},</p>
-        <p>Please review and sign the EventPix Photographer Services Agreement.</p>
-        <p>You can view and sign the agreement here:</p>
-        <p style="text-align:center; margin: 24px 0;">
-          <a href="${signingLink}" style="background:#000; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; display:inline-block;">Review &amp; Sign Agreement</a>
-        </p>
-        <p style="font-size:12px; color:#666;">Or copy this link: ${signingLink}</p>
-        <p>Kind regards,<br/>EventPix</p>
-      </div>
-    `;
+    ctx.signing_link = signingLink;
+    ctx.contract.expiry_date = new Date(expiresIso).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+
+    let emailSubject = "EventPix Photographer Services Agreement for signature";
+    let emailBody: string;
+    if (emailTemplate) {
+      emailSubject = renderMergeFields(emailTemplate.subject || emailSubject, ctx);
+      emailBody = renderMergeFields(emailTemplate.body_html || "", ctx);
+    } else {
+      emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
+          <p>Hi ${ctx.photographer.name.split(" ")[0] || ctx.photographer.name},</p>
+          <p>Please review and sign the EventPix Photographer Services Agreement.</p>
+          <p>You can view and sign the agreement here:</p>
+          <p style="text-align:center; margin: 24px 0;">
+            <a href="${signingLink}" style="background:#000; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; display:inline-block;">Review &amp; Sign Agreement</a>
+          </p>
+          <p style="font-size:12px; color:#666;">Or copy this link: ${signingLink}</p>
+          <p>Kind regards,<br/>EventPix</p>
+        </div>
+      `;
+    }
 
     if (!profile.email) return new Response(JSON.stringify({ error: "Photographer has no email address" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    await sendGmail(profile.email, "EventPix Photographer Services Agreement for signature", emailBody);
-    await admin.from("photographer_contract_audit").insert({ contract_id: row.id, event_type: action === "resend" ? "resent" : "sent", created_by_user_id: userId });
+    await sendGmail(profile.email, emailSubject, emailBody);
+    await admin.from("photographer_contract_audit").insert({ contract_id: row.id, event_type: action === "resend" ? "resent" : "sent", created_by_user_id: userId, event_description: emailTemplate?.name || null });
 
     return new Response(JSON.stringify({ success: true, contract: row, signing_link: signingLink }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
