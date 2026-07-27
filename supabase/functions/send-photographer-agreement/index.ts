@@ -12,6 +12,7 @@ function renderMergeFields(html: string, ctx: Record<string, any>): string {
   const c = ctx.contract || {};
   const map: Record<string, string> = {
     "photographer.name": p.name || "",
+    "photographer.first_name": (p.name || "").split(" ")[0] || "",
     "photographer.business_name": p.business_name || "",
     "photographer.abn": p.abn || "",
     "photographer.email": p.email || "",
@@ -19,6 +20,9 @@ function renderMergeFields(html: string, ctx: Record<string, any>): string {
     "photographer.address": p.address || "",
     "photographer.state": p.state || "",
     "contract.created_date": c.created_date || "",
+    "contract.template_name": c.template_name || "",
+    "contract.expiry_date": c.expiry_date || "",
+    "signing_link": ctx.signing_link || "",
     "today": c.created_date || "",
     "company_name": "EventPix",
   };
