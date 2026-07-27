@@ -53,12 +53,25 @@ export function usePreviewPhotographerAgreement() {
   });
 }
 
+export function usePreviewPhotographerEmail() {
+  return useMutation({
+    mutationFn: async ({ photographerId, emailTemplateId }: { photographerId: string; emailTemplateId?: string }) => {
+      const { data, error } = await supabase.functions.invoke('send-photographer-agreement', {
+        body: { action: 'preview_email', photographerId, emailTemplateId, publicBaseUrl: getPublicBaseUrl() },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to preview email');
+      return data as { subject: string; body_html: string; signing_link: string; template_name: string | null };
+    },
+  });
+}
+
 export function useSendPhotographerAgreement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ photographerId, action = 'send', contractId }: { photographerId: string; action?: 'send' | 'resend' | 'regenerate'; contractId?: string }) => {
+    mutationFn: async ({ photographerId, action = 'send', contractId, emailTemplateId }: { photographerId: string; action?: 'send' | 'resend' | 'regenerate'; contractId?: string; emailTemplateId?: string }) => {
       const { data, error } = await supabase.functions.invoke('send-photographer-agreement', {
-        body: { action, photographerId, contractId, publicBaseUrl: getPublicBaseUrl() },
+        body: { action, photographerId, contractId, emailTemplateId, publicBaseUrl: getPublicBaseUrl() },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to send');
