@@ -1,0 +1,1 @@
+UPDATE public.contract_templates SET scope='photographer' WHERE id='f378113b-dacf-4579-8e83-b1224e503ad5';
