@@ -1,0 +1,1 @@
+ALTER TABLE public.photographer_contracts ADD COLUMN IF NOT EXISTS email_template_id uuid, ADD COLUMN IF NOT EXISTS email_template_name text;

@@ -1038,7 +1038,10 @@ export default function StaffDetail() {
               photographerEmail={profile.email}
               businessName={profile.business_name}
               abn={profile.abn}
+              onboardingStatus={onboardingStatus}
+              accountStatus={(profile as any).status}
             />
+
             <StaffCompliancePanel 
               userId={id} 
               currentOnboardingStatus={onboardingStatus}
