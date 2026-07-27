@@ -4821,6 +4821,8 @@ export type Database = {
           cancelled_at: string | null
           created_at: string
           created_by: string | null
+          email_template_id: string | null
+          email_template_name: string | null
           id: string
           ip_address: string | null
           photographer_id: string
@@ -4845,6 +4847,8 @@ export type Database = {
           cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
+          email_template_id?: string | null
+          email_template_name?: string | null
           id?: string
           ip_address?: string | null
           photographer_id: string
@@ -4869,6 +4873,8 @@ export type Database = {
           cancelled_at?: string | null
           created_at?: string
           created_by?: string | null
+          email_template_id?: string | null
+          email_template_name?: string | null
           id?: string
           ip_address?: string | null
           photographer_id?: string
