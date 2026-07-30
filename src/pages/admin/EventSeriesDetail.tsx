@@ -152,6 +152,15 @@ export default function EventSeriesDetail() {
     clientContacts[0] ||
     null;
 
+  const selectedOnsiteContactId = (series as any)?.onsite_contact_id || null;
+  const onsiteContact =
+    (selectedOnsiteContactId && clientContacts.find((c: any) => c.id === selectedOnsiteContactId)) || null;
+
+  const contactLabel = (c: any) =>
+    c?.contact_name || [c?.first_name, c?.last_name].filter(Boolean).join(' ') || c?.email || 'Unnamed';
+  const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
+
+
 
   const { data: seriesClient } = useQuery({
     queryKey: ['series-client', seriesClientId],
