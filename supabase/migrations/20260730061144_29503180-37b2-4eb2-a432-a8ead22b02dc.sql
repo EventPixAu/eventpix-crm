@@ -1,0 +1,1 @@
+ALTER TABLE public.event_series ADD COLUMN IF NOT EXISTS onsite_contact_id uuid REFERENCES public.client_contacts(id) ON DELETE SET NULL;

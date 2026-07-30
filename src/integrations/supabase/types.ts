@@ -3040,6 +3040,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           notes: string | null
+          onsite_contact_id: string | null
           primary_contact_id: string | null
           program_status: string | null
           updated_at: string | null
@@ -3068,6 +3069,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           notes?: string | null
+          onsite_contact_id?: string | null
           primary_contact_id?: string | null
           program_status?: string | null
           updated_at?: string | null
@@ -3096,6 +3098,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           notes?: string | null
+          onsite_contact_id?: string | null
           primary_contact_id?: string | null
           program_status?: string | null
           updated_at?: string | null
@@ -3134,6 +3137,13 @@ export type Database = {
             columns: ["event_type_id"]
             isOneToOne: false
             referencedRelation: "event_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_series_onsite_contact_id_fkey"
+            columns: ["onsite_contact_id"]
+            isOneToOne: false
+            referencedRelation: "client_contacts"
             referencedColumns: ["id"]
           },
         ]
