@@ -123,14 +123,14 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="top-4 bottom-4 max-w-md translate-y-0 overflow-hidden p-0 flex flex-col gap-0">
+        <DialogHeader className="px-6 pt-6 pr-12">
           <DialogTitle>Edit Lead</DialogTitle>
           <DialogDescription>
             Update lead details. Assign a client to enable contact management.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0 pr-1">
+        <div className="space-y-4 px-6 py-4 overflow-y-auto flex-1 min-h-0">
           <div className="space-y-2">
             <Label htmlFor="edit_lead_name">Lead Name *</Label>
             <Input
@@ -271,7 +271,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
