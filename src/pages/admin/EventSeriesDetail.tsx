@@ -112,8 +112,8 @@ export default function EventSeriesDetail() {
 
   // Primary contact for the series's client (from first event)
   const seriesClientId = events?.[0]?.client_id || null;
-  const { data: primaryContact } = useQuery({
-    queryKey: ['series-primary-contact', seriesClientId],
+  const { data: clientContacts = [] } = useQuery({
+    queryKey: ['series-client-contacts', seriesClientId],
     enabled: !!seriesClientId,
     queryFn: async () => {
       // Prefer contact_company_associations (newer model) — no FK exists so fetch in 2 steps
@@ -133,9 +133,7 @@ export default function EventSeriesDetail() {
         const merged = (assocs || [])
           .map((a: any) => byId[a.contact_id] ? { ...byId[a.contact_id], is_primary: a.is_primary } : null)
           .filter(Boolean) as any[];
-        if (merged.length > 0) {
-          return merged.find((c: any) => c.is_primary) || merged[0];
-        }
+        if (merged.length > 0) return merged;
       }
       // Fallback: legacy client_contacts.client_id
       const { data } = await supabase
@@ -143,10 +141,17 @@ export default function EventSeriesDetail() {
         .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title, is_primary, created_at')
         .eq('client_id', seriesClientId)
         .order('created_at', { ascending: true });
-      if (!data || data.length === 0) return null;
-      return data.find((c: any) => c.is_primary) || data[0];
+      return (data || []) as any[];
     },
   });
+
+  const selectedContactId = (series as any)?.primary_contact_id || null;
+  const primaryContact =
+    (selectedContactId && clientContacts.find((c: any) => c.id === selectedContactId)) ||
+    clientContacts.find((c: any) => c.is_primary) ||
+    clientContacts[0] ||
+    null;
+
 
   const { data: seriesClient } = useQuery({
     queryKey: ['series-client', seriesClientId],
@@ -500,7 +505,35 @@ export default function EventSeriesDetail() {
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  <Select
+                    value={primaryContact?.id || '__none__'}
+                    onValueChange={async (val) => {
+                      const newVal = val === '__none__' ? null : val;
+                      const { error } = await supabase
+                        .from('event_series')
+                        .update({ primary_contact_id: newVal } as any)
+                        .eq('id', id!);
+                      if (error) {
+                        toast.error('Failed to update primary contact');
+                      } else {
+                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                        toast.success('Primary contact updated');
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="max-w-sm">
+                      <SelectValue placeholder="Select contact..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Not set</SelectItem>
+                      {clientContacts.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.contact_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email || 'Unnamed'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {primaryContact ? (
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                       <div>
