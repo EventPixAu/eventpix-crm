@@ -7610,6 +7610,10 @@ export type Database = {
         Args: { _event_id: string }
         Returns: undefined
       }
+      sync_series_contacts_to_events: {
+        Args: { _series_id: string }
+        Returns: number
+      }
       track_email_click: {
         Args: { p_email_log_id: string }
         Returns: undefined
