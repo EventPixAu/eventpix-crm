@@ -545,12 +545,49 @@ export default function EventSeriesDetail() {
                             .eq('id', id!);
                           if (error) {
                             toast.error(`Failed to update ${row.label.toLowerCase()}`);
+                            return;
+                          }
+                          queryClient.invalidateQueries({ queryKey: ['event-series'] });
+
+                          // Propagate to every event in the series
+                          const contactType = row.key === 'primary' ? 'primary' : 'onsite';
+                          const eventIds = (events || []).map((e: any) => e.id);
+                          if (eventIds.length > 0) {
+                            try {
+                              await supabase
+                                .from('event_contacts')
+                                .delete()
+                                .in('event_id', eventIds)
+                                .eq('contact_type', contactType);
+
+                              if (newVal) {
+                                const c = clientContacts.find((x: any) => x.id === newVal);
+                                if (c) {
+                                  await supabase.from('event_contacts').insert(
+                                    eventIds.map((eventId: string) => ({
+                                      event_id: eventId,
+                                      client_contact_id: c.id,
+                                      contact_type: contactType,
+                                      contact_name: contactLabel(c),
+                                      contact_email: c.email || null,
+                                      contact_phone: contactPhone(c),
+                                    }))
+                                  );
+                                }
+                              }
+                              queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+                              queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                              queryClient.invalidateQueries({ queryKey: ['events'] });
+                              toast.success(`${row.label} updated on ${eventIds.length} event${eventIds.length === 1 ? '' : 's'}`);
+                            } catch (err: any) {
+                              toast.error('Saved on series, but failed to update events: ' + err.message);
+                            }
                           } else {
-                            queryClient.invalidateQueries({ queryKey: ['event-series'] });
                             toast.success(`${row.label} updated`);
                           }
                         }}
                       >
+
                         <SelectTrigger className="max-w-sm">
                           <SelectValue placeholder="Select contact..." />
                         </SelectTrigger>
