@@ -505,7 +505,35 @@ export default function EventSeriesDetail() {
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
+                  <Select
+                    value={primaryContact?.id || '__none__'}
+                    onValueChange={async (val) => {
+                      const newVal = val === '__none__' ? null : val;
+                      const { error } = await supabase
+                        .from('event_series')
+                        .update({ primary_contact_id: newVal } as any)
+                        .eq('id', id!);
+                      if (error) {
+                        toast.error('Failed to update primary contact');
+                      } else {
+                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                        toast.success('Primary contact updated');
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="max-w-sm">
+                      <SelectValue placeholder="Select contact..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Not set</SelectItem>
+                      {clientContacts.map((c: any) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.contact_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email || 'Unnamed'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {primaryContact ? (
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                       <div>
