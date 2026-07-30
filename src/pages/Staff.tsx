@@ -63,6 +63,7 @@ import { StaffComplianceOverview } from '@/components/StaffComplianceOverview';
 import { StaffBulkActions } from '@/components/StaffBulkActions';
 import { ONBOARDING_STATUS_CONFIG, type OnboardingStatus } from '@/hooks/useCompliance';
 import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDialog';
+import { AgreementStatusBadge, useAgreementStatusMap } from '@/components/AgreementStatusBadge';
 
 // Unified team member type that works for both profiles and legacy staff
 interface UnifiedTeamMember {
@@ -606,6 +607,9 @@ export default function Staff() {
                                   </span>
                                 );
                               })()}
+                              {member.user_id && (
+                                <AgreementStatusBadge status={agreementStatusMap?.get(member.user_id)} hideWhenNone />
+                              )}
                             </div>
                             {isAdmin && (
                               <DropdownMenu>
