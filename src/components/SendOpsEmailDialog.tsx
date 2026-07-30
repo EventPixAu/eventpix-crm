@@ -122,7 +122,7 @@ export function SendOpsEmailDialog({
     setUserAttachments(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Default-select the client recipient and apply initial values when opening.
+  // Default-select all client contacts and apply initial values when opening.
   useEffect(() => {
     if (!open) return;
     setShowPreview(false);
@@ -133,8 +133,8 @@ export function SendOpsEmailDialog({
 
     setSelectedRecipients((prev) => {
       if (prev.length > 0) return prev;
-      const preferredClient = recipients.find((r) => r.type === 'client');
-      return preferredClient ? [preferredClient.id] : prev;
+      const clientRecipients = recipients.filter((r) => r.type === 'client').map((r) => r.id);
+      return clientRecipients.length > 0 ? clientRecipients : prev;
     });
   }, [open, recipients, initialSubject, initialBody]);
 
