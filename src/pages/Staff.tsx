@@ -120,6 +120,7 @@ export default function Staff() {
   });
 
   // Create a map of user_id to profile onboarding_status for quick lookup
+  const { data: agreementStatusMap } = useAgreementStatusMap();
   const profileStatusMap = useMemo(() => {
     const map = new Map<string, string>();
     profiles.forEach(profile => {

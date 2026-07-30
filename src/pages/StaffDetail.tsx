@@ -113,6 +113,7 @@ export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const { data: agreementStatusMap } = useAgreementStatusMap();
   
   // First try to find a profile with this ID
   const { data: profileData, isLoading: profileLoading, error: profileError } = useQuery({
