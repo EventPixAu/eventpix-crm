@@ -1,0 +1,9 @@
+UPDATE public.email_templates
+SET body_html = replace(body_html, '<p>Please complete this as soon as possible so we can finalise your onboarding and allocate you to suitable assignments.</p>', '<p><strong>NB Payment for services will not be processed if this agreement has not been signed.</strong></p><p>Please complete this as soon as possible so we can finalise your onboarding and allocate you to suitable assignments.</p>'),
+    body_text = replace(body_text, 'Please complete this as soon as possible so we can finalise your onboarding and allocate you to suitable assignments.', E'NB Payment for services will not be processed if this agreement has not been signed.\n\nPlease complete this as soon as possible so we can finalise your onboarding and allocate you to suitable assignments.')
+WHERE name = 'Photographer Services Agreement – New Photographer';
+
+UPDATE public.email_templates
+SET body_html = replace(body_html, '<p>Please complete this as soon as practical so we can keep your profile active in Eventpixii and continue assigning you to jobs.</p>', '<p><strong>NB Payment for services will not be processed if this agreement has not been signed.</strong></p><p>Please complete this as soon as practical so we can keep your profile active in Eventpixii and continue assigning you to jobs.</p>'),
+    body_text = replace(body_text, 'Please complete this as soon as practical so we can keep your profile active in Eventpixii and continue assigning you to jobs.', E'NB Payment for services will not be processed if this agreement has not been signed.\n\nPlease complete this as soon as practical so we can keep your profile active in Eventpixii and continue assigning you to jobs.')
+WHERE name = 'Photographer Services Agreement – Current Photographer Eventpixii Update';
