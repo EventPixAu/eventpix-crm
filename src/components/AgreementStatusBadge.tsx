@@ -15,13 +15,13 @@ const LABELS: Record<AgreementStatus, string> = {
 };
 
 const CLASSES: Record<AgreementStatus, string> = {
-  none: 'bg-muted text-muted-foreground border-transparent',
-  draft: 'bg-muted text-muted-foreground border-transparent',
-  sent: 'bg-primary/10 text-primary border-transparent',
-  viewed: 'bg-primary/10 text-primary border-transparent',
-  signed: 'bg-success/10 text-success border-transparent',
-  cancelled: 'bg-destructive/10 text-destructive border-transparent',
-  expired: 'bg-destructive/10 text-destructive border-transparent',
+  none: 'bg-destructive text-destructive-foreground border-destructive',
+  draft: 'bg-destructive text-destructive-foreground border-destructive',
+  sent: 'bg-destructive text-destructive-foreground border-destructive',
+  viewed: 'bg-destructive text-destructive-foreground border-destructive',
+  signed: 'bg-success text-success-foreground border-success',
+  cancelled: 'bg-destructive text-destructive-foreground border-destructive',
+  expired: 'bg-destructive text-destructive-foreground border-destructive',
 };
 
 /** Latest agreement status keyed by photographer (profile) id. */
@@ -49,14 +49,11 @@ export function useAgreementStatusMap() {
 
 interface Props {
   status: AgreementStatus | undefined;
-  /** Hide entirely when there is no agreement record. */
-  hideWhenNone?: boolean;
   className?: string;
 }
 
-export function AgreementStatusBadge({ status, hideWhenNone, className }: Props) {
+export function AgreementStatusBadge({ status, className }: Props) {
   const s: AgreementStatus = status || 'none';
-  if (hideWhenNone && (s === 'none' || s === 'draft')) return null;
   return (
     <Badge variant="outline" className={`text-xs shrink-0 ${CLASSES[s]} ${className || ''}`}>
       {LABELS[s]}
