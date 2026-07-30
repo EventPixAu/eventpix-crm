@@ -47,6 +47,7 @@ import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDia
 import { StaffWorkflowDefaults } from '@/components/StaffWorkflowDefaults';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { PhotographerAgreementCard } from '@/components/PhotographerAgreementCard';
+import { AgreementStatusBadge, useAgreementStatusMap } from '@/components/AgreementStatusBadge';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
@@ -112,6 +113,7 @@ export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const { data: agreementStatusMap } = useAgreementStatusMap();
   
   // First try to find a profile with this ID
   const { data: profileData, isLoading: profileLoading, error: profileError } = useQuery({
@@ -529,6 +531,7 @@ export default function StaffDetail() {
                       )}
                     </>
                   )}
+                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} />
                   {profile.status && (
                     <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
                       {profile.status}
