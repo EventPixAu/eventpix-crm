@@ -3040,6 +3040,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           notes: string | null
+          primary_contact_id: string | null
           program_status: string | null
           updated_at: string | null
         }
@@ -3067,6 +3068,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           notes?: string | null
+          primary_contact_id?: string | null
           program_status?: string | null
           updated_at?: string | null
         }
@@ -3094,6 +3096,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           notes?: string | null
+          primary_contact_id?: string | null
           program_status?: string | null
           updated_at?: string | null
         }
