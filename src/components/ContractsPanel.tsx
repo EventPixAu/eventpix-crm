@@ -148,13 +148,27 @@ export function ContractsPanel({
   const [editContractPlain, setEditContractPlain] = useState('');
   const [editContractTitle, setEditContractTitle] = useState('');
   const [editMode, setEditMode] = useState<'plain' | 'html'>('plain');
+  const [docShell, setDocShell] = useState<{ before: string; after: string } | null>(null);
   const [signedByName, setSignedByName] = useState('');
   const [signedByEmail, setSignedByEmail] = useState('');
-  
+
+  // Split a full HTML document into its shell (doctype/head/styles) and body content
+  const splitHtmlDocument = (html: string): { shell: { before: string; after: string } | null; body: string } => {
+    const match = html.match(/^([\s\S]*<body[^>]*>)([\s\S]*?)(<\/body>[\s\S]*)$/i);
+    if (match) return { shell: { before: match[1], after: match[3] }, body: match[2] };
+    return { shell: null, body: html };
+  };
+
   // Convert HTML to plain text for editing
   const htmlToPlainText = (html: string): string => {
-    // Replace <br> and block elements with newlines
+    // Drop non-visible content (styles, scripts, head metadata, comments) first
     let text = html
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<head[\s\S]*?<\/head>/gi, '')
+      .replace(/<title[\s\S]*?<\/title>/gi, '')
+      // Replace <br> and block elements with newlines
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n\n')
       .replace(/<\/div>/gi, '\n')
@@ -175,6 +189,7 @@ export function ContractsPanel({
     
     // Strip remaining HTML tags
     text = text.replace(/<[^>]+>/g, '');
+
     
     // Decode HTML entities
     const textarea = document.createElement('textarea');
@@ -212,9 +227,13 @@ export function ContractsPanel({
     // Convert newlines to <br>
     html = html.replace(/\n/g, '<br>');
     
+    // Preserve the original document shell (doctype/head/styles) when there was one
+    if (docShell) return `${docShell.before}${html}${docShell.after}`;
+
     // Wrap in a styled div
     return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">${html}</div>`;
   };
+
   
   // Handle plain text changes - keep plain text as source of truth while editing
   const handlePlainTextChange = (plainText: string) => {
@@ -426,9 +445,12 @@ export function ContractsPanel({
     setEditContractTitle(contract.title);
     const scopedContract = await withProposedServicesApplied(contract);
     const html = scopedContract.rendered_html || '';
+    const { shell, body } = splitHtmlDocument(html);
+    setDocShell(shell);
     setEditContractHtml(html);
-    setEditContractPlain(htmlToPlainText(html));
+    setEditContractPlain(htmlToPlainText(body));
     setIsEditOpen(true);
+
   };
 
   // Handle saving edited contract content
