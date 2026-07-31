@@ -83,9 +83,22 @@ export function CreateAndLinkContactDialog({
   companyName,
 }: CreateAndLinkContactDialogProps) {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
+  const [jobTitleOpen, setJobTitleOpen] = useState(false);
+  const [jobTitleSearch, setJobTitleSearch] = useState('');
   const queryClient = useQueryClient();
   const { data: jobTitles = [] } = useJobTitles();
   const createAssociation = useCreateContactAssociation();
+
+  const selectedJobTitle = useMemo(
+    () => jobTitles.find((t) => t.id === formData.job_title_id),
+    [jobTitles, formData.job_title_id]
+  );
+
+  const filteredJobTitles = useMemo(() => {
+    if (!jobTitleSearch.trim()) return jobTitles;
+    const query = jobTitleSearch.toLowerCase();
+    return jobTitles.filter((t) => t.name.toLowerCase().includes(query));
+  }, [jobTitles, jobTitleSearch]);
 
   // Create contact mutation
   const createContact = useMutation({
