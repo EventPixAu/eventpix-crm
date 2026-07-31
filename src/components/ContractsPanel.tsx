@@ -190,6 +190,10 @@ export function ContractsPanel({
     // Strip remaining HTML tags
     text = text.replace(/<[^>]+>/g, '');
 
+    // Defensive: remove leftover CSS rule blocks (from previously corrupted documents)
+    text = text.replace(/(^|\n)\s*[.#]?[A-Za-z][\w\-\s.,:#>()[\]="']*\{[^{}]*\}/g, '\n');
+
+
     
     // Decode HTML entities
     const textarea = document.createElement('textarea');
