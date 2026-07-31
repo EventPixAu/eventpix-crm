@@ -563,6 +563,81 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Send Portal Link Dialog */}
+      <Dialog open={!!portalContact} onOpenChange={(open) => !open && setPortalContact(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Portal Link</DialogTitle>
+            <DialogDescription>
+              Send the proposal portal link to {portalContact ? getContactDisplay(portalContact).name : 'this contact'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="portal-subject">Subject</Label>
+              <Input
+                id="portal-subject"
+                value={portalSubject}
+                onChange={(e) => setPortalSubject(e.target.value)}
+                placeholder="Email subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="portal-body">Message</Label>
+              <Textarea
+                id="portal-body"
+                value={portalBody}
+                onChange={(e) => setPortalBody(e.target.value)}
+                rows={8}
+                placeholder="Email message"
+              />
+              <p className="text-xs text-muted-foreground">
+                The portal link will be included in the message.
+              </p>
+            </div>
+            {portalUrl && (
+              <div className="p-3 border rounded-md bg-muted/30">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <ExternalLink className="h-3 w-3" />
+                  Portal link
+                </div>
+                <a
+                  href={portalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline break-all"
+                >
+                  {portalUrl}
+                </a>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPortalContact(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendPortalLink}
+              disabled={!portalSubject || !portalBody || isSendingPortal}
+            >
+              {isSendingPortal ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Portal Link
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
