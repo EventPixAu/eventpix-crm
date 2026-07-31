@@ -445,9 +445,12 @@ export function ContractsPanel({
     setEditContractTitle(contract.title);
     const scopedContract = await withProposedServicesApplied(contract);
     const html = scopedContract.rendered_html || '';
+    const { shell, body } = splitHtmlDocument(html);
+    setDocShell(shell);
     setEditContractHtml(html);
-    setEditContractPlain(htmlToPlainText(html));
+    setEditContractPlain(htmlToPlainText(body));
     setIsEditOpen(true);
+
   };
 
   // Handle saving edited contract content
