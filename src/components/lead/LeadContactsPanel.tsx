@@ -49,7 +49,10 @@ interface LeadContactsPanelProps {
   clientId?: string | null;
   disabled?: boolean;
   defaultOpen?: boolean;
+  portalUrl?: string;
+  leadName?: string;
 }
+
 
 export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = true }: LeadContactsPanelProps) {
   const { data: contacts = [] } = useLeadContacts(leadId);
