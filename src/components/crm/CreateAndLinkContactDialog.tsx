@@ -3,8 +3,8 @@
  * 
  * After creating the contact, it's automatically linked via contact_company_associations
  */
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Loader2, Check, ChevronsUpDown, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -32,6 +45,7 @@ import {
   useCreateContactAssociation,
   RELATIONSHIP_TYPES,
 } from '@/hooks/useContactCompanyAssociations';
+import { cn } from '@/lib/utils';
 
 interface CreateAndLinkContactDialogProps {
   open: boolean;
