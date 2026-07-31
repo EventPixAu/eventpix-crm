@@ -5,7 +5,7 @@
  * Displays contacts in a card format with add/edit/delete capabilities.
  */
 import { useState } from 'react';
-import { Plus, Users, Phone, Mail, User, Building2, Link, Trash2, ChevronDown, ChevronRight, UserPlus, Send, ExternalLink } from 'lucide-react';
+import { Plus, Users, Phone, Mail, User, Building2, Link, Trash2, ChevronDown, ChevronRight, UserPlus, Send, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
