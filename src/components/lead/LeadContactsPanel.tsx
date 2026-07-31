@@ -5,10 +5,11 @@
  * Displays contacts in a card format with add/edit/delete capabilities.
  */
 import { useState } from 'react';
-import { Plus, Users, Phone, Mail, User, Building2, Link, Trash2, ChevronDown, ChevronRight, UserPlus } from 'lucide-react';
+import { Plus, Users, Phone, Mail, User, Building2, Link, Trash2, ChevronDown, ChevronRight, UserPlus, Send, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,7 +38,9 @@ import {
   type LeadContactRole,
 } from '@/hooks/useLeadContacts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 const MAX_CONTACTS = 4;
 
@@ -46,20 +49,30 @@ interface LeadContactsPanelProps {
   clientId?: string | null;
   disabled?: boolean;
   defaultOpen?: boolean;
+  portalUrl?: string;
+  leadName?: string;
 }
 
-export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = true }: LeadContactsPanelProps) {
+
+export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = true, portalUrl, leadName }: LeadContactsPanelProps) {
   const { data: contacts = [] } = useLeadContacts(leadId);
   const createContact = useCreateLeadContact();
   const updateContact = useUpdateLeadContact();
   const deleteContact = useDeleteLeadContact();
   const queryClient = useQueryClient();
+  const sendEmail = useSendCrmEmail();
   
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTab, setDialogTab] = useState<'new' | 'existing'>('new');
   const [selectedContactId, setSelectedContactId] = useState('');
   const [selectedRole, setSelectedRole] = useState<LeadContactRole>('primary');
+  
+  // Portal link dialog state
+  const [portalContact, setPortalContact] = useState<typeof contacts[0] | null>(null);
+  const [portalSubject, setPortalSubject] = useState('');
+  const [portalBody, setPortalBody] = useState('');
+  const [isSendingPortal, setIsSendingPortal] = useState(false);
   
   // Direct contact form fields
   const [contactName, setContactName] = useState('');
@@ -169,6 +182,53 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
 
   const handleRoleChange = async (contactId: string, newRole: string) => {
     await updateContact.mutateAsync({ id: contactId, leadId, role: newRole });
+  };
+
+  const handleOpenPortalLink = (contact: typeof contacts[0]) => {
+    const display = getContactDisplay(contact);
+    const firstName = display.name.split(' ')[0];
+    const name = display.name;
+    const link = portalUrl || `${window.location.origin}/client-login`;
+    
+    setPortalContact(contact);
+    setPortalSubject(`Your proposal portal for ${leadName || 'your event'}`);
+    setPortalBody(
+      `Hi ${firstName},\n\n` +
+      `You can access the proposal portal for ${leadName || 'your event'} here:\n\n` +
+      `${link}\n\n` +
+      `Please let us know if you have any questions.\n\n` +
+      `Best regards,\nEventpixii Team`
+    );
+  };
+
+  const handleSendPortalLink = async () => {
+    if (!portalContact) return;
+    const display = getContactDisplay(portalContact);
+    if (!display.email) {
+      toast.error('Contact has no email address');
+      return;
+    }
+    
+    setIsSendingPortal(true);
+    try {
+      await sendEmail.mutateAsync({
+        recipientEmail: display.email,
+        recipientName: display.name || undefined,
+        subject: portalSubject,
+        bodyHtml: portalBody.replace(/\n/g, '<br>'),
+        contactId: portalContact.contact_id || undefined,
+        clientId: clientId || undefined,
+        leadId: leadId,
+      });
+      toast.success(`Portal link sent to ${display.name || display.email}`);
+      setPortalContact(null);
+      setPortalSubject('');
+      setPortalBody('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send portal link');
+    } finally {
+      setIsSendingPortal(false);
+    }
   };
 
   const getRoleLabel = (role: string | null) => {
@@ -318,14 +378,27 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
                           </div>
 
                           {!disabled && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
-                              onClick={() => handleDelete(contact.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {display.email && portalUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                  title="Send portal link"
+                                  onClick={() => handleOpenPortalLink(contact)}
+                                >
+                                  <Send className="h-3 w-3" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDelete(contact.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -486,6 +559,81 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
               }
             >
               Add Contact
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Portal Link Dialog */}
+      <Dialog open={!!portalContact} onOpenChange={(open) => !open && setPortalContact(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Portal Link</DialogTitle>
+            <DialogDescription>
+              Send the proposal portal link to {portalContact ? getContactDisplay(portalContact).name : 'this contact'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="portal-subject">Subject</Label>
+              <Input
+                id="portal-subject"
+                value={portalSubject}
+                onChange={(e) => setPortalSubject(e.target.value)}
+                placeholder="Email subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="portal-body">Message</Label>
+              <Textarea
+                id="portal-body"
+                value={portalBody}
+                onChange={(e) => setPortalBody(e.target.value)}
+                rows={8}
+                placeholder="Email message"
+              />
+              <p className="text-xs text-muted-foreground">
+                The portal link will be included in the message.
+              </p>
+            </div>
+            {portalUrl && (
+              <div className="p-3 border rounded-md bg-muted/30">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                  <ExternalLink className="h-3 w-3" />
+                  Portal link
+                </div>
+                <a
+                  href={portalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline break-all"
+                >
+                  {portalUrl}
+                </a>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPortalContact(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendPortalLink}
+              disabled={!portalSubject || !portalBody || isSendingPortal}
+            >
+              {isSendingPortal ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Portal Link
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
