@@ -3,8 +3,8 @@
  * 
  * After creating the contact, it's automatically linked via contact_company_associations
  */
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Loader2, Check, ChevronsUpDown, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -32,6 +45,7 @@ import {
   useCreateContactAssociation,
   RELATIONSHIP_TYPES,
 } from '@/hooks/useContactCompanyAssociations';
+import { cn } from '@/lib/utils';
 
 interface CreateAndLinkContactDialogProps {
   open: boolean;
@@ -69,9 +83,22 @@ export function CreateAndLinkContactDialog({
   companyName,
 }: CreateAndLinkContactDialogProps) {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
+  const [jobTitleOpen, setJobTitleOpen] = useState(false);
+  const [jobTitleSearch, setJobTitleSearch] = useState('');
   const queryClient = useQueryClient();
   const { data: jobTitles = [] } = useJobTitles();
   const createAssociation = useCreateContactAssociation();
+
+  const selectedJobTitle = useMemo(
+    () => jobTitles.find((t) => t.id === formData.job_title_id),
+    [jobTitles, formData.job_title_id]
+  );
+
+  const filteredJobTitles = useMemo(() => {
+    if (!jobTitleSearch.trim()) return jobTitles;
+    const query = jobTitleSearch.toLowerCase();
+    return jobTitles.filter((t) => t.name.toLowerCase().includes(query));
+  }, [jobTitles, jobTitleSearch]);
 
   // Create contact mutation
   const createContact = useMutation({
@@ -203,21 +230,64 @@ export function CreateAndLinkContactDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="job_title_id">Job Title</Label>
-              <Select
-                value={formData.job_title_id}
-                onValueChange={(value) => setFormData({ ...formData, job_title_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select title" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jobTitles.map((title) => (
-                    <SelectItem key={title.id} value={title.id}>
-                      {title.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={jobTitleOpen} onOpenChange={setJobTitleOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="job_title_id"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={jobTitleOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedJobTitle ? (
+                      <span className="truncate">{selectedJobTitle.name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Select title</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover" align="start">
+                  <Command shouldFilter={false}>
+                    <div className="flex items-center border-b px-3">
+                      <Search className="h-4 w-4 shrink-0 opacity-50" />
+                      <CommandInput
+                        placeholder="Search titles..."
+                        value={jobTitleSearch}
+                        onValueChange={setJobTitleSearch}
+                        className="border-0 focus:ring-0"
+                      />
+                    </div>
+                    <CommandList>
+                      <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                        No titles found.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {filteredJobTitles.map((title) => (
+                          <CommandItem
+                            key={title.id}
+                            value={title.id}
+                            onSelect={() => {
+                              setFormData({ ...formData, job_title_id: title.id });
+                              setJobTitleOpen(false);
+                              setJobTitleSearch('');
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                formData.job_title_id === title.id ? 'opacity-100' : 'opacity-0'
+                              )}
+                            />
+                            {title.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label htmlFor="custom_title">Custom Title</Label>
