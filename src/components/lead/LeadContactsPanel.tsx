@@ -184,6 +184,53 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
     await updateContact.mutateAsync({ id: contactId, leadId, role: newRole });
   };
 
+  const handleOpenPortalLink = (contact: typeof contacts[0]) => {
+    const display = getContactDisplay(contact);
+    const firstName = display.name.split(' ')[0];
+    const name = display.name;
+    const link = portalUrl || `${window.location.origin}/client-login`;
+    
+    setPortalContact(contact);
+    setPortalSubject(`Your proposal portal for ${leadName || 'your event'}`);
+    setPortalBody(
+      `Hi ${firstName},\n\n` +
+      `You can access the proposal portal for ${leadName || 'your event'} here:\n\n` +
+      `${link}\n\n` +
+      `Please let us know if you have any questions.\n\n` +
+      `Best regards,\nEventpixii Team`
+    );
+  };
+
+  const handleSendPortalLink = async () => {
+    if (!portalContact) return;
+    const display = getContactDisplay(portalContact);
+    if (!display.email) {
+      toast.error('Contact has no email address');
+      return;
+    }
+    
+    setIsSendingPortal(true);
+    try {
+      await sendEmail.mutateAsync({
+        recipientEmail: display.email,
+        recipientName: display.name || undefined,
+        subject: portalSubject,
+        bodyHtml: portalBody.replace(/\n/g, '<br>'),
+        contactId: portalContact.contact_id || undefined,
+        clientId: clientId || undefined,
+        leadId: leadId,
+      });
+      toast.success(`Portal link sent to ${display.name || display.email}`);
+      setPortalContact(null);
+      setPortalSubject('');
+      setPortalBody('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send portal link');
+    } finally {
+      setIsSendingPortal(false);
+    }
+  };
+
   const getRoleLabel = (role: string | null) => {
     return LEAD_CONTACT_ROLES.find(r => r.value === role)?.label || role || 'Contact';
   };
