@@ -5,10 +5,11 @@
  * Displays contacts in a card format with add/edit/delete capabilities.
  */
 import { useState } from 'react';
-import { Plus, Users, Phone, Mail, User, Building2, Link, Trash2, ChevronDown, ChevronRight, UserPlus } from 'lucide-react';
+import { Plus, Users, Phone, Mail, User, Building2, Link, Trash2, ChevronDown, ChevronRight, UserPlus, Send, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,7 +38,9 @@ import {
   type LeadContactRole,
 } from '@/hooks/useLeadContacts';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 const MAX_CONTACTS = 4;
 
