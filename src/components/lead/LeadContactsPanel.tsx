@@ -378,14 +378,27 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
                           </div>
 
                           {!disabled && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
-                              onClick={() => handleDelete(contact.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {display.email && portalUrl && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                  title="Send portal link"
+                                  onClick={() => handleOpenPortalLink(contact)}
+                                >
+                                  <Send className="h-3 w-3" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDelete(contact.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
