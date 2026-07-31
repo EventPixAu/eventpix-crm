@@ -379,6 +379,13 @@ export default function LeadDetail(): JSX.Element {
             leadId={id!}
             clientId={(lead as any).client_id}
             defaultOpen={true}
+            portalUrl={linkedEvent?.client_portal_token
+              ? `${getPublicBaseUrl()}/event/${linkedEvent.client_portal_token}`
+              : (lead as any)?.client_portal_token
+                ? `${getPublicBaseUrl()}/lead/${(lead as any).client_portal_token}`
+                : undefined
+            }
+            leadName={lead.lead_name}
           />
 
           {/* Mail Tabs: Send Email + History */}
