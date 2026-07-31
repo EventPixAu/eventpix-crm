@@ -54,18 +54,25 @@ interface LeadContactsPanelProps {
 }
 
 
-export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = true }: LeadContactsPanelProps) {
+export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = true, portalUrl, leadName }: LeadContactsPanelProps) {
   const { data: contacts = [] } = useLeadContacts(leadId);
   const createContact = useCreateLeadContact();
   const updateContact = useUpdateLeadContact();
   const deleteContact = useDeleteLeadContact();
   const queryClient = useQueryClient();
+  const sendEmail = useSendCrmEmail();
   
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogTab, setDialogTab] = useState<'new' | 'existing'>('new');
   const [selectedContactId, setSelectedContactId] = useState('');
   const [selectedRole, setSelectedRole] = useState<LeadContactRole>('primary');
+  
+  // Portal link dialog state
+  const [portalContact, setPortalContact] = useState<typeof contacts[0] | null>(null);
+  const [portalSubject, setPortalSubject] = useState('');
+  const [portalBody, setPortalBody] = useState('');
+  const [isSendingPortal, setIsSendingPortal] = useState(false);
   
   // Direct contact form fields
   const [contactName, setContactName] = useState('');
