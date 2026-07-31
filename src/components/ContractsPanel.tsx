@@ -227,9 +227,13 @@ export function ContractsPanel({
     // Convert newlines to <br>
     html = html.replace(/\n/g, '<br>');
     
+    // Preserve the original document shell (doctype/head/styles) when there was one
+    if (docShell) return `${docShell.before}${html}${docShell.after}`;
+
     // Wrap in a styled div
     return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">${html}</div>`;
   };
+
   
   // Handle plain text changes - keep plain text as source of truth while editing
   const handlePlainTextChange = (plainText: string) => {
