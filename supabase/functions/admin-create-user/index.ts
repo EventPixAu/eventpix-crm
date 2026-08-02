@@ -33,6 +33,43 @@ async function sendViaGmailApi(to: string, subject: string, html: string): Promi
   if (!resp.ok) throw new Error(`Gmail API error: ${await resp.text()}`);
 }
 
+
+const APP_URL = "https://app.eventpix.com.au";
+const ONBOARDING_URL = `${APP_URL}/onboarding`;
+
+function emailShell(heading: string, intro: string, actionLink: string, actionLabel: string, email: string): string {
+  return `
+  <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;line-height:1.6;max-width:620px">
+    <h2 style="margin:0 0 12px">${heading}</h2>
+    ${intro}
+    <p style="margin:24px 0">
+      <a href="${actionLink}" style="background-color:#3b82f6;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:bold">${actionLabel}</a>
+    </p>
+    <div style="background:#f5f7fa;border-radius:8px;padding:16px 20px;margin:24px 0">
+      <p style="margin:0 0 10px"><strong>How to get in — step by step</strong></p>
+      <ol style="margin:0;padding-left:20px">
+        <li style="margin-bottom:8px"><strong>Click the button above.</strong> It opens a secure page where you <strong>create your own password</strong>. You have not been given a password — you choose it yourself on this page.</li>
+        <li style="margin-bottom:8px">Enter your new password twice and click <strong>Reset Password</strong>. (Minimum 6 characters.)</li>
+        <li style="margin-bottom:8px">You'll be signed straight into the EventPix dashboard at <a href="${APP_URL}">app.eventpix.com.au</a>.</li>
+        <li style="margin-bottom:8px">From then on, sign in at <a href="${APP_URL}">app.eventpix.com.au</a> using:<br>
+          &nbsp;&nbsp;• <strong>Email:</strong> ${email}<br>
+          &nbsp;&nbsp;• <strong>Password:</strong> the one you just created</li>
+        <li style="margin-bottom:8px">Once inside, open <strong>My Profile</strong> and complete your details, banking, ABN and compliance documents so you can be assigned to jobs.</li>
+      </ol>
+    </div>
+    <p><strong>Please read first:</strong> our <a href="${ONBOARDING_URL}">Team Onboarding Guide</a> — <a href="${ONBOARDING_URL}">${ONBOARDING_URL}</a><br>
+    It walks through signing in, completing your profile, and how jobs, job sheets and payment work.</p>
+    <p style="font-size:13px;color:#555">
+      <strong>Important notes</strong><br>
+      • The link above is single-use and expires in about 1 hour. If it has expired, go to <a href="${APP_URL}/auth">${APP_URL}/auth</a> and click <em>Forgot password</em> — use this same email address (${email}) and we'll send you a fresh link.<br>
+      • You must use the invitation sent to <strong>${email}</strong>. Signing in with any other address will fail — accounts are created by us, you cannot self-register.<br>
+      • Stuck? Reply to this email and we'll sort it out.
+    </p>
+    <hr style="border:none;border-top:1px solid #e2e2e2;margin:24px 0">
+    <p>Looking forward to working with you,<br><strong>Trevor Connell</strong><br>EventPix Operations<br><a href="mailto:pix@eventpix.com.au">pix@eventpix.com.au</a></p>
+  </div>`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -58,7 +95,7 @@ serve(async (req) => {
     }
 
     const appBaseUrl = (Deno.env.get("INVITE_REDIRECT_URL") || supabaseUrl.replace('.supabase.co', '.lovable.app')).replace(/\/+$/, "");
-    const inviteRedirectTo = `${appBaseUrl}/`;
+    const inviteRedirectTo = `${appBaseUrl}/reset-password`;
     const passwordRedirectTo = `${appBaseUrl}/reset-password`;
 
     // Handle resend access email for existing user
@@ -70,13 +107,13 @@ serve(async (req) => {
       }
 
       try {
-        await sendViaGmailApi(email, "Set your EventPix password", `
-          <h2>Welcome to EventPix</h2>
-          <p>Click the link below to set your password and access your account:</p>
-          <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set My Password</a></p>
-          <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
-          <hr><p>Looking forward to working with you,<br><strong>Trevor Connell</strong><br>EventPix Operations</p>
-        `);
+        await sendViaGmailApi(email, "Your EventPix account — create your password", emailShell(
+          "Welcome to EventPix",
+          `<p>Your EventPix team account is ready. The next step is to <strong>create your own password</strong> — we never issue one for you.</p>`,
+          linkData.properties.action_link,
+          "Create My Password",
+          email,
+        ));
         await admin.from("email_logs").insert({ email_type: "team_invite", recipient_email: email, recipient_name: email, subject: "Set your EventPix password", body_preview: "Set your EventPix password", status: "sent", sent_at: new Date().toISOString(), direction: "outbound" }).then(({ error: logErr }) => { if (logErr) console.error("Failed to log email:", logErr); });
       } catch (emailErr) {
         console.error("Failed to send email:", emailErr);
@@ -109,13 +146,13 @@ serve(async (req) => {
       }
       userId = existingUser.id;
       try {
-        await sendViaGmailApi(inv.email, "Set your EventPix password", `
-          <h2>Welcome to EventPix</h2>
-          <p>Click the link below to set your password and access your account:</p>
-          <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Set My Password</a></p>
-          <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
-          <hr><p>Looking forward to working with you,<br><strong>Trevor Connell</strong><br>EventPix Operations</p>
-        `);
+        await sendViaGmailApi(inv.email, "Your EventPix account — create your password", emailShell(
+          "Welcome to EventPix",
+          `<p>Your EventPix team account is ready. The next step is to <strong>create your own password</strong> — we never issue one for you.</p>`,
+          linkData.properties.action_link,
+          "Create My Password",
+          inv.email,
+        ));
         await admin.from("email_logs").insert({ email_type: "team_invite", recipient_email: inv.email, recipient_name: inv.email, subject: "Set your EventPix password", body_preview: "Set your EventPix password", status: "sent", sent_at: new Date().toISOString(), direction: "outbound" }).then(({ error: logErr }) => { if (logErr) console.error("Failed to log email:", logErr); });
       } catch (emailErr) { console.error("Failed to send email via Gmail:", emailErr); }
     } else {
@@ -126,14 +163,14 @@ serve(async (req) => {
       }
       userId = linkData.user.id;
       try {
-        await sendViaGmailApi(inv.email, "You're invited to join EventPix", `
-          <h2>Welcome to EventPix!</h2>
-          <p>You've been invited to join the EventPix team as <strong>${inv.role}</strong>.</p>
-          <p>Click the button below to set up your account:</p>
-          <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
-          <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
-          <hr><p>Looking forward to working with you,<br><strong>Trevor Connell</strong><br>EventPix Operations</p>
-        `);
+        await sendViaGmailApi(inv.email, "You're invited to join EventPix — create your password", emailShell(
+          "Welcome to EventPix!",
+          `<p>You've been invited to join the EventPix team as <strong>${inv.role}</strong>.</p>
+           <p>There is no password waiting for you — the button below is how you <strong>create your own password</strong> and activate your account.</p>`,
+          linkData.properties.action_link,
+          "Accept Invitation & Create Password",
+          inv.email,
+        ));
         await admin.from("email_logs").insert({ email_type: "team_invite", recipient_email: inv.email, recipient_name: inv.email, subject: "You're invited to join EventPix", body_preview: `Invited to join EventPix as ${inv.role}`, status: "sent", sent_at: new Date().toISOString(), direction: "outbound" }).then(({ error: logErr }) => { if (logErr) console.error("Failed to log email:", logErr); });
       } catch (emailErr) { console.error("Failed to send invite email:", emailErr); }
     }
