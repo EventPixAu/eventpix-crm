@@ -44,13 +44,59 @@ export default function CrewOnboardingGuide() {
 
         <Separator className="my-8 print:my-6" />
 
+        {/* Always-visible sign-in instructions */}
+        <section className="mb-10 print:mb-6 page-break-inside-avoid">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+              <LucideIcons.KeyRound className="h-5 w-5 text-primary" />
+            </div>
+            <h2 className="text-2xl font-display font-semibold">Getting access to your account</h2>
+          </div>
+
+          <Card>
+            <CardContent className="pt-6 space-y-4 text-sm">
+              <p className="text-muted-foreground">
+                EventPix accounts are created for you by the team — you cannot register yourself, and
+                you are never sent a password. You choose your own password the first time you use
+                the invitation link.
+              </p>
+              <ol className="list-decimal pl-5 space-y-2 text-muted-foreground">
+                <li>
+                  Open the invitation email from <strong className="text-foreground">pix@eventpix.com.au</strong> and click
+                  <strong className="text-foreground"> Accept Invitation &amp; Create Password</strong>.
+                </li>
+                <li>Enter a new password twice (minimum 6 characters) and submit.</li>
+                <li>You'll be signed straight into the dashboard at <strong className="text-foreground">app.eventpix.com.au</strong>.</li>
+                <li>
+                  After that, sign in at <a className="text-primary underline" href="https://app.eventpix.com.au/auth">app.eventpix.com.au</a> with
+                  the <strong className="text-foreground">email address the invitation was sent to</strong> and the password you created.
+                </li>
+                <li>Open <strong className="text-foreground">My Profile</strong> and complete your details, ABN/banking and compliance documents so you can be assigned to jobs.</li>
+              </ol>
+              <div className="rounded-md border p-4 space-y-2 text-muted-foreground">
+                <p className="font-semibold text-foreground">Trouble signing in?</p>
+                <p>
+                  <strong className="text-foreground">"Invalid login credentials"</strong> usually means you haven't created a
+                  password yet, or you're using a different email address to the one we invited.
+                </p>
+                <p>
+                  Invitation links are single-use and expire after about an hour. If yours has expired, go to{' '}
+                  <a className="text-primary underline" href="https://app.eventpix.com.au/auth">app.eventpix.com.au</a>, click
+                  <strong className="text-foreground"> Forgot password</strong>, enter your invited email address, and we'll send a fresh link.
+                </p>
+                <p>Still stuck? Email <a className="text-primary underline" href="mailto:pix@eventpix.com.au">pix@eventpix.com.au</a>.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
         {isLoading && (
           <p className="text-center text-muted-foreground text-sm">Loading…</p>
         )}
 
         {!isLoading && sections.length === 0 && (
           <p className="text-center text-muted-foreground text-sm">
-            The onboarding guide hasn't been published yet.
+            More onboarding sections will appear here once published.
           </p>
         )}
 
