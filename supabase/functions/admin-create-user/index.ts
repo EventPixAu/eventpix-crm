@@ -163,14 +163,14 @@ serve(async (req) => {
       }
       userId = linkData.user.id;
       try {
-        await sendViaGmailApi(inv.email, "You're invited to join EventPix", `
-          <h2>Welcome to EventPix!</h2>
-          <p>You've been invited to join the EventPix team as <strong>${inv.role}</strong>.</p>
-          <p>Click the button below to set up your account:</p>
-          <p><a href="${linkData.properties.action_link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
-          <p><strong>Before you get started:</strong> Check out our <a href="https://app.eventpix.com.au/onboarding">Team Onboarding Guide</a>.</p>
-          <hr><p>Looking forward to working with you,<br><strong>Trevor Connell</strong><br>EventPix Operations</p>
-        `);
+        await sendViaGmailApi(inv.email, "You're invited to join EventPix — create your password", emailShell(
+          "Welcome to EventPix!",
+          `<p>You've been invited to join the EventPix team as <strong>${inv.role}</strong>.</p>
+           <p>There is no password waiting for you — the button below is how you <strong>create your own password</strong> and activate your account.</p>`,
+          linkData.properties.action_link,
+          "Accept Invitation & Create Password",
+          inv.email,
+        ));
         await admin.from("email_logs").insert({ email_type: "team_invite", recipient_email: inv.email, recipient_name: inv.email, subject: "You're invited to join EventPix", body_preview: `Invited to join EventPix as ${inv.role}`, status: "sent", sent_at: new Date().toISOString(), direction: "outbound" }).then(({ error: logErr }) => { if (logErr) console.error("Failed to log email:", logErr); });
       } catch (emailErr) { console.error("Failed to send invite email:", emailErr); }
     }
