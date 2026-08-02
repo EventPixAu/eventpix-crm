@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, addDays, startOfDay, isAfter, parseISO } from 'date-fns';
@@ -247,6 +247,15 @@ export default function StaffMe() {
   if (profile && Object.keys(formData).length === 0) {
     initFormData();
   }
+
+  // Notify admin once when an invited team member first accesses their onboarding profile
+  useEffect(() => {
+    if (!profile) return;
+    if ((profile as any).first_login_notified_at) return;
+    supabase.functions
+      .invoke('notify-onboarding', { body: { kind: 'first_login' } })
+      .catch(() => {/* non-blocking */});
+  }, [profile?.id, (profile as any)?.first_login_notified_at]);
   
   const handleFieldChange = (field: keyof ProfileData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -256,12 +265,19 @@ export default function StaffMe() {
   const handleSave = async () => {
     // If status is incomplete and user is saving, mark as pending_review
     const updatedData = { ...formData };
-    if (profile?.onboarding_status === 'incomplete') {
+    const isSubmission = profile?.onboarding_status === 'incomplete';
+    if (isSubmission) {
       (updatedData as any).onboarding_status = 'pending_review';
     }
     await updateProfile.mutateAsync(updatedData);
     setHasChanges(false);
+    if (isSubmission) {
+      supabase.functions
+        .invoke('notify-onboarding', { body: { kind: 'submitted' } })
+        .catch(() => {/* non-blocking */});
+    }
   };
+
   
   if (profileLoading) {
     return (

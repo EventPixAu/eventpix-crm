@@ -5030,6 +5030,8 @@ export type Database = {
           dietary_requirements: string | null
           email: string
           email_notifications_enabled: boolean | null
+          first_login_at: string | null
+          first_login_notified_at: string | null
           full_name: string | null
           gst_registered: boolean | null
           home_city: string | null
@@ -5045,6 +5047,8 @@ export type Database = {
           notification_preferences: Json | null
           onboarding_notes: string | null
           onboarding_status: string
+          onboarding_submitted_at: string | null
+          onboarding_submitted_notified_at: string | null
           phone: string | null
           photography_equipment: string | null
           photography_equipment_json: Json | null
@@ -5076,6 +5080,8 @@ export type Database = {
           dietary_requirements?: string | null
           email: string
           email_notifications_enabled?: boolean | null
+          first_login_at?: string | null
+          first_login_notified_at?: string | null
           full_name?: string | null
           gst_registered?: boolean | null
           home_city?: string | null
@@ -5091,6 +5097,8 @@ export type Database = {
           notification_preferences?: Json | null
           onboarding_notes?: string | null
           onboarding_status?: string
+          onboarding_submitted_at?: string | null
+          onboarding_submitted_notified_at?: string | null
           phone?: string | null
           photography_equipment?: string | null
           photography_equipment_json?: Json | null
@@ -5122,6 +5130,8 @@ export type Database = {
           dietary_requirements?: string | null
           email?: string
           email_notifications_enabled?: boolean | null
+          first_login_at?: string | null
+          first_login_notified_at?: string | null
           full_name?: string | null
           gst_registered?: boolean | null
           home_city?: string | null
@@ -5137,6 +5147,8 @@ export type Database = {
           notification_preferences?: Json | null
           onboarding_notes?: string | null
           onboarding_status?: string
+          onboarding_submitted_at?: string | null
+          onboarding_submitted_notified_at?: string | null
           phone?: string | null
           photography_equipment?: string | null
           photography_equipment_json?: Json | null
