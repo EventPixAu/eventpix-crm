@@ -678,6 +678,38 @@ export default function EventDetail() {
         });
       }
     });
+
+    // Legacy on-site contact stored on the event: resolve email from the company's contacts
+    const onsiteName = (event as any)?.onsite_contact_name?.trim().toLowerCase();
+    if (onsiteName) {
+      const match = (companyContacts as any[]).find(
+        (c) => c.contact_name?.trim().toLowerCase() === onsiteName
+      );
+      if (match?.email && !recipients.find(r => r.email === match.email)) {
+        recipients.push({
+          id: `company-contact-${match.id}`,
+          name: match.contact_name,
+          email: match.email,
+          type: 'client',
+        });
+      }
+    }
+
+    // Fallback: if no client-side recipients yet, offer the company's contacts
+    if (!recipients.some(r => r.type === 'client')) {
+      (companyContacts as any[]).forEach((c) => {
+        if (c.email && !recipients.find(r => r.email === c.email)) {
+          recipients.push({
+            id: `company-contact-${c.id}`,
+            name: c.contact_name || c.email,
+            email: c.email,
+            type: 'client',
+          });
+        }
+      });
+    }
+
+
     
     // Add assigned staff (support both new user-based and legacy staff-based)
     assignments.forEach((assignment: any) => {
