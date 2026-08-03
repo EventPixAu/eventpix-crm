@@ -102,7 +102,7 @@ import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
-import { AgreementStatusBadge, useAgreementStatusMap } from '@/components/AgreementStatusBadge';
+import { AgreementStatusBadge, useAgreementStatusMap, useProfileRoleMap } from '@/components/AgreementStatusBadge';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
