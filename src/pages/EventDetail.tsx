@@ -474,7 +474,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
             {assignment.user_id && (
-              <AgreementStatusBadge status={agreementStatusMap?.get(assignment.user_id)} role={role} />
+              <AgreementStatusBadge status={agreementStatusMap?.get(assignment.user_id)} role={profileRoleMap?.get(assignment.user_id) || role} />
             )}
 
           </div>
