@@ -47,6 +47,25 @@ export function useAgreementStatusMap() {
   });
 }
 
+/** Default team role name keyed by profile id (used where only an event role is available). */
+export function useProfileRoleMap() {
+  return useQuery({
+    queryKey: ['profile-default-role-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, default_role:staff_roles(name)');
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const row of (data as any[]) || []) {
+        if (row.default_role?.name) map.set(row.id, row.default_role.name);
+      }
+      return map;
+    },
+    staleTime: 300_000,
+  });
+}
+
 /** Assistants do not require a Photographer Services Agreement. */
 export function agreementRequiredForRole(role?: string | null): boolean {
   return !/assistant/i.test(role || '');
