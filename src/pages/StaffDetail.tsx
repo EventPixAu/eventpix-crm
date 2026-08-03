@@ -115,12 +115,12 @@ export default function StaffDetail() {
   const [activeTab, setActiveTab] = useState('profile');
   const [resendingOnboarding, setResendingOnboarding] = useState(false);
 
-  const handleResendOnboarding = async () => {
-    if (!id) return;
+  const handleResendOnboarding = async (email: string) => {
+    if (!id || !email) return;
     setResendingOnboarding(true);
     try {
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
-        body: { resend_access_for_user_id: id },
+        body: { resend_access_for_user_id: id, email },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to send onboarding email');
@@ -528,7 +528,7 @@ export default function StaffDetail() {
               variant="outline"
               className="shrink-0"
               disabled={resendingOnboarding}
-              onClick={handleResendOnboarding}
+              onClick={() => handleResendOnboarding(profile.email)}
             >
               <Mail className="h-4 w-4 mr-2" />
               {resendingOnboarding ? 'Sending...' : 'Resend Onboarding Email'}
