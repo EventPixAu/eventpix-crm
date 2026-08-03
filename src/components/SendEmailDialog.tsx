@@ -145,7 +145,9 @@ export function SendEmailDialog({
     if (!open || !templates || selectedTemplateId) return;
     const desiredTrigger = context === 'contract' ? 'contract_sent' : context === 'quote' ? 'quote_sent' : null;
     if (!desiredTrigger) return;
-    const match = templates.find(t => t.trigger_type === desiredTrigger);
+    // Prefer client-facing templates; photographer agreement templates share the same trigger
+    const candidates = templates.filter(t => t.trigger_type === desiredTrigger);
+    const match = candidates.find(t => !/photographer/i.test(t.name || '')) || candidates[0];
     if (match) {
       setSelectedTemplateId(match.id);
       setSubject(processMergeFields(match.subject));
