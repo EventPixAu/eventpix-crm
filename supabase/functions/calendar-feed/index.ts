@@ -235,10 +235,12 @@ Deno.serve(async (req) => {
     const isPrivilegedUser =
       roleNames.has('admin') || roleNames.has('operations') || roleNames.has('executive');
 
-    // Fetch events (next 6 months + past 1 month)
+    // Confirmed events keep full history so subscribed calendars never drop past jobs.
+    // Speculative leads stay in a short window (they change often and aren't a record of work done).
     const now = new Date();
-    const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const futureDate = new Date(now.getFullYear(), now.getMonth() + 6, 0);
+    const pastDate = new Date(now.getFullYear() - 10, 0, 1);
+    const leadPastDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const futureDate = new Date(now.getFullYear(), now.getMonth() + 12, 0);
 
     // For privileged users, show all events AND leads. Otherwise, only events assigned to them.
     let assignedEvents: any[] = [];
@@ -307,7 +309,7 @@ Deno.serve(async (req) => {
           )
         `)
         .in('status', ['new', 'contacted', 'qualified', 'proposal_sent', 'negotiating'])
-        .or(`proposed_event_date.gte.${format(pastDate, 'yyyy-MM-dd')},lead_proposed_dates.proposed_date.gte.${format(pastDate, 'yyyy-MM-dd')}`);
+        .or(`proposed_event_date.gte.${format(leadPastDate, 'yyyy-MM-dd')},lead_proposed_dates.proposed_date.gte.${format(leadPastDate, 'yyyy-MM-dd')}`);
 
       if (leadsError) {
         console.error('Error fetching leads:', leadsError);
@@ -553,7 +555,7 @@ Deno.serve(async (req) => {
         for (const proposedDate of proposedDates) {
           const dateStr = proposedDate.proposed_date;
           // Filter by date range
-          if (dateStr < format(pastDate, 'yyyy-MM-dd') || dateStr > format(futureDate, 'yyyy-MM-dd')) {
+          if (dateStr < format(leadPastDate, 'yyyy-MM-dd') || dateStr > format(futureDate, 'yyyy-MM-dd')) {
             continue;
           }
 
@@ -618,7 +620,7 @@ Deno.serve(async (req) => {
       } else if (lead.proposed_event_date) {
         // No proposed dates table entries - use main proposed_event_date
         const dateStr = lead.proposed_event_date;
-        if (dateStr < format(pastDate, 'yyyy-MM-dd') || dateStr > format(futureDate, 'yyyy-MM-dd')) {
+        if (dateStr < format(leadPastDate, 'yyyy-MM-dd') || dateStr > format(futureDate, 'yyyy-MM-dd')) {
           continue;
         }
 
