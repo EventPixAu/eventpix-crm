@@ -640,6 +640,10 @@ export default function EventDetail() {
   
   // Fetch event contacts for email recipients
   const { data: eventContacts = [] } = useEventContacts(id);
+
+  // Fetch the client company's contacts (used as email recipients when the event has no explicit contacts)
+  const { data: companyContacts = [] } = useClientContacts(event?.client_id || (clientByName as any)?.id || null);
+
   
   // Build recipients for email dialog
   const emailRecipients = useMemo(() => {
