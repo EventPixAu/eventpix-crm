@@ -47,12 +47,19 @@ export function useAgreementStatusMap() {
   });
 }
 
+/** Assistants do not require a Photographer Services Agreement. */
+export function agreementRequiredForRole(role?: string | null): boolean {
+  return !/assistant/i.test(role || '');
+}
+
 interface Props {
   status: AgreementStatus | undefined;
+  role?: string | null;
   className?: string;
 }
 
-export function AgreementStatusBadge({ status, className }: Props) {
+export function AgreementStatusBadge({ status, role, className }: Props) {
+  if (!agreementRequiredForRole(role)) return null;
   const s: AgreementStatus = status || 'none';
   return (
     <Badge variant="outline" className={`text-xs shrink-0 ${CLASSES[s]} ${className || ''}`}>

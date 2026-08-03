@@ -47,7 +47,7 @@ import { InviteStaffToAccountDialog } from '@/components/InviteStaffToAccountDia
 import { StaffWorkflowDefaults } from '@/components/StaffWorkflowDefaults';
 import { PhotographyEquipmentEditor, type PhotographyEquipmentV2, type StoredEquipment } from '@/components/PhotographyEquipmentEditor';
 import { PhotographerAgreementCard } from '@/components/PhotographerAgreementCard';
-import { AgreementStatusBadge, useAgreementStatusMap } from '@/components/AgreementStatusBadge';
+import { AgreementStatusBadge, useAgreementStatusMap, agreementRequiredForRole } from '@/components/AgreementStatusBadge';
 import { ONBOARDING_STATUS_CONFIG, useUpdateOnboardingStatus, type OnboardingStatus } from '@/hooks/useCompliance';
 import { useUserAllocations, ALLOCATION_STATUS_CONFIG, type AllocationStatus } from '@/hooks/useEquipmentAllocations';
 import { cn } from '@/lib/utils';
@@ -531,7 +531,7 @@ export default function StaffDetail() {
                       )}
                     </>
                   )}
-                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} />
+                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} role={profile.default_role?.name} />
                   {profile.status && (
                     <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
                       {profile.status}
@@ -1035,6 +1035,7 @@ export default function StaffDetail() {
         {/* Compliance Tab (Admin only) */}
         {isAdmin && (
           <TabsContent value="compliance" className="space-y-4">
+            {agreementRequiredForRole(profile.default_role?.name) && (
             <PhotographerAgreementCard
               photographerId={profile.id}
               photographerName={profile.full_name || profile.email}
@@ -1044,6 +1045,7 @@ export default function StaffDetail() {
               onboardingStatus={onboardingStatus}
               accountStatus={(profile as any).status}
             />
+            )}
 
             <StaffCompliancePanel 
               userId={id} 

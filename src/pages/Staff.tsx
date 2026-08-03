@@ -609,7 +609,7 @@ export default function Staff() {
                                 );
                               })()}
                               {member.user_id && (
-                                <AgreementStatusBadge status={agreementStatusMap?.get(member.user_id)} />
+                                <AgreementStatusBadge status={agreementStatusMap?.get(member.user_id)} role={member.role} />
                               )}
                             </div>
                             {isAdmin && (
