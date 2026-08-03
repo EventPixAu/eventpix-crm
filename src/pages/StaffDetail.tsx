@@ -113,6 +113,25 @@ export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [resendingOnboarding, setResendingOnboarding] = useState(false);
+
+  const handleResendOnboarding = async () => {
+    if (!id) return;
+    setResendingOnboarding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { resend_access_for_user_id: id },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to send onboarding email');
+      toast.success('Onboarding email sent');
+    } catch (err: any) {
+      toast.error('Failed to send onboarding email', { description: err.message });
+    } finally {
+      setResendingOnboarding(false);
+    }
+  };
+
   const { data: agreementStatusMap } = useAgreementStatusMap();
   
   // First try to find a profile with this ID
