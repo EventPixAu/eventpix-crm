@@ -506,9 +506,17 @@ function InvitationsTable({ invitations }: { invitations: UserInvitation[] }) {
   );
 }
 
+function statusRank(user: UserProfile): number {
+  if (user.registration_status === 'pending') return 0;
+  if (user.is_active) return 1;
+  return 2;
+}
+
 export default function UserManagement() {
   const { data: users = [], isLoading: usersLoading } = useUsers();
   const { data: invitations = [], isLoading: invitationsLoading } = useInvitations();
+
+  const sortedUsers = [...users].sort((a, b) => statusRank(a) - statusRank(b));
 
   const pendingInvites = invitations.filter(i => 
     i.status === 'pending' || i.status === 'emailed' || i.status === 'provisioned'
@@ -572,7 +580,7 @@ export default function UserManagement() {
                     <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
                   </div>
                 ) : (
-                  <UsersTable users={users} />
+                  <UsersTable users={sortedUsers} />
                 )}
               </CardContent>
             </Card>
