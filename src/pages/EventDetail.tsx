@@ -736,7 +736,7 @@ export default function EventDetail() {
     });
     
     return recipients;
-  }, [event, assignments, eventContacts, clientByName]);
+  }, [event, assignments, eventContacts, clientByName, companyContacts]);
   
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
