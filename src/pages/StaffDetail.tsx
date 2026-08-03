@@ -495,6 +495,30 @@ export default function StaffDetail() {
         </Alert>
       )}
 
+      {/* Onboarding not complete: allow resending the onboarding/access email */}
+      {sourceTable === 'profiles' && isAdmin && onboardingStatus !== 'active' && profile.email && (
+        <Alert className="mb-6">
+          <Mail className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span>
+              Onboarding isn't complete for this team member. Resend the onboarding email with
+              sign-in instructions and a link to create their password.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              disabled={resendingOnboarding}
+              onClick={handleResendOnboarding}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              {resendingOnboarding ? 'Sending...' : 'Resend Onboarding Email'}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+
       {/* Profile Summary Card */}
       <Card className="mb-6">
         <CardContent className="pt-6">
