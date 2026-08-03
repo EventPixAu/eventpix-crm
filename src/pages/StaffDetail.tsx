@@ -113,6 +113,25 @@ export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [resendingOnboarding, setResendingOnboarding] = useState(false);
+
+  const handleResendOnboarding = async (email: string) => {
+    if (!id || !email) return;
+    setResendingOnboarding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { resend_access_for_user_id: id, email },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to send onboarding email');
+      toast.success('Onboarding email sent');
+    } catch (err: any) {
+      toast.error('Failed to send onboarding email', { description: err.message });
+    } finally {
+      setResendingOnboarding(false);
+    }
+  };
+
   const { data: agreementStatusMap } = useAgreementStatusMap();
   
   // First try to find a profile with this ID
@@ -494,6 +513,30 @@ export default function StaffDetail() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Onboarding not complete: allow resending the onboarding/access email */}
+      {sourceTable === 'profiles' && isAdmin && onboardingStatus !== 'active' && profile.email && (
+        <Alert className="mb-6">
+          <Mail className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span>
+              Onboarding isn't complete for this team member. Resend the onboarding email with
+              sign-in instructions and a link to create their password.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              disabled={resendingOnboarding}
+              onClick={() => handleResendOnboarding(profile.email)}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              {resendingOnboarding ? 'Sending...' : 'Resend Onboarding Email'}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
 
       {/* Profile Summary Card */}
       <Card className="mb-6">
