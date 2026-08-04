@@ -210,9 +210,24 @@ export default function PhotographerDashboard() {
     return 'Good evening';
   }, []);
 
-  // Extract first name from full_name, falling back to email prefix
-  const fullName = user?.user_metadata?.full_name as string | undefined;
-  const firstName = fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
+  // Prefer the team profile name; fall back to auth metadata, then a neutral greeting
+  const { data: profileName } = useQuery({
+    queryKey: ['dashboard-profile-name', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+      return (data?.full_name as string | null) || null;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const fullName = profileName || (user?.user_metadata?.full_name as string | undefined);
+  const firstName = fullName?.trim().split(' ')[0] || 'there';
 
   return (
     <div className="min-h-screen bg-background pb-24">
