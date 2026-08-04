@@ -112,6 +112,8 @@ interface LookupTableProps {
   createPending: boolean;
   updatePending: boolean;
   itemLabel: string;
+  /** Sort alphabetically by name instead of by sort_order */
+  alphabetical?: boolean;
   /** Optional extra boolean toggle column (e.g. "Onsite" for staff roles) */
   extraToggle?: {
     field: string;
@@ -130,15 +132,26 @@ function LookupTable({
   createPending,
   updatePending,
   itemLabel,
+  alphabetical,
   extraToggle,
 }: LookupTableProps) {
-  // Sort by sort_order then name
+  // Sort alphabetically by name when requested, otherwise by sort_order then name
   const items = [...itemsProp].sort((a, b) => {
+    if (alphabetical) {
+      return (a.name ?? '').localeCompare(b.name ?? '', undefined, { sensitivity: 'base' });
+    }
     const ao = a.sort_order ?? 0;
     const bo = b.sort_order ?? 0;
     if (ao !== bo) return ao - bo;
     return (a.name ?? '').localeCompare(b.name ?? '');
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [newName, setNewName] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const colCount = (alphabetical ? 0 : 1) + 1 + (extraToggle ? 1 : 0) + 2; // order + name + extraToggle + active + edit
+  const emptyColSpan = colCount;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [newName, setNewName] = useState('');
