@@ -7,6 +7,7 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import DOMPurify from 'dompurify';
+import { format, parseISO } from 'date-fns';
 import { Send, Eye, Paperclip, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,8 @@ import {
 } from '@/components/ui/select';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
+import { supabase } from '@/lib/supabase';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface SendContactEmailDialogProps {
@@ -128,7 +131,70 @@ export function SendContactEmailDialog({
   const [showPreview, setShowPreview] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [mergeContext, setMergeContext] = useState<{
+    eventDate?: string;
+    eventName?: string;
+    venueName?: string;
+    leadName?: string;
+    quoteAcceptUrl?: string;
+  }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Resolve merge fields in a block of text using the current context.
+  const buildMergeFields = useMemo(() => {
+    const firstName = contactFirstName || contactName.split(' ')[0] || '';
+    const budgetButtonText = mergeContext.quoteAcceptUrl
+      ? `View & Accept Budget: ${mergeContext.quoteAcceptUrl}`
+      : '';
+    return (extraContext: typeof mergeContext = mergeContext) => {
+      const evtDate = extraContext.eventDate || '';
+      const evtName = extraContext.eventName || '';
+      const vName = extraContext.venueName || '';
+      const lName = extraContext.leadName || '';
+      const qUrl = extraContext.quoteAcceptUrl || '';
+      const qButton = qUrl ? `View & Accept Budget: ${qUrl}` : '';
+      return {
+        '{{contact.first_name}}': firstName,
+        '{{contact.name}}': firstName,
+        '{{contact_name}}': firstName,
+        '{{client_name}}': firstName,
+        '{{client.first_name}}': firstName,
+        '{{client.primary_contact_name}}': contactName || '',
+        '{{client.business_name}}': companyName || '',
+        '{{company_name}}': companyName || '',
+        '{{event.event_date}}': evtDate,
+        '{{event_date}}': evtDate,
+        '{{event.event_name}}': evtName,
+        '{{event_name}}': evtName,
+        '{{event.venue}}': vName,
+        '{{event.venue_name}}': vName,
+        '{{venue_name}}': vName,
+        '{{venue.name}}': vName,
+        '{{lead.name}}': lName,
+        '{{lead_name}}': lName,
+        '{{lead_or_job_name}}': evtName || lName,
+        '{{quote.link}}': qUrl,
+        '{{quote.button}}': qButton,
+        '{{quote.url}}': qUrl,
+        '{{budget.link}}': qUrl,
+        '{{budget.button}}': qButton,
+        '{{budget.url}}': qUrl,
+      };
+    };
+  }, [contactFirstName, contactName, companyName, mergeContext]);
+
+  const resolveMergeFields = (text: string, fields: Record<string, string>): string => {
+    let result = text;
+    Object.entries(fields).forEach(([field, value]) => {
+      result = result.split(field).join(value);
+    });
+    return result;
+  };
+
+  // Linkify plain text URLs in HTML for a nicer final email.
+  const linkifyUrls = (html: string): string => {
+    return html.replace(/(\bhttps?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0891b2;text-decoration:underline;">$1</a>');
+  };
 
   // Reset when dialog opens — pre-populate plain text signature below the cursor
   useEffect(() => {
@@ -139,8 +205,63 @@ export function SendContactEmailDialog({
       setShowPreview(false);
       setAttachments([]);
       setIsSending(false);
+      setMergeContext({});
     }
   }, [open]);
+
+  // Load related quote/event context so budget/event merge fields can resolve.
+  useEffect(() => {
+    if (!open || !clientId) return;
+    let cancelled = false;
+    const fetchContext = async () => {
+      try {
+        const { data: quotes } = await supabase
+          .from('quotes')
+          .select('id, public_token, quote_number, event_id, linked_event_id, lead_id, client_id')
+          .eq('client_id', clientId)
+          .in('status', ['draft', 'sent'])
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const quote = quotes?.[0];
+        const eventId = quote?.event_id || quote?.linked_event_id;
+
+        let event: { event_name?: string; event_date?: string; venue_name?: string } | null = null;
+        if (eventId) {
+          const { data: events } = await supabase
+            .from('events')
+            .select('event_name, event_date, venue_name')
+            .eq('id', eventId)
+            .limit(1);
+          event = events?.[0] || null;
+        } else {
+          const { data: events } = await supabase
+            .from('events')
+            .select('event_name, event_date, venue_name')
+            .eq('client_id', clientId)
+            .order('event_date', { ascending: false })
+            .limit(1);
+          event = events?.[0] || null;
+        }
+
+        if (!cancelled) {
+          const eventDate = event?.event_date
+            ? format(parseISO(event.event_date), 'EEEE, d MMMM yyyy')
+            : '';
+          setMergeContext({
+            eventDate,
+            eventName: event?.event_name || quote?.quote_number || '',
+            venueName: event?.venue_name || '',
+            leadName: quote?.quote_number || event?.event_name || '',
+            quoteAcceptUrl: quote?.public_token ? `${getPublicBaseUrl()}/accept/${quote.public_token}` : undefined,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load email merge context:', err);
+      }
+    };
+    fetchContext();
+    return () => { cancelled = true; };
+  }, [open, clientId]);
 
   // Apply template — preserve a single signature/footer below template content
   useEffect(() => {
@@ -151,21 +272,10 @@ export function SendContactEmailDialog({
     let processedSubject = template.subject || '';
     let processedBody = template.body_text || template.body_html || '';
 
-    // Replace merge fields
-    const firstName = contactFirstName || contactName.split(' ')[0] || '';
-    const mergeFields: Record<string, string> = {
-      '{{contact.first_name}}': firstName,
-      '{{contact.name}}': firstName,
-      '{{contact_name}}': firstName,
-      '{{client_name}}': firstName,
-      '{{client.first_name}}': firstName,
-      '{{company_name}}': companyName || '',
-    };
-
-    Object.entries(mergeFields).forEach(([field, value]) => {
-      processedSubject = processedSubject.split(field).join(value);
-      processedBody = processedBody.split(field).join(value);
-    });
+    // Replace merge fields using the latest contact/quote/event context
+    const mergeFields = buildMergeFields();
+    processedSubject = resolveMergeFields(processedSubject, mergeFields);
+    processedBody = resolveMergeFields(processedBody, mergeFields);
 
     // Strip any existing signature block in the template to avoid duplication
     const sigIdx = processedBody.indexOf(SIGNATURE_MARKER);
@@ -176,7 +286,8 @@ export function SendContactEmailDialog({
 
     setSubject(processedSubject);
     setBody(`${plainBody}\n\n${PLAIN_TEXT_SIGNATURE}`);
-  }, [selectedTemplateId, templates, contactName, contactFirstName, companyName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplateId, templates]);
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -210,11 +321,27 @@ export function SendContactEmailDialog({
 
     setIsSending(true);
     try {
+      // Final pass: resolve any merge fields that are still present (e.g. typed manually)
+      const mergeFields = buildMergeFields();
+      const resolvedSubject = resolveMergeFields(subject, mergeFields);
+      let finalBodyHtml = resolveMergeFields(bodyToHtml(body), mergeFields);
+      finalBodyHtml = linkifyUrls(finalBodyHtml);
+
+      // Safety check: block send if raw placeholders remain unresolved
+      const unresolved = [...finalBodyHtml.matchAll(/\{\{[^}]+\}\}/g)].map(m => m[0]);
+      if (unresolved.length > 0) {
+        toast.error('Some placeholders could not be filled', {
+          description: `Please resolve these before sending: ${unresolved.slice(0, 5).join(', ')}`,
+        });
+        setIsSending(false);
+        return;
+      }
+
       await sendEmail.mutateAsync({
         recipientEmail: contactEmail,
         recipientName: contactName,
-        subject,
-        bodyHtml: bodyToHtml(body),
+        subject: resolvedSubject,
+        bodyHtml: finalBodyHtml,
         attachments: attachments.length > 0 ? attachments : undefined,
         contactId,
         clientId: clientId || undefined,
@@ -227,7 +354,7 @@ export function SendContactEmailDialog({
     }
   };
 
-  const previewHtml = bodyToHtml(body);
+  const previewHtml = linkifyUrls(resolveMergeFields(bodyToHtml(body), buildMergeFields()));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
