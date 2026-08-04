@@ -320,11 +320,25 @@ export function SendContactEmailDialog({
 
     setIsSending(true);
     try {
+      // Final pass: resolve any merge fields that are still present (e.g. typed manually)
+      const mergeFields = buildMergeFields();
+      const resolvedSubject = resolveMergeFields(subject, mergeFields);
+      let finalBodyHtml = resolveMergeFields(bodyToHtml(body), mergeFields);
+      finalBodyHtml = linkifyUrls(finalBodyHtml);
+
+      // Safety check: warn if raw placeholders remain unresolved
+      const unresolved = [...finalBodyHtml.matchAll(/\{\{[^}]+\}\}/g)].map(m => m[0]);
+      if (unresolved.length > 0) {
+        toast.warning('Some placeholders could not be filled', {
+          description: unresolved.slice(0, 5).join(', '),
+        });
+      }
+
       await sendEmail.mutateAsync({
         recipientEmail: contactEmail,
         recipientName: contactName,
-        subject,
-        bodyHtml: bodyToHtml(body),
+        subject: resolvedSubject,
+        bodyHtml: finalBodyHtml,
         attachments: attachments.length > 0 ? attachments : undefined,
         contactId,
         clientId: clientId || undefined,
