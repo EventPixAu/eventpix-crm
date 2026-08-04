@@ -192,7 +192,7 @@ export function useMyJobSheets() {
           id: event.id,
           assignment_id: a.id,
           event_name: event.event_name,
-          event_date: event.event_date,
+          event_date: assignedSession?.session_date || event.event_date,
           arrival_time: arrivalTime,
           start_time: startTime,
           end_time: endTime,
@@ -202,7 +202,7 @@ export function useMyJobSheets() {
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
           confirmation_status: (a as any).confirmation_status || null,
-          sessions: (sessions as any[])
+          sessions: (assignedSession ? [assignedSession] : (sessions as any[]))
             .filter((s) => s.session_type !== 'post_production' && s.session_type !== 'post-production')
             .sort((x, y) => (x.session_date || '').localeCompare(y.session_date || ''))
             .map((s) => ({
