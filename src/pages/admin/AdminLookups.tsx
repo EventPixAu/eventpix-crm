@@ -666,6 +666,7 @@ export default function AdminLookups() {
                 createPending={createStaffRole.isPending}
                 updatePending={updateStaffRole.isPending}
                 itemLabel="Staff Role"
+                alphabetical
                 extraToggle={{
                   field: 'is_onsite',
                   header: 'Onsite',
