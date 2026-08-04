@@ -6,6 +6,8 @@
  * Quick access to job sheets, calendar, and help.
  */
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 import { format, parseISO, isToday, isTomorrow, isFuture, isPast, addDays } from 'date-fns';
 import { motion } from 'framer-motion';
