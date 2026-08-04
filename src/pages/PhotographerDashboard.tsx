@@ -307,7 +307,7 @@ export default function PhotographerDashboard() {
           <div className="space-y-3">
             {filteredJobs.map((job, index) => (
               <motion.div
-                key={job.id}
+                key={job.assignment_id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
