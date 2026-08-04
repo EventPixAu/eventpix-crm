@@ -73,6 +73,7 @@ export function useMyJobSheets() {
         .select(`
           id,
           event_id,
+          session_id,
           confirmation_status,
           call_time_at,
           events!inner(
@@ -147,9 +148,17 @@ export function useMyJobSheets() {
         const deliveryDueSoon = eventsWithDueWorkflow.has(event.id) && !delivered && !isCompleted;
 
 
-        // Get session data - find matching session for event date or first session
+        // Get session data — if the assignment is scoped to a specific session (multi-day
+        // events create one assignment per day), use that session; otherwise fall back.
         const sessions = (event.event_sessions || []) as any[];
-        const matchingSession = sessions.find((s: any) => s.session_date === event.event_date) || sessions[0];
+        const assignedSessionId = (a as any).session_id as string | null;
+        const assignedSession = assignedSessionId
+          ? sessions.find((s: any) => s.id === assignedSessionId)
+          : null;
+        const matchingSession =
+          assignedSession ||
+          sessions.find((s: any) => s.session_date === event.event_date) ||
+          sessions[0];
         
         // Prioritize: assignment call_time_at (timestamptz) > session arrival_time (HH:mm:ss)
         // call_time_at is a full timestamp; convert to HH:mm:ss in the event's local timezone
@@ -183,7 +192,7 @@ export function useMyJobSheets() {
           id: event.id,
           assignment_id: a.id,
           event_name: event.event_name,
-          event_date: event.event_date,
+          event_date: assignedSession?.session_date || event.event_date,
           arrival_time: arrivalTime,
           start_time: startTime,
           end_time: endTime,
@@ -193,7 +202,7 @@ export function useMyJobSheets() {
           onsite_contact_phone: event.onsite_contact_phone,
           coverage_details: event.coverage_details,
           confirmation_status: (a as any).confirmation_status || null,
-          sessions: (sessions as any[])
+          sessions: (assignedSession ? [assignedSession] : (sessions as any[]))
             .filter((s) => s.session_type !== 'post_production' && s.session_type !== 'post-production')
             .sort((x, y) => (x.session_date || '').localeCompare(y.session_date || ''))
             .map((s) => ({
