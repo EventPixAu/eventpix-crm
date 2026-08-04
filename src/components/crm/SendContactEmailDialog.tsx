@@ -286,7 +286,8 @@ export function SendContactEmailDialog({
 
     setSubject(processedSubject);
     setBody(`${plainBody}\n\n${PLAIN_TEXT_SIGNATURE}`);
-  }, [selectedTemplateId, templates, buildMergeFields]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTemplateId, templates]);
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
