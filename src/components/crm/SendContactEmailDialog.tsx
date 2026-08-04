@@ -351,7 +351,7 @@ export function SendContactEmailDialog({
     }
   };
 
-  const previewHtml = bodyToHtml(body);
+  const previewHtml = linkifyUrls(resolveMergeFields(bodyToHtml(body), buildMergeFields()));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
