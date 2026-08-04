@@ -73,6 +73,7 @@ export function useMyJobSheets() {
         .select(`
           id,
           event_id,
+          session_id,
           confirmation_status,
           call_time_at,
           events!inner(
