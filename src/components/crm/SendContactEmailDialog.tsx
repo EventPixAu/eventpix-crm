@@ -209,6 +209,60 @@ export function SendContactEmailDialog({
     }
   }, [open]);
 
+  // Load related quote/event context so budget/event merge fields can resolve.
+  useEffect(() => {
+    if (!open || !clientId) return;
+    let cancelled = false;
+    const fetchContext = async () => {
+      try {
+        const { data: quotes } = await supabase
+          .from('quotes')
+          .select('id, public_token, quote_number, event_id, linked_event_id, lead_id, client_id')
+          .eq('client_id', clientId)
+          .in('status', ['draft', 'sent'])
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const quote = quotes?.[0];
+        const eventId = quote?.event_id || quote?.linked_event_id;
+
+        let event: { event_name?: string; event_date?: string; venue_name?: string; lead_name?: string } | null = null;
+        if (eventId) {
+          const { data: events } = await supabase
+            .from('events')
+            .select('event_name, event_date, venue_name, lead_name')
+            .eq('id', eventId)
+            .limit(1);
+          event = events?.[0] || null;
+        } else {
+          const { data: events } = await supabase
+            .from('events')
+            .select('event_name, event_date, venue_name, lead_name')
+            .eq('client_id', clientId)
+            .order('event_date', { ascending: false })
+            .limit(1);
+          event = events?.[0] || null;
+        }
+
+        if (!cancelled) {
+          const eventDate = event?.event_date
+            ? format(parseISO(event.event_date), 'EEEE, d MMMM yyyy')
+            : '';
+          setMergeContext({
+            eventDate,
+            eventName: event?.event_name || quote?.quote_number || '',
+            venueName: event?.venue_name || '',
+            leadName: event?.lead_name || '',
+            quoteAcceptUrl: quote?.public_token ? `${getPublicBaseUrl()}/accept/${quote.public_token}` : undefined,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load email merge context:', err);
+      }
+    };
+    fetchContext();
+    return () => { cancelled = true; };
+  }, [open, clientId]);
+
   // Apply template — preserve a single signature/footer below template content
   useEffect(() => {
     if (!selectedTemplateId || !templates) return;
