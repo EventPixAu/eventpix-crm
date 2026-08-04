@@ -131,7 +131,70 @@ export function SendContactEmailDialog({
   const [showPreview, setShowPreview] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [mergeContext, setMergeContext] = useState<{
+    eventDate?: string;
+    eventName?: string;
+    venueName?: string;
+    leadName?: string;
+    quoteAcceptUrl?: string;
+  }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Resolve merge fields in a block of text using the current context.
+  const buildMergeFields = useMemo(() => {
+    const firstName = contactFirstName || contactName.split(' ')[0] || '';
+    const budgetButtonText = mergeContext.quoteAcceptUrl
+      ? `View & Accept Budget: ${mergeContext.quoteAcceptUrl}`
+      : '';
+    return (extraContext: typeof mergeContext = mergeContext) => {
+      const evtDate = extraContext.eventDate || '';
+      const evtName = extraContext.eventName || '';
+      const vName = extraContext.venueName || '';
+      const lName = extraContext.leadName || '';
+      const qUrl = extraContext.quoteAcceptUrl || '';
+      const qButton = qUrl ? `View & Accept Budget: ${qUrl}` : '';
+      return {
+        '{{contact.first_name}}': firstName,
+        '{{contact.name}}': firstName,
+        '{{contact_name}}': firstName,
+        '{{client_name}}': firstName,
+        '{{client.first_name}}': firstName,
+        '{{client.primary_contact_name}}': contactName || '',
+        '{{client.business_name}}': companyName || '',
+        '{{company_name}}': companyName || '',
+        '{{event.event_date}}': evtDate,
+        '{{event_date}}': evtDate,
+        '{{event.event_name}}': evtName,
+        '{{event_name}}': evtName,
+        '{{event.venue}}': vName,
+        '{{event.venue_name}}': vName,
+        '{{venue_name}}': vName,
+        '{{venue.name}}': vName,
+        '{{lead.name}}': lName,
+        '{{lead_name}}': lName,
+        '{{lead_or_job_name}}': evtName || lName,
+        '{{quote.link}}': qUrl,
+        '{{quote.button}}': qButton,
+        '{{quote.url}}': qUrl,
+        '{{budget.link}}': qUrl,
+        '{{budget.button}}': qButton,
+        '{{budget.url}}': qUrl,
+      };
+    };
+  }, [contactFirstName, contactName, companyName, mergeContext]);
+
+  const resolveMergeFields = (text: string, fields: Record<string, string>): string => {
+    let result = text;
+    Object.entries(fields).forEach(([field, value]) => {
+      result = result.split(field).join(value);
+    });
+    return result;
+  };
+
+  // Linkify plain text URLs in HTML for a nicer final email.
+  const linkifyUrls = (html: string): string => {
+    return html.replace(/(\bhttps?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0891b2;text-decoration:underline;">$1</a>');
+  };
 
   // Reset when dialog opens — pre-populate plain text signature below the cursor
   useEffect(() => {
@@ -142,6 +205,7 @@ export function SendContactEmailDialog({
       setShowPreview(false);
       setAttachments([]);
       setIsSending(false);
+      setMergeContext({});
     }
   }, [open]);
 
