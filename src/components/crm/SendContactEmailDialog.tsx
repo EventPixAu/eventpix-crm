@@ -225,18 +225,18 @@ export function SendContactEmailDialog({
         const quote = quotes?.[0];
         const eventId = quote?.event_id || quote?.linked_event_id;
 
-        let event: { event_name?: string; event_date?: string; venue_name?: string; lead_name?: string } | null = null;
+        let event: { event_name?: string; event_date?: string; venue_name?: string } | null = null;
         if (eventId) {
           const { data: events } = await supabase
             .from('events')
-            .select('event_name, event_date, venue_name, lead_name')
+            .select('event_name, event_date, venue_name')
             .eq('id', eventId)
             .limit(1);
           event = events?.[0] || null;
         } else {
           const { data: events } = await supabase
             .from('events')
-            .select('event_name, event_date, venue_name, lead_name')
+            .select('event_name, event_date, venue_name')
             .eq('client_id', clientId)
             .order('event_date', { ascending: false })
             .limit(1);
@@ -251,7 +251,7 @@ export function SendContactEmailDialog({
             eventDate,
             eventName: event?.event_name || quote?.quote_number || '',
             venueName: event?.venue_name || '',
-            leadName: event?.lead_name || '',
+            leadName: quote?.quote_number || event?.event_name || '',
             quoteAcceptUrl: quote?.public_token ? `${getPublicBaseUrl()}/accept/${quote.public_token}` : undefined,
           });
         }
