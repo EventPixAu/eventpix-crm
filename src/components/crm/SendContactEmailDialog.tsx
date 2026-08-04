@@ -272,21 +272,10 @@ export function SendContactEmailDialog({
     let processedSubject = template.subject || '';
     let processedBody = template.body_text || template.body_html || '';
 
-    // Replace merge fields
-    const firstName = contactFirstName || contactName.split(' ')[0] || '';
-    const mergeFields: Record<string, string> = {
-      '{{contact.first_name}}': firstName,
-      '{{contact.name}}': firstName,
-      '{{contact_name}}': firstName,
-      '{{client_name}}': firstName,
-      '{{client.first_name}}': firstName,
-      '{{company_name}}': companyName || '',
-    };
-
-    Object.entries(mergeFields).forEach(([field, value]) => {
-      processedSubject = processedSubject.split(field).join(value);
-      processedBody = processedBody.split(field).join(value);
-    });
+    // Replace merge fields using the latest contact/quote/event context
+    const mergeFields = buildMergeFields();
+    processedSubject = resolveMergeFields(processedSubject, mergeFields);
+    processedBody = resolveMergeFields(processedBody, mergeFields);
 
     // Strip any existing signature block in the template to avoid duplication
     const sigIdx = processedBody.indexOf(SIGNATURE_MARKER);
