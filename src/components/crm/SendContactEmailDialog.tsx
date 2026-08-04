@@ -286,7 +286,7 @@ export function SendContactEmailDialog({
 
     setSubject(processedSubject);
     setBody(`${plainBody}\n\n${PLAIN_TEXT_SIGNATURE}`);
-  }, [selectedTemplateId, templates, contactName, contactFirstName, companyName]);
+  }, [selectedTemplateId, templates, buildMergeFields]);
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
