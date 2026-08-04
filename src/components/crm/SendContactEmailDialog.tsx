@@ -327,12 +327,14 @@ export function SendContactEmailDialog({
       let finalBodyHtml = resolveMergeFields(bodyToHtml(body), mergeFields);
       finalBodyHtml = linkifyUrls(finalBodyHtml);
 
-      // Safety check: warn if raw placeholders remain unresolved
+      // Safety check: block send if raw placeholders remain unresolved
       const unresolved = [...finalBodyHtml.matchAll(/\{\{[^}]+\}\}/g)].map(m => m[0]);
       if (unresolved.length > 0) {
-        toast.warning('Some placeholders could not be filled', {
-          description: unresolved.slice(0, 5).join(', '),
+        toast.error('Some placeholders could not be filled', {
+          description: `Please resolve these before sending: ${unresolved.slice(0, 5).join(', ')}`,
         });
+        setIsSending(false);
+        return;
       }
 
       await sendEmail.mutateAsync({
