@@ -152,10 +152,6 @@ function LookupTable({
 
   const colCount = (alphabetical ? 0 : 1) + 1 + (extraToggle ? 1 : 0) + 2; // order + name + extraToggle + active + edit
   const emptyColSpan = colCount;
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [newName, setNewName] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
 
   const handleStartEdit = (item: LookupItem) => {
     setEditingId(item.id);
