@@ -7,6 +7,7 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import DOMPurify from 'dompurify';
+import { format, parseISO } from 'date-fns';
 import { Send, Eye, Paperclip, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,8 @@ import {
 } from '@/components/ui/select';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useSendCrmEmail, EmailAttachment } from '@/hooks/useSendCrmEmail';
+import { supabase } from '@/lib/supabase';
+import { getPublicBaseUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface SendContactEmailDialogProps {
