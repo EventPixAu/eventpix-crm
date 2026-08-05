@@ -3,7 +3,7 @@ import { Clock, CheckCircle, Play, Truck, Archive, CalendarX } from 'lucide-reac
 import { cn } from '@/lib/utils';
 
 interface OpsStatusBadgeProps {
-  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | 'postponed' | null;
+  status: 'awaiting_details' | 'confirmed' | 'ready' | 'in_progress' | 'delivered' | 'completed' | 'archived' | 'cancelled' | null;
   className?: string;
 }
 
@@ -44,15 +44,15 @@ export function OpsStatusBadge({ status, className }: OpsStatusBadgeProps) {
       icon: Archive,
       className: 'border-gray-500/50 bg-gray-500/10 text-gray-500 dark:text-gray-400',
     },
-    postponed: {
-      label: 'Event Postponed',
+    cancelled: {
+      label: 'Event Cancelled',
       icon: CalendarX,
-      className: 'border-orange-500/50 bg-orange-500/10 text-orange-700 dark:text-orange-400',
+      className: 'border-destructive/50 bg-destructive/10 text-destructive',
     },
   };
 
   const currentStatus = status || 'awaiting_details';
-  const { label, icon: Icon, className: statusClassName } = config[currentStatus];
+  const { label, icon: Icon, className: statusClassName } = config[currentStatus] || config.awaiting_details;
 
   return (
     <Badge variant="outline" className={cn('gap-1', statusClassName, className)}>
