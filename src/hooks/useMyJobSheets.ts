@@ -103,6 +103,26 @@ export function useMyJobSheets() {
 
       if (error) throw error;
 
+      // Resolve each assignment's session directly. Do not rely solely on the
+      // event_sessions embed: older cached/PostgREST relationship results can
+      // omit that nested row even though event_assignments.session_id is set.
+      const assignedSessionIds = [...new Set(
+        (assignments || [])
+          .map((assignment: any) => assignment.session_id as string | null)
+          .filter((sessionId): sessionId is string => Boolean(sessionId))
+      )];
+      const assignedSessionsById = new Map<string, any>();
+
+      if (assignedSessionIds.length > 0) {
+        const { data: assignedSessions, error: assignedSessionsError } = await supabase
+          .from('event_sessions')
+          .select('id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type')
+          .in('id', assignedSessionIds);
+
+        if (assignedSessionsError) throw assignedSessionsError;
+        (assignedSessions || []).forEach((session: any) => assignedSessionsById.set(session.id, session));
+      }
+
       // Fetch workflow steps assigned to this user that are incomplete and due within 7 days.
       // These drive the "Delivery Due" badge — responsibility comes from Workflow assignment.
       const sevenDaysISO = addDays(new Date(), 7).toISOString().slice(0, 10);
@@ -153,7 +173,7 @@ export function useMyJobSheets() {
         const sessions = (event.event_sessions || []) as any[];
         const assignedSessionId = (a as any).session_id as string | null;
         const assignedSession = assignedSessionId
-          ? sessions.find((s: any) => s.id === assignedSessionId)
+          ? assignedSessionsById.get(assignedSessionId) || sessions.find((s: any) => s.id === assignedSessionId)
           : null;
         const matchingSession =
           assignedSession ||

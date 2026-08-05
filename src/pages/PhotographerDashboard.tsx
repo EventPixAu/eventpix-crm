@@ -217,15 +217,24 @@ export default function PhotographerDashboard() {
     queryKey: ['dashboard-profile-name', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', user.id)
         .maybeSingle();
-      return (data?.full_name as string | null) || null;
+      if (profile?.full_name) return profile.full_name as string;
+
+      // Legacy personnel can still have their canonical name in staff even
+      // when their auth metadata/profile row was created before name syncing.
+      const { data: staffMember } = await supabase
+        .from('staff')
+        .select('name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return (staffMember?.name as string | null) || null;
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
   const fullName = profileName || (user?.user_metadata?.full_name as string | undefined);
