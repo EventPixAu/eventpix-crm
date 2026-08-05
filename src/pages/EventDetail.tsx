@@ -1349,7 +1349,7 @@ export default function EventDetail() {
                       <Select
                         value={(event as any).ops_status || 'awaiting_details'}
                         onValueChange={async (value) => {
-                          if (value === 'postponed') {
+                          if (value === 'cancelled') {
                             setPostponeConfirmOpen(true);
                             return;
                           }
@@ -1376,31 +1376,66 @@ export default function EventDetail() {
                           <SelectItem value="in_progress">In Progress</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="postponed">Event Postponed</SelectItem>
+                          <SelectItem value="cancelled">Event Cancelled</SelectItem>
                           <SelectItem value="archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
                       <AlertDialog open={postponeConfirmOpen} onOpenChange={setPostponeConfirmOpen}>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Postpone this event?</AlertDialogTitle>
+                            <AlertDialogTitle>Cancel this event?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will mark the event as postponed and move it back into Sales. The event's current date will be kept until you set a new one.
+                              This will mark the event as cancelled and send a cancellation notification to the client contacts and any assigned crew
+                              {emailRecipients.length > 0 ? ` (${emailRecipients.length} recipient${emailRecipients.length === 1 ? '' : 's'})` : ''}.
                               {(event as any).lead_id
                                 ? ' The linked lead will be reopened to "New Lead".'
-                                : ' No linked lead was found — the event will remain here as postponed.'}
+                                : ''}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Keep event</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={async () => {
                                 setIsUpdatingStatus(true);
                                 try {
                                   await updateEvent.mutateAsync({
                                     id: event.id,
-                                    ops_status: 'postponed',
+                                    ops_status: 'cancelled',
                                   });
+
+                                  // Notify client contacts and assigned crew
+                                  const eventDateLabel = event.event_date
+                                    ? format(parseISO(event.event_date), 'EEEE, d MMMM yyyy')
+                                    : 'the scheduled date';
+                                  let sent = 0;
+                                  for (const r of emailRecipients) {
+                                    const isCrew = r.type !== 'client';
+                                    const bodyHtml = `
+                                      <p>Hi ${(r.name || '').split(' ')[0] || 'there'},</p>
+                                      <p>Please note that <strong>${event.event_name}</strong> scheduled for <strong>${eventDateLabel}</strong>${event.venue_name ? ` at ${event.venue_name}` : ''} has been <strong>cancelled</strong>.</p>
+                                      ${isCrew
+                                        ? '<p>You are no longer required for this booking. Please remove it from your calendar — we will be in touch regarding any future work.</p>'
+                                        : '<p>No coverage will be provided for this event. Please contact us if you would like to reschedule or discuss alternative arrangements.</p>'}
+                                      <p>Apologies for any inconvenience.</p>
+                                      <p>Kind regards,<br/>EventPix</p>
+                                    `;
+                                    try {
+                                      await supabase.functions.invoke('send-crm-email', {
+                                        body: {
+                                          recipientEmail: r.email,
+                                          recipientName: r.name,
+                                          subject: `Event cancelled: ${event.event_name} — ${eventDateLabel}`,
+                                          bodyHtml,
+                                          eventId: event.id,
+                                          clientId: event.client_id || undefined,
+                                        },
+                                      });
+                                      sent += 1;
+                                    } catch (e) {
+                                      console.error('Cancellation email failed for', r.email, e);
+                                    }
+                                  }
+
                                   const leadId = (event as any).lead_id as string | null;
                                   if (leadId) {
                                     await supabase
@@ -1408,24 +1443,22 @@ export default function EventDetail() {
                                       .update({ status: 'new' })
                                       .eq('id', leadId);
                                     if (event.client_id) {
-                                      await setClientStatusAuto(event.client_id, 'prospect', 'event_postponed');
+                                      await setClientStatusAuto(event.client_id, 'prospect', 'event_cancelled');
                                     }
                                     queryClient.invalidateQueries({ queryKey: ['leads'] });
-                                    toast.success('Event postponed', { description: 'Moved back to Sales — opening lead.' });
-                                    setPostponeConfirmOpen(false);
-                                    navigate(`/sales/leads/${leadId}`);
-                                    return;
                                   }
-                                  toast.success('Event postponed', { description: 'Marked as postponed. No linked lead to reopen.' });
+                                  toast.success('Event cancelled', {
+                                    description: `${sent} notification${sent === 1 ? '' : 's'} sent to client contacts and crew.`,
+                                  });
                                   setPostponeConfirmOpen(false);
                                 } catch (err: any) {
-                                  toast.error('Failed to postpone event', { description: err?.message });
+                                  toast.error('Failed to cancel event', { description: err?.message });
                                 } finally {
                                   setIsUpdatingStatus(false);
                                 }
                               }}
                             >
-                              Postpone event
+                              Cancel event & notify
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
