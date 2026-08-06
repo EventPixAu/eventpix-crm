@@ -295,6 +295,19 @@ export default function CrmLookups() {
   const updateSubcategory = useUpdateCompanySubcategory();
   const [newSubcategoryParentId, setNewSubcategoryParentId] = useState<string>('');
   const [newSubcategoryName, setNewSubcategoryName] = useState<string>('');
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [editSubName, setEditSubName] = useState('');
+  const [editSubParentId, setEditSubParentId] = useState('');
+
+  const handleSaveSub = async () => {
+    if (!editingSubId || !editSubName.trim()) return;
+    await updateSubcategory.mutateAsync({
+      id: editingSubId,
+      name: editSubName.trim(),
+      parent_id: editSubParentId,
+    });
+    setEditingSubId(null);
+  };
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
