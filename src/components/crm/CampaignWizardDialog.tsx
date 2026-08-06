@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -632,6 +633,53 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                 </CardContent>
               </Card>
 
+              <Card>
+                <CardContent className="pt-4 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <Switch checked={batchEnabled} onCheckedChange={(v) => setBatchEnabled(!!v)} />
+                    <span className="text-sm font-medium">Split into batches</span>
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Send this campaign in smaller groups on different dates. Each contact's follow-up
+                    sequence starts from the date their own batch was sent.
+                  </p>
+                  {batchEnabled && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Number of batches</Label>
+                          <Select value={String(batchCount)} onValueChange={(v) => setBatchCount(parseInt(v, 10))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="2">2 batches</SelectItem>
+                              <SelectItem value="3">3 batches</SelectItem>
+                              <SelectItem value="4">4 batches</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Split method</Label>
+                          <Select value="random" onValueChange={() => undefined}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="random">Random (equal groups)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {batchSizes.map((n, i) => (
+                          <Badge key={i} variant="secondary">Batch {i + 1}: {n} contacts</Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Set a send date &amp; time for each batch in Step 4.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               <div className="space-y-2">
                 <Label>Manually add a contact</Label>
                 <Input
@@ -825,25 +873,62 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
           {step === 4 && (
             <div className="space-y-4 py-2 pb-32">
-              <Select value={scheduleMode} onValueChange={(v) => setScheduleMode(v as 'now' | 'later')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="now">Send immediately</SelectItem>
-                  <SelectItem value="later">Schedule for later</SelectItem>
-                </SelectContent>
-              </Select>
-              {scheduleMode === 'later' && (
-                <div className="space-y-2">
-                  <Label>Send date & time</Label>
-                  <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+              {batchEnabled ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Each batch sends independently at its own date &amp; time.
+                  </p>
+                  {batchSchedules.map((val, i) => (
+                    <div key={i} className="space-y-2">
+                      <Label>Batch {i + 1} send date &amp; time · {batchSizes[i] ?? 0} contacts</Label>
+                      <Input
+                        type="datetime-local"
+                        value={val}
+                        onChange={(e) => {
+                          const next = [...batchSchedules];
+                          next[i] = e.target.value;
+                          setBatchSchedules(next);
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <>
+                  <Select value={scheduleMode} onValueChange={(v) => setScheduleMode(v as 'now' | 'later')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="now">Send immediately</SelectItem>
+                      <SelectItem value="later">Schedule for later</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {scheduleMode === 'later' && (
+                    <div className="space-y-2">
+                      <Label>Send date & time</Label>
+                      <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+                    </div>
+                  )}
+                </>
               )}
 
               <Card className="bg-muted/40">
                 <CardContent className="pt-4 text-sm space-y-1">
                   <div><strong>Recipients:</strong> {finalRecipients.length}</div>
                   <div><strong>Steps:</strong> {1 + followUps.length} ({followUps.length} follow-up{followUps.length === 1 ? '' : 's'})</div>
-                  <div><strong>Schedule:</strong> {scheduleMode === 'now' ? 'Immediate' : (scheduledAt ? format(new Date(scheduledAt), 'PPp') : 'Pick a time')}</div>
+                  {batchEnabled ? (
+                    <div>
+                      <strong>Batches:</strong> {batchCount} (random split)
+                      <ul className="mt-1 space-y-0.5">
+                        {batchSchedules.map((v, i) => (
+                          <li key={i} className="text-muted-foreground">
+                            Batch {i + 1} — {batchSizes[i] ?? 0} contacts · {v ? format(new Date(v), 'PPp') : 'Pick a time'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div><strong>Schedule:</strong> {scheduleMode === 'now' ? 'Immediate' : (scheduledAt ? format(new Date(scheduledAt), 'PPp') : 'Pick a time')}</div>
+                  )}
                   <div><strong>Sender:</strong> pix@rs.eventpix.com.au (Resend)</div>
                 </CardContent>
               </Card>
