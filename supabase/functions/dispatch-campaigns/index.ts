@@ -20,7 +20,7 @@ serve(async (req) => {
 
   const results: Array<Record<string, unknown>> = [];
 
-  async function invokeStep(campaignId: string, stepOrder: number) {
+  async function invokeStep(campaignId: string, stepOrder: number, batchNumber?: number) {
     try {
       const resp = await fetch(`${supabaseUrl}/functions/v1/send-campaign-step`, {
         method: "POST",
@@ -29,12 +29,12 @@ serve(async (req) => {
           "x-cron-secret": cronSecret,
           "Authorization": `Bearer ${serviceKey}`,
         },
-        body: JSON.stringify({ campaignId, stepOrder }),
+        body: JSON.stringify({ campaignId, stepOrder, batchNumber }),
       });
       const json = await resp.json().catch(() => ({}));
-      results.push({ campaignId, stepOrder, ok: resp.ok, ...json });
+      results.push({ campaignId, stepOrder, batchNumber, ok: resp.ok, ...json });
     } catch (e) {
-      results.push({ campaignId, stepOrder, ok: false, error: String(e) });
+      results.push({ campaignId, stepOrder, batchNumber, ok: false, error: String(e) });
     }
   }
 
@@ -48,6 +48,7 @@ serve(async (req) => {
       .from("email_campaigns")
       .select("id, scheduled_at, current_step")
       .eq("status", "scheduled")
+      .eq("batch_count", 1)
       .lte("scheduled_at", nowIso);
 
     for (const c of dueScheduled || []) {
@@ -71,6 +72,7 @@ serve(async (req) => {
       .from("email_campaigns")
       .select("id, current_step")
       .eq("status", "in_progress")
+      .eq("batch_count", 1)
       .eq("is_sequence", true);
 
     for (const c of active || []) {
@@ -115,6 +117,91 @@ serve(async (req) => {
       await invokeStep(c.id, nextStepOrder);
     }
 
+
+
+    // 3) Batched campaigns — each batch has its own send time and advances its
+    // own sequence from the date THAT batch was sent.
+    const { data: batched } = await supabase
+      .from("email_campaigns")
+      .select("id, batch_count, batch_schedule, status")
+      .gt("batch_count", 1)
+      .in("status", ["scheduled", "in_progress"]);
+
+    for (const c of batched || []) {
+      const schedule: string[] = Array.isArray(c.batch_schedule) ? c.batch_schedule as string[] : [];
+
+      const { data: steps } = await supabase
+        .from("email_campaign_steps")
+        .select("id, step_order, delay_days")
+        .eq("campaign_id", c.id)
+        .order("step_order");
+      if (!steps || steps.length === 0) continue;
+
+      const { data: batchContacts } = await supabase
+        .from("campaign_contacts")
+        .select("id, batch_number")
+        .eq("campaign_id", c.id);
+      const contactsByBatch = new Map<number, string[]>();
+      for (const bc of batchContacts || []) {
+        const b = (bc as { batch_number: number }).batch_number ?? 1;
+        if (!contactsByBatch.has(b)) contactsByBatch.set(b, []);
+        contactsByBatch.get(b)!.push((bc as { id: string }).id);
+      }
+
+      const stepIds = steps.map((s) => s.id);
+      const { data: sends } = await supabase
+        .from("campaign_step_sends")
+        .select("step_id, campaign_contact_id, status, sent_at")
+        .in("step_id", stepIds);
+
+      let allBatchesDone = true;
+
+      for (let b = 1; b <= (c.batch_count ?? 1); b++) {
+        const idsInBatch = new Set(contactsByBatch.get(b) || []);
+        if (idsInBatch.size === 0) continue;
+
+        const batchSends = (sends || []).filter((s) =>
+          idsInBatch.has((s as { campaign_contact_id: string }).campaign_contact_id)
+        );
+
+        // Highest step_order already processed for this batch + when it went out
+        let highestSentOrder = -1;
+        let lastSentAt: string | null = null;
+        for (const st of steps) {
+          const rows = batchSends.filter((s) => (s as { step_id: string }).step_id === st.id);
+          if (rows.length === 0) continue;
+          if (st.step_order > highestSentOrder) {
+            highestSentOrder = st.step_order;
+            lastSentAt = rows
+              .map((r) => (r as { sent_at: string | null }).sent_at)
+              .filter(Boolean)
+              .sort()
+              .pop() ?? null;
+          }
+        }
+
+        const nextOrder = highestSentOrder + 1;
+        const nextStep = steps.find((s) => s.step_order === nextOrder);
+        if (!nextStep) continue; // this batch has finished its sequence
+
+        allBatchesDone = false;
+
+        if (nextOrder === 0) {
+          const due = schedule[b - 1] ? new Date(schedule[b - 1]) : null;
+          if (!due || due.getTime() > Date.now()) continue;
+          await invokeStep(c.id, 0, b);
+        } else {
+          if (!lastSentAt) continue;
+          const delayMs = (nextStep.delay_days ?? 0) * 24 * 60 * 60 * 1000;
+          if (new Date(lastSentAt).getTime() + delayMs > Date.now()) continue;
+          await invokeStep(c.id, nextOrder, b);
+        }
+      }
+
+      if (allBatchesDone && c.status !== "completed") {
+        await supabase.from("email_campaigns").update({ status: "completed" }).eq("id", c.id);
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, dispatched: results.length, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
