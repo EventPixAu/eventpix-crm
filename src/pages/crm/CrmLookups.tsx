@@ -295,6 +295,19 @@ export default function CrmLookups() {
   const updateSubcategory = useUpdateCompanySubcategory();
   const [newSubcategoryParentId, setNewSubcategoryParentId] = useState<string>('');
   const [newSubcategoryName, setNewSubcategoryName] = useState<string>('');
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [editSubName, setEditSubName] = useState('');
+  const [editSubParentId, setEditSubParentId] = useState('');
+
+  const handleSaveSub = async () => {
+    if (!editingSubId || !editSubName.trim()) return;
+    await updateSubcategory.mutateAsync({
+      id: editingSubId,
+      name: editSubName.trim(),
+      parent_id: editSubParentId,
+    });
+    setEditingSubId(null);
+  };
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
@@ -434,12 +447,60 @@ export default function CrmLookups() {
                           <h4 className="font-medium text-sm mb-2">{parent.name}</h4>
                           <div className="border rounded-lg divide-y">
                             {subs.map((s) => (
-                              <div key={s.id} className={`flex items-center justify-between p-2 px-3 ${!s.is_active ? 'opacity-60' : ''}`}>
-                                <span className={!s.is_active ? 'line-through text-sm' : 'text-sm'}>{s.name}</span>
-                                <Switch
-                                  checked={s.is_active}
-                                  onCheckedChange={() => updateSubcategory.mutate({ id: s.id, is_active: !s.is_active })}
-                                />
+                              <div key={s.id} className={`flex items-center gap-2 justify-between p-2 px-3 ${!s.is_active ? 'opacity-60' : ''}`}>
+                                {editingSubId === s.id ? (
+                                  <div className="flex flex-1 flex-col sm:flex-row gap-2">
+                                    <Input
+                                      value={editSubName}
+                                      onChange={(e) => setEditSubName(e.target.value)}
+                                      className="h-8 flex-1"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSaveSub();
+                                        if (e.key === 'Escape') setEditingSubId(null);
+                                      }}
+                                    />
+                                    <select
+                                      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                                      value={editSubParentId}
+                                      onChange={(e) => setEditSubParentId(e.target.value)}
+                                    >
+                                      {companyCategories.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                      ))}
+                                    </select>
+                                    <div className="flex gap-1">
+                                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleSaveSub} disabled={updateSubcategory.isPending || !editSubName.trim()}>
+                                        <Check className="h-4 w-4 text-success" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setEditingSubId(null)}>
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className={!s.is_active ? 'line-through text-sm' : 'text-sm'}>{s.name}</span>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => {
+                                          setEditingSubId(s.id);
+                                          setEditSubName(s.name);
+                                          setEditSubParentId(s.parent_id);
+                                        }}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Switch
+                                        checked={s.is_active}
+                                        onCheckedChange={() => updateSubcategory.mutate({ id: s.id, is_active: !s.is_active })}
+                                      />
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             ))}
                           </div>
