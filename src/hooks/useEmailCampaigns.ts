@@ -239,6 +239,7 @@ export interface EngagementStepEntry {
 
 export interface EngagementContact {
   id: string;
+  batch_number: number;
   recipient_email: string;
   recipient_name: string | null;
   recipient_state: string | null;
@@ -271,6 +272,21 @@ export interface CampaignEngagement {
     botOpens: number;
     botClicks: number;
   };
+  batchCount: number;
+  perBatchSummary: Record<number, {
+    total: number;
+    sent: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    unsubscribed: number;
+    replied: number;
+    failed: number;
+    pending: number;
+    skipped: number;
+    botOpens: number;
+    botClicks: number;
+  }>;
   perStepSummary: Record<string, {
     sent: number;
     opened: number;
@@ -332,7 +348,7 @@ export function useCampaignEngagement(
         .from('campaign_contacts')
         .select(`
           id, recipient_email, recipient_name, last_event_name, last_event_date,
-          status, email_log_id, contact_id,
+          status, email_log_id, contact_id, batch_number,
           client_contacts(unsubscribed, unsubscribed_at, state),
           email_logs!campaign_contacts_email_log_id_fkey(id, status, opened_at, first_opened_at, open_count, clicked_at, click_count, sent_at, error_message, bot_suspected)
         `)
@@ -577,6 +593,7 @@ export function useCampaignEngagement(
 
         return {
           id: c.id,
+          batch_number: c.batch_number ?? 1,
           recipient_email: c.recipient_email,
           recipient_name: c.recipient_name,
           recipient_state: cc?.state ?? null,
@@ -592,11 +609,37 @@ export function useCampaignEngagement(
         };
       });
 
+      // Per-batch rollup so each batch can be reported on independently
+      const perBatchSummary: CampaignEngagement['perBatchSummary'] = {};
+      for (const c of contacts) {
+        const b = c.batch_number ?? 1;
+        if (!perBatchSummary[b]) {
+          perBatchSummary[b] = {
+            total: 0, sent: 0, opened: 0, clicked: 0, bounced: 0, unsubscribed: 0,
+            replied: 0, failed: 0, pending: 0, skipped: 0, botOpens: 0, botClicks: 0,
+          };
+        }
+        const bucket = perBatchSummary[b];
+        bucket.total += 1;
+        const anyOpened = Object.values(c.steps).some((st) => st.hasOpened);
+        const anyClicked = Object.values(c.steps).some((st) => st.hasClicked);
+        if (anyOpened) bucket.opened += 1;
+        if (anyClicked) bucket.clicked += 1;
+        if (c.base_derived !== 'opened' && c.base_derived !== 'clicked') {
+          bucket[c.base_derived] = (bucket[c.base_derived] || 0) + 1;
+        } else {
+          bucket.sent += 1;
+        }
+      }
+      const batchCount = Object.keys(perBatchSummary).length;
+
       return {
         steps,
         contacts,
         summary,
         perStepSummary,
+        perBatchSummary,
+        batchCount,
         lastUpdated: Date.now(),
       };
     },
