@@ -616,6 +616,39 @@ function CampaignDetailDialog({ campaign, open, onOpenChange }: CampaignDetailDi
           </div>
 
 
+          {/* Per-batch performance */}
+          {(engagement?.batchCount ?? 1) > 1 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Batch performance</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Object.entries(engagement?.perBatchSummary ?? {})
+                  .sort((a, b) => Number(a[0]) - Number(b[0]))
+                  .map(([batch, bs]) => (
+                    <div key={batch} className="space-y-2">
+                      <div className="text-sm font-medium">
+                        Batch {batch}
+                        <span className="text-muted-foreground font-normal"> · {bs.total} recipients</span>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-6">
+                        <StatTile label="Sent" value={bs.sent + bs.replied} />
+                        <StatTile label="Pending" value={bs.pending} tone="muted" />
+                        <StatTile label="Opened" value={bs.opened} tone="success" />
+                        <StatTile label="Clicked" value={bs.clicked} tone="info" />
+                        <StatTile label="Bounced" value={bs.bounced} tone="destructive" />
+                        <StatTile label="Failed" value={bs.failed} tone="destructive" />
+                      </div>
+                    </div>
+                  ))}
+                <p className="text-xs text-muted-foreground">
+                  Combined totals for all batches are shown above. Each batch's follow-up sequence runs
+                  from the date that batch was sent.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {campaign.status === 'in_progress' && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
