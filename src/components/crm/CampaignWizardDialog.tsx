@@ -86,6 +86,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   const [manualSearch, setManualSearch] = useState('');
   const [audienceCleared, setAudienceCleared] = useState(false);
 
+  // Step 1 — batch splitting
+  const [batchEnabled, setBatchEnabled] = useState(false);
+  const [batchCount, setBatchCount] = useState(2);
+  const [batchSchedules, setBatchSchedules] = useState<string[]>([]);
+
   // Step 2
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
@@ -316,6 +321,22 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     return list;
   }, [matched, manualIncludes, manualExcludes, audienceCleared, bounceIndex]);
 
+  // Roughly-equal batch sizes, e.g. 286 across 3 batches -> 96 / 95 / 95
+  const batchSizes = useMemo(() => {
+    if (!batchEnabled) return [finalRecipients.length];
+    const total = finalRecipients.length;
+    const base = Math.floor(total / batchCount);
+    const rem = total % batchCount;
+    return Array.from({ length: batchCount }, (_, i) => base + (i < rem ? 1 : 0));
+  }, [batchEnabled, batchCount, finalRecipients.length]);
+
+  useEffect(() => {
+    setBatchSchedules((prev) => {
+      const next = Array.from({ length: batchCount }, (_, i) => prev[i] || '');
+      return next;
+    });
+  }, [batchCount, batchEnabled]);
+
   const distinctCountries = useMemo(() => {
     if (!companiesIndex) return [] as string[];
     const set = new Set<string>();
@@ -332,6 +353,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], countries: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
+    setBatchEnabled(false); setBatchCount(2); setBatchSchedules([]);
     setName(''); setSubject(''); setBodyHtml('');
     setFollowUps([]);
     setScheduleMode('now'); setScheduledAt('');
