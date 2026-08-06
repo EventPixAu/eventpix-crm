@@ -14,6 +14,7 @@ const RESEND_FROM = "EventPix <pix@rs.eventpix.com.au>";
 interface SendCampaignStepBody {
   campaignId: string;
   stepOrder?: number; // defaults to campaigns.current_step
+  batchNumber?: number; // when set, only recipients in this batch are sent
 }
 
 function looksLikeEmail(s: string): boolean {
@@ -145,15 +146,20 @@ serve(async (req) => {
       .maybeSingle();
     if (!step) throw new Error(`Step ${stepOrder} not found`);
 
+    const isBatched = (campaign.batch_count ?? 1) > 1;
+    const batchNumber = isBatched ? (body.batchNumber ?? 1) : null;
+
     // Get recipients
-    const { data: recipients } = await supabase
+    let recipientQuery = supabase
       .from("campaign_contacts")
       .select("*, client_contacts(id, first_name, last_name, contact_name, unsubscribed, bounce_status, archived, status, client_id, clients(business_name))")
       .eq("campaign_id", campaign.id);
+    if (batchNumber !== null) recipientQuery = recipientQuery.eq("batch_number", batchNumber);
+    const { data: recipients } = await recipientQuery;
 
-    // Update campaign to in_progress
+    // Update campaign to in_progress (batched campaigns track progress per batch)
     await supabase.from("email_campaigns")
-      .update({ status: "in_progress", current_step: stepOrder })
+      .update(isBatched ? { status: "in_progress" } : { status: "in_progress", current_step: stepOrder })
       .eq("id", campaign.id);
 
     const publicBase = Deno.env.get("PUBLIC_BASE_URL") || "https://app.eventpix.com.au";
@@ -404,12 +410,22 @@ serve(async (req) => {
       sent_count: (campaign.sent_count || 0) + sent,
       failed_count: (campaign.failed_count || 0) + failed,
     };
-    if (stepOrder === 0) {
+    if (stepOrder === 0 && !isBatched) {
       updates.total_recipients = (recipients || []).length;
     }
-    if (isLastStep && !campaign.is_sequence) updates.status = "completed";
-    else if (isLastStep) updates.status = "completed";
-    else updates.current_step = stepOrder + 1;
+    if (isBatched) {
+      // Batched campaigns: the dispatcher advances each batch independently and
+      // marks the campaign completed once every batch has finished every step.
+      const { count: totalRecipientCount } = await supabase
+        .from("campaign_contacts")
+        .select("id", { count: "exact", head: true })
+        .eq("campaign_id", campaign.id);
+      updates.total_recipients = totalRecipientCount ?? campaign.total_recipients ?? 0;
+    } else if (isLastStep) {
+      updates.status = "completed";
+    } else {
+      updates.current_step = stepOrder + 1;
+    }
 
     // Don't overwrite a cancellation that landed mid-send
     const { data: finalStatus } = await supabase
@@ -419,7 +435,7 @@ serve(async (req) => {
     }
     await supabase.from("email_campaigns").update(updates).eq("id", campaign.id);
 
-    return new Response(JSON.stringify({ success: true, sent, failed, skipped, stepOrder }), {
+    return new Response(JSON.stringify({ success: true, sent, failed, skipped, stepOrder, batchNumber }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
