@@ -218,6 +218,7 @@ export type Database = {
       }
       campaign_contacts: {
         Row: {
+          batch_number: number
           campaign_id: string
           client_id: string | null
           contact_id: string | null
@@ -234,6 +235,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          batch_number?: number
           campaign_id: string
           client_id?: string | null
           contact_id?: string | null
@@ -250,6 +252,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          batch_number?: number
           campaign_id?: string
           client_id?: string | null
           contact_id?: string | null
@@ -1926,6 +1929,8 @@ export type Database = {
       }
       email_campaigns: {
         Row: {
+          batch_count: number
+          batch_schedule: Json
           body_override: string | null
           campaign_type: string
           created_at: string
@@ -1950,6 +1955,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          batch_count?: number
+          batch_schedule?: Json
           body_override?: string | null
           campaign_type: string
           created_at?: string
@@ -1974,6 +1981,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          batch_count?: number
+          batch_schedule?: Json
           body_override?: string | null
           campaign_type?: string
           created_at?: string

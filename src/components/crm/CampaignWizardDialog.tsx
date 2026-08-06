@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -85,6 +86,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
   const [manualExcludes, setManualExcludes] = useState<string[]>([]);
   const [manualSearch, setManualSearch] = useState('');
   const [audienceCleared, setAudienceCleared] = useState(false);
+
+  // Step 1 — batch splitting
+  const [batchEnabled, setBatchEnabled] = useState(false);
+  const [batchCount, setBatchCount] = useState(2);
+  const [batchSchedules, setBatchSchedules] = useState<string[]>([]);
 
   // Step 2
   const [name, setName] = useState('');
@@ -316,6 +322,22 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     return list;
   }, [matched, manualIncludes, manualExcludes, audienceCleared, bounceIndex]);
 
+  // Roughly-equal batch sizes, e.g. 286 across 3 batches -> 96 / 95 / 95
+  const batchSizes = useMemo(() => {
+    if (!batchEnabled) return [finalRecipients.length];
+    const total = finalRecipients.length;
+    const base = Math.floor(total / batchCount);
+    const rem = total % batchCount;
+    return Array.from({ length: batchCount }, (_, i) => base + (i < rem ? 1 : 0));
+  }, [batchEnabled, batchCount, finalRecipients.length]);
+
+  useEffect(() => {
+    setBatchSchedules((prev) => {
+      const next = Array.from({ length: batchCount }, (_, i) => prev[i] || '');
+      return next;
+    });
+  }, [batchCount, batchEnabled]);
+
   const distinctCountries = useMemo(() => {
     if (!companiesIndex) return [] as string[];
     const set = new Set<string>();
@@ -332,6 +354,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     setFilters({ statuses: [], categories: [], subcategories: [], clientTypes: [], sources: [], states: [], countries: [], cities: [] });
     setManualIncludes([]); setManualExcludes([]); setManualSearch('');
     setAudienceCleared(false);
+    setBatchEnabled(false); setBatchCount(2); setBatchSchedules([]);
     setName(''); setSubject(''); setBodyHtml('');
     setFollowUps([]);
     setScheduleMode('now'); setScheduledAt('');
@@ -422,9 +445,16 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       if (!subject.trim() || !bodyHtml.trim()) throw new Error('Subject and body required');
       if (finalRecipients.length === 0) throw new Error('No recipients selected');
 
-      const scheduled_at = scheduleMode === 'later' && scheduledAt
-        ? new Date(scheduledAt).toISOString()
-        : null;
+      const batchIsoSchedule = batchEnabled
+        ? batchSchedules.map((v) => (v ? new Date(v).toISOString() : null))
+        : [];
+      if (batchEnabled && batchIsoSchedule.some((v) => !v)) {
+        throw new Error('Set a send date & time for every batch');
+      }
+
+      const scheduled_at = batchEnabled
+        ? (batchIsoSchedule as string[]).slice().sort()[0]
+        : (scheduleMode === 'later' && scheduledAt ? new Date(scheduledAt).toISOString() : null);
 
       // Insert campaign
       const { data: campaign, error: cErr } = await supabase
@@ -440,6 +470,8 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
           is_sequence: followUps.length > 0,
           send_via: 'resend',
           scheduled_at,
+          batch_count: batchEnabled ? batchCount : 1,
+          batch_schedule: (batchEnabled ? batchIsoSchedule : []) as unknown as never,
           status: scheduled_at ? 'scheduled' : 'draft',
         })
         .select()
@@ -460,22 +492,30 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       const { error: sErr } = await supabase.from('email_campaign_steps').insert(steps);
       if (sErr) throw sErr;
 
-      // Recipients
-      const rows = finalRecipients.map((c) => ({
+      // Recipients — randomised round-robin assignment produces roughly equal batches
+      const ordered = [...finalRecipients];
+      if (batchEnabled) {
+        for (let i = ordered.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+        }
+      }
+      const rows = ordered.map((c, idx) => ({
         campaign_id: campaign.id,
         contact_id: c.id,
         client_id: c.client_id,
         recipient_email: c.email!,
         recipient_name: c.contact_name && !c.contact_name.includes('@') ? c.contact_name : null,
         status: 'pending' as const,
+        batch_number: batchEnabled ? (idx % batchCount) + 1 : 1,
       }));
       if (rows.length) {
         const { error: rErr } = await supabase.from('campaign_contacts').insert(rows);
         if (rErr) throw rErr;
       }
 
-      // Send immediately if 'now'
-      if (scheduleMode === 'now') {
+      // Send immediately if 'now' (batched campaigns always dispatch per batch schedule)
+      if (!batchEnabled && scheduleMode === 'now') {
         const { error: sendErr } = await supabase.functions.invoke('send-campaign-step', {
           body: { campaignId: campaign.id, stepOrder: 0 },
         });
@@ -486,7 +526,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast.success(scheduleMode === 'now' ? 'Campaign launched' : 'Campaign scheduled');
+      toast.success(!batchEnabled && scheduleMode === 'now' ? 'Campaign launched' : 'Campaign scheduled');
       setStep(5);
     },
     onError: (e: Error) => toast.error('Failed', { description: e.message }),
@@ -607,6 +647,53 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-4 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <Switch checked={batchEnabled} onCheckedChange={(v) => setBatchEnabled(!!v)} />
+                    <span className="text-sm font-medium">Split into batches</span>
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Send this campaign in smaller groups on different dates. Each contact's follow-up
+                    sequence starts from the date their own batch was sent.
+                  </p>
+                  {batchEnabled && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Number of batches</Label>
+                          <Select value={String(batchCount)} onValueChange={(v) => setBatchCount(parseInt(v, 10))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="2">2 batches</SelectItem>
+                              <SelectItem value="3">3 batches</SelectItem>
+                              <SelectItem value="4">4 batches</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Split method</Label>
+                          <Select value="random" onValueChange={() => undefined}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="random">Random (equal groups)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {batchSizes.map((n, i) => (
+                          <Badge key={i} variant="secondary">Batch {i + 1}: {n} contacts</Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Set a send date &amp; time for each batch in Step 4.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -803,25 +890,62 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
 
           {step === 4 && (
             <div className="space-y-4 py-2 pb-32">
-              <Select value={scheduleMode} onValueChange={(v) => setScheduleMode(v as 'now' | 'later')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="now">Send immediately</SelectItem>
-                  <SelectItem value="later">Schedule for later</SelectItem>
-                </SelectContent>
-              </Select>
-              {scheduleMode === 'later' && (
-                <div className="space-y-2">
-                  <Label>Send date & time</Label>
-                  <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+              {batchEnabled ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Each batch sends independently at its own date &amp; time.
+                  </p>
+                  {batchSchedules.map((val, i) => (
+                    <div key={i} className="space-y-2">
+                      <Label>Batch {i + 1} send date &amp; time · {batchSizes[i] ?? 0} contacts</Label>
+                      <Input
+                        type="datetime-local"
+                        value={val}
+                        onChange={(e) => {
+                          const next = [...batchSchedules];
+                          next[i] = e.target.value;
+                          setBatchSchedules(next);
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <>
+                  <Select value={scheduleMode} onValueChange={(v) => setScheduleMode(v as 'now' | 'later')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="now">Send immediately</SelectItem>
+                      <SelectItem value="later">Schedule for later</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {scheduleMode === 'later' && (
+                    <div className="space-y-2">
+                      <Label>Send date & time</Label>
+                      <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+                    </div>
+                  )}
+                </>
               )}
 
               <Card className="bg-muted/40">
                 <CardContent className="pt-4 text-sm space-y-1">
                   <div><strong>Recipients:</strong> {finalRecipients.length}</div>
                   <div><strong>Steps:</strong> {1 + followUps.length} ({followUps.length} follow-up{followUps.length === 1 ? '' : 's'})</div>
-                  <div><strong>Schedule:</strong> {scheduleMode === 'now' ? 'Immediate' : (scheduledAt ? format(new Date(scheduledAt), 'PPp') : 'Pick a time')}</div>
+                  {batchEnabled ? (
+                    <div>
+                      <strong>Batches:</strong> {batchCount} (random split)
+                      <ul className="mt-1 space-y-0.5">
+                        {batchSchedules.map((v, i) => (
+                          <li key={i} className="text-muted-foreground">
+                            Batch {i + 1} — {batchSizes[i] ?? 0} contacts · {v ? format(new Date(v), 'PPp') : 'Pick a time'}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div><strong>Schedule:</strong> {scheduleMode === 'now' ? 'Immediate' : (scheduledAt ? format(new Date(scheduledAt), 'PPp') : 'Pick a time')}</div>
+                  )}
                   <div><strong>Sender:</strong> pix@rs.eventpix.com.au (Resend)</div>
                 </CardContent>
               </Card>
@@ -833,9 +957,11 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
               <CheckCircle2 className="h-16 w-16 text-green-500" />
               <div className="text-2xl font-semibold">Campaign Launched</div>
               <div className="text-muted-foreground max-w-md">
-                {scheduleMode === 'now'
+                {!batchEnabled && scheduleMode === 'now'
                   ? `Your campaign is being sent to ${finalRecipients.length} recipient${finalRecipients.length === 1 ? '' : 's'}. You may close this window.`
-                  : `Your campaign has been scheduled${scheduledAt ? ` for ${format(new Date(scheduledAt), 'PPp')}` : ''}. You may close this window.`}
+                  : batchEnabled
+                    ? `Your campaign has been scheduled across ${batchCount} batches. You may close this window.`
+                    : `Your campaign has been scheduled${scheduledAt ? ` for ${format(new Date(scheduledAt), 'PPp')}` : ''}. You may close this window.`}
               </div>
             </div>
           )}
@@ -859,7 +985,8 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
             {step === 4 && (
               <Button
                 onClick={async () => {
-                  if (scheduleMode === 'later' && !scheduledAt) return;
+                  if (batchEnabled && batchSchedules.some((v) => !v)) return;
+                  if (!batchEnabled && scheduleMode === 'later' && !scheduledAt) return;
                   // Duplicate detection: same name + already sent / in progress / completed / scheduled
                   setDuplicateInfo(null);
                   if (name.trim()) {
@@ -875,10 +1002,15 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   }
                   setConfirmOpen(true);
                 }}
-                disabled={createCampaign.isPending || (scheduleMode === 'later' && !scheduledAt)}
+                disabled={
+                  createCampaign.isPending ||
+                  (batchEnabled ? batchSchedules.some((v) => !v) : (scheduleMode === 'later' && !scheduledAt))
+                }
               >
                 {createCampaign.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                {scheduleMode === 'now' ? <><Send className="h-4 w-4 mr-1" /> Launch campaign</> : <><CalIcon className="h-4 w-4 mr-1" /> Schedule</>}
+                {!batchEnabled && scheduleMode === 'now'
+                  ? <><Send className="h-4 w-4 mr-1" /> Launch campaign</>
+                  : <><CalIcon className="h-4 w-4 mr-1" /> Schedule</>}
               </Button>
             )}
             {step === 5 && (
@@ -894,13 +1026,14 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {scheduleMode === 'now' ? 'Send campaign now?' : 'Schedule campaign?'}
+              {!batchEnabled && scheduleMode === 'now' ? 'Send campaign now?' : 'Schedule campaign?'}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <p>
-                  You are about to {scheduleMode === 'now' ? 'send' : 'schedule a send'} to{' '}
-                  <strong>{finalRecipients.length}</strong> recipient{finalRecipients.length === 1 ? '' : 's'}.
+                  You are about to {!batchEnabled && scheduleMode === 'now' ? 'send' : 'schedule a send'} to{' '}
+                  <strong>{finalRecipients.length}</strong> recipient{finalRecipients.length === 1 ? '' : 's'}
+                  {batchEnabled ? ` across ${batchCount} batches` : ''}.
                   This cannot be undone. Are you sure?
                 </p>
                 {duplicateInfo && (
@@ -920,7 +1053,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                 createCampaign.mutate();
               }}
             >
-              Confirm & {scheduleMode === 'now' ? 'Send' : 'Schedule'}
+              Confirm & {!batchEnabled && scheduleMode === 'now' ? 'Send' : 'Schedule'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
