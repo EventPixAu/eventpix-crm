@@ -311,8 +311,6 @@ serve(async (req) => {
 
     console.log(`Updated email log ${targetLog.id}: ${targetLog.status} -> ${newStatus}`);
 
-    }
-
     return new Response(JSON.stringify({ ok: true, updated: targetLog.id, newStatus }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
