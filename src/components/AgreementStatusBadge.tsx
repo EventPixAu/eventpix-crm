@@ -66,6 +66,22 @@ export function useProfileRoleMap() {
   });
 }
 
+/** Salaried team members (staff) do not require a Photographer Services Agreement. */
+export function useSalariedProfileSet() {
+  return useQuery({
+    queryKey: ['salaried-profile-set'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('is_salaried', true);
+      if (error) throw error;
+      return new Set<string>((data || []).map((r: any) => r.id));
+    },
+    staleTime: 300_000,
+  });
+}
+
 /** Assistants do not require a Photographer Services Agreement. */
 export function agreementRequiredForRole(role?: string | null): boolean {
   return !/assistant/i.test(role || '');
@@ -74,10 +90,14 @@ export function agreementRequiredForRole(role?: string | null): boolean {
 interface Props {
   status: AgreementStatus | undefined;
   role?: string | null;
+  /** Profile id — used to exempt salaried staff. */
+  profileId?: string | null;
   className?: string;
 }
 
-export function AgreementStatusBadge({ status, role, className }: Props) {
+export function AgreementStatusBadge({ status, role, profileId, className }: Props) {
+  const { data: salaried } = useSalariedProfileSet();
+  if (profileId && salaried?.has(profileId)) return null;
   if (!agreementRequiredForRole(role)) return null;
   const s: AgreementStatus = status || 'none';
   return (

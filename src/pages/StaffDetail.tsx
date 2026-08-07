@@ -574,7 +574,7 @@ export default function StaffDetail() {
                       )}
                     </>
                   )}
-                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} role={profile.default_role?.name} />
+                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} role={profile.default_role?.name} profileId={profile.id} />
                   {profile.status && (
                     <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
                       {profile.status}
