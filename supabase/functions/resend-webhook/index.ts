@@ -161,7 +161,7 @@ serve(async (req) => {
     const { data: logs, error: fetchError } = await supabase
       .from("email_logs")
       .select("id, status, subject, client_id, lead_id, event_id, quote_id, contract_id, contact_id, template_id, email_type, recipient_name, from_email, from_name, sent_by")
-      .ilike("recipient_email", recipientEmail.replace(/[%_]/g, (m) => "\\" + m))
+      .ilike("recipient_email", recipientEmail.replace(/[%_]/g, (m: string) => "\\" + m))
       .eq("direction", "outbound")
       .gte("created_at", thirtyDaysAgo)
       .order("created_at", { ascending: false })
@@ -342,7 +342,7 @@ async function handleBounceContact(
       : `Flagged: Spam complaint received from Resend on ${dateStr}`;
 
     // Case-insensitive exact match on the whole address (escape LIKE wildcards).
-    const escaped = recipientEmail.trim().replace(/[%_]/g, (m) => "\\" + m);
+    const escaped = recipientEmail.trim().replace(/[%_]/g, (m: string) => "\\" + m);
     const { data: contacts, error: findErr } = await supabase
       .from("client_contacts")
       .select("id, email, status")
