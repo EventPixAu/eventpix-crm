@@ -7603,6 +7603,10 @@ export type Database = {
           contact_id: string
         }[]
       }
+      set_contact_status_manual: {
+        Args: { p_contact_id: string; p_status: string }
+        Returns: undefined
+      }
       set_user_active: {
         Args: { p_is_active: boolean; p_user_id: string }
         Returns: Json

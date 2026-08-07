@@ -808,10 +808,11 @@ export default function ContactDetail() {
                     value={(contact as any).status || '__unassigned__'}
                     onValueChange={async (value) => {
                       const newStatus = value === '__unassigned__' ? null : value;
-                      const { error } = await supabase
-                        .from('client_contacts')
-                        .update({ status: newStatus })
-                        .eq('id', contact.id);
+                      const { error } = await (supabase as any).rpc('set_contact_status_manual', {
+                        p_contact_id: contact.id,
+                        p_status: newStatus,
+                      });
+
                       if (error) {
                         toast.error('Failed to update status');
                       } else {
