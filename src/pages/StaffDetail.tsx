@@ -1078,7 +1078,7 @@ export default function StaffDetail() {
         {/* Compliance Tab (Admin only) */}
         {isAdmin && (
           <TabsContent value="compliance" className="space-y-4">
-            {agreementRequiredForRole(profile.default_role?.name) && (
+            {agreementRequiredForRole(profile.default_role?.name) && !(profile as any).is_salaried && (
             <PhotographerAgreementCard
               photographerId={profile.id}
               photographerName={profile.full_name || profile.email}
