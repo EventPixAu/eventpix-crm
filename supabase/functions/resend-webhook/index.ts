@@ -140,6 +140,13 @@ serve(async (req) => {
         });
     }
 
+    // CRM contact handling for bounce / complaint events.
+    // Run this BEFORE (and independently of) email_logs matching so a bounce is
+    // never dropped just because we couldn't find the originating send row.
+    if (eventType === "email.bounced" || eventType === "email.complained") {
+      await handleBounceContact(supabase, recipientEmail, eventType === "email.bounced", now);
+    }
+
     if (!newStatus) {
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -154,7 +161,7 @@ serve(async (req) => {
     const { data: logs, error: fetchError } = await supabase
       .from("email_logs")
       .select("id, status, subject, client_id, lead_id, event_id, quote_id, contract_id, contact_id, template_id, email_type, recipient_name, from_email, from_name, sent_by")
-      .eq("recipient_email", recipientEmail)
+      .ilike("recipient_email", recipientEmail.replace(/[%_]/g, (m) => "\\" + m))
       .eq("direction", "outbound")
       .gte("created_at", thirtyDaysAgo)
       .order("created_at", { ascending: false })
@@ -304,128 +311,6 @@ serve(async (req) => {
 
     console.log(`Updated email log ${targetLog.id}: ${targetLog.status} -> ${newStatus}`);
 
-    // CRM contact handling for bounce / complaint events
-    if (eventType === "email.bounced" || eventType === "email.complained") {
-      try {
-        const isHardBounce = eventType === "email.bounced";
-        const bounceFlag = isHardBounce ? "bounced" : "complained";
-        const dateStr = new Date(now).toISOString().slice(0, 10);
-        const noteText = isHardBounce
-          ? `Auto-archived: Hard bounce received from Resend on ${dateStr}`
-          : `Flagged: Spam complaint received from Resend on ${dateStr}`;
-
-        const { data: contacts } = await supabase
-          .from("client_contacts")
-          .select("id")
-          .ilike("email", recipientEmail);
-
-        for (const contact of contacts ?? []) {
-          const update: Record<string, unknown> = {
-            bounce_status: bounceFlag,
-            bounced_at: now,
-          };
-          if (isHardBounce) {
-            update.status = "Archived";
-            update.archived = true;
-            update.archived_at = now;
-          }
-          await supabase.from("client_contacts").update(update).eq("id", contact.id);
-
-          await supabase.from("client_contact_notes").insert({
-            contact_id: contact.id,
-            note: noteText,
-          });
-
-          await supabase.from("contact_activities").insert({
-            contact_id: contact.id,
-            activity_type: "bounce",
-            activity_date: now,
-            subject: isHardBounce ? "Hard bounce (auto-archived)" : "Spam complaint flagged",
-            notes: `${noteText}. Email: ${recipientEmail}`,
-          });
-        }
-        console.log(`Processed ${contacts?.length ?? 0} CRM contact(s) for ${eventType} (${recipientEmail})`);
-
-        // Cascade bounce to ALL campaign sequence steps for this contact —
-        // mark every pending future step_send as skipped and flag campaign_contacts
-        // so the dispatcher never fires another email at them.
-        if (isHardBounce) {
-          try {
-            const contactIds = (contacts ?? []).map((c: any) => c.id).filter(Boolean);
-            // 1) Find all campaign_contacts rows for this recipient (by contact_id or raw email)
-            let ccRows: any[] = [];
-            if (contactIds.length) {
-              const { data } = await supabase
-                .from("campaign_contacts")
-                .select("id, campaign_id, status")
-                .in("contact_id", contactIds);
-              ccRows = data ?? [];
-            }
-            const { data: byEmail } = await supabase
-              .from("campaign_contacts")
-              .select("id, campaign_id, status")
-              .ilike("recipient_email", recipientEmail);
-            for (const r of byEmail ?? []) {
-              if (!ccRows.find((x) => x.id === r.id)) ccRows.push(r);
-            }
-
-            // 2) Flag parent rows as bounced so future dispatcher runs skip them
-            const toFlag = ccRows
-              .filter((r) => !["bounced", "unsubscribed", "replied"].includes(r.status))
-              .map((r) => r.id);
-            if (toFlag.length) {
-              await supabase.from("campaign_contacts")
-                .update({ status: "bounced", error_message: "Hard bounce received from Resend" })
-                .in("id", toFlag);
-            }
-
-            // 3) Mark every pending step_send (current + future) as skipped
-            const ccIds = ccRows.map((r) => r.id);
-            if (ccIds.length) {
-              await supabase.from("campaign_step_sends")
-                .update({ status: "skipped", error_message: "Recipient bounced — skipped remaining sequence" })
-                .in("campaign_contact_id", ccIds)
-                .eq("status", "pending");
-
-              // 4) Upsert a skipped row for any step that doesn't yet have a send row
-              //    so the timeline shows "Bounced/Skipped" instead of "Pending".
-              const campaignIds = Array.from(new Set(ccRows.map((r) => r.campaign_id)));
-              const { data: steps } = await supabase
-                .from("email_campaign_steps")
-                .select("id, campaign_id, step_order")
-                .in("campaign_id", campaignIds);
-              const { data: existing } = await supabase
-                .from("campaign_step_sends")
-                .select("campaign_contact_id, step_id")
-                .in("campaign_contact_id", ccIds);
-              const existingKey = new Set((existing ?? []).map((s: any) => `${s.campaign_contact_id}::${s.step_id}`));
-              const inserts: Array<Record<string, unknown>> = [];
-              for (const cc of ccRows) {
-                for (const s of steps ?? []) {
-                  if (s.campaign_id !== cc.campaign_id) continue;
-                  const key = `${cc.id}::${s.id}`;
-                  if (existingKey.has(key)) continue;
-                  inserts.push({
-                    campaign_contact_id: cc.id,
-                    step_id: s.id,
-                    status: "skipped",
-                    error_message: "Recipient bounced — skipped remaining sequence",
-                  });
-                }
-              }
-              if (inserts.length) {
-                await supabase.from("campaign_step_sends").insert(inserts);
-              }
-            }
-
-            console.log(`Cascaded bounce skip across ${ccRows.length} campaign_contact row(s) for ${recipientEmail}`);
-          } catch (cascadeErr) {
-            console.error("Bounce cascade error:", cascadeErr);
-          }
-        }
-      } catch (crmErr) {
-        console.error("CRM bounce handling error:", crmErr);
-      }
     }
 
     return new Response(JSON.stringify({ ok: true, updated: targetLog.id, newStatus }), {
@@ -441,6 +326,142 @@ serve(async (req) => {
     });
   }
 });
+
+// ============================================================================
+// CRM bounce / complaint handling — archive contact, note, activity, cascade
+// ============================================================================
+async function handleBounceContact(
+  supabase: any,
+  recipientEmail: string,
+  isHardBounce: boolean,
+  now: string,
+) {
+  try {
+    const bounceFlag = isHardBounce ? "bounced" : "complained";
+    const dateStr = new Date(now).toISOString().slice(0, 10);
+    const noteText = isHardBounce
+      ? `Auto-archived: Hard bounce received from Resend on ${dateStr}`
+      : `Flagged: Spam complaint received from Resend on ${dateStr}`;
+
+    // Case-insensitive exact match on the whole address (escape LIKE wildcards).
+    const escaped = recipientEmail.trim().replace(/[%_]/g, (m) => "\\" + m);
+    const { data: contacts, error: findErr } = await supabase
+      .from("client_contacts")
+      .select("id, email, status")
+      .ilike("email", escaped);
+
+    if (findErr) {
+      console.error(`Bounce: contact lookup failed for ${recipientEmail}:`, findErr);
+      return;
+    }
+    if (!contacts || contacts.length === 0) {
+      console.warn(`Bounce: no CRM contact matched ${recipientEmail}`);
+      return;
+    }
+
+    for (const contact of contacts) {
+      const update: Record<string, unknown> = {
+        bounce_status: bounceFlag,
+        bounced_at: now,
+      };
+      if (isHardBounce) {
+        update.status = "Archived";
+        update.archived = true;
+        update.archived_at = now;
+      }
+      const { error: updErr } = await supabase
+        .from("client_contacts")
+        .update(update)
+        .eq("id", contact.id);
+      if (updErr) console.error(`Bounce: failed to archive contact ${contact.id}:`, updErr);
+
+      const { error: noteErr } = await supabase.from("client_contact_notes").insert({
+        contact_id: contact.id,
+        note: noteText,
+      });
+      if (noteErr) console.error(`Bounce: failed to add note for ${contact.id}:`, noteErr);
+
+      const { error: actErr } = await supabase.from("contact_activities").insert({
+        contact_id: contact.id,
+        activity_type: "bounce",
+        activity_date: now,
+        subject: isHardBounce ? "Hard bounce (auto-archived)" : "Spam complaint flagged",
+        notes: `${noteText}. Email: ${recipientEmail}`,
+      });
+      if (actErr) console.error(`Bounce: failed to log activity for ${contact.id}:`, actErr);
+    }
+    console.log(`Bounce: processed ${contacts.length} CRM contact(s) for ${recipientEmail} (hard=${isHardBounce})`);
+
+    if (!isHardBounce) return;
+
+    // Cascade: stop every remaining campaign sequence step for this recipient.
+    try {
+      const contactIds = contacts.map((c: any) => c.id).filter(Boolean);
+      let ccRows: any[] = [];
+      if (contactIds.length) {
+        const { data } = await supabase
+          .from("campaign_contacts")
+          .select("id, campaign_id, status")
+          .in("contact_id", contactIds);
+        ccRows = data ?? [];
+      }
+      const { data: byEmail } = await supabase
+        .from("campaign_contacts")
+        .select("id, campaign_id, status")
+        .ilike("recipient_email", escaped);
+      for (const r of byEmail ?? []) {
+        if (!ccRows.find((x) => x.id === r.id)) ccRows.push(r);
+      }
+
+      const toFlag = ccRows
+        .filter((r) => !["bounced", "unsubscribed", "replied"].includes(r.status))
+        .map((r) => r.id);
+      if (toFlag.length) {
+        await supabase.from("campaign_contacts")
+          .update({ status: "bounced", error_message: "Hard bounce received from Resend" })
+          .in("id", toFlag);
+      }
+
+      const ccIds = ccRows.map((r) => r.id);
+      if (ccIds.length) {
+        await supabase.from("campaign_step_sends")
+          .update({ status: "skipped", error_message: "Recipient bounced — skipped remaining sequence" })
+          .in("campaign_contact_id", ccIds)
+          .eq("status", "pending");
+
+        const campaignIds = Array.from(new Set(ccRows.map((r) => r.campaign_id)));
+        const { data: steps } = await supabase
+          .from("email_campaign_steps")
+          .select("id, campaign_id, step_order")
+          .in("campaign_id", campaignIds);
+        const { data: existing } = await supabase
+          .from("campaign_step_sends")
+          .select("campaign_contact_id, step_id")
+          .in("campaign_contact_id", ccIds);
+        const existingKey = new Set((existing ?? []).map((s: any) => `${s.campaign_contact_id}::${s.step_id}`));
+        const inserts: Array<Record<string, unknown>> = [];
+        for (const cc of ccRows) {
+          for (const s of steps ?? []) {
+            if (s.campaign_id !== cc.campaign_id) continue;
+            if (existingKey.has(`${cc.id}::${s.id}`)) continue;
+            inserts.push({
+              campaign_contact_id: cc.id,
+              step_id: s.id,
+              status: "skipped",
+              error_message: "Recipient bounced — skipped remaining sequence",
+            });
+          }
+        }
+        if (inserts.length) await supabase.from("campaign_step_sends").insert(inserts);
+      }
+      console.log(`Bounce cascade across ${ccRows.length} campaign_contact row(s) for ${recipientEmail}`);
+    } catch (cascadeErr) {
+      console.error("Bounce cascade error:", cascadeErr);
+    }
+  } catch (e) {
+    console.error("CRM bounce handling error:", e);
+  }
+}
 
 // ============================================================================
 // Inbound email handler (Resend "email.received" / inbound forwarding events)
