@@ -574,7 +574,7 @@ export default function StaffDetail() {
                       )}
                     </>
                   )}
-                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} role={profile.default_role?.name} />
+                  <AgreementStatusBadge status={agreementStatusMap?.get(profile.id)} role={profile.default_role?.name} profileId={profile.id} />
                   {profile.status && (
                     <Badge variant={profile.status === 'active' ? 'default' : 'secondary'}>
                       {profile.status}
@@ -1078,7 +1078,7 @@ export default function StaffDetail() {
         {/* Compliance Tab (Admin only) */}
         {isAdmin && (
           <TabsContent value="compliance" className="space-y-4">
-            {agreementRequiredForRole(profile.default_role?.name) && (
+            {agreementRequiredForRole(profile.default_role?.name) && !(profile as any).is_salaried && (
             <PhotographerAgreementCard
               photographerId={profile.id}
               photographerName={profile.full_name || profile.email}
