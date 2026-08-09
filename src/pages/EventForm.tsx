@@ -281,13 +281,17 @@ export default function EventForm() {
 
   const handleVenueSelect = useCallback((venue: Venue) => {
     const addressParts = [venue.address_line_1, venue.address_line_2, venue.suburb, venue.state, venue.postcode].filter(Boolean);
-    form.setValue('venue_address', addressParts.join(', '));
+    form.setValue('venue_address', venue.full_address || addressParts.join(', '));
     if (venue.access_notes) form.setValue('venue_access_notes', venue.access_notes);
-    if (venue.parking_notes) form.setValue('venue_parking_notes', venue.parking_notes);
+    if (venue.parking_access || venue.parking_notes) {
+      form.setValue('venue_parking_notes', venue.parking_access || venue.parking_notes || '');
+    }
+    setSelectedVenueId(venue.id);
   }, [form]);
 
   const handleGooglePlaceSelect = useCallback((details: { name: string; address: string }) => {
     form.setValue('venue_address', details.address);
+    setSelectedVenueId(null);
   }, [form]);
 
   const handleRequestUnlock = () => {
