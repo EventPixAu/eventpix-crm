@@ -46,7 +46,10 @@ function SecretField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="bg-secondary"
-          autoComplete="off"
+          autoComplete="new-password"
+          name={`venue-secret-${label.replace(/\s+/g, '-').toLowerCase()}`}
+          data-1p-ignore
+          data-lpignore="true"
         />
         <Button type="button" variant="outline" size="icon" onClick={() => setVisible((v) => !v)} title={visible ? 'Hide' : 'Reveal'}>
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -309,12 +312,12 @@ export default function VenueDetail() {
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Public WiFi network</Label>
-              <Input value={form.public_wifi_ssid ?? ''} onChange={(e) => set('public_wifi_ssid', e.target.value)} className="bg-secondary" />
+              <Input value={form.public_wifi_ssid ?? ''} onChange={(e) => set('public_wifi_ssid', e.target.value)} className="bg-secondary" autoComplete="off" name="venue-public-wifi-ssid" data-1p-ignore data-lpignore="true" />
             </div>
             <SecretField label="Public WiFi password" value={form.public_wifi_password ?? ''} onChange={(v) => set('public_wifi_password', v)} />
             <div className="space-y-1.5">
               <Label>Event manager WiFi network</Label>
-              <Input value={form.event_wifi_ssid ?? ''} onChange={(e) => set('event_wifi_ssid', e.target.value)} className="bg-secondary" />
+              <Input value={form.event_wifi_ssid ?? ''} onChange={(e) => set('event_wifi_ssid', e.target.value)} className="bg-secondary" autoComplete="off" name="venue-event-wifi-ssid" data-1p-ignore data-lpignore="true" />
             </div>
             <SecretField label="Event manager WiFi password" value={form.event_wifi_password ?? ''} onChange={(v) => set('event_wifi_password', v)} />
             <div className="space-y-1.5 md:col-span-2">
