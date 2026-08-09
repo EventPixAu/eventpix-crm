@@ -52,6 +52,8 @@ import CrewOnboardingGuide from "./pages/CrewOnboardingGuide";
 import MyAvailability from "./pages/MyAvailability";
 import MyDocuments from "./pages/MyDocuments";
 import Equipment from "./pages/Equipment";
+import VenueList from "./pages/operations/VenueList";
+import VenueDetail from "./pages/operations/VenueDetail";
 import StaffMe from "./pages/StaffMe";
 import MyJobSheets from "./pages/MyJobSheets";
 import ClientList from "./pages/sales/ClientList";
@@ -269,6 +271,8 @@ function AppRoutes() {
       <Route path="/job-intake" element={<ProtectedRoute><OpsGuard><JobIntakeList /></OpsGuard></ProtectedRoute>} />
       <Route path="/job-intake/:id" element={<ProtectedRoute><OpsGuard><JobIntakeDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/equipment" element={<ProtectedRoute><OpsGuard><Equipment /></OpsGuard></ProtectedRoute>} />
+      <Route path="/venues" element={<ProtectedRoute><OpsGuard><VenueList /></OpsGuard></ProtectedRoute>} />
+      <Route path="/venues/:id" element={<ProtectedRoute><OpsGuard><VenueDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/team-brief-templates" element={<ProtectedRoute><AdminGuard><TeamBriefTemplates /></AdminGuard></ProtectedRoute>} />

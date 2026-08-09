@@ -95,6 +95,7 @@ export default function EventForm() {
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   
   // Determine if form should be disabled due to lock
   const isFormLocked = isEditing && isLocked && !isUnlocked;
@@ -281,13 +282,17 @@ export default function EventForm() {
 
   const handleVenueSelect = useCallback((venue: Venue) => {
     const addressParts = [venue.address_line_1, venue.address_line_2, venue.suburb, venue.state, venue.postcode].filter(Boolean);
-    form.setValue('venue_address', addressParts.join(', '));
+    form.setValue('venue_address', venue.full_address || addressParts.join(', '));
     if (venue.access_notes) form.setValue('venue_access_notes', venue.access_notes);
-    if (venue.parking_notes) form.setValue('venue_parking_notes', venue.parking_notes);
+    if (venue.parking_access || venue.parking_notes) {
+      form.setValue('venue_parking_notes', venue.parking_access || venue.parking_notes || '');
+    }
+    setSelectedVenueId(venue.id);
   }, [form]);
 
   const handleGooglePlaceSelect = useCallback((details: { name: string; address: string }) => {
     form.setValue('venue_address', details.address);
+    setSelectedVenueId(null);
   }, [form]);
 
   const handleRequestUnlock = () => {
@@ -308,6 +313,7 @@ export default function EventForm() {
       start_time: values.start_time || null,
       end_time: values.end_time || null,
       venue_name: values.venue_name || null,
+      ...(selectedVenueId ? { venue_id: selectedVenueId } : {}),
       venue_address: values.venue_address || null,
       venue_access_notes: values.venue_access_notes || null,
       venue_parking_notes: values.venue_parking_notes || null,
@@ -545,6 +551,25 @@ export default function EventForm() {
                   </FormItem>
                 )}
               />
+
+              {selectedVenueId ? (
+                <p className="text-xs text-muted-foreground">
+                  Linked to venue library.{' '}
+                  <a href={`/venues/${selectedVenueId}`} target="_blank" rel="noreferrer" className="underline">
+                    View venue details
+                  </a>
+                </p>
+              ) : form.watch('venue_name')?.trim() ? (
+                <p className="text-xs text-muted-foreground">
+                  Not linked to the venue library.{' '}
+                  <a href="/venues" target="_blank" rel="noreferrer" className="underline">
+                    Add this venue
+                  </a>{' '}
+                  to store access, WiFi and signal details.
+                </p>
+              ) : null}
+
+
 
               <FormField
                 control={form.control}
