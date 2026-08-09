@@ -6722,6 +6722,9 @@ export type Database = {
           ai_filled_fields: Json
           country: string | null
           created_at: string | null
+          crew_updated_at: string | null
+          crew_updated_by: string | null
+          crew_updated_by_name: string | null
           event_wifi_password: string | null
           event_wifi_ssid: string | null
           events_contact_email: string | null
@@ -6736,6 +6739,7 @@ export type Database = {
           is_confirmed: boolean
           last_visited: string | null
           name: string
+          needs_crew_review: boolean
           optus_signal: string
           parking_access: string | null
           parking_cost: string | null
@@ -6761,6 +6765,9 @@ export type Database = {
           ai_filled_fields?: Json
           country?: string | null
           created_at?: string | null
+          crew_updated_at?: string | null
+          crew_updated_by?: string | null
+          crew_updated_by_name?: string | null
           event_wifi_password?: string | null
           event_wifi_ssid?: string | null
           events_contact_email?: string | null
@@ -6775,6 +6782,7 @@ export type Database = {
           is_confirmed?: boolean
           last_visited?: string | null
           name: string
+          needs_crew_review?: boolean
           optus_signal?: string
           parking_access?: string | null
           parking_cost?: string | null
@@ -6800,6 +6808,9 @@ export type Database = {
           ai_filled_fields?: Json
           country?: string | null
           created_at?: string | null
+          crew_updated_at?: string | null
+          crew_updated_by?: string | null
+          crew_updated_by_name?: string | null
           event_wifi_password?: string | null
           event_wifi_ssid?: string | null
           events_contact_email?: string | null
@@ -6814,6 +6825,7 @@ export type Database = {
           is_confirmed?: boolean
           last_visited?: string | null
           name?: string
+          needs_crew_review?: boolean
           optus_signal?: string
           parking_access?: string | null
           parking_cost?: string | null
@@ -7513,6 +7525,58 @@ export type Database = {
           p_template_id: string
         }
         Returns: string
+      }
+      crew_update_venue: {
+        Args: { _note?: string; _updates: Json; _venue_id: string }
+        Returns: {
+          access_notes: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          ai_filled_fields: Json
+          country: string | null
+          created_at: string | null
+          crew_updated_at: string | null
+          crew_updated_by: string | null
+          crew_updated_by_name: string | null
+          event_wifi_password: string | null
+          event_wifi_ssid: string | null
+          events_contact_email: string | null
+          events_contact_name: string | null
+          events_contact_phone: string | null
+          events_dept_email: string | null
+          events_dept_phone: string | null
+          full_address: string | null
+          id: string
+          internet_notes: string | null
+          is_active: boolean | null
+          is_confirmed: boolean
+          last_visited: string | null
+          name: string
+          needs_crew_review: boolean
+          optus_signal: string
+          parking_access: string | null
+          parking_cost: string | null
+          parking_notes: string | null
+          postcode: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          public_wifi_password: string | null
+          public_wifi_ssid: string | null
+          signal_notes: string | null
+          state: string | null
+          suburb: string | null
+          telstra_signal: string
+          updated_at: string | null
+          venue_type: string | null
+          website: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "venues"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       current_user_role: { Args: never; Returns: string }
       detect_lead_type: {

@@ -58,6 +58,7 @@ import { CrewChecklist } from '@/components/crew/CrewChecklist';
 import { PhotographySection } from '@/components/crew/PhotographySection';
 import { CrewEventContacts } from '@/components/crew/CrewEventContacts';
 import { CrewTeamList } from '@/components/crew/CrewTeamList';
+import { CrewVenueCard } from '@/components/crew/CrewVenueCard';
 import { DeliveryInfo } from '@/components/crew/DeliveryInfo';
 import { AllEventContacts } from '@/components/crew/AllEventContacts';
 import { EventEquipmentByRole } from '@/components/crew/EventEquipmentByRole';
@@ -777,45 +778,12 @@ export default function EventDayOf() {
           </Link>
         </section>
 
-        {/* Venue Card - Enhanced with access/parking notes */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mb-4 bg-card border border-border rounded-xl p-4"
-        >
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-              <MapPin className="h-5 w-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold mb-1">Venue</h3>
-              {displayEvent.venue_name && (
-                <p className="font-medium">{displayEvent.venue_name}</p>
-              )}
-              {displayEvent.venue_address && (
-                <p className="text-sm text-muted-foreground">{displayEvent.venue_address}</p>
-              )}
-              {(displayEvent as any).venue_access_notes && (
-                <div className="mt-3 p-2 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-1.5 text-xs font-medium mb-1">
-                    <DoorOpen className="h-3 w-3" />
-                    Access Notes
-                  </div>
-                  <p className="text-sm">{(displayEvent as any).venue_access_notes}</p>
-                </div>
-              )}
-              {(displayEvent as any).venue_parking_notes && (
-                <div className="mt-2 p-2 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-1.5 text-xs font-medium mb-1">
-                    <Car className="h-3 w-3" />
-                    Parking Notes
-                  </div>
-                  <p className="text-sm">{(displayEvent as any).venue_parking_notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.section>
+        {/* Venue Card - venue library details + crew updates */}
+        <CrewVenueCard
+          venueId={(displayEvent as any).venue_id}
+          venueName={displayEvent.venue_name}
+          venueAddress={displayEvent.venue_address}
+        />
 
         {/* Dress Code Card */}
         {(displayEvent as any).dress_code && (

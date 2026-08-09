@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Plus, Search, Sparkles, Wifi, CheckCircle2, AlertTriangle, Upload } from 'lucide-react';
+import { Building2, MapPin, Plus, Search, Sparkles, Wifi, CheckCircle2, AlertTriangle, Upload, PencilLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ export default function VenueList() {
   const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [reviewFilter, setReviewFilter] = useState('all');
   const [addOpen, setAddOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -37,6 +38,7 @@ export default function VenueList() {
     return venues.filter((v) => {
       if (stateFilter !== 'all' && (v.state ?? '') !== stateFilter) return false;
       if (typeFilter !== 'all' && (v.venue_type ?? '') !== typeFilter) return false;
+      if (reviewFilter === 'crew' && !v.needs_crew_review) return false;
       if (!term) return true;
       return [v.name, v.full_address, v.address_line_1, v.suburb, v.state, v.postcode]
         .filter(Boolean)
@@ -44,7 +46,7 @@ export default function VenueList() {
         .toLowerCase()
         .includes(term);
     });
-  }, [venues, search, stateFilter, typeFilter]);
+  }, [venues, search, stateFilter, typeFilter, reviewFilter]);
 
   const eventCount = (venueId: string, name: string) =>
     (counts?.byId?.[venueId] ?? 0) + (counts?.byName?.[name.trim().toLowerCase()] ?? 0);
@@ -135,6 +137,13 @@ export default function VenueList() {
               {VENUE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={reviewFilter} onValueChange={setReviewFilter}>
+            <SelectTrigger className="w-[200px] bg-secondary"><SelectValue placeholder="Review status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All venues</SelectItem>
+              <SelectItem value="crew">Needs crew review</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (
@@ -172,6 +181,11 @@ export default function VenueList() {
                       </Badge>
                     )}
                   </div>
+                  {venue.needs_crew_review && (
+                    <Badge variant="outline" className="border-amber-500 text-amber-700">
+                      <PencilLine className="h-3 w-3 mr-1" /> Updated by crew — needs review
+                    </Badge>
+                  )}
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {venue.venue_type && <Badge variant="secondary">{venue.venue_type}</Badge>}
                     {(venue.public_wifi_ssid || venue.event_wifi_ssid) && (
