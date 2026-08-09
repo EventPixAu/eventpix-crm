@@ -5,6 +5,7 @@
  * to link an existing venue or create a new one.
  */
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
