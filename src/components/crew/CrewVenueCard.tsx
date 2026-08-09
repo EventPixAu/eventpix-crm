@@ -220,22 +220,22 @@ export function CrewVenueCard({ venueId, venueName, venueAddress }: Props) {
               <div className="space-y-1.5">
                 <Label>Public WiFi network</Label>
                 <Input value={form.public_wifi_ssid ?? ''} onChange={(e) => set('public_wifi_ssid', e.target.value)}
-                  placeholder={venue?.public_wifi_ssid || ''} className="bg-secondary" />
+                  placeholder={venue?.public_wifi_ssid || ''} className="bg-secondary" autoComplete="off" name="crew-public-wifi-ssid" data-1p-ignore data-lpignore="true" />
               </div>
               <div className="space-y-1.5">
                 <Label>Public WiFi password</Label>
                 <Input value={form.public_wifi_password ?? ''} onChange={(e) => set('public_wifi_password', e.target.value)}
-                  placeholder={venue?.public_wifi_password || ''} className="bg-secondary" />
+                  placeholder={venue?.public_wifi_password || ''} className="bg-secondary" autoComplete="new-password" name="crew-public-wifi-password" data-1p-ignore data-lpignore="true" />
               </div>
               <div className="space-y-1.5">
                 <Label>Event WiFi network</Label>
                 <Input value={form.event_wifi_ssid ?? ''} onChange={(e) => set('event_wifi_ssid', e.target.value)}
-                  placeholder={venue?.event_wifi_ssid || ''} className="bg-secondary" />
+                  placeholder={venue?.event_wifi_ssid || ''} className="bg-secondary" autoComplete="off" name="crew-event-wifi-ssid" data-1p-ignore data-lpignore="true" />
               </div>
               <div className="space-y-1.5">
                 <Label>Event WiFi password</Label>
                 <Input value={form.event_wifi_password ?? ''} onChange={(e) => set('event_wifi_password', e.target.value)}
-                  placeholder={venue?.event_wifi_password || ''} className="bg-secondary" />
+                  placeholder={venue?.event_wifi_password || ''} className="bg-secondary" autoComplete="new-password" name="crew-event-wifi-password" data-1p-ignore data-lpignore="true" />
               </div>
             </div>
             <div className="space-y-1.5">
