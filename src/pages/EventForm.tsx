@@ -313,6 +313,7 @@ export default function EventForm() {
       start_time: values.start_time || null,
       end_time: values.end_time || null,
       venue_name: values.venue_name || null,
+      ...(selectedVenueId ? { venue_id: selectedVenueId } : {}),
       venue_address: values.venue_address || null,
       venue_access_notes: values.venue_access_notes || null,
       venue_parking_notes: values.venue_parking_notes || null,
