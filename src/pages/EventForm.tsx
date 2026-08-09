@@ -552,6 +552,25 @@ export default function EventForm() {
                 )}
               />
 
+              {selectedVenueId ? (
+                <p className="text-xs text-muted-foreground">
+                  Linked to venue library.{' '}
+                  <a href={`/venues/${selectedVenueId}`} target="_blank" rel="noreferrer" className="underline">
+                    View venue details
+                  </a>
+                </p>
+              ) : form.watch('venue_name')?.trim() ? (
+                <p className="text-xs text-muted-foreground">
+                  Not linked to the venue library.{' '}
+                  <a href="/venues" target="_blank" rel="noreferrer" className="underline">
+                    Add this venue
+                  </a>{' '}
+                  to store access, WiFi and signal details.
+                </p>
+              ) : null}
+
+
+
               <FormField
                 control={form.control}
                 name="venue_address"
