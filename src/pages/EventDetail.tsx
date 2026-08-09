@@ -71,7 +71,6 @@ import { SessionsDisplay } from '@/components/SessionsDisplay';
 import { useEventContacts, CONTACT_TYPES } from '@/hooks/useEventContacts';
 import { useClientContacts } from '@/hooks/useClientContacts';
 
-import { VenueAddressLink } from '@/components/VenueAddressLink';
 import { EventVenueEditor } from '@/components/EventVenueEditor';
 import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
