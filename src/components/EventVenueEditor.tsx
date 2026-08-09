@@ -21,6 +21,7 @@ import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import { useUpdateEvent } from '@/hooks/useEvents';
 import { useCreateVenue, useVenueAiLookup, type Venue } from '@/hooks/useVenues';
 
+
 interface EventVenueEditorProps {
   eventId: string;
   venueId?: string | null;
