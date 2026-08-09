@@ -5,6 +5,7 @@
  * to link an existing venue or create a new one.
  */
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +38,7 @@ export function EventVenueEditor({
   venueAddress,
   readOnly = false,
 }: EventVenueEditorProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'select' | 'create'>('select');
   const [search, setSearch] = useState('');
@@ -145,12 +147,31 @@ export function EventVenueEditor({
         <div className="flex-1 min-w-0">
           <p className="text-sm text-muted-foreground">Venue</p>
           {venueName ? (
-            <VenueAddressLink
-              venueName={venueName}
-              address={venueAddress}
-              variant="inline"
-              showIcon={false}
-            />
+            <div className="flex items-center gap-2 min-w-0">
+              {venueId ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/venues/${venueId}`);
+                  }}
+                  className="text-sm font-medium hover:text-primary hover:underline truncate text-left"
+                >
+                  {venueName}
+                </button>
+              ) : (
+                <span className="text-sm font-medium truncate">{venueName}</span>
+              )}
+              {venueAddress && (
+                <VenueAddressLink
+                  venueName=""
+                  address={venueAddress}
+                  variant="inline"
+                  showIcon
+                  className="text-muted-foreground shrink-0"
+                />
+              )}
+            </div>
           ) : (
             <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">
               <Plus className="h-3.5 w-3.5" />
