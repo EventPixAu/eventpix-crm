@@ -44,6 +44,10 @@ export interface Venue {
   last_visited: string | null;
   is_confirmed: boolean;
   ai_filled_fields: string[];
+  needs_crew_review: boolean;
+  crew_updated_at: string | null;
+  crew_updated_by: string | null;
+  crew_updated_by_name: string | null;
 }
 
 export type VenueInsert = Partial<Omit<Venue, 'id' | 'created_at' | 'updated_at'>> & { name: string };
@@ -170,6 +174,28 @@ export function useUpdateVenue() {
     onError: (error: any) => {
       toast.error('Error updating venue', { description: error.message });
     },
+  });
+}
+
+/** Crew-facing update from the Day-Of View — writes live, flags for admin review. */
+export function useCrewUpdateVenue() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ venueId, updates, note }: { venueId: string; updates: Record<string, string>; note?: string }) => {
+      const { data, error } = await supabase.rpc('crew_update_venue', {
+        _venue_id: venueId,
+        _updates: updates as any,
+        _note: note?.trim() || null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] });
+      queryClient.invalidateQueries({ queryKey: ['venue-notes', vars.venueId] });
+      toast.success('Venue updated — admin has been notified to review');
+    },
+    onError: (error: any) => toast.error('Could not update venue', { description: error.message }),
   });
 }
 
