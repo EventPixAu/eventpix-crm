@@ -46,7 +46,10 @@ function SecretField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="bg-secondary"
-          autoComplete="off"
+          autoComplete="new-password"
+          name={`venue-secret-${label.replace(/\s+/g, '-').toLowerCase()}`}
+          data-1p-ignore
+          data-lpignore="true"
         />
         <Button type="button" variant="outline" size="icon" onClick={() => setVisible((v) => !v)} title={visible ? 'Hide' : 'Reveal'}>
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
