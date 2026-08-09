@@ -15,6 +15,7 @@ import {
   useVenues, useCreateVenue, useVenueAiLookup, useVenueEventCounts, VENUE_TYPES,
 } from '@/hooks/useVenues';
 import { AU_STATES } from '@/lib/auStates';
+import { VenueCsvImportDialog } from '@/components/venues/VenueCsvImportDialog';
 
 export default function VenueList() {
   const navigate = useNavigate();
