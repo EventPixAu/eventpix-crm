@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Plus, Search, Sparkles, Wifi, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Building2, MapPin, Plus, Search, Sparkles, Wifi, CheckCircle2, AlertTriangle, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
