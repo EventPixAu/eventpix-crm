@@ -38,6 +38,7 @@ export function EventVenueEditor({
   venueAddress,
   readOnly = false,
 }: EventVenueEditorProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<'select' | 'create'>('select');
   const [search, setSearch] = useState('');
