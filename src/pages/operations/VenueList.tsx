@@ -101,9 +101,14 @@ export default function VenueList() {
               Operational venue library — access, internet, signal and contacts.
             </p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Add Venue
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Import CSV
+            </Button>
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Add Venue
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
