@@ -90,8 +90,8 @@ export function EventVenueEditor({
         name,
         address: newAddress.trim() || undefined,
       });
-      fields = (result as any).fields ?? {};
-      aiFilled = (result as any).aiFilled ?? [];
+      fields = result.fields ?? {};
+      aiFilled = result.aiFilled ?? [];
     } catch {
       // AI pre-fill is best-effort — carry on with a blank record
     }
@@ -109,7 +109,7 @@ export function EventVenueEditor({
       parking_cost: fields.parking_cost || null,
       events_dept_phone: fields.events_dept_phone || null,
       events_dept_email: fields.events_dept_email || null,
-      ai_filled_fields: aiFilled as any,
+      ai_filled_fields: aiFilled,
       is_confirmed: false,
       is_active: true,
     });
