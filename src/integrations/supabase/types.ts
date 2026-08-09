@@ -6679,60 +6679,158 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note: string
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_notes_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           access_notes: string | null
           address_line_1: string | null
           address_line_2: string | null
+          ai_filled_fields: Json
           country: string | null
           created_at: string | null
+          event_wifi_password: string | null
+          event_wifi_ssid: string | null
+          events_contact_email: string | null
+          events_contact_name: string | null
+          events_contact_phone: string | null
+          events_dept_email: string | null
+          events_dept_phone: string | null
+          full_address: string | null
           id: string
+          internet_notes: string | null
           is_active: boolean | null
+          is_confirmed: boolean
+          last_visited: string | null
           name: string
+          optus_signal: string
+          parking_access: string | null
+          parking_cost: string | null
           parking_notes: string | null
           postcode: string | null
           primary_contact_email: string | null
           primary_contact_name: string | null
           primary_contact_phone: string | null
+          public_wifi_password: string | null
+          public_wifi_ssid: string | null
+          signal_notes: string | null
           state: string | null
           suburb: string | null
+          telstra_signal: string
           updated_at: string | null
+          venue_type: string | null
+          website: string | null
         }
         Insert: {
           access_notes?: string | null
           address_line_1?: string | null
           address_line_2?: string | null
+          ai_filled_fields?: Json
           country?: string | null
           created_at?: string | null
+          event_wifi_password?: string | null
+          event_wifi_ssid?: string | null
+          events_contact_email?: string | null
+          events_contact_name?: string | null
+          events_contact_phone?: string | null
+          events_dept_email?: string | null
+          events_dept_phone?: string | null
+          full_address?: string | null
           id?: string
+          internet_notes?: string | null
           is_active?: boolean | null
+          is_confirmed?: boolean
+          last_visited?: string | null
           name: string
+          optus_signal?: string
+          parking_access?: string | null
+          parking_cost?: string | null
           parking_notes?: string | null
           postcode?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          public_wifi_password?: string | null
+          public_wifi_ssid?: string | null
+          signal_notes?: string | null
           state?: string | null
           suburb?: string | null
+          telstra_signal?: string
           updated_at?: string | null
+          venue_type?: string | null
+          website?: string | null
         }
         Update: {
           access_notes?: string | null
           address_line_1?: string | null
           address_line_2?: string | null
+          ai_filled_fields?: Json
           country?: string | null
           created_at?: string | null
+          event_wifi_password?: string | null
+          event_wifi_ssid?: string | null
+          events_contact_email?: string | null
+          events_contact_name?: string | null
+          events_contact_phone?: string | null
+          events_dept_email?: string | null
+          events_dept_phone?: string | null
+          full_address?: string | null
           id?: string
+          internet_notes?: string | null
           is_active?: boolean | null
+          is_confirmed?: boolean
+          last_visited?: string | null
           name?: string
+          optus_signal?: string
+          parking_access?: string | null
+          parking_cost?: string | null
           parking_notes?: string | null
           postcode?: string | null
           primary_contact_email?: string | null
           primary_contact_name?: string | null
           primary_contact_phone?: string | null
+          public_wifi_password?: string | null
+          public_wifi_ssid?: string | null
+          signal_notes?: string | null
           state?: string | null
           suburb?: string | null
+          telstra_signal?: string
           updated_at?: string | null
+          venue_type?: string | null
+          website?: string | null
         }
         Relationships: []
       }
