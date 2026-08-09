@@ -116,6 +116,7 @@ export default function VenueDetail() {
       events_contact_email: form.events_contact_email ?? null,
       last_visited: form.last_visited || null,
       is_confirmed: !!form.is_confirmed,
+      needs_crew_review: form.is_confirmed ? false : (venue.needs_crew_review ?? false),
       is_active: form.is_active ?? true,
     });
   };
@@ -163,6 +164,27 @@ export default function VenueDetail() {
             </Button>
           </div>
         </div>
+
+        {venue.needs_crew_review && (
+          <Card className="border-primary/50 bg-primary/5">
+            <CardContent className="py-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                This record was updated by {venue.crew_updated_by_name || 'a crew member'}
+                {venue.crew_updated_at ? ` on ${format(new Date(venue.crew_updated_at), 'd MMM yyyy')}` : ''} — please review and confirm
+              </p>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  await updateVenue.mutateAsync({ id: venue.id, is_confirmed: true, needs_crew_review: false } as any);
+                  set('is_confirmed', true);
+                }}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Mark as Confirmed
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {!form.is_confirmed && (
           <Card className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
