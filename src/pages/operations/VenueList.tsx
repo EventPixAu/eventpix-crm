@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Plus, Search, Sparkles, Wifi, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Building2, MapPin, Plus, Search, Sparkles, Wifi, CheckCircle2, AlertTriangle, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
   useVenues, useCreateVenue, useVenueAiLookup, useVenueEventCounts, VENUE_TYPES,
 } from '@/hooks/useVenues';
 import { AU_STATES } from '@/lib/auStates';
+import { VenueCsvImportDialog } from '@/components/venues/VenueCsvImportDialog';
 
 export default function VenueList() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function VenueList() {
   const [stateFilter, setStateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newAddress, setNewAddress] = useState('');
 
@@ -99,9 +101,14 @@ export default function VenueList() {
               Operational venue library — access, internet, signal and contacts.
             </p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Add Venue
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Import CSV
+            </Button>
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Add Venue
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -220,6 +227,8 @@ export default function VenueList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <VenueCsvImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </AppLayout>
   );
 }
