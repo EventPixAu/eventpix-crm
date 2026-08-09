@@ -45,7 +45,10 @@ export function VenueAddressLink({
     return (
       <button
         type="button"
-        onClick={openInMaps}
+        onClick={(e) => {
+          e.stopPropagation();
+          openInMaps();
+        }}
         disabled={!address}
         className={cn(
           "inline-flex items-center gap-1 text-sm hover:text-primary transition-colors",
@@ -60,6 +63,7 @@ export function VenueAddressLink({
       </button>
     );
   }
+
 
   // Default variant
   return (

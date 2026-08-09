@@ -71,7 +71,7 @@ import { SessionsDisplay } from '@/components/SessionsDisplay';
 import { useEventContacts, CONTACT_TYPES } from '@/hooks/useEventContacts';
 import { useClientContacts } from '@/hooks/useClientContacts';
 
-import { VenueAddressLink } from '@/components/VenueAddressLink';
+import { EventVenueEditor } from '@/components/EventVenueEditor';
 import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 import { JobWorkflowRail } from '@/components/JobWorkflowRail';
@@ -1118,20 +1118,12 @@ export default function EventDetail() {
                     </div>
                   </div>
 
-                  {event.venue_name && (
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <MapPin className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">Venue</p>
-                        <VenueAddressLink 
-                          address={event.venue_address} 
-                          venueName={event.venue_name} 
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <EventVenueEditor
+                    eventId={event.id}
+                    venueId={(event as any).venue_id}
+                    venueName={event.venue_name}
+                    venueAddress={event.venue_address}
+                  />
 
                   {(event as any).event_website && (
                     <div className="flex items-start gap-3">
