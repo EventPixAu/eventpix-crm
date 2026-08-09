@@ -269,6 +269,8 @@ function AppRoutes() {
       <Route path="/job-intake" element={<ProtectedRoute><OpsGuard><JobIntakeList /></OpsGuard></ProtectedRoute>} />
       <Route path="/job-intake/:id" element={<ProtectedRoute><OpsGuard><JobIntakeDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/equipment" element={<ProtectedRoute><OpsGuard><Equipment /></OpsGuard></ProtectedRoute>} />
+      <Route path="/venues" element={<ProtectedRoute><OpsGuard><VenueList /></OpsGuard></ProtectedRoute>} />
+      <Route path="/venues/:id" element={<ProtectedRoute><OpsGuard><VenueDetail /></OpsGuard></ProtectedRoute>} />
       <Route path="/admin/contract-templates" element={<ProtectedRoute><AdminGuard><ContractTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/email-templates" element={<ProtectedRoute><AdminGuard><EmailTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/team-brief-templates" element={<ProtectedRoute><AdminGuard><TeamBriefTemplates /></AdminGuard></ProtectedRoute>} />
