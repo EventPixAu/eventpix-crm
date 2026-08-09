@@ -227,6 +227,8 @@ export default function VenueList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <VenueCsvImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </AppLayout>
   );
 }
