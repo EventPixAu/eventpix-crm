@@ -95,6 +95,7 @@ export default function EventForm() {
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   
   // Determine if form should be disabled due to lock
   const isFormLocked = isEditing && isLocked && !isUnlocked;
