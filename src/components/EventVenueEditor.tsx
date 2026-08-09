@@ -17,10 +17,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { VenueAddressLink } from '@/components/VenueAddressLink';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import { useUpdateEvent } from '@/hooks/useEvents';
-import { useCreateVenue, useVenueAiLookup, type Venue } from '@/hooks/useVenues';
+import { useActiveVenues, useCreateVenue, useVenueAiLookup, type Venue } from '@/hooks/useVenues';
 
 
 interface EventVenueEditorProps {
@@ -49,6 +48,19 @@ export function EventVenueEditor({
   const updateEvent = useUpdateEvent();
   const createVenue = useCreateVenue();
   const aiLookup = useVenueAiLookup();
+  const { data: venues = [] } = useActiveVenues();
+
+  const normalize = (value?: string | null) => value?.trim().toLowerCase() || '';
+  const matchedVenue = venues.find((venue) =>
+    (normalize(venueName) && normalize(venue.name) === normalize(venueName)) ||
+    (normalize(venueAddress) && (
+      normalize(venue.full_address) === normalize(venueAddress) ||
+      normalize([venue.address_line_1, venue.suburb, venue.state, venue.postcode, venue.country]
+        .filter(Boolean)
+        .join(', ')) === normalize(venueAddress)
+    ))
+  );
+  const linkedVenueId = venueId || matchedVenue?.id;
 
   useEffect(() => {
     if (open) {
@@ -147,29 +159,30 @@ export function EventVenueEditor({
         <div className="flex-1 min-w-0">
           <p className="text-sm text-muted-foreground">Venue</p>
           {venueName ? (
-            <div className="flex items-center gap-2 min-w-0">
-              {venueId ? (
+            <div className="min-w-0">
+              {linkedVenueId ? (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/venues/${venueId}`);
+                    navigate(`/venues/${linkedVenueId}`);
                   }}
-                  className="text-sm font-medium hover:text-primary hover:underline truncate text-left"
+                  className="block w-full text-left hover:text-primary hover:underline"
                 >
-                  {venueName}
+                  <span className="block text-sm font-medium truncate">{venueName}</span>
+                  {venueAddress && (
+                    <span className="block text-sm font-normal text-muted-foreground truncate">
+                      {venueAddress}
+                    </span>
+                  )}
                 </button>
               ) : (
-                <span className="text-sm font-medium truncate">{venueName}</span>
-              )}
-              {venueAddress && (
-                <VenueAddressLink
-                  venueName=""
-                  address={venueAddress}
-                  variant="inline"
-                  showIcon
-                  className="text-muted-foreground shrink-0"
-                />
+                <>
+                  <span className="block text-sm font-medium truncate">{venueName}</span>
+                  {venueAddress && (
+                    <span className="block text-sm text-muted-foreground truncate">{venueAddress}</span>
+                  )}
+                </>
               )}
             </div>
           ) : (
