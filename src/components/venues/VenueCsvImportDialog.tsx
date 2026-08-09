@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, FileUp, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { FileUp, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -318,5 +318,3 @@ export function VenueCsvImportDialog({
     </Dialog>
   );
 }
-
-export { Upload };
