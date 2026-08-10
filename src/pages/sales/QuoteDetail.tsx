@@ -567,6 +567,12 @@ export default function QuoteDetail() {
               View Proposal
             </Button>
           </Link>
+          {(isLocked || quote.status === 'accepted' || quote.status === 'sent') && (
+            <Button variant="outline" onClick={handleCreateRevision} disabled={creatingRevision}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {creatingRevision ? 'Creating…' : 'Create revision'}
+            </Button>
+          )}
           {isLocked && (
             <Button variant="outline" onClick={() => setIsUnlockConfirmOpen(true)}>
               <Edit2 className="h-4 w-4 mr-2" />
