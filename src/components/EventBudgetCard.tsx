@@ -92,6 +92,22 @@ export function EventBudgetCard({ quoteId, eventId, leadId, clientId }: EventBud
     onError: (e: any) => toast.error(e.message || 'Failed to create budget'),
   });
 
+  const createRevision = useMutation({
+    mutationFn: async (qid: string) => {
+      const { data, error } = await supabase.rpc('create_quote_revision' as any, { p_quote_id: qid });
+      if (error) throw error;
+      return data as unknown as string;
+    },
+    onSuccess: (newId) => {
+      toast.success('Revision created', { description: 'Update the line items, then send it to the client.' });
+      qc.invalidateQueries({ queryKey: ['event-budget-quote'] });
+      qc.invalidateQueries({ queryKey: ['event-quotes', eventId] });
+      navigate(`/sales/quotes/${newId}`);
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to create revision'),
+  });
+
+
   if (isLoading) {
     return (
       <div className="bg-card border border-border rounded-xl p-5 shadow-card animate-pulse">
