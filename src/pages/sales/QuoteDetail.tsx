@@ -176,6 +176,7 @@ export default function QuoteDetail() {
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
   const [isUnlockConfirmOpen, setIsUnlockConfirmOpen] = useState(false);
+  const [creatingRevision, setCreatingRevision] = useState(false);
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
@@ -468,6 +469,25 @@ export default function QuoteDetail() {
     toast.success('Link copied to clipboard');
   };
 
+  // Create an editable draft copy (v2, v3, …) of this budget.
+  // The original is kept intact as a historical record.
+  const handleCreateRevision = async () => {
+    if (!id) return;
+    setCreatingRevision(true);
+    try {
+      const { data, error } = await supabase.rpc('create_quote_revision' as any, { p_quote_id: id });
+      if (error) throw error;
+      toast.success('Revision created', { description: 'Update the line items, then send it to the client.' });
+      navigate(`/sales/quotes/${data as string}`);
+    } catch (e: any) {
+      toast.error('Failed to create revision', { description: e.message });
+    } finally {
+      setCreatingRevision(false);
+    }
+  };
+
+
+
   const handleIntroBlur = async () => {
     if (!id || isLocked) return;
     const currentIntro = (quote as any)?.intro_text || '';
@@ -547,6 +567,12 @@ export default function QuoteDetail() {
               View Proposal
             </Button>
           </Link>
+          {(isLocked || quote.status === 'accepted' || quote.status === 'sent') && (
+            <Button variant="outline" onClick={handleCreateRevision} disabled={creatingRevision}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {creatingRevision ? 'Creating…' : 'Create revision'}
+            </Button>
+          )}
           {isLocked && (
             <Button variant="outline" onClick={() => setIsUnlockConfirmOpen(true)}>
               <Edit2 className="h-4 w-4 mr-2" />
