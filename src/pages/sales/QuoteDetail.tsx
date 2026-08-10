@@ -176,6 +176,7 @@ export default function QuoteDetail() {
   const [regeneratingToken, setRegeneratingToken] = useState(false);
   const [creatingQuote, setCreatingQuote] = useState(false);
   const [isUnlockConfirmOpen, setIsUnlockConfirmOpen] = useState(false);
+  const [creatingRevision, setCreatingRevision] = useState(false);
   const [newItem, setNewItem] = useState({
     product_id: '',
     description: '',
