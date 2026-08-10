@@ -7,7 +7,8 @@
  * can be created inline and linked to the event.
  */
 import { Link, useNavigate } from 'react-router-dom';
-import { DollarSign, ExternalLink, Plus } from 'lucide-react';
+import { DollarSign, ExternalLink, Plus, RefreshCw } from 'lucide-react';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
