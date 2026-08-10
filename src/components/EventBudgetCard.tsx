@@ -142,6 +142,7 @@ export function EventBudgetCard({ quoteId, eventId, leadId, clientId }: EventBud
   }
 
   const q = quote as any;
+  const canRevise = q.is_locked || q.status === 'accepted' || q.status === 'sent';
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 shadow-card">
@@ -156,13 +157,27 @@ export function EventBudgetCard({ quoteId, eventId, leadId, clientId }: EventBud
             <Badge variant="outline" className="text-xs">Locked</Badge>
           )}
         </div>
-        <Link to={`/sales/quotes/${q.id}`}>
-          <Button variant="ghost" size="sm">
-            <ExternalLink className="h-4 w-4 mr-1" />
-            View
-          </Button>
-        </Link>
+        <div className="flex items-center gap-1">
+          {canRevise && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={createRevision.isPending}
+              onClick={() => createRevision.mutate(q.id)}
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              {createRevision.isPending ? 'Creating…' : 'Create revision'}
+            </Button>
+          )}
+          <Link to={`/sales/quotes/${q.id}`}>
+            <Button variant="ghost" size="sm">
+              <ExternalLink className="h-4 w-4 mr-1" />
+              View
+            </Button>
+          </Link>
+        </div>
       </div>
+
 
       <div className="space-y-2 text-sm">
         {q.quote_number && (
