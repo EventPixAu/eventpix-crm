@@ -7517,6 +7517,7 @@ export type Database = {
         }
         Returns: string
       }
+      create_quote_revision: { Args: { p_quote_id: string }; Returns: string }
       create_workflow_instance: {
         Args: {
           p_entity_id: string
