@@ -733,6 +733,25 @@ export default function AdminLookups() {
               />
             </TabsContent>
 
+            <TabsContent value="venue-types" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Venue types</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the "Venue type" dropdown on venue records and the venue list filter.
+                </p>
+              </div>
+              <LookupTable
+                items={venueTypes}
+                isLoading={venueTypesLoading}
+                onCreate={async (name) => { await createVenueType.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateVenueType.mutateAsync({ id, ...updates }); }}
+                createPending={createVenueType.isPending}
+                updatePending={updateVenueType.isPending}
+                itemLabel="Venue Type"
+              />
+            </TabsContent>
+
+
             <TabsContent value="lead-sources" className="m-0">
               <LookupTable
                 items={leadSources}
