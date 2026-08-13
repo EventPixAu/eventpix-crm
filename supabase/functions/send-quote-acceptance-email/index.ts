@@ -82,17 +82,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     let leadData: any = null, clientData: any = null;
     if (quote.lead_id) {
-      const { data: lead } = await supabase.from("leads").select("id, lead_name, client_id").eq("id", quote.lead_id).single();
+      const { data: lead } = await supabase.from("leads").select("id, lead_name, client_id, estimated_event_date").eq("id", quote.lead_id).maybeSingle();
       leadData = lead;
       if (lead?.client_id) {
-        const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", lead.client_id).single();
+        const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", lead.client_id).maybeSingle();
         clientData = client;
       }
     }
     if (quote.client_id && !clientData) {
-      const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", quote.client_id).single();
+      const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", quote.client_id).maybeSingle();
       clientData = client;
     }
+
+    // Resolve the event date: linked event first, then the lead's estimated date
+    let rawEventDate: string | null = null;
+    const eventRef = quote.event_id || quote.linked_event_id;
+    if (eventRef) {
+      const { data: ev } = await supabase.from("events").select("event_date").eq("id", eventRef).maybeSingle();
+      rawEventDate = ev?.event_date ?? null;
+    }
+    if (!rawEventDate) rawEventDate = leadData?.estimated_event_date ?? null;
+
+    const eventDateFormatted = rawEventDate
+      ? new Date(`${String(rawEventDate).slice(0, 10)}T00:00:00`).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" })
+      : "TBC";
 
     const clientName = clientData?.business_name || leadData?.lead_name || "Unknown Client";
     const leadName = leadData?.lead_name || clientName;
