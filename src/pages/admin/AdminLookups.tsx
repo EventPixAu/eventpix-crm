@@ -52,6 +52,7 @@ import {
   useAllContactTypes,
   useCreateContactType,
   useUpdateContactType,
+import { useAllVenueTypes, useCreateVenueType, useUpdateVenueType } from '@/hooks/useVenueTypes';
   useAllDressCodes,
 
   useCreateDressCode,
