@@ -21,6 +21,7 @@ import {
   useAddVenueNote, useDeleteVenueNote, useVenueAiLookup,
   VENUE_TYPES, SIGNAL_QUALITIES, type Venue,
 } from '@/hooks/useVenues';
+import { useActiveVenueTypes } from '@/hooks/useVenueTypes';
 
 const NONE = '__none__';
 
@@ -217,7 +218,7 @@ export default function VenueDetail() {
                 <SelectTrigger className="bg-secondary"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NONE}>Not set</SelectItem>
-                  {VENUE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {venueTypeOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
