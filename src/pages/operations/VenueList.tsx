@@ -14,12 +14,15 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import {
   useVenues, useCreateVenue, useVenueAiLookup, useVenueEventCounts, VENUE_TYPES,
 } from '@/hooks/useVenues';
+import { useActiveVenueTypes } from '@/hooks/useVenueTypes';
 import { AU_STATES } from '@/lib/auStates';
 import { VenueCsvImportDialog } from '@/components/venues/VenueCsvImportDialog';
 
 export default function VenueList() {
   const navigate = useNavigate();
   const { data: venues = [], isLoading } = useVenues();
+  const { data: venueTypeRows = [] } = useActiveVenueTypes();
+  const venueTypeOptions = venueTypeRows.length ? venueTypeRows.map((t) => t.name) : [...VENUE_TYPES];
   const { data: counts } = useVenueEventCounts();
   const createVenue = useCreateVenue();
   const aiLookup = useVenueAiLookup();
@@ -134,7 +137,7 @@ export default function VenueList() {
             <SelectTrigger className="w-[190px] bg-secondary"><SelectValue placeholder="Venue type" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All types</SelectItem>
-              {VENUE_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              {venueTypeOptions.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={reviewFilter} onValueChange={setReviewFilter}>

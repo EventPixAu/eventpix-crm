@@ -53,10 +53,12 @@ import {
   useCreateContactType,
   useUpdateContactType,
   useAllDressCodes,
+
   useCreateDressCode,
   useUpdateDressCode,
   type LookupItem,
 } from '@/hooks/useAdminLookups';
+import { useAllVenueTypes, useCreateVenueType, useUpdateVenueType } from '@/hooks/useVenueTypes';
 import {
   useAllLeadSources,
   useCreateLeadSource,
@@ -474,6 +476,13 @@ export default function AdminLookups() {
   const createDressCode = useCreateDressCode();
   const updateDressCode = useUpdateDressCode();
 
+  // Venue Types
+  const { data: venueTypes = [], isLoading: venueTypesLoading } = useAllVenueTypes();
+  const createVenueType = useCreateVenueType();
+  const updateVenueType = useUpdateVenueType();
+
+
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -601,6 +610,13 @@ export default function AdminLookups() {
                 <Beaker className="h-4 w-4 mr-2" />
                 Training
               </TabsTrigger>
+              <TabsTrigger
+                value="venue-types"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Venue Types
+              </TabsTrigger>
               <TabsTrigger 
                 value="site-settings"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
@@ -608,6 +624,7 @@ export default function AdminLookups() {
                 <Building2 className="h-4 w-4 mr-2" />
                 Business
               </TabsTrigger>
+
             </TabsList>
           </div>
 
@@ -724,6 +741,25 @@ export default function AdminLookups() {
                 itemLabel="Dress Code"
               />
             </TabsContent>
+
+            <TabsContent value="venue-types" className="m-0">
+              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-medium">Venue types</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  These values populate the "Venue type" dropdown on venue records and the venue list filter.
+                </p>
+              </div>
+              <LookupTable
+                items={venueTypes}
+                isLoading={venueTypesLoading}
+                onCreate={async (name) => { await createVenueType.mutateAsync(name); }}
+                onUpdate={async (id, updates) => { await updateVenueType.mutateAsync({ id, ...updates }); }}
+                createPending={createVenueType.isPending}
+                updatePending={updateVenueType.isPending}
+                itemLabel="Venue Type"
+              />
+            </TabsContent>
+
 
             <TabsContent value="lead-sources" className="m-0">
               <LookupTable
