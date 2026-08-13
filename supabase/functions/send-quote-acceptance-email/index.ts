@@ -139,6 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="padding:8px 0;color:#6b7280;">Client</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${clientName}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;">Job</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${leadName}</td></tr>
+            <tr><td style="padding:8px 0;color:#6b7280;">Event date</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${eventDateFormatted}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;">Quote</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${quoteNumber}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;">Value</td><td style="padding:8px 0;color:#059669;font-weight:bold;font-size:18px;text-align:right;">${totalFormatted}</td></tr>
           </table>
