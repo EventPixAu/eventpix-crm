@@ -73,6 +73,8 @@ export default function VenueDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: venue, isLoading } = useVenue(id);
+  const { data: venueTypeRows = [] } = useActiveVenueTypes();
+  const venueTypeOptions = venueTypeRows.length ? venueTypeRows.map((t) => t.name) : [...VENUE_TYPES];
   const updateVenue = useUpdateVenue();
   const deleteVenue = useDeleteVenue();
   const aiLookup = useVenueAiLookup();

@@ -21,6 +21,8 @@ import { VenueCsvImportDialog } from '@/components/venues/VenueCsvImportDialog';
 export default function VenueList() {
   const navigate = useNavigate();
   const { data: venues = [], isLoading } = useVenues();
+  const { data: venueTypeRows = [] } = useActiveVenueTypes();
+  const venueTypeOptions = venueTypeRows.length ? venueTypeRows.map((t) => t.name) : [...VENUE_TYPES];
   const { data: counts } = useVenueEventCounts();
   const createVenue = useCreateVenue();
   const aiLookup = useVenueAiLookup();
