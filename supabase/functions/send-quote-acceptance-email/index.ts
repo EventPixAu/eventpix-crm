@@ -55,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending quote acceptance emails for quote: ${quoteId}`);
 
     const { data: quote, error: quoteError } = await supabase
-      .from("quotes").select("id, quote_number, total_estimate, subtotal, tax_total, accepted_at, lead_id, client_id, public_token").eq("id", quoteId).single();
+      .from("quotes").select("id, quote_number, total_estimate, subtotal, tax_total, accepted_at, lead_id, client_id, public_token, event_id, linked_event_id").eq("id", quoteId).maybeSingle();
     if (quoteError || !quote) {
       return new Response(JSON.stringify({ success: false, error: "Quote not found" }), { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
