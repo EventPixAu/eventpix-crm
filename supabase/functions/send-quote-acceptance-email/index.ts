@@ -55,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending quote acceptance emails for quote: ${quoteId}`);
 
     const { data: quote, error: quoteError } = await supabase
-      .from("quotes").select("id, quote_number, total_estimate, subtotal, tax_total, accepted_at, lead_id, client_id, public_token").eq("id", quoteId).single();
+      .from("quotes").select("id, quote_number, total_estimate, subtotal, tax_total, accepted_at, lead_id, client_id, public_token, event_id, linked_event_id").eq("id", quoteId).maybeSingle();
     if (quoteError || !quote) {
       return new Response(JSON.stringify({ success: false, error: "Quote not found" }), { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
@@ -82,17 +82,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     let leadData: any = null, clientData: any = null;
     if (quote.lead_id) {
-      const { data: lead } = await supabase.from("leads").select("id, lead_name, client_id").eq("id", quote.lead_id).single();
+      const { data: lead } = await supabase.from("leads").select("id, lead_name, client_id, estimated_event_date").eq("id", quote.lead_id).maybeSingle();
       leadData = lead;
       if (lead?.client_id) {
-        const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", lead.client_id).single();
+        const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", lead.client_id).maybeSingle();
         clientData = client;
       }
     }
     if (quote.client_id && !clientData) {
-      const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", quote.client_id).single();
+      const { data: client } = await supabase.from("clients").select("id, business_name, primary_contact_name, primary_contact_email").eq("id", quote.client_id).maybeSingle();
       clientData = client;
     }
+
+    // Resolve the event date: linked event first, then the lead's estimated date
+    let rawEventDate: string | null = null;
+    const eventRef = quote.event_id || quote.linked_event_id;
+    if (eventRef) {
+      const { data: ev } = await supabase.from("events").select("event_date").eq("id", eventRef).maybeSingle();
+      rawEventDate = ev?.event_date ?? null;
+    }
+    if (!rawEventDate) rawEventDate = leadData?.estimated_event_date ?? null;
+
+    const eventDateFormatted = rawEventDate
+      ? new Date(`${String(rawEventDate).slice(0, 10)}T00:00:00`).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" })
+      : "TBC";
 
     const clientName = clientData?.business_name || leadData?.lead_name || "Unknown Client";
     const leadName = leadData?.lead_name || clientName;
@@ -126,6 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="padding:8px 0;color:#6b7280;">Client</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${clientName}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;">Job</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${leadName}</td></tr>
+            <tr><td style="padding:8px 0;color:#6b7280;">Event date</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${eventDateFormatted}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;">Quote</td><td style="padding:8px 0;color:#111827;font-weight:bold;text-align:right;">${quoteNumber}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;">Value</td><td style="padding:8px 0;color:#059669;font-weight:bold;font-size:18px;text-align:right;">${totalFormatted}</td></tr>
           </table>
