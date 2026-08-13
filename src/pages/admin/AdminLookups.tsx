@@ -474,6 +474,13 @@ export default function AdminLookups() {
   const createDressCode = useCreateDressCode();
   const updateDressCode = useUpdateDressCode();
 
+  // Venue Types
+  const { data: venueTypes = [], isLoading: venueTypesLoading } = useAllVenueTypes();
+  const createVenueType = useCreateVenueType();
+  const updateVenueType = useUpdateVenueType();
+
+
+
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
