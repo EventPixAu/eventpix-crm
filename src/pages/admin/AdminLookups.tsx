@@ -601,6 +601,13 @@ export default function AdminLookups() {
                 <Beaker className="h-4 w-4 mr-2" />
                 Training
               </TabsTrigger>
+              <TabsTrigger
+                value="venue-types"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Venue Types
+              </TabsTrigger>
               <TabsTrigger 
                 value="site-settings"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
@@ -608,6 +615,7 @@ export default function AdminLookups() {
                 <Building2 className="h-4 w-4 mr-2" />
                 Business
               </TabsTrigger>
+
             </TabsList>
           </div>
 
