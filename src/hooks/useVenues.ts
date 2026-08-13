@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-export const VENUE_TYPES = ['Hotel', 'Convention Centre', 'Function Centre', 'Stadium', 'Outdoor', 'Other'] as const;
+export const VENUE_TYPES = ['Hotel', 'Club', 'Convention Centre', 'Function Centre', 'Stadium', 'Outdoor', 'Other'] as const;
 export const SIGNAL_QUALITIES = ['Excellent', 'Good', 'Fair', 'Poor', 'No Signal', 'Not Tested'] as const;
 
 export interface Venue {
