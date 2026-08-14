@@ -141,6 +141,7 @@ export function EventVenueEditor({
     });
 
     setOpen(false);
+    navigate(`/venues/${venue.id}`);
   };
 
   const busy = updateEvent.isPending || createVenue.isPending || aiLookup.isPending;
