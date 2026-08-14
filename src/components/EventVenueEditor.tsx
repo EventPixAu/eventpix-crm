@@ -231,7 +231,14 @@ export function EventVenueEditor({
               )}
 
               <div className="text-center">
-                <Button type="button" variant="ghost" onClick={() => setMode('create')}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setNewName((selectedVenue ? selectedVenue.name : search).trim());
+                    setMode('create');
+                  }}
+                >
                   <Plus className="h-4 w-4 mr-2" /> Create new venue
                 </Button>
               </div>
