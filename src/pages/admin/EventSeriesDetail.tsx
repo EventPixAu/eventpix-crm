@@ -162,6 +162,27 @@ export default function EventSeriesDetail() {
     c?.contact_name || [c?.first_name, c?.last_name].filter(Boolean).join(' ') || c?.email || 'Unnamed';
   const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
 
+  // Client portal (all events) link for the primary contact
+  const portalLoginUrl = `${getPublicBaseUrl()}/client-login`;
+  const [sendingPortalLink, setSendingPortalLink] = useState(false);
+  const sendPortalLink = async (email: string) => {
+    setSendingPortalLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
+        body: { email, redirectTo: `${getPublicBaseUrl()}/portal` },
+      });
+      if (error || (data as any)?.error) {
+        toast.error('Unable to send portal link', {
+          description: error?.message || (data as any)?.error,
+        });
+      } else {
+        toast.success(`Portal login link sent to ${email}`);
+      }
+    } finally {
+      setSendingPortalLink(false);
+    }
+  };
+
   // Persist the inferred primary contact so it propagates to every event in the series
   useEffect(() => {
     if (!id || !series) return;
