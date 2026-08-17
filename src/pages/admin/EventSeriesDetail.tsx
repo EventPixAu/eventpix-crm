@@ -25,6 +25,8 @@ import {
   Eye,
   RefreshCw,
   Trash2,
+  Copy,
+  Send,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -84,7 +86,7 @@ import { SeriesBulkActionsDialog } from '@/components/SeriesBulkActionsDialog';
 import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
 import { SeriesCostSummary } from '@/components/SeriesCostSummary';
 import { SeriesRepeatIndicators } from '@/components/SeriesRepeatIndicators';
-import { cn } from '@/lib/utils';
+import { cn, getPublicBaseUrl } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
@@ -159,6 +161,27 @@ export default function EventSeriesDetail() {
   const contactLabel = (c: any) =>
     c?.contact_name || [c?.first_name, c?.last_name].filter(Boolean).join(' ') || c?.email || 'Unnamed';
   const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
+
+  // Client portal (all events) link for the primary contact
+  const portalLoginUrl = `${getPublicBaseUrl()}/client-login`;
+  const [sendingPortalLink, setSendingPortalLink] = useState(false);
+  const sendPortalLink = async (email: string) => {
+    setSendingPortalLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
+        body: { email, redirectTo: `${getPublicBaseUrl()}/portal` },
+      });
+      if (error || (data as any)?.error) {
+        toast.error('Unable to send portal link', {
+          description: error?.message || (data as any)?.error,
+        });
+      } else {
+        toast.success(`Portal login link sent to ${email}`);
+      }
+    } finally {
+      setSendingPortalLink(false);
+    }
+  };
 
   // Persist the inferred primary contact so it propagates to every event in the series
   useEffect(() => {
@@ -615,7 +638,47 @@ export default function EventSeriesDetail() {
                             </a>
                           )}
                         </div>
-                      ) : (
+                      ) : null}
+                      {row.key === 'primary' && row.contact?.email && (
+                        <div className="rounded-md border bg-muted/40 p-3 space-y-2">
+                          <div className="text-xs font-medium">Client portal link (all events)</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <a
+                              href={portalLoginUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm text-primary hover:underline break-all"
+                            >
+                              {portalLoginUrl}
+                            </a>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(portalLoginUrl);
+                                toast.success('Portal link copied');
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5 mr-1" />
+                              Copy
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={sendingPortalLink}
+                              onClick={() => sendPortalLink(row.contact!.email!)}
+                            >
+                              <Send className="h-3.5 w-3.5 mr-1" />
+                              {sendingPortalLink ? 'Sending…' : 'Email login link'}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Sends a secure magic link so {contactLabel(row.contact)} can view every event in this series.
+                          </p>
+                        </div>
+                      )}
+                      {!row.contact && (
                         <p className="text-sm text-muted-foreground">
                           {row.empty}{' '}
                           <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
