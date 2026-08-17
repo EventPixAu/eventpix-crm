@@ -86,7 +86,7 @@ import { SeriesBulkActionsDialog } from '@/components/SeriesBulkActionsDialog';
 import { BulkAssignmentDialog } from '@/components/BulkAssignmentDialog';
 import { SeriesCostSummary } from '@/components/SeriesCostSummary';
 import { SeriesRepeatIndicators } from '@/components/SeriesRepeatIndicators';
-import { cn } from '@/lib/utils';
+import { cn, getPublicBaseUrl } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
