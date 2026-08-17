@@ -160,6 +160,23 @@ export default function EventSeriesDetail() {
     c?.contact_name || [c?.first_name, c?.last_name].filter(Boolean).join(' ') || c?.email || 'Unnamed';
   const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
 
+  // Persist the inferred primary contact so it propagates to every event in the series
+  useEffect(() => {
+    if (!id || !series) return;
+    if (selectedContactId || !primaryContact?.id) return;
+    (async () => {
+      const { error } = await supabase
+        .from('event_series')
+        .update({ primary_contact_id: primaryContact.id } as any)
+        .eq('id', id);
+      if (error) return;
+      await supabase.rpc('sync_series_contacts_to_events' as any, { _series_id: id });
+      queryClient.invalidateQueries({ queryKey: ['event-series'] });
+      queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+    })();
+  }, [id, series, selectedContactId, primaryContact?.id]);
+
+
 
 
   const { data: seriesClient } = useQuery({
