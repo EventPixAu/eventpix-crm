@@ -908,6 +908,8 @@ export function ContractsPanel({
           if (!open) setSelectedContract(null);
         }}
         clientId={clientId}
+        eventId={selectedContract?.event_id || eventId || null}
+
         clientEmail={clientEmail}
         clientName={clientName}
         relatedContractId={selectedContract?.id}

@@ -515,6 +515,8 @@ export default function ContractDetail() {
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
         clientId={contract.client_id}
+        eventId={(contract as any).event_id || null}
+
         clientEmail={resolvedClientEmail}
         clientName={resolvedClientName}
         relatedContractId={contract.id}
