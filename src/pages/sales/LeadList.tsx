@@ -83,6 +83,7 @@ export default function LeadList() {
     
     const matchesStatus = 
       statusFilter === 'all' ? true :
+      statusFilter === 'budget_accepted' ? acceptedLeadIds.has(lead.id) :
       statusFilter === 'active' ? activeStatuses.includes(lead.status) :
       lead.status === statusFilter;
     
