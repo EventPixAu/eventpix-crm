@@ -8,7 +8,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Target, Calendar, Building2, DollarSign } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Search, Target, Calendar, Building2, DollarSign, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
@@ -48,6 +50,21 @@ export default function LeadList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to active leads only
 
+  // Leads whose budget (quote) has been accepted — surfaced as a badge in the list
+  const { data: acceptedLeadIds = new Set<string>() } = useQuery({
+    queryKey: ['leads-accepted-budgets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('lead_id')
+        .eq('status', 'accepted')
+        .not('lead_id', 'is', null);
+      if (error) throw error;
+      return new Set((data || []).map((q: any) => q.lead_id as string));
+    },
+    refetchInterval: 60000,
+  });
+
   // Build status config from DB lookup
   const statusConfig = leadStatuses.reduce((acc, s) => {
     acc[s.name] = { label: s.label, variant: VARIANT_MAP[s.badge_variant] || 'secondary' };
@@ -66,6 +83,7 @@ export default function LeadList() {
     
     const matchesStatus = 
       statusFilter === 'all' ? true :
+      statusFilter === 'budget_accepted' ? acceptedLeadIds.has(lead.id) :
       statusFilter === 'active' ? activeStatuses.includes(lead.status) :
       lead.status === statusFilter;
     
@@ -121,6 +139,7 @@ export default function LeadList() {
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="budget_accepted">Budget accepted</SelectItem>
                 {leadStatuses.map((s) => (
                   <SelectItem key={s.name} value={s.name}>{s.label}</SelectItem>
                 ))}
@@ -207,9 +226,17 @@ export default function LeadList() {
                         {(lead as any).lead_source?.name || lead.source || '—'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={sc.variant}>
-                          {sc.label}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Badge variant={sc.variant}>
+                            {sc.label}
+                          </Badge>
+                          {acceptedLeadIds.has(lead.id) && (
+                            <Badge variant="outline" className="border-success/40 bg-success/10 text-success gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Budget accepted
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {lead.created_at ? format(new Date(lead.created_at), 'dd MMM') : '—'}
