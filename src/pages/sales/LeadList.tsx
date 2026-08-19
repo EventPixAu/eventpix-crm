@@ -225,9 +225,17 @@ export default function LeadList() {
                         {(lead as any).lead_source?.name || lead.source || '—'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={sc.variant}>
-                          {sc.label}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Badge variant={sc.variant}>
+                            {sc.label}
+                          </Badge>
+                          {acceptedLeadIds.has(lead.id) && (
+                            <Badge variant="outline" className="border-success/40 bg-success/10 text-success gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Budget accepted
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {lead.created_at ? format(new Date(lead.created_at), 'dd MMM') : '—'}
