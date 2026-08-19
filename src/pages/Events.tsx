@@ -123,7 +123,8 @@ export default function Events() {
       const matchesDelivery = deliveryFilter === 'all' || deliveryMethodName === deliveryFilter.toLowerCase();
 
       const opsStatus = (event as any).ops_status;
-      const isArchived = opsStatus === 'archived';
+      // Cancelled events are auto-archived (hidden from current, shown under Archived)
+      const isArchived = opsStatus === 'archived' || opsStatus === 'cancelled';
       const isCompleted = opsStatus === 'completed';
       
       let filterCategory: string;
