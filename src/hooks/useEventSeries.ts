@@ -106,7 +106,8 @@ export function useEventSeriesStats(seriesId: string | undefined) {
       const { data: events, error } = await supabase
         .from('events')
         .select('id, event_date')
-        .eq('event_series_id', seriesId);
+        .eq('event_series_id', seriesId)
+        .or('ops_status.is.null,ops_status.neq.cancelled');
       
       if (error) throw error;
       
@@ -203,6 +204,7 @@ export function useSeriesEvents(seriesId: string | undefined) {
           event_assignments(id, user_id)
         `)
         .eq('event_series_id', seriesId)
+        .or('ops_status.is.null,ops_status.neq.cancelled')
         .order('event_date');
       
       if (error) throw error;

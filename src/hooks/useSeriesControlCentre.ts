@@ -74,8 +74,9 @@ export function useSeriesOverview(seriesId: string | undefined) {
       // Get all events in series
       const { data: events, error: eventsError } = await supabase
         .from('events')
-        .select('id, event_date, city, state, venue_name')
+        .select('id, event_date, city, state, venue_name, ops_status')
         .eq('event_series_id', seriesId)
+        .or('ops_status.is.null,ops_status.neq.cancelled')
         .order('event_date');
 
       if (eventsError) throw eventsError;
@@ -134,6 +135,7 @@ export function useSeriesCoverage(seriesId: string | undefined) {
           event_assignments(id, user_id, staff_role:staff_roles(name))
         `)
         .eq('event_series_id', seriesId)
+        .or('ops_status.is.null,ops_status.neq.cancelled')
         .gte('event_date', today)
         .order('event_date');
 
@@ -215,6 +217,7 @@ export function useSeriesDelivery(seriesId: string | undefined) {
           delivery_records(id, delivery_link, delivered_at)
         `)
         .eq('event_series_id', seriesId)
+        .or('ops_status.is.null,ops_status.neq.cancelled')
         .order('delivery_deadline');
 
       if (error) throw error;
@@ -278,6 +281,7 @@ export function useSeriesNeedsAttention(seriesId: string | undefined) {
           delivery_records(id, delivery_link)
         `)
         .eq('event_series_id', seriesId)
+        .or('ops_status.is.null,ops_status.neq.cancelled')
         .gte('event_date', today)
         .order('event_date');
 
