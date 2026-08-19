@@ -139,6 +139,7 @@ export default function LeadList() {
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="budget_accepted">Budget accepted</SelectItem>
                 {leadStatuses.map((s) => (
                   <SelectItem key={s.name} value={s.name}>{s.label}</SelectItem>
                 ))}
