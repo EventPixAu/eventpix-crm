@@ -50,6 +50,21 @@ export default function LeadList() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active'); // Default to active leads only
 
+  // Leads whose budget (quote) has been accepted — surfaced as a badge in the list
+  const { data: acceptedLeadIds = new Set<string>() } = useQuery({
+    queryKey: ['leads-accepted-budgets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('lead_id')
+        .eq('status', 'accepted')
+        .not('lead_id', 'is', null);
+      if (error) throw error;
+      return new Set((data || []).map((q: any) => q.lead_id as string));
+    },
+    refetchInterval: 60000,
+  });
+
   // Build status config from DB lookup
   const statusConfig = leadStatuses.reduce((acc, s) => {
     acc[s.name] = { label: s.label, variant: VARIANT_MAP[s.badge_variant] || 'secondary' };
