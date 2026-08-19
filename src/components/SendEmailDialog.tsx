@@ -62,6 +62,8 @@ interface SendEmailDialogProps {
   clientId: string;
   clientEmail?: string;
   clientName?: string;
+  /** When provided, the event's contacts are pre-selected as recipients */
+  eventId?: string | null;
   relatedQuoteId?: string;
   relatedContractId?: string;
   contractHtml?: string;
@@ -79,6 +81,7 @@ export function SendEmailDialog({
   clientId,
   clientEmail,
   clientName,
+  eventId,
   relatedQuoteId,
   relatedContractId,
   contractHtml,
@@ -111,34 +114,82 @@ export function SendEmailDialog({
   // Temporary state for contact selector
   const [selectorContactId, setSelectorContactId] = useState<string | null>(null);
 
-  // Auto-resolve contact by email when dialog opens
+  // Auto-resolve default recipients when dialog opens:
+  // 1. Event contacts (primary first) when an event is linked
+  // 2. Client's primary contact
+  // 3. Provided clientEmail fallback
   useEffect(() => {
-    if (open && clientEmail && recipients.length === 0 && !hasAutoResolved) {
-      setHasAutoResolved(true);
-      supabase
-        .from('client_contacts')
-        .select('id, contact_name, first_name, email, phone_mobile, phone_office, phone')
-        .ilike('email', clientEmail)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) {
-            setRecipients([{
-              email: data.email || clientEmail,
-              name: data.contact_name || clientName || '',
-              contactId: data.id,
-              contact: data as unknown as CrmContact,
-            }]);
-          } else {
-            setRecipients([{
-              email: clientEmail,
-              name: clientName || '',
-            }]);
-          }
-        });
-    } else if (!open) {
+    if (!open) {
       setHasAutoResolved(false);
+      return;
     }
-  }, [open, clientEmail, clientName, recipients.length, hasAutoResolved]);
+    if (hasAutoResolved || recipients.length > 0) return;
+    setHasAutoResolved(true);
+
+    const contactSelect = 'id, contact_name, first_name, last_name, email, phone_mobile, phone_office, phone';
+
+    const toRecipient = (c: Record<string, unknown>): Recipient => ({
+      email: String(c.email),
+      name: (c.contact_name as string) || [c.first_name, c.last_name].filter(Boolean).join(' ') || '',
+      contactId: c.id as string,
+      contact: c as unknown as CrmContact,
+    });
+
+    const resolve = async () => {
+      // 1. Event contacts
+      if (eventId) {
+        const { data } = await supabase
+          .from('event_contacts')
+          .select(`contact_type, sort_order, client_contact:client_contacts(${contactSelect})`)
+          .eq('event_id', eventId)
+          .order('sort_order', { ascending: true });
+
+        const eventRecipients = (data || [])
+          .map((row: Record<string, unknown>) => row.client_contact as Record<string, unknown> | null)
+          .filter((c): c is Record<string, unknown> => !!c && !!c.email)
+          .filter((c, i, arr) => arr.findIndex(o => String(o.email).toLowerCase() === String(c.email).toLowerCase()) === i)
+          .map(toRecipient);
+
+        if (eventRecipients.length > 0) {
+          setRecipients(eventRecipients);
+          return;
+        }
+      }
+
+      // 2. Client's primary contact
+      if (clientId) {
+        const { data } = await supabase
+          .from('client_contacts')
+          .select(contactSelect)
+          .eq('client_id', clientId)
+          .eq('is_primary', true)
+          .not('email', 'is', null)
+          .limit(1)
+          .maybeSingle();
+        if (data?.email) {
+          setRecipients([toRecipient(data as unknown as Record<string, unknown>)]);
+          return;
+        }
+      }
+
+      // 3. Fallback to provided client email
+      if (clientEmail) {
+        const { data } = await supabase
+          .from('client_contacts')
+          .select(contactSelect)
+          .ilike('email', clientEmail)
+          .maybeSingle();
+        setRecipients([
+          data?.email
+            ? toRecipient(data as unknown as Record<string, unknown>)
+            : { email: clientEmail, name: clientName || '' },
+        ]);
+      }
+    };
+
+    void resolve();
+  }, [open, eventId, clientId, clientEmail, clientName, recipients.length, hasAutoResolved]);
+
 
   // Auto-select default template based on context when dialog opens
   useEffect(() => {
