@@ -8,7 +8,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Search, Target, Calendar, Building2, DollarSign } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Search, Target, Calendar, Building2, DollarSign, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
