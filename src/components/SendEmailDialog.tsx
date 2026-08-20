@@ -144,12 +144,22 @@ export function SendEmailDialog({
       if (eventId) {
         const { data } = await supabase
           .from('event_contacts')
-          .select(`contact_type, sort_order, client_contact:client_contacts(${contactSelect})`)
+          .select(`client_contact_id, contact_type, sort_order, contact_name, contact_email, contact_phone, client_contact:client_contacts(${contactSelect})`)
           .eq('event_id', eventId)
           .order('sort_order', { ascending: true });
 
         const eventRecipients = (data || [])
-          .map((row: Record<string, unknown>) => row.client_contact as Record<string, unknown> | null)
+          .map((row: Record<string, unknown>) => {
+            const linkedContact = row.client_contact as Record<string, unknown> | null;
+            if (linkedContact?.email) return linkedContact;
+            if (!row.contact_email) return null;
+            return {
+              id: row.client_contact_id,
+              contact_name: row.contact_name,
+              email: row.contact_email,
+              phone: row.contact_phone,
+            };
+          })
           .filter((c): c is Record<string, unknown> => !!c && !!c.email)
           .filter((c, i, arr) => arr.findIndex(o => String(o.email).toLowerCase() === String(c.email).toLowerCase()) === i)
           .map(toRecipient);
