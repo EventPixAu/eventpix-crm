@@ -1320,8 +1320,8 @@ export default function QuoteDetail() {
         }
         context="quote"
         mergeContext={{
-          eventName: leadData?.lead_name || quote.quote_number,
-          eventDate: leadData?.estimated_event_date,
+          eventName: jobName,
+          eventDate: eventDate,
           venueName: leadData?.venue_text,
           leadName: leadData?.lead_name,
           quoteAcceptUrl: quote.public_token 
