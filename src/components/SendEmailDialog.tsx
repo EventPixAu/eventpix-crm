@@ -111,6 +111,10 @@ export function SendEmailDialog({
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasAutoResolved, setHasAutoResolved] = useState(false);
+  // Raw (unresolved) template text so merge fields can be re-resolved when context loads
+  const rawTemplateRef = useRef<{ subject: string; body: string } | null>(null);
+  const userEditedRef = useRef(false);
+
   // Temporary state for contact selector
   const [selectorContactId, setSelectorContactId] = useState<string | null>(null);
 
