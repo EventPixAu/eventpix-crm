@@ -241,6 +241,9 @@ export function SendEmailDialog({
       setIsGeneratingPdf(false);
       setIsSending(false);
       setHasAutoResolved(false);
+      rawTemplateRef.current = null;
+      userEditedRef.current = false;
+
     } else if (!selectedTemplateId) {
       // Only seed hardcoded defaults when no email template has been applied —
       // an auto-selected template must always win so the sent email matches it.
