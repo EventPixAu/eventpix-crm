@@ -249,9 +249,8 @@ export function LeadSummaryCard({
               <MapPin className="h-3 w-3" />
               Venue
             </span>
-            <span className="font-medium text-right max-w-[60%]">
-              {(lead as any).venue_text || '—'}
-            </span>
+            <LeadVenueEditor leadId={lead.id} venueText={(lead as any).venue_text} />
+
           </div>
           
           <div className="flex justify-between items-center">
