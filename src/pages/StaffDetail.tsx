@@ -771,6 +771,11 @@ export default function StaffDetail() {
                   </div>
                 )}
                 
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Registered for GST</span>
+                  <p className="text-sm font-medium">{profile.gst_registered ? 'Yes' : 'No'}</p>
+                </div>
+                
                 <div className="pt-2 border-t">
                   <span className="text-xs text-muted-foreground">Address</span>
                   {(profile.address_line1 || profile.address_city || profile.address_state) ? (
