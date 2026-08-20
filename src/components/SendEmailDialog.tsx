@@ -228,10 +228,13 @@ export function SendEmailDialog({
       setIsGeneratingPdf(false);
       setIsSending(false);
       setHasAutoResolved(false);
-    } else {
+    } else if (!selectedTemplateId) {
+      // Only seed hardcoded defaults when no email template has been applied —
+      // an auto-selected template must always win so the sent email matches it.
       if (defaultSubject) setSubject(defaultSubject);
       if (defaultBody) setBody(defaultBody);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultSubject, defaultBody, context]);
 
   // Handle file selection
