@@ -641,7 +641,7 @@ export function SendEmailDialog({
               {body && /<[a-z][\s\S]*>/i.test(body) && !showPlainText ? (
                 <div className="space-y-2">
                   <div
-                    className="border rounded-md p-3 bg-background min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary [&_a]:break-all"
+                    className="border rounded-md p-3 bg-background min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm text-foreground [&_p]:!text-foreground [&_span]:!text-foreground [&_div]:!text-foreground [&_li]:!text-foreground [&_a]:!text-primary [&_a]:break-all"
                     contentEditable
                     suppressContentEditableWarning
                     onBlur={(e) => { userEditedRef.current = true; setBody(e.currentTarget.innerHTML); }}
