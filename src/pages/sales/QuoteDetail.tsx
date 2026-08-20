@@ -114,8 +114,25 @@ export default function QuoteDetail() {
   const addPackageToQuote = useAddPackageToQuote();
   const acceptQuote = useAcceptQuote();
 
+  // Resolve the event from either side of the relationship. Older/event-created
+  // budgets are linked through events.quote_id rather than quotes.event_id.
+  const quoteEventId = (quote as any)?.event_id || (quote as any)?.linked_event_id || null;
+  const { data: quoteEvent } = useQuery({
+    queryKey: ['quote-email-event', id, quoteEventId],
+    enabled: !!id && !!quote,
+    queryFn: async () => {
+      let query = supabase
+        .from('events')
+        .select('id, event_name, event_date, venue_name, venue_address, client_id, lead_id');
+      query = quoteEventId ? query.eq('id', quoteEventId) : query.eq('quote_id', id as string);
+      const { data, error } = await query.order('event_date', { ascending: true }).limit(1).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const linkedEventIdForScope = quoteEvent?.id || quoteEventId;
+
   // Event-level proposed services fallback for the Scope section
-  const linkedEventIdForScope = (quote as any)?.event_id || (quote as any)?.linked_event_id || null;
   const { data: linkedEventScope } = useQuery({
     queryKey: ['event-proposed-services', linkedEventIdForScope],
     enabled: !!linkedEventIdForScope,
@@ -532,8 +549,8 @@ export default function QuoteDetail() {
   // Lead/job info for right panel - use lead data with sessions
   const leadSessions = leadData?.event_sessions || [];
   const firstSession = leadSessions[0];
-  const jobName = leadData?.lead_name || quote.quote_number || 'Budget';
-  const eventDate = firstSession?.session_date || leadData?.tentative_date || leadData?.estimated_event_date;
+  const jobName = quoteEvent?.event_name || leadData?.lead_name || quote.quote_number || 'Budget';
+  const eventDate = quoteEvent?.event_date || firstSession?.session_date || leadData?.tentative_date || leadData?.estimated_event_date;
   const eventTime = firstSession?.start_time || leadData?.tentative_time;
   const venueAddress = leadData?.venue_text || leadData?.venue_address;
 
@@ -1305,7 +1322,7 @@ export default function QuoteDetail() {
       <SendEmailDialog
         open={isEmailDialogOpen}
         onOpenChange={setIsEmailDialogOpen}
-        clientId={quote.client_id}
+        clientId={quote.client_id || quoteEvent?.client_id || leadData?.client?.id || ''}
         eventId={linkedEventIdForScope}
 
         clientEmail={primaryContactEmail}
@@ -1322,7 +1339,7 @@ export default function QuoteDetail() {
         mergeContext={{
           eventName: jobName,
           eventDate: eventDate,
-          venueName: leadData?.venue_text,
+          venueName: quoteEvent?.venue_name || leadData?.venue_text,
           leadName: leadData?.lead_name,
           quoteAcceptUrl: quote.public_token 
             ? `${getPublicBaseUrl()}/accept/${quote.public_token}` 

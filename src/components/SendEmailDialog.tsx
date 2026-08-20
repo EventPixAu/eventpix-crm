@@ -144,12 +144,22 @@ export function SendEmailDialog({
       if (eventId) {
         const { data } = await supabase
           .from('event_contacts')
-          .select(`contact_type, sort_order, client_contact:client_contacts(${contactSelect})`)
+          .select(`client_contact_id, contact_type, sort_order, contact_name, contact_email, contact_phone, client_contact:client_contacts(${contactSelect})`)
           .eq('event_id', eventId)
           .order('sort_order', { ascending: true });
 
         const eventRecipients = (data || [])
-          .map((row: Record<string, unknown>) => row.client_contact as Record<string, unknown> | null)
+          .map((row: Record<string, unknown>) => {
+            const linkedContact = row.client_contact as Record<string, unknown> | null;
+            if (linkedContact?.email) return linkedContact;
+            if (!row.contact_email) return null;
+            return {
+              id: row.client_contact_id,
+              contact_name: row.contact_name,
+              email: row.contact_email,
+              phone: row.contact_phone,
+            };
+          })
           .filter((c): c is Record<string, unknown> => !!c && !!c.email)
           .filter((c, i, arr) => arr.findIndex(o => String(o.email).toLowerCase() === String(c.email).toLowerCase()) === i)
           .map(toRecipient);
@@ -198,7 +208,22 @@ export function SendEmailDialog({
 
   // Auto-select default template based on context when dialog opens
   useEffect(() => {
-    if (!open || !templates || selectedTemplateId) return;
+    if (!open || !templates) return;
+
+    // Keep an already-selected template synced with the latest saved version.
+    // React Query may first provide cached content and refresh it moments later.
+    if (selectedTemplateId) {
+      const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+      const raw = rawTemplateRef.current;
+      const latestSubject = selectedTemplate?.subject || '';
+      const latestBody = selectedTemplate?.body_text || selectedTemplate?.body_html || '';
+      if (selectedTemplate && !userEditedRef.current &&
+          (raw?.subject !== latestSubject || raw?.body !== latestBody)) {
+        applyTemplateContent(selectedTemplate);
+      }
+      return;
+    }
+
     const desiredTrigger = context === 'contract' ? 'contract_sent' : context === 'quote' ? 'quote_sent' : null;
     if (!desiredTrigger) return;
     // Prefer client-facing templates; photographer agreement templates share the same trigger
@@ -244,11 +269,6 @@ export function SendEmailDialog({
       rawTemplateRef.current = null;
       userEditedRef.current = false;
 
-    } else if (!selectedTemplateId) {
-      // Only seed hardcoded defaults when no email template has been applied —
-      // an auto-selected template must always win so the sent email matches it.
-      if (defaultSubject) setSubject(defaultSubject);
-      if (defaultBody) setBody(defaultBody);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultSubject, defaultBody, context]);
