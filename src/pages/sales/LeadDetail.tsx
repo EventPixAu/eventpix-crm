@@ -137,6 +137,7 @@ export default function LeadDetail(): JSX.Element {
   const [isSendBudgetsOpen, setIsSendBudgetsOpen] = useState(false);
   const [sendBudgetsSubject, setSendBudgetsSubject] = useState('');
   const [sendBudgetsBody, setSendBudgetsBody] = useState('');
+  const [sendBudgetsUrl, setSendBudgetsUrl] = useState<string | undefined>(undefined);
   const [isSendingBudgets, setIsSendingBudgets] = useState(false);
 
   if (isLoading && !isCreateMode) {
@@ -239,6 +240,8 @@ export default function LeadDetail(): JSX.Element {
         return;
       }
       
+      setSendBudgetsUrl(budgetLinks[0]?.link);
+
       const leadName = lead.lead_name || 'your project';
       const clientFirstName = client?.primary_contact_name?.split(' ')[0] || 'there';
       
@@ -709,6 +712,7 @@ export default function LeadDetail(): JSX.Element {
         mergeContext={{
           leadName: lead.lead_name,
           eventDate: sessions[0]?.session_date,
+          quoteAcceptUrl: sendBudgetsUrl,
         }}
       />
     </AppLayout>
