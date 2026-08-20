@@ -111,6 +111,10 @@ export function SendEmailDialog({
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasAutoResolved, setHasAutoResolved] = useState(false);
+  // Raw (unresolved) template text so merge fields can be re-resolved when context loads
+  const rawTemplateRef = useRef<{ subject: string; body: string } | null>(null);
+  const userEditedRef = useRef(false);
+
   // Temporary state for contact selector
   const [selectorContactId, setSelectorContactId] = useState<string | null>(null);
 
@@ -156,21 +160,22 @@ export function SendEmailDialog({
         }
       }
 
-      // 2. Client's primary contact
+      // 2. Client's primary contact (fall back to any contact with an email)
       if (clientId) {
         const { data } = await supabase
           .from('client_contacts')
           .select(contactSelect)
           .eq('client_id', clientId)
-          .eq('is_primary', true)
           .not('email', 'is', null)
-          .limit(1)
-          .maybeSingle();
-        if (data?.email) {
-          setRecipients([toRecipient(data as unknown as Record<string, unknown>)]);
+          .order('is_primary', { ascending: false })
+          .limit(1);
+        const contact = data?.[0];
+        if (contact?.email) {
+          setRecipients([toRecipient(contact as unknown as Record<string, unknown>)]);
           return;
         }
       }
+
 
       // 3. Fallback to provided client email
       if (clientEmail) {
@@ -201,14 +206,22 @@ export function SendEmailDialog({
     const match = candidates.find(t => !/photographer/i.test(t.name || '')) || candidates[0];
     if (match) {
       setSelectedTemplateId(match.id);
-      setSubject(processMergeFields(match.subject));
-      const rawBody = match.body_text || match.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      // Resolve merge fields in the editable body so users see final text (e.g. series commencing date)
-      const processedBody = processMergeFields(rawBody).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      setBody(processedBody);
+      applyTemplateContent(match);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, templates, context]);
+
+  // Re-resolve merge fields once the async merge context / recipients arrive,
+  // so the editor never shows raw {{placeholders}}.
+  useEffect(() => {
+    if (!open || userEditedRef.current) return;
+    const raw = rawTemplateRef.current;
+    if (!raw) return;
+    setSubject(processMergeFields(raw.subject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
+    setBody(processMergeFields(raw.body));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mergeContext?.eventName, mergeContext?.eventDate, mergeContext?.venueName, mergeContext?.leadName, mergeContext?.quoteAcceptUrl, mergeContext?.contractSignUrl, recipients[0]?.email]);
+
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -228,6 +241,9 @@ export function SendEmailDialog({
       setIsGeneratingPdf(false);
       setIsSending(false);
       setHasAutoResolved(false);
+      rawTemplateRef.current = null;
+      userEditedRef.current = false;
+
     } else if (!selectedTemplateId) {
       // Only seed hardcoded defaults when no email template has been applied —
       // an auto-selected template must always win so the sent email matches it.
@@ -365,17 +381,27 @@ export function SendEmailDialog({
       .replace(/\{\{contract\.url\}\}/gi, mergeContext?.contractSignUrl || '');
   };
 
+  // Apply a template's raw content and resolve merge fields with the current context
+  const applyTemplateContent = (template: { subject?: string | null; body_text?: string | null; body_html?: string | null }) => {
+    const rawSubject = template.subject || '';
+    const rawBody = template.body_text || template.body_html || '';
+    rawTemplateRef.current = { subject: rawSubject, body: rawBody };
+    userEditedRef.current = false;
+    setSubject(processMergeFields(rawSubject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
+    setBody(processMergeFields(rawBody));
+  };
+
   // Apply template when selected
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
     if (template) {
-      setSubject(processMergeFields(template.subject));
-      const rawBody = template.body_text || template.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      const processedBody = processMergeFields(rawBody).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      setBody(processedBody);
+      applyTemplateContent(template);
+    } else {
+      rawTemplateRef.current = null;
     }
   };
+
 
   const getProcessedBody = (recipient?: Recipient) => {
     return processMergeFields(body, recipient);
@@ -584,7 +610,7 @@ export function SendEmailDialog({
               <Input
                 id="subject"
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={(e) => { userEditedRef.current = true; setSubject(e.target.value); }}
                 placeholder="Your Quote from EventPix"
               />
             </div>
@@ -598,7 +624,7 @@ export function SendEmailDialog({
                     className="border rounded-md p-3 bg-background min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary [&_a]:break-all"
                     contentEditable
                     suppressContentEditableWarning
-                    onBlur={(e) => setBody(e.currentTarget.innerHTML)}
+                    onBlur={(e) => { userEditedRef.current = true; setBody(e.currentTarget.innerHTML); }}
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
                   />
                   <Button
@@ -615,7 +641,7 @@ export function SendEmailDialog({
                   <Textarea
                     id="body"
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
+                    onChange={(e) => { userEditedRef.current = true; setBody(e.target.value); }}
                     placeholder="Enter your email message here..."
                     rows={10}
                     className="font-mono text-sm"
