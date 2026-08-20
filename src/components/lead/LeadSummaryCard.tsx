@@ -24,6 +24,8 @@ import { useLostReasons } from '@/hooks/useLostReasons';
 import { setClientStatusAuto } from '@/lib/clientStatusAuto';
 import { useQueryClient } from '@tanstack/react-query';
 import { EditLeadDialog } from '@/components/EditLeadDialog';
+import { LeadVenueEditor } from '@/components/lead/LeadVenueEditor';
+
 import {
   Dialog,
   DialogContent,
@@ -249,9 +251,8 @@ export function LeadSummaryCard({
               <MapPin className="h-3 w-3" />
               Venue
             </span>
-            <span className="font-medium text-right max-w-[60%]">
-              {(lead as any).venue_text || '—'}
-            </span>
+            <LeadVenueEditor leadId={lead.id} venueText={(lead as any).venue_text} />
+
           </div>
           
           <div className="flex justify-between items-center">
