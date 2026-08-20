@@ -71,6 +71,7 @@ interface ProfileData {
   // Additional editable fields
   business_name: string | null;
   abn: string | null;
+  gst_registered: boolean | null;
   address_line1: string | null;
   address_line2: string | null;
   address_city: string | null;
@@ -107,7 +108,7 @@ function useMyProfile() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, photography_equipment_json, business_name, abn, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements, default_role_id, default_role:staff_roles(name)')
+        .select('*, photography_equipment_json, business_name, abn, gst_registered, address_line1, address_line2, address_city, address_state, address_postcode, vehicle_make_model, vehicle_registration, dietary_requirements, default_role_id, default_role:staff_roles(name)')
         .eq('id', user.id)
         .single();
       
@@ -232,6 +233,7 @@ export default function StaffMe() {
         travel_ready: profile.travel_ready ?? false,
         business_name: profile.business_name || '',
         abn: profile.abn || '',
+        gst_registered: profile.gst_registered ?? false,
         address_line1: profile.address_line1 || '',
         address_line2: profile.address_line2 || '',
         address_city: profile.address_city || '',
@@ -465,6 +467,19 @@ export default function StaffMe() {
                           value={formData.abn || ''}
                           onChange={(e) => handleFieldChange('abn', e.target.value)}
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="gst_registered">Registered for GST?</Label>
+                        <div className="flex items-center gap-3 h-10">
+                          <Switch
+                            id="gst_registered"
+                            checked={!!formData.gst_registered}
+                            onCheckedChange={(checked) => handleFieldChange('gst_registered', checked)}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {formData.gst_registered ? 'Registered for GST' : 'Not registered for GST'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

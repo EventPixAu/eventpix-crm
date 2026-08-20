@@ -77,6 +77,7 @@ interface StaffProfile {
   // New fields
   business_name?: string | null;
   abn?: string | null;
+  gst_registered?: boolean | null;
   address_line1?: string | null;
   address_line2?: string | null;
   address_city?: string | null;
@@ -150,7 +151,7 @@ export default function StaffDetail() {
           preferred_start_time, preferred_end_time,
           notes_internal, default_role_id,
             vehicle_registration, dietary_requirements, certificates, location,
-          business_name, abn, address_line1, address_line2,
+          business_name, abn, gst_registered, address_line1, address_line2,
           address_city, address_state, address_postcode,
           vehicle_make_model, pli_details, pli_expiry, photography_equipment,
           default_role:staff_roles(name)
@@ -163,7 +164,7 @@ export default function StaffDetail() {
         const { data: linkedStaffData } = await supabase
           .from('staff')
           .select(`
-            business_name, abn,
+            business_name, abn, gst_registered,
             address_line1, address_line2, address_city, address_state, address_postcode,
             vehicle_make_model, vehicle_registration,
             pli_details, pli_expiry,
@@ -179,6 +180,7 @@ export default function StaffDetail() {
             ...profileResult as StaffProfile,
             business_name: profileResult.business_name || linkedStaffData.business_name || null,
             abn: profileResult.abn || linkedStaffData.abn || null,
+            gst_registered: profileResult.gst_registered ?? linkedStaffData.gst_registered ?? null,
             address_line1: profileResult.address_line1 || linkedStaffData.address_line1 || null,
             address_line2: profileResult.address_line2 || linkedStaffData.address_line2 || null,
             address_city: profileResult.address_city || linkedStaffData.address_city || null,
@@ -204,7 +206,7 @@ export default function StaffDetail() {
         .from('staff')
           .select(`
             user_id, name, email, phone, role, status, notes, location,
-            business_name, abn,
+            business_name, abn, gst_registered,
             address_line1, address_line2, address_city, address_state, address_postcode,
             vehicle_make_model, vehicle_registration,
             pli_details, pli_expiry,
@@ -225,7 +227,7 @@ export default function StaffDetail() {
             preferred_start_time, preferred_end_time,
             notes_internal, default_role_id,
             vehicle_registration, dietary_requirements, certificates, location,
-            business_name, abn, address_line1, address_line2,
+            business_name, abn, gst_registered, address_line1, address_line2,
             address_city, address_state, address_postcode,
             vehicle_make_model, pli_details, pli_expiry, photography_equipment,
             default_role:staff_roles(name)
@@ -240,6 +242,7 @@ export default function StaffDetail() {
             ...linkedProfile as StaffProfile,
             business_name: linkedProfile.business_name || staffData.business_name || null,
             abn: linkedProfile.abn || staffData.abn || null,
+            gst_registered: linkedProfile.gst_registered ?? staffData.gst_registered ?? null,
             address_line1: linkedProfile.address_line1 || staffData.address_line1 || null,
             address_line2: linkedProfile.address_line2 || staffData.address_line2 || null,
             address_city: linkedProfile.address_city || staffData.address_city || null,
@@ -285,6 +288,7 @@ export default function StaffDetail() {
 
             business_name: staffData.business_name || null,
             abn: staffData.abn || null,
+            gst_registered: staffData.gst_registered ?? null,
             address_line1: staffData.address_line1 || null,
             address_line2: staffData.address_line2 || null,
             address_city: staffData.address_city || null,
@@ -770,6 +774,11 @@ export default function StaffDetail() {
                     <p className="text-sm font-medium">{profile.abn}</p>
                   </div>
                 )}
+                
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Registered for GST</span>
+                  <p className="text-sm font-medium">{profile.gst_registered ? 'Yes' : 'No'}</p>
+                </div>
                 
                 <div className="pt-2 border-t">
                   <span className="text-xs text-muted-foreground">Address</span>
