@@ -24,6 +24,8 @@ import { useLostReasons } from '@/hooks/useLostReasons';
 import { setClientStatusAuto } from '@/lib/clientStatusAuto';
 import { useQueryClient } from '@tanstack/react-query';
 import { EditLeadDialog } from '@/components/EditLeadDialog';
+import { LeadVenueEditor } from '@/components/lead/LeadVenueEditor';
+
 import {
   Dialog,
   DialogContent,
