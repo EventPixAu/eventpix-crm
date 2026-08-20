@@ -208,7 +208,22 @@ export function SendEmailDialog({
 
   // Auto-select default template based on context when dialog opens
   useEffect(() => {
-    if (!open || !templates || selectedTemplateId) return;
+    if (!open || !templates) return;
+
+    // Keep an already-selected template synced with the latest saved version.
+    // React Query may first provide cached content and refresh it moments later.
+    if (selectedTemplateId) {
+      const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+      const raw = rawTemplateRef.current;
+      const latestSubject = selectedTemplate?.subject || '';
+      const latestBody = selectedTemplate?.body_text || selectedTemplate?.body_html || '';
+      if (selectedTemplate && !userEditedRef.current &&
+          (raw?.subject !== latestSubject || raw?.body !== latestBody)) {
+        applyTemplateContent(selectedTemplate);
+      }
+      return;
+    }
+
     const desiredTrigger = context === 'contract' ? 'contract_sent' : context === 'quote' ? 'quote_sent' : null;
     if (!desiredTrigger) return;
     // Prefer client-facing templates; photographer agreement templates share the same trigger
@@ -254,11 +269,6 @@ export function SendEmailDialog({
       rawTemplateRef.current = null;
       userEditedRef.current = false;
 
-    } else if (!selectedTemplateId) {
-      // Only seed hardcoded defaults when no email template has been applied —
-      // an auto-selected template must always win so the sent email matches it.
-      if (defaultSubject) setSubject(defaultSubject);
-      if (defaultBody) setBody(defaultBody);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultSubject, defaultBody, context]);
