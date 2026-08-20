@@ -610,7 +610,7 @@ export function SendEmailDialog({
               <Input
                 id="subject"
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={(e) => { userEditedRef.current = true; setSubject(e.target.value); }}
                 placeholder="Your Quote from EventPix"
               />
             </div>
@@ -624,7 +624,7 @@ export function SendEmailDialog({
                     className="border rounded-md p-3 bg-background min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm dark:prose-invert max-w-none text-sm [&_a]:text-primary [&_a]:break-all"
                     contentEditable
                     suppressContentEditableWarning
-                    onBlur={(e) => setBody(e.currentTarget.innerHTML)}
+                    onBlur={(e) => { userEditedRef.current = true; setBody(e.currentTarget.innerHTML); }}
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
                   />
                   <Button
@@ -641,7 +641,7 @@ export function SendEmailDialog({
                   <Textarea
                     id="body"
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
+                    onChange={(e) => { userEditedRef.current = true; setBody(e.target.value); }}
                     placeholder="Enter your email message here..."
                     rows={10}
                     className="font-mono text-sm"
