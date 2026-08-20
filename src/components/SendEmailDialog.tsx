@@ -156,21 +156,22 @@ export function SendEmailDialog({
         }
       }
 
-      // 2. Client's primary contact
+      // 2. Client's primary contact (fall back to any contact with an email)
       if (clientId) {
         const { data } = await supabase
           .from('client_contacts')
           .select(contactSelect)
           .eq('client_id', clientId)
-          .eq('is_primary', true)
           .not('email', 'is', null)
-          .limit(1)
-          .maybeSingle();
-        if (data?.email) {
-          setRecipients([toRecipient(data as unknown as Record<string, unknown>)]);
+          .order('is_primary', { ascending: false })
+          .limit(1);
+        const contact = data?.[0];
+        if (contact?.email) {
+          setRecipients([toRecipient(contact as unknown as Record<string, unknown>)]);
           return;
         }
       }
+
 
       // 3. Fallback to provided client email
       if (clientEmail) {
