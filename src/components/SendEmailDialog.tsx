@@ -202,14 +202,22 @@ export function SendEmailDialog({
     const match = candidates.find(t => !/photographer/i.test(t.name || '')) || candidates[0];
     if (match) {
       setSelectedTemplateId(match.id);
-      setSubject(processMergeFields(match.subject));
-      const rawBody = match.body_text || match.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      // Resolve merge fields in the editable body so users see final text (e.g. series commencing date)
-      const processedBody = processMergeFields(rawBody).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      setBody(processedBody);
+      applyTemplateContent(match);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, templates, context]);
+
+  // Re-resolve merge fields once the async merge context / recipients arrive,
+  // so the editor never shows raw {{placeholders}}.
+  useEffect(() => {
+    if (!open || userEditedRef.current) return;
+    const raw = rawTemplateRef.current;
+    if (!raw) return;
+    setSubject(processMergeFields(raw.subject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
+    setBody(processMergeFields(raw.body));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mergeContext?.eventName, mergeContext?.eventDate, mergeContext?.venueName, mergeContext?.leadName, mergeContext?.quoteAcceptUrl, mergeContext?.contractSignUrl, recipients[0]?.email]);
+
 
   // Reset form when dialog opens/closes
   useEffect(() => {
