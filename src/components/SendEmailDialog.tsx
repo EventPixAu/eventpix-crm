@@ -374,17 +374,27 @@ export function SendEmailDialog({
       .replace(/\{\{contract\.url\}\}/gi, mergeContext?.contractSignUrl || '');
   };
 
+  // Apply a template's raw content and resolve merge fields with the current context
+  const applyTemplateContent = (template: { subject?: string | null; body_text?: string | null; body_html?: string | null }) => {
+    const rawSubject = template.subject || '';
+    const rawBody = template.body_text || template.body_html || '';
+    rawTemplateRef.current = { subject: rawSubject, body: rawBody };
+    userEditedRef.current = false;
+    setSubject(processMergeFields(rawSubject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
+    setBody(processMergeFields(rawBody));
+  };
+
   // Apply template when selected
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
     if (template) {
-      setSubject(processMergeFields(template.subject));
-      const rawBody = template.body_text || template.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      const processedBody = processMergeFields(rawBody).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
-      setBody(processedBody);
+      applyTemplateContent(template);
+    } else {
+      rawTemplateRef.current = null;
     }
   };
+
 
   const getProcessedBody = (recipient?: Recipient) => {
     return processMergeFields(body, recipient);
