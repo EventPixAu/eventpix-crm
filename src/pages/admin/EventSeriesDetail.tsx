@@ -320,8 +320,15 @@ export default function EventSeriesDetail() {
       console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
     } else {
+      const { error: syncError } = await supabase
+        .rpc('sync_series_contacts_to_events' as any, { _series_id: id });
       queryClient.invalidateQueries({ queryKey: ['event-series'] });
-      toast.success('Settings saved');
+      queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+      if (syncError) {
+        toast.error('Settings saved, but contacts failed to sync: ' + syncError.message);
+      } else {
+        toast.success('Settings saved and contacts synced to events');
+      }
     }
   };
   
