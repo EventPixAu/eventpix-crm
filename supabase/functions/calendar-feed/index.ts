@@ -273,6 +273,7 @@ Deno.serve(async (req) => {
             venue_address
           )
         `)
+        .neq('ops_status', 'cancelled')
         .gte('event_date', format(pastDate, 'yyyy-MM-dd'))
         .lte('event_date', format(futureDate, 'yyyy-MM-dd'));
 
@@ -346,7 +347,8 @@ Deno.serve(async (req) => {
             )
           )
         `)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .neq('events.ops_status', 'cancelled');
 
       if (assignmentError) {
         console.error('Error fetching events:', assignmentError);
