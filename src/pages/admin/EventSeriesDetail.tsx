@@ -1293,6 +1293,31 @@ export default function EventSeriesDetail() {
                           {settingsPrimaryContact.phone_mobile || settingsPrimaryContact.phone || settingsPrimaryContact.phone_office}
                         </div>
                       )}
+                      {settingsPrimaryContact.email && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={sendingPortalLink}
+                            onClick={() => sendPortalLink(settingsPrimaryContact.email)}
+                          >
+                            <Send className="h-3.5 w-3.5 mr-1" />
+                            {sendingPortalLink ? 'Sending…' : 'Invite to portal'}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(portalLoginUrl);
+                              toast.success('Portal link copied');
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5 mr-1" />
+                            Copy link
+                          </Button>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">No main contact selected.</p>
@@ -1316,10 +1341,24 @@ export default function EventSeriesDetail() {
                         {(c.phone_mobile || c.phone || c.phone_office) && (
                           <div className="text-sm">{c.phone_mobile || c.phone || c.phone_office}</div>
                         )}
+                        {c.email && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="mt-1"
+                            disabled={sendingPortalLink}
+                            onClick={() => sendPortalLink(c.email)}
+                          >
+                            <Send className="h-3.5 w-3.5 mr-1" />
+                            Invite to portal
+                          </Button>
+                        )}
                       </div>
                     ))
                   )}
                 </div>
+
               </div>
             </CardContent>
           </Card>
