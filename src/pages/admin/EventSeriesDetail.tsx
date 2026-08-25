@@ -345,6 +345,9 @@ export default function EventSeriesDetail() {
   
   const handleSaveSettings = async () => {
     if (!id) return;
+    const cleanAdditionalContactIds = Array.from(new Set(
+      editAdditionalContactIds.filter((contactId) => contactId && contactId !== editDefaultContactId)
+    ));
     const { error } = await supabase
       .from('event_series')
       .update({
@@ -362,7 +365,8 @@ export default function EventSeriesDetail() {
         default_ops_status: editDefaultOpsStatus || 'confirmed',
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
-        additional_contact_ids: editAdditionalContactIds.filter(Boolean),
+        primary_contact_id: editDefaultContactId || null,
+        additional_contact_ids: cleanAdditionalContactIds,
         dress_code: editDressCode === '__none__' ? null : editDressCode || null,
       } as any)
       .eq('id', id);
@@ -1419,17 +1423,38 @@ export default function EventSeriesDetail() {
                 </div>
 
                 <div className="space-y-2">
-                  <ContactSelector
-                    value={editDefaultContactId}
-                    onChange={(contactId) => setEditDefaultContactId(contactId)}
-                    placeholder="Search for a contact..."
-                    companyId={events?.[0]?.client_id || null}
-                  />
+                  <Label>Client Contacts</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Choose a label for each client contact. Only one contact can be Primary.
+                  </p>
+                  <div className="flex items-start gap-2">
+                    <Select value="primary" disabled>
+                      <SelectTrigger className="w-32 shrink-0" aria-label="Contact label">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="primary">Primary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="flex-1">
+                      <ContactSelector
+                        value={editDefaultContactId}
+                        onChange={(contactId) => {
+                          setEditDefaultContactId(contactId);
+                          if (contactId) {
+                            setEditAdditionalContactIds((prev) => prev.filter((id) => id !== contactId));
+                          }
+                        }}
+                        placeholder="Search for the primary contact..."
+                        companyId={events?.[0]?.client_id || null}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label>Additional Contacts</Label>
+                    <Label>Secondary Contacts</Label>
                     <Button
                       type="button"
                       size="sm"
@@ -1441,7 +1466,7 @@ export default function EventSeriesDetail() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Copied onto every new event created from this series, alongside the default contact.
+                    These contacts are copied onto every event in the series alongside the Primary contact.
                   </p>
                   {editAdditionalContactIds.length === 0 ? (
                     <p className="text-sm text-muted-foreground italic py-2">
@@ -1451,10 +1476,35 @@ export default function EventSeriesDetail() {
                     <div className="space-y-2">
                       {editAdditionalContactIds.map((contactId, index) => (
                         <div key={index} className="flex items-start gap-2">
+                          <Select
+                            value="secondary"
+                            onValueChange={(label) => {
+                              if (label !== 'primary' || !contactId) return;
+                              const formerPrimary = editDefaultContactId;
+                              setEditDefaultContactId(contactId);
+                              setEditAdditionalContactIds((prev) => {
+                                const next = prev.filter((id, i) => i !== index && id !== contactId);
+                                if (formerPrimary && formerPrimary !== contactId) next.splice(index, 0, formerPrimary);
+                                return Array.from(new Set(next.filter(Boolean)));
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="w-32 shrink-0" aria-label="Contact label">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="primary">Primary</SelectItem>
+                              <SelectItem value="secondary">Secondary</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <div className="flex-1">
                             <ContactSelector
                               value={contactId || null}
                               onChange={(newId) => {
+                                if (newId && (newId === editDefaultContactId || editAdditionalContactIds.some((id, i) => i !== index && id === newId))) {
+                                  toast.error('That contact has already been added');
+                                  return;
+                                }
                                 const next = [...editAdditionalContactIds];
                                 next[index] = newId || '';
                                 setEditAdditionalContactIds(next);
