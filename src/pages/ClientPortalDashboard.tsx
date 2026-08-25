@@ -11,6 +11,7 @@ import {
   Building2,
   FileText,
   ChevronRight,
+  Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,15 +39,27 @@ interface Lead {
   company_name: string;
 }
 
+interface CrewMember {
+  name: string | null;
+  role: string | null;
+  dietary_requirements: string | null;
+}
+
 interface Event {
   id: string;
   event_name: string;
   event_date: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
   venue_name: string | null;
+  venue_address?: string | null;
   ops_status: string | null;
   client_portal_token: string | null;
   created_at: string;
   company_name: string;
+  series_id?: string | null;
+  series_name?: string | null;
+  crew?: CrewMember[];
 }
 
 const statusColors: Record<string, string> = {
@@ -184,6 +197,24 @@ export default function ClientPortalDashboard() {
 
   const baseUrl = window.location.origin;
 
+  const groupedEvents = (() => {
+    const map = new Map<string, { key: string; title: string; events: Event[] }>();
+    for (const ev of events) {
+      const key = ev.series_id || '__standalone__';
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          title: ev.series_id ? ev.series_name || 'Event Program' : 'Your Events',
+          events: [],
+        });
+      }
+      map.get(key)!.events.push(ev);
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.key === '__standalone__' ? 1 : b.key === '__standalone__' ? -1 : a.title.localeCompare(b.title)
+    );
+  })();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -283,70 +314,97 @@ export default function ClientPortalDashboard() {
           </section>
         )}
 
-        {/* Active Events */}
+        {/* Active Events, grouped by series/program */}
         {events.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Your Events
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {events.map((event, i) => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Card className="bg-card border-border hover:border-primary/40 transition-colors group">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-medium text-foreground">{event.event_name}</h3>
-                          {companies.length > 1 && (
-                            <p className="text-xs text-muted-foreground">{event.company_name}</p>
+          <section className="space-y-8">
+            {groupedEvents.map((group) => (
+              <div key={group.key}>
+                <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  {group.title}
+                </h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {group.events.length} event{group.events.length === 1 ? '' : 's'}
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {group.events.map((event, i) => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                    >
+                      <Card className="bg-card border-border hover:border-primary/40 transition-colors group h-full">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-medium text-foreground">{event.event_name}</h3>
+                              {companies.length > 1 && (
+                                <p className="text-xs text-muted-foreground">{event.company_name}</p>
+                              )}
+                            </div>
+                            <Badge className={statusColors[event.ops_status || ''] || 'bg-muted text-muted-foreground'}>
+                              {formatStatus(event.ops_status)}
+                            </Badge>
+                          </div>
+
+                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            {event.event_date && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(parseISO(event.event_date), 'EEE dd MMM yyyy')}
+                              </span>
+                            )}
+                            {event.venue_name && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {event.venue_name}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="rounded-md border border-border/60 bg-muted/20 p-2.5 space-y-1.5">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                              <Users className="h-3.5 w-3.5 text-primary" />
+                              Photographers
+                            </div>
+                            {event.crew && event.crew.length > 0 ? (
+                              event.crew.map((member, idx) => (
+                                <div key={idx} className="text-xs text-muted-foreground">
+                                  <span className="text-foreground">{member.name || 'Team member'}</span>
+                                  {member.role ? ` — ${member.role}` : ''}
+                                  <div className="text-[11px]">
+                                    🍽️ {member.dietary_requirements?.trim() || 'No dietary requirements'}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-muted-foreground">To be confirmed</p>
+                            )}
+                          </div>
+
+                          {event.client_portal_token && (
+                            <a
+                              href={`${baseUrl}/event/${event.client_portal_token}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button
+                                size="sm"
+                                className="w-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 gap-2"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                View Event Details
+                              </Button>
+                            </a>
                           )}
-                        </div>
-                        <Badge className={statusColors[event.ops_status || ''] || 'bg-muted text-muted-foreground'}>
-                          {formatStatus(event.ops_status)}
-                        </Badge>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                        {event.event_date && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(parseISO(event.event_date), 'dd MMM yyyy')}
-                          </span>
-                        )}
-                        {event.venue_name && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {event.venue_name}
-                          </span>
-                        )}
-                      </div>
-
-                      {event.client_portal_token && (
-                        <a
-                          href={`${baseUrl}/event/${event.client_portal_token}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Button
-                            size="sm"
-                            className="w-full bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 gap-2"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            View Event Details
-                          </Button>
-                        </a>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </section>
         )}
 
