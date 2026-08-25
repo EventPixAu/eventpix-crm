@@ -183,6 +183,27 @@ export default function EventSeriesDetail() {
     }
   };
 
+  // Change the series primary (main) client contact and propagate to all events
+  const savePrimaryContact = async (contactId: string | null) => {
+    if (!id) return;
+    const { error } = await supabase
+      .from('event_series')
+      .update({ primary_contact_id: contactId, default_contact_id: contactId } as any)
+      .eq('id', id);
+    if (error) {
+      toast.error('Failed to update main contact', { description: error.message });
+      return;
+    }
+    setEditDefaultContactId(contactId);
+    setEditAdditionalContactIds((prev) => prev.filter((c) => c && c !== contactId));
+    const { error: syncError } = await supabase
+      .rpc('sync_series_contacts_to_events' as any, { _series_id: id });
+    queryClient.invalidateQueries({ queryKey: ['event-series'] });
+    queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+    if (syncError) toast.error('Saved, but contacts failed to sync: ' + syncError.message);
+    else toast.success('Main client contact updated');
+  };
+
   // Persist the inferred primary contact so it propagates to every event in the series
   useEffect(() => {
     if (!id || !series) return;
