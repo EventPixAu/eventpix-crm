@@ -237,6 +237,36 @@ export default function EventSeriesDetail() {
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
   const [editDressCode, setEditDressCode] = useState<string>('__none__');
+
+  // Resolved client contact details for the Settings tab
+  const seriesClientName = seriesClient?.business_name || events?.[0]?.client_name || null;
+  const settingsContactIds = useMemo(
+    () => Array.from(new Set([
+      editDefaultContactId || (series as any)?.default_contact_id || (series as any)?.primary_contact_id,
+      ...editAdditionalContactIds,
+    ].filter(Boolean))) as string[],
+    [editDefaultContactId, editAdditionalContactIds, series]
+  );
+  const { data: settingsContacts = [] } = useQuery({
+    queryKey: ['series-settings-contacts', settingsContactIds],
+    enabled: settingsContactIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('id, contact_name, email, phone, phone_mobile, phone_office, role_title')
+        .in('id', settingsContactIds);
+      return (data || []) as any[];
+    },
+  });
+  const settingsPrimaryId =
+    editDefaultContactId || (series as any)?.default_contact_id || (series as any)?.primary_contact_id || null;
+  const settingsPrimaryContact =
+    (settingsPrimaryId && settingsContacts.find((c: any) => c.id === settingsPrimaryId)) || primaryContact || null;
+  const settingsSecondaryContacts = settingsContacts.filter(
+    (c: any) => c.id !== (settingsPrimaryContact as any)?.id
+  );
+
+
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
@@ -1186,7 +1216,76 @@ export default function EventSeriesDetail() {
 
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Client Contacts
+              </CardTitle>
+              <CardDescription>
+                Main and secondary client contacts for this program. On-site contacts and photographer
+                details are managed on each individual event.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {seriesClientName && (
+                <div className="text-sm text-muted-foreground">
+                  Client: <span className="text-foreground font-medium">{seriesClientName}</span>
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-border p-4 space-y-1">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Main client contact</div>
+                  {settingsPrimaryContact ? (
+                    <>
+                      <div className="font-semibold">{settingsPrimaryContact.contact_name}</div>
+                      {settingsPrimaryContact.role_title && (
+                        <div className="text-sm text-muted-foreground">{settingsPrimaryContact.role_title}</div>
+                      )}
+                      {settingsPrimaryContact.email && (
+                        <a href={`mailto:${settingsPrimaryContact.email}`} className="block text-sm text-primary hover:underline">
+                          {settingsPrimaryContact.email}
+                        </a>
+                      )}
+                      {(settingsPrimaryContact.phone_mobile || settingsPrimaryContact.phone || settingsPrimaryContact.phone_office) && (
+                        <div className="text-sm">
+                          {settingsPrimaryContact.phone_mobile || settingsPrimaryContact.phone || settingsPrimaryContact.phone_office}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No main contact selected.</p>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-border p-4 space-y-3">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Secondary client contacts</div>
+                  {settingsSecondaryContacts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">No secondary contacts added.</p>
+                  ) : (
+                    settingsSecondaryContacts.map((c: any) => (
+                      <div key={c.id} className="space-y-0.5">
+                        <div className="font-medium">{c.contact_name}</div>
+                        {c.role_title && <div className="text-sm text-muted-foreground">{c.role_title}</div>}
+                        {c.email && (
+                          <a href={`mailto:${c.email}`} className="block text-sm text-primary hover:underline">
+                            {c.email}
+                          </a>
+                        )}
+                        {(c.phone_mobile || c.phone || c.phone_office) && (
+                          <div className="text-sm">{c.phone_mobile || c.phone || c.phone_office}</div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid lg:grid-cols-2 gap-6">
+
             <Card>
               <CardHeader>
                 <CardTitle>Series Defaults</CardTitle>
