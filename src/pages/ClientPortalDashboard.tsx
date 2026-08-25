@@ -11,6 +11,7 @@ import {
   Building2,
   FileText,
   ChevronRight,
+  Users,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -195,6 +196,24 @@ export default function ClientPortalDashboard() {
   }
 
   const baseUrl = window.location.origin;
+
+  const groupedEvents = (() => {
+    const map = new Map<string, { key: string; title: string; events: Event[] }>();
+    for (const ev of events) {
+      const key = ev.series_id || '__standalone__';
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          title: ev.series_id ? ev.series_name || 'Event Program' : 'Your Events',
+          events: [],
+        });
+      }
+      map.get(key)!.events.push(ev);
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.key === '__standalone__' ? 1 : b.key === '__standalone__' ? -1 : a.title.localeCompare(b.title)
+    );
+  })();
 
   return (
     <div className="min-h-screen bg-background">
