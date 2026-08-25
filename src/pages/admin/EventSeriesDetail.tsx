@@ -237,6 +237,36 @@ export default function EventSeriesDetail() {
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
   const [editDressCode, setEditDressCode] = useState<string>('__none__');
+
+  // Resolved client contact details for the Settings tab
+  const seriesClientName = seriesClient?.business_name || events?.[0]?.client_name || null;
+  const settingsContactIds = useMemo(
+    () => Array.from(new Set([
+      editDefaultContactId || (series as any)?.default_contact_id || (series as any)?.primary_contact_id,
+      ...editAdditionalContactIds,
+    ].filter(Boolean))) as string[],
+    [editDefaultContactId, editAdditionalContactIds, series]
+  );
+  const { data: settingsContacts = [] } = useQuery({
+    queryKey: ['series-settings-contacts', settingsContactIds],
+    enabled: settingsContactIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('id, contact_name, email, phone, phone_mobile, phone_office, role_title')
+        .in('id', settingsContactIds);
+      return (data || []) as any[];
+    },
+  });
+  const settingsPrimaryId =
+    editDefaultContactId || (series as any)?.default_contact_id || (series as any)?.primary_contact_id || null;
+  const settingsPrimaryContact =
+    (settingsPrimaryId && settingsContacts.find((c: any) => c.id === settingsPrimaryId)) || primaryContact || null;
+  const settingsSecondaryContacts = settingsContacts.filter(
+    (c: any) => c.id !== (settingsPrimaryContact as any)?.id
+  );
+
+
   
   // Dialog states
   const [bulkCreateOpen, setBulkCreateOpen] = useState(false);
