@@ -1198,11 +1198,12 @@ export default function EventSeriesDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {series?.client_name && (
+              {seriesClientName && (
                 <div className="text-sm text-muted-foreground">
-                  Client: <span className="text-foreground font-medium">{series.client_name}</span>
+                  Client: <span className="text-foreground font-medium">{seriesClientName}</span>
                 </div>
               )}
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="rounded-lg border border-border p-4 space-y-1">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">Main client contact</div>
