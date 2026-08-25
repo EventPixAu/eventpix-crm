@@ -215,6 +215,7 @@ export function useAdminCalendarEvents(
           delivery_records!left(id, delivered_at),
           event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, venue_name, venue_address)
         `)
+        .neq('ops_status', 'cancelled')
         .order('event_date', { ascending: true });
 
       // Filter: events with event_date in range OR events with sessions in range
@@ -402,7 +403,8 @@ export function useStaffCalendarEvents(currentMonth: Date) {
             event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, venue_name, venue_address)
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .neq('events.ops_status', 'cancelled');
 
       if (error) throw error;
 
