@@ -1234,6 +1234,21 @@ export default function EventSeriesDetail() {
                 </div>
               )}
 
+              <div className="space-y-2">
+                <Label>Main client contact</Label>
+                <ContactSelector
+                  value={settingsPrimaryId}
+                  onChange={(contactId) => savePrimaryContact(contactId)}
+                  placeholder="Search for a contact..."
+                  companyId={seriesClientId || events?.[0]?.client_id || null}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This contact is set as the primary contact on every event in the series.
+                </p>
+              </div>
+
+
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="rounded-lg border border-border p-4 space-y-1">
                   <div className="text-xs uppercase tracking-wide text-muted-foreground">Main client contact</div>
