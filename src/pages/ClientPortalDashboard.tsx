@@ -38,15 +38,27 @@ interface Lead {
   company_name: string;
 }
 
+interface CrewMember {
+  name: string | null;
+  role: string | null;
+  dietary_requirements: string | null;
+}
+
 interface Event {
   id: string;
   event_name: string;
   event_date: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
   venue_name: string | null;
+  venue_address?: string | null;
   ops_status: string | null;
   client_portal_token: string | null;
   created_at: string;
   company_name: string;
+  series_id?: string | null;
+  series_name?: string | null;
+  crew?: CrewMember[];
 }
 
 const statusColors: Record<string, string> = {
