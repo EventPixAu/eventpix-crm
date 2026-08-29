@@ -127,6 +127,7 @@ export function SendOpsEmailDialog({
     if (!open) return;
     setShowPreview(false);
     setUserAttachments([]);
+    setEditingPlainText(false);
 
     if (initialSubject) setSubject(initialSubject);
     if (initialBody) setBody(initialBody);
@@ -452,6 +453,11 @@ export function SendOpsEmailDialog({
                       className="h-7 text-xs"
                       onClick={() => {
                         const plain = body
+                          // Preserve hyperlinks as markdown so URLs are not lost
+                          .replace(/<a\s+[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, text) => {
+                            const label = String(text).replace(/<[^>]+>/g, '').trim() || href;
+                            return `[${label}](${href})`;
+                          })
                           .replace(/<br\s*\/?>/gi, '\n')
                           .replace(/<\/p>/gi, '\n')
                           .replace(/<[^>]+>/g, '')
