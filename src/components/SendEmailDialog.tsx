@@ -173,7 +173,34 @@ export function SendEmailDialog({
         }
       }
 
-      // 2. Client's primary contact (fall back to any contact with an email)
+      // 2. Lead contacts (primary first) — the lead's primary contact may belong
+      // to a different company than the lead's client (e.g. an event management company)
+      if (leadId) {
+        const { data } = await supabase
+          .from('enquiry_contacts')
+          .select(`role, contact_name, contact_email, contact_id, client_contact:client_contacts(${contactSelect})`)
+          .eq('lead_id', leadId);
+
+        const roleRank = (r: string | null) => (r === 'primary' ? 0 : r === 'secondary' ? 1 : 2);
+        const leadRecipients = (data || [])
+          .sort((a, b) => roleRank(a.role) - roleRank(b.role))
+          .map((row) => {
+            const linked = row.client_contact as Record<string, unknown> | null;
+            if (linked?.email) return linked;
+            if (!row.contact_email) return null;
+            return { id: row.contact_id, contact_name: row.contact_name, email: row.contact_email };
+          })
+          .filter((c): c is Record<string, unknown> => !!c && !!c.email)
+          .filter((c, i, arr) => arr.findIndex(o => String(o.email).toLowerCase() === String(c.email).toLowerCase()) === i)
+          .map(toRecipient);
+
+        if (leadRecipients.length > 0) {
+          setRecipients(leadRecipients);
+          return;
+        }
+      }
+
+      // 3. Client's primary contact (fall back to any contact with an email)
       if (clientId) {
         const { data } = await supabase
           .from('client_contacts')
