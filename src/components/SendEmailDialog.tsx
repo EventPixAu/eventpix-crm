@@ -64,6 +64,8 @@ interface SendEmailDialogProps {
   clientName?: string;
   /** When provided, the event's contacts are pre-selected as recipients */
   eventId?: string | null;
+  /** When provided, the lead's contacts (primary first) are pre-selected as recipients */
+  leadId?: string | null;
   relatedQuoteId?: string;
   relatedContractId?: string;
   contractHtml?: string;
@@ -82,6 +84,7 @@ export function SendEmailDialog({
   clientEmail,
   clientName,
   eventId,
+  leadId,
   relatedQuoteId,
   relatedContractId,
   contractHtml,
