@@ -217,7 +217,7 @@ export function SendEmailDialog({
       }
 
 
-      // 3. Fallback to provided client email
+      // 4. Fallback to provided client email
       if (clientEmail) {
         const { data } = await supabase
           .from('client_contacts')
@@ -233,7 +233,7 @@ export function SendEmailDialog({
     };
 
     void resolve();
-  }, [open, eventId, clientId, clientEmail, clientName, recipients.length, hasAutoResolved]);
+  }, [open, eventId, leadId, clientId, clientEmail, clientName, recipients.length, hasAutoResolved]);
 
 
   // Auto-select default template based on context when dialog opens
