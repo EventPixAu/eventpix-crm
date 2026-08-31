@@ -1324,6 +1324,7 @@ export default function QuoteDetail() {
         onOpenChange={setIsEmailDialogOpen}
         clientId={quote.client_id || quoteEvent?.client_id || leadData?.client?.id || ''}
         eventId={linkedEventIdForScope}
+        leadId={resolvedLeadId}
 
         clientEmail={primaryContactEmail}
         clientName={primaryContactName || clientName}
