@@ -187,7 +187,6 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
   const handleOpenPortalLink = (contact: typeof contacts[0]) => {
     const display = getContactDisplay(contact);
     const firstName = display.name.split(' ')[0];
-    const name = display.name;
     const link = portalUrl || `${window.location.origin}/client-login`;
     
     setPortalContact(contact);
