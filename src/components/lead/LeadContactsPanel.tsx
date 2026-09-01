@@ -191,13 +191,18 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
     const link = portalUrl || `${window.location.origin}/client-login`;
     
     setPortalContact(contact);
-    setPortalSubject(`Your proposal portal for ${leadName || 'your event'}`);
+    setPortalSubject(`Your portal access for ${leadName || 'your event'} — Eventpixii`);
     setPortalBody(
-      `Hi ${firstName},\n\n` +
-      `You can access the proposal portal for ${leadName || 'your event'} here:\n\n` +
-      `${link}\n\n` +
-      `Please let us know if you have any questions.\n\n` +
-      `Best regards,\nEventpixii Team`
+      `<p>Hi ${firstName},</p>` +
+      `<p>You've been invited to access the client portal for <strong>${leadName || 'your event'}</strong>, where you can view event details, dates, venues and documents.</p>` +
+      `<p style="margin: 24px 0;">` +
+      `<a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">Open Portal</a>` +
+      `</p>` +
+      (link.includes('/client-login')
+        ? `<p style="color: #666; font-size: 14px;">Simply enter your email address (<strong>${display.email}</strong>) and we'll send you a secure login link. No password needed.</p>`
+        : `<p style="color: #666; font-size: 14px;">This link opens your portal directly — no password needed.</p>`) +
+      `<p>Please let us know if you have any questions.</p>` +
+      `<p>Best regards,<br/>The Eventpixii Team</p>`
     );
   };
 

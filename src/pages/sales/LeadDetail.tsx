@@ -386,7 +386,7 @@ export default function LeadDetail(): JSX.Element {
               ? `${getPublicBaseUrl()}/event/${linkedEvent.client_portal_token}`
               : (lead as any)?.client_portal_token
                 ? `${getPublicBaseUrl()}/lead/${(lead as any).client_portal_token}`
-                : undefined
+                : `${getPublicBaseUrl()}/client-login`
             }
             leadName={lead.lead_name}
           />
