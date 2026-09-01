@@ -211,11 +211,18 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
     
     setIsSendingPortal(true);
     try {
+      const link = portalUrl || `${window.location.origin}/client-login`;
+      const bodyHtml =
+        portalBody.split('\n').filter(Boolean).map(line => `<p>${line}</p>`).join('') +
+        `<p style="margin: 24px 0;">` +
+        `<a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">Open Portal</a>` +
+        `</p>` +
+        `<p>Best regards,<br/>The Eventpixii Team</p>`;
       await sendEmail.mutateAsync({
         recipientEmail: display.email,
         recipientName: display.name || undefined,
         subject: portalSubject,
-        bodyHtml: portalBody.replace(/\n/g, '<br>'),
+        bodyHtml,
         contactId: portalContact.contact_id || undefined,
         clientId: clientId || undefined,
         leadId: leadId,
