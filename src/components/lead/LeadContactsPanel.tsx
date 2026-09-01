@@ -187,17 +187,16 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
   const handleOpenPortalLink = (contact: typeof contacts[0]) => {
     const display = getContactDisplay(contact);
     const firstName = display.name.split(' ')[0];
-    const name = display.name;
     const link = portalUrl || `${window.location.origin}/client-login`;
     
     setPortalContact(contact);
-    setPortalSubject(`Your proposal portal for ${leadName || 'your event'}`);
+    setPortalSubject(`Your portal access for ${leadName || 'your event'} — Eventpixii`);
     setPortalBody(
       `Hi ${firstName},\n\n` +
-      `You can access the proposal portal for ${leadName || 'your event'} here:\n\n` +
-      `${link}\n\n` +
-      `Please let us know if you have any questions.\n\n` +
-      `Best regards,\nEventpixii Team`
+      `You've been invited to access the client portal for ${leadName || 'your event'}, where you can view event details, dates, venues and documents.\n\n` +
+      (link.includes('/client-login')
+        ? `Click the button below and enter your email address (${display.email}) — we'll send you a secure login link. No password needed.`
+        : `Click the button below to open your portal directly — no password needed.`)
     );
   };
 
@@ -211,11 +210,18 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
     
     setIsSendingPortal(true);
     try {
+      const link = portalUrl || `${window.location.origin}/client-login`;
+      const bodyHtml =
+        portalBody.split('\n').filter(Boolean).map(line => `<p>${line}</p>`).join('') +
+        `<p style="margin: 24px 0;">` +
+        `<a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">Open Portal</a>` +
+        `</p>` +
+        `<p>Best regards,<br/>The Eventpixii Team</p>`;
       await sendEmail.mutateAsync({
         recipientEmail: display.email,
         recipientName: display.name || undefined,
         subject: portalSubject,
-        bodyHtml: portalBody.replace(/\n/g, '<br>'),
+        bodyHtml,
         contactId: portalContact.contact_id || undefined,
         clientId: clientId || undefined,
         leadId: leadId,
