@@ -193,16 +193,11 @@ export function LeadContactsPanel({ leadId, clientId, disabled, defaultOpen = tr
     setPortalContact(contact);
     setPortalSubject(`Your portal access for ${leadName || 'your event'} — Eventpixii`);
     setPortalBody(
-      `<p>Hi ${firstName},</p>` +
-      `<p>You've been invited to access the client portal for <strong>${leadName || 'your event'}</strong>, where you can view event details, dates, venues and documents.</p>` +
-      `<p style="margin: 24px 0;">` +
-      `<a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">Open Portal</a>` +
-      `</p>` +
+      `Hi ${firstName},\n\n` +
+      `You've been invited to access the client portal for ${leadName || 'your event'}, where you can view event details, dates, venues and documents.\n\n` +
       (link.includes('/client-login')
-        ? `<p style="color: #666; font-size: 14px;">Simply enter your email address (<strong>${display.email}</strong>) and we'll send you a secure login link. No password needed.</p>`
-        : `<p style="color: #666; font-size: 14px;">This link opens your portal directly — no password needed.</p>`) +
-      `<p>Please let us know if you have any questions.</p>` +
-      `<p>Best regards,<br/>The Eventpixii Team</p>`
+        ? `Click the button below and enter your email address (${display.email}) — we'll send you a secure login link. No password needed.`
+        : `Click the button below to open your portal directly — no password needed.`)
     );
   };
 
