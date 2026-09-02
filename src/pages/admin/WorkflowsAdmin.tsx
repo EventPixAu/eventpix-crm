@@ -164,6 +164,9 @@ function SortableStepItem({
           {dateOffsetText}
         </span>
       )}
+      {step.is_series_level && (
+        <Badge variant="secondary" className="text-xs">Series</Badge>
+      )}
       {step.completion_type === 'auto' && (
         <Badge variant="outline" className="text-xs">Auto</Badge>
       )}
@@ -251,6 +254,9 @@ function SortableEventTypeStep({
       />
       <RoleAbbrevBadge roleName={roleName} />
       <span className="flex-1">{step.label}</span>
+      {step.is_series_level && (
+        <Badge variant="secondary" className="text-xs">Series</Badge>
+      )}
       <Button
         variant="ghost"
         size="icon"
@@ -394,6 +400,7 @@ export default function WorkflowsAdmin() {
     phase: 'pre_event',
     completion_type: 'manual',
     is_active: true,
+    is_series_level: false,
     date_offset_reference: 'event_date',
   });
 
@@ -489,6 +496,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: newStep.date_offset_reference || null,
       help_text: newStep.help_text || null,
       is_active: true,
+      is_series_level: newStep.is_series_level ?? false,
       default_staff_role_id: newStep.default_staff_role_id ?? adminRole?.id ?? null,
       default_assignee_user_id: null,
     });
@@ -505,6 +513,7 @@ export default function WorkflowsAdmin() {
       phase: 'pre_event',
       completion_type: 'manual',
       is_active: true,
+      is_series_level: false,
       date_offset_reference: 'event_date',
     });
   };
@@ -522,6 +531,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: editingStep.date_offset_reference,
       help_text: editingStep.help_text,
       is_active: editingStep.is_active,
+      is_series_level: editingStep.is_series_level,
       default_staff_role_id: editingStep.default_staff_role_id,
       default_assignee_user_id: editingStep.default_assignee_user_id,
     });
@@ -549,6 +559,7 @@ export default function WorkflowsAdmin() {
       date_offset_reference: step.date_offset_reference,
       help_text: step.help_text,
       is_active: step.is_active,
+      is_series_level: step.is_series_level,
       default_staff_role_id: step.default_staff_role_id,
       default_assignee_user_id: step.default_assignee_user_id,
     });
@@ -811,9 +822,35 @@ export default function WorkflowsAdmin() {
                     </div>
 
                     <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
+                      {(() => {
+                        const seriesSteps = adminActiveSteps
+                          .filter(s => s.is_series_level)
+                          .sort(compareStepsBySortOrder);
+                        if (seriesSteps.length === 0) return null;
+                        return (
+                          <div>
+                            <h3 className="text-sm font-medium mb-1 text-primary">Series</h3>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Applied once per event series — these steps are not added to the individual events.
+                            </p>
+                            <div className="space-y-2">
+                              {seriesSteps.map(step => (
+                                <SortableEventTypeStep
+                                  key={step.id}
+                                  step={step}
+                                  isChecked={selectedSteps.includes(step.id)}
+                                  onToggle={() => handleStepToggle(step.id)}
+                                  onEdit={setEditingStep}
+                                  roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       {phases.map(phase => {
                         const phaseSteps = adminActiveSteps
-                          .filter(s => s.phase === phase.key)
+                          .filter(s => s.phase === phase.key && !s.is_series_level)
                           .sort(compareStepsBySortOrder);
                         if (phaseSteps.length === 0) return null;
                         
@@ -932,6 +969,19 @@ export default function WorkflowsAdmin() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+              <Checkbox
+                id="new-step-series"
+                checked={!!newStep.is_series_level}
+                onCheckedChange={c => setNewStep({ ...newStep, is_series_level: !!c })}
+              />
+              <div>
+                <Label htmlFor="new-step-series" className="cursor-pointer">Series-level step</Label>
+                <p className="text-xs text-muted-foreground">
+                  Applies once to the whole series and is not repeated on each event in a series.
+                </p>
+              </div>
             </div>
             <div>
               <Label>Completion Type</Label>
@@ -1080,6 +1130,19 @@ export default function WorkflowsAdmin() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+                <Checkbox
+                  id="edit-step-series"
+                  checked={!!editingStep.is_series_level}
+                  onCheckedChange={c => setEditingStep({ ...editingStep, is_series_level: !!c })}
+                />
+                <div>
+                  <Label htmlFor="edit-step-series" className="cursor-pointer">Series-level step</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Applies once to the whole series and is not repeated on each event in a series.
+                  </p>
+                </div>
               </div>
               <div>
                 <Label>Completion Type</Label>

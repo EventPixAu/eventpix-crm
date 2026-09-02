@@ -6010,6 +6010,75 @@ export type Database = {
           },
         ]
       }
+      series_workflow_steps: {
+        Row: {
+          auto_trigger_event: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_type: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          is_completed: boolean
+          master_step_id: string | null
+          notes: string | null
+          phase: Database["public"]["Enums"]["workflow_phase"]
+          series_id: string
+          step_label: string
+          step_order: number
+          updated_at: string
+        }
+        Insert: {
+          auto_trigger_event?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_type?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean
+          master_step_id?: string | null
+          notes?: string | null
+          phase?: Database["public"]["Enums"]["workflow_phase"]
+          series_id: string
+          step_label: string
+          step_order?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_trigger_event?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_type?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean
+          master_step_id?: string | null
+          notes?: string | null
+          phase?: Database["public"]["Enums"]["workflow_phase"]
+          series_id?: string
+          step_label?: string
+          step_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "series_workflow_steps_master_step_id_fkey"
+            columns: ["master_step_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_master_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "series_workflow_steps_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "event_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           created_at: string
@@ -6991,6 +7060,7 @@ export type Database = {
           help_text: string | null
           id: string
           is_active: boolean
+          is_series_level: boolean
           label: string
           phase: string
           sort_order: number
@@ -7007,6 +7077,7 @@ export type Database = {
           help_text?: string | null
           id?: string
           is_active?: boolean
+          is_series_level?: boolean
           label: string
           phase: string
           sort_order?: number
@@ -7023,6 +7094,7 @@ export type Database = {
           help_text?: string | null
           id?: string
           is_active?: boolean
+          is_series_level?: boolean
           label?: string
           phase?: string
           sort_order?: number
@@ -7828,6 +7900,10 @@ export type Database = {
       sync_series_contacts_to_events: {
         Args: { _series_id: string }
         Returns: number
+      }
+      sync_series_workflow_steps: {
+        Args: { p_series_id: string }
+        Returns: Json
       }
       track_email_click: {
         Args: { p_email_log_id: string }

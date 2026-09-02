@@ -304,6 +304,7 @@ export default function EditorWorkflowsPanel() {
         date_offset_reference: null,
         help_text: stepForm.help_text.trim() || null,
         is_active: stepForm.is_active,
+        is_series_level: false,
         default_staff_role_id: defaultEditorRoleId,
         default_assignee_user_id: null,
       });
