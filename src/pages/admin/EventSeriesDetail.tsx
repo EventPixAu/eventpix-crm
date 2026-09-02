@@ -639,50 +639,38 @@ export default function EventSeriesDetail() {
                       <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                         {row.label}
                       </Label>
-                      <Select
-                        value={row.contact?.id || '__none__'}
-                        onValueChange={async (val) => {
-                          const newVal = val === '__none__' ? null : val;
-                          const { error } = await supabase
-                            .from('event_series')
-                            .update({ [row.field]: newVal } as any)
-                            .eq('id', id!);
-                          if (error) {
-                            toast.error(`Failed to update ${row.label.toLowerCase()}`);
-                            return;
-                          }
-                          queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                      <div className="max-w-sm">
+                        <ContactSelector
+                          value={row.contact?.id || null}
+                          placeholder="Search all CRM contacts (incl. agencies)..."
+                          onChange={async (newVal) => {
+                            const { error } = await supabase
+                              .from('event_series')
+                              .update({ [row.field]: newVal } as any)
+                              .eq('id', id!);
+                            if (error) {
+                              toast.error(`Failed to update ${row.label.toLowerCase()}`);
+                              return;
+                            }
+                            queryClient.invalidateQueries({ queryKey: ['event-series'] });
 
-                          // Propagate to every event in the series (server-side)
-                          const { data: syncedCount, error: syncError } = await supabase
-                            .rpc('sync_series_contacts_to_events' as any, { _series_id: id! });
+                            // Propagate to every event in the series (server-side)
+                            const { data: syncedCount, error: syncError } = await supabase
+                              .rpc('sync_series_contacts_to_events' as any, { _series_id: id! });
 
-                          if (syncError) {
-                            toast.error('Saved on series, but failed to update events: ' + syncError.message);
-                          } else {
-                            const n = Number(syncedCount ?? 0);
-                            toast.success(`${row.label} updated on ${n} event${n === 1 ? '' : 's'}`);
-                          }
+                            if (syncError) {
+                              toast.error('Saved on series, but failed to update events: ' + syncError.message);
+                            } else {
+                              const n = Number(syncedCount ?? 0);
+                              toast.success(`${row.label} updated on ${n} event${n === 1 ? '' : 's'}`);
+                            }
 
-                          queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
-                          queryClient.invalidateQueries({ queryKey: ['series-events'] });
-                          queryClient.invalidateQueries({ queryKey: ['events'] });
-
-                        }}
-                      >
-
-                        <SelectTrigger className="max-w-sm">
-                          <SelectValue placeholder="Select contact..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">Not set</SelectItem>
-                          {clientContacts.map((c: any) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {contactLabel(c)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                            queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+                            queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                            queryClient.invalidateQueries({ queryKey: ['events'] });
+                          }}
+                        />
+                      </div>
                       {row.contact ? (
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
                           <div>
