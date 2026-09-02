@@ -149,77 +149,34 @@ export default function EventSeriesDetail() {
   });
 
   const selectedContactId = (series as any)?.primary_contact_id || null;
-  const primaryContact =
-    (selectedContactId && clientContacts.find((c: any) => c.id === selectedContactId)) ||
-    clientContacts.find((c: any) => c.is_primary) ||
-    clientContacts[0] ||
+  const selectedOnsiteContactId = (series as any)?.onsite_contact_id || null;
+
+  // The selected contacts may belong to a managing agency rather than the client company,
+  // so resolve them directly by id instead of only searching the client's contact list.
+  const selectedContactIds = useMemo(
+    () => Array.from(new Set([selectedContactId, selectedOnsiteContactId].filter(Boolean))) as string[],
+    [selectedContactId, selectedOnsiteContactId]
+  );
+  const { data: selectedContactRecords = [] } = useQuery({
+    queryKey: ['series-selected-contacts', selectedContactIds],
+    enabled: selectedContactIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('client_contacts')
+        .select('id, contact_name, first_name, last_name, email, phone, phone_mobile, phone_office, role_title')
+        .in('id', selectedContactIds);
+      return (data || []) as any[];
+    },
+  });
+
+  const findContact = (contactId: string | null) =>
+    (contactId &&
+      (selectedContactRecords.find((c: any) => c.id === contactId) ||
+        clientContacts.find((c: any) => c.id === contactId))) ||
     null;
 
-  const selectedOnsiteContactId = (series as any)?.onsite_contact_id || null;
-  const onsiteContact =
-    (selectedOnsiteContactId && clientContacts.find((c: any) => c.id === selectedOnsiteContactId)) || null;
-
-  const contactLabel = (c: any) =>
-    c?.contact_name || [c?.first_name, c?.last_name].filter(Boolean).join(' ') || c?.email || 'Unnamed';
-  const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
-
-  // Client portal (all events) link for the primary contact
-  const portalLoginUrl = `${getPublicBaseUrl()}/client-login`;
-  const [sendingPortalLink, setSendingPortalLink] = useState(false);
-  const sendPortalLink = async (email: string) => {
-    setSendingPortalLink(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
-        body: { email, redirectTo: `${getPublicBaseUrl()}/portal` },
-      });
-      if (error || (data as any)?.error) {
-        toast.error('Unable to send portal link', {
-          description: error?.message || (data as any)?.error,
-        });
-      } else {
-        toast.success(`Portal login link sent to ${email}`);
-      }
-    } finally {
-      setSendingPortalLink(false);
-    }
-  };
-
-  // Change the series primary (main) client contact and propagate to all events
-  const savePrimaryContact = async (contactId: string | null) => {
-    if (!id) return;
-    const { error } = await supabase
-      .from('event_series')
-      .update({ primary_contact_id: contactId, default_contact_id: contactId } as any)
-      .eq('id', id);
-    if (error) {
-      toast.error('Failed to update main contact', { description: error.message });
-      return;
-    }
-    setEditDefaultContactId(contactId);
-    setEditAdditionalContactIds((prev) => prev.filter((c) => c && c !== contactId));
-    const { error: syncError } = await supabase
-      .rpc('sync_series_contacts_to_events' as any, { _series_id: id });
-    queryClient.invalidateQueries({ queryKey: ['event-series'] });
-    queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
-    if (syncError) toast.error('Saved, but contacts failed to sync: ' + syncError.message);
-    else toast.success('Main client contact updated');
-  };
-
-  // Persist the inferred primary contact so it propagates to every event in the series
-  useEffect(() => {
-    if (!id || !series) return;
-    if (selectedContactId || !primaryContact?.id) return;
-    (async () => {
-      const { error } = await supabase
-        .from('event_series')
-        .update({ primary_contact_id: primaryContact.id } as any)
-        .eq('id', id);
-      if (error) return;
-      await supabase.rpc('sync_series_contacts_to_events' as any, { _series_id: id });
-      queryClient.invalidateQueries({ queryKey: ['event-series'] });
-      queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
-    })();
-  }, [id, series, selectedContactId, primaryContact?.id]);
+  const primaryContact = findContact(selectedContactId);
+  const onsiteContact = findContact(selectedOnsiteContactId);
 
 
 
