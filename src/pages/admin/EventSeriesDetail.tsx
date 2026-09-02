@@ -178,7 +178,51 @@ export default function EventSeriesDetail() {
   const primaryContact = findContact(selectedContactId);
   const onsiteContact = findContact(selectedOnsiteContactId);
 
+  const contactLabel = (c: any) =>
+    c?.contact_name || [c?.first_name, c?.last_name].filter(Boolean).join(' ') || c?.email || 'Unnamed';
+  const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
 
+  // Client portal (all events) link for the primary contact
+  const portalLoginUrl = `${getPublicBaseUrl()}/client-login`;
+  const [sendingPortalLink, setSendingPortalLink] = useState(false);
+  const sendPortalLink = async (email: string) => {
+    setSendingPortalLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
+        body: { email, redirectTo: `${getPublicBaseUrl()}/portal` },
+      });
+      if (error || (data as any)?.error) {
+        toast.error('Unable to send portal link', {
+          description: error?.message || (data as any)?.error,
+        });
+      } else {
+        toast.success(`Portal login link sent to ${email}`);
+      }
+    } finally {
+      setSendingPortalLink(false);
+    }
+  };
+
+  // Change the series primary (main) client contact and propagate to all events
+  const savePrimaryContact = async (contactId: string | null) => {
+    if (!id) return;
+    const { error } = await supabase
+      .from('event_series')
+      .update({ primary_contact_id: contactId, default_contact_id: contactId } as any)
+      .eq('id', id);
+    if (error) {
+      toast.error('Failed to update main contact', { description: error.message });
+      return;
+    }
+    setEditDefaultContactId(contactId);
+    setEditAdditionalContactIds((prev) => prev.filter((c) => c && c !== contactId));
+    const { error: syncError } = await supabase
+      .rpc('sync_series_contacts_to_events' as any, { _series_id: id });
+    queryClient.invalidateQueries({ queryKey: ['event-series'] });
+    queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+    if (syncError) toast.error('Saved, but contacts failed to sync: ' + syncError.message);
+    else toast.success('Main client contact updated');
+  };
 
 
   const { data: seriesClient } = useQuery({
