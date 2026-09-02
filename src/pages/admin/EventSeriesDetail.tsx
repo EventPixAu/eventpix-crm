@@ -752,8 +752,56 @@ export default function EventSeriesDetail() {
                   Program Status
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <Select
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Operations Status (applies to all events)</Label>
+                  <Select
+                    value={(series as any).default_ops_status || 'confirmed'}
+                    onValueChange={async (val) => {
+                      try {
+                        const { error: sErr } = await supabase
+                          .from('event_series')
+                          .update({ default_ops_status: val } as any)
+                          .eq('id', id!);
+                        if (sErr) throw sErr;
+
+                        const { error: eErr } = await supabase
+                          .from('events')
+                          .update({ ops_status: val } as any)
+                          .eq('event_series_id', id!)
+                          .not('ops_status', 'in', '("cancelled","completed")');
+                        if (eErr) throw eErr;
+
+                        setEditDefaultOpsStatus(val);
+                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                        queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                        queryClient.invalidateQueries({ queryKey: ['events'] });
+                        toast.success('Operations status applied to all events in the series');
+                      } catch (e: any) {
+                        toast.error(e.message || 'Failed to update operations status');
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {opsStatuses.map(status => (
+                        <SelectItem key={status.id} value={status.name}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Cascades to every event in the series. Cancelled and completed events are left unchanged.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Program Status</Label>
+                  <Select
+
                   value={(series as any).program_status || '__none__'}
                   onValueChange={async (val) => {
                     const newVal = val === '__none__' ? null : val;
