@@ -822,9 +822,35 @@ export default function WorkflowsAdmin() {
                     </div>
 
                     <div className="p-4 space-y-6 max-h-[600px] overflow-y-auto">
+                      {(() => {
+                        const seriesSteps = adminActiveSteps
+                          .filter(s => s.is_series_level)
+                          .sort(compareStepsBySortOrder);
+                        if (seriesSteps.length === 0) return null;
+                        return (
+                          <div>
+                            <h3 className="text-sm font-medium mb-1 text-primary">Series</h3>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Applied once per event series — these steps are not added to the individual events.
+                            </p>
+                            <div className="space-y-2">
+                              {seriesSteps.map(step => (
+                                <SortableEventTypeStep
+                                  key={step.id}
+                                  step={step}
+                                  isChecked={selectedSteps.includes(step.id)}
+                                  onToggle={() => handleStepToggle(step.id)}
+                                  onEdit={setEditingStep}
+                                  roleName={staffRoles.find(r => r.id === step.default_staff_role_id)?.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       {phases.map(phase => {
                         const phaseSteps = adminActiveSteps
-                          .filter(s => s.phase === phase.key)
+                          .filter(s => s.phase === phase.key && !s.is_series_level)
                           .sort(compareStepsBySortOrder);
                         if (phaseSteps.length === 0) return null;
                         

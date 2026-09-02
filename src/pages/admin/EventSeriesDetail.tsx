@@ -90,6 +90,7 @@ import { cn, getPublicBaseUrl } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
  import { SeriesDefaultAssignmentsPanel } from '@/components/SeriesDefaultAssignmentsPanel';
  import { SeriesWorkflowPanel } from '@/components/SeriesWorkflowPanel';
+import { SeriesLevelStepsPanel } from '@/components/series/SeriesLevelStepsPanel';
  import { SeriesDefaultEquipmentPanel } from '@/components/SeriesDefaultEquipmentPanel';
  import { ListChecks, DollarSign } from 'lucide-react';
  import { SeriesBudgetAgreementPanel } from '@/components/series/SeriesBudgetAgreementPanel';
