@@ -196,7 +196,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
   }, [events]);
 
   const handleSyncToEvents = async () => {
-    if (resolvedStepIds.length === 0) {
+    if (eventSteps.length === 0) {
       toast.error('Please select a workflow first');
       return;
     }
@@ -228,7 +228,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
         const eventDate = new Date(event.event_date);
         const bookingDate = new Date(event.created_at || new Date());
 
-        const steps = selectedSteps.map((step, index) => {
+        const steps = eventSteps.map((step, index) => {
           let dueDate: string | null = null;
           if (step.date_offset_days !== null && step.date_offset_reference) {
             const ref =
@@ -366,7 +366,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
           {resolvedStepIds.length > 0 && (
             <div className="pt-2">
               <div className="text-sm font-medium mb-2">
-                Preview — {resolvedStepIds.length} step{resolvedStepIds.length !== 1 ? 's' : ''} will be applied
+                Preview — {eventSteps.length} step{eventSteps.length !== 1 ? 's' : ''} will be applied to each event
               </div>
               <div className="grid gap-3 md:grid-cols-3">
                 {(Object.keys(PHASE_CONFIG) as WorkflowPhase[]).map(phase => {
@@ -420,7 +420,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
             </div>
             <Button
               onClick={handleSyncToEvents}
-              disabled={isSyncing || resolvedStepIds.length === 0 || upcomingEvents.length === 0}
+              disabled={isSyncing || eventSteps.length === 0 || upcomingEvents.length === 0}
             >
               <RefreshCw className={cn('h-4 w-4 mr-2', isSyncing && 'animate-spin')} />
               {isSyncing ? 'Syncing...' : 'Sync Workflow to Events'}
