@@ -855,8 +855,8 @@ export default function WorkflowsAdmin() {
 
                       {adminActiveSteps.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
-                          No Admin steps found in the Master Workflow. Assign a
-                          Staff Admin role to steps in the Operations Steps tab.
+                          No workflow steps found. Add steps in the Operations
+                          Steps tab or via the Add Step button above.
                         </div>
                       )}
                     </div>
