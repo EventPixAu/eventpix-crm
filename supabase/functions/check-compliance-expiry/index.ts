@@ -307,7 +307,7 @@ async function sendStaffNotification(
       <h1>${expiredCount > 0 ? '⚠️ Compliance Documents Expired' : '⏰ Documents Expiring Soon'}</h1>
     </div>
     <div class="content">
-      <p>Hi ${name},</p>
+      <p>Hi ${(name || 'there').trim().split(/\s+/)[0] || 'there'},</p>
       <p>${expiredCount > 0 
         ? 'Some of your compliance documents have expired. Please upload renewals as soon as possible to maintain your assignment eligibility.'
         : 'This is a reminder that some of your compliance documents are expiring soon. Please upload renewals before they expire.'
@@ -430,7 +430,7 @@ async function sendAdminSummary(
       <h1>📋 Daily Compliance Report</h1>
     </div>
     <div class="content">
-      <p>Hi ${name},</p>
+      <p>Hi ${(name || 'there').trim().split(/\s+/)[0] || 'there'},</p>
       <p>Here's your daily compliance document summary:</p>
       
       <div class="stats">

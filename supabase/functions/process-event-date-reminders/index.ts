@@ -119,9 +119,10 @@ const handler = async (req: Request): Promise<Response> => {
           if (!recipientEmail) continue;
 
           const roleLine = assignment.role_name ? ` (${assignment.role_name})` : "";
+          const recipientFirstName = (recipientName || "there").trim().split(/\s+/)[0] || "there";
           const emailHtml = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
             <h2 style="color:#1a1a1a;margin-bottom:20px;">📸 Event Reminder</h2>
-            <p style="color:#333;font-size:16px;line-height:1.6;">Hi ${recipientName}${roleLine},</p>
+            <p style="color:#333;font-size:16px;line-height:1.6;">Hi ${recipientFirstName}${roleLine},</p>
             <p style="color:#333;font-size:16px;line-height:1.6;">This is a friendly reminder that you have an upcoming event:</p>
             <div style="background:#f8f9fa;border-radius:8px;padding:20px;margin:20px 0;">
               <h3 style="color:#1a1a1a;margin:0 0 12px 0;">${eventDetails.event_name}</h3>

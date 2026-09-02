@@ -406,7 +406,7 @@ export default function EmailTemplates() {
               onChange={(value) => setFormData({ ...formData, body_text: value })}
               format="text"
               label="Email Body *"
-              placeholder={`Hi {{client.primary_contact_name}},
+               placeholder={`Hi {{client.first_name}},
 
 Thank you for your enquiry about photography services for {{lead_or_job_name}}.
 

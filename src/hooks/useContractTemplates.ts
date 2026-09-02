@@ -180,7 +180,7 @@ export function renderMergeFields(html: string, context: MergeFieldContext): str
   rendered = rendered.replace(/\{\{client\.business_name\}\}/g, context.client?.business_name || '');
   rendered = rendered.replace(/\{\{client\.first_name\}\}/g, clientFirstName);
   rendered = rendered.replace(/\{\{client_name\}\}/g, clientFirstName);
-  rendered = rendered.replace(/\{\{client\.primary_contact_name\}\}/g, context.client?.primary_contact_name || '');
+  rendered = rendered.replace(/\{\{client\.primary_contact_name\}\}/g, clientFirstName);
   rendered = rendered.replace(/\{\{client\.primary_contact_email\}\}/g, context.client?.primary_contact_email || '');
   rendered = rendered.replace(/\{\{client\.primary_contact_phone\}\}/g, context.client?.primary_contact_phone || '');
   rendered = rendered.replace(/\{\{client\.billing_address\}\}/g, context.client?.billing_address || '');
