@@ -836,7 +836,99 @@ export default function EventSeriesDetail() {
 
             </Card>
           </div>
-          
+
+          {/* Series Defaults (inline, cascade to events) */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Series Defaults</CardTitle>
+              <CardDescription>
+                Saved instantly and applied to every event in this series. Cancelled and completed events are left unchanged.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {([
+                  {
+                    key: 'event_type_id',
+                    label: 'Event Type',
+                    value: (series as any).event_type_id || '__none__',
+                    options: eventTypes.map(t => ({ value: t.id, label: t.name })),
+                    eventColumn: 'event_type_id',
+                  },
+                  {
+                    key: 'default_delivery_method_id',
+                    label: 'Delivery Method',
+                    value: (series as any).default_delivery_method_id || '__none__',
+                    options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
+                    eventColumn: 'delivery_method_id',
+                  },
+                  {
+                    key: 'default_delivery_method_guests_id',
+                    label: 'Delivery Method - Guests',
+                    value: (series as any).default_delivery_method_guests_id || '__none__',
+                    options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
+                    eventColumn: 'delivery_method_guests_id',
+                  },
+                  {
+                    key: 'dress_code',
+                    label: 'Dress Code',
+                    value: (series as any).dress_code || '__none__',
+                    options: dressCodes.map(c => ({ value: c.name, label: c.name })),
+                    eventColumn: 'dress_code',
+                  },
+                ] as const).map((field) => (
+                  <div key={field.key} className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                    <Select
+                      value={field.value}
+                      onValueChange={async (val) => {
+                        const newVal = val === '__none__' ? null : val;
+                        try {
+                          const { error: sErr } = await supabase
+                            .from('event_series')
+                            .update({ [field.key]: newVal } as any)
+                            .eq('id', id!);
+                          if (sErr) throw sErr;
+
+                          const { error: eErr } = await supabase
+                            .from('events')
+                            .update({ [field.eventColumn]: newVal } as any)
+                            .eq('event_series_id', id!)
+                            .not('ops_status', 'in', '("cancelled","completed")');
+                          if (eErr) throw eErr;
+
+                          if (field.key === 'event_type_id') setEditEventTypeId(newVal || '');
+                          if (field.key === 'default_delivery_method_id') setEditDeliveryMethodId(newVal || '');
+                          if (field.key === 'default_delivery_method_guests_id') setEditDefaultGuestDeliveryId(newVal || '__none__');
+                          if (field.key === 'dress_code') setEditDressCode(newVal || '__none__');
+
+                          queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                          queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                          queryClient.invalidateQueries({ queryKey: ['events'] });
+                          toast.success(`${field.label} applied to all events in the series`);
+                        } catch (e: any) {
+                          toast.error(e.message || `Failed to update ${field.label.toLowerCase()}`);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {field.options.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatCard
               title="Total Events"
