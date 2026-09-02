@@ -382,11 +382,10 @@ export function SendEmailDialog({
   // Process merge fields in text
   const processMergeFields = (text: string, recipient?: Recipient): string => {
     const r = recipient || primaryRecipient;
-    const contactFirstName = r?.contact?.first_name 
-      || r?.name?.split(' ')[0] 
-      || clientName?.split(' ')[0] 
-      || '';
-    const recipientName = r?.name || clientName || '';
+    const contactFirstName = r?.contact?.first_name?.trim()
+      || r?.name?.trim().split(/\s+/)[0]
+      || clientName?.trim().split(/\s+/)[0]
+      || 'there';
     const recipientEmail = r?.email || clientEmail || '';
     const eventDate = mergeContext?.eventDate 
       ? new Date(mergeContext.eventDate).toLocaleDateString('en-AU', { 
