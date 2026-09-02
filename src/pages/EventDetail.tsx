@@ -1242,6 +1242,12 @@ export default function EventDetail() {
                                </Badge>
                              </div>
                              <p className="text-xs text-muted-foreground capitalize truncate">{role}</p>
+                             {phone && (
+                               <a href={`tel:${phone}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
+                                 <Phone className="h-3 w-3" />
+                                 {phone}
+                               </a>
+                             )}
                            </div>
                          </div>
                        );
