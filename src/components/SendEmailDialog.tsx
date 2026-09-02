@@ -406,7 +406,7 @@ export function SendEmailDialog({
     return processed
       .replace(/\{\{client_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
-      .replace(/\{\{client\.primary_contact_name\}\}/gi, recipientName)
+      .replace(/\{\{client\.primary_contact_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.business_name\}\}/gi, clientName || '')
       .replace(/\{\{contact\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{contact\.name\}\}/gi, contactFirstName)

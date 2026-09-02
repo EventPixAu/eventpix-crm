@@ -2163,7 +2163,7 @@ export default function EventDetail() {
           initialSubject={`Request to upload files – ${event.event_name}`}
           initialBody={(() => {
             const eventDate = event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : '';
-            return `Hi,\n` +
+            return `Hi {{recipient_name}},\n` +
               `Thank you for shooting ${event.event_name}${eventDate ? ` on ${eventDate}` : ''}.\n` +
               `Please upload the event files to our portal at your earliest convenience:\n` +
               `[Upload Files Here](https://trevorsteam-portal-6373224367.portal.massive.io/)\n` +

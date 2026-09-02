@@ -12,7 +12,7 @@ function renderMergeFields(html: string, ctx: Record<string, any>): string {
   const c = ctx.contract || {};
   const map: Record<string, string> = {
     "photographer.name": p.name || "",
-    "photographer.first_name": (p.name || "").split(" ")[0] || "",
+    "photographer.first_name": (p.name || "there").trim().split(/\s+/)[0] || "there",
     "photographer.business_name": p.business_name || "",
     "photographer.abn": p.abn || "",
     "photographer.email": p.email || "",
@@ -221,7 +221,7 @@ serve(async (req) => {
     } else {
       emailBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
-          <p>Hi ${ctx.photographer.name.split(" ")[0] || ctx.photographer.name},</p>
+          <p>Hi ${(ctx.photographer.name || "there").trim().split(/\s+/)[0] || "there"},</p>
           <p>Please review and sign the EventPix Photographer Services Agreement.</p>
           <p>You can view and sign the agreement here:</p>
           <p style="text-align:center; margin: 24px 0;">

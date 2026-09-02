@@ -111,6 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
     const leadName = leadData?.lead_name || clientName;
     const quoteNumber = quote.quote_number || `#${quote.id.slice(0, 8)}`;
     const totalFormatted = new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(quote.total_estimate || 0);
+    const acceptedByFirstName = acceptedByName.trim().split(/\s+/)[0] || "there";
 
     const emailFooter = `<div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb;font-family:Arial,sans-serif;font-size:14px;color:#374151;">
       <p style="margin:0 0 4px 0;font-weight:600;">Trevor Connell</p><p style="margin:0 0 8px 0;color:#6b7280;">Operations Manager</p>
@@ -122,7 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
       <div style="background-color:#111827;padding:20px;text-align:center;border-radius:8px 8px 0 0;"><h1 style="color:white;margin:0;font-size:24px;">EventPix</h1></div>
       <div style="padding:32px;background-color:#ffffff;">
         <h2 style="color:#111827;margin-top:0;">Thank you for accepting our proposal!</h2>
-        <p style="color:#374151;font-size:16px;">Hi ${acceptedByName},</p>
+        <p style="color:#374151;font-size:16px;">Hi ${acceptedByFirstName},</p>
         <p style="color:#374151;font-size:16px;">Thank you for accepting our proposal for <strong>${leadName}</strong>. We're excited to work with you!</p>
         <div style="background-color:#f3f4f6;padding:20px;border-radius:8px;margin:24px 0;">
           <p style="margin:0 0 8px 0;color:#6b7280;">Quote Reference</p><p style="margin:0;font-weight:bold;color:#111827;font-size:18px;">${quoteNumber}</p>

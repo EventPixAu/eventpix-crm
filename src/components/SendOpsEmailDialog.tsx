@@ -154,6 +154,8 @@ export function SendOpsEmailDialog({
     const primaryContactName = eventData.primary_contact_name || 
       recipients.find(r => r.type === 'client')?.name || 
       eventData.client_name;
+    const primaryContactFirstName = (primaryContactName || '').trim().split(/\s+/)[0] || 'there';
+    const recipientFirstName = (recipientName || '').trim().split(/\s+/)[0] || 'Team Member';
     
     const portalUrl = eventData.client_portal_token
       ? `${getPublicBaseUrl()}/event/${eventData.client_portal_token}`
@@ -175,17 +177,17 @@ export function SendOpsEmailDialog({
       .replace(/\{\{venue_address\}\}/gi, eventData.venue_address || '')
       .replace(/\{\{event\.venue_address\}\}/gi, eventData.venue_address || '')
       // Client fields - both formats
-      .replace(/\{\{client_name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
-      .replace(/\{\{client\.first_name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
-      .replace(/\{\{client\.name\}\}/gi, (primaryContactName || eventData.client_name || '').split(' ')[0])
+      .replace(/\{\{client_name\}\}/gi, primaryContactFirstName)
+      .replace(/\{\{client\.first_name\}\}/gi, primaryContactFirstName)
+      .replace(/\{\{client\.name\}\}/gi, primaryContactFirstName)
       .replace(/\{\{client\.business_name\}\}/gi, eventData.client_name)
-      .replace(/\{\{client\.primary_contact_name\}\}/gi, primaryContactName)
+      .replace(/\{\{client\.primary_contact_name\}\}/gi, primaryContactFirstName)
       // Portal URL
       .replace(/\{\{event\.portal_url\}\}/gi, portalUrl)
       .replace(/\{\{portal_url\}\}/gi, portalUrl)
       // Photographer/recipient
-      .replace(/\{\{photographer_name\}\}/gi, recipientName || 'Team Member')
-      .replace(/\{\{recipient_name\}\}/gi, recipientName || 'Team Member');
+      .replace(/\{\{photographer_name\}\}/gi, recipientFirstName)
+      .replace(/\{\{recipient_name\}\}/gi, recipientFirstName);
   };
 
   // Apply template when selected

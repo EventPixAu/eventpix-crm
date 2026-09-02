@@ -219,6 +219,7 @@ function formatTime(timeStr: string | null): string {
 }
 
 function buildEmailHtml(recipientName: string, subject: string, event: any, appUrl: string): string {
+  const recipientFirstName = recipientName.trim().split(/\s+/)[0] || 'there';
   return `<!DOCTYPE html><html><head><style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333}
 .container{max-width:600px;margin:0 auto;padding:20px}.header{background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:24px;border-radius:12px 12px 0 0}
@@ -227,7 +228,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;l
 .detail-value{font-weight:500}.button{display:inline-block;background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:16px}
 .footer{text-align:center;margin-top:24px;font-size:12px;color:#9ca3af}
 </style></head><body><div class="container"><div class="header"><h1>📸 ${subject.includes('New assignment') ? 'New Assignment' : 'Event Updated'}</h1></div>
-<div class="content"><p>Hi ${recipientName},</p>
+<div class="content"><p>Hi ${recipientFirstName},</p>
 <p>${subject.includes('New assignment') ? 'You have been assigned to the following event.' : 'The following event details have been updated:'}</p>
 <div class="detail"><div class="detail-label">Event</div><div class="detail-value">${event.event_name}</div></div>
 <div class="detail"><div class="detail-label">Date & Time</div><div class="detail-value">${formatDate(event.event_date)}${event.start_time ? ` at ${formatTime(event.start_time)}` : ''}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}</div></div>
