@@ -1220,8 +1220,9 @@ export default function EventDetail() {
                    <div className="space-y-2">
                      {assignments.map((a: any) => {
                        const name = a.profile?.full_name || a.staff?.name || 'Unknown';
-                       const role = a.staff_role?.name || a.role_on_event || a.staff?.role || 'Staff';
-                       const status = a.confirmation_status || 'pending';
+                      const role = a.staff_role?.name || a.role_on_event || a.staff?.role || 'Staff';
+                      const phone = a.profile?.phone || a.staff?.phone || null;
+                      const status = a.confirmation_status || 'pending';
                        const initials = name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
                        return (
                          <div key={a.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
@@ -1241,6 +1242,12 @@ export default function EventDetail() {
                                </Badge>
                              </div>
                              <p className="text-xs text-muted-foreground capitalize truncate">{role}</p>
+                             {phone && (
+                               <a href={`tel:${phone}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5">
+                                 <Phone className="h-3 w-3" />
+                                 {phone}
+                               </a>
+                             )}
                            </div>
                          </div>
                        );
