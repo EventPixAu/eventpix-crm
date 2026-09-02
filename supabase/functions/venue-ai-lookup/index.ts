@@ -81,6 +81,8 @@ serve(async (req) => {
     if (lovableApiKey) {
       const prompt = [
         `Provide publicly available operational details for this Australian event venue.`,
+        `Context: we are an event photography crew. "access_notes" means CREW/EQUIPMENT access for production gear (lighting, backdrops, printers, road cases): loading dock or service entry, bump-in procedure, lifts/trolleys, security sign-in, storage. It is NOT about disability/wheelchair accessibility — do not mention accessible rooms or wheelchair facilities.`,
+        `"parking_access" means where crew vehicles can park/unload, height limits, entry points.`,
         `Venue name: ${venueName}`,
         address ? `Known address hint: ${address}` : '',
         priorEvents?.length ? `We have previously worked at this venue; recorded address: ${fromEvents.full_address ?? 'unknown'}.` : '',
