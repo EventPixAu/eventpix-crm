@@ -401,20 +401,9 @@ export default function WorkflowsAdmin() {
   // Active steps only
   const activeSteps = useMemo(() => masterSteps.filter(s => s.is_active), [masterSteps]);
 
-  // Admin-role steps only (for Admin Workflows tab) — excludes Editor/Video roles
-  const adminRoleIds = useMemo(() => {
-    const isAdminRoleName = (name?: string | null) => {
-      if (!name) return false;
-      const n = name.toLowerCase();
-      // Admin roles include "Staff Admin"; exclude editor/video roles
-      return !n.includes('editor') && !n.includes('video');
-    };
-    return new Set(staffRoles.filter(r => isAdminRoleName(r.name)).map(r => r.id));
-  }, [staffRoles]);
-  const adminActiveSteps = useMemo(
-    () => activeSteps.filter(s => s.default_staff_role_id && adminRoleIds.has(s.default_staff_role_id)),
-    [activeSteps, adminRoleIds]
-  );
+  // Admin Workflows tab shows ALL active master steps — workflows for every
+  // role are configured from this single view.
+  const adminActiveSteps = activeSteps;
 
   // Load defaults when event type is selected
   useEffect(() => {
@@ -866,8 +855,8 @@ export default function WorkflowsAdmin() {
 
                       {adminActiveSteps.length === 0 && (
                         <div className="text-center py-8 text-muted-foreground">
-                          No Admin steps found in the Master Workflow. Assign a
-                          Staff Admin role to steps in the Operations Steps tab.
+                          No workflow steps found. Add steps in the Operations
+                          Steps tab or via the Add Step button above.
                         </div>
                       )}
                     </div>
