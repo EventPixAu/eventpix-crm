@@ -917,7 +917,8 @@ export default function EventSeriesDetail() {
          </TabsContent>
   
          {/* Workflow Tab */}
-         <TabsContent value="workflow">
+         <TabsContent value="workflow" className="space-y-6">
+           <SeriesLevelStepsPanel seriesId={id!} />
            <SeriesWorkflowPanel seriesId={id!} />
          </TabsContent>
 
