@@ -160,15 +160,21 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
 
   const hasChanges = adminEventTypeId !== initialAdmin || editorEventTypeId !== initialEditor;
 
+  // Series-level steps live on the series checklist only — never on individual events.
+  const eventSteps = useMemo(
+    () => selectedSteps.filter(s => !(s as any).is_series_level),
+    [selectedSteps]
+  );
+
   const stepsByPhase = useMemo(() => {
     const grouped: Record<WorkflowPhase, typeof masterSteps> = {
       pre_event: [], day_of: [], post_event: [],
     };
-    selectedSteps.forEach(s => {
+    eventSteps.forEach(s => {
       if (grouped[s.phase]) grouped[s.phase].push(s);
     });
     return grouped;
-  }, [selectedSteps]);
+  }, [eventSteps]);
 
   const handleSave = async () => {
     try {
