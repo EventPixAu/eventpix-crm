@@ -831,7 +831,9 @@ export default function EventSeriesDetail() {
                     <SelectItem value="event_completed">Event Completed</SelectItem>
                   </SelectContent>
                 </Select>
+                </div>
               </CardContent>
+
             </Card>
           </div>
           
