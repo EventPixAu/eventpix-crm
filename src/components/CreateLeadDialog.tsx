@@ -106,7 +106,9 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   
   // Form state - Lead Details
   const [eventName, setEventName] = useState('');
+  const [isSeries, setIsSeries] = useState(false);
   const [eventTypeId, setEventTypeId] = useState('');
+
   const [leadSourceId, setLeadSourceId] = useState('');
   const [salesWorkflowId, setSalesWorkflowId] = useState('');
   const [venueText, setVenueText] = useState('');
@@ -124,6 +126,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       setPrimaryContactId(null);
       setPrimaryContact(null);
       setEventName('');
+      setIsSeries(false);
       setEventTypeId('');
       setLeadSourceId('');
       setSalesWorkflowId('');
@@ -230,6 +233,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         venue_text: venueText.trim() || null,
         notes: notes.trim() || null,
         status: 'new',
+        is_series: isSeries,
       };
       
       // Add sales workflow if selected
@@ -431,11 +435,29 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
               <Target className="h-4 w-4 text-muted-foreground" />
               <Label className="text-sm font-medium">Event Details</Label>
             </div>
+
+            {/* Single Event vs Series */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Booking Type *</Label>
+              <Tabs value={isSeries ? 'series' : 'single'} onValueChange={(v) => setIsSeries(v === 'series')}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="single" className="flex-1">Single Event</TabsTrigger>
+                  <TabsTrigger value="series" className="flex-1">Event Series</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <p className="text-xs text-muted-foreground">
+                {isSeries
+                  ? 'A series covers multiple events under one booking. Add each event date below.'
+                  : 'A single event, optionally with multiple sessions on the same booking.'}
+              </p>
+            </div>
+
             <Input
-              placeholder="Event name *"
+              placeholder={isSeries ? 'Series name *' : 'Event name *'}
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
             />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Select value={eventTypeId} onValueChange={setEventTypeId}>
                 <SelectTrigger>
