@@ -126,6 +126,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
       setPrimaryContactId(null);
       setPrimaryContact(null);
       setEventName('');
+      setIsSeries(false);
       setEventTypeId('');
       setLeadSourceId('');
       setSalesWorkflowId('');
@@ -232,6 +233,7 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
         venue_text: venueText.trim() || null,
         notes: notes.trim() || null,
         status: 'new',
+        is_series: isSeries,
       };
       
       // Add sales workflow if selected
