@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plus, Search, Package, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Package, Pencil, Trash2, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -102,6 +102,19 @@ export default function ProductList() {
     setEditingProduct(product);
     setFormData({
       name: product.name,
+      description: product.description,
+      category_id: product.category_id,
+      unit_price: product.unit_price,
+      tax_rate: product.tax_rate,
+      is_active: product.is_active,
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleDuplicate = (product: Product) => {
+    setEditingProduct(null); // ensures submit creates a NEW product
+    setFormData({
+      name: `${product.name} (Copy)`,
       description: product.description,
       category_id: product.category_id,
       unit_price: product.unit_price,
@@ -238,6 +251,14 @@ export default function ProductList() {
                             title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDuplicate(product)}
+                            title="Duplicate as new product"
+                          >
+                            <Copy className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
