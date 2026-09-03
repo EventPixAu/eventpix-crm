@@ -106,7 +106,9 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
   
   // Form state - Lead Details
   const [eventName, setEventName] = useState('');
+  const [isSeries, setIsSeries] = useState(false);
   const [eventTypeId, setEventTypeId] = useState('');
+
   const [leadSourceId, setLeadSourceId] = useState('');
   const [salesWorkflowId, setSalesWorkflowId] = useState('');
   const [venueText, setVenueText] = useState('');
