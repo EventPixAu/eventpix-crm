@@ -4333,6 +4333,7 @@ export type Database = {
           event_type_id: string | null
           event_website: string | null
           id: string
+          is_series: boolean
           is_training: boolean | null
           lead_name: string
           lead_source_id: string | null
@@ -4367,6 +4368,7 @@ export type Database = {
           event_type_id?: string | null
           event_website?: string | null
           id?: string
+          is_series?: boolean
           is_training?: boolean | null
           lead_name: string
           lead_source_id?: string | null
@@ -4401,6 +4403,7 @@ export type Database = {
           event_type_id?: string | null
           event_website?: string | null
           id?: string
+          is_series?: boolean
           is_training?: boolean | null
           lead_name?: string
           lead_source_id?: string | null

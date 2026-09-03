@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS is_series boolean NOT NULL DEFAULT false;
