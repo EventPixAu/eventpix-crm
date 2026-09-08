@@ -671,6 +671,16 @@ export function CreateLeadDialog({ trigger, defaultClientId }: CreateLeadDialogP
           )}
         </div>
         
+        {!isFormValid && (
+          <p className="text-xs text-destructive text-right">
+            Still needed: {[
+              !isCompanyValid && 'Company',
+              !isContactValid && 'Primary Contact',
+              eventName.trim().length === 0 && (isSeries ? 'Series name' : 'Event name'),
+            ].filter(Boolean).join(', ')}
+          </p>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
             Cancel
