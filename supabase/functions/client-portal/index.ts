@@ -40,7 +40,8 @@ serve(async (req) => {
         brief_content, client_brief_content, main_shoot_date,
         lead_id, quote_id,
         client_brief_template_id, client_brief_file_name, client_brief_file_path,
-        share_team_vehicle_info, share_team_dietary
+        share_team_vehicle_info, share_team_dietary,
+        meal_provided, parking_provided, share_meal_info, share_parking_info
       `)
       .eq("client_portal_token", token)
       .maybeSingle();
@@ -255,6 +256,8 @@ serve(async (req) => {
       venue,
       event_type: eventTypeName,
       special_instructions: event.special_instructions,
+      meal_provided: event.share_meal_info ? event.meal_provided : null,
+      parking_provided: event.share_parking_info ? event.parking_provided : null,
       photography_brief: event.photography_brief,
       brief_content: event.client_brief_content,
       brief_attachment_name: briefAttachmentName,

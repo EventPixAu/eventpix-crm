@@ -1799,6 +1799,28 @@ export default function EventDetail() {
                         />
                         <span>Share team dietary requirements</span>
                       </label>
+                      <label className="flex items-start gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={!!(event as any).share_meal_info}
+                          onCheckedChange={async (checked) => {
+                            await supabase.from('events').update({ share_meal_info: !!checked }).eq('id', id!);
+                            queryClient.invalidateQueries({ queryKey: ['events', id] });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>Share meal provided (Y/N)</span>
+                      </label>
+                      <label className="flex items-start gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={!!(event as any).share_parking_info}
+                          onCheckedChange={async (checked) => {
+                            await supabase.from('events').update({ share_parking_info: !!checked }).eq('id', id!);
+                            queryClient.invalidateQueries({ queryKey: ['events', id] });
+                          }}
+                          className="mt-0.5"
+                        />
+                        <span>Share parking provided (Y/N)</span>
+                      </label>
                     </div>
                   )}
                 </div>
