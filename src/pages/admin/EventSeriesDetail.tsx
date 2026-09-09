@@ -857,7 +857,7 @@ export default function EventSeriesDetail() {
                   },
                   {
                     key: 'default_delivery_method_id',
-                    label: 'Delivery Method',
+                    label: 'Delivery Method - Client',
                     value: (series as any).default_delivery_method_id || '__none__',
                     options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
                     eventColumn: 'delivery_method_id',
@@ -868,6 +868,13 @@ export default function EventSeriesDetail() {
                     value: (series as any).default_delivery_method_guests_id || '__none__',
                     options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
                     eventColumn: 'delivery_method_guests_id',
+                  },
+                  {
+                    key: 'default_delivery_method_photographer_id',
+                    label: 'Delivery - Photographer',
+                    value: (series as any).default_delivery_method_photographer_id || '__none__',
+                    options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
+                    eventColumn: 'delivery_method_photographer_id',
                   },
                   {
                     key: 'dress_code',

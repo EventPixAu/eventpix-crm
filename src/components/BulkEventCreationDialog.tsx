@@ -255,6 +255,7 @@ export function BulkEventCreationDialog({
         coverage_details: series.default_coverage_details || undefined,
         delivery_method_id: series.default_delivery_method_id || undefined,
         delivery_method_guests_id: (series as any).default_delivery_method_guests_id || undefined,
+        delivery_method_photographer_id: (series as any).default_delivery_method_photographer_id || undefined,
         ops_status: (series as any).default_ops_status || 'confirmed',
         dress_code: series.dress_code || undefined,
         delivery_deadline: row.event_date 
