@@ -8,6 +8,7 @@ import { format, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   Calendar,
+  Car,
   Clock,
   Download,
   FileCheck2,
@@ -21,6 +22,7 @@ import {
   ShieldCheck,
   User,
   Users,
+  UtensilsCrossed,
   ExternalLink,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
