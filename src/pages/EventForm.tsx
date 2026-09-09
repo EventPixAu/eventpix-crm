@@ -713,6 +713,40 @@ export default function EventForm() {
                 )}
               />
 
+              {isEditing && id && (
+                <div className="space-y-2">
+                  <FormLabel>Primary Contact</FormLabel>
+                  {clientContacts.length > 0 ? (
+                    <Select
+                      value={primaryEventContact?.client_contact_id || ''}
+                      onValueChange={handlePrimaryContactSelect}
+                      disabled={isFormLocked || createEventContact.isPending || updateEventContact.isPending}
+                    >
+                      <SelectTrigger className="bg-secondary">
+                        <SelectValue placeholder="Select primary contact" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientContacts.map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id}>
+                            {contact.contact_name}
+                            {contact.email && (
+                              <span className="text-muted-foreground ml-2">({contact.email})</span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      No CRM contacts for this client yet — add one in the Event Contacts section below.
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Used for contracts, agreements and client emails for this event.
+                  </p>
+                </div>
+              )}
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
