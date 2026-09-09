@@ -1413,7 +1413,7 @@ export default function EventDetail() {
                                       <p>Hi ${(r.name || '').split(' ')[0] || 'there'},</p>
                                       <p>Please note that <strong>${event.event_name}</strong> scheduled for <strong>${eventDateLabel}</strong>${event.venue_name ? ` at ${event.venue_name}` : ''} has been <strong>cancelled</strong>.</p>
                                       ${isCrew
-                                        ? '<p>You are no longer required for this booking. Please remove it from your calendar — we will be in touch regarding any future work.</p>'
+                                        ? '<p>You are no longer required for this booking. Please update your calendar.</p>'
                                         : '<p>No coverage will be provided for this event. Please contact us if you would like to reschedule or discuss alternative arrangements.</p>'}
                                       <p>Apologies for any inconvenience.</p>
                                       <p>Kind regards,<br/>EventPix</p>
