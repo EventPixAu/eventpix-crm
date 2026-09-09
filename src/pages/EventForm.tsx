@@ -62,6 +62,8 @@ const eventSchema = z.object({
   delivery_method_guests_id: z.string().optional().nullable(),
   delivery_method_photographer_id: z.string().optional().nullable(),
   delivery_deadline: z.string().optional(),
+  meal_provided: z.string().optional(),
+  parking_provided: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -137,6 +139,8 @@ export default function EventForm() {
       delivery_method_guests_id: null,
       delivery_method_photographer_id: null,
       delivery_deadline: '',
+      meal_provided: '',
+      parking_provided: '',
       notes: '',
     },
   });
@@ -233,6 +237,8 @@ export default function EventForm() {
         delivery_method_guests_id: (event as any).delivery_method_guests_id || null,
         delivery_method_photographer_id: (event as any).delivery_method_photographer_id || null,
         delivery_deadline: event.delivery_deadline || '',
+        meal_provided: (event as any).meal_provided === true ? 'yes' : (event as any).meal_provided === false ? 'no' : '',
+        parking_provided: (event as any).parking_provided === true ? 'yes' : (event as any).parking_provided === false ? 'no' : '',
         notes: event.notes || '',
       });
       setSelectedClientId(event.client_id || null);
@@ -326,6 +332,8 @@ export default function EventForm() {
       delivery_method_guests_id: values.delivery_method_guests_id || null,
       delivery_method_photographer_id: values.delivery_method_photographer_id || null,
       delivery_deadline: values.delivery_deadline || null,
+      meal_provided: values.meal_provided === 'yes' ? true : values.meal_provided === 'no' ? false : null,
+      parking_provided: values.parking_provided === 'yes' ? true : values.parking_provided === 'no' ? false : null,
       notes: values.notes || null,
     };
     
