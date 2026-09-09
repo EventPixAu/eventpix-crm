@@ -857,7 +857,7 @@ export default function EventSeriesDetail() {
                   },
                   {
                     key: 'default_delivery_method_id',
-                    label: 'Delivery Method',
+                    label: 'Delivery Method - Client',
                     value: (series as any).default_delivery_method_id || '__none__',
                     options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
                     eventColumn: 'delivery_method_id',
