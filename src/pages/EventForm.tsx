@@ -39,6 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
+import { useEventContacts, useCreateEventContact, useUpdateEventContact } from '@/hooks/useEventContacts';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import type { Venue } from '@/hooks/useVenues';
 
@@ -158,6 +159,34 @@ export default function EventForm() {
   
   // Fetch contacts for the client
   const { data: clientContacts = [] } = useClientContacts(effectiveClientId);
+
+  // Primary contact for this event (stored in event_contacts with type 'primary')
+  const { data: eventContacts = [] } = useEventContacts(isEditing ? id : undefined);
+  const createEventContact = useCreateEventContact();
+  const updateEventContact = useUpdateEventContact();
+  const primaryEventContact = eventContacts.find((c: any) => c.contact_type === 'primary');
+
+  const handlePrimaryContactSelect = async (contactId: string) => {
+    if (!id) return;
+    const contact = clientContacts.find((c) => c.id === contactId);
+    if (!contact) return;
+    const payload = {
+      client_contact_id: contact.id,
+      contact_name: contact.contact_name,
+      contact_phone: getBestPhone(contact) || null,
+      contact_email: contact.email || null,
+    };
+    if (primaryEventContact) {
+      await updateEventContact.mutateAsync({ id: primaryEventContact.id, eventId: id, ...payload });
+    } else {
+      await createEventContact.mutateAsync({
+        event_id: id,
+        contact_type: 'primary',
+        sort_order: 0,
+        ...payload,
+      });
+    }
+  };
 
   const resetOnsiteContact = () => {
     form.setValue('onsite_contact_name', '');
