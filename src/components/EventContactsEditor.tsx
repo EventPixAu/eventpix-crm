@@ -31,6 +31,7 @@ import {
 import {
   useEventContacts,
   useCreateEventContact,
+  useUpdateEventContact,
   useDeleteEventContact,
   CONTACT_TYPES,
   type ContactType,
@@ -50,6 +51,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
   const { data: contacts = [] } = useEventContacts(eventId);
   const { data: dynamicContactTypes = [] } = useActiveContactTypes();
   const createContact = useCreateEventContact();
+  const updateContact = useUpdateEventContact();
   const deleteContact = useDeleteEventContact();
 
   const contactTypeOptions = dynamicContactTypes.length > 0
@@ -104,6 +106,19 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
 
   const handleDelete = async (contactId: string) => {
     await deleteContact.mutateAsync({ id: contactId, eventId });
+  };
+
+  const handleTypeChange = async (contactId: string, newType: string) => {
+    // Promoting to primary: demote any existing primary first so there is only one
+    if (newType === 'primary') {
+      const existingPrimaries = contacts.filter(
+        (c) => c.contact_type === 'primary' && c.id !== contactId
+      );
+      for (const p of existingPrimaries) {
+        await updateContact.mutateAsync({ id: p.id, eventId, contact_type: 'onsite' });
+      }
+    }
+    await updateContact.mutateAsync({ id: contactId, eventId, contact_type: newType });
   };
 
   const getContactTypeLabel = (type: string) => {
@@ -163,9 +178,27 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="font-medium">{name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {getContactTypeLabel(contact.contact_type)}
-                        </Badge>
+                        {!disabled ? (
+                          <Select
+                            value={contact.contact_type}
+                            onValueChange={(value) => handleTypeChange(contact.id, value)}
+                          >
+                            <SelectTrigger className="h-6 w-auto text-xs px-2 gap-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {contactTypeOptions.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            {getContactTypeLabel(contact.contact_type)}
+                          </Badge>
+                        )}
                         {isLinked && (
                           <Badge variant="secondary" className="text-xs gap-1">
                             <Link className="h-3 w-3" />
