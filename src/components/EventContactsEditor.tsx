@@ -31,6 +31,7 @@ import {
 import {
   useEventContacts,
   useCreateEventContact,
+  useUpdateEventContact,
   useDeleteEventContact,
   CONTACT_TYPES,
   type ContactType,
@@ -50,6 +51,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
   const { data: contacts = [] } = useEventContacts(eventId);
   const { data: dynamicContactTypes = [] } = useActiveContactTypes();
   const createContact = useCreateEventContact();
+  const updateContact = useUpdateEventContact();
   const deleteContact = useDeleteEventContact();
 
   const contactTypeOptions = dynamicContactTypes.length > 0
