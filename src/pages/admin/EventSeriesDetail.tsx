@@ -870,6 +870,13 @@ export default function EventSeriesDetail() {
                     eventColumn: 'delivery_method_guests_id',
                   },
                   {
+                    key: 'default_delivery_method_photographer_id',
+                    label: 'Delivery - Photographer',
+                    value: (series as any).default_delivery_method_photographer_id || '__none__',
+                    options: deliveryMethods.map(m => ({ value: m.id, label: m.name })),
+                    eventColumn: 'delivery_method_photographer_id',
+                  },
+                  {
                     key: 'dress_code',
                     label: 'Dress Code',
                     value: (series as any).dress_code || '__none__',
