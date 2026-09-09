@@ -63,6 +63,8 @@ interface PortalData {
   } | null;
   event_type: string | null;
   special_instructions: string | null;
+  meal_provided: boolean | null;
+  parking_provided: boolean | null;
   photography_brief: string | null;
   brief_content: string | null;
   brief_attachment_name: string | null;
@@ -273,6 +275,26 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                     Open in Maps ↗
                   </a>
                 )}
+              </div>
+            </div>
+          )}
+
+          {(data.meal_provided !== null && data.meal_provided !== undefined) && (
+            <div className="flex items-start gap-3">
+              <UtensilsCrossed className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-white font-medium">Meal provided</p>
+                <p className="text-white/60 text-sm mt-0.5">{data.meal_provided ? 'Yes' : 'No'}</p>
+              </div>
+            </div>
+          )}
+
+          {(data.parking_provided !== null && data.parking_provided !== undefined) && (
+            <div className="flex items-start gap-3">
+              <Car className="h-5 w-5 text-sky-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-white font-medium">Parking provided</p>
+                <p className="text-white/60 text-sm mt-0.5">{data.parking_provided ? 'Yes' : 'No'}</p>
               </div>
             </div>
           )}

@@ -59,6 +59,8 @@ interface Event {
   company_name: string;
   series_id?: string | null;
   series_name?: string | null;
+  meal_provided?: boolean | null;
+  parking_provided?: boolean | null;
   crew?: CrewMember[];
 }
 
@@ -359,6 +361,16 @@ export default function ClientPortalDashboard() {
                               <span className="flex items-center gap-1">
                                 <MapPin className="h-3 w-3" />
                                 {event.venue_name}
+                              </span>
+                            )}
+                            {event.meal_provided !== null && event.meal_provided !== undefined && (
+                              <span className="flex items-center gap-1">
+                                🍽️ Meal: {event.meal_provided ? 'Yes' : 'No'}
+                              </span>
+                            )}
+                            {event.parking_provided !== null && event.parking_provided !== undefined && (
+                              <span className="flex items-center gap-1">
+                                🅿️ Parking: {event.parking_provided ? 'Yes' : 'No'}
                               </span>
                             )}
                           </div>
