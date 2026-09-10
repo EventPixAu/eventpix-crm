@@ -755,43 +755,56 @@ export default function EventForm() {
                     <FormItem>
                       <FormLabel>On-site Contact</FormLabel>
                       {clientContacts.length > 0 ? (
-                        <Select 
-                          onValueChange={(value) => {
-                            if (value === '__manual__') {
-                              field.onChange('');
-                              form.setValue('onsite_contact_phone', '');
-                            } else {
-                              handleContactSelect(value);
-                            }
-                          }}
-                          value={clientContacts.find(c => c.contact_name === field.value)?.id || '__manual__'}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-secondary">
-                              <SelectValue placeholder="Select contact" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {clientContacts.map((contact) => (
-                              <SelectItem key={contact.id} value={contact.id}>
-                                {contact.contact_name}
-                                {getBestPhone(contact) && (
-                                  <span className="text-muted-foreground ml-2">
-                                    ({getBestPhone(contact)})
-                                  </span>
-                                )}
+                        <div className="space-y-2">
+                          <Select 
+                            onValueChange={(value) => {
+                              if (value === '__manual__') {
+                                field.onChange('');
+                                form.setValue('onsite_contact_phone', '');
+                              } else {
+                                handleContactSelect(value);
+                              }
+                            }}
+                            value={clientContacts.find(c => c.contact_name === field.value)?.id || '__manual__'}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="bg-secondary">
+                                <SelectValue placeholder="Select contact" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {clientContacts.map((contact) => (
+                                <SelectItem key={contact.id} value={contact.id}>
+                                  {contact.contact_name}
+                                  {getBestPhone(contact) && (
+                                    <span className="text-muted-foreground ml-2">
+                                      ({getBestPhone(contact)})
+                                    </span>
+                                  )}
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="__manual__">
+                                <span className="text-muted-foreground">Enter manually...</span>
                               </SelectItem>
-                            ))}
-                            <SelectItem value="__manual__">
-                              <span className="text-muted-foreground">Enter manually...</span>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                            </SelectContent>
+                          </Select>
+                          {!clientContacts.find(c => c.contact_name === field.value) && (
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value || ''}
+                                placeholder="Type contact name"
+                                className="bg-secondary"
+                              />
+                            </FormControl>
+                          )}
+                        </div>
                       ) : (
                         <FormControl>
-                          <Input {...field} placeholder="Contact name" className="bg-secondary" />
+                          <Input {...field} value={field.value || ''} placeholder="Contact name" className="bg-secondary" />
                         </FormControl>
                       )}
+
                       <FormMessage />
                     </FormItem>
                   )}
