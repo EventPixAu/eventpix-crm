@@ -213,7 +213,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       if (filters.statuses.length) {
         q = q.in('status', filters.statuses);
       } else {
-        q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived)');
+        q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived,status.neq.Left Company)');
       }
 
       // Source filter is applied client-side so we can match on the contact's own source

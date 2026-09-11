@@ -808,6 +808,26 @@ export default function ContactDetail() {
                     value={(contact as any).status || '__unassigned__'}
                     onValueChange={async (value) => {
                       const newStatus = value === '__unassigned__' ? null : value;
+
+                      if (newStatus === 'Left Company') {
+                        const ok = window.confirm(
+                          'Mark this contact as having left the company? They will be unlinked from all companies and archived.'
+                        );
+                        if (!ok) return;
+                        const { error: leftError } = await (supabase as any).rpc('mark_contact_left_company', {
+                          p_contact_id: contact.id,
+                        });
+                        if (leftError) {
+                          toast.error('Failed to update status');
+                        } else {
+                          toast.success('Contact marked as left company and archived');
+                          queryClient.invalidateQueries({ queryKey: ['contact', id] });
+                          queryClient.invalidateQueries({ queryKey: ['contact-company-associations', contact.id] });
+                          queryClient.invalidateQueries({ queryKey: ['client-contacts'] });
+                        }
+                        return;
+                      }
+
                       const { error } = await (supabase as any).rpc('set_contact_status_manual', {
                         p_contact_id: contact.id,
                         p_status: newStatus,
