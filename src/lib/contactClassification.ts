@@ -12,6 +12,7 @@ export const CONTACT_STATUSES = [
   { value: 'Prospect', label: 'Prospect', description: 'Never booked, potential client' },
   { value: 'Staff', label: 'Staff', description: 'Internal staff/team contacts — excluded from marketing campaigns and client counts' },
   { value: 'Archived', label: 'Archived', description: 'No longer in use' },
+  { value: 'Left Company', label: 'Left Company', description: 'Contact has left the company — unlinked from companies and archived' },
 ] as const;
 
 export type ContactStatus = typeof CONTACT_STATUSES[number]['value'];

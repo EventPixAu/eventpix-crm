@@ -826,7 +826,7 @@ export default function ContactDetail() {
                     </SelectTrigger>
                     <SelectContent className="bg-popover z-50">
                       <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                      {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'].map((s) => (
+                      {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company'].map((s) => (
                         <SelectItem key={s} value={s}>{s}</SelectItem>
                       ))}
                     </SelectContent>

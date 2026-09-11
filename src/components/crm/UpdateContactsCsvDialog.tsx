@@ -122,7 +122,7 @@ const HEADER_MAP: Record<string, keyof CsvRow> = {
 };
 
 
-const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived']);
+const VALID_STATUSES = new Set(['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company']);
 const PROTECTED_STATUSES = new Set(['Active', 'Current', 'Staff']);
 
 function normaliseStatus(raw?: string): string | undefined {

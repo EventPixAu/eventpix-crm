@@ -44,7 +44,7 @@ interface AudienceFilters {
   cities: string[];
 }
 
-const CONTACT_STATUS_OPTIONS = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'];
+const CONTACT_STATUS_OPTIONS = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company'];
 
 interface SequenceStep {
   delayDays: number;
@@ -561,7 +561,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   label="Status"
                   options={CONTACT_STATUS_OPTIONS.map((s) => ({
                     value: s,
-                    label: (s === 'Staff' || s === 'Archived') ? `${s} (excluded by default)` : s,
+                    label: (s === 'Staff' || s === 'Archived' || s === 'Left Company') ? `${s} (excluded by default)` : s,
                   }))}
                   selected={filters.statuses}
                   onToggle={(v) => toggleFilter('statuses', v)}

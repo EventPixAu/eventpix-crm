@@ -774,7 +774,7 @@ export default function ContactList() {
                 <SelectContent className="bg-popover z-50 max-h-[300px]">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="__unassigned__">Unassigned</SelectItem>
-                  {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'].map((s) => (
+                  {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company'].map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
@@ -963,7 +963,7 @@ export default function ContactList() {
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-50 max-h-[300px]">
                           <SelectItem value="__none__">Select status</SelectItem>
-                          {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'].map((s) => (
+                          {['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company'].map((s) => (
                             <SelectItem key={s} value={s}>{s}</SelectItem>
                           ))}
                         </SelectContent>

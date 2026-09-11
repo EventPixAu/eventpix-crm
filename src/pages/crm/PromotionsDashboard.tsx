@@ -353,7 +353,7 @@ export default function PromotionsDashboard() {
     };
   }, [clients]);
 
-  const statusOrder = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Unassigned'];
+  const statusOrder = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company', 'Unassigned'];
   const categoryOrder = [
     'Schools',
     'Event Management',
