@@ -7843,6 +7843,10 @@ export type Database = {
         Args: { p_role: string }
         Returns: string
       }
+      mark_contact_left_company: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
       mark_contract_as_sent: { Args: { p_contract_id: string }; Returns: Json }
       mark_invitation_emailed: {
         Args: { p_auth_user_id: string; p_invitation_id: string }

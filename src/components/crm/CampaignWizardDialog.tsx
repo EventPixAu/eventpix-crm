@@ -44,7 +44,7 @@ interface AudienceFilters {
   cities: string[];
 }
 
-const CONTACT_STATUS_OPTIONS = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived'];
+const CONTACT_STATUS_OPTIONS = ['Active', 'Current', 'Previous', 'Old', 'Prospect', 'Staff', 'Archived', 'Left Company'];
 
 interface SequenceStep {
   delayDays: number;
@@ -213,7 +213,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
       if (filters.statuses.length) {
         q = q.in('status', filters.statuses);
       } else {
-        q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived)');
+        q = q.or('status.is.null,and(status.neq.Staff,status.neq.Archived,status.neq.Left Company)');
       }
 
       // Source filter is applied client-side so we can match on the contact's own source
@@ -561,7 +561,7 @@ export function CampaignWizardDialog({ open, onOpenChange }: Props) {
                   label="Status"
                   options={CONTACT_STATUS_OPTIONS.map((s) => ({
                     value: s,
-                    label: (s === 'Staff' || s === 'Archived') ? `${s} (excluded by default)` : s,
+                    label: (s === 'Staff' || s === 'Archived' || s === 'Left Company') ? `${s} (excluded by default)` : s,
                   }))}
                   selected={filters.statuses}
                   onToggle={(v) => toggleFilter('statuses', v)}
