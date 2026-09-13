@@ -367,6 +367,7 @@ export default function EventSeriesDetail() {
         default_notes_internal: editNotesInternal || null,
         default_start_time: editStartTime || null,
         default_end_time: editEndTime || null,
+        default_call_time: editCallTime || null,
         default_ops_status: editDefaultOpsStatus || 'confirmed',
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
@@ -380,10 +381,17 @@ export default function EventSeriesDetail() {
       console.error('Failed to save settings:', error);
       toast.error('Failed to save settings');
     } else {
+      // Cascade Team Call Time to active events
+      await supabase
+        .from('events')
+        .update({ call_time: editCallTime || null } as any)
+        .eq('event_series_id', id)
+        .not('ops_status', 'in', '("cancelled","completed")');
       const { error: syncError } = await supabase
         .rpc('sync_series_contacts_to_events' as any, { _series_id: id });
       queryClient.invalidateQueries({ queryKey: ['event-series'] });
       queryClient.invalidateQueries({ queryKey: ['event-contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['series-events'] });
       if (syncError) {
         toast.error('Settings saved, but contacts failed to sync: ' + syncError.message);
       } else {
