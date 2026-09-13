@@ -258,6 +258,7 @@ export default function EventSeriesDetail() {
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
+  const [editDefaultPhotographerDeliveryId, setEditDefaultPhotographerDeliveryId] = useState<string>('');
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
   const [editDressCode, setEditDressCode] = useState<string>('__none__');
@@ -319,6 +320,7 @@ export default function EventSeriesDetail() {
       setEditCallTime((series as any).default_call_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
+      setEditDefaultPhotographerDeliveryId((series as any).default_delivery_method_photographer_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
       setEditDressCode((series as any).dress_code || '__none__');
@@ -342,6 +344,7 @@ export default function EventSeriesDetail() {
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
+      setEditDefaultPhotographerDeliveryId((series as any).default_delivery_method_photographer_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
       setEditDressCode((series as any).dress_code || '__none__');
@@ -370,6 +373,7 @@ export default function EventSeriesDetail() {
         default_call_time: editCallTime || null,
         default_ops_status: editDefaultOpsStatus || 'confirmed',
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
+        default_delivery_method_photographer_id: editDefaultPhotographerDeliveryId === '__none__' ? null : editDefaultPhotographerDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
         primary_contact_id: editDefaultContactId || null,
         additional_contact_ids: cleanAdditionalContactIds,
@@ -1547,7 +1551,7 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Delivery Method</Label>
+                  <Label>Delivery Method - Client</Label>
                   <Select value={editDeliveryMethodId} onValueChange={setEditDeliveryMethodId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select method" />
@@ -1565,6 +1569,23 @@ export default function EventSeriesDetail() {
                 <div className="space-y-2">
                   <Label>Delivery Method - Guests</Label>
                   <Select value={editDefaultGuestDeliveryId} onValueChange={setEditDefaultGuestDeliveryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {deliveryMethods.map(method => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Delivery - Photographer</Label>
+                  <Select value={editDefaultPhotographerDeliveryId} onValueChange={setEditDefaultPhotographerDeliveryId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select method" />
                     </SelectTrigger>
@@ -1831,8 +1852,9 @@ export default function EventSeriesDetail() {
                         .update({
                           event_type_id: editEventTypeId || null,
                           delivery_method_id: editDeliveryMethodId || null,
-                          delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
-                          start_time: editStartTime || null,
+                           delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
+                           delivery_method_photographer_id: editDefaultPhotographerDeliveryId === '__none__' ? null : editDefaultPhotographerDeliveryId || null,
+                           start_time: editStartTime || null,
                           end_time: editEndTime || null,
                           coverage_details: editCoverage || null,
                           special_instructions: editNotesPublic || null,

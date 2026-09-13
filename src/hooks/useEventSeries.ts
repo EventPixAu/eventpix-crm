@@ -322,6 +322,7 @@ export function useBulkCreateEvents() {
       coverage_details?: string;
       delivery_method_id?: string;
       delivery_method_guests_id?: string;
+      delivery_method_photographer_id?: string;
       ops_status?: string;
       delivery_deadline?: string;
       notes?: string;
