@@ -1613,6 +1613,21 @@ export default function EventSeriesDetail() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Team Call Time
+                  </Label>
+                  <Input
+                    type="time"
+                    value={editCallTime}
+                    onChange={(e) => setEditCallTime(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Applied to all active events in the series when you save.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Client Contacts</Label>
                   <p className="text-xs text-muted-foreground">
                     Choose a label for each client contact. Only one contact can be Primary.
