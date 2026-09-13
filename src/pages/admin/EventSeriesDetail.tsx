@@ -254,6 +254,7 @@ export default function EventSeriesDetail() {
   const [editNotesPublic, setEditNotesPublic] = useState('');
   const [editNotesInternal, setEditNotesInternal] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
+  const [editCallTime, setEditCallTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
@@ -932,44 +933,6 @@ export default function EventSeriesDetail() {
                     </Select>
                   </div>
                 ))}
-              </div>
-
-              {/* Team Call Time - inline save + cascade */}
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Team Call Time
-                  </Label>
-                  <Input
-                    type="time"
-                    value={(series as any).default_call_time || ''}
-                    onChange={async (e) => {
-                      const val = e.target.value || null;
-                      try {
-                        const { error: sErr } = await supabase
-                          .from('event_series')
-                          .update({ default_call_time: val } as any)
-                          .eq('id', id!);
-                        if (sErr) throw sErr;
-
-                        const { error: eErr } = await supabase
-                          .from('events')
-                          .update({ call_time: val } as any)
-                          .eq('event_series_id', id!)
-                          .not('ops_status', 'in', '("cancelled","completed")');
-                        if (eErr) throw eErr;
-
-                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
-                        queryClient.invalidateQueries({ queryKey: ['series-events'] });
-                        queryClient.invalidateQueries({ queryKey: ['events'] });
-                        toast.success('Team Call Time applied to all events in the series');
-                      } catch (err: any) {
-                        toast.error(err.message || 'Failed to update Team Call Time');
-                      }
-                    }}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
