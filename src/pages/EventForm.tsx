@@ -92,6 +92,7 @@ export default function EventForm() {
   
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  const applyEventTypeWorkflow = useApplyEventTypeWorkflow();
   
   // Event locking state
   const { isLocked, minutesUntilStart } = useEventLocking(event?.start_at || null);
