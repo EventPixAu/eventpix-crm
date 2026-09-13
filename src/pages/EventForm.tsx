@@ -409,6 +409,17 @@ export default function EventForm() {
       } catch (e) {
         console.error('Failed to auto-create initial session', e);
       }
+      // Apply the workflow configured for the selected event type
+      try {
+        if (result?.id && values.event_type_id) {
+          await applyEventTypeWorkflow.mutateAsync({
+            eventId: result.id,
+            eventTypeId: values.event_type_id,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to apply event type workflow', e);
+      }
       navigate(`/events/${result.id}`);
     }
   };
