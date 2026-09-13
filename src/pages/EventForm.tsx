@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEvent, useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
+import { useApplyEventTypeWorkflow } from '@/hooks/useEventWorkflowSteps';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { EventLockBanner } from '@/components/EventLockBanner';
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
