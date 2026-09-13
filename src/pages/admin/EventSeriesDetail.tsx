@@ -390,7 +390,7 @@ export default function EventSeriesDetail() {
         .from('events')
         .update({ call_time: editCallTime || null } as any)
         .eq('event_series_id', id)
-        .not('ops_status', 'in', '("cancelled","completed")');
+        .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
       const { error: syncError } = await supabase
         .rpc('sync_series_contacts_to_events' as any, { _series_id: id });
       queryClient.invalidateQueries({ queryKey: ['event-series'] });
@@ -784,7 +784,7 @@ export default function EventSeriesDetail() {
                           .from('events')
                           .update({ ops_status: val } as any)
                           .eq('event_series_id', id!)
-                          .not('ops_status', 'in', '("cancelled","completed")');
+                          .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
                         if (eErr) throw eErr;
 
                         setEditDefaultOpsStatus(val);
@@ -916,7 +916,7 @@ export default function EventSeriesDetail() {
                             .from('events')
                             .update({ [field.eventColumn]: newVal } as any)
                             .eq('event_series_id', id!)
-                            .not('ops_status', 'in', '("cancelled","completed")');
+                            .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
                           if (eErr) throw eErr;
 
                           if (field.key === 'event_type_id') setEditEventTypeId(newVal || '');
