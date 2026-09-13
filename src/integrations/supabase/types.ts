@@ -3028,6 +3028,7 @@ export type Database = {
         Row: {
           additional_contact_ids: string[]
           created_at: string | null
+          default_call_time: string | null
           default_contact_id: string | null
           default_coverage_details: string | null
           default_delivery_deadline_days: number | null
@@ -3058,6 +3059,7 @@ export type Database = {
         Insert: {
           additional_contact_ids?: string[]
           created_at?: string | null
+          default_call_time?: string | null
           default_contact_id?: string | null
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
@@ -3088,6 +3090,7 @@ export type Database = {
         Update: {
           additional_contact_ids?: string[]
           created_at?: string | null
+          default_call_time?: string | null
           default_contact_id?: string | null
           default_coverage_details?: string | null
           default_delivery_deadline_days?: number | null
@@ -3432,6 +3435,7 @@ export type Database = {
           brief_template_id: string | null
           brief_updated_at: string | null
           calendar_sequence: number
+          call_time: string | null
           camera_settings: string | null
           city: string | null
           client_brief_content: string | null
@@ -3520,6 +3524,7 @@ export type Database = {
           brief_template_id?: string | null
           brief_updated_at?: string | null
           calendar_sequence?: number
+          call_time?: string | null
           camera_settings?: string | null
           city?: string | null
           client_brief_content?: string | null
@@ -3610,6 +3615,7 @@ export type Database = {
           brief_template_id?: string | null
           brief_updated_at?: string | null
           calendar_sequence?: number
+          call_time?: string | null
           camera_settings?: string | null
           city?: string | null
           client_brief_content?: string | null
