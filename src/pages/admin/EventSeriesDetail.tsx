@@ -1852,8 +1852,9 @@ export default function EventSeriesDetail() {
                         .update({
                           event_type_id: editEventTypeId || null,
                           delivery_method_id: editDeliveryMethodId || null,
-                          delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
-                          start_time: editStartTime || null,
+                           delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
+                           delivery_method_photographer_id: editDefaultPhotographerDeliveryId === '__none__' ? null : editDefaultPhotographerDeliveryId || null,
+                           start_time: editStartTime || null,
                           end_time: editEndTime || null,
                           coverage_details: editCoverage || null,
                           special_instructions: editNotesPublic || null,
