@@ -1,5 +1,7 @@
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
 import { Calendar, Clock, MapPin, ExternalLink, Camera } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useEventSessions } from '@/hooks/useEventSessions';
@@ -15,6 +17,18 @@ interface SessionsDisplayProps {
 
 export function SessionsDisplay({ eventId, compact = false, className, assignments = [] }: SessionsDisplayProps) {
   const { data: sessions = [], isLoading } = useEventSessions(eventId);
+  const { data: eventCallTime } = useQuery({
+    queryKey: ['event-call-time', eventId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('call_time')
+        .eq('id', eventId)
+        .maybeSingle();
+      return (data as any)?.call_time as string | null;
+    },
+    enabled: !!eventId,
+  });
 
   if (isLoading) {
     return (
@@ -90,10 +104,10 @@ export function SessionsDisplay({ eventId, compact = false, className, assignmen
                   </div>
                   
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    {(session as any).arrival_time && (
+                    {((session as any).arrival_time || eventCallTime) && (
                       <span className="flex items-center gap-1 text-warning">
                         <Clock className="h-3.5 w-3.5" />
-                        Call: {format(new Date(`2000-01-01T${(session as any).arrival_time}`), 'h:mm a')}
+                        Call: {format(new Date(`2000-01-01T${(session as any).arrival_time || eventCallTime}`), 'h:mm a')}
                       </span>
                     )}
                     {session.start_time && (
