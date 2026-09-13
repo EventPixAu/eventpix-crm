@@ -15,6 +15,18 @@ interface SessionsDisplayProps {
 
 export function SessionsDisplay({ eventId, compact = false, className, assignments = [] }: SessionsDisplayProps) {
   const { data: sessions = [], isLoading } = useEventSessions(eventId);
+  const { data: eventCallTime } = useQuery({
+    queryKey: ['event-call-time', eventId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('events')
+        .select('call_time')
+        .eq('id', eventId)
+        .maybeSingle();
+      return (data as any)?.call_time as string | null;
+    },
+    enabled: !!eventId,
+  });
 
   if (isLoading) {
     return (
