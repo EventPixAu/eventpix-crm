@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useEvent, useCreateEvent, useUpdateEvent } from '@/hooks/useEvents';
+import { useApplyEventTypeWorkflow } from '@/hooks/useEventWorkflowSteps';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { EventLockBanner } from '@/components/EventLockBanner';
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
@@ -92,6 +93,7 @@ export default function EventForm() {
   
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
+  const applyEventTypeWorkflow = useApplyEventTypeWorkflow();
   
   // Event locking state
   const { isLocked, minutesUntilStart } = useEventLocking(event?.start_at || null);
@@ -375,7 +377,16 @@ export default function EventForm() {
     }
 
     if (isEditing && id) {
+      const eventTypeChanged = (event as any)?.event_type_id !== values.event_type_id;
       await updateEvent.mutateAsync({ id, updated_at: event?.updated_at, ...cleanValues });
+      // Keep the workflow in step with the selected event type
+      if (eventTypeChanged && values.event_type_id) {
+        try {
+          await applyEventTypeWorkflow.mutateAsync({ eventId: id, eventTypeId: values.event_type_id });
+        } catch (e) {
+          console.error('Failed to apply event type workflow', e);
+        }
+      }
       navigate(`/events/${id}`);
     } else {
       const result = await createEvent.mutateAsync(cleanValues);
@@ -397,6 +408,17 @@ export default function EventForm() {
         }
       } catch (e) {
         console.error('Failed to auto-create initial session', e);
+      }
+      // Apply the workflow configured for the selected event type
+      try {
+        if (result?.id && values.event_type_id) {
+          await applyEventTypeWorkflow.mutateAsync({
+            eventId: result.id,
+            eventTypeId: values.event_type_id,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to apply event type workflow', e);
       }
       navigate(`/events/${result.id}`);
     }

@@ -1834,6 +1834,7 @@ export default function EventDetail() {
                       <InitializeWorkflowDialog 
                         eventId={id} 
                         currentTemplateId={(event as any).workflow_template_id}
+                        currentEventTypeId={(event as any).event_type_id}
                       />
                     </div>
                   )}

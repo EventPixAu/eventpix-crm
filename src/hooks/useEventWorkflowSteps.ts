@@ -730,6 +730,141 @@ export function useDeleteWorkflowStep() {
   });
 }
 
+// Apply the workflow configured for an event type (Administration → Workflows → Event Type Defaults)
+// directly to an event. Completed steps are preserved by label.
+export function useApplyEventTypeWorkflow() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      eventId,
+      eventTypeId,
+    }: {
+      eventId: string;
+      eventTypeId: string;
+    }) => {
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .eq('id', eventId)
+        .maybeSingle();
+      if (eventError) throw eventError;
+      if (!event) throw new Error('Event not found');
+
+      // Which master steps are configured for this event type?
+      const { data: defaults, error: defaultsError } = await supabase
+        .from('event_type_step_defaults')
+        .select('master_step_id')
+        .eq('event_type_id', eventTypeId);
+      if (defaultsError) throw defaultsError;
+
+      const stepIds = (defaults || []).map(d => d.master_step_id);
+      if (stepIds.length === 0) return 0;
+
+      const { data: masterSteps, error: stepsError } = await supabase
+        .from('workflow_master_steps')
+        .select('*')
+        .in('id', stepIds)
+        .eq('is_active', true);
+      if (stepsError) throw stepsError;
+
+      // Series-level steps live on the series checklist only.
+      const applicable = (masterSteps || []).filter(s => !(s as any).is_series_level);
+      if (applicable.length === 0) return 0;
+
+      let jobAcceptedDate: string | null = event.booking_date || event.created_at;
+      let leadCreatedDate: string | null = event.created_at;
+      if (event.lead_id) {
+        const { data: lead } = await supabase
+          .from('leads')
+          .select('created_at, updated_at, status')
+          .eq('id', event.lead_id)
+          .maybeSingle();
+        if (lead) {
+          leadCreatedDate = lead.created_at;
+          if (lead.status === 'won') jobAcceptedDate = lead.updated_at;
+        }
+      }
+
+      // Preserve completed steps by label
+      const { data: existing } = await supabase
+        .from('event_workflow_steps')
+        .select('step_label, is_completed, completed_at, completed_by, notes')
+        .eq('event_id', eventId);
+      const completedByLabel = new Map<string, any>();
+      (existing || []).forEach((s: any) => {
+        if (s.is_completed) completedByLabel.set(s.step_label, s);
+      });
+
+      const eventDate = new Date(event.main_shoot_date || event.event_date);
+      const bookingDate = new Date(jobAcceptedDate || event.created_at);
+      const createdDate = new Date(leadCreatedDate || event.created_at);
+      const deliveryDeadline = event.delivery_deadline ? new Date(event.delivery_deadline) : null;
+
+      const phaseOrder: Record<string, number> = { pre_event: 0, day_of: 1, post_event: 2 };
+      const sorted = [...applicable].sort((a, b) => {
+        const pa = phaseOrder[a.phase as string] ?? 1;
+        const pb = phaseOrder[b.phase as string] ?? 1;
+        if (pa !== pb) return pa - pb;
+        return (a.sort_order || 0) - (b.sort_order || 0);
+      });
+
+      const steps = sorted.map((step, index) => {
+        let dueDate: string | null = null;
+        if (step.date_offset_days !== null && step.date_offset_reference) {
+          let reference: Date;
+          switch (step.date_offset_reference) {
+            case 'job_accepted': reference = bookingDate; break;
+            case 'lead_created': reference = createdDate; break;
+            case 'delivery_deadline': reference = deliveryDeadline || eventDate; break;
+            default: reference = eventDate;
+          }
+          const calculated = new Date(reference);
+          calculated.setDate(calculated.getDate() + step.date_offset_days);
+          dueDate = calculated.toISOString().split('T')[0];
+        }
+
+        const preserved = completedByLabel.get(step.label);
+        return {
+          event_id: eventId,
+          template_item_id: null,
+          step_label: step.label,
+          step_order: index + 1,
+          completion_type: step.completion_type || 'manual',
+          auto_trigger_event: step.auto_trigger_event,
+          due_date: dueDate,
+          is_completed: preserved?.is_completed ?? false,
+          completed_at: preserved?.completed_at ?? null,
+          completed_by: preserved?.completed_by ?? null,
+          notes: step.help_text,
+          assigned_to: (step as any).default_assignee_user_id ?? null,
+        };
+      });
+
+      const { error: deleteError } = await supabase
+        .from('event_workflow_steps')
+        .delete()
+        .eq('event_id', eventId);
+      if (deleteError) throw deleteError;
+
+      const { error: insertError } = await supabase
+        .from('event_workflow_steps')
+        .insert(steps);
+      if (insertError) throw insertError;
+
+      return steps.length;
+    },
+    onSuccess: (count, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      if (count > 0) toast.success(`Workflow applied — ${count} steps`);
+    },
+    onError: (error: any) => {
+      toast.error('Failed to apply workflow: ' + error.message);
+    },
+  });
+}
+
 // Get workflow progress summary
 export function useWorkflowProgress(eventId: string | undefined) {
   const { data: steps = [] } = useEventWorkflowSteps(eventId);
