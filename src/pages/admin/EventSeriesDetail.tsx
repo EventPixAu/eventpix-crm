@@ -316,6 +316,7 @@ export default function EventSeriesDetail() {
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
       setEditEndTime((series as any).default_end_time || '');
+      setEditCallTime((series as any).default_call_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
@@ -337,6 +338,7 @@ export default function EventSeriesDetail() {
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
+      setEditCallTime((series as any).default_call_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
