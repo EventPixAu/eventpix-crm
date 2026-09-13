@@ -377,7 +377,10 @@ export function InitializeWorkflowDialog({
       </DialogContent>
     </Dialog>
       {workflowLabel && (
-        <span className="text-sm text-muted-foreground">{workflowLabel}</span>
+        <div className="min-w-0 border-l border-border pl-3">
+          <p className="text-xs text-muted-foreground">Assigned Workflow</p>
+          <p className="truncate text-sm font-medium text-foreground">{workflowLabel}</p>
+        </div>
       )}
     </div>
   );
