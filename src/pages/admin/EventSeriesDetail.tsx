@@ -784,7 +784,7 @@ export default function EventSeriesDetail() {
                           .from('events')
                           .update({ ops_status: val } as any)
                           .eq('event_series_id', id!)
-                          .not('ops_status', 'in', '("cancelled","completed")');
+                          .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
                         if (eErr) throw eErr;
 
                         setEditDefaultOpsStatus(val);
@@ -916,7 +916,7 @@ export default function EventSeriesDetail() {
                             .from('events')
                             .update({ [field.eventColumn]: newVal } as any)
                             .eq('event_series_id', id!)
-                            .not('ops_status', 'in', '("cancelled","completed")');
+                            .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
                           if (eErr) throw eErr;
 
                           if (field.key === 'event_type_id') setEditEventTypeId(newVal || '');
