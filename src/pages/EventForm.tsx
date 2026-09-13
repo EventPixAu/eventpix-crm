@@ -375,7 +375,16 @@ export default function EventForm() {
     }
 
     if (isEditing && id) {
+      const eventTypeChanged = (event as any)?.event_type_id !== values.event_type_id;
       await updateEvent.mutateAsync({ id, updated_at: event?.updated_at, ...cleanValues });
+      // Keep the workflow in step with the selected event type
+      if (eventTypeChanged && values.event_type_id) {
+        try {
+          await applyEventTypeWorkflow.mutateAsync({ eventId: id, eventTypeId: values.event_type_id });
+        } catch (e) {
+          console.error('Failed to apply event type workflow', e);
+        }
+      }
       navigate(`/events/${id}`);
     } else {
       const result = await createEvent.mutateAsync(cleanValues);
