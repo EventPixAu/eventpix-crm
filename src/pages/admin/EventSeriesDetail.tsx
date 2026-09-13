@@ -1551,7 +1551,7 @@ export default function EventSeriesDetail() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Delivery Method</Label>
+                  <Label>Delivery Method - Client</Label>
                   <Select value={editDeliveryMethodId} onValueChange={setEditDeliveryMethodId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select method" />
