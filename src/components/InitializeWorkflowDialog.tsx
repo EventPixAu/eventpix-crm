@@ -45,12 +45,21 @@ interface InitializeWorkflowDialogProps {
 export function InitializeWorkflowDialog({
   eventId,
   currentTemplateId,
+  currentEventTypeId,
   workflowLabel,
   trigger,
 }: InitializeWorkflowDialogProps) {
 
   const [open, setOpen] = useState(false);
-  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>('');
+  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>(currentEventTypeId || '');
+
+  // Default to the event's own event type so the matching workflow is pre-selected
+  useEffect(() => {
+    if (open && currentEventTypeId) {
+      setSelectedEventTypeId(currentEventTypeId);
+      setHasTouchedSelection(false);
+    }
+  }, [open, currentEventTypeId]);
   const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
   const [showItems, setShowItems] = useState(false);
   const [hasTouchedSelection, setHasTouchedSelection] = useState(false);
