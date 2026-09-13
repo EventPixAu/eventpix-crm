@@ -258,6 +258,7 @@ export default function EventSeriesDetail() {
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
   const [editDefaultGuestDeliveryId, setEditDefaultGuestDeliveryId] = useState<string>('');
+  const [editDefaultPhotographerDeliveryId, setEditDefaultPhotographerDeliveryId] = useState<string>('');
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
   const [editDressCode, setEditDressCode] = useState<string>('__none__');
@@ -319,6 +320,7 @@ export default function EventSeriesDetail() {
       setEditCallTime((series as any).default_call_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
+      setEditDefaultPhotographerDeliveryId((series as any).default_delivery_method_photographer_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
       setEditDressCode((series as any).dress_code || '__none__');
@@ -342,6 +344,7 @@ export default function EventSeriesDetail() {
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
       setEditDefaultGuestDeliveryId((series as any).default_delivery_method_guests_id || '__none__');
+      setEditDefaultPhotographerDeliveryId((series as any).default_delivery_method_photographer_id || '__none__');
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
       setEditDressCode((series as any).dress_code || '__none__');
@@ -370,6 +373,7 @@ export default function EventSeriesDetail() {
         default_call_time: editCallTime || null,
         default_ops_status: editDefaultOpsStatus || 'confirmed',
         default_delivery_method_guests_id: editDefaultGuestDeliveryId === '__none__' ? null : editDefaultGuestDeliveryId || null,
+        default_delivery_method_photographer_id: editDefaultPhotographerDeliveryId === '__none__' ? null : editDefaultPhotographerDeliveryId || null,
         default_contact_id: editDefaultContactId || null,
         primary_contact_id: editDefaultContactId || null,
         additional_contact_ids: cleanAdditionalContactIds,
