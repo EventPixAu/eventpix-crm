@@ -43,6 +43,10 @@ interface CrewMember {
   name: string | null;
   role: string | null;
   dietary_requirements: string | null;
+  agency?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  is_agency?: boolean;
 }
 
 interface Event {
@@ -378,16 +382,18 @@ export default function ClientPortalDashboard() {
                           <div className="rounded-md border border-border/60 bg-muted/20 p-2.5 space-y-1.5">
                             <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                               <Users className="h-3.5 w-3.5 text-primary" />
-                              Photographers
+                              Your Team
                             </div>
                             {event.crew && event.crew.length > 0 ? (
                               event.crew.map((member, idx) => (
                                 <div key={idx} className="text-xs text-muted-foreground">
                                   <span className="text-foreground">{member.name || 'Team member'}</span>
-                                  {member.role ? ` — ${member.role}` : ''}
-                                  <div className="text-[11px]">
+                                  {member.role ? ` — ${member.role}` : ''}{member.agency ? ` · ${member.agency}` : ''}
+                                  {member.phone && <div className="text-[11px]"><a href={`tel:${member.phone}`} className="text-primary hover:underline">{member.phone}</a></div>}
+                                  {member.email && <div className="text-[11px]"><a href={`mailto:${member.email}`} className="text-primary hover:underline">{member.email}</a></div>}
+                                  {!member.is_agency && <div className="text-[11px]">
                                     🍽️ {member.dietary_requirements?.trim() || 'No dietary requirements'}
-                                  </div>
+                                  </div>}
                                 </div>
                               ))
                             ) : (
