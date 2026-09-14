@@ -1018,12 +1018,12 @@ export default function ContactDetail() {
 
       {/* Edit Contact Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-h-[90dvh] max-w-md overflow-hidden flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Edit Contact</DialogTitle>
             <DialogDescription>Update contact details.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="first_name">First Name</Label>
@@ -1137,7 +1137,7 @@ export default function ContactDetail() {
             </p>
 
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t pt-4">
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>
               Cancel
             </Button>
