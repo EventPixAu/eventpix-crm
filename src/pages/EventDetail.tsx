@@ -105,6 +105,8 @@ import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 import { AgreementStatusBadge, useAgreementStatusMap, useProfileRoleMap } from '@/components/AgreementStatusBadge';
+import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
+import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -616,6 +618,7 @@ export default function EventDetail() {
   const { data: event, isLoading } = useEvent(id);
   const { data: assignments = [] } = useEventAssignments(id);
   const { data: eventSessions = [] } = useEventSessions(id);
+  const { data: agencyCrew = [] } = useEventAgencyCrew(id);
   const { data: emailStatuses } = useEventEmailActionStatuses(id);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: deliveryMethods = [] } = useDeliveryMethods();
@@ -1206,12 +1209,12 @@ export default function EventDetail() {
                 />
                )}
                {/* Assigned Team (summary) */}
-               {canSeeSection('contacts') && assignments.length > 0 && (
+               {canSeeSection('contacts') && (assignments.length > 0 || agencyCrew.length > 0) && (
                  <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                    <div className="flex items-center justify-between mb-4">
                      <h2 className="text-lg font-display font-semibold flex items-center gap-2">
                        <Users className="h-4 w-4" />
-                       Assigned Team ({assignments.length})
+                        Assigned Team ({assignments.length + agencyCrew.length})
                      </h2>
                      <Button variant="outline" size="sm" onClick={() => setActiveTab('assignments')}>
                        Manage
@@ -1252,6 +1255,22 @@ export default function EventDetail() {
                          </div>
                        );
                      })}
+                      {agencyCrew.map((member) => {
+                        const initials = member.name.split(' ').map((part) => part[0]).join('').substring(0, 2).toUpperCase();
+                        return (
+                          <div key={member.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0"><span className="text-sm font-medium text-secondary-foreground">{initials}</span></div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-medium">{member.name}</span><Badge variant="outline" className="text-xs">Agency</Badge></div>
+                              <p className="text-xs text-muted-foreground">{member.role} · {member.agency}</p>
+                              <div className="flex flex-wrap gap-x-3">
+                                <a href={`tel:${member.phone}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"><Phone className="h-3 w-3" />{member.phone}</a>
+                                {member.email && <a href={`mailto:${member.email}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"><Mail className="h-3 w-3" />{member.email}</a>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                    </div>
                  </div>
                )}
@@ -1948,6 +1967,8 @@ export default function EventDetail() {
               </div>
             )}
           </div>
+
+          {id && <EventAgencyCrewPanel eventId={id} crew={agencyCrew} sessions={eventSessions} canManage={isAdmin || isOperations} />}
 
           {/* Crew Checklists - admin/ops only */}
           {(isAdmin || isOperations) && id && assignments.length > 0 && (

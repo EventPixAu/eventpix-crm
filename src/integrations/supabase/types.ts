@@ -2576,6 +2576,66 @@ export type Database = {
         }
         Relationships: []
       }
+      event_agency_crew: {
+        Row: {
+          agency: string
+          created_at: string
+          created_by: string
+          email: string | null
+          event_id: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string
+          role: string
+          session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency: string
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          event_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone: string
+          role: string
+          session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency?: string
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          event_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string
+          role?: string
+          session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_agency_crew_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_agency_crew_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "event_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_assignments: {
         Row: {
           assignment_notes: string | null

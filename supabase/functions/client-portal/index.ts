@@ -121,6 +121,27 @@ serve(async (req) => {
       })
       .filter((member: any) => !member.role?.toLowerCase().includes("editor"));
 
+    const { data: agencyCrew, error: agencyCrewError } = await supabase
+      .from("event_agency_crew")
+      .select("name, role, agency, phone, email")
+      .eq("event_id", event.id)
+      .order("name");
+
+    if (agencyCrewError) throw agencyCrewError;
+
+    team.push(...(agencyCrew || []).map((member: any) => ({
+      name: member.name,
+      role: member.role,
+      agency: member.agency,
+      phone: member.phone,
+      email: member.email,
+      avatar_url: null,
+      vehicle_registration: null,
+      vehicle_make_model: null,
+      dietary_requirements: null,
+      is_agency: true,
+    })));
+
     // Contacts
     const { data: rawContacts } = await supabase
       .from("event_contacts")

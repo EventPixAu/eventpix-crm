@@ -89,6 +89,9 @@ interface PortalData {
     vehicle_registration: string | null;
     vehicle_make_model: string | null;
     dietary_requirements: string | null;
+    agency?: string | null;
+    email?: string | null;
+    is_agency?: boolean;
   }>;
   contacts: Array<{
     id: string;
@@ -367,20 +370,23 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                   )}
                   <div className="min-w-0">
                     <p className="text-white font-medium text-sm">{member.name}</p>
-                    <p className="text-white/50 text-xs capitalize">{member.role}</p>
+                    <p className="text-white/50 text-xs">{member.role}{member.agency ? ` · ${member.agency}` : ''}</p>
                     {member.phone && (
                       <a href={`tel:${member.phone}`} className="text-blue-400 text-xs flex items-center gap-1 hover:underline mt-0.5">
                         <Phone className="h-3 w-3" /> {member.phone}
                       </a>
+                    )}
+                    {member.email && (
+                      <a href={`mailto:${member.email}`} className="text-blue-400 text-xs flex items-center gap-1 hover:underline mt-0.5"><Mail className="h-3 w-3" /> {member.email}</a>
                     )}
                     {(member.vehicle_registration || member.vehicle_make_model) && (
                       <p className="text-white/60 text-xs mt-1">
                         🚗 {[member.vehicle_make_model, member.vehicle_registration].filter(Boolean).join(' · ')}
                       </p>
                     )}
-                    <p className="text-white/60 text-xs mt-0.5">
+                    {!member.is_agency && <p className="text-white/60 text-xs mt-0.5">
                       🍽️ {member.dietary_requirements?.trim() ? member.dietary_requirements : 'No dietary requirements'}
-                    </p>
+                    </p>}
                   </div>
                 </div>
               ))}
