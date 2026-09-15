@@ -101,6 +101,13 @@ export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Pro
               {session && <p className="text-xs text-muted-foreground">{session.label || session.session_date}{session.start_time ? ` · ${session.start_time.slice(0, 5)}` : ''}</p>}
               <a href={`tel:${member.phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline"><Phone className="h-3.5 w-3.5" />{member.phone}</a>
               {member.email && <a href={`mailto:${member.email}`} className="flex items-center gap-2 text-sm text-primary hover:underline"><Mail className="h-3.5 w-3.5" />{member.email}</a>}
+              {(member.agency_contact_name || member.agency_contact_phone || member.agency_contact_email) && (
+                <div className="border-t border-border pt-2 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">Agency contact{member.agency_contact_name ? `: ${member.agency_contact_name}` : ''}</p>
+                  {member.agency_contact_phone && <a href={`tel:${member.agency_contact_phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline"><Phone className="h-3.5 w-3.5" />{member.agency_contact_phone}</a>}
+                  {member.agency_contact_email && <a href={`mailto:${member.agency_contact_email}`} className="flex items-center gap-2 text-sm text-primary hover:underline"><Mail className="h-3.5 w-3.5" />{member.agency_contact_email}</a>}
+                </div>
+              )}
               {member.notes && <p className="text-xs text-muted-foreground border-t border-border pt-2">{member.notes}</p>}
             </div>;
           })}
