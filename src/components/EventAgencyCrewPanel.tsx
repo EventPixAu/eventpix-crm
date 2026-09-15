@@ -23,7 +23,11 @@ interface Props {
   canManage: boolean;
 }
 
-const emptyForm = { name: '', role: '', agency: '', phone: '', email: '', notes: '', session_id: '__none__' };
+const emptyForm = {
+  name: '', phone: '', email: '', agency: '', role: '',
+  agency_contact_name: '', agency_contact_email: '', agency_contact_phone: '',
+  notes: '', session_id: '__none__',
+};
 
 export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Props) {
   const [open, setOpen] = useState(false);
@@ -44,10 +48,13 @@ export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Pro
     setEditing(member);
     setForm({
       name: member.name,
-      role: member.role,
-      agency: member.agency,
       phone: member.phone,
       email: member.email || '',
+      agency: member.agency,
+      role: member.role,
+      agency_contact_name: member.agency_contact_name || '',
+      agency_contact_email: member.agency_contact_email || '',
+      agency_contact_phone: member.agency_contact_phone || '',
       notes: member.notes || '',
       session_id: member.session_id || '__none__',
     });
