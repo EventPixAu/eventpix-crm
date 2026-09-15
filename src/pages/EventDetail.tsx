@@ -1262,7 +1262,7 @@ export default function EventDetail() {
                             <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0"><span className="text-sm font-medium text-secondary-foreground">{initials}</span></div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-medium">{member.name}</span><Badge variant="outline" className="text-xs">Agency</Badge></div>
-                              <p className="text-xs text-muted-foreground">{member.role} · {member.agency}</p>
+                              <p className="text-xs text-muted-foreground">{member.role}{member.agency ? ` · ${member.agency}` : ' · Freelancer'}</p>
                               <div className="flex flex-wrap gap-x-3">
                                 <a href={`tel:${member.phone}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"><Phone className="h-3 w-3" />{member.phone}</a>
                                 {member.email && <a href={`mailto:${member.email}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-0.5"><Mail className="h-3 w-3" />{member.email}</a>}
