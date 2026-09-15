@@ -146,7 +146,7 @@ export default function Events() {
         statusFilter === 'current' ? (filterCategory === 'current' || filterCategory === 'upcoming')
         : filterCategory === statusFilter;
       
-      const matchesStatus = statusFilter === 'all' || filterCategory === statusFilter;
+      const matchesStatus = statusFilter === 'all' || matchesStatusCategory;
 
       return matchesSearch && matchesType && matchesStatus && matchesDelivery;
     });
@@ -231,6 +231,7 @@ export default function Events() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="current">Current</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
