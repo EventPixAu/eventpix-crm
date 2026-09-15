@@ -127,17 +127,26 @@ export default function Events() {
       const isArchived = opsStatus === 'archived' || opsStatus === 'cancelled';
       const isCompleted = opsStatus === 'completed';
       
+      const today = new Date().toISOString().split('T')[0];
+      const isUpcoming = event.event_date >= today;
+
       let filterCategory: string;
       if (isArchived) {
         filterCategory = 'archived';
       } else if (isCompleted) {
         filterCategory = 'completed';
+      } else if (isUpcoming) {
+        filterCategory = 'upcoming';
       } else {
-        // Events stay "current" until explicitly marked completed/archived
+        // Past events stay "current" until explicitly marked completed/archived
         filterCategory = 'current';
       }
+      // "current" includes upcoming events; "upcoming" shows only future-dated ones
+      const matchesStatusCategory =
+        statusFilter === 'current' ? (filterCategory === 'current' || filterCategory === 'upcoming')
+        : filterCategory === statusFilter;
       
-      const matchesStatus = statusFilter === 'all' || filterCategory === statusFilter;
+      const matchesStatus = statusFilter === 'all' || matchesStatusCategory;
 
       return matchesSearch && matchesType && matchesStatus && matchesDelivery;
     });
@@ -222,6 +231,7 @@ export default function Events() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="current">Current</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
