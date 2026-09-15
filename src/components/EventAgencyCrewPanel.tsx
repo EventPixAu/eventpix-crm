@@ -64,14 +64,14 @@ export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Pro
   const save = async () => {
     const values = {
       name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || null,
-      agency: form.agency.trim(), role: form.role.trim(),
+      agency: form.agency.trim() || null, role: form.role.trim(),
       agency_contact_name: form.agency_contact_name.trim() || null,
       agency_contact_email: form.agency_contact_email.trim() || null,
       agency_contact_phone: form.agency_contact_phone.trim() || null,
       notes: form.notes.trim() || null,
       session_id: form.session_id === '__none__' ? null : form.session_id,
     };
-    if (!values.name || !values.phone || !values.agency || !values.role) return;
+    if (!values.name || !values.phone || !values.role) return;
     if (editing) await updateCrew.mutateAsync({ id: editing.id, eventId, ...values });
     else await createCrew.mutateAsync({ event_id: eventId, ...values });
     setOpen(false);
@@ -92,7 +92,7 @@ export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Pro
             const session = sessions.find((item) => item.id === member.session_id);
             return <div key={member.id} className="border border-border rounded-lg p-4 space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <div><p className="font-medium">{member.name}</p><p className="text-sm text-muted-foreground">{member.role} · {member.agency}</p></div>
+                <div><p className="font-medium">{member.name}</p><p className="text-sm text-muted-foreground">{member.role}{member.agency ? ` · ${member.agency}` : ''}</p></div>
                 {canManage && <div className="flex gap-1">
                   <Button variant="ghost" size="icon" onClick={() => startEdit(member)} aria-label={`Edit ${member.name}`}><Pencil className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => setRemoving(member)} aria-label={`Remove ${member.name}`}><Trash2 className="h-4 w-4 text-destructive" /></Button>
