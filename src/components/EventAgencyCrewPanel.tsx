@@ -63,11 +63,15 @@ export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Pro
 
   const save = async () => {
     const values = {
-      name: form.name.trim(), role: form.role.trim(), agency: form.agency.trim(), phone: form.phone.trim(),
-      email: form.email.trim() || null, notes: form.notes.trim() || null,
+      name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || null,
+      agency: form.agency.trim(), role: form.role.trim(),
+      agency_contact_name: form.agency_contact_name.trim() || null,
+      agency_contact_email: form.agency_contact_email.trim() || null,
+      agency_contact_phone: form.agency_contact_phone.trim() || null,
+      notes: form.notes.trim() || null,
       session_id: form.session_id === '__none__' ? null : form.session_id,
     };
-    if (!values.name || !values.role || !values.agency || !values.phone) return;
+    if (!values.name || !values.phone || !values.agency || !values.role) return;
     if (editing) await updateCrew.mutateAsync({ id: editing.id, eventId, ...values });
     else await createCrew.mutateAsync({ event_id: eventId, ...values });
     setOpen(false);
@@ -109,11 +113,19 @@ export function EventAgencyCrewPanel({ eventId, crew, sessions, canManage }: Pro
           <div className="min-h-0 flex-1 overflow-y-auto space-y-4 pr-1">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2"><Label htmlFor="agency-name">Name *</Label><Input id="agency-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="space-y-2"><Label htmlFor="agency-role">Role *</Label><Input id="agency-role" placeholder="Videographer" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} /></div>
-              <div className="space-y-2"><Label htmlFor="agency-company">Agency *</Label><Input id="agency-company" value={form.agency} onChange={(e) => setForm({ ...form, agency: e.target.value })} /></div>
               <div className="space-y-2"><Label htmlFor="agency-phone">Phone *</Label><Input id="agency-phone" type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div className="space-y-2"><Label htmlFor="agency-email">Email</Label><Input id="agency-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div className="space-y-2"><Label htmlFor="agency-company">Agency *</Label><Input id="agency-company" value={form.agency} onChange={(e) => setForm({ ...form, agency: e.target.value })} /></div>
+              <div className="space-y-2 sm:col-span-2"><Label htmlFor="agency-role">Role *</Label><Input id="agency-role" placeholder="Videographer" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} /></div>
             </div>
-            <div className="space-y-2"><Label htmlFor="agency-email">Email</Label><Input id="agency-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div className="border-t border-border pt-4 space-y-4">
+              <p className="text-sm font-medium text-muted-foreground">Agency contact (optional)</p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div className="space-y-2"><Label htmlFor="agency-contact-name">Contact name</Label><Input id="agency-contact-name" value={form.agency_contact_name} onChange={(e) => setForm({ ...form, agency_contact_name: e.target.value })} /></div>
+                <div className="space-y-2"><Label htmlFor="agency-contact-email">Contact email</Label><Input id="agency-contact-email" type="email" value={form.agency_contact_email} onChange={(e) => setForm({ ...form, agency_contact_email: e.target.value })} /></div>
+                <div className="space-y-2"><Label htmlFor="agency-contact-phone">Contact phone</Label><Input id="agency-contact-phone" type="tel" value={form.agency_contact_phone} onChange={(e) => setForm({ ...form, agency_contact_phone: e.target.value })} /></div>
+              </div>
+            </div>
             {sessions.length > 0 && <div className="space-y-2"><Label>Session / time block</Label><Select value={form.session_id} onValueChange={(value) => setForm({ ...form, session_id: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="__none__">All sessions</SelectItem>{sessions.map((session) => <SelectItem key={session.id} value={session.id}>{session.label || session.session_date}</SelectItem>)}</SelectContent></Select></div>}
             <div className="space-y-2"><Label htmlFor="agency-notes">Private notes</Label><Textarea id="agency-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
