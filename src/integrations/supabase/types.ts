@@ -2579,6 +2579,9 @@ export type Database = {
       event_agency_crew: {
         Row: {
           agency: string
+          agency_contact_email: string | null
+          agency_contact_name: string | null
+          agency_contact_phone: string | null
           created_at: string
           created_by: string
           email: string | null
@@ -2593,6 +2596,9 @@ export type Database = {
         }
         Insert: {
           agency: string
+          agency_contact_email?: string | null
+          agency_contact_name?: string | null
+          agency_contact_phone?: string | null
           created_at?: string
           created_by?: string
           email?: string | null
@@ -2607,6 +2613,9 @@ export type Database = {
         }
         Update: {
           agency?: string
+          agency_contact_email?: string | null
+          agency_contact_name?: string | null
+          agency_contact_phone?: string | null
           created_at?: string
           created_by?: string
           email?: string | null
