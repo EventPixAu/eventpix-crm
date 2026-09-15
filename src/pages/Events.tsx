@@ -40,7 +40,7 @@ export default function Events() {
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('current');
+  const [statusFilter, setStatusFilter] = useState('upcoming');
   const [deliveryFilter, setDeliveryFilter] = useState('all');
 
   const { data: eventSessions = [] } = useQuery({
