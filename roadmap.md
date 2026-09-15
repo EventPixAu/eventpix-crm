@@ -8,4 +8,4 @@
 ## Current request
 - [x] Add agency-provided crew to event details with phone required/available and email optional
 - [x] Make agency crew visible to the client
-- [ ] Reorder agency crew fields (name, phone, email, agency, role) and add optional agency contact name/email/phone
+- [x] Reorder agency crew fields (name, phone, email, agency, role) and add optional agency contact name/email/phone
