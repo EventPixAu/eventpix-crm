@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   Filter,
   CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -53,6 +54,7 @@ type FilterMode = 'upcoming' | 'today' | 'past';
 function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][number] }) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
+  const [declining, setDeclining] = useState(false);
   const eventDate = parseISO(job.event_date);
   const isEventToday = isToday(eventDate);
   const isEventTomorrow = isTomorrow(eventDate);
@@ -83,6 +85,46 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
       toast.error('Failed to confirm');
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleDecline = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeclining(true);
+    try {
+      const { error } = await supabase
+        .from('event_assignments')
+        .update({ confirmation_status: 'declined', confirmed_at: null })
+        .eq('id', job.assignment_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Marked as unavailable — the team has been notified via your status.');
+    } catch (err) {
+      toast.error('Failed to update status');
+    } finally {
+      setDeclining(false);
+    }
+  };
+
+  const handleResetToPending = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeclining(true);
+    try {
+      const { error } = await supabase
+        .from('event_assignments')
+        .update({ confirmation_status: 'pending', confirmed_at: null })
+        .eq('id', job.assignment_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Status reset — you can confirm again.');
+    } catch (err) {
+      toast.error('Failed to update status');
+    } finally {
+      setDeclining(false);
     }
   };
 
@@ -236,17 +278,29 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
               )}
             </div>
 
-            {/* Confirm availability button */}
+            {/* Confirm / decline availability buttons */}
             {!isEventPast && (!job.confirmation_status || job.confirmation_status === 'pending') && (
-              <Button
-                size="sm"
-                className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white border-0"
-                onClick={handleConfirm}
-                disabled={confirming}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {confirming ? 'Confirming...' : 'Confirm Availability'}
-              </Button>
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white border-0"
+                  onClick={handleConfirm}
+                  disabled={confirming || declining}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {confirming ? 'Confirming...' : 'Confirm Availability'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-destructive border-destructive/40 hover:bg-destructive/10"
+                  onClick={handleDecline}
+                  disabled={confirming || declining}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {declining ? 'Updating...' : "I'm Unavailable"}
+                </Button>
+              </div>
             )}
 
             {job.confirmation_status === 'confirmed' && (
@@ -254,6 +308,19 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                 <CheckCircle className="h-3.5 w-3.5" />
                 Confirmed
               </div>
+            )}
+
+            {job.confirmation_status === 'declined' && (
+              <button
+                type="button"
+                onClick={handleResetToPending}
+                disabled={declining}
+                className="flex items-center gap-1.5 text-xs text-destructive mt-3 hover:underline"
+                title="Changed your mind? Tap to reset so you can confirm"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Marked unavailable{declining ? ' — updating...' : ' — tap to undo'}
+              </button>
             )}
           </CardContent>
         </Card>
