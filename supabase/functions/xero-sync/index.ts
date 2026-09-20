@@ -354,7 +354,7 @@ Deno.serve(async (req) => {
             return 'travel';
           } else if (d.includes('hotel') || d.includes('accommodation') || d.includes('lodging') || d.includes('airbnb')) {
             return 'accommodation';
-          } else if (d.includes('staff') || d.includes('wage') || d.includes('salary') || d.includes('contractor') || d.includes('subcontract')) {
+          } else if (d.includes('staff') || d.includes('wage') || d.includes('salary') || d.includes('contractor') || d.includes('subcontract') || d.includes('photographer') || d.includes('videographer') || d.includes('crew') || d.includes('editor') || d.includes('retouch') || d.includes('freelanc')) {
             return 'staff';
           }
           return 'sundry';
@@ -798,7 +798,7 @@ Deno.serve(async (req) => {
                       category = 'travel';
                     } else if (acctNameLower.includes('hotel') || acctNameLower.includes('accommodation') || acctNameLower.includes('lodging')) {
                       category = 'accommodation';
-                    } else if (acctNameLower.includes('staff') || acctNameLower.includes('wage') || acctNameLower.includes('salary') || acctNameLower.includes('contractor') || acctNameLower.includes('subcontract')) {
+                    } else if (acctNameLower.includes('staff') || acctNameLower.includes('wage') || acctNameLower.includes('salary') || acctNameLower.includes('contractor') || acctNameLower.includes('subcontract') || acctNameLower.includes('photographer') || acctNameLower.includes('videographer') || acctNameLower.includes('crew') || acctNameLower.includes('editor') || acctNameLower.includes('retouch') || acctNameLower.includes('freelanc')) {
                       category = 'staff';
                     }
 
