@@ -8,6 +8,13 @@
       "when": 1789961594923,
       "tag": "0000_add_workflow_event_type_to_events",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789964630406,
+      "tag": "0001_fix_series_workflow_step_label_matching",
+      "breakpoints": true
     }
   ]
 }
