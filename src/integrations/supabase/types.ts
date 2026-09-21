@@ -3580,6 +3580,7 @@ export type Database = {
           venue_name: string | null
           venue_parking_notes: string | null
           venue_postcode: string | null
+          workflow_event_type_id: string | null
           workflow_template_id: string | null
           xero_tag: string | null
         }
@@ -3671,6 +3672,7 @@ export type Database = {
           venue_name?: string | null
           venue_parking_notes?: string | null
           venue_postcode?: string | null
+          workflow_event_type_id?: string | null
           workflow_template_id?: string | null
           xero_tag?: string | null
         }
@@ -3762,6 +3764,7 @@ export type Database = {
           venue_name?: string | null
           venue_parking_notes?: string | null
           venue_postcode?: string | null
+          workflow_event_type_id?: string | null
           workflow_template_id?: string | null
           xero_tag?: string | null
         }
@@ -3869,6 +3872,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_workflow_event_type_id_fkey"
+            columns: ["workflow_event_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_types"
             referencedColumns: ["id"]
           },
           {

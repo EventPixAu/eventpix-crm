@@ -495,9 +495,11 @@ export function useInitializeWorkflowFromEventType() {
     mutationFn: async ({ 
       eventId, 
       selectedStepIds,
+      eventTypeId,
     }: { 
       eventId: string; 
       selectedStepIds: string[];
+      eventTypeId?: string | null;
     }) => {
       // Get event details for date calculations
       const { data: event, error: eventError } = await supabase
@@ -613,11 +615,21 @@ export function useInitializeWorkflowFromEventType() {
         .insert(steps);
       
       if (insertError) throw insertError;
-      
+
+      // Remember which workflow (event type) was applied to this job
+      if (eventTypeId) {
+        await supabase
+          .from('events')
+          .update({ workflow_event_type_id: eventTypeId } as any)
+          .eq('id', eventId);
+      }
+
       return steps.length;
     },
     onSuccess: (count, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events', eventId] });
       toast.success(`Added ${count} workflow steps`);
     },

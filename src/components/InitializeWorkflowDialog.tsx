@@ -174,12 +174,17 @@ export function InitializeWorkflowDialog({
     await initializeSteps.mutateAsync({
       eventId,
       selectedStepIds: Array.from(selectedStepIds),
+      eventTypeId: selectedEventTypeId || null,
     });
     
     setOpen(false);
   };
   
   const isLoading = eventTypesLoading || stepsLoading;
+
+  // Show the workflow that is actually assigned to this job, not the event's category
+  const resolvedWorkflowLabel =
+    eventTypes.find(t => t.id === currentEventTypeId)?.name || workflowLabel;
   
   return (
     <div className="flex items-center gap-2">
@@ -376,10 +381,10 @@ export function InitializeWorkflowDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-      {workflowLabel && (
+      {resolvedWorkflowLabel && (
         <div className="min-w-0 border-l border-border pl-3">
           <p className="text-xs text-muted-foreground">Assigned Workflow</p>
-          <p className="truncate text-sm font-medium text-foreground">{workflowLabel}</p>
+          <p className="truncate text-sm font-medium text-foreground">{resolvedWorkflowLabel}</p>
         </div>
       )}
     </div>
