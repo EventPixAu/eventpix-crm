@@ -1594,6 +1594,7 @@ export default function EventDetail() {
                   quoteId={(event as any).quote_id}
                   eventName={(event as any).event_name}
                   eventDate={(event as any).event_date}
+                  eventSeriesId={(event as any).event_series_id}
                   defaultOpen={true}
                 />
               )}
