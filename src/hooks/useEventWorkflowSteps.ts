@@ -504,11 +504,12 @@ export function useInitializeWorkflowFromEventType() {
       // Get event details for date calculations
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id, event_series_id')
         .eq('id', eventId)
         .single();
       
       if (eventError) throw eventError;
+      const isSeriesEvent = !!(event as any).event_series_id;
       
       // Get job accepted date from lead if exists
       let jobAcceptedDate = event.booking_date || event.created_at;
