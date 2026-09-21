@@ -58,7 +58,7 @@ export function useDeliveryMetrics(startDate?: string, endDate?: string, eventTy
           delivery_deadline,
           event_type_id,
           event_series_id,
-          event_type:event_types(name),
+          event_type:event_types!events_event_type_id_fkey(name),
           event_series:event_series(name),
           delivery_records(delivered_at)
         `)

@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     if (event_id) {
       const { data: ev } = await supabase
         .from("events")
-        .select("event_name, event_date, venue_name, start_time, end_time, coverage_details, event_types(name)")
+        .select("event_name, event_date, venue_name, start_time, end_time, coverage_details, event_types!events_event_type_id_fkey(name)")
         .eq("id", event_id)
         .maybeSingle();
       if (ev) {
