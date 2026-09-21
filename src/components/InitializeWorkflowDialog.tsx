@@ -174,6 +174,7 @@ export function InitializeWorkflowDialog({
     await initializeSteps.mutateAsync({
       eventId,
       selectedStepIds: Array.from(selectedStepIds),
+      eventTypeId: selectedEventTypeId || null,
     });
     
     setOpen(false);
@@ -376,10 +377,10 @@ export function InitializeWorkflowDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-      {workflowLabel && (
+      {resolvedWorkflowLabel && (
         <div className="min-w-0 border-l border-border pl-3">
           <p className="text-xs text-muted-foreground">Assigned Workflow</p>
-          <p className="truncate text-sm font-medium text-foreground">{workflowLabel}</p>
+          <p className="truncate text-sm font-medium text-foreground">{resolvedWorkflowLabel}</p>
         </div>
       )}
     </div>
