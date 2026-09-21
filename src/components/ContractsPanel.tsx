@@ -23,6 +23,7 @@ import {
   Pencil,
   Download,
   Layers,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,7 +77,7 @@ import {
   applyProposedServicesToContractHtml,
   useGenerateContractFromTemplate,
 } from '@/hooks/useContractTemplates';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
 import { supabase } from '@/lib/supabase';
