@@ -22,6 +22,7 @@ import {
   Mail,
   Pencil,
   Download,
+  Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,7 @@ interface ContractsPanelProps {
   leadName?: string;
   eventName?: string;
   eventDate?: string;
+  eventSeriesId?: string | null;
   defaultOpen?: boolean;
 }
 
@@ -115,6 +117,7 @@ export function ContractsPanel({
   leadName,
   eventName,
   eventDate,
+  eventSeriesId,
   defaultOpen = false,
 }: ContractsPanelProps) {
   const queryClient = useQueryClient();
@@ -124,6 +127,21 @@ export function ContractsPanel({
   const { data: leadContracts = [] } = useLeadContracts(leadId);
   const { data: eventContracts = [] } = useEventContracts(eventId);
   const { data: templates = [] } = useActiveContractTemplates();
+  const { data: seriesContract } = useQuery({
+    queryKey: ['series-contract', eventSeriesId],
+    queryFn: async () => {
+      if (!eventSeriesId) return null;
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('id, title, status')
+        .eq('event_series_id', eventSeriesId)
+        .eq('scope', 'series')
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!eventSeriesId,
+  });
   
   // Mutation hooks
   const generateContract = useGenerateContractFromTemplate();
@@ -497,9 +515,9 @@ export function ContractsPanel({
               <div className="flex items-center gap-2">
                 <FileSignature className="h-5 w-5 text-muted-foreground" />
                 <span className="font-semibold">Contracts</span>
-                {contracts.length > 0 && (
+                {(contracts.length > 0 || seriesContract) && (
                   <Badge variant="secondary" className="text-xs">
-                    {contracts.length}
+                    {contracts.length + (seriesContract ? 1 : 0)}
                   </Badge>
                 )}
               </div>
@@ -533,11 +551,38 @@ export function ContractsPanel({
           
           <CollapsibleContent>
             <div className="px-4 pb-4 border-t">
-              {contracts.length === 0 ? (
+              {seriesContract && (
+                <div className="mt-4 flex items-center justify-between gap-3 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Layers className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        Covered by series agreement{seriesContract.title ? ` — ${seriesContract.title}` : ''}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Applies across all events in the series</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="outline" className={`text-xs capitalize ${getStatusColor(seriesContract.status)}`}>
+                      {seriesContract.status}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Open series agreement"
+                      onClick={() => navigate(`/admin/series/${eventSeriesId}`)}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {contracts.length === 0 && !seriesContract ? (
                 <p className="text-sm text-muted-foreground text-center py-6">
                   No contracts yet
                 </p>
-              ) : (
+              ) : contracts.length > 0 ? (
                 <div className="space-y-2 pt-4">
                   {contracts.map((contract) => (
                     <div
@@ -684,7 +729,7 @@ export function ContractsPanel({
                     </div>
                   ))}
                 </div>
-              )}
+              ) : null}
             </div>
           </CollapsibleContent>
         </div>
