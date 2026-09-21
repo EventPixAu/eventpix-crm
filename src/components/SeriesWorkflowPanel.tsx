@@ -259,7 +259,15 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
         if (delErr) { failed++; continue; }
 
         const { error } = await supabase.from('event_workflow_steps').insert(steps);
-        if (!error) synced++; else failed++;
+        if (!error) {
+          synced++;
+          if (adminEventTypeId !== NONE) {
+            await supabase
+              .from('events')
+              .update({ workflow_event_type_id: adminEventTypeId } as any)
+              .eq('id', event.id);
+          }
+        } else failed++;
       }
 
       setInitialAdmin(adminEventTypeId);
