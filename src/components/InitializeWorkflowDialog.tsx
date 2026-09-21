@@ -40,6 +40,8 @@ interface InitializeWorkflowDialogProps {
   currentEventTypeId?: string | null;
   workflowLabel?: string | null;
   trigger?: React.ReactNode;
+  /** When the event belongs to a series, series-level steps are excluded (they live on the series checklist). */
+  isSeriesEvent?: boolean;
 }
 
 export function InitializeWorkflowDialog({
@@ -48,6 +50,7 @@ export function InitializeWorkflowDialog({
   currentEventTypeId,
   workflowLabel,
   trigger,
+  isSeriesEvent = false,
 }: InitializeWorkflowDialogProps) {
 
   const [open, setOpen] = useState(false);
