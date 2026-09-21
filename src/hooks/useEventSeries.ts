@@ -199,7 +199,7 @@ export function useSeriesEvents(seriesId: string | undefined) {
         .from('events')
         .select(`
           *,
-          event_type:event_types(name),
+          event_type:event_types!events_event_type_id_fkey(name),
           delivery_method:delivery_methods_lookup!events_delivery_method_id_fkey(name),
           event_assignments(id, user_id)
         `)

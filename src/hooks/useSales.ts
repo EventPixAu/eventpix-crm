@@ -198,7 +198,7 @@ export function useClientEvents(clientId: string | undefined) {
         .from('events')
         .select(`
           *,
-          event_type:event_types(id, name)
+          event_type:event_types!events_event_type_id_fkey(id, name)
         `)
         .eq('client_id', clientId)
         .order('event_date', { ascending: false });
