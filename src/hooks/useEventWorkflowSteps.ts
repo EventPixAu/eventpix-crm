@@ -495,9 +495,11 @@ export function useInitializeWorkflowFromEventType() {
     mutationFn: async ({ 
       eventId, 
       selectedStepIds,
+      eventTypeId,
     }: { 
       eventId: string; 
       selectedStepIds: string[];
+      eventTypeId?: string | null;
     }) => {
       // Get event details for date calculations
       const { data: event, error: eventError } = await supabase
