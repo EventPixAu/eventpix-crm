@@ -182,6 +182,9 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
         id: seriesId,
         default_workflow_step_ids: resolvedStepIds.length > 0 ? resolvedStepIds : null,
       });
+      await supabase.rpc('sync_series_workflow_steps' as any, { p_series_id: seriesId });
+      await queryClient.invalidateQueries({ queryKey: ['series-workflow-steps', seriesId] });
+      await queryClient.invalidateQueries({ queryKey: ['event-workflow-steps'] });
       setInitialAdmin(adminEventTypeId);
       setInitialEditor(editorEventTypeId);
       toast.success('Workflow selection saved');
@@ -211,6 +214,14 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
         id: seriesId,
         default_workflow_step_ids: resolvedStepIds,
       });
+
+      // Populate the once-per-series checklist and remove those steps from
+      // individual events before rebuilding each event's remaining workflow.
+      const { error: seriesStepsError } = await supabase.rpc(
+        'sync_series_workflow_steps' as any,
+        { p_series_id: seriesId }
+      );
+      if (seriesStepsError) throw seriesStepsError;
 
       let synced = 0, preserved = 0, failed = 0;
 
@@ -274,6 +285,7 @@ export function SeriesWorkflowPanel({ seriesId }: SeriesWorkflowPanelProps) {
       setInitialEditor(editorEventTypeId);
       // Invalidate any cached event workflow queries so the events reflect the new steps
       await queryClient.invalidateQueries({ queryKey: ['event-workflow-steps'] });
+      await queryClient.invalidateQueries({ queryKey: ['series-workflow-steps', seriesId] });
       await queryClient.invalidateQueries({ queryKey: ['events'] });
       toast.success(
         `Synced workflow to ${synced} event(s)` +

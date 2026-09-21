@@ -9,3 +9,4 @@
 - [x] Add agency-provided crew to event details with phone required/available and email optional
 - [x] Make agency crew visible to the client
 - [x] Reorder agency crew fields (name, phone, email, agency, role) and add optional agency contact name/email/phone
+- [x] Move the first four series workflow steps into the series checklist and remove them from individual events
