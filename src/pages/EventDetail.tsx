@@ -1856,6 +1856,7 @@ export default function EventDetail() {
                         currentTemplateId={(event as any).workflow_template_id}
                         currentEventTypeId={(event as any).workflow_event_type_id || (event as any).event_type_id}
                         workflowLabel={getEventTypeName()}
+                        isSeriesEvent={!!(event as any).event_series_id}
                       />
                     </div>
                   )}
