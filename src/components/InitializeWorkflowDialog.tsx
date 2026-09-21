@@ -181,6 +181,10 @@ export function InitializeWorkflowDialog({
   };
   
   const isLoading = eventTypesLoading || stepsLoading;
+
+  // Show the workflow that is actually assigned to this job, not the event's category
+  const resolvedWorkflowLabel =
+    eventTypes.find(t => t.id === currentEventTypeId)?.name || workflowLabel;
   
   return (
     <div className="flex items-center gap-2">
