@@ -250,11 +250,12 @@ export function useInitializeWorkflowStepsSelective() {
       // Get event details for date calculations
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id, event_series_id')
         .eq('id', eventId)
         .single();
       
       if (eventError) throw eventError;
+      const isSeriesEvent = !!(event as any).event_series_id;
       
       // Get job accepted date from lead if exists
       let jobAcceptedDate = event.booking_date || event.created_at;
@@ -544,7 +545,11 @@ export function useInitializeWorkflowFromEventType() {
         .order('sort_order');
       
       if (stepsError) throw stepsError;
-      if (!masterSteps || masterSteps.length === 0) throw new Error('No valid steps selected');
+      // Series-level steps belong to the series checklist, never to each event in the series.
+      const eligibleSteps = (masterSteps || []).filter(
+        s => !(isSeriesEvent && (s as any).is_series_level)
+      );
+      if (eligibleSteps.length === 0) throw new Error('No valid steps selected');
       
       // Delete existing workflow steps for this event
       const { error: deleteError } = await supabase
@@ -562,7 +567,7 @@ export function useInitializeWorkflowFromEventType() {
       
       // Sort steps by phase then sort_order
       const phaseOrder = { pre_event: 0, day_of: 1, post_event: 2 };
-      const sortedSteps = [...masterSteps].sort((a, b) => {
+      const sortedSteps = [...eligibleSteps].sort((a, b) => {
         const aPhase = phaseOrder[a.phase as keyof typeof phaseOrder] ?? 1;
         const bPhase = phaseOrder[b.phase as keyof typeof phaseOrder] ?? 1;
         if (aPhase !== bPhase) return aPhase - bPhase;
@@ -757,7 +762,7 @@ export function useApplyEventTypeWorkflow() {
     }) => {
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id')
+        .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id, event_series_id')
         .eq('id', eventId)
         .maybeSingle();
       if (eventError) throw eventError;
@@ -780,8 +785,11 @@ export function useApplyEventTypeWorkflow() {
         .eq('is_active', true);
       if (stepsError) throw stepsError;
 
-      // Series-level steps live on the series checklist only.
-      const applicable = (masterSteps || []).filter(s => !(s as any).is_series_level);
+      // Series-level steps live on the series checklist only (standalone events keep them).
+      const isSeriesEvent = !!(event as any).event_series_id;
+      const applicable = (masterSteps || []).filter(
+        s => !(isSeriesEvent && (s as any).is_series_level)
+      );
       if (applicable.length === 0) return 0;
 
       let jobAcceptedDate: string | null = event.booking_date || event.created_at;
