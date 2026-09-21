@@ -94,19 +94,24 @@ export function InitializeWorkflowDialog({
   // Get the steps to show for the selected event type
   const stepsForSelectedType = useMemo(() => {
     if (!selectedEventTypeId) return [];
-    
+
+    // Steps marked series-level belong to the series checklist, not to each event in the series.
+    const available = isSeriesEvent
+      ? allMasterSteps.filter(step => !(step as any).is_series_level)
+      : allMasterSteps;
+
     // Get the configured defaults for this event type
     const defaults = allStepDefaults.filter(d => d.event_type_id === selectedEventTypeId);
     
     if (defaults.length === 0) {
       // No custom configuration - show ALL active master steps
-      return allMasterSteps;
+      return available;
     }
     
     // Show only the configured steps for this event type
     const configuredStepIds = new Set(defaults.map(d => d.master_step_id));
-    return allMasterSteps.filter(step => configuredStepIds.has(step.id));
-  }, [selectedEventTypeId, allStepDefaults, allMasterSteps]);
+    return available.filter(step => configuredStepIds.has(step.id));
+  }, [selectedEventTypeId, allStepDefaults, allMasterSteps, isSeriesEvent]);
   
   // Group steps by phase
   const stepsByPhase = useMemo(() => {
