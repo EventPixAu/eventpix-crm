@@ -11,3 +11,4 @@
 - [x] Reorder agency crew fields (name, phone, email, agency, role) and add optional agency contact name/email/phone
 - [x] Move the first four series workflow steps into the series checklist and remove them from individual events
 - [x] Make the series steps checklist compact: one line of tick-box chips per phase
+- [x] Ensure all dialogs, confirmation popups, sheets, and drawers scroll within the viewport
