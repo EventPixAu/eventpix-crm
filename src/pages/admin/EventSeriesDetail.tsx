@@ -148,8 +148,30 @@ export default function EventSeriesDetail() {
     },
   });
 
+  // Fallback: if the series has no saved default contact, use the primary contact
+  // already attached to the series' events so the Overview still shows someone.
+  const seriesEventIds = useMemo(
+    () => (events || []).map((e: any) => e.id).filter(Boolean) as string[],
+    [events]
+  );
+  const { data: eventDerivedContactId = null } = useQuery({
+    queryKey: ['series-event-derived-contact', seriesEventIds],
+    enabled: seriesEventIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('event_contacts')
+        .select('client_contact_id, contact_type, created_at')
+        .in('event_id', seriesEventIds)
+        .not('client_contact_id', 'is', null)
+        .order('created_at', { ascending: true });
+      const rows = (data || []) as any[];
+      const primary = rows.find((r) => r.contact_type === 'primary');
+      return (primary || rows[0])?.client_contact_id || null;
+    },
+  });
+
   const selectedContactId =
-    (series as any)?.default_contact_id || (series as any)?.primary_contact_id || null;
+    (series as any)?.default_contact_id || (series as any)?.primary_contact_id || eventDerivedContactId || null;
   const selectedOnsiteContactId = (series as any)?.onsite_contact_id || null;
 
   // The selected contacts may belong to a managing agency rather than the client company,
