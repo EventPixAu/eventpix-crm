@@ -487,10 +487,10 @@ export default function ContactDetail() {
           title="New Contact"
           actions={
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/crm/contacts">
+              <BackLink to="/crm/contacts">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Cancel
-              </Link>
+              </BackLink>
             </Button>
           }
         />
@@ -641,10 +641,10 @@ export default function ContactDetail() {
       <AppLayout>
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
-            <Link to="/crm/contacts">
+            <BackLink to="/crm/contacts">
               <ArrowLeft className="h-4 w-4" />
               Back to Contacts
-            </Link>
+            </BackLink>
           </Button>
         </div>
         <div className="text-center py-12 text-muted-foreground">

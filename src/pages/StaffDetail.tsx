@@ -448,10 +448,10 @@ export default function StaffDetail() {
       <AppLayout>
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
-            <Link to="/staff">
+            <BackLink to="/staff">
               <ArrowLeft className="h-4 w-4" />
               Back to Team
-            </Link>
+            </BackLink>
           </Button>
         </div>
         <div className="text-center py-12 text-muted-foreground">
@@ -481,10 +481,10 @@ export default function StaffDetail() {
     <AppLayout>
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
-          <Link to="/staff">
+          <BackLink to="/staff">
             <ArrowLeft className="h-4 w-4" />
             Back to Team
-          </Link>
+          </BackLink>
         </Button>
       </div>
 

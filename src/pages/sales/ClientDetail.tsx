@@ -227,10 +227,10 @@ export default function ClientDetail() {
           title="New Company"
           actions={
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/crm/companies">
+              <BackLink to="/crm/companies">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Cancel
-              </Link>
+              </BackLink>
             </Button>
           }
         />
@@ -374,10 +374,10 @@ export default function ClientDetail() {
       <AppLayout>
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild className="gap-2 -ml-2">
-            <Link to="/crm/companies">
+            <BackLink to="/crm/companies">
               <ArrowLeft className="h-4 w-4" />
               Back to Companies
-            </Link>
+            </BackLink>
           </Button>
         </div>
         <div className="text-center py-12 text-muted-foreground">
