@@ -896,9 +896,9 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
               }
             >
               <Send className="h-4 w-4 mr-1" />
-              {quote?.public_token ? 'Re-send' : 'Send for acceptance'}
+              {quoteIsShareable ? 'Re-send' : 'Send for acceptance'}
             </Button>
-            {acceptLink && (
+            {acceptLink ? (
               <div className="flex items-center gap-2 ml-auto">
                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
                 <Input
@@ -914,6 +914,10 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
+            ) : (
+              <p className="ml-auto text-xs text-muted-foreground">
+                The client link becomes active once you send the budget for acceptance.
+              </p>
             )}
           </div>
         </CardContent>
