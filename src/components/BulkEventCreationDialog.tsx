@@ -124,6 +124,8 @@ export function BulkEventCreationDialog({
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
       setUseDefaultContact(true);
+      setDefaultStartTime(seriesStartTime);
+      setDefaultEndTime(seriesEndTime);
       
       // Fetch contact details if series has a default contact
       if (seriesDefaultContactId) {
