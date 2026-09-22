@@ -268,8 +268,8 @@ export default function EventForm() {
         delivery_method_guests_id: (event as any).delivery_method_guests_id || null,
         delivery_method_photographer_id: (event as any).delivery_method_photographer_id || null,
         delivery_deadline: event.delivery_deadline || '',
-        meal_provided: (event as any).meal_provided === true ? 'yes' : (event as any).meal_provided === false ? 'no' : '',
-        parking_provided: (event as any).parking_provided === true ? 'yes' : (event as any).parking_provided === false ? 'no' : '',
+        meal_provided: (event as any).meal_provision_status || ((event as any).meal_provided === true ? 'yes' : (event as any).meal_provided === false ? 'no' : ''),
+        parking_provided: (event as any).parking_provision_status || ((event as any).parking_provided === true ? 'yes' : (event as any).parking_provided === false ? 'no' : ''),
         notes: event.notes || '',
       });
       setSelectedClientId(event.client_id || null);
@@ -367,6 +367,8 @@ export default function EventForm() {
       delivery_deadline: values.delivery_deadline || null,
       meal_provided: values.meal_provided === 'yes' ? true : values.meal_provided === 'no' ? false : null,
       parking_provided: values.parking_provided === 'yes' ? true : values.parking_provided === 'no' ? false : null,
+      meal_provision_status: values.meal_provided || null,
+      parking_provision_status: values.parking_provided || null,
       notes: values.notes || null,
     };
     
@@ -986,6 +988,7 @@ export default function EventForm() {
                         <SelectContent>
                           <SelectItem value="yes">Yes</SelectItem>
                           <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="not_required">Not required</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1008,6 +1011,7 @@ export default function EventForm() {
                         <SelectContent>
                           <SelectItem value="yes">Yes</SelectItem>
                           <SelectItem value="no">No</SelectItem>
+                          <SelectItem value="not_required">Not required</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

@@ -5,6 +5,7 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 export interface EmailAttachment {
@@ -37,7 +38,13 @@ export function useSendCrmEmail() {
         body: params,
       });
       
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const details = await error.context.json().catch(() => null);
+          throw new Error(details?.error || error.message);
+        }
+        throw error;
+      }
       if (!data.success) throw new Error(data.error || 'Failed to send email');
       
       return data;

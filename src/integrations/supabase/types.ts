@@ -3550,11 +3550,13 @@ export type Database = {
           live_feed_link: string | null
           main_shoot_date: string | null
           meal_provided: boolean | null
+          meal_provision_status: string | null
           notes: string | null
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
           ops_status: string | null
           parking_provided: boolean | null
+          parking_provision_status: string | null
           photography_brief: string | null
           pre_registration_link: string | null
           proposed_services: string | null
@@ -3642,11 +3644,13 @@ export type Database = {
           live_feed_link?: string | null
           main_shoot_date?: string | null
           meal_provided?: boolean | null
+          meal_provision_status?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
           parking_provided?: boolean | null
+          parking_provision_status?: string | null
           photography_brief?: string | null
           pre_registration_link?: string | null
           proposed_services?: string | null
@@ -3734,11 +3738,13 @@ export type Database = {
           live_feed_link?: string | null
           main_shoot_date?: string | null
           meal_provided?: boolean | null
+          meal_provision_status?: string | null
           notes?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
           parking_provided?: boolean | null
+          parking_provision_status?: string | null
           photography_brief?: string | null
           pre_registration_link?: string | null
           proposed_services?: string | null

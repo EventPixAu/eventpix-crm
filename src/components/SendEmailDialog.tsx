@@ -109,7 +109,7 @@ export function SendEmailDialog({
   const [showPlainText, setShowPlainText] = useState(false);
   const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
   const [attachProposalPdf, setAttachProposalPdf] = useState(context === 'quote');
-  const [attachContractPdf, setAttachContractPdf] = useState(context === 'contract');
+  const [attachContractPdf, setAttachContractPdf] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -246,7 +246,7 @@ export function SendEmailDialog({
       const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
       const raw = rawTemplateRef.current;
       const latestSubject = selectedTemplate?.subject || '';
-      const latestBody = selectedTemplate?.body_text || selectedTemplate?.body_html || '';
+      const latestBody = selectedTemplate?.body_html || selectedTemplate?.body_text || '';
       if (selectedTemplate && !userEditedRef.current &&
           (raw?.subject !== latestSubject || raw?.body !== latestBody)) {
         applyTemplateContent(selectedTemplate);
@@ -292,7 +292,7 @@ export function SendEmailDialog({
       setShowPlainText(false);
       setAttachments([]);
       setAttachProposalPdf(context === 'quote');
-      setAttachContractPdf(context === 'contract');
+      setAttachContractPdf(false);
       setIsGeneratingPdf(false);
       setIsSending(false);
       setHasAutoResolved(false);
@@ -433,7 +433,8 @@ export function SendEmailDialog({
   // Apply a template's raw content and resolve merge fields with the current context
   const applyTemplateContent = (template: { subject?: string | null; body_text?: string | null; body_html?: string | null }) => {
     const rawSubject = template.subject || '';
-    const rawBody = template.body_text || template.body_html || '';
+    // Prefer the rich version so action links render as clear buttons.
+    const rawBody = template.body_html || template.body_text || '';
     rawTemplateRef.current = { subject: rawSubject, body: rawBody };
     userEditedRef.current = false;
     setSubject(processMergeFields(rawSubject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
