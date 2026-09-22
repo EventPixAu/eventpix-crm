@@ -179,11 +179,26 @@ export function EditWorkflowStepDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="management">Management</SelectItem>
-                {staffOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                {staffOptions.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel>Event Team</SelectLabel>
+                    {staffOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+                {otherOptions.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel>All Team (incl. Editors)</SelectLabel>
+                    {otherOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
               </SelectContent>
             </Select>
           </div>
