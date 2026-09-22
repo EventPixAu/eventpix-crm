@@ -191,10 +191,14 @@ export function BulkEventCreationDialog({
     }));
   };
   
+  const handleApplyTimesToAll = () => {
+    setRows(rows.map(r => ({ ...r, start_time: defaultStartTime, end_time: defaultEndTime })));
+  };
+
   const handleAddRow = () => {
     setRows([...rows, createEmptyRow({
-      start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
-      end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
+      start_time: defaultStartTime || rows[rows.length - 1]?.start_time || seriesStartTime,
+      end_time: defaultEndTime || rows[rows.length - 1]?.end_time || seriesEndTime,
       venue_name: rows[rows.length - 1]?.venue_name || seriesDefaultVenue,
       venue_address: rows[rows.length - 1]?.venue_address || seriesDefaultAddress,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
