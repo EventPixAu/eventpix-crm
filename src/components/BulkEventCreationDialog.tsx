@@ -113,6 +113,8 @@ export function BulkEventCreationDialog({
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
   const [useDefaultContact, setUseDefaultContact] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [defaultStartTime, setDefaultStartTime] = useState(seriesStartTime);
+  const [defaultEndTime, setDefaultEndTime] = useState(seriesEndTime);
   
   // Reset form when dialog opens
   useEffect(() => {
@@ -122,6 +124,8 @@ export function BulkEventCreationDialog({
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
       setUseDefaultContact(true);
+      setDefaultStartTime(seriesStartTime);
+      setDefaultEndTime(seriesEndTime);
       
       // Fetch contact details if series has a default contact
       if (seriesDefaultContactId) {
@@ -187,10 +191,14 @@ export function BulkEventCreationDialog({
     }));
   };
   
+  const handleApplyTimesToAll = () => {
+    setRows(rows.map(r => ({ ...r, start_time: defaultStartTime, end_time: defaultEndTime })));
+  };
+
   const handleAddRow = () => {
     setRows([...rows, createEmptyRow({
-      start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
-      end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
+      start_time: defaultStartTime || rows[rows.length - 1]?.start_time || seriesStartTime,
+      end_time: defaultEndTime || rows[rows.length - 1]?.end_time || seriesEndTime,
       venue_name: rows[rows.length - 1]?.venue_name || seriesDefaultVenue,
       venue_address: rows[rows.length - 1]?.venue_address || seriesDefaultAddress,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
@@ -340,6 +348,37 @@ export function BulkEventCreationDialog({
                 <Label htmlFor="useDefaultContact" className="text-sm text-muted-foreground cursor-pointer">
                   Apply default contact to all events without custom contact
                 </Label>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Input
+                    type="time"
+                    value={defaultStartTime}
+                    onChange={(e) => setDefaultStartTime(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Time</Label>
+                  <Input
+                    type="time"
+                    value={defaultEndTime}
+                    onChange={(e) => setDefaultEndTime(e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyTimesToAll}
+                    disabled={!defaultStartTime && !defaultEndTime}
+                  >
+                    <Clock className="h-4 w-4 mr-1" />
+                    Apply times to all events
+                  </Button>
+                </div>
               </div>
             </div>
             
