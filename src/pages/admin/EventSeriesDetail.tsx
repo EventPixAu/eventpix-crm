@@ -254,6 +254,7 @@ export default function EventSeriesDetail() {
   const [editNotesPublic, setEditNotesPublic] = useState('');
   const [editNotesInternal, setEditNotesInternal] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
+  const [editSetupTime, setEditSetupTime] = useState('');
   const [editCallTime, setEditCallTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
@@ -319,6 +320,7 @@ export default function EventSeriesDetail() {
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
+      setEditSetupTime((series as any).default_setup_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditCallTime((series as any).default_call_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
@@ -346,6 +348,7 @@ export default function EventSeriesDetail() {
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
+      setEditSetupTime((series as any).default_setup_time || '');
       setEditCallTime((series as any).default_call_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
