@@ -438,7 +438,7 @@ export default function WorkflowDetail() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate('/admin/workflows')}>
+        <Button variant="ghost" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/admin/workflows')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Templates
         </Button>

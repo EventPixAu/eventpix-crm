@@ -162,7 +162,7 @@ export default function ContractDetail() {
       <AppLayout>
         <div className="text-center py-16">
           <h2 className="text-xl font-semibold">Contract not found</h2>
-          <Button variant="link" onClick={() => navigate('/sales/contracts')}>
+          <Button variant="link" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/sales/contracts')}>
             Back to Contracts
           </Button>
         </div>
@@ -179,7 +179,7 @@ export default function ContractDetail() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/sales/contracts')}>
+          <Button variant="ghost" size="icon" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/sales/contracts')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
