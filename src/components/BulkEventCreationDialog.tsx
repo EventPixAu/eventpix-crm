@@ -99,9 +99,15 @@ export function BulkEventCreationDialog({
   const seriesStartTime = (series as any).default_start_time || '18:00';
   const seriesEndTime = (series as any).default_end_time || '22:00';
   const seriesDefaultContactId = (series as any).default_contact_id || null;
-  const seriesDefaultVenue = (series as any).default_venue_city || '';
+  const isSingleVenue = (series as any).series_type === 'single_venue';
+  const seriesVenueName = (series as any).default_venue_name || '';
+  const seriesVenueAddress = (series as any).default_venue_address || '';
+  const seriesDefaultVenue = isSingleVenue
+    ? (seriesVenueName || (series as any).default_venue_city || '')
+    : ((series as any).default_venue_city || '');
+  const seriesDefaultAddress = isSingleVenue ? seriesVenueAddress : '';
   
-  const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
+  const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue, venue_address: seriesDefaultAddress })]);
   const [clientName, setClientName] = useState('');
   const [defaultContactId, setDefaultContactId] = useState<string | null>(null);
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
@@ -111,7 +117,7 @@ export function BulkEventCreationDialog({
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
+      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue, venue_address: seriesDefaultAddress })]);
       setClientName(series.name);
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
@@ -151,7 +157,7 @@ export function BulkEventCreationDialog({
     }
   }, [open, series.name, seriesStartTime, seriesEndTime, seriesDefaultContactId]);
   
-  const validRows = rows.filter(r => r.event_date && (r.city || r.venue_name));
+  const validRows = rows.filter(r => r.event_date && (isSingleVenue || r.city || r.venue_name));
   
   // Handle default contact selection
   const handleDefaultContactChange = (contactId: string | null, contact?: CrmContact | null) => {
@@ -185,7 +191,8 @@ export function BulkEventCreationDialog({
     setRows([...rows, createEmptyRow({
       start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
       end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
-      venue_name: seriesDefaultVenue,
+      venue_name: rows[rows.length - 1]?.venue_name || seriesDefaultVenue,
+      venue_address: rows[rows.length - 1]?.venue_address || seriesDefaultAddress,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
       onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
       onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
@@ -241,12 +248,14 @@ export function BulkEventCreationDialog({
       const contactIds = [primaryContactId, ...seriesAdditionalContactIds].filter((v): v is string => !!v);
 
       return {
-        event_name: `${series.name} - ${row.city || venueName}`,
+        event_name: isSingleVenue
+          ? `${series.name} - ${row.event_date ? format(parseISO(row.event_date), 'd MMM yyyy') : (row.venue_name || seriesDefaultVenue)}`
+          : `${series.name} - ${row.city || venueName}`,
         client_name: clientName || series.name,
         event_date: row.event_date,
         start_time: row.start_time || undefined,
         end_time: row.end_time || undefined,
-        venue_name: row.venue_name || row.city,
+        venue_name: row.venue_name || row.city || seriesDefaultVenue,
         venue_address: row.venue_address || undefined,
         onsite_contact_name: contactName || undefined,
         onsite_contact_phone: contactPhone || undefined,
@@ -287,7 +296,9 @@ export function BulkEventCreationDialog({
             Bulk Create Events
           </DialogTitle>
           <DialogDescription>
-            Add multiple events across different cities and dates for <strong>{series.name}</strong>
+            {isSingleVenue
+              ? <>Add dates at <strong>{seriesDefaultVenue || 'the series venue'}</strong> for <strong>{series.name}</strong> — contact, team and equipment come from the series and can be changed per date.</>
+              : <>Add multiple events across different cities and dates for <strong>{series.name}</strong></>}
           </DialogDescription>
         </DialogHeader>
         
@@ -359,7 +370,7 @@ export function BulkEventCreationDialog({
                         </span>
                       </div>
                       
-                      <div className="col-span-2">
+                      <div className={isSingleVenue ? 'col-span-3' : 'col-span-2'}>
                         <Input
                           type="date"
                           value={row.event_date}
@@ -368,20 +379,22 @@ export function BulkEventCreationDialog({
                         />
                       </div>
                       
-                      <div className="col-span-2">
-                        <Input
-                          value={row.city}
-                          onChange={(e) => handleUpdateRow(row.id, 'city', e.target.value)}
-                          placeholder="City"
-                        />
-                      </div>
+                      {!isSingleVenue && (
+                        <div className="col-span-2">
+                          <Input
+                            value={row.city}
+                            onChange={(e) => handleUpdateRow(row.id, 'city', e.target.value)}
+                            placeholder="City"
+                          />
+                        </div>
+                      )}
                       
-                      <div className="col-span-3">
+                      <div className={isSingleVenue ? 'col-span-4' : 'col-span-3'}>
                         <Input
                           value={row.venue_name}
                           onChange={(e) => handleUpdateRow(row.id, 'venue_name', e.target.value)}
-                          placeholder="Venue name"
-                          className={!row.city && !row.venue_name ? 'border-destructive/50' : ''}
+                          placeholder={isSingleVenue ? (seriesDefaultVenue || 'Venue name') : 'Venue name'}
+                          className={!isSingleVenue && !row.city && !row.venue_name ? 'border-destructive/50' : ''}
                         />
                       </div>
                       
@@ -490,7 +503,7 @@ export function BulkEventCreationDialog({
               {validRows.length === 0 ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <AlertCircle className="h-4 w-4" />
-                  Add at least one event with a date and city/venue
+                  {isSingleVenue ? 'Add at least one date' : 'Add at least one event with a date and city/venue'}
                 </div>
               ) : (
                 <div className="space-y-3">

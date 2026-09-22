@@ -53,6 +53,9 @@ export default function EventSeriesList() {
   const [newDeadlineDays, setNewDeadlineDays] = useState('5');
   const [newCoverage, setNewCoverage] = useState('');
   const [newNotes, setNewNotes] = useState('');
+  const [newSeriesType, setNewSeriesType] = useState<'multi_venue' | 'single_venue'>('multi_venue');
+  const [newVenueName, setNewVenueName] = useState('');
+  const [newVenueAddress, setNewVenueAddress] = useState('');
   
   const { data: series = [], isLoading } = useEventSeries();
   const { data: eventTypes = [] } = useEventTypes();
@@ -91,6 +94,9 @@ export default function EventSeriesList() {
       default_coverage_details: newCoverage || null,
       notes: newNotes || null,
       is_active: true,
+      series_type: newSeriesType,
+      default_venue_name: newSeriesType === 'single_venue' ? (newVenueName.trim() || null) : null,
+      default_venue_address: newSeriesType === 'single_venue' ? (newVenueAddress.trim() || null) : null,
     });
     
     resetForm();
@@ -104,6 +110,9 @@ export default function EventSeriesList() {
     setNewDeadlineDays('5');
     setNewCoverage('');
     setNewNotes('');
+    setNewSeriesType('multi_venue');
+    setNewVenueName('');
+    setNewVenueAddress('');
   };
 
   const handleToggleActive = async (id: string, currentActive: boolean) => {
@@ -142,6 +151,45 @@ export default function EventSeriesList() {
                     placeholder="e.g., Local Business Awards 2026"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Series Format *</Label>
+                  <Select value={newSeriesType} onValueChange={(v) => setNewSeriesType(v as 'multi_venue' | 'single_venue')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multi_venue">Multiple venues — different places and dates</SelectItem>
+                      <SelectItem value="single_venue">One venue — same place over multiple dates</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {newSeriesType === 'single_venue'
+                      ? 'Same venue, contact, team and equipment on every date — each date can still be changed individually.'
+                      : 'Each event has its own city, venue and onsite contact.'}
+                  </p>
+                </div>
+
+                {newSeriesType === 'single_venue' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Venue Name</Label>
+                      <Input
+                        value={newVenueName}
+                        onChange={(e) => setNewVenueName(e.target.value)}
+                        placeholder="e.g., The Palms"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Venue Address</Label>
+                      <Input
+                        value={newVenueAddress}
+                        onChange={(e) => setNewVenueAddress(e.target.value)}
+                        placeholder="Full address"
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -316,6 +364,11 @@ function SeriesCard({ series, eventCount, eventTypes, onToggleActive, onClick }:
             <h3 className="font-semibold">{series.name}</h3>
             {eventType && (
               <p className="text-sm text-muted-foreground">{eventType.name}</p>
+            )}
+            {series.series_type === 'single_venue' && (
+              <Badge variant="outline" className="mt-1 text-xs font-normal">
+                One venue{series.default_venue_name ? ` · ${series.default_venue_name}` : ''}
+              </Badge>
             )}
           </div>
         </div>

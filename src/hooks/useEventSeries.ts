@@ -18,6 +18,10 @@ export interface EventSeries {
   updated_at: string;
   default_workflow_step_ids: string[] | null;
   dress_code: string | null;
+  /** 'multi_venue' (different venues/cities) or 'single_venue' (one venue, multiple dates) */
+  series_type: string | null;
+  default_venue_name: string | null;
+  default_venue_address: string | null;
 }
 
 export type CreateEventSeriesInput = {
@@ -32,6 +36,9 @@ export type CreateEventSeriesInput = {
   is_active?: boolean;
   default_workflow_step_ids?: string[] | null;
   dress_code?: string | null;
+  series_type?: string | null;
+  default_venue_name?: string | null;
+  default_venue_address?: string | null;
 };
 
 export interface EventSeriesWithStats extends EventSeries {
