@@ -412,6 +412,55 @@ export default function EventSeriesDetail() {
       }
     }
   };
+
+  const handleSeriesDefaultTimeChange = async (
+    field: 'default_start_time' | 'default_end_time',
+    eventField: 'start_time' | 'end_time',
+    value: string,
+  ) => {
+    if (!id) return;
+
+    if (field === 'default_start_time') setEditStartTime(value);
+    else setEditEndTime(value);
+
+    try {
+      const storedValue = value || null;
+      const { error: seriesError } = await supabase
+        .from('event_series')
+        .update({ [field]: storedValue } as any)
+        .eq('id', id);
+      if (seriesError) throw seriesError;
+
+      const { data: activeEvents, error: eventsReadError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('event_series_id', id)
+        .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
+      if (eventsReadError) throw eventsReadError;
+
+      const eventIds = (activeEvents || []).map((event) => event.id);
+      if (eventIds.length > 0) {
+        const { error: eventsError } = await supabase
+          .from('events')
+          .update({ [eventField]: storedValue } as any)
+          .in('id', eventIds);
+        if (eventsError) throw eventsError;
+
+        const { error: sessionsError } = await supabase
+          .from('event_sessions')
+          .update({ [eventField]: storedValue } as any)
+          .in('event_id', eventIds);
+        if (sessionsError) throw sessionsError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['event-series'] });
+      queryClient.invalidateQueries({ queryKey: ['series-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success(`${field === 'default_start_time' ? 'Start' : 'Finish'} time applied to all active events`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update default event time');
+    }
+  };
   
   const handleToggleEventSelection = (eventId: string) => {
     setSelectedEventIds(prev => 
@@ -1075,6 +1124,24 @@ export default function EventSeriesDetail() {
                     </Select>
                   </div>
                 ))}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Default Start Time</Label>
+                  <Input
+                    type="time"
+                    value={editStartTime}
+                    onChange={(event) => setEditStartTime(event.target.value)}
+                    onBlur={(event) => handleSeriesDefaultTimeChange('default_start_time', 'start_time', event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Default Finish Time</Label>
+                  <Input
+                    type="time"
+                    value={editEndTime}
+                    onChange={(event) => setEditEndTime(event.target.value)}
+                    onBlur={(event) => handleSeriesDefaultTimeChange('default_end_time', 'end_time', event.target.value)}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
