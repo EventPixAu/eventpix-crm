@@ -246,7 +246,7 @@ export function SendEmailDialog({
       const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
       const raw = rawTemplateRef.current;
       const latestSubject = selectedTemplate?.subject || '';
-      const latestBody = selectedTemplate?.body_text || selectedTemplate?.body_html || '';
+      const latestBody = selectedTemplate?.body_html || selectedTemplate?.body_text || '';
       if (selectedTemplate && !userEditedRef.current &&
           (raw?.subject !== latestSubject || raw?.body !== latestBody)) {
         applyTemplateContent(selectedTemplate);
