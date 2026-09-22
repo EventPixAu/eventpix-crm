@@ -5,7 +5,7 @@
  * Uses ContactSelector for onsite contact selection.
  */
 import { useState, useEffect } from 'react';
-import { format, addDays, parseISO } from 'date-fns';
+import { format, addDays, parseISO, eachDayOfInterval, getDay, isBefore } from 'date-fns';
 import { 
   Plus, 
   Trash2, 
@@ -112,6 +112,9 @@ export function BulkEventCreationDialog({
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
   const [useDefaultContact, setUseDefaultContact] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+  const [rangeDays, setRangeDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   
   // Reset form when dialog opens
   useEffect(() => {
@@ -121,6 +124,9 @@ export function BulkEventCreationDialog({
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
       setUseDefaultContact(true);
+      setRangeStart('');
+      setRangeEnd('');
+      setRangeDays([0, 1, 2, 3, 4, 5, 6]);
       
       // Fetch contact details if series has a default contact
       if (seriesDefaultContactId) {
@@ -157,6 +163,31 @@ export function BulkEventCreationDialog({
   }, [open, series.name, seriesStartTime, seriesEndTime, seriesDefaultContactId]);
   
   const validRows = rows.filter(r => r.event_date && (isSingleVenue || r.city || r.venue_name));
+
+  const rangePreviewDates = (() => {
+    if (!rangeStart || !rangeEnd) return [] as Date[];
+    const from = parseISO(rangeStart);
+    const to = parseISO(rangeEnd);
+    if (isBefore(to, from)) return [] as Date[];
+    return eachDayOfInterval({ start: from, end: to }).filter(d => rangeDays.includes(getDay(d)));
+  })();
+
+  const handleGenerateRange = () => {
+    if (rangePreviewDates.length === 0) return;
+    const generated = rangePreviewDates.map(d => createEmptyRow({
+      event_date: format(d, 'yyyy-MM-dd'),
+      start_time: seriesStartTime,
+      end_time: seriesEndTime,
+      venue_name: seriesDefaultVenue,
+      venue_address: seriesDefaultAddress,
+      onsite_contact_id: useDefaultContact ? defaultContactId : null,
+      onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
+      onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
+    }));
+    const existing = rows.filter(r => r.event_date);
+    const seen = new Set(existing.map(r => r.event_date));
+    setRows([...existing, ...generated.filter(r => !seen.has(r.event_date))]);
+  };
   
   // Handle default contact selection
   const handleDefaultContactChange = (contactId: string | null, contact?: CrmContact | null) => {
@@ -340,6 +371,59 @@ export function BulkEventCreationDialog({
                 <Label htmlFor="useDefaultContact" className="text-sm text-muted-foreground cursor-pointer">
                   Apply default contact to all events without custom contact
                 </Label>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-medium text-sm">Add a date range</h4>
+                  <p className="text-xs text-muted-foreground">
+                    For runs like every day for three weeks — set the first and last date and we'll add every date for you.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>First date</Label>
+                    <Input type="date" value={rangeStart} onChange={(e) => setRangeStart(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last date</Label>
+                    <Input type="date" value={rangeEnd} onChange={(e) => setRangeEnd(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Days included</Label>
+                    <div className="flex flex-wrap gap-1">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
+                        <Button
+                          key={d}
+                          type="button"
+                          size="sm"
+                          variant={rangeDays.includes(i) ? 'default' : 'outline'}
+                          className="px-2"
+                          onClick={() => setRangeDays(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])}
+                        >
+                          {d}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleGenerateRange}
+                    disabled={rangePreviewDates.length === 0}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add {rangePreviewDates.length || ''} dates
+                  </Button>
+                  {rangeStart && rangeEnd && rangePreviewDates.length === 0 && (
+                    <span className="text-xs text-destructive">Check the dates and days selected.</span>
+                  )}
+                </div>
               </div>
 
             </div>
