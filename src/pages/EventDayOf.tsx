@@ -531,12 +531,12 @@ export default function EventDayOf() {
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Link
+                <BackLink
                   to={`/events/${id}`}
                   className="p-1 -ml-1 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-5 w-5" />
-                </Link>
+                </BackLink>
                 <span className="text-sm text-muted-foreground">
                   {isAdmin ? 'Day-Of View' : 'Job Sheet'}
                 </span>

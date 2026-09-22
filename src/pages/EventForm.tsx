@@ -455,13 +455,13 @@ export default function EventForm() {
   return (
     <AppLayout>
       <div className="max-w-2xl">
-        <Link
+        <BackLink
           to={backLink}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
-        </Link>
+        </BackLink>
 
         <PageHeader
           title={pageTitle}
