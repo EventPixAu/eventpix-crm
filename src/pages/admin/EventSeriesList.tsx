@@ -365,6 +365,11 @@ function SeriesCard({ series, eventCount, eventTypes, onToggleActive, onClick }:
             {eventType && (
               <p className="text-sm text-muted-foreground">{eventType.name}</p>
             )}
+            {series.series_type === 'single_venue' && (
+              <Badge variant="outline" className="mt-1 text-xs font-normal">
+                One venue{series.default_venue_name ? ` · ${series.default_venue_name}` : ''}
+              </Badge>
+            )}
           </div>
         </div>
         <div onClick={(e) => e.stopPropagation()}>
