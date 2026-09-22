@@ -417,13 +417,14 @@ export default function EventSeriesDetail() {
   };
 
   const handleSeriesDefaultTimeChange = async (
-    field: 'default_start_time' | 'default_end_time',
-    eventField: 'start_time' | 'end_time',
+    field: 'default_start_time' | 'default_end_time' | 'default_setup_time',
+    eventField: 'start_time' | 'end_time' | 'setup_time',
     value: string,
   ) => {
     if (!id) return;
 
     if (field === 'default_start_time') setEditStartTime(value);
+    else if (field === 'default_setup_time') setEditSetupTime(value);
     else setEditEndTime(value);
 
     try {
