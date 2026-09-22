@@ -327,6 +327,9 @@ export default function EventSeriesDetail() {
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
       setEditDressCode((series as any).dress_code || '__none__');
+      setEditSeriesType(((series as any).series_type === 'single_venue') ? 'single_venue' : 'multi_venue');
+      setEditVenueName((series as any).default_venue_name || '');
+      setEditVenueAddress((series as any).default_venue_address || '');
     }
   });
   
@@ -351,6 +354,9 @@ export default function EventSeriesDetail() {
       setEditDefaultContactId((series as any).default_contact_id || null);
       setEditAdditionalContactIds(((series as any).additional_contact_ids as string[] | null) || []);
       setEditDressCode((series as any).dress_code || '__none__');
+      setEditSeriesType(((series as any).series_type === 'single_venue') ? 'single_venue' : 'multi_venue');
+      setEditVenueName((series as any).default_venue_name || '');
+      setEditVenueAddress((series as any).default_venue_address || '');
     }
   }, [series]);
   
