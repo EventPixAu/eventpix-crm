@@ -53,6 +53,9 @@ export default function EventSeriesList() {
   const [newDeadlineDays, setNewDeadlineDays] = useState('5');
   const [newCoverage, setNewCoverage] = useState('');
   const [newNotes, setNewNotes] = useState('');
+  const [newSeriesType, setNewSeriesType] = useState<'multi_venue' | 'single_venue'>('multi_venue');
+  const [newVenueName, setNewVenueName] = useState('');
+  const [newVenueAddress, setNewVenueAddress] = useState('');
   
   const { data: series = [], isLoading } = useEventSeries();
   const { data: eventTypes = [] } = useEventTypes();
@@ -91,6 +94,9 @@ export default function EventSeriesList() {
       default_coverage_details: newCoverage || null,
       notes: newNotes || null,
       is_active: true,
+      series_type: newSeriesType,
+      default_venue_name: newSeriesType === 'single_venue' ? (newVenueName.trim() || null) : null,
+      default_venue_address: newSeriesType === 'single_venue' ? (newVenueAddress.trim() || null) : null,
     });
     
     resetForm();
@@ -104,6 +110,9 @@ export default function EventSeriesList() {
     setNewDeadlineDays('5');
     setNewCoverage('');
     setNewNotes('');
+    setNewSeriesType('multi_venue');
+    setNewVenueName('');
+    setNewVenueAddress('');
   };
 
   const handleToggleActive = async (id: string, currentActive: boolean) => {
