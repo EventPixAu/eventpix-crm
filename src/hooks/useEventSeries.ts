@@ -347,9 +347,19 @@ export function useBulkCreateEvents() {
       for (const event of events) {
         try {
           const { contact_ids, ...eventInsert } = event;
+          // Link the event to the contact's company so budgets/agreements work
+          let resolvedClientId: string | null = (eventInsert as any).client_id || null;
+          if (!resolvedClientId && contact_ids?.length) {
+            const { data: firstContact } = await supabase
+              .from('client_contacts')
+              .select('client_id')
+              .eq('id', contact_ids[0])
+              .maybeSingle();
+            resolvedClientId = (firstContact as any)?.client_id || null;
+          }
           const { data, error } = await supabase
             .from('events')
-            .insert(eventInsert)
+            .insert({ ...eventInsert, ...(resolvedClientId ? { client_id: resolvedClientId } : {}) })
             .select('id')
             .single();
           

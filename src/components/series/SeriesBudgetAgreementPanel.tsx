@@ -198,10 +198,36 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     [seriesEvents],
   );
 
-  const inferredClientId = useMemo(
-    () => seriesEvents[0]?.client_id || null,
+  const eventClientId = useMemo(
+    () => seriesEvents.find((e: any) => e.client_id)?.client_id || null,
     [seriesEvents],
   );
+
+  // Fallback: no event is linked to a company yet — resolve it from the
+  // contacts attached to the series' events.
+  const { data: contactClientId = null } = useQuery({
+    queryKey: ['series-budget-contact-client', seriesId, seriesEvents.length],
+    enabled: !eventClientId && seriesEvents.length > 0,
+    queryFn: async () => {
+      const eventIds = seriesEvents.map((e: any) => e.id).filter(Boolean);
+      if (!eventIds.length) return null;
+      const { data: ecs } = await supabase
+        .from('event_contacts')
+        .select('client_contact_id')
+        .in('event_id', eventIds)
+        .not('client_contact_id', 'is', null);
+      const contactId = (ecs || [])[0]?.client_contact_id;
+      if (!contactId) return null;
+      const { data: contact } = await supabase
+        .from('client_contacts')
+        .select('client_id')
+        .eq('id', contactId)
+        .maybeSingle();
+      return (contact as any)?.client_id || null;
+    },
+  });
+
+  const inferredClientId = eventClientId || contactClientId;
 
   const { data: client } = useQuery({
     queryKey: ['series-client', inferredClientId],
