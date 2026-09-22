@@ -485,9 +485,14 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     onError: (e: any) => toast.error(e.message || 'Send failed'),
   });
 
-  const acceptLink = quote?.public_token
-    ? `${getPublicBaseUrl()}/accept/${quote.public_token}`
-    : null;
+  const quoteIsShareable =
+    quote?.status === 'sent' ||
+    quote?.status === 'viewed' ||
+    quote?.status === 'accepted';
+  const acceptLink =
+    quote?.public_token && quoteIsShareable
+      ? `${getPublicBaseUrl()}/accept/${quote.public_token}`
+      : null;
 
   const copyLink = (url: string) => {
     navigator.clipboard.writeText(url);
