@@ -151,6 +151,45 @@ export default function EventSeriesList() {
                     placeholder="e.g., Local Business Awards 2026"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Series Format *</Label>
+                  <Select value={newSeriesType} onValueChange={(v) => setNewSeriesType(v as 'multi_venue' | 'single_venue')}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multi_venue">Multiple venues — different places and dates</SelectItem>
+                      <SelectItem value="single_venue">One venue — same place over multiple dates</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {newSeriesType === 'single_venue'
+                      ? 'Same venue, contact, team and equipment on every date — each date can still be changed individually.'
+                      : 'Each event has its own city, venue and onsite contact.'}
+                  </p>
+                </div>
+
+                {newSeriesType === 'single_venue' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Venue Name</Label>
+                      <Input
+                        value={newVenueName}
+                        onChange={(e) => setNewVenueName(e.target.value)}
+                        placeholder="e.g., The Palms"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Venue Address</Label>
+                      <Input
+                        value={newVenueAddress}
+                        onChange={(e) => setNewVenueAddress(e.target.value)}
+                        placeholder="Full address"
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
