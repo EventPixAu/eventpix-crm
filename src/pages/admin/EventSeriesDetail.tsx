@@ -148,7 +148,8 @@ export default function EventSeriesDetail() {
     },
   });
 
-  const selectedContactId = (series as any)?.primary_contact_id || null;
+  const selectedContactId =
+    (series as any)?.default_contact_id || (series as any)?.primary_contact_id || null;
   const selectedOnsiteContactId = (series as any)?.onsite_contact_id || null;
 
   // The selected contacts may belong to a managing agency rather than the client company,
@@ -684,7 +685,7 @@ export default function EventSeriesDetail() {
 
           {/* Contacts + Program Status */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {seriesClientId && (
+            {(seriesClientId || selectedContactId || selectedOnsiteContactId) && (
               <Card className="lg:col-span-2">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -701,10 +702,10 @@ export default function EventSeriesDetail() {
                   {([
                     {
                       key: 'primary' as const,
-                      label: 'Primary Contact',
+                      label: 'Default Client Contact',
                       contact: primaryContact,
                       field: 'primary_contact_id',
-                      empty: 'No primary contact set on this client.',
+                      empty: 'No default client contact set for this series.',
                     },
                     {
                       key: 'onsite' as const,
@@ -723,9 +724,12 @@ export default function EventSeriesDetail() {
                           value={row.contact?.id || null}
                           placeholder="Search all CRM contacts (incl. agencies)..."
                           onChange={async (newVal) => {
+                            const update = row.key === 'primary'
+                              ? { primary_contact_id: newVal, default_contact_id: newVal }
+                              : { [row.field]: newVal };
                             const { error } = await supabase
                               .from('event_series')
-                              .update({ [row.field]: newVal } as any)
+                              .update(update as any)
                               .eq('id', id!);
                             if (error) {
                               toast.error(`Failed to update ${row.label.toLowerCase()}`);
@@ -811,10 +815,15 @@ export default function EventSeriesDetail() {
                       )}
                       {!row.contact && (
                         <p className="text-sm text-muted-foreground">
-                          {row.empty}{' '}
-                          <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
-                            Manage contacts
-                          </Link>
+                          {row.empty}
+                          {seriesClientId && (
+                            <>
+                              {' '}
+                              <Link to={`/crm/companies/${seriesClientId}`} className="text-primary hover:underline">
+                                Manage contacts
+                              </Link>
+                            </>
+                          )}
                         </p>
                       )}
                     </div>
