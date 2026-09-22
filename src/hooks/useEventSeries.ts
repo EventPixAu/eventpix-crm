@@ -362,22 +362,36 @@ export function useBulkCreateEvents() {
             results.failed++;
             results.errors.push(`${event.event_name}: Insert returned no data`);
           } else {
-          const { error: sessionError } = await supabase
+          // Series defaults may create the main session in the event insert trigger.
+          // Only add one here when the trigger did not already create it.
+          const { data: existingSession, error: sessionLookupError } = await supabase
             .from('event_sessions')
-            .insert({
-              event_id: data.id,
-              session_date: event.event_date,
-              start_time: event.start_time || null,
-              end_time: event.end_time || null,
-              venue_name: event.venue_name || null,
-              venue_address: event.venue_address || null,
-              label: 'Main Session',
-              sort_order: 0,
-            } as any);
+            .select('id')
+            .eq('event_id', data.id)
+            .eq('session_date', event.event_date)
+            .maybeSingle();
 
-          if (sessionError) {
-            console.error('Bulk create session error:', event.event_name, sessionError);
-            results.errors.push(`${event.event_name}: Event created but session was not created (${sessionError.message})`);
+          if (sessionLookupError) {
+            console.error('Bulk create session lookup error:', event.event_name, sessionLookupError);
+            results.errors.push(`${event.event_name}: Event created but its session could not be checked (${sessionLookupError.message})`);
+          } else if (!existingSession) {
+            const { error: sessionError } = await supabase
+              .from('event_sessions')
+              .insert({
+                event_id: data.id,
+                session_date: event.event_date,
+                start_time: event.start_time || null,
+                end_time: event.end_time || null,
+                venue_name: event.venue_name || null,
+                venue_address: event.venue_address || null,
+                label: 'Main Session',
+                sort_order: 0,
+              } as any);
+
+            if (sessionError) {
+              console.error('Bulk create session error:', event.event_name, sessionError);
+              results.errors.push(`${event.event_name}: Event created but session was not created (${sessionError.message})`);
+            }
           }
 
           // Attach client contacts (primary + additional) as event_contacts

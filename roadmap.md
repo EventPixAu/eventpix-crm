@@ -14,3 +14,5 @@
 - [x] Ensure all dialogs, confirmation popups, sheets, and drawers scroll within the viewport
 - [x] Add “Not required” to both Meal provided and Parking provided choices
 - [x] Diagnose the failed email and confirm whether its link renders as text or a button
+
+- [x] Remove duplicate session entry shown for the same event; preserve the complete session record.
