@@ -368,7 +368,7 @@ export function BulkEventCreationDialog({
                         </span>
                       </div>
                       
-                      <div className="col-span-2">
+                      <div className={isSingleVenue ? 'col-span-3' : 'col-span-2'}>
                         <Input
                           type="date"
                           value={row.event_date}
@@ -377,20 +377,22 @@ export function BulkEventCreationDialog({
                         />
                       </div>
                       
-                      <div className="col-span-2">
-                        <Input
-                          value={row.city}
-                          onChange={(e) => handleUpdateRow(row.id, 'city', e.target.value)}
-                          placeholder="City"
-                        />
-                      </div>
+                      {!isSingleVenue && (
+                        <div className="col-span-2">
+                          <Input
+                            value={row.city}
+                            onChange={(e) => handleUpdateRow(row.id, 'city', e.target.value)}
+                            placeholder="City"
+                          />
+                        </div>
+                      )}
                       
-                      <div className="col-span-3">
+                      <div className={isSingleVenue ? 'col-span-4' : 'col-span-3'}>
                         <Input
                           value={row.venue_name}
                           onChange={(e) => handleUpdateRow(row.id, 'venue_name', e.target.value)}
-                          placeholder="Venue name"
-                          className={!row.city && !row.venue_name ? 'border-destructive/50' : ''}
+                          placeholder={isSingleVenue ? (seriesDefaultVenue || 'Venue name') : 'Venue name'}
+                          className={!isSingleVenue && !row.city && !row.venue_name ? 'border-destructive/50' : ''}
                         />
                       </div>
                       
