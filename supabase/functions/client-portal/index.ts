@@ -41,7 +41,8 @@ serve(async (req) => {
         lead_id, quote_id,
         client_brief_template_id, client_brief_file_name, client_brief_file_path,
         share_team_vehicle_info, share_team_dietary,
-        meal_provided, parking_provided, share_meal_info, share_parking_info
+        meal_provided, parking_provided, meal_provision_status, parking_provision_status,
+        share_meal_info, share_parking_info
       `)
       .eq("client_portal_token", token)
       .maybeSingle();
@@ -279,6 +280,8 @@ serve(async (req) => {
       special_instructions: event.special_instructions,
       meal_provided: event.share_meal_info ? event.meal_provided : null,
       parking_provided: event.share_parking_info ? event.parking_provided : null,
+      meal_provision_status: event.share_meal_info ? event.meal_provision_status : null,
+      parking_provision_status: event.share_parking_info ? event.parking_provision_status : null,
       photography_brief: event.photography_brief,
       brief_content: event.client_brief_content,
       brief_attachment_name: briefAttachmentName,
