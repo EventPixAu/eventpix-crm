@@ -262,6 +262,9 @@ export default function EventSeriesDetail() {
   const [editDefaultContactId, setEditDefaultContactId] = useState<string | null>(null);
   const [editAdditionalContactIds, setEditAdditionalContactIds] = useState<string[]>([]);
   const [editDressCode, setEditDressCode] = useState<string>('__none__');
+  const [editSeriesType, setEditSeriesType] = useState<'multi_venue' | 'single_venue'>('multi_venue');
+  const [editVenueName, setEditVenueName] = useState('');
+  const [editVenueAddress, setEditVenueAddress] = useState('');
 
   // Resolved client contact details for the Settings tab
   const seriesClientName = seriesClient?.business_name || events?.[0]?.client_name || null;
@@ -851,6 +854,125 @@ export default function EventSeriesDetail() {
 
             </Card>
           </div>
+
+          {/* Series Format & Venue */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Series Format</CardTitle>
+              <CardDescription>
+                Choose whether this series runs across different venues or repeats at one venue over multiple dates.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Format</Label>
+                  <Select
+                    value={editSeriesType}
+                    onValueChange={async (val) => {
+                      const next = val as 'multi_venue' | 'single_venue';
+                      setEditSeriesType(next);
+                      const { error } = await supabase
+                        .from('event_series')
+                        .update({ series_type: next } as any)
+                        .eq('id', id!);
+                      if (error) toast.error('Failed to update format');
+                      else {
+                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                        toast.success('Series format updated');
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multi_venue">Multiple venues</SelectItem>
+                      <SelectItem value="single_venue">One venue, multiple dates</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {editSeriesType === 'single_venue' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Venue Name</Label>
+                      <Input
+                        value={editVenueName}
+                        onChange={(e) => setEditVenueName(e.target.value)}
+                        placeholder="e.g., The Palms"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Venue Address</Label>
+                      <Input
+                        value={editVenueAddress}
+                        onChange={(e) => setEditVenueAddress(e.target.value)}
+                        placeholder="Full address"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {editSeriesType === 'single_venue' && (
+                <div className="flex flex-wrap items-center gap-2 mt-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from('event_series')
+                        .update({
+                          default_venue_name: editVenueName || null,
+                          default_venue_address: editVenueAddress || null,
+                        } as any)
+                        .eq('id', id!);
+                      if (error) toast.error('Failed to save venue');
+                      else {
+                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                        toast.success('Venue saved');
+                      }
+                    }}
+                  >
+                    Save venue
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      const { error: sErr } = await supabase
+                        .from('event_series')
+                        .update({
+                          default_venue_name: editVenueName || null,
+                          default_venue_address: editVenueAddress || null,
+                        } as any)
+                        .eq('id', id!);
+                      const { error: eErr } = await supabase
+                        .from('events')
+                        .update({
+                          venue_name: editVenueName || null,
+                          venue_address: editVenueAddress || null,
+                        } as any)
+                        .eq('event_series_id', id!)
+                        .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
+                      if (sErr || eErr) toast.error('Failed to apply venue to events');
+                      else {
+                        queryClient.invalidateQueries({ queryKey: ['event-series'] });
+                        queryClient.invalidateQueries({ queryKey: ['series-events'] });
+                        queryClient.invalidateQueries({ queryKey: ['events'] });
+                        toast.success('Venue applied to all active events in the series');
+                      }
+                    }}
+                  >
+                    Apply venue to all events
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Each event can still be given its own venue afterwards.
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Series Defaults (inline, cascade to events) */}
           <Card>
