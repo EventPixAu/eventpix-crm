@@ -254,6 +254,7 @@ export default function EventSeriesDetail() {
   const [editNotesPublic, setEditNotesPublic] = useState('');
   const [editNotesInternal, setEditNotesInternal] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
+  const [editSetupTime, setEditSetupTime] = useState('');
   const [editCallTime, setEditCallTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
   const [editDefaultOpsStatus, setEditDefaultOpsStatus] = useState('confirmed');
@@ -319,6 +320,7 @@ export default function EventSeriesDetail() {
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
+      setEditSetupTime((series as any).default_setup_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditCallTime((series as any).default_call_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
@@ -346,6 +348,7 @@ export default function EventSeriesDetail() {
       setEditNotesPublic((series as any).default_notes_public || '');
       setEditNotesInternal((series as any).default_notes_internal || '');
       setEditStartTime((series as any).default_start_time || '');
+      setEditSetupTime((series as any).default_setup_time || '');
       setEditCallTime((series as any).default_call_time || '');
       setEditEndTime((series as any).default_end_time || '');
       setEditDefaultOpsStatus((series as any).default_ops_status || 'confirmed');
@@ -414,13 +417,14 @@ export default function EventSeriesDetail() {
   };
 
   const handleSeriesDefaultTimeChange = async (
-    field: 'default_start_time' | 'default_end_time',
-    eventField: 'start_time' | 'end_time',
+    field: 'default_start_time' | 'default_end_time' | 'default_setup_time',
+    eventField: 'start_time' | 'end_time' | 'setup_time',
     value: string,
   ) => {
     if (!id) return;
 
     if (field === 'default_start_time') setEditStartTime(value);
+    else if (field === 'default_setup_time') setEditSetupTime(value);
     else setEditEndTime(value);
 
     try {
@@ -446,17 +450,19 @@ export default function EventSeriesDetail() {
           .in('id', eventIds);
         if (eventsError) throw eventsError;
 
-        const { error: sessionsError } = await supabase
-          .from('event_sessions')
-          .update({ [eventField]: storedValue } as any)
-          .in('event_id', eventIds);
-        if (sessionsError) throw sessionsError;
+        if (eventField !== 'setup_time') {
+          const { error: sessionsError } = await supabase
+            .from('event_sessions')
+            .update({ [eventField]: storedValue } as any)
+            .in('event_id', eventIds);
+          if (sessionsError) throw sessionsError;
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['event-series'] });
       queryClient.invalidateQueries({ queryKey: ['series-events'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      toast.success(`${field === 'default_start_time' ? 'Start' : 'Finish'} time applied to all active events`);
+      toast.success(`${field === 'default_start_time' ? 'Start' : field === 'default_setup_time' ? 'Setup' : 'Finish'} time applied to all active events`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to update default event time');
     }
@@ -1124,6 +1130,15 @@ export default function EventSeriesDetail() {
                     </Select>
                   </div>
                 ))}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Default Setup Time</Label>
+                  <Input
+                    type="time"
+                    value={editSetupTime}
+                    onChange={(event) => setEditSetupTime(event.target.value)}
+                    onBlur={(event) => handleSeriesDefaultTimeChange('default_setup_time', 'setup_time', event.target.value)}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Default Start Time</Label>
                   <Input

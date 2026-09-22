@@ -36,6 +36,13 @@
       "when": 1790045999936,
       "tag": "0004_add_series_type_and_default_venue",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790048890560,
+      "tag": "0005_add_setup_time",
+      "breakpoints": true
     }
   ]
 }

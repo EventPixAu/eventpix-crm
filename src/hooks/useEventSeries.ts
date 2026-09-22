@@ -320,6 +320,7 @@ export function useBulkCreateEvents() {
       event_date: string;
       start_time?: string;
       end_time?: string;
+      setup_time?: string;
       venue_name?: string;
       venue_address?: string;
       onsite_contact_name?: string;

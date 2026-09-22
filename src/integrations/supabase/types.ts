@@ -3111,6 +3111,7 @@ export type Database = {
           default_ops_status: string | null
           default_photographers_required: number | null
           default_roles_json: Json | null
+          default_setup_time: string | null
           default_start_time: string | null
           default_venue_address: string | null
           default_venue_city: string | null
@@ -3145,6 +3146,7 @@ export type Database = {
           default_ops_status?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
+          default_setup_time?: string | null
           default_start_time?: string | null
           default_venue_address?: string | null
           default_venue_city?: string | null
@@ -3179,6 +3181,7 @@ export type Database = {
           default_ops_status?: string | null
           default_photographers_required?: number | null
           default_roles_json?: Json | null
+          default_setup_time?: string | null
           default_start_time?: string | null
           default_venue_address?: string | null
           default_venue_city?: string | null
@@ -3574,6 +3577,7 @@ export type Database = {
           quote_id: string | null
           recommended_kit_id: string | null
           run_sheet_url: string | null
+          setup_time: string | null
           share_meal_info: boolean
           share_parking_info: boolean
           share_team_dietary: boolean
@@ -3668,6 +3672,7 @@ export type Database = {
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
+          setup_time?: string | null
           share_meal_info?: boolean
           share_parking_info?: boolean
           share_team_dietary?: boolean
@@ -3762,6 +3767,7 @@ export type Database = {
           quote_id?: string | null
           recommended_kit_id?: string | null
           run_sheet_url?: string | null
+          setup_time?: string | null
           share_meal_info?: boolean
           share_parking_info?: boolean
           share_team_dietary?: boolean
