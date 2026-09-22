@@ -228,6 +228,19 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                 const displayEmail = onsiteEmail || clientDetails?.primary_contact_email;
                 
                 if (!displayName && !displayEmail && !displayPhone) return null;
+
+                // Avoid showing the same person twice: if this contact is already
+                // listed below as an event contact, only show the company name here.
+                const norm = (v?: string | null) => (v || '').trim().toLowerCase();
+                const alreadyListed = contacts.some((c) => {
+                  const cName = norm(c.contact_name || c.client_contact?.contact_name);
+                  const cEmail = norm(c.contact_email || c.client_contact?.email);
+                  return (
+                    (!!displayName && cName === norm(displayName)) ||
+                    (!!displayEmail && !!cEmail && cEmail === norm(displayEmail))
+                  );
+                });
+                if (alreadyListed) return null;
                 
                 return (
                   <div className="mt-1 space-y-1">
