@@ -1244,6 +1244,14 @@ export default function EventSeriesDetail() {
                   />
                 </div>
               </div>
+              <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t">
+                <Button size="sm" onClick={handleApplyDefaultsToAllEvents}>
+                  Apply defaults to all events
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Pushes every series default (type, delivery methods, dress code, times, coverage, deadline) onto all active events. Each event can still be changed afterwards.
+                </span>
+              </div>
             </CardContent>
           </Card>
 
