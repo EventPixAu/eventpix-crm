@@ -117,7 +117,7 @@ export function BulkEventCreationDialog({
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
+      setRows([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue, venue_address: seriesDefaultAddress })]);
       setClientName(series.name);
       setDefaultContactId(seriesDefaultContactId);
       setDefaultContactInfo({ name: '', phone: '' });
@@ -191,7 +191,8 @@ export function BulkEventCreationDialog({
     setRows([...rows, createEmptyRow({
       start_time: rows[rows.length - 1]?.start_time || seriesStartTime,
       end_time: rows[rows.length - 1]?.end_time || seriesEndTime,
-      venue_name: seriesDefaultVenue,
+      venue_name: rows[rows.length - 1]?.venue_name || seriesDefaultVenue,
+      venue_address: rows[rows.length - 1]?.venue_address || seriesDefaultAddress,
       onsite_contact_id: useDefaultContact ? defaultContactId : null,
       onsite_contact_name: useDefaultContact ? defaultContactInfo.name : '',
       onsite_contact_phone: useDefaultContact ? defaultContactInfo.phone : '',
