@@ -157,7 +157,7 @@ export function BulkEventCreationDialog({
     }
   }, [open, series.name, seriesStartTime, seriesEndTime, seriesDefaultContactId]);
   
-  const validRows = rows.filter(r => r.event_date && (r.city || r.venue_name));
+  const validRows = rows.filter(r => r.event_date && (isSingleVenue || r.city || r.venue_name));
   
   // Handle default contact selection
   const handleDefaultContactChange = (contactId: string | null, contact?: CrmContact | null) => {
@@ -248,12 +248,14 @@ export function BulkEventCreationDialog({
       const contactIds = [primaryContactId, ...seriesAdditionalContactIds].filter((v): v is string => !!v);
 
       return {
-        event_name: `${series.name} - ${row.city || venueName}`,
+        event_name: isSingleVenue
+          ? `${series.name} - ${row.event_date ? format(parseISO(row.event_date), 'd MMM yyyy') : (row.venue_name || seriesDefaultVenue)}`
+          : `${series.name} - ${row.city || venueName}`,
         client_name: clientName || series.name,
         event_date: row.event_date,
         start_time: row.start_time || undefined,
         end_time: row.end_time || undefined,
-        venue_name: row.venue_name || row.city,
+        venue_name: row.venue_name || row.city || seriesDefaultVenue,
         venue_address: row.venue_address || undefined,
         onsite_contact_name: contactName || undefined,
         onsite_contact_phone: contactPhone || undefined,
