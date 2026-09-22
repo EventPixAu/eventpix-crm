@@ -5,7 +5,7 @@
  * Uses ContactSelector for onsite contact selection.
  */
 import { useState, useEffect } from 'react';
-import { format, addDays, parseISO } from 'date-fns';
+import { format, addDays, parseISO, eachDayOfInterval, getDay, isBefore } from 'date-fns';
 import { 
   Plus, 
   Trash2, 
@@ -112,6 +112,9 @@ export function BulkEventCreationDialog({
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
   const [useDefaultContact, setUseDefaultContact] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+  const [rangeDays, setRangeDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   
   // Reset form when dialog opens
   useEffect(() => {
