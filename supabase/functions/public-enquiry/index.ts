@@ -403,21 +403,29 @@ Deno.serve(async (req) => {
 
       // Auto-response to enquirer
       try {
-        const { data: autoReplyTemplate } = await supabase
+        // Only ever use the dedicated generic enquiry acknowledgement.
+        // Other enquiry_received templates (e.g. booking confirmations) must
+        // never be auto-sent to a brand new enquirer.
+        const { data: autoReplyCandidates } = await supabase
           .from("email_templates")
           .select("*")
           .eq("trigger_type", "enquiry_received")
           .eq("is_active", true)
-          .limit(1)
-          .maybeSingle();
+          .eq("name", "Enquiry response")
+          .limit(1);
+        const autoReplyTemplate = autoReplyCandidates?.[0] ?? null;
 
         if (autoReplyTemplate) {
           const mergeContext: Record<string, string> = {
             "{{contact.first_name}}": firstName || "there",
+            "{{first_name}}": firstName || "there",
             "{{contact.name}}": payload.name,
+            "{{client_name}}": firstName || payload.name,
             "{{client.primary_contact_name}}": payload.name,
             "{{lead_or_job_name}}": leadName,
+            "{{event_name}}": leadName,
             "{{company_name}}": companyNormalised || "",
+            "{{venue_name}}": (payload as any).venue || "TBC",
             "{{event_date}}": payload.event_date || "TBC",
           };
 
@@ -427,6 +435,10 @@ Deno.serve(async (req) => {
             subject = subject.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
             body = body.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
           }
+          // Never leave raw placeholders in a client-facing email
+          subject = subject.replace(/\{\{[^}]+\}\}/g, "").replace(/\s{2,}/g, " ").trim();
+          body = body.replace(/\{\{[^}]+\}\}/g, "");
+
 
           const bodyHtml = autoReplyTemplate.format === "text"
             ? `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;">${body.replace(/\n/g, "<br>")}</div>`
