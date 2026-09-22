@@ -296,7 +296,9 @@ export function BulkEventCreationDialog({
             Bulk Create Events
           </DialogTitle>
           <DialogDescription>
-            Add multiple events across different cities and dates for <strong>{series.name}</strong>
+            {isSingleVenue
+              ? <>Add dates at <strong>{seriesDefaultVenue || 'the series venue'}</strong> for <strong>{series.name}</strong> — contact, team and equipment come from the series and can be changed per date.</>
+              : <>Add multiple events across different cities and dates for <strong>{series.name}</strong></>}
           </DialogDescription>
         </DialogHeader>
         
@@ -501,7 +503,7 @@ export function BulkEventCreationDialog({
               {validRows.length === 0 ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <AlertCircle className="h-4 w-4" />
-                  Add at least one event with a date and city/venue
+                  {isSingleVenue ? 'Add at least one date' : 'Add at least one event with a date and city/venue'}
                 </div>
               ) : (
                 <div className="space-y-3">
