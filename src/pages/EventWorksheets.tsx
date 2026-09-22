@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -141,13 +142,13 @@ export default function EventWorksheets() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <Link
+          <BackLink
             to={`/events/${eventId}`}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Event
-          </Link>
+          </BackLink>
           <h1 className="text-2xl lg:text-3xl font-display font-bold">
             Worksheets
           </h1>

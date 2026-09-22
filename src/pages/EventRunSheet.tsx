@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { format, parseISO } from 'date-fns';
 import {
   ArrowLeft,
@@ -118,13 +119,13 @@ export default function EventRunSheet() {
       {/* Screen-only header */}
       <div className="print:hidden p-4 border-b border-border bg-background sticky top-0 z-10">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link
+          <BackLink
             to={`/events/${id}/day-of`}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Day-Of
-          </Link>
+          </BackLink>
           <Button onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
             Print

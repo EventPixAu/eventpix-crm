@@ -89,7 +89,7 @@ export default function JobIntakeDetail() {
         <div className="text-center py-12">
           <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-lg font-medium mb-2">Job not found</h2>
-          <Button variant="outline" onClick={() => navigate('/job-intake')}>
+          <Button variant="outline" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/job-intake')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Jobs
           </Button>
@@ -158,7 +158,7 @@ export default function JobIntakeDetail() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/job-intake')}>
+          <Button variant="ghost" size="icon" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/job-intake')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>

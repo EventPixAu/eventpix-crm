@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
@@ -851,13 +852,13 @@ export default function EventDetail() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <Link
+          <BackLink
             to={event.event_series_id ? `/admin/series/${event.event_series_id}` : "/events"}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
           >
             <ArrowLeft className="h-4 w-4" />
             {event.event_series_id ? 'Back to Series' : 'Back to Events'}
-          </Link>
+          </BackLink>
           <div className="flex items-center gap-3 mb-2 flex-wrap">
             <h1 className="text-2xl lg:text-3xl font-display font-bold">
               {event.event_name}

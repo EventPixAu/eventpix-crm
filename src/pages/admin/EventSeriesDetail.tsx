@@ -484,7 +484,7 @@ export default function EventSeriesDetail() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate('/admin/series')}>
+        <Button variant="ghost" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/admin/series')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Series
         </Button>

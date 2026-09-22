@@ -127,7 +127,7 @@ export default function LeadPortalPreview() {
           size="sm" 
           variant="outline" 
           className="ml-4 h-7 text-xs bg-black/10 border-black/20 hover:bg-black/20"
-          onClick={() => navigate(`/sales/leads/${id}`)}
+          onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate(`/sales/leads/${id}`)}
         >
           <ArrowLeft className="h-3 w-3 mr-1" />
           Back to Lead

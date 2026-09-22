@@ -286,7 +286,7 @@ export default function LeadDetail(): JSX.Element {
         description={`Dashboard > Leads > ${lead.lead_name}`}
         actions={
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={() => navigate('/sales/leads')}>
+            <Button variant="outline" onClick={() => ((window.history.state?.idx ?? 0) > 0) ? navigate(-1) : navigate('/sales/leads')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
