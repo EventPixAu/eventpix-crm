@@ -20,7 +20,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -70,10 +72,26 @@ export function EditWorkflowStepDialog({
     enabled: open && !!eventId,
   });
 
+  // Fetch all active team members so steps can be assigned to anyone with a
+  // login (e.g. editors), not just crew booked on this event
+  const { data: allTeam = [] } = useQuery({
+    queryKey: ['workflow-assignable-team'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, default_role:staff_roles!profiles_default_role_id_fkey(name)')
+        .eq('is_active', true)
+        .order('full_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open,
+  });
+
   // Build unique staff options from assignments
-  const staffOptions = (() => {
+  const { staffOptions, otherOptions } = (() => {
     const seen = new Set<string>();
-    const options: { value: string; label: string }[] = [];
+    const eventOpts: { value: string; label: string }[] = [];
 
     eventStaff.forEach((a: any) => {
       const userId = a.user_id || a.profile?.id;
@@ -81,13 +99,25 @@ export function EditWorkflowStepDialog({
       seen.add(userId);
       const name = a.profile?.full_name || a.profile?.email || 'Unknown';
       const role = a.staff_role?.name || a.role_on_event || '';
-      options.push({
+      eventOpts.push({
         value: userId,
         label: role ? `${name} (${role})` : name,
       });
     });
 
-    return options;
+    const otherOpts: { value: string; label: string }[] = [];
+    (allTeam as any[]).forEach((p) => {
+      if (!p.id || seen.has(p.id)) return;
+      seen.add(p.id);
+      const name = p.full_name || p.email || 'Unknown';
+      const role = p.default_role?.name || '';
+      otherOpts.push({
+        value: p.id,
+        label: role ? `${name} (${role})` : name,
+      });
+    });
+
+    return { staffOptions: eventOpts, otherOptions: otherOpts };
   })();
   
   useEffect(() => {
@@ -149,11 +179,26 @@ export function EditWorkflowStepDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="management">Management</SelectItem>
-                {staffOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                {staffOptions.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel>Event Team</SelectLabel>
+                    {staffOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+                {otherOptions.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel>All Team (incl. Editors)</SelectLabel>
+                    {otherOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
               </SelectContent>
             </Select>
           </div>
