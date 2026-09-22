@@ -138,12 +138,12 @@ export default function Events() {
       } else if (isUpcoming) {
         filterCategory = 'upcoming';
       } else {
-        // Past events stay "current" until explicitly marked completed/archived
-        filterCategory = 'current';
+        // Past events stay "past" (still active) until explicitly marked completed/archived
+        filterCategory = 'past';
       }
-      // "current" includes upcoming events; "upcoming" shows only future-dated ones
+      // "current" includes both upcoming and past-not-completed events
       const matchesStatusCategory =
-        statusFilter === 'current' ? (filterCategory === 'current' || filterCategory === 'upcoming')
+        statusFilter === 'current' ? (filterCategory === 'past' || filterCategory === 'upcoming')
         : filterCategory === statusFilter;
       
       const matchesStatus = statusFilter === 'all' || matchesStatusCategory;
@@ -232,6 +232,7 @@ export default function Events() {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="current">Current</SelectItem>
             <SelectItem value="upcoming">Upcoming</SelectItem>
+            <SelectItem value="past">Previous (not completed)</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
