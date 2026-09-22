@@ -349,6 +349,37 @@ export function BulkEventCreationDialog({
                   Apply default contact to all events without custom contact
                 </Label>
               </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Input
+                    type="time"
+                    value={defaultStartTime}
+                    onChange={(e) => setDefaultStartTime(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Time</Label>
+                  <Input
+                    type="time"
+                    value={defaultEndTime}
+                    onChange={(e) => setDefaultEndTime(e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyTimesToAll}
+                    disabled={!defaultStartTime && !defaultEndTime}
+                  >
+                    <Clock className="h-4 w-4 mr-1" />
+                    Apply times to all events
+                  </Button>
+                </div>
+              </div>
             </div>
             
             {/* Event Rows */}
