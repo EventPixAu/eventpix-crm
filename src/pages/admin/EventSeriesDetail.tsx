@@ -468,7 +468,84 @@ export default function EventSeriesDetail() {
       toast.error(error.message || 'Failed to update default event time');
     }
   };
-  
+
+  // Push every series default (type, delivery methods, dress code, times,
+  // call time, coverage, delivery deadline) onto all active events at once.
+  const handleApplyDefaultsToAllEvents = async () => {
+    if (!id || !series) return;
+    const s = series as any;
+    if (!window.confirm('Apply the series defaults to every active event in this series? Per-event values will be overwritten. Cancelled and completed events are left unchanged.')) return;
+
+    try {
+      const { data: activeEvents, error: readErr } = await supabase
+        .from('events')
+        .select('id, event_date')
+        .eq('event_series_id', id)
+        .or('ops_status.is.null,ops_status.not.in.(cancelled,completed)');
+      if (readErr) throw readErr;
+      const active = activeEvents || [];
+      if (active.length === 0) {
+        toast.info('No active events in this series to update');
+        return;
+      }
+
+      const deadlineDays: number | null = s.default_delivery_deadline_days ?? null;
+      const baseUpdate: Record<string, any> = {
+        event_type_id: s.event_type_id ?? null,
+        delivery_method_id: s.default_delivery_method_id ?? null,
+        delivery_method_guests_id: s.default_delivery_method_guests_id ?? null,
+        delivery_method_photographer_id: s.default_delivery_method_photographer_id ?? null,
+        dress_code: s.dress_code ?? null,
+        setup_time: s.default_setup_time ?? null,
+        start_time: s.default_start_time ?? null,
+        end_time: s.default_end_time ?? null,
+        call_time: s.default_call_time ?? null,
+        coverage_details: s.default_coverage_details ?? null,
+      };
+
+      // When a delivery deadline (days) is set, compute it per event date.
+      const deadlineGroups = new Map<string | null, string[]>();
+      for (const ev of active) {
+        let deadline: string | null = null;
+        if (deadlineDays != null && ev.event_date) {
+          const d = new Date(ev.event_date + 'T00:00:00');
+          d.setDate(d.getDate() + deadlineDays);
+          deadline = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+        const bucket = deadlineGroups.get(deadline) || [];
+        bucket.push(ev.id);
+        deadlineGroups.set(deadline, bucket);
+      }
+
+      for (const [deadline, ids] of deadlineGroups) {
+        const payload = deadlineDays != null ? { ...baseUpdate, delivery_deadline: deadline } : baseUpdate;
+        const { error: updErr } = await supabase
+          .from('events')
+          .update(payload as any)
+          .in('id', ids);
+        if (updErr) throw updErr;
+      }
+
+      const eventIds = active.map((e) => e.id);
+      const { error: sessErr } = await supabase
+        .from('event_sessions')
+        .update({
+          start_time: s.default_start_time ?? null,
+          end_time: s.default_end_time ?? null,
+        } as any)
+        .in('event_id', eventIds);
+      if (sessErr) throw sessErr;
+
+      queryClient.invalidateQueries({ queryKey: ['event-series'] });
+      queryClient.invalidateQueries({ queryKey: ['series-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event-sessions'] });
+      toast.success(`Series defaults applied to ${active.length} active event(s)`);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to apply defaults to events');
+    }
+  };
+
   const handleToggleEventSelection = (eventId: string) => {
     setSelectedEventIds(prev => 
       prev.includes(eventId) 
