@@ -485,10 +485,9 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     onError: (e: any) => toast.error(e.message || 'Send failed'),
   });
 
-  const quoteIsShareable =
-    quote?.status === 'sent' ||
-    quote?.status === 'viewed' ||
-    quote?.status === 'accepted';
+  const quoteIsShareable = ['sent', 'viewed', 'accepted'].includes(
+    String(quote?.status ?? '')
+  );
   const acceptLink =
     quote?.public_token && quoteIsShareable
       ? `${getPublicBaseUrl()}/accept/${quote.public_token}`
