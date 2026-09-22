@@ -99,9 +99,15 @@ export function BulkEventCreationDialog({
   const seriesStartTime = (series as any).default_start_time || '18:00';
   const seriesEndTime = (series as any).default_end_time || '22:00';
   const seriesDefaultContactId = (series as any).default_contact_id || null;
-  const seriesDefaultVenue = (series as any).default_venue_city || '';
+  const isSingleVenue = (series as any).series_type === 'single_venue';
+  const seriesVenueName = (series as any).default_venue_name || '';
+  const seriesVenueAddress = (series as any).default_venue_address || '';
+  const seriesDefaultVenue = isSingleVenue
+    ? (seriesVenueName || (series as any).default_venue_city || '')
+    : ((series as any).default_venue_city || '');
+  const seriesDefaultAddress = isSingleVenue ? seriesVenueAddress : '';
   
-  const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue })]);
+  const [rows, setRows] = useState<BulkEventRow[]>([createEmptyRow({ start_time: seriesStartTime, end_time: seriesEndTime, venue_name: seriesDefaultVenue, venue_address: seriesDefaultAddress })]);
   const [clientName, setClientName] = useState('');
   const [defaultContactId, setDefaultContactId] = useState<string | null>(null);
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
