@@ -254,6 +254,7 @@ export function BulkEventCreationDialog({
         event_date: row.event_date,
         start_time: row.start_time || undefined,
         end_time: row.end_time || undefined,
+        setup_time: (series as any).default_setup_time || undefined,
         venue_name: row.venue_name || row.city || seriesDefaultVenue,
         venue_address: row.venue_address || undefined,
         onsite_contact_name: contactName || undefined,
