@@ -29,6 +29,13 @@
       "when": 1790043735732,
       "tag": "0003_expose_event_logistics_statuses_to_client_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790045999936,
+      "tag": "0004_add_series_type_and_default_venue",
+      "breakpoints": true
     }
   ]
 }

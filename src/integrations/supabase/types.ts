@@ -3112,7 +3112,9 @@ export type Database = {
           default_photographers_required: number | null
           default_roles_json: Json | null
           default_start_time: string | null
+          default_venue_address: string | null
           default_venue_city: string | null
+          default_venue_name: string | null
           default_workflow_step_ids: string[] | null
           dress_code: string | null
           event_type_id: string | null
@@ -3123,6 +3125,7 @@ export type Database = {
           onsite_contact_id: string | null
           primary_contact_id: string | null
           program_status: string | null
+          series_type: string
           updated_at: string | null
         }
         Insert: {
@@ -3143,7 +3146,9 @@ export type Database = {
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           default_start_time?: string | null
+          default_venue_address?: string | null
           default_venue_city?: string | null
+          default_venue_name?: string | null
           default_workflow_step_ids?: string[] | null
           dress_code?: string | null
           event_type_id?: string | null
@@ -3154,6 +3159,7 @@ export type Database = {
           onsite_contact_id?: string | null
           primary_contact_id?: string | null
           program_status?: string | null
+          series_type?: string
           updated_at?: string | null
         }
         Update: {
@@ -3174,7 +3180,9 @@ export type Database = {
           default_photographers_required?: number | null
           default_roles_json?: Json | null
           default_start_time?: string | null
+          default_venue_address?: string | null
           default_venue_city?: string | null
+          default_venue_name?: string | null
           default_workflow_step_ids?: string[] | null
           dress_code?: string | null
           event_type_id?: string | null
@@ -3185,6 +3193,7 @@ export type Database = {
           onsite_contact_id?: string | null
           primary_contact_id?: string | null
           program_status?: string | null
+          series_type?: string
           updated_at?: string | null
         }
         Relationships: [
