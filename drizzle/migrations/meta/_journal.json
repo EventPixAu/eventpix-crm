@@ -15,6 +15,13 @@
       "when": 1789964630406,
       "tag": "0001_fix_series_workflow_step_label_matching",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790043659581,
+      "tag": "0002_add_event_logistics_statuses",
+      "breakpoints": true
     }
   ]
 }
