@@ -12,3 +12,5 @@
 - [x] Move the first four series workflow steps into the series checklist and remove them from individual events
 - [x] Make the series steps checklist compact: one line of tick-box chips per phase
 - [x] Ensure all dialogs, confirmation popups, sheets, and drawers scroll within the viewport
+- [ ] Add “Not required” to both Meal provided and Parking provided choices
+- [ ] Diagnose the failed email and confirm whether its link renders as text or a button
