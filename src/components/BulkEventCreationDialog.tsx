@@ -113,6 +113,8 @@ export function BulkEventCreationDialog({
   const [defaultContactInfo, setDefaultContactInfo] = useState<{ name: string; phone: string }>({ name: '', phone: '' });
   const [useDefaultContact, setUseDefaultContact] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [defaultStartTime, setDefaultStartTime] = useState(seriesStartTime);
+  const [defaultEndTime, setDefaultEndTime] = useState(seriesEndTime);
   
   // Reset form when dialog opens
   useEffect(() => {
