@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { format, parseISO } from 'date-fns';
 import {
   ArrowLeft,

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { format, parseISO, isToday, isBefore, addDays, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {

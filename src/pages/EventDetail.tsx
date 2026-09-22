@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import {

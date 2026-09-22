@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,

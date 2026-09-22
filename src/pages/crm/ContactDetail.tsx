@@ -9,6 +9,7 @@
 import { useState, useMemo } from 'react';
 import { RecordNavigator } from '@/components/RecordNavigator';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { format, parseISO } from 'date-fns';
 import {
   ArrowLeft,

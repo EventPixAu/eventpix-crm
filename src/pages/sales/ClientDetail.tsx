@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { BackLink } from '@/components/BackLink';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { RecordNavigator } from '@/components/RecordNavigator';
 import { useQueryClient } from '@tanstack/react-query';
