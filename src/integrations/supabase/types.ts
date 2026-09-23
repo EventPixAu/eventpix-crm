@@ -2650,6 +2650,7 @@ export type Database = {
           assignment_notes: string | null
           assignment_status: string | null
           call_time_at: string | null
+          confirm_token: string
           confirmation_status: string
           confirmed_at: string | null
           created_at: string | null
@@ -2673,6 +2674,7 @@ export type Database = {
           assignment_notes?: string | null
           assignment_status?: string | null
           call_time_at?: string | null
+          confirm_token?: string
           confirmation_status?: string
           confirmed_at?: string | null
           created_at?: string | null
@@ -2696,6 +2698,7 @@ export type Database = {
           assignment_notes?: string | null
           assignment_status?: string | null
           call_time_at?: string | null
+          confirm_token?: string
           confirmation_status?: string
           confirmed_at?: string | null
           created_at?: string | null
@@ -7725,6 +7728,7 @@ export type Database = {
         Args: { p_contact_id: string }
         Returns: string
       }
+      confirm_assignment_by_token: { Args: { _token: string }; Returns: Json }
       contact_has_open_lead_or_active_event: {
         Args: { p_contact_id: string }
         Returns: boolean
