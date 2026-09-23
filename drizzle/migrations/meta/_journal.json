@@ -43,6 +43,13 @@
       "when": 1790048890560,
       "tag": "0005_add_setup_time",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790140452609,
+      "tag": "0006_prevent_duplicate_linked_event_contacts",
+      "breakpoints": true
     }
   ]
 }

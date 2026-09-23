@@ -407,30 +407,51 @@ export function useBulkCreateEvents() {
           // Attach client contacts (primary + additional) as event_contacts
           const uniqueContactIds = Array.from(new Set((contact_ids || []).filter(Boolean)));
           if (uniqueContactIds.length > 0) {
-            const { data: contactRows } = await supabase
-              .from('client_contacts')
-              .select('id, contact_name, email, phone, phone_mobile, phone_office')
-              .in('id', uniqueContactIds);
-
-            const rowsToInsert = uniqueContactIds.map((cid, idx) => {
-              const c = contactRows?.find(r => r.id === cid);
-              return {
-                event_id: data.id,
-                client_contact_id: cid,
-                contact_name: c?.contact_name || null,
-                contact_email: c?.email || null,
-                contact_phone: c?.phone_mobile || c?.phone_office || c?.phone || null,
-                contact_type: idx === 0 ? 'primary' : 'other',
-                sort_order: idx,
-              };
-            });
-
-            const { error: contactsError } = await supabase
+            // The series trigger may already have attached these contacts.
+            // Only add IDs that are still missing from this event.
+            const { data: existingContacts, error: existingContactsError } = await supabase
               .from('event_contacts')
-              .insert(rowsToInsert);
-            if (contactsError) {
-              console.error('Bulk create contacts error:', event.event_name, contactsError);
-              results.errors.push(`${event.event_name}: Event created but contacts were not linked (${contactsError.message})`);
+              .select('client_contact_id')
+              .eq('event_id', data.id)
+              .in('client_contact_id', uniqueContactIds);
+
+            if (existingContactsError) {
+              console.error('Bulk create contact lookup error:', event.event_name, existingContactsError);
+              results.errors.push(`${event.event_name}: Event created but its contacts could not be checked (${existingContactsError.message})`);
+            } else {
+              const existingContactIds = new Set(
+                (existingContacts || []).map((row) => row.client_contact_id).filter(Boolean)
+              );
+              const missingContactIds = uniqueContactIds.filter((contactId) => !existingContactIds.has(contactId));
+
+              if (missingContactIds.length > 0) {
+                const { data: contactRows } = await supabase
+                  .from('client_contacts')
+                  .select('id, contact_name, email, phone, phone_mobile, phone_office')
+                  .in('id', missingContactIds);
+
+                const rowsToInsert = missingContactIds.map((cid) => {
+                  const c = contactRows?.find(r => r.id === cid);
+                  const originalIndex = uniqueContactIds.indexOf(cid);
+                  return {
+                    event_id: data.id,
+                    client_contact_id: cid,
+                    contact_name: c?.contact_name || null,
+                    contact_email: c?.email || null,
+                    contact_phone: c?.phone_mobile || c?.phone_office || c?.phone || null,
+                    contact_type: originalIndex === 0 ? 'primary' : 'other',
+                    sort_order: originalIndex,
+                  };
+                });
+
+                const { error: contactsError } = await supabase
+                  .from('event_contacts')
+                  .insert(rowsToInsert);
+                if (contactsError) {
+                  console.error('Bulk create contacts error:', event.event_name, contactsError);
+                  results.errors.push(`${event.event_name}: Event created but contacts were not linked (${contactsError.message})`);
+                }
+              }
             }
           }
 
