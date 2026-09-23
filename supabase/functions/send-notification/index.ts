@@ -416,7 +416,7 @@ const handler = async (req: Request): Promise<Response> => {
     await sendViaGmailApi(`"${recipientName}" <${recipientEmail}>`, subject, html, icsContent);
     await logNotificationEmail(supabase, { recipientEmail: recipientEmail!, recipientName: recipientName!, subject, eventId: event_id, sentBy: user.id });
     if (assignment_id) {
-      const { error: assignmentUpdateError } = await supabase
+      const { error: assignmentUpdateError } = await supabaseUser
         .from("event_assignments")
         .update({ notified: true, notification_sent_at: new Date().toISOString() })
         .eq("id", assignment_id);
