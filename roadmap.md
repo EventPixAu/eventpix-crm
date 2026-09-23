@@ -22,7 +22,7 @@
 
 - [x] Keep the "Assigned x N" pill showing total assignees and grey it out when nobody is pending.
 - [x] When an event becomes confirmed, move its crew assignments from On hold to Pending and email each photographer an update.
-- [x] Add Start Time and End Time to Basic Information when creating an event.
+- [x] Keep only Start Date in Basic Information; session times are managed in Sessions.
 - [x] Add a "Click here to Confirm" button to assignment emails that confirms the crew assignment without logging in.
 - [x] Add the line "Please confirm your availability via the button below" above the buttons in those emails.
 - [x] Show the latest assignment email date beside Resend, keep Remove with the action buttons, and make pay details half width.
