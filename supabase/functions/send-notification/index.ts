@@ -218,7 +218,7 @@ function formatTime(timeStr: string | null): string {
   return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-function buildEmailHtml(recipientName: string, subject: string, event: any, appUrl: string): string {
+function buildEmailHtml(recipientName: string, subject: string, event: any, appUrl: string, confirmToken?: string | null): string {
   const recipientFirstName = recipientName.trim().split(/\s+/)[0] || 'there';
   const isNewAssignment = subject.includes('New assignment');
   const isConfirmedAssignment = subject.includes('Assignment confirmed');
@@ -238,8 +238,9 @@ ${event.venue_name ? `<div class="detail"><div class="detail-label">Venue</div><
 ${event.onsite_contact_name ? `<div class="detail"><div class="detail-label">On-site Contact</div><div class="detail-value">${event.onsite_contact_name}${event.onsite_contact_phone ? ` - ${event.onsite_contact_phone}` : ''}</div></div>` : ''}
 ${event.coverage_details ? `<div class="detail"><div class="detail-label">Coverage Details</div><div class="detail-value">${event.coverage_details}</div></div>` : ''}
 <a href="${appUrl}/events/${event.id}" class="button">View Event Details</a>
+${confirmToken && (isNewAssignment || isConfirmedAssignment) ? `<a href="${appUrl}/confirm-assignment/${confirmToken}" class="button" style="background:#16a34a;color:white;margin-left:8px;">Click here to Confirm</a>` : ''}
   ${subject.includes('Updated details') ? '<p style="margin-top:20px;color:#6b7280;font-size:14px;"><em>Apologies for any repeated calendar invites — we’re making sure your schedule reflects the most up-to-date timings.</em></p>' : ''}
-  ${isNewAssignment || isConfirmedAssignment ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability in EventPix.</p>' : ''}
+  ${(isNewAssignment || isConfirmedAssignment) && !confirmToken ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability in EventPix.</p>' : ''}
 </div><div class="footer"><p>EventPix - Event Photography Management</p></div></div></body></html>`;
 }
 
@@ -291,6 +292,7 @@ const handler = async (req: Request): Promise<Response> => {
     let recipientName: string | null = null;
     let subject: string;
     let icsContent: string;
+    let confirmToken: string | null = null;
 
     if (type === "assignment" || type === "assignment_confirmed") {
       if (!user_id) throw new Error("user_id is required for assignment notifications");
@@ -325,9 +327,10 @@ const handler = async (req: Request): Promise<Response> => {
       if (assignment_id) {
         const { data: assignment } = await supabase
           .from("event_assignments")
-          .select("session_id")
+          .select("session_id, confirm_token, confirmation_status")
           .eq("id", assignment_id)
           .maybeSingle();
+        if (assignment && assignment.confirmation_status !== "on_hold") confirmToken = assignment.confirm_token;
         if (assignment?.session_id) {
           // Single-session assignment: pass as a single-entry sessions list
           // so the ICS includes call/arrival time (setup) when present.
@@ -411,7 +414,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ success: true, message: `Notified ${results.length} staff members` }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    const html = buildEmailHtml(recipientName!, subject, event, appUrl);
+    const html = buildEmailHtml(recipientName!, subject, event, appUrl, confirmToken);
     await sendViaGmailApi(`"${recipientName}" <${recipientEmail}>`, subject, html, icsContent);
     await logNotificationEmail(supabase, { recipientEmail: recipientEmail!, recipientName: recipientName!, subject, eventId: event_id, sentBy: user.id });
 
