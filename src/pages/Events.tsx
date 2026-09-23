@@ -4,7 +4,6 @@ import { format, parseISO, isToday, isFuture } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   Calendar,
-  CheckCircle2,
   ChevronRight,
   Clock,
   AlertTriangle,
@@ -12,6 +11,7 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -309,23 +309,28 @@ export default function Events() {
                               manualStatus={(event as any).clients?.manual_status}
                             />
                           )}
-                          {(assignmentCounts[event.id]?.total || 0) > 0 && (
-                            <span
-                              className="inline-flex items-stretch overflow-hidden rounded-md border border-border bg-background/60 text-xs font-medium"
-                              title={`${assignmentCounts[event.id].confirmed} confirmed, ${assignmentCounts[event.id].pending} pending (excludes editors)`}
-                            >
-                              <span className="inline-flex items-center gap-1.5 border-r border-border px-2 py-0.5 text-primary">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                <strong>{assignmentCounts[event.id].confirmed}</strong>
-                                <span className="text-[10px] uppercase text-muted-foreground">Confirmed</span>
+                          {(assignmentCounts[event.id]?.total || 0) > 0 && (() => {
+                            const { confirmed, pending, total } = assignmentCounts[event.id];
+                            const awaiting = pending > 0;
+                            return (
+                              <span
+                                className={cn(
+                                  'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
+                                  awaiting
+                                    ? 'border-primary/40 bg-primary/10 text-primary'
+                                    : 'border-border bg-muted text-muted-foreground',
+                                )}
+                                title={
+                                  awaiting
+                                    ? `${confirmed} confirmed, ${pending} pending (excludes editors)`
+                                    : `All ${total} crew confirmed (excludes editors)`
+                                }
+                              >
+                                <Users className="h-3 w-3" />
+                                Assigned x {total}
                               </span>
-                              <span className="inline-flex items-center gap-1.5 bg-warning/10 px-2 py-0.5 text-warning">
-                                <Clock className="h-3.5 w-3.5" />
-                                <strong>{assignmentCounts[event.id].pending}</strong>
-                                <span className="text-[10px] uppercase">Pending</span>
-                              </span>
-                            </span>
-                          )}
+                            );
+                          })()}
                         </>
                       )}
                     </div>
