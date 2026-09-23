@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { setClientStatusAuto } from '@/lib/clientStatusAuto';
+import { releaseOnHoldAssignments } from '@/hooks/useNotifications';
 
 export interface ConvertToEventInput {
   enquiry_id: string;
@@ -80,6 +81,10 @@ export function useConvertToEvent() {
       const result = data as unknown as ConvertToEventResult;
       if (!result.success) {
         throw new Error(result.error || 'Conversion failed');
+      }
+
+      if (result.event_id) {
+        await releaseOnHoldAssignments(result.event_id);
       }
 
       // Write any extra event fields (e.g. event_website) that the RPC doesn't handle.
