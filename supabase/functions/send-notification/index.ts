@@ -263,6 +263,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const token = authHeader.replace('Bearer ', '');
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -296,7 +299,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       if (type === "assignment_confirmed") {
-        const { data: releasedAssignment, error: releaseError } = await supabase
+        const { data: releasedAssignment, error: releaseError } = await supabaseUser
           .from("event_assignments")
           .update({ confirmation_status: "pending", confirmed_at: null })
           .eq("id", assignment_id)
