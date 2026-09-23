@@ -337,6 +337,7 @@ export function useCreateAssignment() {
       session_id?: string;
       role_on_event?: string; 
       assignment_notes?: string;
+      confirmation_status?: string;
     }) => {
       const { data, error } = await supabase
         .from('event_assignments')

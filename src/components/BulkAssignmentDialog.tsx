@@ -230,14 +230,15 @@ export function BulkAssignmentDialog({
                 user_id: userId,
                 staff_role_id: selectedRole || null,
                 assignment_notes: assignmentNotes || null,
+                confirmation_status: (event as any).ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
               })
               .select()
               .single();
 
             if (error) throw error;
 
-            // Send notification
-            if (data) {
+            // Pending events keep crew on hold until the event is confirmed.
+            if (data && (event as any).ops_status !== 'awaiting_details') {
               sendNotification.mutate({
                 type: 'assignment',
                 event_id: event.id,

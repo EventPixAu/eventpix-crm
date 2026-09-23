@@ -234,11 +234,13 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       staff_role_id?: string;
       session_id?: string;
       assignment_notes?: string;
+      confirmation_status?: string;
     } = {
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
       session_id: selectedSession !== 'all' ? selectedSession : undefined,
       assignment_notes: assignmentNotes || undefined,
+      confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
 
     // Use staff_id for legacy staff table entries, user_id for profiles
@@ -250,8 +252,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
 
     const result = await createAssignment.mutateAsync(assignmentData);
 
-    // Send notification after successful assignment
-    if (result) {
+    // Pending events keep crew on hold until the event is confirmed.
+    if (result && event?.ops_status !== 'awaiting_details') {
       sendNotification.mutate({
         type: 'assignment',
         event_id: eventId,

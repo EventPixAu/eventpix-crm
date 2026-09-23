@@ -29,6 +29,7 @@ import { useConvertToEvent, ConvertToEventInput } from '@/hooks/useConvertToEven
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { supabase } from '@/lib/supabase';
 import { setClientStatusAuto } from '@/lib/clientStatusAuto';
+import { releaseOnHoldAssignments } from '@/hooks/useNotifications';
 
 interface Lead {
   id: string;
@@ -125,6 +126,7 @@ export function ConvertToEventDialog({ open, onOpenChange, lead }: ConvertToEven
       const rpcResult = rpcData as any;
       if (!rpcResult?.success) throw new Error(rpcResult?.error || 'Conversion failed');
       const firstEventId: string = rpcResult.event_id;
+      await releaseOnHoldAssignments(firstEventId);
 
       // 3. Link first event to series and write event_website if present
       const firstUpdate: Record<string, unknown> = { event_series_id: seriesId };
