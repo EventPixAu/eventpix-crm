@@ -50,6 +50,13 @@
       "when": 1790140452609,
       "tag": "0006_prevent_duplicate_linked_event_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790201499863,
+      "tag": "0007_assignment_confirm_token",
+      "breakpoints": true
     }
   ]
 }
