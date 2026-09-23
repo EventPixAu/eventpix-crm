@@ -2660,6 +2660,7 @@ export type Database = {
           hours_override: number | null
           id: string
           notes: string | null
+          notification_sent_at: string | null
           notified: boolean | null
           responsible_for_delivery: boolean
           role_on_event: string | null
@@ -2684,6 +2685,7 @@ export type Database = {
           hours_override?: number | null
           id?: string
           notes?: string | null
+          notification_sent_at?: string | null
           notified?: boolean | null
           responsible_for_delivery?: boolean
           role_on_event?: string | null
@@ -2708,6 +2710,7 @@ export type Database = {
           hours_override?: number | null
           id?: string
           notes?: string | null
+          notification_sent_at?: string | null
           notified?: boolean | null
           responsible_for_delivery?: boolean
           role_on_event?: string | null
