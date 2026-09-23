@@ -21,6 +21,7 @@ export interface EventAssignment {
   notes: string | null;
   confirmation_status: string | null;
   confirmed_at: string | null;
+  notification_sent_at: string | null;
   profile?: {
     id: string;
     full_name: string | null;

@@ -569,14 +569,23 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             title="Resend notification email"
           >
             <Send className="h-3.5 w-3.5 mr-1" />
-            Resend
+            <span>Resend</span>
+            {assignment.notification_sent_at && (
+              <span className="text-muted-foreground">
+                · {format(parseISO(assignment.notification_sent_at), 'd MMM yyyy')}
+              </span>
+            )}
           </Button>
-          <AlertDialog>
+        </div>
+      )}
+      <div className="grid gap-3 md:grid-cols-2 md:items-start">
+        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
+        {isAdmin && <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-7 text-xs w-full text-destructive hover:text-destructive hover:bg-destructive/10 md:mt-2"
                 title="Remove from event"
                 disabled={removeAssignment.isPending}
               >
@@ -602,10 +611,8 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )}
-      <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
+          </AlertDialog>}
+      </div>
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
   );
