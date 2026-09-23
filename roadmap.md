@@ -16,3 +16,4 @@
 - [x] Diagnose the failed email and confirm whether its link renders as text or a button
 
 - [x] Remove duplicate session entry shown for the same event; preserve the complete session record.
+- [x] Remove duplicate linked event contacts and prevent series/bulk creation from adding them again.

@@ -55,13 +55,44 @@ export function useCreateEventContact() {
 
   return useMutation({
     mutationFn: async (contact: EventContactInsert) => {
+      if (contact.client_contact_id) {
+        const { data: existing, error: lookupError } = await supabase
+          .from('event_contacts')
+          .select('id')
+          .eq('event_id', contact.event_id)
+          .eq('client_contact_id', contact.client_contact_id)
+          .maybeSingle();
+
+        if (lookupError) throw lookupError;
+        if (existing) {
+          const { data, error } = await supabase
+            .from('event_contacts')
+            .update({
+              contact_type: contact.contact_type,
+              contact_name: contact.contact_name,
+              contact_phone: contact.contact_phone,
+              contact_email: contact.contact_email,
+              notes: contact.notes,
+              sort_order: contact.sort_order,
+            })
+            .eq('id', existing.id)
+            .select()
+            .maybeSingle();
+
+          if (error) throw error;
+          if (!data) throw new Error('Contact could not be updated');
+          return data;
+        }
+      }
+
       const { data, error } = await supabase
         .from('event_contacts')
         .insert(contact)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) throw new Error('Contact could not be added');
       return data;
     },
     onSuccess: (data) => {
@@ -84,9 +115,10 @@ export function useUpdateEventContact() {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) throw new Error('Contact could not be updated');
       return { ...data, eventId };
     },
     onSuccess: (data) => {
