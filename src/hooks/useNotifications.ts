@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -44,6 +44,7 @@ export async function releaseOnHoldAssignments(eventId: string) {
 }
 
 export function useSendNotification() {
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: SendNotificationParams) => {
@@ -54,7 +55,8 @@ export function useSendNotification() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, params) => {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', params.event_id] });
       if (data?.dryRun) {
         toast.success('Notification queued (prototype mode)', { description: 'Email sending is not configured. Check console for details.' });
       } else {

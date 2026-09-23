@@ -374,9 +374,6 @@ const handler = async (req: Request): Promise<Response> => {
         : `Eventpix - New assignment: ${event.event_name} - ${dateLabel}`;
       icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId, allSessions);
 
-      if (assignment_id) {
-        await supabase.from("event_assignments").update({ notified: true }).eq("id", assignment_id);
-      }
     } else {
       const assignQuery = supabase
         .from("event_assignments").select("user_id, profiles:user_id(email, full_name)").eq("event_id", event_id);
@@ -418,6 +415,15 @@ const handler = async (req: Request): Promise<Response> => {
     const html = buildEmailHtml(recipientName!, subject, event, appUrl, confirmToken);
     await sendViaGmailApi(`"${recipientName}" <${recipientEmail}>`, subject, html, icsContent);
     await logNotificationEmail(supabase, { recipientEmail: recipientEmail!, recipientName: recipientName!, subject, eventId: event_id, sentBy: user.id });
+    if (assignment_id) {
+      const { error: assignmentUpdateError } = await supabase
+        .from("event_assignments")
+        .update({ notified: true, notification_sent_at: new Date().toISOString() })
+        .eq("id", assignment_id);
+      if (assignmentUpdateError) {
+        console.error("Failed to record assignment notification date:", assignmentUpdateError);
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, message: "Notification sent via Gmail API" }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
   } catch (error: any) {
