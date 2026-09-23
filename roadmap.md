@@ -17,3 +17,5 @@
 
 - [x] Remove duplicate session entry shown for the same event; preserve the complete session record.
 - [x] Remove duplicate linked event contacts and prevent series/bulk creation from adding them again.
+
+- [ ] Add clear confirmed and pending staff counts to the all-events overview; leave individual event assignment cards unchanged.
