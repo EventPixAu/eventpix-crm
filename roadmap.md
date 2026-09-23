@@ -21,3 +21,4 @@
 - [x] Add clear confirmed and pending staff counts to the all-events overview; leave individual event assignment cards unchanged.
 
 - [x] Keep the "Assigned x N" pill showing total assignees and grey it out when nobody is pending.
+- [ ] When an event becomes confirmed, move its crew assignments from On hold to Pending and email each photographer an update.
