@@ -576,16 +576,12 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
               </span>
             )}
           </Button>
-        </div>
-      )}
-      <div className="grid gap-3 md:grid-cols-2 md:items-start">
-        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
-        {isAdmin && <AlertDialog>
+          <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs w-full text-destructive hover:text-destructive hover:bg-destructive/10 md:mt-2"
+                className="h-7 text-xs w-full text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Remove from event"
                 disabled={removeAssignment.isPending}
               >
@@ -611,7 +607,11 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>}
+          </AlertDialog>
+        </div>
+      )}
+      <div className="md:w-1/2">
+        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
       </div>
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
