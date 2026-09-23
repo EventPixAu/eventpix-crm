@@ -4,6 +4,7 @@ import { format, parseISO, isToday, isFuture } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   Calendar,
+  CheckCircle2,
   ChevronRight,
   Clock,
   AlertTriangle,
@@ -55,19 +56,22 @@ export default function Events() {
     },
   });
 
-  // Fetch assignment counts for all events (excludes offsite editor roles)
+  // Fetch assignment status counts for all events (excludes offsite editor roles)
   const { data: assignmentCounts = {} } = useQuery({
     queryKey: ['event-assignment-counts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_assignments')
-        .select('event_id, user_id, staff_id, role_on_event, staff_roles(name)');
+        .select('event_id, user_id, staff_id, role_on_event, confirmation_status, staff_roles(name)');
       if (error) throw error;
-      const counts: Record<string, number> = {};
+      const counts: Record<string, { confirmed: number; pending: number; total: number }> = {};
       (data || []).forEach((a: any) => {
         const roleName: string = a.staff_roles?.name || a.role_on_event || '';
         if (/editor|retoucher/i.test(roleName)) return;
-        counts[a.event_id] = (counts[a.event_id] || 0) + 1;
+        if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, total: 0 };
+        counts[a.event_id].total += 1;
+        if (a.confirmation_status === 'confirmed') counts[a.event_id].confirmed += 1;
+        if (!a.confirmation_status || a.confirmation_status === 'pending') counts[a.event_id].pending += 1;
       });
       return counts;
     },
@@ -305,13 +309,21 @@ export default function Events() {
                               manualStatus={(event as any).clients?.manual_status}
                             />
                           )}
-                          {(assignmentCounts[event.id] || 0) > 0 && (
+                          {(assignmentCounts[event.id]?.total || 0) > 0 && (
                             <span
-                              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-                              title="Crew assigned (excludes editors)"
+                              className="inline-flex items-stretch overflow-hidden rounded-md border border-border bg-background/60 text-xs font-medium"
+                              title={`${assignmentCounts[event.id].confirmed} confirmed, ${assignmentCounts[event.id].pending} pending (excludes editors)`}
                             >
-                              <Users className="h-3 w-3" />
-                              Assigned x {assignmentCounts[event.id]}
+                              <span className="inline-flex items-center gap-1.5 border-r border-border px-2 py-0.5 text-primary">
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <strong>{assignmentCounts[event.id].confirmed}</strong>
+                                <span className="text-[10px] uppercase text-muted-foreground">Confirmed</span>
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 bg-warning/10 px-2 py-0.5 text-warning">
+                                <Clock className="h-3.5 w-3.5" />
+                                <strong>{assignmentCounts[event.id].pending}</strong>
+                                <span className="text-[10px] uppercase">Pending</span>
+                              </span>
                             </span>
                           )}
                         </>
@@ -339,12 +351,12 @@ export default function Events() {
                           </span>
                         </>
                       )}
-                      {(assignmentCounts[event.id] || 0) > 0 && (
+                      {(assignmentCounts[event.id]?.total || 0) > 0 && (
                         <>
                           <span className="hidden sm:inline">•</span>
                           <span className="hidden sm:flex items-center gap-1">
                             <Users className="h-3.5 w-3.5" />
-                            {assignmentCounts[event.id]}
+                            {assignmentCounts[event.id].total}
                           </span>
                         </>
                       )}
