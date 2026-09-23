@@ -25,3 +25,4 @@
 - [x] Add Start Time and End Time to Basic Information when creating an event.
 - [x] Add a "Click here to Confirm" button to assignment emails that confirms the crew assignment without logging in.
 - [x] Add the line "Please confirm your availability via the button below" above the buttons in those emails.
+- [x] Show the latest assignment email date beside Resend, move Remove down, and make pay details half width.
