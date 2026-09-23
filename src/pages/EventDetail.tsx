@@ -95,7 +95,7 @@ import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
 import { SendTeamUpdateDialog } from '@/components/SendTeamUpdateDialog';
-import { useSendNotification } from '@/hooks/useNotifications';
+import { releaseOnHoldAssignments, useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -1377,6 +1377,23 @@ export default function EventDetail() {
                             id: event.id,
                             ops_status: value,
                           });
+                           if (value === 'confirmed' && (event as any).ops_status !== 'confirmed') {
+                             try {
+                               const result = await releaseOnHoldAssignments(event.id);
+                               if (result.released > 0) {
+                                 queryClient.invalidateQueries({ queryKey: ['event-assignments', event.id] });
+                                 queryClient.invalidateQueries({ queryKey: ['event-assignment-counts'] });
+                                 toast.success(
+                                   `${result.released} assignment${result.released === 1 ? '' : 's'} moved to pending`,
+                                   { description: `${result.notified} photographer update email${result.notified === 1 ? '' : 's'} sent.` },
+                                 );
+                               }
+                             } catch (error) {
+                               toast.error('Event confirmed, but crew assignments could not be released', {
+                                 description: error instanceof Error ? error.message : 'Please try again.',
+                               });
+                             }
+                           }
                           // When event marked completed, return client to Active Client
                           if (value === 'completed' && event.client_id) {
                             await setClientStatusAuto(event.client_id, 'active', 'event_completed');

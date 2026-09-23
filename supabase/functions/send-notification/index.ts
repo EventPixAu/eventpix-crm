@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "assignment" | "event_update";
+  type: "assignment" | "assignment_confirmed" | "event_update";
   event_id: string;
   user_id?: string;
   assignment_id?: string;
@@ -220,6 +220,8 @@ function formatTime(timeStr: string | null): string {
 
 function buildEmailHtml(recipientName: string, subject: string, event: any, appUrl: string): string {
   const recipientFirstName = recipientName.trim().split(/\s+/)[0] || 'there';
+  const isNewAssignment = subject.includes('New assignment');
+  const isConfirmedAssignment = subject.includes('Assignment confirmed');
   return `<!DOCTYPE html><html><head><style>
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333}
 .container{max-width:600px;margin:0 auto;padding:20px}.header{background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:24px;border-radius:12px 12px 0 0}
@@ -227,17 +229,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;l
 .detail{margin-bottom:16px}.detail-label{font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:4px}
 .detail-value{font-weight:500}.button{display:inline-block;background:#6366f1;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:16px}
 .footer{text-align:center;margin-top:24px;font-size:12px;color:#9ca3af}
-</style></head><body><div class="container"><div class="header"><h1>📸 ${subject.includes('New assignment') ? 'New Assignment' : 'Event Updated'}</h1></div>
+  </style></head><body><div class="container"><div class="header"><h1>📸 ${isNewAssignment ? 'New Assignment' : isConfirmedAssignment ? 'Assignment Update' : 'Event Updated'}</h1></div>
 <div class="content"><p>Hi ${recipientFirstName},</p>
-<p>${subject.includes('New assignment') ? 'You have been assigned to the following event.' : 'The following event details have been updated:'}</p>
+  <p>${isNewAssignment ? 'You have been assigned to the following event.' : isConfirmedAssignment ? 'This event is now confirmed and your assignment is awaiting your availability confirmation.' : 'The following event details have been updated:'}</p>
 <div class="detail"><div class="detail-label">Event</div><div class="detail-value">${event.event_name}</div></div>
 <div class="detail"><div class="detail-label">Date & Time</div><div class="detail-value">${formatDate(event.event_date)}${event.start_time ? ` at ${formatTime(event.start_time)}` : ''}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}</div></div>
 ${event.venue_name ? `<div class="detail"><div class="detail-label">Venue</div><div class="detail-value">${event.venue_name}${event.venue_address ? `<br>${event.venue_address}` : ''}</div></div>` : ''}
 ${event.onsite_contact_name ? `<div class="detail"><div class="detail-label">On-site Contact</div><div class="detail-value">${event.onsite_contact_name}${event.onsite_contact_phone ? ` - ${event.onsite_contact_phone}` : ''}</div></div>` : ''}
 ${event.coverage_details ? `<div class="detail"><div class="detail-label">Coverage Details</div><div class="detail-value">${event.coverage_details}</div></div>` : ''}
 <a href="${appUrl}/events/${event.id}" class="button">View Event Details</a>
-${subject.includes('Updated details') ? '<p style="margin-top:20px;color:#6b7280;font-size:14px;"><em>Apologies for any repeated calendar invites — we’re making sure your schedule reflects the most up-to-date timings.</em></p>' : ''}
-${subject.includes('New assignment') ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability by return email.</p>' : ''}
+  ${subject.includes('Updated details') ? '<p style="margin-top:20px;color:#6b7280;font-size:14px;"><em>Apologies for any repeated calendar invites — we’re making sure your schedule reflects the most up-to-date timings.</em></p>' : ''}
+  ${isNewAssignment || isConfirmedAssignment ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability in EventPix.</p>' : ''}
 </div><div class="footer"><p>EventPix - Event Photography Management</p></div></div></body></html>`;
 }
 
@@ -287,7 +289,7 @@ const handler = async (req: Request): Promise<Response> => {
     let subject: string;
     let icsContent: string;
 
-    if (type === "assignment") {
+    if (type === "assignment" || type === "assignment_confirmed") {
       if (!user_id) throw new Error("user_id is required for assignment notifications");
       const { data: profile, error: profileError } = await supabase.from("profiles").select("email, full_name").eq("id", user_id).maybeSingle();
       if (profileError) throw new Error(`Profile lookup failed: ${profileError.message}`);
@@ -342,7 +344,9 @@ const handler = async (req: Request): Promise<Response> => {
       const dateLabel = allSessions && allSessions.length > 1
         ? `${formatDate(allSessions[0].session_date)} – ${formatDate(allSessions[allSessions.length - 1].session_date)}`
         : formatDate(event.event_date);
-      subject = `Eventpix - New assignment: ${event.event_name} - ${dateLabel}`;
+      subject = type === "assignment_confirmed"
+        ? `Eventpix - Assignment confirmed: ${event.event_name} - ${dateLabel}`
+        : `Eventpix - New assignment: ${event.event_name} - ${dateLabel}`;
       icsContent = generateICS(event, event.calendar_sequence || 0, appUrl, assignmentSessionId, allSessions);
 
       if (assignment_id) {
