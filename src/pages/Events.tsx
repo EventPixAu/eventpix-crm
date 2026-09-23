@@ -4,6 +4,7 @@ import { format, parseISO, isToday, isFuture } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
   Calendar,
+  CheckCircle2,
   ChevronRight,
   Clock,
   AlertTriangle,
