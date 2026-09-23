@@ -19,3 +19,5 @@
 - [x] Remove duplicate linked event contacts and prevent series/bulk creation from adding them again.
 
 - [x] Add clear confirmed and pending staff counts to the all-events overview; leave individual event assignment cards unchanged.
+
+- [x] Keep the "Assigned x N" pill showing total assignees and grey it out when nobody is pending.
