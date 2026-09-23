@@ -387,6 +387,14 @@ export default function Events() {
                           <span className="hidden sm:flex items-center gap-1">
                             <Users className="h-3.5 w-3.5" />
                             {assignmentCounts[event.id].total}
+                            <span className="text-success">
+                              {assignmentCounts[event.id].confirmed} confirmed
+                            </span>
+                            {assignmentCounts[event.id].pending > 0 && (
+                              <span className="text-warning">
+                                {assignmentCounts[event.id].pending} pending
+                              </span>
+                            )}
                           </span>
                         </>
                       )}
