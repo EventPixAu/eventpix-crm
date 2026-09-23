@@ -140,17 +140,42 @@ export function useVenueEvents(venueId: string | undefined, venueName?: string |
   });
 }
 
+/** Loose key used to detect venues that are really the same place. */
+export const venueNameKey = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/\b(the|pty|ltd|hotel|centre|center)\b/g, ' ')
+    .replace(/[^a-z0-9]/g, '');
+
+/** Returns an existing active venue whose name is effectively the same, if any. */
+export async function findExistingVenue(name: string): Promise<Venue | null> {
+  const key = venueNameKey(name);
+  if (!key) return null;
+  const { data, error } = await supabase.from('venues').select('*').eq('is_active', true);
+  if (error || !data) return null;
+  const match = data.find((v: any) => venueNameKey(v.name ?? '') === key);
+  return match ? asVenue(match) : null;
+}
+
 export function useCreateVenue() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (venue: VenueInsert) => {
+      // Never create a second record for a venue we already have.
+      const existing = await findExistingVenue(venue.name);
+      if (existing) return { ...existing, __existing: true } as Venue & { __existing?: boolean };
+
       const { data, error } = await supabase.from('venues').insert(venue as any).select().single();
       if (error) throw error;
       return asVenue(data);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['venues'] });
-      toast.success('Venue created');
+      if (data?.__existing) {
+        toast.info('Venue already exists', { description: `Linked to "${data.name}" in the library.` });
+      } else {
+        toast.success('Venue created');
+      }
     },
     onError: (error: any) => {
       toast.error('Error creating venue', { description: error.message });
