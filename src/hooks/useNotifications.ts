@@ -20,14 +20,6 @@ export async function releaseOnHoldAssignments(eventId: string) {
   if (fetchError) throw fetchError;
   if (!assignments?.length) return { released: 0, notified: 0 };
 
-  const assignmentIds = assignments.map((assignment) => assignment.id);
-  const { error: updateError } = await supabase
-    .from('event_assignments')
-    .update({ confirmation_status: 'pending', confirmed_at: null })
-    .in('id', assignmentIds);
-
-  if (updateError) throw updateError;
-
   const notificationResults = await Promise.allSettled(
     assignments
       .filter((assignment) => assignment.user_id)

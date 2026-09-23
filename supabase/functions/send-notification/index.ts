@@ -291,6 +291,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (type === "assignment" || type === "assignment_confirmed") {
       if (!user_id) throw new Error("user_id is required for assignment notifications");
+      if (type === "assignment_confirmed" && !assignment_id) {
+        throw new Error("assignment_id is required for confirmed assignment notifications");
+      }
+
+      if (type === "assignment_confirmed") {
+        const { data: releasedAssignment, error: releaseError } = await supabase
+          .from("event_assignments")
+          .update({ confirmation_status: "pending", confirmed_at: null })
+          .eq("id", assignment_id)
+          .eq("event_id", event_id)
+          .eq("user_id", user_id)
+          .eq("confirmation_status", "on_hold")
+          .select("id")
+          .maybeSingle();
+        if (releaseError) throw new Error(`Failed to release assignment: ${releaseError.message}`);
+        if (!releasedAssignment) throw new Error("Assignment is not on hold or does not match this event and photographer");
+      }
+
       const { data: profile, error: profileError } = await supabase.from("profiles").select("email, full_name").eq("id", user_id).maybeSingle();
       if (profileError) throw new Error(`Profile lookup failed: ${profileError.message}`);
       if (!profile) throw new Error(`No profile found for user_id: ${user_id}`);
