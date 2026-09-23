@@ -311,23 +311,47 @@ export default function Events() {
                           )}
                           {(assignmentCounts[event.id]?.total || 0) > 0 && (() => {
                             const { confirmed, pending, total } = assignmentCounts[event.id];
-                            const awaiting = pending > 0;
                             return (
-                              <span
-                                className={cn(
-                                  'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
-                                  awaiting
-                                    ? 'border-primary/40 bg-primary/10 text-primary'
-                                    : 'border-border bg-muted text-muted-foreground',
-                                )}
-                                title={
-                                  awaiting
-                                    ? `${confirmed} confirmed, ${pending} pending (excludes editors)`
-                                    : `All ${total} crew confirmed (excludes editors)`
-                                }
-                              >
-                                <Users className="h-3 w-3" />
-                                Assigned x {total}
+                              <span className="inline-flex items-center gap-1">
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                                  title={`${total} crew assigned (excludes editors)`}
+                                >
+                                  <Users className="h-3 w-3" />
+                                  Assigned {total}
+                                </span>
+                                <span
+                                  className={cn(
+                                    'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
+                                    confirmed > 0
+                                      ? 'border-success/40 bg-success/10 text-success'
+                                      : 'border-border bg-muted text-muted-foreground',
+                                  )}
+                                  title={
+                                    confirmed > 0
+                                      ? `${confirmed} of ${total} crew confirmed`
+                                      : 'No crew have confirmed yet'
+                                  }
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Confirmed {confirmed}
+                                </span>
+                                <span
+                                  className={cn(
+                                    'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
+                                    pending > 0
+                                      ? 'border-warning/50 bg-warning/10 text-warning'
+                                      : 'border-border bg-muted text-muted-foreground',
+                                  )}
+                                  title={
+                                    pending > 0
+                                      ? `${pending} awaiting a response`
+                                      : 'Everyone has responded'
+                                  }
+                                >
+                                  <Clock className="h-3 w-3" />
+                                  Pending {pending}
+                                </span>
                               </span>
                             );
                           })()}
