@@ -237,6 +237,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;l
 ${event.venue_name ? `<div class="detail"><div class="detail-label">Venue</div><div class="detail-value">${event.venue_name}${event.venue_address ? `<br>${event.venue_address}` : ''}</div></div>` : ''}
 ${event.onsite_contact_name ? `<div class="detail"><div class="detail-label">On-site Contact</div><div class="detail-value">${event.onsite_contact_name}${event.onsite_contact_phone ? ` - ${event.onsite_contact_phone}` : ''}</div></div>` : ''}
 ${event.coverage_details ? `<div class="detail"><div class="detail-label">Coverage Details</div><div class="detail-value">${event.coverage_details}</div></div>` : ''}
+  ${confirmToken && (isNewAssignment || isConfirmedAssignment) ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability via the button below</p>' : ''}
 <a href="${appUrl}/events/${event.id}" class="button">View Event Details</a>
 ${confirmToken && (isNewAssignment || isConfirmedAssignment) ? `<a href="${appUrl}/confirm-assignment/${confirmToken}" class="button" style="background:#16a34a;color:white;margin-left:8px;">Click here to Confirm</a>` : ''}
   ${subject.includes('Updated details') ? '<p style="margin-top:20px;color:#6b7280;font-size:14px;"><em>Apologies for any repeated calendar invites — we’re making sure your schedule reflects the most up-to-date timings.</em></p>' : ''}
