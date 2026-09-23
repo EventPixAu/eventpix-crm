@@ -1,11 +1,10 @@
-# Add “Not required” to crew logistics
+# Add times to New Event
 
 ## Changes
-- Add “Not required” as a distinct saved choice for both Meal provided and Parking provided.
-- Keep the existing “Not set”, “Yes”, and “No” states unchanged.
-- Show “Not required” consistently when reopening an event and anywhere shared logistics appear to clients.
+- Add Start Time and End Time fields beside the Start Date in Basic Information.
+- Save those times on the event and use them for the automatically created first session.
+- Keep existing edit and lead-conversion values working unchanged.
 
-## Technical details
-- Store the new state separately so it is not confused with an unanswered field.
-- Extend the client-facing event data and displays to recognise the new state.
-- Verify both selectors save and reload correctly.
+## Verification
+- Confirm the New Event form shows both time fields on desktop and mobile.
+- Confirm entered times persist into the event and its initial session.
