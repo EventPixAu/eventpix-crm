@@ -1580,22 +1580,6 @@ export default function EventDetail() {
                 <EventFinancialsCard eventId={id} />
               )}
 
-              {/* QR Registration */}
-              {id && canSeeSection('qr_panel') && (
-                <EventQrPanel
-                  eventId={id}
-                  qrFilePath={(event as any).qr_file_path || null}
-                  qrFileName={(event as any).qr_file_name || null}
-                  preRegistrationLink={(event as any).pre_registration_link || null}
-                  liveFeedLink={(event as any).live_feed_link || null}
-                  dropboxLink={(event as any).dropbox_link || null}
-                  smugmugLink={(event as any).smugmug_link || null}
-                  artworkDriveLink={(event as any).artwork_drive_link || null}
-                  eventWebPageLink={(event as any).event_web_page_link || null}
-                  isAdmin={isAdmin || isOperations || isSales}
-                />
-              )}
-
               {/* Budget (Quote) Panel */}
               {(isAdmin || canSeeSection('budget')) && (
                 <EventBudgetCard quoteId={(event as any).quote_id} eventId={id} leadId={(event as any).lead_id} clientId={(event as any).client_id} />
@@ -1891,6 +1875,21 @@ export default function EventDetail() {
                 );
               })()}
 
+              {/* QR Registration */}
+              {id && canSeeSection('qr_panel') && (
+                <EventQrPanel
+                  eventId={id}
+                  qrFilePath={(event as any).qr_file_path || null}
+                  qrFileName={(event as any).qr_file_name || null}
+                  preRegistrationLink={(event as any).pre_registration_link || null}
+                  liveFeedLink={(event as any).live_feed_link || null}
+                  dropboxLink={(event as any).dropbox_link || null}
+                  smugmugLink={(event as any).smugmug_link || null}
+                  artworkDriveLink={(event as any).artwork_drive_link || null}
+                  eventWebPageLink={(event as any).event_web_page_link || null}
+                  isAdmin={isAdmin || isOperations || isSales}
+                />
+              )}
 
               {/* Mail History */}
               {(isAdmin || canSeeSection('mail_history')) && id && (
