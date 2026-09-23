@@ -72,13 +72,7 @@ export default function Events() {
         if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, total: 0 };
         counts[a.event_id].total += 1;
         if (a.confirmation_status === 'confirmed') counts[a.event_id].confirmed += 1;
-        if (
-          !a.confirmation_status ||
-          a.confirmation_status === 'pending' ||
-          a.confirmation_status === 'on_hold'
-        ) {
-          counts[a.event_id].pending += 1;
-        }
+        if (!a.confirmation_status || a.confirmation_status === 'pending') counts[a.event_id].pending += 1;
       });
       return counts;
     },
