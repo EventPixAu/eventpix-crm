@@ -78,6 +78,13 @@
       "when": 1790229503418,
       "tag": "0010_add_event_notes_for_next_time",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790293221236,
+      "tag": "0011_convert_enquiry_reuse_existing_venue",
+      "breakpoints": true
     }
   ]
 }
