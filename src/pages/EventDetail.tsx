@@ -91,6 +91,7 @@ import { StaffWorkflowPanel } from '@/components/StaffWorkflowPanel';
 import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { useEventSectionVisibility } from '@/hooks/useRoleSectionVisibility';
 import { EventQrPanel } from '@/components/EventQrPanel';
+import { EventNotesForNextTime } from '@/components/EventNotesForNextTime';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
@@ -1905,6 +1906,15 @@ export default function EventDetail() {
 
               {/* Setup Tasks */}
               {(isAdmin || canSeeSection('tasks')) && id && <EventTasksCard eventId={id} />}
+
+              {/* Notes for next time */}
+              {id && (
+                <EventNotesForNextTime
+                  eventId={id}
+                  initialValue={(event as any).notes_for_next_time || null}
+                  canEdit={isAdmin || isOperations || isSales}
+                />
+              )}
 
             </motion.div>
           </div>
