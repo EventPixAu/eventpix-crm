@@ -6,13 +6,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Camera, Aperture, Lightbulb, Image, Mic, Loader2, Save, Pencil } from 'lucide-react';
+import { Plus, Trash2, Camera, Aperture, Lightbulb, Image, Mic, Loader2, Save, Pencil, Smartphone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // --- Shared types ---
 
@@ -41,9 +42,17 @@ export interface EquipmentKit {
   items: EquipmentItem[];
 }
 
+export interface PhoneInfo {
+  model: string;
+  usb: string;
+}
+
+export const USB_CONNECTION_OPTIONS = ['USB-C', 'Lightning', 'Micro-USB', 'Other'] as const;
+
 export interface PhotographyEquipmentV2 {
   version: 2;
   kits: EquipmentKit[];
+  phone?: PhoneInfo;
 }
 
 export type StoredEquipment = PhotographyEquipment | PhotographyEquipmentV2;
