@@ -8059,6 +8059,7 @@ export type Database = {
         Args: { p_event_id: string; p_step_id: string }
         Returns: undefined
       }
+      venue_name_key: { Args: { p: string }; Returns: string }
       workflow_role_to_app_role: {
         Args: { p_role_name: string }
         Returns: Database["public"]["Enums"]["app_role"]
