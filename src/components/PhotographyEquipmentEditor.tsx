@@ -125,6 +125,13 @@ export function PhotographyEquipmentEditor({
     }
   }, [initialData]);
 
+  const updatePhone = (field: keyof PhoneInfo, value: string) => {
+    update({
+      ...data,
+      phone: { model: data.phone?.model || '', usb: data.phone?.usb || '', [field]: value },
+    });
+  };
+
   // Warn on browser unload if there are unsaved changes
   useEffect(() => {
     if (!hasChanges) return;
@@ -233,6 +240,42 @@ export function PhotographyEquipmentEditor({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Phone block */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Phone</span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Phone Model</Label>
+                <Input
+                  placeholder="e.g., iPhone 15 Pro, Samsung Galaxy S24"
+                  value={data.phone?.model || ''}
+                  onChange={e => updatePhone('model', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">USB Connection</Label>
+                <Select
+                  value={data.phone?.usb || ''}
+                  onValueChange={v => updatePhone('usb', v)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select connection type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USB_CONNECTION_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           <Accordion type="multiple" defaultValue={['camera', 'lighting']} className="space-y-2">
             {CATEGORY_CONFIG.map(({ key, label, icon: Icon, placeholder }) => {
               const kits = kitsForCategory(key);
