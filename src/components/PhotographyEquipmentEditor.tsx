@@ -6,13 +6,14 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Camera, Aperture, Lightbulb, Image, Mic, Loader2, Save, Pencil } from 'lucide-react';
+import { Plus, Trash2, Camera, Aperture, Lightbulb, Image, Mic, Loader2, Save, Pencil, Smartphone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // --- Shared types ---
 
@@ -41,9 +42,17 @@ export interface EquipmentKit {
   items: EquipmentItem[];
 }
 
+export interface PhoneInfo {
+  model: string;
+  usb: string;
+}
+
+export const USB_CONNECTION_OPTIONS = ['USB-C', 'Lightning', 'Micro-USB', 'Other'] as const;
+
 export interface PhotographyEquipmentV2 {
   version: 2;
   kits: EquipmentKit[];
+  phone?: PhoneInfo;
 }
 
 export type StoredEquipment = PhotographyEquipment | PhotographyEquipmentV2;
@@ -115,6 +124,13 @@ export function PhotographyEquipmentEditor({
       setData(migrateToV2(initialData));
     }
   }, [initialData]);
+
+  const updatePhone = (field: keyof PhoneInfo, value: string) => {
+    update({
+      ...data,
+      phone: { model: data.phone?.model || '', usb: data.phone?.usb || '', [field]: value },
+    });
+  };
 
   // Warn on browser unload if there are unsaved changes
   useEffect(() => {
@@ -224,6 +240,42 @@ export function PhotographyEquipmentEditor({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Phone block */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">Phone</span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Phone Model</Label>
+                <Input
+                  placeholder="e.g., iPhone 15 Pro, Samsung Galaxy S24"
+                  value={data.phone?.model || ''}
+                  onChange={e => updatePhone('model', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">USB Connection</Label>
+                <Select
+                  value={data.phone?.usb || ''}
+                  onValueChange={v => updatePhone('usb', v)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select connection type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USB_CONNECTION_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           <Accordion type="multiple" defaultValue={['camera', 'lighting']} className="space-y-2">
             {CATEGORY_CONFIG.map(({ key, label, icon: Icon, placeholder }) => {
               const kits = kitsForCategory(key);
