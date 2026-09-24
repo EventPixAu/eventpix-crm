@@ -1,0 +1,2 @@
+ALTER TABLE public.events ADD COLUMN notes_for_next_time TEXT;
+COMMENT ON COLUMN public.events.notes_for_next_time IS 'Free-text notes captured during/after an event to help set up the next (often annual) repeat of this event.';

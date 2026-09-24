@@ -3570,6 +3570,7 @@ export type Database = {
           meal_provided: boolean | null
           meal_provision_status: string | null
           notes: string | null
+          notes_for_next_time: string | null
           onsite_contact_name: string | null
           onsite_contact_phone: string | null
           ops_status: string | null
@@ -3665,6 +3666,7 @@ export type Database = {
           meal_provided?: boolean | null
           meal_provision_status?: string | null
           notes?: string | null
+          notes_for_next_time?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
@@ -3760,6 +3762,7 @@ export type Database = {
           meal_provided?: boolean | null
           meal_provision_status?: string | null
           notes?: string | null
+          notes_for_next_time?: string | null
           onsite_contact_name?: string | null
           onsite_contact_phone?: string | null
           ops_status?: string | null
