@@ -34,6 +34,17 @@ import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGu
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useAuth } from '@/lib/auth';
 import { useCreateCrewChecklistForUser } from '@/hooks/useCrewChecklists';
+import { getTimezoneOffset } from '@/lib/timezones';
+
+// Combine a local date + time in an IANA timezone into a timestamptz ISO string
+function toTimestamptz(dateStr: string, timeStr: string, tz: string): string {
+  const offset = getTimezoneOffset(tz, new Date(`${dateStr}T12:00:00`));
+  const m = offset.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+  const sign = m?.[1] ?? '+';
+  const hh = (m?.[2] ?? '10').padStart(2, '0');
+  const mm = m?.[3] ?? '00';
+  return `${dateStr}T${timeStr}:00${sign}${hh}:${mm}`;
+}
 
 interface StaffAssignmentDialogProps {
   eventId: string;
@@ -64,6 +75,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const [teamMemberSearchFocused, setTeamMemberSearchFocused] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [callTimeChoice, setCallTimeChoice] = useState('default');
+  const [customCallTime, setCustomCallTime] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
   // Guardrail state
@@ -152,6 +165,15 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   }, [selectedUser, dateAvailability]);
   
   const hasSessions = sessions.length > 0;
+
+  // Call time context from the selected session
+  const selectedSessionObj = useMemo(
+    () => sessions.find(s => s.id === selectedSession),
+    [sessions, selectedSession]
+  );
+  const sessionCallTime = (selectedSessionObj as any)?.arrival_time || selectedSessionObj?.start_time || null;
+  const sessionDate = selectedSessionObj?.session_date || event?.event_date || null;
+  const sessionTz = (selectedSessionObj as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
   
   // Filter assigned users by selected session context
   const assignedUserIds = useMemo(() => {
@@ -235,6 +257,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       session_id?: string;
       assignment_notes?: string;
       confirmation_status?: string;
+      call_time_at?: string;
     } = {
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
@@ -242,6 +265,11 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       assignment_notes: assignmentNotes || undefined,
       confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
+
+    // Custom call time overrides the session default
+    if (callTimeChoice === 'custom' && customCallTime && sessionDate) {
+      assignmentData.call_time_at = toTimestamptz(sessionDate, customCallTime, sessionTz);
+    }
 
     // Use staff_id for legacy staff table entries, user_id for profiles
     if (isStaffTableEntry) {
@@ -275,6 +303,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     setTeamMemberSearch('');
     setSelectedRole('');
     setAssignmentNotes('');
+    setCallTimeChoice('default');
+    setCustomCallTime('');
     // Don't reset selectedSession - keep it for consecutive assignments to same session
     setGuardrailChecks(null);
     setGuardrailOverridden(false);
@@ -520,6 +550,34 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             <p className="text-xs text-muted-foreground">
               Edit this list in Admin → Lookups → Staff Roles.
             </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Call time</Label>
+            <Select value={callTimeChoice} onValueChange={setCallTimeChoice}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  {sessionCallTime
+                    ? `Session call time (${formatTime12(sessionCallTime)})`
+                    : 'Session default'}
+                </SelectItem>
+                <SelectItem value="custom">Custom time…</SelectItem>
+              </SelectContent>
+            </Select>
+            {callTimeChoice === 'custom' && (
+              <Input
+                type="time"
+                value={customCallTime}
+                onChange={(e) => setCustomCallTime(e.target.value)}
+                className="mt-1.5"
+              />
+            )}
           </div>
 
           <Textarea
