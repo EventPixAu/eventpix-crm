@@ -26,3 +26,4 @@
 - [x] Add a "Click here to Confirm" button to assignment emails that confirms the crew assignment without logging in.
 - [x] Add the line "Please confirm your availability via the button below" above the buttons in those emails.
 - [x] Show the latest assignment email date beside Resend, keep Remove with the action buttons, and make pay details half width.
+- [x] Show every team member's call time as a range from setup arrival through session finish.
