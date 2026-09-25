@@ -508,6 +508,32 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
               {role}
             </p>
           )}
+          {(() => {
+            const callIso = (assignment as any).call_time_at;
+            const sessionArrival = (assignment as any).session?.arrival_time;
+            let callLabel: string | null = null;
+            if (callIso) {
+              const m = String(callIso).match(/T(\d{2}):(\d{2})/);
+              if (m) {
+                const d = new Date();
+                d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+                callLabel = format(d, 'h:mm a');
+              }
+            } else if (sessionArrival) {
+              const [h, mm] = String(sessionArrival).split(':').map(Number);
+              if (!isNaN(h) && !isNaN(mm)) {
+                const d = new Date();
+                d.setHours(h, mm, 0, 0);
+                callLabel = format(d, 'h:mm a');
+              }
+            }
+            return callLabel ? (
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Call time: <span className="text-foreground font-medium">{callLabel}</span>
+              </p>
+            ) : null;
+          })()}
           {assignment.assignment_notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
           )}
