@@ -257,6 +257,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       session_id?: string;
       assignment_notes?: string;
       confirmation_status?: string;
+      call_time_at?: string;
     } = {
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
@@ -264,6 +265,11 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       assignment_notes: assignmentNotes || undefined,
       confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
+
+    // Custom call time overrides the session default
+    if (callTimeChoice === 'custom' && customCallTime && sessionDate) {
+      assignmentData.call_time_at = toTimestamptz(sessionDate, customCallTime, sessionTz);
+    }
 
     // Use staff_id for legacy staff table entries, user_id for profiles
     if (isStaffTableEntry) {
@@ -297,6 +303,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     setTeamMemberSearch('');
     setSelectedRole('');
     setAssignmentNotes('');
+    setCallTimeChoice('default');
+    setCustomCallTime('');
     // Don't reset selectedSession - keep it for consecutive assignments to same session
     setGuardrailChecks(null);
     setGuardrailOverridden(false);
