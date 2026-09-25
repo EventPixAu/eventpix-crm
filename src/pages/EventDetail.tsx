@@ -511,7 +511,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
           {(() => {
             const callIso = assignment.call_time_at;
             const wrapIso = assignment.wrap_time_at;
-            const sessionArrival = assignment.session?.arrival_time;
+            const sessionArrival = assignment.session?.arrival_time || assignment.session?.start_time;
             const sessionEnd = assignment.session?.end_time;
             let callLabel: string | null = null;
             let finishLabel: string | null = null;
