@@ -552,6 +552,34 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </p>
           </div>
 
+          <div className="space-y-1.5">
+            <Label>Call time</Label>
+            <Select value={callTimeChoice} onValueChange={setCallTimeChoice}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">
+                  {sessionCallTime
+                    ? `Session call time (${formatTime12(sessionCallTime)})`
+                    : 'Session default'}
+                </SelectItem>
+                <SelectItem value="custom">Custom time…</SelectItem>
+              </SelectContent>
+            </Select>
+            {callTimeChoice === 'custom' && (
+              <Input
+                type="time"
+                value={customCallTime}
+                onChange={(e) => setCustomCallTime(e.target.value)}
+                className="mt-1.5"
+              />
+            )}
+          </div>
+
           <Textarea
             placeholder="Assignment notes (optional)"
             value={assignmentNotes}
