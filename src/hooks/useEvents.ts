@@ -132,7 +132,8 @@ export function useEventAssignments(eventId: string | undefined) {
             session_date,
             label,
             start_time,
-            end_time
+            end_time,
+            arrival_time
           ),
           staff:staff_id (
             id,
