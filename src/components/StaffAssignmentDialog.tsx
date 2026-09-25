@@ -34,6 +34,17 @@ import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGu
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useAuth } from '@/lib/auth';
 import { useCreateCrewChecklistForUser } from '@/hooks/useCrewChecklists';
+import { getTimezoneOffset } from '@/lib/timezones';
+
+// Combine a local date + time in an IANA timezone into a timestamptz ISO string
+function toTimestamptz(dateStr: string, timeStr: string, tz: string): string {
+  const offset = getTimezoneOffset(tz, new Date(`${dateStr}T12:00:00`));
+  const m = offset.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+  const sign = m?.[1] ?? '+';
+  const hh = (m?.[2] ?? '10').padStart(2, '0');
+  const mm = m?.[3] ?? '00';
+  return `${dateStr}T${timeStr}:00${sign}${hh}:${mm}`;
+}
 
 interface StaffAssignmentDialogProps {
   eventId: string;
