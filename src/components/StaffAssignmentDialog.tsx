@@ -75,6 +75,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const [teamMemberSearchFocused, setTeamMemberSearchFocused] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [callTimeChoice, setCallTimeChoice] = useState('default');
+  const [customCallTime, setCustomCallTime] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
   // Guardrail state
@@ -163,6 +165,15 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   }, [selectedUser, dateAvailability]);
   
   const hasSessions = sessions.length > 0;
+
+  // Call time context from the selected session
+  const selectedSessionObj = useMemo(
+    () => sessions.find(s => s.id === selectedSession),
+    [sessions, selectedSession]
+  );
+  const sessionCallTime = (selectedSessionObj as any)?.arrival_time || selectedSessionObj?.start_time || null;
+  const sessionDate = selectedSessionObj?.session_date || event?.event_date || null;
+  const sessionTz = (selectedSessionObj as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
   
   // Filter assigned users by selected session context
   const assignedUserIds = useMemo(() => {
