@@ -509,9 +509,12 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             </p>
           )}
           {(() => {
-            const callIso = (assignment as any).call_time_at;
-            const sessionArrival = (assignment as any).session?.arrival_time;
+            const callIso = assignment.call_time_at;
+            const wrapIso = assignment.wrap_time_at;
+            const sessionArrival = assignment.session?.arrival_time || assignment.session?.start_time;
+            const sessionEnd = assignment.session?.end_time;
             let callLabel: string | null = null;
+            let finishLabel: string | null = null;
             if (callIso) {
               const m = String(callIso).match(/T(\d{2}):(\d{2})/);
               if (m) {
@@ -527,10 +530,19 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
                 callLabel = format(d, 'h:mm a');
               }
             }
-            return callLabel ? (
+            const finishTime = wrapIso || sessionEnd;
+            if (finishTime) {
+              const m = String(finishTime).match(/T?(\d{2}):(\d{2})/);
+              if (m) {
+                const d = new Date();
+                d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+                finishLabel = format(d, 'h:mm a');
+              }
+            }
+            return callLabel && finishLabel ? (
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                Call time: <span className="text-foreground font-medium">{callLabel}</span>
+                Call time: <span className="text-foreground font-medium">{callLabel} – {finishLabel}</span>
               </p>
             ) : null;
           })()}

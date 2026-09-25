@@ -22,6 +22,8 @@ export interface EventAssignment {
   confirmation_status: string | null;
   confirmed_at: string | null;
   notification_sent_at: string | null;
+  call_time_at?: string | null;
+  wrap_time_at?: string | null;
   profile?: {
     id: string;
     full_name: string | null;
@@ -38,6 +40,7 @@ export interface EventAssignment {
     label: string | null;
     start_time: string | null;
     end_time: string | null;
+    arrival_time: string | null;
   } | null;
   // Legacy staff relation
   staff?: {
