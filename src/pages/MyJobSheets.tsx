@@ -55,6 +55,8 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
   const [declining, setDeclining] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [declineReason, setDeclineReason] = useState('');
   const eventDate = parseISO(job.event_date);
   const isEventToday = isToday(eventDate);
   const isEventTomorrow = isTomorrow(eventDate);
@@ -88,18 +90,29 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
     }
   };
 
-  const handleDecline = async (e: React.MouseEvent) => {
+  const handleDecline = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setShowDeclineDialog(true);
+  };
+
+  const confirmDecline = async () => {
     setDeclining(true);
     try {
       const { error } = await supabase
         .from('event_assignments')
-        .update({ confirmation_status: 'declined', confirmed_at: null })
+        .update({
+          confirmation_status: 'declined',
+          confirmed_at: null,
+          declined_at: new Date().toISOString(),
+          decline_reason: declineReason.trim() || null,
+        })
         .eq('id', job.assignment_id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
       queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      setShowDeclineDialog(false);
+      setDeclineReason('');
       toast.success('Marked as unavailable — the team has been notified via your status.');
     } catch (err) {
       toast.error('Failed to update status');
