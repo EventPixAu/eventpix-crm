@@ -442,6 +442,9 @@ export function RecommendCrewDialog({
                   <Button variant="outline" size="sm" onClick={addRole}>
                     + Add Role
                   </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    How many to recommend per role — set 0 to recommend everyone.
+                  </p>
                 </div>
               </div>
               
