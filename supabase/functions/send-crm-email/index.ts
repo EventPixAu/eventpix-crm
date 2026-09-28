@@ -185,6 +185,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Never deliver a template whose event or budget fields were not filled in.
+    if (/\{\{\s*[^{}]+?\s*\}\}/.test(`${subject} ${bodyHtml}`)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Email contains unfilled placeholders. Please check the event and budget details before sending." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     console.log(`Sending CRM email to: ${recipientEmail}, subject: ${subject}`);
 
     const emailFooter = `
