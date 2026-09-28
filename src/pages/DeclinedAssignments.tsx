@@ -70,7 +70,7 @@ export default function DeclinedAssignments() {
     <AppLayout>
       <PageHeader
         title="Declined"
-        subtitle="Team members who have marked themselves unavailable for an event"
+        description="Team members who have marked themselves unavailable for an event"
       />
       <div className="p-4 md:p-6 space-y-3">
         {isLoading ? (
