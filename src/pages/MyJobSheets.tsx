@@ -43,6 +43,15 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui/toggle-group';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useMyJobSheets } from '@/hooks/useMyJobSheets';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -335,6 +344,31 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                 Marked unavailable{declining ? ' — updating...' : ' — tap to undo'}
               </button>
             )}
+
+            <Dialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+              <DialogContent onClick={(e: any) => e.stopPropagation()}>
+                <DialogHeader>
+                  <DialogTitle>Not available?</DialogTitle>
+                  <DialogDescription>
+                    Let the team know why you can't make this event (optional).
+                  </DialogDescription>
+                </DialogHeader>
+                <Textarea
+                  value={declineReason}
+                  onChange={(e) => setDeclineReason(e.target.value)}
+                  placeholder="e.g. Already booked, travelling, unavailable that week…"
+                  rows={3}
+                />
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setShowDeclineDialog(false)} disabled={declining}>
+                    Cancel
+                  </Button>
+                  <Button variant="destructive" onClick={confirmDecline} disabled={declining}>
+                    {declining ? 'Updating…' : "I'm Unavailable"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </motion.div>
