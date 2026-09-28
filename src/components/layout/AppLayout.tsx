@@ -93,6 +93,7 @@ const operationsItems: NavItem[] = [
   { href: '/staff', label: 'Team', icon: Users },
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/venues', label: 'Venues', icon: Building2 },
+  { href: '/declined', label: 'Declined', icon: XCircle },
 ];
 
 // ===== ADMINISTRATION SECTION (Admin-only) =====
