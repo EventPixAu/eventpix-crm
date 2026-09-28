@@ -9,6 +9,7 @@
 - [x] Recommend Crew: include every active Team member, filter by their Team role, and only show already-assigned people when their role matches the search.
 - [x] Fix budget follow-up email: include event name and date, provide the correct budget link, and prevent unfilled placeholders from being sent.
 - [x] Add "On Hold - Date TBA" as a lead status and make it available wherever lead statuses are selected.
+- [x] Clear lead dates, times, and proposed sessions when status changes to On Hold - Date TBA; clear the already-held lead's old dates.
 
 ## Open
-- [ ] Clear lead dates, times, and proposed sessions when status changes to On Hold - Date TBA; clear the already-held lead's old dates.
+- (none)
