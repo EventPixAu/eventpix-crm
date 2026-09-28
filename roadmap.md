@@ -6,6 +6,7 @@
 - [x] Remove the assignment counts ("N confirmed / N pending") from the second row of the Events list — pills on the first row remain.
 - [x] Remove agreement status badges from event assignment cards; make the Confirmed pill green.
 - [x] Recommend Crew: remove the "how many" count field (always recommend everyone) and make the results list scrollable.
+- [x] Recommend Crew: include every active Team member, filter by their Team role, and only show already-assigned people when their role matches the search.
 
 ## Open
 - (none)
