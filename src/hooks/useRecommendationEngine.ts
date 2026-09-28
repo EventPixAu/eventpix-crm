@@ -277,10 +277,12 @@ export function useGenerateRecommendations() {
       eventIds,
       roleRequirements,
       scope = 'single_event',
+      locationFilter = null,
     }: {
       eventIds: string[];
       roleRequirements?: RoleRequirement[];
       scope?: 'single_event' | 'bulk' | 'series';
+      locationFilter?: string | null;
     }): Promise<DraftAssignment> => {
       // Fetch events
       const { data: events, error: eventsError } = await supabase
@@ -350,7 +352,7 @@ export function useGenerateRecommendations() {
         return acc;
       }, {} as Record<string, string[]>);
       
-      const candidates: StaffCandidate[] = photographers.map(p => ({
+      const allCandidates: StaffCandidate[] = photographers.map(p => ({
         userId: p.id,
         fullName: p.full_name || p.email,
         email: p.email,
@@ -362,6 +364,12 @@ export function useGenerateRecommendations() {
         defaultRoleId: p.default_role_id,
         defaultRoleName: (p.staff_role as any)?.name || null,
       }));
+
+      // Optional location filter: match candidate home city (case-insensitive)
+      const candidates = locationFilter
+        ? allCandidates.filter(c => c.homeCity?.toLowerCase() === locationFilter.toLowerCase())
+        : allCandidates;
+      
       
       const eventRecommendations: EventRecommendation[] = [];
       
