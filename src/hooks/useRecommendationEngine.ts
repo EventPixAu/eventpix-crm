@@ -463,8 +463,9 @@ export function useGenerateRecommendations() {
           }
         }
 
-        // Include everyone already assigned to this event so they stay visible
-        for (const candidate of candidates) {
+        // Include everyone already assigned to this event so they stay visible,
+        // even if the location filter would otherwise exclude them
+        for (const candidate of allCandidates) {
           if (!alreadyOnEvent.has(candidate.userId)) continue;
           recommendations.push({
             candidate,
