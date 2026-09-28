@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSkills } from '@/hooks/useStaffCapabilities';
+import { useLocations } from '@/hooks/useLookups';
 import { 
   useGenerateRecommendations, 
   useApplyAssignmentDraft,
@@ -233,8 +234,10 @@ export function RecommendCrewDialog({
   const [overrideUnavailable, setOverrideUnavailable] = useState(false);
   const [overrideConflicts, setOverrideConflicts] = useState(false);
   const [overrideTight, setOverrideTight] = useState(false);
+  const [locationFilter, setLocationFilter] = useState('all');
   
   const { data: skills } = useSkills();
+  const { data: locations = [] } = useLocations();
   const generateMutation = useGenerateRecommendations();
   const applyMutation = useApplyAssignmentDraft();
   
@@ -247,6 +250,7 @@ export function RecommendCrewDialog({
       setOverrideUnavailable(false);
       setOverrideConflicts(false);
       setOverrideTight(false);
+      setLocationFilter('all');
       if (seriesDefaults) {
         setRoleRequirements(seriesDefaults);
       }
@@ -266,6 +270,7 @@ export function RecommendCrewDialog({
         eventIds,
         roleRequirements,
         scope,
+        locationFilter: locationFilter !== 'all' ? locationFilter : null,
       });
       
       setDraft(result);
@@ -433,6 +438,29 @@ export function RecommendCrewDialog({
                 </div>
               </div>
               
+              <div>
+                <Label className="text-sm font-medium">Location</Label>
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger className="mt-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="All locations" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All locations</SelectItem>
+                    {locations.map((location) => (
+                      <SelectItem key={location.id} value={location.name}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Only recommend team members based in this location.
+                </p>
+              </div>
+
               <div className="text-sm text-muted-foreground">
                 <Users className="h-4 w-4 inline mr-1" />
                 Generating recommendations for {eventIds.length} event{eventIds.length > 1 ? 's' : ''}
