@@ -47,6 +47,7 @@ import {
   Layers,
   UserCircle,
   Shield,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';
@@ -93,6 +94,7 @@ const operationsItems: NavItem[] = [
   { href: '/staff', label: 'Team', icon: Users },
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/venues', label: 'Venues', icon: Building2 },
+  { href: '/declined', label: 'Declined', icon: XCircle },
 ];
 
 // ===== ADMINISTRATION SECTION (Admin-only) =====

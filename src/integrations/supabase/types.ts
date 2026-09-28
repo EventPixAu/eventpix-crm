@@ -2654,6 +2654,8 @@ export type Database = {
           confirmation_status: string
           confirmed_at: string | null
           created_at: string | null
+          decline_reason: string | null
+          declined_at: string | null
           estimated_cost: number | null
           event_id: string
           hourly_rate_override: number | null
@@ -2679,6 +2681,8 @@ export type Database = {
           confirmation_status?: string
           confirmed_at?: string | null
           created_at?: string | null
+          decline_reason?: string | null
+          declined_at?: string | null
           estimated_cost?: number | null
           event_id: string
           hourly_rate_override?: number | null
@@ -2704,6 +2708,8 @@ export type Database = {
           confirmation_status?: string
           confirmed_at?: string | null
           created_at?: string | null
+          decline_reason?: string | null
+          declined_at?: string | null
           estimated_cost?: number | null
           event_id?: string
           hourly_rate_override?: number | null
@@ -8014,6 +8020,10 @@ export type Database = {
       set_contact_status_manual: {
         Args: { p_contact_id: string; p_status: string }
         Returns: undefined
+      }
+      set_decline_reason_by_token: {
+        Args: { _reason: string; _token: string }
+        Returns: Json
       }
       set_user_active: {
         Args: { p_is_active: boolean; p_user_id: string }
