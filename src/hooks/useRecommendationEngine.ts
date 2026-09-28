@@ -420,8 +420,9 @@ export function useGenerateRecommendations() {
           const roleRecommendations: { candidate: StaffCandidate; score: number; rationale: string[]; warnings: RecommendationWarning[] }[] = [];
           
           for (const candidate of candidates) {
-            // Skip already assigned for this event
+            // Skip already assigned in this run, or already on this event (shown separately below)
             if (assignedUsers.has(candidate.userId)) continue;
+            if (alreadyOnEvent.has(candidate.userId)) continue;
             
             const availability = availabilityMap[candidate.userId];
             const assignments = assignmentsMap[candidate.userId] || [];
@@ -460,6 +461,20 @@ export function useGenerateRecommendations() {
               warnings: rec.warnings,
             });
           }
+        }
+
+        // Include everyone already assigned to this event so they stay visible
+        for (const candidate of candidates) {
+          if (!alreadyOnEvent.has(candidate.userId)) continue;
+          recommendations.push({
+            candidate,
+            role: candidate.defaultRoleName || roles[0]?.role || 'Crew',
+            score: 0,
+            confidence: 'low',
+            rationale: ['Already assigned to this event'],
+            warnings: [],
+            alreadyAssigned: true,
+          });
         }
         
         eventRecommendations.push({
