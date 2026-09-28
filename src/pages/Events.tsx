@@ -65,14 +65,15 @@ export default function Events() {
         .from('event_assignments')
         .select('event_id, user_id, staff_id, role_on_event, confirmation_status, staff_roles(name)');
       if (error) throw error;
-      const counts: Record<string, { confirmed: number; pending: number; total: number }> = {};
+      const counts: Record<string, { confirmed: number; pending: number; declined: number; total: number }> = {};
       (data || []).forEach((a: any) => {
         const roleName: string = a.staff_roles?.name || a.role_on_event || '';
         if (/editor|retoucher/i.test(roleName)) return;
-        if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, total: 0 };
+        if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, declined: 0, total: 0 };
         counts[a.event_id].total += 1;
         if (a.confirmation_status === 'confirmed') counts[a.event_id].confirmed += 1;
-        if (!a.confirmation_status || a.confirmation_status === 'pending') counts[a.event_id].pending += 1;
+        if (a.confirmation_status === 'declined') counts[a.event_id].declined += 1;
+        if (!a.confirmation_status || a.confirmation_status === 'pending' || a.confirmation_status === 'on_hold') counts[a.event_id].pending += 1;
       });
       return counts;
     },
@@ -311,7 +312,7 @@ export default function Events() {
                             />
                           )}
                           {(assignmentCounts[event.id]?.total || 0) > 0 && (() => {
-                            const { confirmed, pending, total } = assignmentCounts[event.id];
+                            const { confirmed, pending, declined, total } = assignmentCounts[event.id];
                             return (
                               <span className="inline-flex items-center gap-1">
                                 <span
