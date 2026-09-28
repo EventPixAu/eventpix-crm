@@ -364,6 +364,12 @@ export function useGenerateRecommendations() {
         defaultRoleId: p.default_role_id,
         defaultRoleName: (p.staff_role as any)?.name || null,
       }));
+
+      // Optional location filter: match candidate home city (case-insensitive)
+      const candidates = locationFilter
+        ? allCandidates.filter(c => c.homeCity?.toLowerCase() === locationFilter.toLowerCase())
+        : allCandidates;
+      
       
       const eventRecommendations: EventRecommendation[] = [];
       
