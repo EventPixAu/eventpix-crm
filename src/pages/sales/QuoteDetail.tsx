@@ -1332,7 +1332,7 @@ export default function QuoteDetail() {
         defaultSubject={`Your budget from Eventpix for ${jobName}`}
         defaultBody={
           `<p>Hi {{client_name}}</p>` +
-          `<p>A budget has been prepared for your event on {{event.event_date}}<br/>We are looking forward to working with you</p>` +
+          `<p>A budget has been prepared for {{event.event_name}} on {{event.event_date}}<br/>We are looking forward to working with you</p>` +
           `<p>{{budget.button}}</p>` +
           `<p>Regards</p>`
         }
