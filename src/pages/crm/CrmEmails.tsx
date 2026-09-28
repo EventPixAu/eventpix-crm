@@ -30,6 +30,10 @@ import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { InboundReplyDialog } from '@/components/crm/InboundReplyDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { getPublicBaseUrl } from '@/lib/utils';
+
+type FollowupBudget = { id: string; quote_name: string | null; public_token: string | null; event_id: string | null; linked_event_id: string | null; lead_id: string | null };
 
 export default function CrmEmails() {
   const [searchParams] = useSearchParams();
@@ -54,6 +58,9 @@ export default function CrmEmails() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('09:00');
+  const [followupBudgets, setFollowupBudgets] = useState<FollowupBudget[]>([]);
+  const [selectedBudgetId, setSelectedBudgetId] = useState('');
+  const [followupEvent, setFollowupEvent] = useState<{ name: string; date: string } | null>(null);
 
   // Data hooks
   const { data: templates = [] } = useEmailTemplates();
@@ -63,6 +70,71 @@ export default function CrmEmails() {
   const deleteScheduledEmail = useDeleteScheduledEmail();
   const createScheduledEmail = useCreateScheduledEmail();
   const sendEmail = useSendCrmEmail();
+  const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+  const needsBudget = selectedTemplate?.trigger_type === 'quote_followup' || /\{\{(?:budget|quote)\.(?:button|link|url)\}\}/i.test(bodyHtml);
+
+  useEffect(() => {
+    let active = true;
+    setFollowupBudgets([]);
+    setSelectedBudgetId('');
+    setFollowupEvent(null);
+    const clientId = selectedContact?.client_id || selectedContact?.companies?.find(c => c.is_primary)?.company_id || selectedContact?.companies?.[0]?.company_id;
+    if (!clientId || !needsBudget) return;
+    void supabase.from('quotes').select('id, quote_name, public_token, event_id, linked_event_id, lead_id').eq('client_id', clientId).eq('status', 'sent').order('created_at', { ascending: false }).then(({ data }) => {
+      if (active) setFollowupBudgets(data || []);
+    });
+    return () => { active = false; };
+  }, [selectedContact, needsBudget]);
+
+  useEffect(() => {
+    let active = true;
+    setFollowupEvent(null);
+    const budget = followupBudgets.find(q => q.id === selectedBudgetId);
+    if (!budget) return;
+    const load = async () => {
+      let name = budget.quote_name || '';
+      let date = '';
+      if (budget.lead_id) {
+        const { data: lead } = await supabase.from('leads').select('lead_name, estimated_event_date').eq('id', budget.lead_id).maybeSingle();
+        name = lead?.lead_name || name;
+        date = lead?.estimated_event_date || date;
+      }
+      const eventId = budget.event_id || budget.linked_event_id;
+      if (eventId) {
+        const { data: event } = await supabase.from('events').select('event_name, event_date').eq('id', eventId).maybeSingle();
+        name = event?.event_name || name;
+        date = event?.event_date || date;
+      }
+      if (active) setFollowupEvent({ name, date });
+    };
+    void load();
+    return () => { active = false; };
+  }, [selectedBudgetId, followupBudgets]);
+
+  const prepareEmail = () => {
+    const budget = followupBudgets.find(q => q.id === selectedBudgetId);
+    if (needsBudget && (!budget?.public_token || !followupEvent?.name || !followupEvent.date)) {
+      throw new Error('Select a budget with an event name, date and sharing link before sending.');
+    }
+    const firstName = recipientName.trim().split(/\s+/)[0] || 'there';
+    const eventDate = followupEvent?.date ? format(new Date(`${followupEvent.date}T12:00:00`), 'EEEE, d MMMM yyyy') : '';
+    const budgetUrl = budget?.public_token ? `${getPublicBaseUrl()}/accept/${budget.public_token}` : '';
+    const budgetButton = budgetUrl ? `<a href="${budgetUrl}" style="display:inline-block;padding:12px 24px;background:#0891b2;color:#ffffff;text-decoration:none;border-radius:6px;">View Your Budget</a>` : '';
+    const fields: Record<string, string> = {
+      'client.first_name': firstName, client_name: firstName, 'contact.first_name': firstName,
+      'event.event_name': followupEvent?.name || '', 'event.name': followupEvent?.name || '', event_name: followupEvent?.name || '',
+      'event.event_date': eventDate, 'event.date': eventDate, event_date: eventDate,
+      'budget.button': budgetButton, 'budget.link': budgetButton, 'budget.url': budgetUrl,
+      'quote.button': budgetButton, 'quote.link': budgetButton, 'quote.url': budgetUrl,
+    };
+    const resolve = (value: string) => value.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (whole, field: string) => fields[field.toLowerCase()] ?? whole);
+    const resolvedSubject = resolve(subject);
+    const resolvedBody = resolve(bodyHtml);
+    if (/\{\{\s*[^{}]+?\s*\}\}/.test(`${resolvedSubject} ${resolvedBody}`)) {
+      throw new Error('The email still contains unfilled placeholders. Please check the message before sending.');
+    }
+    return { resolvedSubject, resolvedBody };
+  };
 
   // Inbox filter state
   const [inboxFilter, setInboxFilter] = useState<'all' | 'crm' | 'sales' | 'operations'>('all');
@@ -167,6 +239,7 @@ export default function CrmEmails() {
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId);
+    setSelectedBudgetId('');
     const template = templates.find(t => t.id === templateId);
     if (template) {
       setSubject(template.subject);
@@ -189,6 +262,12 @@ export default function CrmEmails() {
   const handleSendNow = async () => {
     if (!recipientEmail || !subject || !bodyHtml) return;
 
+    let prepared;
+    try { prepared = prepareEmail(); } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Please check the email before sending.');
+      return;
+    }
+
     // Get client_id from selected contact or its company association
     const clientId = selectedContact?.client_id || 
       selectedContact?.companies?.find(c => c.is_primary)?.company_id ||
@@ -197,8 +276,8 @@ export default function CrmEmails() {
     await sendEmail.mutateAsync({
       recipientEmail,
       recipientName,
-      subject,
-      bodyHtml,
+      subject: prepared.resolvedSubject,
+      bodyHtml: prepared.resolvedBody,
       contactId: selectedContactId || undefined,
       clientId: clientId || undefined,
       templateId: selectedTemplateId || undefined,
@@ -210,6 +289,11 @@ export default function CrmEmails() {
 
   const handleSchedule = async () => {
     if (!recipientEmail || !subject || !bodyHtml || !scheduledDate) return;
+    let prepared;
+    try { prepared = prepareEmail(); } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Please check the email before scheduling.');
+      return;
+    }
 
     const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
     
@@ -221,8 +305,8 @@ export default function CrmEmails() {
     await createScheduledEmail.mutateAsync({
       recipient_email: recipientEmail,
       recipient_name: recipientName || null,
-      subject,
-      body_html: bodyHtml,
+      subject: prepared.resolvedSubject,
+      body_html: prepared.resolvedBody,
       scheduled_at: scheduledAt,
       contact_id: selectedContactId || null,
       client_id: clientId || null,
@@ -244,6 +328,7 @@ export default function CrmEmails() {
     setBodyHtml('');
     setScheduledDate('');
     setScheduledTime('09:00');
+    setSelectedBudgetId('');
   };
 
   const getStatusBadge = (status: string) => {
@@ -628,6 +713,19 @@ export default function CrmEmails() {
                     </Select>
                   </div>
 
+                  {needsBudget && (
+                    <div className="space-y-2">
+                      <Label>Budget for this follow-up *</Label>
+                      <Select value={selectedBudgetId} onValueChange={setSelectedBudgetId}>
+                        <SelectTrigger><SelectValue placeholder="Select the budget to follow up" /></SelectTrigger>
+                        <SelectContent>
+                          {followupBudgets.map(q => <SelectItem key={q.id} value={q.id}>{q.quote_name || 'Budget'}{q.public_token ? '' : ' (no sharing link)'}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {selectedBudgetId && followupEvent && <p className="text-sm text-muted-foreground">{followupEvent.name} · {followupEvent.date ? format(new Date(`${followupEvent.date}T12:00:00`), 'd MMMM yyyy') : 'Date missing'}</p>}
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Subject *</Label>
                     <Input
@@ -723,7 +821,7 @@ export default function CrmEmails() {
                       <hr className="my-3" />
                       <div
                         className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml.replace(/\n/g, '<br>')) }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((() => { try { return prepareEmail().resolvedBody; } catch { return bodyHtml; } })().replace(/\n/g, '<br>')) }}
                       />
                     </div>
                   ) : (
