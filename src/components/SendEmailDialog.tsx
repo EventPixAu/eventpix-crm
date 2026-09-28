@@ -262,6 +262,10 @@ export function SendEmailDialog({
     if (match) {
       setSelectedTemplateId(match.id);
       applyTemplateContent(match);
+    } else if (defaultBody) {
+      rawTemplateRef.current = { subject: defaultSubject, body: defaultBody };
+      setSubject(processMergeFields(defaultSubject).replace(/<[^>]+>/g, ''));
+      setBody(processMergeFields(defaultBody));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, templates, context]);
