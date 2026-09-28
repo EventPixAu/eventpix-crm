@@ -9,4 +9,4 @@
 - [x] Recommend Crew: include every active Team member, filter by their Team role, and only show already-assigned people when their role matches the search.
 
 ## Open
-- (none)
+- [ ] Fix budget follow-up email: include event name and date, provide the correct budget link, and prevent unfilled placeholders from being sent.
