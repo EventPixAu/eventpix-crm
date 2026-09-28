@@ -40,12 +40,12 @@ function base64UrlEncode(str: string): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function buildMimeWithIcs(to: string, subject: string, html: string, icsContent: string): string {
+function buildMimeWithIcs(to: string, subject: string, html: string, icsContent?: string): string {
   const boundary = `b_${crypto.randomUUID().replace(/-/g, "")}`;
   const from = '"EventPix" <pix@eventpix.com.au>';
   const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
 
-  const icsBase64 = btoa(unescape(encodeURIComponent(icsContent)));
+  const icsBase64 = icsContent ? btoa(unescape(encodeURIComponent(icsContent))) : "";
 
   let mime = `From: ${from}\r\nTo: ${to}\r\nSubject: ${encodedSubject}\r\nMIME-Version: 1.0\r\n`;
   mime += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
@@ -54,6 +54,7 @@ function buildMimeWithIcs(to: string, subject: string, html: string, icsContent:
   mime += `--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n`;
   mime += btoa(unescape(encodeURIComponent(html))) + "\r\n";
 
+  if (!icsContent) { mime += `--${boundary}--`; return mime; }
   // ICS calendar part (inline)
   mime += `--${boundary}\r\nContent-Type: text/calendar; charset=UTF-8; method=REQUEST\r\nContent-Transfer-Encoding: base64\r\n\r\n`;
   mime += icsBase64 + "\r\n";
@@ -66,7 +67,7 @@ function buildMimeWithIcs(to: string, subject: string, html: string, icsContent:
   return mime;
 }
 
-async function sendViaGmailApi(to: string, subject: string, html: string, icsContent: string): Promise<void> {
+async function sendViaGmailApi(to: string, subject: string, html: string, icsContent?: string): Promise<void> {
   const accessToken = await getGmailAccessToken();
   const mime = buildMimeWithIcs(to, subject, html, icsContent);
   const raw = base64UrlEncode(mime);
