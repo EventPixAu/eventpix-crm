@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Users } from 'lucide-react';
+import { Users, XCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
