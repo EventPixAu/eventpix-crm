@@ -35,6 +35,7 @@ export interface StaffRecommendation {
   confidence: 'high' | 'medium' | 'low';
   rationale: string[];
   warnings: RecommendationWarning[];
+  alreadyAssigned?: boolean;
 }
 
 export interface EventRecommendation {
@@ -365,10 +366,22 @@ export function useGenerateRecommendations() {
         defaultRoleName: (p.staff_role as any)?.name || null,
       }));
 
-      // Optional location filter: match candidate home city (case-insensitive)
+      // Optional location filter: substring match on home city (case-insensitive)
+      // so "Central Coast / Sydney" matches a "Sydney" filter
       const candidates = locationFilter
-        ? allCandidates.filter(c => c.homeCity?.toLowerCase() === locationFilter.toLowerCase())
+        ? allCandidates.filter(c => c.homeCity?.toLowerCase().includes(locationFilter.toLowerCase()))
         : allCandidates;
+
+      // Fetch existing assignments for these events so already-assigned crew still show
+      const { data: existingAssignments } = await supabase
+        .from('event_assignments')
+        .select('user_id, event_id')
+        .in('event_id', eventIds);
+      const assignedByEvent = (existingAssignments || []).reduce((acc, a) => {
+        if (!acc[a.event_id]) acc[a.event_id] = new Set<string>();
+        acc[a.event_id].add(a.user_id);
+        return acc;
+      }, {} as Record<string, Set<string>>);
       
       
       const eventRecommendations: EventRecommendation[] = [];
@@ -400,14 +413,16 @@ export function useGenerateRecommendations() {
         
         const recommendations: StaffRecommendation[] = [];
         const assignedUsers = new Set<string>();
+        const alreadyOnEvent = assignedByEvent[event.id] || new Set<string>();
         
         // For each role requirement
         for (const role of roles) {
           const roleRecommendations: { candidate: StaffCandidate; score: number; rationale: string[]; warnings: RecommendationWarning[] }[] = [];
           
           for (const candidate of candidates) {
-            // Skip already assigned for this event
+            // Skip already assigned in this run, or already on this event (shown separately below)
             if (assignedUsers.has(candidate.userId)) continue;
+            if (alreadyOnEvent.has(candidate.userId)) continue;
             
             const availability = availabilityMap[candidate.userId];
             const assignments = assignmentsMap[candidate.userId] || [];
@@ -446,6 +461,21 @@ export function useGenerateRecommendations() {
               warnings: rec.warnings,
             });
           }
+        }
+
+        // Include everyone already assigned to this event so they stay visible,
+        // even if the location filter would otherwise exclude them
+        for (const candidate of allCandidates) {
+          if (!alreadyOnEvent.has(candidate.userId)) continue;
+          recommendations.push({
+            candidate,
+            role: candidate.defaultRoleName || roles[0]?.role || 'Crew',
+            score: 0,
+            confidence: 'low',
+            rationale: ['Already assigned to this event'],
+            warnings: [],
+            alreadyAssigned: true,
+          });
         }
         
         eventRecommendations.push({

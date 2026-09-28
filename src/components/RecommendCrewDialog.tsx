@@ -101,9 +101,10 @@ function RecommendationCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <Checkbox 
-            checked={isSelected} 
+          <Checkbox
+            checked={isSelected}
             onCheckedChange={onToggle}
+            disabled={recommendation.alreadyAssigned}
             className="mt-1"
           />
           <div className="flex-1">
@@ -112,7 +113,13 @@ function RecommendationCard({
               <Badge variant="secondary" className="text-xs">
                 {recommendation.role}
               </Badge>
-              <ConfidenceBadge confidence={recommendation.confidence} />
+              {recommendation.alreadyAssigned ? (
+                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                  Already assigned
+                </Badge>
+              ) : (
+                <ConfidenceBadge confidence={recommendation.confidence} />
+              )}
               {recommendation.candidate.homeCity && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3" />
@@ -134,10 +141,12 @@ function RecommendationCard({
           </div>
         </div>
         
-        <div className="text-right">
-          <div className="text-lg font-semibold">{Math.round(recommendation.score)}</div>
-          <div className="text-xs text-muted-foreground">score</div>
-        </div>
+        {!recommendation.alreadyAssigned && (
+          <div className="text-right">
+            <div className="text-lg font-semibold">{Math.round(recommendation.score)}</div>
+            <div className="text-xs text-muted-foreground">score</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -286,7 +295,7 @@ export function RecommendCrewDialog({
       for (const eventRec of result.eventRecommendations) {
         for (const rec of eventRec.recommendations) {
           const hasError = rec.warnings.some(w => w.severity === 'error');
-          if (!hasError) {
+          if (!hasError && !rec.alreadyAssigned) {
             autoSelected.add(`${eventRec.eventId}-${rec.candidate.userId}`);
           }
         }
