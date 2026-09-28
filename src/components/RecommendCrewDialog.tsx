@@ -120,10 +120,10 @@ function RecommendationCard({
               ) : (
                 <ConfidenceBadge confidence={recommendation.confidence} />
               )}
-              {recommendation.candidate.homeCity && (
+              {(recommendation.candidate.location || recommendation.candidate.homeCity) && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3" />
-                  {recommendation.candidate.homeCity}
+                  {recommendation.candidate.location || recommendation.candidate.homeCity}
                 </span>
               )}
             </div>

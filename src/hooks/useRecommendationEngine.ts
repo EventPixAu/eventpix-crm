@@ -16,6 +16,7 @@ export interface StaffCandidate {
   seniority: string;
   homeCity: string | null;
   homeState: string | null;
+  location: string | null;
   travelReady: boolean;
   skills: string[];
   defaultRoleId: string | null;
@@ -317,6 +318,7 @@ export function useGenerateRecommendations() {
           status,
           home_city,
           home_state,
+          location,
           travel_ready,
           seniority,
           default_role_id,
@@ -360,16 +362,22 @@ export function useGenerateRecommendations() {
         seniority: p.seniority || 'mid',
         homeCity: p.home_city,
         homeState: p.home_state,
+        location: (p as any).location || null,
         travelReady: p.travel_ready || false,
         skills: skillsByUser[p.id] || [],
         defaultRoleId: p.default_role_id,
         defaultRoleName: (p.staff_role as any)?.name || null,
       }));
 
-      // Optional location filter: substring match on home city (case-insensitive)
-      // so "Central Coast / Sydney" matches a "Sydney" filter
+      // Optional location filter: substring match on location or home city
+      // (case-insensitive) so "Central Coast / Sydney" matches "Sydney", and
+      // someone based in a suburb (home_city) with location "Sydney" still matches
       const candidates = locationFilter
-        ? allCandidates.filter(c => c.homeCity?.toLowerCase().includes(locationFilter.toLowerCase()))
+        ? allCandidates.filter(c => {
+            const needle = locationFilter.toLowerCase();
+            return c.location?.toLowerCase().includes(needle)
+              || c.homeCity?.toLowerCase().includes(needle);
+          })
         : allCandidates;
 
       // Fetch existing assignments for these events so already-assigned crew still show
