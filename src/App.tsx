@@ -55,6 +55,7 @@ import MyAvailability from "./pages/MyAvailability";
 import MyDocuments from "./pages/MyDocuments";
 import Equipment from "./pages/Equipment";
 import VenueList from "./pages/operations/VenueList";
+import DeclinedAssignments from "./pages/DeclinedAssignments";
 import VenueDetail from "./pages/operations/VenueDetail";
 import StaffMe from "./pages/StaffMe";
 import MyJobSheets from "./pages/MyJobSheets";
