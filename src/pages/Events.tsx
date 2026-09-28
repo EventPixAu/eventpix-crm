@@ -354,6 +354,15 @@ export default function Events() {
                                   <Clock className="h-3 w-3" />
                                   Pending {pending}
                                 </span>
+                                {declined > 0 && (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
+                                    title={`${declined} crew declined`}
+                                  >
+                                    <XCircle className="h-3 w-3" />
+                                    Declined {declined}
+                                  </span>
+                                )}
                               </span>
                             );
                           })()}
@@ -394,6 +403,11 @@ export default function Events() {
                             {assignmentCounts[event.id].pending > 0 && (
                               <span className="text-warning">
                                 {assignmentCounts[event.id].pending} pending
+                              </span>
+                            )}
+                            {assignmentCounts[event.id].declined > 0 && (
+                              <span className="text-destructive">
+                                {assignmentCounts[event.id].declined} declined
                               </span>
                             )}
                           </span>
