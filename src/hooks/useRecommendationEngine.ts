@@ -427,10 +427,13 @@ export function useGenerateRecommendations() {
         for (const role of roles) {
           const roleRecommendations: { candidate: StaffCandidate; score: number; rationale: string[]; warnings: RecommendationWarning[] }[] = [];
           
+          const roleQuery = (role.role || '').trim().toLowerCase();
           for (const candidate of candidates) {
             // Skip already assigned in this run, or already on this event (shown separately below)
             if (assignedUsers.has(candidate.userId)) continue;
             if (alreadyOnEvent.has(candidate.userId)) continue;
+            // Only people whose own role matches what was searched (e.g. "assistant")
+            if (roleQuery && !(candidate.defaultRoleName || '').toLowerCase().includes(roleQuery)) continue;
             
             const availability = availabilityMap[candidate.userId];
             const assignments = assignmentsMap[candidate.userId] || [];
