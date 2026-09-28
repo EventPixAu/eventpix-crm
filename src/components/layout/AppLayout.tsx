@@ -47,6 +47,7 @@ import {
   Layers,
   UserCircle,
   Shield,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth';

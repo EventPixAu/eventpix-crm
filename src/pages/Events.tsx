@@ -391,28 +391,6 @@ export default function Events() {
                           </span>
                         </>
                       )}
-                      {(assignmentCounts[event.id]?.total || 0) > 0 && (
-                        <>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="hidden sm:flex items-center gap-1">
-                            <Users className="h-3.5 w-3.5" />
-                            {assignmentCounts[event.id].total}
-                            <span className="text-success">
-                              {assignmentCounts[event.id].confirmed} confirmed
-                            </span>
-                            {assignmentCounts[event.id].pending > 0 && (
-                              <span className="text-warning">
-                                {assignmentCounts[event.id].pending} pending
-                              </span>
-                            )}
-                            {assignmentCounts[event.id].declined > 0 && (
-                              <span className="text-destructive">
-                                {assignmentCounts[event.id].declined} declined
-                              </span>
-                            )}
-                          </span>
-                        </>
-                      )}
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
