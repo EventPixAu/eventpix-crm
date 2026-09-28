@@ -106,7 +106,7 @@ import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
-import { AgreementStatusBadge, useAgreementStatusMap, useProfileRoleMap } from '@/components/AgreementStatusBadge';
+import { useProfileRoleMap } from '@/components/AgreementStatusBadge';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 function formatSessionTime(timeStr: string): string {
