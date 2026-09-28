@@ -663,18 +663,22 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </Alert>
           )}
 
-          {/* Legacy Conflict Warning from calendar check (shown only if no guardrail issues) */}
-          {conflicts.length > 0 && !hasGuardrailIssues && (
-            <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
+          {/* Scheduling Conflict Warning — always shown when the member overlaps another event */}
+          {conflicts.length > 0 && (
+            <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Scheduling Conflict</AlertTitle>
               <AlertDescription>
-                <strong>Conflict:</strong> This team member is already assigned to{' '}
-                {conflicts.map((c, i) => (
-                  <span key={c.event_id}>
-                    {i > 0 && ', '}
-                    <strong>{c.event_name}</strong> at {format(new Date(c.start_at), 'h:mm a')}
-                  </span>
-                ))}
+                This team member is already assigned to:
+                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                  {conflicts.map((c) => (
+                    <li key={c.event_id}>
+                      <strong>{c.event_name}</strong>
+                      {c.start_at && <> — {format(new Date(c.start_at), 'd MMM, h:mm a')}{c.end_at ? `–${format(new Date(c.end_at), 'h:mm a')}` : ''}</>}
+                    </li>
+                  ))}
+                </ul>
+                You can still assign them, but they will be double-booked.
               </AlertDescription>
             </Alert>
           )}
