@@ -403,10 +403,11 @@ export function RecommendCrewDialog({
                       />
                       <Input
                         type="number"
-                        min={1}
-                        max={10}
+                        min={0}
+                        max={20}
                         value={role.count}
-                        onChange={(e) => updateRole(index, { count: parseInt(e.target.value) || 1 })}
+                        title="0 = recommend everyone available"
+                        onChange={(e) => updateRole(index, { count: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0) })}
                         className="w-20"
                       />
                       <Select

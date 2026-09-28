@@ -431,8 +431,9 @@ export function useGenerateRecommendations() {
           // Sort by score descending
           roleRecommendations.sort((a, b) => b.score - a.score);
           
-          // Take top candidates for this role
-          for (let i = 0; i < role.count && i < roleRecommendations.length; i++) {
+          // Take top candidates for this role (count 0 = everyone)
+          const limit = role.count > 0 ? role.count : roleRecommendations.length;
+          for (let i = 0; i < limit && i < roleRecommendations.length; i++) {
             const rec = roleRecommendations[i];
             assignedUsers.add(rec.candidate.userId);
             
