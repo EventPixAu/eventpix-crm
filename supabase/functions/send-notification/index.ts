@@ -40,12 +40,12 @@ function base64UrlEncode(str: string): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function buildMimeWithIcs(to: string, subject: string, html: string, icsContent: string): string {
+function buildMimeWithIcs(to: string, subject: string, html: string, icsContent?: string): string {
   const boundary = `b_${crypto.randomUUID().replace(/-/g, "")}`;
   const from = '"EventPix" <pix@eventpix.com.au>';
   const encodedSubject = `=?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
 
-  const icsBase64 = btoa(unescape(encodeURIComponent(icsContent)));
+  const icsBase64 = icsContent ? btoa(unescape(encodeURIComponent(icsContent))) : "";
 
   let mime = `From: ${from}\r\nTo: ${to}\r\nSubject: ${encodedSubject}\r\nMIME-Version: 1.0\r\n`;
   mime += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
@@ -54,6 +54,7 @@ function buildMimeWithIcs(to: string, subject: string, html: string, icsContent:
   mime += `--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n`;
   mime += btoa(unescape(encodeURIComponent(html))) + "\r\n";
 
+  if (!icsContent) { mime += `--${boundary}--`; return mime; }
   // ICS calendar part (inline)
   mime += `--${boundary}\r\nContent-Type: text/calendar; charset=UTF-8; method=REQUEST\r\nContent-Transfer-Encoding: base64\r\n\r\n`;
   mime += icsBase64 + "\r\n";
@@ -66,7 +67,7 @@ function buildMimeWithIcs(to: string, subject: string, html: string, icsContent:
   return mime;
 }
 
-async function sendViaGmailApi(to: string, subject: string, html: string, icsContent: string): Promise<void> {
+async function sendViaGmailApi(to: string, subject: string, html: string, icsContent?: string): Promise<void> {
   const accessToken = await getGmailAccessToken();
   const mime = buildMimeWithIcs(to, subject, html, icsContent);
   const raw = base64UrlEncode(mime);
@@ -283,7 +284,44 @@ const handler = async (req: Request): Promise<Response> => {
     if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { type, event_id, user_id, assignment_id, user_ids }: NotificationRequest = await req.json();
+    const { type, event_id, user_id, assignment_id, user_ids, lead_id }: NotificationRequest = await req.json();
+
+    if (type === "lead_on_hold") {
+      if (!lead_id || !/^[0-9a-f-]{36}$/i.test(lead_id)) {
+        return new Response(JSON.stringify({ error: "lead_id is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: lead } = await supabase.from("leads").select("id, lead_name").eq("id", lead_id).maybeSingle();
+      if (!lead) throw new Error("Lead not found");
+      const { data: las } = await supabase.from("lead_assignments").select("user_id").eq("lead_id", lead_id).not("user_id", "is", null);
+      const ids = [...new Set((las || []).map((a: any) => a.user_id))];
+      if (ids.length === 0) {
+        return new Response(JSON.stringify({ success: true, count: 0 }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { data: profiles } = await supabase.from("profiles").select("email, full_name").in("id", ids);
+      const leadName = (lead as any).lead_name || "your upcoming event";
+      const subj = `Eventpix - On hold: ${leadName} - date to be confirmed`;
+      let count = 0;
+      for (const p of profiles || []) {
+        if (!p.email) continue;
+        const first = (p.full_name || "").split(" ")[0] || "there";
+        const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;background:#f5f5f5;margin:0;padding:20px"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
+<div style="background:#000;color:#fff;padding:24px"><h1 style="margin:0;font-size:22px">Event on hold</h1></div>
+<div style="padding:24px"><p>Hi ${first},</p>
+<p>The event <strong>${leadName}</strong> you were pencilled in for is now <strong>on hold</strong> while the client confirms a new date.</p>
+<p>The previous date and times no longer apply, so please release that date in your calendar. You remain on our list for this job, and we'll be in touch once the new date is confirmed.</p>
+<p>Thanks for your patience.</p></div>
+<div style="text-align:center;padding:16px;font-size:12px;color:#9ca3af">EventPix - Event Photography Management</div></div></body></html>`;
+        await sendViaGmailApi(`"${p.full_name || p.email}" <${p.email}>`, subj, html);
+        try {
+          await supabase.from("email_logs").insert({
+            email_type: "crew_notification", recipient_email: p.email, recipient_name: p.full_name || p.email,
+            subject: subj, body_preview: subj, sent_by: user.id, status: "sent", sent_at: new Date().toISOString(), direction: "outbound",
+          });
+        } catch (e) { console.error(e); }
+        count++;
+      }
+      return new Response(JSON.stringify({ success: true, count }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).single();
     if (eventError || !event) throw new Error(`Event not found: ${eventError?.message}`);

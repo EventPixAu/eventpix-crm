@@ -264,6 +264,11 @@ export function useUpdateLead() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: LeadUpdate & { id: string }) => {
+      let previousStatus: string | null = null;
+      if (updates.status === 'on_hold_date_tba') {
+        const { data: prev } = await supabase.from('leads').select('status').eq('id', id).maybeSingle();
+        previousStatus = prev?.status ?? null;
+      }
       const { data, error } = await supabase
         .from('leads')
         .update(updates)
@@ -272,6 +277,17 @@ export function useUpdateLead() {
         .single();
       
       if (error) throw error;
+
+      if (updates.status === 'on_hold_date_tba' && previousStatus !== 'on_hold_date_tba') {
+        const { data: res, error: notifyError } = await supabase.functions.invoke('send-notification', {
+          body: { type: 'lead_on_hold', lead_id: id },
+        });
+        if (notifyError) {
+          toast.error('Lead updated, but team could not be notified', { description: notifyError.message });
+        } else if (res?.count) {
+          toast.success(`On hold notice sent to ${res.count} team member${res.count === 1 ? '' : 's'}`);
+        }
+      }
       return data;
     },
     onSuccess: (_, variables) => {
@@ -279,6 +295,7 @@ export function useUpdateLead() {
       queryClient.invalidateQueries({ queryKey: ['leads', variables.id] });
       if (variables.status === 'on_hold_date_tba') {
         queryClient.invalidateQueries({ queryKey: ['lead-sessions', variables.id] });
+        queryClient.invalidateQueries({ queryKey: ['lead-assignments', variables.id] });
       }
       toast.success('Lead updated successfully');
     },
