@@ -11,4 +11,4 @@
 - [x] Add "On Hold - Date TBA" as a lead status and make it available wherever lead statuses are selected.
 
 ## Open
-- (none)
+- [ ] Clear lead dates, times, and proposed sessions when status changes to On Hold - Date TBA; clear the already-held lead's old dates.
