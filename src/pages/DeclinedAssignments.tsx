@@ -17,7 +17,7 @@ type DeclinedAssignment = {
   role_on_event: string | null;
   staff_roles: { name: string } | null;
   staff: { name: string } | null;
-  profiles: { first_name: string | null; last_name: string | null } | null;
+  profiles: { full_name: string | null } | null;
   events: { id: string; event_name: string; event_date: string } | null;
 };
 
@@ -36,7 +36,7 @@ export default function DeclinedAssignments() {
         .select(`id, declined_at, decline_reason, role_on_event,
           staff_roles:staff_roles!event_assignments_staff_role_id_fkey(name),
           staff:staff!event_assignments_staff_id_fkey(name),
-          profiles:profiles!event_assignments_user_id_fkey(first_name, last_name),
+          profiles:profiles!event_assignments_user_id_fkey(full_name),
           events:events!event_assignments_event_id_fkey(id, event_name, event_date)`)
         .eq('confirmation_status', 'declined')
         .order('declined_at', { ascending: false, nullsFirst: false })
@@ -57,10 +57,8 @@ export default function DeclinedAssignments() {
   const personName = (row: DeclinedAssignment) => {
     const staffName = row.staff?.name?.trim();
     if (staffName) return staffName;
-    const first = row.profiles?.first_name?.trim() || '';
-    const last = row.profiles?.last_name?.trim() || '';
-    const full = `${first} ${last}`.trim();
-    return full || 'Unknown team member';
+    const profileName = row.profiles?.full_name?.trim() || '';
+    return profileName || 'Unknown team member';
   };
 
   const roleName = (row: DeclinedAssignment) =>
