@@ -22,6 +22,7 @@ function ErrorBoundaryWithReset({ children }: { children: React.ReactNode }) {
 import Auth from "./pages/Auth";
 import Unsubscribe from "./pages/Unsubscribe";
 import ConfirmAssignment from "./pages/ConfirmAssignment";
+import DeclineAssignment from "./pages/DeclineAssignment";
 import Dashboard from "./pages/Dashboard";
 import OperationsDashboard from "./pages/OperationsDashboard";
 import MyTasksDashboard from "./pages/MyTasksDashboard";
@@ -224,6 +225,7 @@ function AppRoutes() {
       <Route path="/portal" element={<ClientPortalDashboard />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/confirm-assignment/:token" element={<ConfirmAssignment />} />
+      <Route path="/decline-assignment/:token" element={<DeclineAssignment />} />
       <Route path="/sign/photographer-agreement/:token" element={<PublicSignPhotographerAgreement />} />
       
       
