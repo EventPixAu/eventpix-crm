@@ -29,6 +29,7 @@ import {
 import { useClients, useUpdateLead } from '@/hooks/useSales';
 import { useEventTypes } from '@/hooks/useLookups';
 import { useLeadSources } from '@/hooks/useLeadSources';
+import { useLeadStatuses } from '@/hooks/useLeadStatuses';
 
 interface Lead {
   id: string;
@@ -54,6 +55,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
   const { data: clients } = useClients();
   const { data: eventTypes } = useEventTypes();
   const { data: leadSources } = useLeadSources();
+  const { data: leadStatuses = [] } = useLeadStatuses();
   const updateLead = useUpdateLead();
 
   const [formData, setFormData] = useState({
@@ -67,15 +69,6 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
     notes: '',
     status: '',
   });
-
-  const statusOptions = [
-    { value: 'new', label: 'New Lead' },
-    { value: 'qualified', label: 'Qualified' },
-    { value: 'quoted', label: 'Quoted' },
-    { value: 'contract_sent', label: 'Contract Sent' },
-    { value: 'won', label: 'Won' },
-    { value: 'lost', label: 'Lost' },
-  ];
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -107,7 +100,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
       venue_text: formData.venue_text || null,
       event_website: formData.event_website || null,
       notes: formData.notes || null,
-      status: formData.status as 'new' | 'qualified' | 'quoted' | 'contract_sent' | 'won' | 'lost' | 'accepted',
+      status: formData.status,
     });
     
     setOpen(false);
@@ -151,8 +144,8 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                {leadStatuses.map((option) => (
+                  <SelectItem key={option.name} value={option.name}>
                     {option.label}
                   </SelectItem>
                 ))}
