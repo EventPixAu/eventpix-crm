@@ -48,7 +48,7 @@ import { useLostReasons } from '@/hooks/useLostReasons';
 import { toast } from 'sonner';
 
 // Studio Ninja-style pipeline stages
-type LeadStatus = 'new' | 'qualified' | 'quoted' | 'contract_sent' | 'won' | 'accepted' | 'lost';
+type LeadStatus = 'new' | 'qualified' | 'on_hold_date_tba' | 'quoted' | 'contract_sent' | 'won' | 'accepted' | 'lost';
 
 interface PipelineColumn {
   status: LeadStatus;
@@ -65,14 +65,21 @@ const COLUMNS: PipelineColumn[] = [
     label: 'New Lead', 
     color: 'bg-sky-500',
     description: 'Fresh inquiries from website',
-    canDragTo: ['qualified', 'lost']
+    canDragTo: ['qualified', 'on_hold_date_tba', 'lost']
   },
   { 
     status: 'qualified', 
     label: 'Qualified', 
     color: 'bg-amber-500',
     description: 'Validated and worth pursuing',
-    canDragTo: ['quoted', 'lost']
+    canDragTo: ['quoted', 'on_hold_date_tba', 'lost']
+  },
+  {
+    status: 'on_hold_date_tba',
+    label: 'On Hold - Date TBA',
+    color: 'bg-muted-foreground',
+    description: 'Waiting for the event date to be confirmed',
+    canDragTo: ['new', 'qualified', 'quoted', 'lost']
   },
   { 
     status: 'quoted', 
@@ -80,7 +87,7 @@ const COLUMNS: PipelineColumn[] = [
     color: 'bg-violet-500',
     icon: <DollarSign className="h-3 w-3" />,
     description: 'Budget has been sent',
-    canDragTo: ['contract_sent', 'lost']
+    canDragTo: ['contract_sent', 'on_hold_date_tba', 'lost']
   },
   { 
     status: 'contract_sent', 
@@ -88,7 +95,7 @@ const COLUMNS: PipelineColumn[] = [
     color: 'bg-indigo-500',
     icon: <FileText className="h-3 w-3" />,
     description: 'Contract issued, awaiting signature',
-    canDragTo: ['won', 'lost']
+    canDragTo: ['won', 'on_hold_date_tba', 'lost']
   },
   { 
     status: 'won', 
@@ -276,7 +283,7 @@ export default function PipelineView() {
       />
 
       <TooltipProvider>
-        <div className="grid grid-cols-6 gap-3 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-7 gap-3 h-[calc(100vh-200px)] overflow-x-auto min-w-[900px]">
           {COLUMNS.map((col) => {
             const isDropTarget = dragOverColumn === col.status;
             const leadCount = leadsByStatus[col.status]?.length || 0;

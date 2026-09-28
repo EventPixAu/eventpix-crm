@@ -10,4 +10,4 @@
 - [x] Fix budget follow-up email: include event name and date, provide the correct budget link, and prevent unfilled placeholders from being sent.
 
 ## Open
-- (none)
+- [ ] Add "On Hold - Date TBA" as a lead status and make it available wherever lead statuses are selected.
