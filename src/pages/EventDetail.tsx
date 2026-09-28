@@ -106,7 +106,6 @@ import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
-import { AgreementStatusBadge, useAgreementStatusMap, useProfileRoleMap } from '@/components/AgreementStatusBadge';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 function formatSessionTime(timeStr: string): string {
@@ -441,8 +440,6 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
     },
   });
 
-  const { data: agreementStatusMap } = useAgreementStatusMap();
-  const { data: profileRoleMap } = useProfileRoleMap();
   const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
   const initial = name.charAt(0).toUpperCase();
@@ -475,13 +472,10 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             </Link>
             <Badge
               variant={confirmationStatus === 'confirmed' ? 'default' : confirmationStatus === 'declined' ? 'destructive' : 'secondary'}
-              className="text-xs shrink-0"
+              className={confirmationStatus === 'confirmed' ? 'bg-emerald-600 hover:bg-emerald-600 text-white text-xs shrink-0' : 'text-xs shrink-0'}
             >
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
-            {assignment.user_id && (
-              <AgreementStatusBadge status={agreementStatusMap?.get(assignment.user_id)} role={profileRoleMap?.get(assignment.user_id) || role} profileId={assignment.user_id} />
-            )}
 
           </div>
           {isAdmin && editingRole ? (
