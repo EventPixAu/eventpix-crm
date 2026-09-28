@@ -413,6 +413,7 @@ export function useGenerateRecommendations() {
         
         const recommendations: StaffRecommendation[] = [];
         const assignedUsers = new Set<string>();
+        const alreadyOnEvent = assignedByEvent[event.id] || new Set<string>();
         
         // For each role requirement
         for (const role of roles) {
