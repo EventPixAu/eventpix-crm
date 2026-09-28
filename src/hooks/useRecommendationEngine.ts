@@ -328,17 +328,6 @@ export function useGenerateRecommendations() {
       
       if (staffError) throw staffError;
       
-      // Get user roles to filter only photographers
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'photographer');
-      
-      if (rolesError) throw rolesError;
-      
-      const photographerIds = new Set((userRoles || []).map(r => r.user_id));
-      const photographers = (staffData || []).filter(s => photographerIds.has(s.id));
-      
       // Get all staff skills
       const { data: skillsData, error: skillsError } = await supabase
         .from('staff_skills')
@@ -355,7 +344,10 @@ export function useGenerateRecommendations() {
         return acc;
       }, {} as Record<string, string[]>);
       
-      const allCandidates: StaffCandidate[] = photographers.map(p => ({
+      // A person's event role is determined by their Team profile, not their
+      // account access role. Limiting this list to photographer accounts hides
+      // assistants and other eligible team members.
+      const allCandidates: StaffCandidate[] = (staffData || []).map(p => ({
         userId: p.id,
         fullName: p.full_name || p.email,
         email: p.email,
@@ -474,10 +466,18 @@ export function useGenerateRecommendations() {
           }
         }
 
-        // Include everyone already assigned to this event so they stay visible,
-        // even if the location filter would otherwise exclude them
+        // Keep already-assigned people visible for the requested role, even if
+        // the location filter would otherwise exclude them.
+        const requestedRoleQueries = roles
+          .map(role => (role.role || '').trim().toLowerCase())
+          .filter(Boolean);
         for (const candidate of allCandidates) {
           if (!alreadyOnEvent.has(candidate.userId)) continue;
+          const candidateRole = (candidate.defaultRoleName || '').toLowerCase();
+          if (
+            requestedRoleQueries.length > 0
+            && !requestedRoleQueries.some(query => candidateRole.includes(query))
+          ) continue;
           recommendations.push({
             candidate,
             role: candidate.defaultRoleName || roles[0]?.role || 'Crew',
