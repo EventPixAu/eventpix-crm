@@ -281,6 +281,7 @@ export function useGenerateRecommendations() {
       eventIds: string[];
       roleRequirements?: RoleRequirement[];
       scope?: 'single_event' | 'bulk' | 'series';
+      locationFilter?: string | null;
     }): Promise<DraftAssignment> => {
       // Fetch events
       const { data: events, error: eventsError } = await supabase
