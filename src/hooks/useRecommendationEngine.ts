@@ -552,6 +552,12 @@ export function useApplyAssignmentDraft() {
     }) => {
       const assignments: { event_id: string; user_id: string; staff_role_id?: string; assignment_notes?: string }[] = [];
       const auditEntries: { eventId: string; warnings: any[]; userId: string }[] = [];
+
+      // Use the role requested in the dialog (e.g. "Photographer"), not the person's profile default
+      const { data: roleRows } = await supabase.from('staff_roles').select('id, name');
+      const roleIdByName = new Map((roleRows || []).map((r: any) => [String(r.name).trim().toLowerCase(), r.id as string]));
+      const resolveRoleId = (roleName: string, fallback: string | null) =>
+        roleIdByName.get((roleName || '').trim().toLowerCase()) || fallback || undefined;
       
       for (const eventRec of draft.eventRecommendations) {
         for (const rec of eventRec.recommendations) {
@@ -564,7 +570,7 @@ export function useApplyAssignmentDraft() {
           assignments.push({
             event_id: eventRec.eventId,
             user_id: rec.candidate.userId,
-            staff_role_id: rec.candidate.defaultRoleId || undefined,
+            staff_role_id: resolveRoleId(rec.role, rec.candidate.defaultRoleId),
             assignment_notes: `Auto-assigned: ${rec.role} (${rec.confidence} confidence)`,
           });
           
