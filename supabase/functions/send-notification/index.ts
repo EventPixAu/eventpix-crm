@@ -235,11 +235,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;l
 <div class="detail"><div class="detail-label">Event</div><div class="detail-value">${event.event_name}</div></div>
 <div class="detail"><div class="detail-label">Date & Time</div><div class="detail-value">${formatDate(event.event_date)}${event.start_time ? ` at ${formatTime(event.start_time)}` : ''}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}</div></div>
 ${event.venue_name ? `<div class="detail"><div class="detail-label">Venue</div><div class="detail-value">${event.venue_name}${event.venue_address ? `<br>${event.venue_address}` : ''}</div></div>` : ''}
-${event.onsite_contact_name ? `<div class="detail"><div class="detail-label">On-site Contact</div><div class="detail-value">${event.onsite_contact_name}${event.onsite_contact_phone ? ` - ${event.onsite_contact_phone}` : ''}</div></div>` : ''}
 ${event.coverage_details ? `<div class="detail"><div class="detail-label">Coverage Details</div><div class="detail-value">${event.coverage_details}</div></div>` : ''}
   ${confirmToken && (isNewAssignment || isConfirmedAssignment) ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability via the button below</p>' : ''}
 <a href="${appUrl}/events/${event.id}" class="button">View Event Details</a>
-${confirmToken && (isNewAssignment || isConfirmedAssignment) ? `<a href="${appUrl}/confirm-assignment/${confirmToken}" class="button" style="background:#16a34a;color:white;margin-left:8px;">Click here to Confirm</a>` : ''}
+${confirmToken && (isNewAssignment || isConfirmedAssignment) ? `<a href="${appUrl}/confirm-assignment/${confirmToken}" class="button" style="background:#16a34a;color:white;margin-left:8px;">Click here to Confirm</a><a href="${appUrl}/decline-assignment/${confirmToken}" class="button" style="background:#dc2626;color:white;margin-left:8px;">Not available</a>` : ''}
   ${subject.includes('Updated details') ? '<p style="margin-top:20px;color:#6b7280;font-size:14px;"><em>Apologies for any repeated calendar invites — we’re making sure your schedule reflects the most up-to-date timings.</em></p>' : ''}
   ${(isNewAssignment || isConfirmedAssignment) && !confirmToken ? '<p style="margin-top:20px;font-weight:500;">Please confirm your availability in EventPix.</p>' : ''}
 </div><div class="footer"><p>EventPix - Event Photography Management</p></div></div></body></html>`;
