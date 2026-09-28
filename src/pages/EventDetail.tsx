@@ -106,7 +106,6 @@ import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
-import { useProfileRoleMap } from '@/components/AgreementStatusBadge';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 function formatSessionTime(timeStr: string): string {
@@ -473,7 +472,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             </Link>
             <Badge
               variant={confirmationStatus === 'confirmed' ? 'default' : confirmationStatus === 'declined' ? 'destructive' : 'secondary'}
-              className="text-xs shrink-0"
+              className={confirmationStatus === 'confirmed' ? 'bg-emerald-600 hover:bg-emerald-600 text-white text-xs shrink-0' : 'text-xs shrink-0'}
             >
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
