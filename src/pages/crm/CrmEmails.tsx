@@ -713,6 +713,19 @@ export default function CrmEmails() {
                     </Select>
                   </div>
 
+                  {needsBudget && (
+                    <div className="space-y-2">
+                      <Label>Budget for this follow-up *</Label>
+                      <Select value={selectedBudgetId} onValueChange={setSelectedBudgetId}>
+                        <SelectTrigger><SelectValue placeholder="Select the budget to follow up" /></SelectTrigger>
+                        <SelectContent>
+                          {followupBudgets.map(q => <SelectItem key={q.id} value={q.id}>{q.quote_name || 'Budget'}{q.public_token ? '' : ' (no sharing link)'}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {selectedBudgetId && followupEvent && <p className="text-sm text-muted-foreground">{followupEvent.name} · {followupEvent.date ? format(new Date(`${followupEvent.date}T12:00:00`), 'd MMMM yyyy') : 'Date missing'}</p>}
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Subject *</Label>
                     <Input
@@ -808,7 +821,7 @@ export default function CrmEmails() {
                       <hr className="my-3" />
                       <div
                         className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml.replace(/\n/g, '<br>')) }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((() => { try { return prepareEmail().resolvedBody; } catch { return bodyHtml; } })().replace(/\n/g, '<br>')) }}
                       />
                     </div>
                   ) : (
