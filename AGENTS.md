@@ -1,0 +1,1 @@
+Email send handlers must reject unresolved `{{...}}` placeholders before delivery, because multiple compose screens and scheduled sends share the same sender.
