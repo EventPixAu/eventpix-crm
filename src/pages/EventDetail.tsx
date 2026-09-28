@@ -441,8 +441,6 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
     },
   });
 
-  const { data: agreementStatusMap } = useAgreementStatusMap();
-  const { data: profileRoleMap } = useProfileRoleMap();
   const name = assignment.profile?.full_name || assignment.staff?.name || 'Unknown';
   const role = assignment.staff_role?.name || assignment.role_on_event || assignment.staff?.role || 'Staff';
   const initial = name.charAt(0).toUpperCase();
@@ -479,9 +477,6 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             >
               {confirmationStatus === 'confirmed' ? 'Confirmed' : confirmationStatus === 'declined' ? 'Declined' : 'Pending'}
             </Badge>
-            {assignment.user_id && (
-              <AgreementStatusBadge status={agreementStatusMap?.get(assignment.user_id)} role={profileRoleMap?.get(assignment.user_id) || role} profileId={assignment.user_id} />
-            )}
 
           </div>
           {isAdmin && editingRole ? (
