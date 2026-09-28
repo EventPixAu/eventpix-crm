@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Users } from 'lucide-react';
+import { Users, XCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
@@ -65,14 +65,15 @@ export default function Events() {
         .from('event_assignments')
         .select('event_id, user_id, staff_id, role_on_event, confirmation_status, staff_roles(name)');
       if (error) throw error;
-      const counts: Record<string, { confirmed: number; pending: number; total: number }> = {};
+      const counts: Record<string, { confirmed: number; pending: number; declined: number; total: number }> = {};
       (data || []).forEach((a: any) => {
         const roleName: string = a.staff_roles?.name || a.role_on_event || '';
         if (/editor|retoucher/i.test(roleName)) return;
-        if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, total: 0 };
+        if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, declined: 0, total: 0 };
         counts[a.event_id].total += 1;
         if (a.confirmation_status === 'confirmed') counts[a.event_id].confirmed += 1;
-        if (!a.confirmation_status || a.confirmation_status === 'pending') counts[a.event_id].pending += 1;
+        if (a.confirmation_status === 'declined') counts[a.event_id].declined += 1;
+        if (!a.confirmation_status || a.confirmation_status === 'pending' || a.confirmation_status === 'on_hold') counts[a.event_id].pending += 1;
       });
       return counts;
     },
@@ -311,7 +312,7 @@ export default function Events() {
                             />
                           )}
                           {(assignmentCounts[event.id]?.total || 0) > 0 && (() => {
-                            const { confirmed, pending, total } = assignmentCounts[event.id];
+                            const { confirmed, pending, declined, total } = assignmentCounts[event.id];
                             return (
                               <span className="inline-flex items-center gap-1">
                                 <span
@@ -353,6 +354,15 @@ export default function Events() {
                                   <Clock className="h-3 w-3" />
                                   Pending {pending}
                                 </span>
+                                {declined > 0 && (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
+                                    title={`${declined} crew declined`}
+                                  >
+                                    <XCircle className="h-3 w-3" />
+                                    Declined {declined}
+                                  </span>
+                                )}
                               </span>
                             );
                           })()}
@@ -393,6 +403,11 @@ export default function Events() {
                             {assignmentCounts[event.id].pending > 0 && (
                               <span className="text-warning">
                                 {assignmentCounts[event.id].pending} pending
+                              </span>
+                            )}
+                            {assignmentCounts[event.id].declined > 0 && (
+                              <span className="text-destructive">
+                                {assignmentCounts[event.id].declined} declined
                               </span>
                             )}
                           </span>

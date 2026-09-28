@@ -7820,6 +7820,7 @@ export type Database = {
         }
       }
       current_user_role: { Args: never; Returns: string }
+      decline_assignment_by_token: { Args: { _token: string }; Returns: Json }
       detect_lead_type: {
         Args: { p_client_id: string }
         Returns: Database["public"]["Enums"]["lead_type"]
