@@ -283,7 +283,7 @@ export function RecommendCrewDialog({
     try {
       const result = await generateMutation.mutateAsync({
         eventIds,
-        roleRequirements,
+        roleRequirements: roleRequirements.map((r) => ({ ...r, count: 0 })),
         scope,
         locationFilter: locationFilter !== 'all' ? locationFilter : null,
       });
@@ -410,15 +410,6 @@ export function RecommendCrewDialog({
                         onChange={(e) => updateRole(index, { role: e.target.value })}
                         className="flex-1"
                       />
-                      <Input
-                        type="number"
-                        min={0}
-                        max={20}
-                        value={role.count}
-                        title="0 = recommend everyone available"
-                        onChange={(e) => updateRole(index, { count: e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value) || 0) })}
-                        className="w-20"
-                      />
                       <Select
                         value={role.required_skills?.join(',') || ''}
                         onValueChange={(value) => updateRole(index, { 
@@ -451,9 +442,6 @@ export function RecommendCrewDialog({
                   <Button variant="outline" size="sm" onClick={addRole}>
                     + Add Role
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    How many to recommend per role — set 0 to recommend everyone.
-                  </p>
                 </div>
               </div>
               
@@ -487,7 +475,7 @@ export function RecommendCrewDialog({
             </div>
           ) : (
             // Results view
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain -mx-6 px-6">
               <div className="space-y-3">
                 {draft.eventRecommendations.map((eventRec) => (
                   <EventRecommendationSection
