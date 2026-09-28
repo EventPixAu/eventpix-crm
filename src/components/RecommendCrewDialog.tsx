@@ -289,17 +289,8 @@ export function RecommendCrewDialog({
       
       setDraft(result);
       
-      // Auto-select all recommendations without errors
-      const autoSelected = new Set<string>();
-      for (const eventRec of result.eventRecommendations) {
-        for (const rec of eventRec.recommendations) {
-          const hasError = rec.warnings.some(w => w.severity === 'error');
-          if (!hasError && !rec.alreadyAssigned) {
-            autoSelected.add(`${eventRec.eventId}-${rec.candidate.userId}`);
-          }
-        }
-      }
-      setSelectedRecommendations(autoSelected);
+      // Never pre-select — the user ticks who they want
+      setSelectedRecommendations(new Set());
       
       // Expand all events
       setExpandedEvents(new Set(result.eventRecommendations.map(e => e.eventId)));
