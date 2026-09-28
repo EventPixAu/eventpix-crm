@@ -1,1 +1,2 @@
 Email send handlers must reject unresolved `{{...}}` placeholders before delivery, because multiple compose screens and scheduled sends share the same sender.
+The lead On Hold - Date TBA transition clears dates and lead-only sessions in database triggers, because status can be changed from several screens.

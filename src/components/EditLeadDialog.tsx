@@ -96,7 +96,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
       client_id: formData.client_id || null,
       event_type_id: formData.event_type_id || null,
       lead_source_id: formData.lead_source_id || null,
-      estimated_event_date: formData.estimated_event_date || null,
+      estimated_event_date: formData.status === 'on_hold_date_tba' ? null : formData.estimated_event_date || null,
       venue_text: formData.venue_text || null,
       event_website: formData.event_website || null,
       notes: formData.notes || null,
@@ -138,7 +138,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
             <Label htmlFor="edit_status">Status</Label>
             <Select 
               value={formData.status} 
-              onValueChange={(value) => setFormData({ ...formData, status: value })}
+              onValueChange={(value) => setFormData({ ...formData, status: value, ...(value === 'on_hold_date_tba' ? { estimated_event_date: '' } : {}) })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
@@ -225,6 +225,7 @@ export function EditLeadDialog({ lead, trigger }: EditLeadDialogProps) {
               type="date"
               value={formData.estimated_event_date}
               onChange={(e) => setFormData({ ...formData, estimated_event_date: e.target.value })}
+              disabled={formData.status === 'on_hold_date_tba'}
             />
           </div>
 

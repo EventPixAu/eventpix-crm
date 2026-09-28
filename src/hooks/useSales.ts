@@ -277,6 +277,9 @@ export function useUpdateLead() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['leads', variables.id] });
+      if (variables.status === 'on_hold_date_tba') {
+        queryClient.invalidateQueries({ queryKey: ['lead-sessions', variables.id] });
+      }
       toast.success('Lead updated successfully');
     },
     onError: (error: Error) => {
