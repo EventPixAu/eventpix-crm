@@ -109,16 +109,20 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   // Fetch availability for the event date
   const { data: dateAvailability = [] } = useStaffAvailabilityByDate(event?.event_date);
 
-  // Check conflicts for selected user
-  const eventStart = useMemo(() => {
-    if (!event?.start_at) return null;
-    return new Date(event.start_at);
-  }, [event?.start_at]);
-  
-  const eventEnd = useMemo(() => {
-    if (!event?.end_at) return null;
-    return new Date(event.end_at);
-  }, [event?.end_at]);
+  // Check conflicts for selected user — prefer the selected session's date/times,
+  // falling back to event-level times (most events only have times on sessions)
+  const selectedSessionForConflict = sessions.find(s => s.id === selectedSession);
+  const conflictDate = selectedSessionForConflict?.session_date || event?.event_date || null;
+  const conflictTz = (selectedSessionForConflict as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
+  const conflictStartStr = selectedSessionForConflict
+    ? toTimestamptz(conflictDate!, (selectedSessionForConflict.arrival_time || selectedSessionForConflict.start_time || '09:00').slice(0, 5), conflictTz)
+    : (event?.start_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.start_time || '09:00').slice(0, 5), conflictTz) : null));
+  const conflictEndStr = selectedSessionForConflict
+    ? toTimestamptz(conflictDate!, (selectedSessionForConflict.end_time || '23:59').slice(0, 5), conflictTz)
+    : (event?.end_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.end_time || '23:59').slice(0, 5), conflictTz) : null));
+
+  const eventStart = useMemo(() => conflictStartStr ? new Date(conflictStartStr) : null, [conflictStartStr]);
+  const eventEnd = useMemo(() => conflictEndStr ? new Date(conflictEndStr) : null, [conflictEndStr]);
 
   const { data: conflicts = [] } = useCheckConflicts(
     selectedUser || undefined,
@@ -659,18 +663,22 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </Alert>
           )}
 
-          {/* Legacy Conflict Warning from calendar check (shown only if no guardrail issues) */}
-          {conflicts.length > 0 && !hasGuardrailIssues && (
-            <Alert variant="destructive" className="bg-orange-50 border-orange-200 text-orange-800">
+          {/* Scheduling Conflict Warning — always shown when the member overlaps another event */}
+          {conflicts.length > 0 && (
+            <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Scheduling Conflict</AlertTitle>
               <AlertDescription>
-                <strong>Conflict:</strong> This team member is already assigned to{' '}
-                {conflicts.map((c, i) => (
-                  <span key={c.event_id}>
-                    {i > 0 && ', '}
-                    <strong>{c.event_name}</strong> at {format(new Date(c.start_at), 'h:mm a')}
-                  </span>
-                ))}
+                This team member is already assigned to:
+                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                  {conflicts.map((c) => (
+                    <li key={c.event_id}>
+                      <strong>{c.event_name}</strong>
+                      {c.start_at && <> — {format(new Date(c.start_at), 'd MMM, h:mm a')}{c.end_at ? `–${format(new Date(c.end_at), 'h:mm a')}` : ''}</>}
+                    </li>
+                  ))}
+                </ul>
+                You can still assign them, but they will be double-booked.
               </AlertDescription>
             </Alert>
           )}
