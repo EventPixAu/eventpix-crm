@@ -502,7 +502,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
               {role}
             </p>
           )}
-          {(() => {
+          {!role?.toLowerCase().includes('post event') && (() => {
             const callIso = assignment.call_time_at;
             const wrapIso = assignment.wrap_time_at;
             const sessionArrival = assignment.session?.arrival_time || assignment.session?.start_time;

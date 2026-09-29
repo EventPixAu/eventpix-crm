@@ -556,6 +556,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </p>
           </div>
 
+          {!isPostEventRole && (
           <div className="space-y-1.5">
             <Label>Call time</Label>
             <Select value={callTimeChoice} onValueChange={setCallTimeChoice}>
