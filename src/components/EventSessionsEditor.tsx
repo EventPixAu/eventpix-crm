@@ -27,7 +27,7 @@ import {
   useUpdateEventSession,
   useDeleteEventSession,
 } from '@/hooks/useEventSessions';
-import { SUPPORTED_TIMEZONES, getTimezoneAbbr } from '@/lib/timezones';
+import { SUPPORTED_TIMEZONES, getTimezoneAbbr, detectTimezoneFromAddress, getTimezoneAbbrForDate } from '@/lib/timezones';
 import { cn } from '@/lib/utils';
 
 interface SessionFormData {
