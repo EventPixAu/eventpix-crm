@@ -87,6 +87,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { user } = useAuth();
   const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
+  const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
   const { data: sessions = [] } = useEventSessions(eventId);
@@ -270,8 +271,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
 
-    // Custom call time overrides the session default
-    if (callTimeChoice === 'custom' && customCallTime && sessionDate) {
+    // Custom call time overrides the session default (not for post-event roles)
+    if (!isPostEventRole && callTimeChoice === 'custom' && customCallTime && sessionDate) {
       assignmentData.call_time_at = toTimestamptz(sessionDate, customCallTime, sessionTz);
     }
 
@@ -556,6 +557,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </p>
           </div>
 
+          {!isPostEventRole && (
           <div className="space-y-1.5">
             <Label>Call time</Label>
             <Select value={callTimeChoice} onValueChange={setCallTimeChoice}>
@@ -583,6 +585,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               />
             )}
           </div>
+          )}
 
           <Textarea
             placeholder="Assignment notes (optional)"
