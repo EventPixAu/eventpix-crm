@@ -76,6 +76,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [teamMemberSearchFocused, setTeamMemberSearchFocused] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [callTimeChoice, setCallTimeChoice] = useState('default');
+  const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
   const [customCallTime, setCustomCallTime] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
@@ -270,8 +271,8 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
 
-    // Custom call time overrides the session default
-    if (callTimeChoice === 'custom' && customCallTime && sessionDate) {
+    // Custom call time overrides the session default (not for post-event roles)
+    if (!isPostEventRole && callTimeChoice === 'custom' && customCallTime && sessionDate) {
       assignmentData.call_time_at = toTimestamptz(sessionDate, customCallTime, sessionTz);
     }
 
@@ -584,6 +585,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               />
             )}
           </div>
+          )}
 
           <Textarea
             placeholder="Assignment notes (optional)"
