@@ -396,7 +396,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
                   <SelectContent>
                     {SUPPORTED_TIMEZONES.map(tz => (
                       <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
+                        {tz.label.split(' (')[0]} ({getTimezoneAbbrForDate(tz.value, formData.session_date)})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -409,9 +409,14 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
               <Input
                 id="venue_address"
                 value={formData.venue_address}
-                onChange={(e) => setFormData({ ...formData, venue_address: e.target.value })}
+                onChange={(e) => {
+                  const venue_address = e.target.value;
+                  const detected = detectTimezoneFromAddress(venue_address);
+                  setFormData((prev) => ({ ...prev, venue_address, timezone: detected || prev.timezone }));
+                }}
                 placeholder="Full address"
               />
+              <p className="text-xs text-muted-foreground">Timezone is set automatically from the address; daylight saving follows the session date.</p>
             </div>
           </div>
 
