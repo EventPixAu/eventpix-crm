@@ -76,7 +76,6 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [teamMemberSearchFocused, setTeamMemberSearchFocused] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [callTimeChoice, setCallTimeChoice] = useState('default');
-  const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
   const [customCallTime, setCustomCallTime] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
   
@@ -88,6 +87,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { user } = useAuth();
   const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
+  const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
   const { data: sessions = [] } = useEventSessions(eventId);
