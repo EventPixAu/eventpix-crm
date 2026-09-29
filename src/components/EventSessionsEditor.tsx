@@ -92,7 +92,7 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
       session_date: defaultSessionDate || '',
       venue_name: defaultVenueName || '',
       venue_address: defaultVenueAddress || '',
-      timezone: defaultTimezone || 'Australia/Sydney',
+      timezone: detectTimezoneFromAddress(defaultVenueAddress) || defaultTimezone || 'Australia/Sydney',
     });
     setIsDialogOpen(true);
   };
