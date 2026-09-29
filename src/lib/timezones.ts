@@ -57,3 +57,59 @@ export function formatTimeInTimezone(
     return time.substring(0, 5);
   }
 }
+
+// Infer an IANA timezone from an Australian/NZ address (state, postcode or city).
+export function detectTimezoneFromAddress(address: string | null | undefined): SupportedTimezone | null {
+  if (!address) return null;
+  const a = ` ${address.toUpperCase().replace(/[,.]/g, ' ')} `;
+  if (/NEW ZEALAND| NZ |AUCKLAND|WELLINGTON|CHRISTCHURCH|QUEENSTOWN/.test(a)) return 'Pacific/Auckland';
+  if (/BROKEN HILL/.test(a)) return 'Australia/Adelaide';
+  const states: [RegExp, SupportedTimezone][] = [
+    [/ (WA|WESTERN AUSTRALIA) /, 'Australia/Perth'],
+    [/ (NT|NORTHERN TERRITORY) /, 'Australia/Darwin'],
+    [/ (SA|SOUTH AUSTRALIA) /, 'Australia/Adelaide'],
+    [/ (QLD|QUEENSLAND) /, 'Australia/Brisbane'],
+    [/ (TAS|TASMANIA) /, 'Australia/Hobart'],
+    [/ (VIC|VICTORIA) /, 'Australia/Melbourne'],
+    [/ (NSW|NEW SOUTH WALES|ACT|AUSTRALIAN CAPITAL TERRITORY) /, 'Australia/Sydney'],
+  ];
+  for (const [re, tz] of states) if (re.test(a)) return tz;
+  const pc = a.match(/ (\d{4}) (AUSTRALIA )?$/) || a.match(/ (\d{4}) /);
+  if (pc) {
+    const n = parseInt(pc[1], 10);
+    if (n >= 800 && n < 1000) return 'Australia/Darwin';
+    if (n >= 2000 && n < 3000) return 'Australia/Sydney';
+    if (n >= 3000 && n < 4000) return 'Australia/Melbourne';
+    if (n >= 4000 && n < 5000) return 'Australia/Brisbane';
+    if (n >= 5000 && n < 6000) return 'Australia/Adelaide';
+    if (n >= 6000 && n < 7000) return 'Australia/Perth';
+    if (n >= 7000 && n < 8000) return 'Australia/Hobart';
+    if (n >= 8000 && n < 9000) return 'Australia/Melbourne';
+    if (n >= 9000) return 'Australia/Brisbane';
+  }
+  const cities: [RegExp, SupportedTimezone][] = [
+    [/PERTH|FREMANTLE/, 'Australia/Perth'], [/DARWIN|ALICE SPRINGS/, 'Australia/Darwin'],
+    [/ADELAIDE/, 'Australia/Adelaide'], [/BRISBANE|GOLD COAST|CAIRNS|TOWNSVILLE|SUNSHINE COAST/, 'Australia/Brisbane'],
+    [/HOBART|LAUNCESTON/, 'Australia/Hobart'], [/MELBOURNE|GEELONG/, 'Australia/Melbourne'],
+    [/SYDNEY|CANBERRA|NEWCASTLE|WOLLONGONG/, 'Australia/Sydney'],
+  ];
+  for (const [re, tz] of cities) if (re.test(a)) return tz;
+  return null;
+}
+
+// Daylight-saving-aware abbreviation (e.g. AEST vs AEDT) for a timezone on a date.
+export function getTimezoneAbbrForDate(tz: string, date: string | null | undefined): string {
+  const d = date ? new Date(`${date}T12:00:00`) : new Date();
+  const off = getTimezoneOffset(tz, d); // e.g. GMT+11
+  const map: Record<string, Record<string, string>> = {
+    'Australia/Sydney': { 'GMT+10': 'AEST', 'GMT+11': 'AEDT' },
+    'Australia/Melbourne': { 'GMT+10': 'AEST', 'GMT+11': 'AEDT' },
+    'Australia/Hobart': { 'GMT+10': 'AEST', 'GMT+11': 'AEDT' },
+    'Australia/Brisbane': { 'GMT+10': 'AEST' },
+    'Australia/Adelaide': { 'GMT+9:30': 'ACST', 'GMT+10:30': 'ACDT' },
+    'Australia/Darwin': { 'GMT+9:30': 'ACST' },
+    'Australia/Perth': { 'GMT+8': 'AWST' },
+    'Pacific/Auckland': { 'GMT+12': 'NZST', 'GMT+13': 'NZDT' },
+  };
+  return map[tz]?.[off] || off;
+}
