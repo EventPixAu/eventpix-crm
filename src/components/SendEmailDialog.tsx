@@ -529,6 +529,8 @@ export function SendEmailDialog({
           attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
           contactId: recipient.contactId || undefined,
           clientId: clientId || undefined,
+          leadId: leadId || undefined,
+          eventId: eventId || undefined,
           quoteId: relatedQuoteId || undefined,
           contractId: relatedContractId || undefined,
           templateId: selectedTemplateId || undefined,
