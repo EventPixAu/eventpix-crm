@@ -11,7 +11,7 @@
  * - Right panels: Job info, Client info
  * - Bottom: Subtotal / Discount row
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -255,6 +255,15 @@ export default function QuoteDetail() {
   }, [quote, searchParams]);
 
   const isLocked = quote?.status === 'accepted' || quote?.status === 'rejected';
+
+  // Default unnamed budgets to "Photo 1" — the most commonly used budget name.
+  const defaultedNameRef = useRef(false);
+  useEffect(() => {
+    if (defaultedNameRef.current || !quote || isLocked) return;
+    if ((quote as any).quote_name) return;
+    defaultedNameRef.current = true;
+    updateQuote.mutateAsync({ id: quote.id, quote_name: 'Photo 1' } as any).catch(() => {});
+  }, [quote, isLocked]);
   const clientData = quote?.client as any;
   const leadData = quote?.lead as any;
   const clientName = clientData?.business_name || leadData?.client?.business_name;
@@ -699,7 +708,7 @@ export default function QuoteDetail() {
               ) : (
                 <div className="flex gap-2">
                   <Select
-                    value={(quote as any).quote_name || ''}
+                    value={(quote as any).quote_name || 'Photo 1'}
                     onValueChange={async (val) => {
                       if (val === '__custom__') {
                         setCustomBudgetName('');
