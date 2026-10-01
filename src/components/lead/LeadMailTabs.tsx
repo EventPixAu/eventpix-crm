@@ -409,10 +409,10 @@ interface MailHistoryPanelContentProps {
 }
 
 function MailHistoryPanelContent({ leadId, contactEmail, maxItems = 10 }: MailHistoryPanelContentProps) {
+  // Only show emails tagged to this lead/job — not all correspondence with the contact.
   const { data: leadLogs = [] } = useLeadEmailLogs(leadId);
-  const { data: recipientLogs = [] } = useRecipientEmailLogs(contactEmail);
   
-  const allLogs = [...leadLogs, ...recipientLogs];
+  const allLogs = [...leadLogs];
   const uniqueLogs = allLogs.filter((log, index, self) => 
     index === self.findIndex(l => l.id === log.id)
   ).sort((a, b) => {
