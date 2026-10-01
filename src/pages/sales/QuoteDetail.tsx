@@ -11,7 +11,7 @@
  * - Right panels: Job info, Client info
  * - Bottom: Subtotal / Discount row
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
