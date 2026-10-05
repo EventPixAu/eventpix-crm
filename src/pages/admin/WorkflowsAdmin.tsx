@@ -385,6 +385,7 @@ export default function WorkflowsAdmin() {
     : tabParam === 'briefs' ? 'briefs'
     : tabParam === 'event-briefs' ? 'event-briefs'
     : tabParam === 'editing-instructions' ? 'editing-instructions'
+    : tabParam === 'sales' || tabParam === 'sales-workflows' ? 'sales'
     : 'operations';
   const [activeTab, setActiveTabState] = useState<string>(tabFromUrl);
   useEffect(() => { setActiveTabState(tabFromUrl); }, [tabFromUrl]);
