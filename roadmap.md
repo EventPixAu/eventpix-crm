@@ -12,4 +12,6 @@
 - [x] Clear lead dates, times, and proposed sessions when status changes to On Hold - Date TBA; clear the already-held lead's old dates.
 
 ## Open
-- (none)
+- [ ] Add budget-to-event client delivery-options email with the supplied document.
+- [ ] Provide an easy client delivery-choice response and show the confirmed choice on the event.
+- [ ] Verify email preparation and client response without sending live test emails.
