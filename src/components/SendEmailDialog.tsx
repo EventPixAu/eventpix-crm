@@ -858,7 +858,7 @@ export function SendEmailDialog({
               </div>
               <div className="border-t pt-4">
                 <div 
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm max-w-none text-foreground [&_*]:text-foreground [&_a]:text-primary"
                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getProcessedBody() || '<p class="text-muted-foreground">No message content</p>') }}
                 />
               </div>
