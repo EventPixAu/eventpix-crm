@@ -26,7 +26,6 @@ import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { getPublicBaseUrl } from '@/lib/utils';
-import { format } from 'date-fns';
 
 interface LeadMailTabsProps {
   leadId: string;
