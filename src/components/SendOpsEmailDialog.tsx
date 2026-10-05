@@ -33,6 +33,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { getPublicBaseUrl } from '@/lib/utils';
+import { DELIVERY_TEMPLATE_NAME } from '@/lib/clientDeliveryOptions';
 
 interface Recipient {
   id: string;
@@ -194,6 +195,13 @@ export function SendOpsEmailDialog({
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
+    if (template?.name === DELIVERY_TEMPLATE_NAME) {
+      // This template needs the client choice link and the delivery document, handled by the dedicated window.
+      setSelectedTemplateId('');
+      onOpenChange(false);
+      window.dispatchEvent(new Event('open-delivery-email'));
+      return;
+    }
     if (template) {
       setSubject(replaceMergeFields(template.subject));
       setBody(replaceMergeFields(template.body_html));
