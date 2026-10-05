@@ -24,6 +24,8 @@ import { ContactSelector } from '@/components/shared/ContactSelector';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { supabase } from '@/integrations/supabase/client';
+import { getPublicBaseUrl } from '@/lib/utils';
 
 interface LeadMailTabsProps {
   leadId: string;
@@ -82,6 +84,21 @@ export function LeadMailTabs({
     }
   };
 
+  // Lead event date + latest sent budget for merge fields
+  const [leadEventDate, setLeadEventDate] = useState<string | null>(null);
+  const [budgetToken, setBudgetToken] = useState<string | null>(null);
+  useEffect(() => {
+    if (!leadId) return;
+    void supabase.from('leads').select('estimated_event_date').eq('id', leadId).maybeSingle()
+      .then(({ data }) => setLeadEventDate((data as any)?.estimated_event_date ?? null));
+    void supabase.from('quotes').select('public_token, status').eq('lead_id', leadId)
+      .not('public_token', 'is', null).order('created_at', { ascending: false })
+      .then(({ data }) => {
+        const rows = (data || []) as { public_token: string | null; status: string }[];
+        setBudgetToken((rows.find(r => r.status === 'sent') || rows[0])?.public_token ?? null);
+      });
+  }, [leadId]);
+
   // Process merge fields
   const processMergeFields = (text: string): string => {
     const contactFirstName = selectedContact?.first_name 
@@ -89,6 +106,9 @@ export function LeadMailTabs({
       || defaultRecipientName?.split(' ')[0] 
       || '';
     
+    const eventDateText = leadEventDate ? format(new Date(`${leadEventDate.slice(0, 10)}T12:00:00`), 'EEEE, d MMMM yyyy') : '';
+    const budgetUrl = budgetToken ? `${getPublicBaseUrl()}/accept/${budgetToken}` : '';
+    const budgetButton = budgetUrl ? `<a href="${budgetUrl}" style="display:inline-block;padding:12px 24px;background:#0891b2;color:#ffffff;text-decoration:none;border-radius:6px;">View Your Budget</a>` : '';
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
@@ -100,7 +120,11 @@ export function LeadMailTabs({
       .replace(/\{\{contact_name\}\}/gi, contactFirstName)
       .replace(/\{\{contact\.email\}\}/gi, recipientEmail || defaultRecipientEmail || '')
       .replace(/\{\{lead\.name\}\}/gi, leadName || '')
-      .replace(/\{\{lead_or_job_name\}\}/gi, leadName || '');
+      .replace(/\{\{lead_or_job_name\}\}/gi, leadName || '')
+      .replace(/\{\{\s*(event\.event_name|event\.name|event_name)\s*\}\}/gi, leadName || '')
+      .replace(/\{\{\s*(event\.event_date|event\.date|event_date)\s*\}\}/gi, eventDateText)
+      .replace(/\{\{\s*(budget|quote)\.url\s*\}\}/gi, budgetUrl)
+      .replace(/\{\{\s*(budget|quote)\.(button|link)\s*\}\}/gi, budgetButton);
   };
 
   // Apply template
