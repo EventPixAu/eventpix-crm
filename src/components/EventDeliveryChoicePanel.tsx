@@ -79,7 +79,7 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
         clientId={event.client_id || ''} clientName={event.client_name} eventId={event.id}
         leadId={event.lead_id} relatedQuoteId={event.quote_id || undefined}
         mergeContext={{ eventName: event.event_name, eventDate: event.event_date, deliveryChoiceUrl: `${getPublicBaseUrl()}/delivery-choice/${token}` }}
-        requiredAttachment={{ url: documentAsset.url, filename: 'Client_delivery_options.docx', contentType: documentAsset.content_type }} />}
+        requiredAttachment={{ url: new URL(documentAsset.url, getPublicBaseUrl()).href, filename: 'Client_delivery_options.docx', contentType: documentAsset.content_type }} />}
     </div>
   );
 }
