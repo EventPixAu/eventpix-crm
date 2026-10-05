@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { DELIVERY_CHOICES, deliveryChoiceLabel, requiresDeliveryTiming } from '@/lib/clientDeliveryOptions';
 import documentAsset from '@/assets/client-delivery-options.asset.json';
-import { getPublicBaseUrl } from '@/lib/utils';
+import { deliveryPublicBaseUrl } from '@/lib/clientDeliveryOptions';
 
 interface RequestData { status: string; event_name?: string; event_date?: string; choice?: string; timing?: string; social_media_access?: boolean; branding_notes?: string; confirmed_at?: string }
 
@@ -77,7 +77,7 @@ export default function ClientDeliveryChoice() {
           <Button variant="outline" onClick={() => setConfirmed(false)}>Change my choice</Button>
         </section> : <form onSubmit={submit} className="space-y-6 border-t pt-6">
           <div className="space-y-3"><h2 className="text-xl font-semibold">Choose your photo delivery</h2><p className="text-muted-foreground">Dropbox is included for every event. Your edited and culled photos are delivered within two working days.</p>
-            <Button asChild variant="link" className="h-auto p-0"><a href={new URL(documentAsset.url, getPublicBaseUrl()).href} download="Client_delivery_options.docx">Read the delivery-options document</a></Button>
+            <Button asChild variant="link" className="h-auto p-0"><a href={new URL(documentAsset.url, deliveryPublicBaseUrl()).href} download="Client_delivery_options.docx">Read the delivery-options document</a></Button>
           </div>
           <RadioGroup aria-label="Delivery option" value={choice} onValueChange={setChoice} className="gap-3">
             {DELIVERY_CHOICES.map(option => <Label key={option.value} htmlFor={option.value} className="flex cursor-pointer items-start gap-3 rounded-md border p-4 has-[[data-state=checked]]:border-primary">

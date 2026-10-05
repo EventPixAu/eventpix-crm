@@ -1,4 +1,9 @@
 export const DELIVERY_TEMPLATE_NAME = 'Booking confirmed – delivery options';
+export function deliveryPublicBaseUrl() {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return origin === 'https://app.eventpix.com.au' || origin === 'https://eventpix-crm.lovable.app'
+    ? origin : 'https://app.eventpix.com.au';
+}
 export const DELIVERY_CHOICES = [
   { value: 'dropbox_only', label: 'Dropbox only', description: 'Client delivery only, with no guest gallery.' },
   { value: 'post_event_gallery', label: 'Post-event guest gallery', description: 'Guests can view and download photos. You can limit which photos appear and distribute the gallery link.' },

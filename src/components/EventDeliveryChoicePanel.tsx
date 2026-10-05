@@ -6,8 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { getPublicBaseUrl } from '@/lib/utils';
-import { deliveryChoiceLabel } from '@/lib/clientDeliveryOptions';
+import { deliveryChoiceLabel, deliveryPublicBaseUrl } from '@/lib/clientDeliveryOptions';
 import documentAsset from '@/assets/client-delivery-options.asset.json';
 import { toast } from 'sonner';
 
@@ -78,8 +77,8 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
       {open && token && <SendEmailDialog open={open} onOpenChange={setOpen} context="delivery"
         clientId={event.client_id || ''} clientName={event.client_name} eventId={event.id}
         leadId={event.lead_id} relatedQuoteId={event.quote_id || undefined}
-        mergeContext={{ eventName: event.event_name, eventDate: event.event_date, deliveryChoiceUrl: `${getPublicBaseUrl()}/delivery-choice/${token}` }}
-        requiredAttachment={{ url: new URL(documentAsset.url, getPublicBaseUrl()).href, filename: 'Client_delivery_options.docx', contentType: documentAsset.content_type }} />}
+        mergeContext={{ eventName: event.event_name, eventDate: event.event_date, deliveryChoiceUrl: `${deliveryPublicBaseUrl()}/delivery-choice/${token}` }}
+        requiredAttachment={{ url: new URL(documentAsset.url, deliveryPublicBaseUrl()).href, filename: 'Client_delivery_options.docx', contentType: documentAsset.content_type }} />}
     </div>
   );
 }
