@@ -39,6 +39,7 @@ import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { DELIVERY_TEMPLATE_NAME } from '@/lib/clientDeliveryOptions';
 
 interface MergeFieldContext {
   eventName?: string;
@@ -47,6 +48,7 @@ interface MergeFieldContext {
   leadName?: string;
   quoteAcceptUrl?: string;
   contractSignUrl?: string;
+  deliveryChoiceUrl?: string;
 }
 
 interface Recipient {
@@ -72,7 +74,8 @@ interface SendEmailDialogProps {
   contractTitle?: string;
   defaultSubject?: string;
   defaultBody?: string;
-  context: 'quote' | 'contract';
+  context: 'quote' | 'contract' | 'delivery';
+  requiredAttachment?: { url: string; filename: string; contentType: string };
   mergeContext?: MergeFieldContext;
   onSendSuccess?: () => void | Promise<void>;
 }
@@ -94,6 +97,7 @@ export function SendEmailDialog({
   context,
   mergeContext,
   onSendSuccess,
+  requiredAttachment,
 }: SendEmailDialogProps) {
   const { data: templates } = useActiveEmailTemplates();
   const sendEmail = useSendCrmEmail();
@@ -254,10 +258,9 @@ export function SendEmailDialog({
       return;
     }
 
-    const desiredTrigger = context === 'contract' ? 'contract_sent' : context === 'quote' ? 'quote_sent' : null;
-    if (!desiredTrigger) return;
+    const desiredTrigger = context === 'contract' ? 'contract_sent' : 'quote_sent';
     // Prefer client-facing templates; photographer agreement templates share the same trigger
-    const candidates = templates.filter(t => t.trigger_type === desiredTrigger);
+    const candidates = templates.filter(t => context === 'delivery' ? t.name === DELIVERY_TEMPLATE_NAME : t.trigger_type === desiredTrigger);
     const match = candidates.find(t => !/photographer/i.test(t.name || '')) || candidates[0];
     if (match) {
       setSelectedTemplateId(match.id);
@@ -279,7 +282,7 @@ export function SendEmailDialog({
     setSubject(processMergeFields(raw.subject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
     setBody(processMergeFields(raw.body));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mergeContext?.eventName, mergeContext?.eventDate, mergeContext?.venueName, mergeContext?.leadName, mergeContext?.quoteAcceptUrl, mergeContext?.contractSignUrl, recipients[0]?.email]);
+  }, [open, mergeContext?.eventName, mergeContext?.eventDate, mergeContext?.venueName, mergeContext?.leadName, mergeContext?.quoteAcceptUrl, mergeContext?.contractSignUrl, mergeContext?.deliveryChoiceUrl, recipients[0]?.email]);
 
 
   // Reset form when dialog opens/closes
@@ -392,7 +395,7 @@ export function SendEmailDialog({
       || 'there';
     const recipientEmail = r?.email || clientEmail || '';
     const eventDate = mergeContext?.eventDate 
-      ? new Date(mergeContext.eventDate).toLocaleDateString('en-AU', { 
+      ? new Date(`${mergeContext.eventDate.slice(0, 10)}T12:00:00`).toLocaleDateString('en-AU', { 
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
         })
       : '';
@@ -407,6 +410,7 @@ export function SendEmailDialog({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
+      .replace(/\{\{delivery\.button\}\}/gi, mergeContext?.deliveryChoiceUrl ? `<a href="${mergeContext.deliveryChoiceUrl}" style="display: inline-block; padding: 12px 24px; border: 2px solid currentColor; border-radius: 6px; font-weight: 600; text-decoration: none; margin: 16px 0;">Choose delivery option</a>` : '{{delivery.button}}')
       .replace(/\{\{client_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, contactFirstName)
@@ -466,6 +470,23 @@ export function SendEmailDialog({
 
     setIsSending(true);
     let finalAttachments = [...attachments];
+
+    // The delivery guide is mandatory; a failed download must never send a partial email.
+    if (requiredAttachment) {
+      try {
+        const response = await fetch(requiredAttachment.url);
+        if (!response.ok) throw new Error('Document unavailable');
+        const blob = await response.blob();
+        if (!blob.size || (blob.type && !blob.type.includes('wordprocessingml') && blob.type !== 'application/octet-stream')) {
+          throw new Error('Invalid document');
+        }
+        finalAttachments.push({ filename: requiredAttachment.filename, contentType: requiredAttachment.contentType, content: await blobToBase64(blob) });
+      } catch {
+        toast.error('The delivery document could not be attached. Please try again. No email was sent.');
+        setIsSending(false);
+        return;
+      }
+    }
 
     // Generate PDF attachments once
     if (attachProposalPdf && relatedQuoteId && context === 'quote') {
@@ -566,7 +587,7 @@ export function SendEmailDialog({
         </DialogHeader>
 
         {!showPreview ? (
-          <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4">
             {/* Recipients */}
             <div className="space-y-2">
               <Label>Recipients</Label>
@@ -723,6 +744,9 @@ export function SendEmailDialog({
             <div className="space-y-2">
               <Label>Attachments</Label>
               <div className="flex flex-wrap gap-2">
+                {requiredAttachment && <div className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-sm">
+                  <Paperclip className="h-3 w-3" /><span>{requiredAttachment.filename}</span>
+                </div>}
                 {attachments.map((att, index) => (
                   <div 
                     key={index} 
@@ -813,11 +837,12 @@ export function SendEmailDialog({
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
-                {(attachments.length > 0 || attachProposalPdf || attachContractPdf) && (
+                {(requiredAttachment || attachments.length > 0 || attachProposalPdf || attachContractPdf) && (
                   <div className="text-sm flex items-center gap-2">
                     <span className="font-medium">Attachments:</span>
                     <span className="text-muted-foreground">
                       {[
+                        ...(requiredAttachment ? [requiredAttachment.filename] : []),
                         ...attachments.map(a => a.filename),
                         ...(attachProposalPdf && relatedQuoteId ? ['Proposal PDF (auto-generated)'] : []),
                         ...(attachContractPdf && contractHtml ? ['Agreement PDF (auto-generated)'] : [])
@@ -833,7 +858,7 @@ export function SendEmailDialog({
               </div>
               <div className="border-t pt-4">
                 <div 
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm max-w-none text-foreground [&_*]:text-foreground [&_a]:text-primary"
                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(getProcessedBody() || '<p class="text-muted-foreground">No message content</p>') }}
                 />
               </div>

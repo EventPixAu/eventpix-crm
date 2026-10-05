@@ -140,7 +140,7 @@ export function useConvertToEvent() {
       toast.success('Job created successfully', { description: `All Sales data transferred. ${details || 'Event ready'}${warnings.length > 0 ? `. Warnings: ${warnings.join(', ')}` : ''}` });
       
       if (result.event_id) {
-        navigate(`/events/${result.event_id}`);
+        navigate(`/events/${result.event_id}?deliveryEmail=1`);
       }
     },
     onError: (error) => {

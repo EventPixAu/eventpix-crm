@@ -479,13 +479,13 @@ export default function QuoteDetail() {
   const handleConvertToEvent = async () => {
     if (!id || !eventData.event_name || !eventData.event_date) return;
     
-    await convertToEvent.mutateAsync({
+    const createdEvent = await convertToEvent.mutateAsync({
       quoteId: id,
       eventData,
     });
     
     setIsConvertOpen(false);
-    navigate('/events');
+    navigate(`/events/${createdEvent.id}?deliveryEmail=1`);
   };
 
   const copyProposalLink = () => {

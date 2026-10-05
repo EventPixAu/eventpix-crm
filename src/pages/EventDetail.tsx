@@ -92,6 +92,7 @@ import { EventDocumentsPanel } from '@/components/EventDocumentsPanel';
 import { useEventSectionVisibility } from '@/hooks/useRoleSectionVisibility';
 import { EventQrPanel } from '@/components/EventQrPanel';
 import { EventNotesForNextTime } from '@/components/EventNotesForNextTime';
+import { EventDeliveryChoicePanel } from '@/components/EventDeliveryChoicePanel';
 import { EventBriefPanel } from '@/components/EventBriefPanel';
 import { ClientBriefPanel } from '@/components/ClientBriefPanel';
 import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationDialog';
@@ -1161,6 +1162,8 @@ export default function EventDetail() {
                       )}
                     </div>
                   </div>
+
+                  <EventDeliveryChoicePanel event={event} canSend={isAdmin || isOperations || isSales} />
 
                   <EventVenueEditor
                     eventId={event.id}
