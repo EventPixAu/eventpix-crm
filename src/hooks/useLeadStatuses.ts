@@ -17,6 +17,25 @@ export interface LeadStatus {
   is_system: boolean;
 }
 
+const leadStatusLabelOrder = [
+  'New Lead',
+  'Budget Sent',
+  'Agreement Sent',
+  'Won',
+  'On Hold - Date TBA',
+  'Lost',
+];
+
+function orderLeadStatuses(statuses: LeadStatus[]): LeadStatus[] {
+  return [...statuses].sort((a, b) => {
+    const aIndex = leadStatusLabelOrder.indexOf(a.label);
+    const bIndex = leadStatusLabelOrder.indexOf(b.label);
+    const aRank = aIndex < 0 ? leadStatusLabelOrder.length : aIndex;
+    const bRank = bIndex < 0 ? leadStatusLabelOrder.length : bIndex;
+    return aRank - bRank || a.sort_order - b.sort_order || a.label.localeCompare(b.label);
+  });
+}
+
 export function useLeadStatuses() {
   return useQuery({
     queryKey: ['lead-statuses'],
@@ -29,7 +48,7 @@ export function useLeadStatuses() {
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
-      return data as LeadStatus[];
+      return orderLeadStatuses(data as LeadStatus[]);
     },
   });
 }
@@ -45,7 +64,7 @@ export function useAllLeadStatuses() {
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
-      return data as LeadStatus[];
+      return orderLeadStatuses(data as LeadStatus[]);
     },
   });
 }
