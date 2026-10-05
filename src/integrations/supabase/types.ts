@@ -2865,6 +2865,50 @@ export type Database = {
           },
         ]
       }
+      event_delivery_preferences: {
+        Row: {
+          branding_notes: string | null
+          choice: string | null
+          confirmed_at: string | null
+          event_id: string
+          expires_at: string
+          requested_at: string
+          response_token: string
+          social_media_access: boolean
+          timing: string | null
+        }
+        Insert: {
+          branding_notes?: string | null
+          choice?: string | null
+          confirmed_at?: string | null
+          event_id: string
+          expires_at?: string
+          requested_at?: string
+          response_token?: string
+          social_media_access?: boolean
+          timing?: string | null
+        }
+        Update: {
+          branding_notes?: string | null
+          choice?: string | null
+          confirmed_at?: string | null
+          event_id?: string
+          expires_at?: string
+          requested_at?: string
+          response_token?: string
+          social_media_access?: boolean
+          timing?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_delivery_preferences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_documents: {
         Row: {
           created_at: string
@@ -7875,6 +7919,7 @@ export type Database = {
           qr_enabled: boolean
         }[]
       }
+      get_delivery_choice_request: { Args: { p_token: string }; Returns: Json }
       get_quote_by_public_token: {
         Args: { p_token: string }
         Returns: {
@@ -7984,6 +8029,10 @@ export type Database = {
         Returns: undefined
       }
       mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
+      prepare_delivery_choice_request: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       provision_user_invitation: {
         Args: { p_email: string; p_role: string }
         Returns: Json
@@ -8038,6 +8087,16 @@ export type Database = {
           p_contract_id: string
           p_signed_by_email?: string
           p_signed_by_name?: string
+        }
+        Returns: Json
+      }
+      submit_delivery_choice: {
+        Args: {
+          p_branding_notes: string
+          p_choice: string
+          p_social_media_access: boolean
+          p_timing: string
+          p_token: string
         }
         Returns: Json
       }
