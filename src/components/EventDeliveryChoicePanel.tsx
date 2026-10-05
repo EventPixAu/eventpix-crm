@@ -49,6 +49,14 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
   };
 
   useEffect(() => {
+    if (!canSend) return;
+    const listener = () => { void prepare(); };
+    window.addEventListener('open-delivery-email', listener);
+    return () => window.removeEventListener('open-delivery-email', listener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSend, event.id]);
+
+  useEffect(() => {
     if (!canSend || handled.current || !new URLSearchParams(location.search).has('deliveryEmail')) return;
     handled.current = true;
     const search = new URLSearchParams(location.search);
