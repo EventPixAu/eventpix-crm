@@ -3,3 +3,4 @@ The lead On Hold - Date TBA transition clears dates and lead-only sessions in da
 Lead-status display ordering is centralized in the shared lead-status hook, so detail and edit menus agree without changing stored statuses.
 Client delivery preferences use a dedicated expiring event token and separate preference table; explicit client confirmation must not silently alter operational delivery settings.
 Delivery-options emails use the existing Gmail review dialog with a mandatory asset-backed attachment; conversion opens a review window and never sends automatically.
+Delivery-choice client links and document fetches use a published origin even during local/preview review, because asset delivery and client access require public hosting.

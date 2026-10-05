@@ -11,7 +11,6 @@
 - [x] Add "On Hold - Date TBA" as a lead status and make it available wherever lead statuses are selected.
 - [x] Clear lead dates, times, and proposed sessions when status changes to On Hold - Date TBA; clear the already-held lead's old dates.
 
-## Open
-- [ ] Add budget-to-event client delivery-options email with the supplied document.
-- [ ] Provide an easy client delivery-choice response and show the confirmed choice on the event.
-- [ ] Verify email preparation and client response without sending live test emails.
+- [x] Add budget-to-event client delivery-options email with the supplied document.
+- [x] Provide an easy client delivery-choice response and show the confirmed choice on the event.
+- [x] Verify email preparation and client response without sending live test emails.
