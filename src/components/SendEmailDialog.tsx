@@ -410,7 +410,7 @@ export function SendEmailDialog({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
-      .replace(/\{\{delivery\.button\}\}/gi, mergeContext?.deliveryChoiceUrl ? `<a href="${mergeContext.deliveryChoiceUrl}">Choose delivery option</a>` : '{{delivery.button}}')
+      .replace(/\{\{delivery\.button\}\}/gi, mergeContext?.deliveryChoiceUrl ? `<a href="${mergeContext.deliveryChoiceUrl}" style="display: inline-block; padding: 12px 24px; border: 2px solid currentColor; border-radius: 6px; font-weight: 600; text-decoration: none; margin: 16px 0;">Choose delivery option</a>` : '{{delivery.button}}')
       .replace(/\{\{client_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, contactFirstName)
