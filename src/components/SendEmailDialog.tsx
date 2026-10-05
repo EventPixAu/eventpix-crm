@@ -744,6 +744,9 @@ export function SendEmailDialog({
             <div className="space-y-2">
               <Label>Attachments</Label>
               <div className="flex flex-wrap gap-2">
+                {requiredAttachment && <div className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-sm">
+                  <Paperclip className="h-3 w-3" /><span>{requiredAttachment.filename}</span>
+                </div>}
                 {attachments.map((att, index) => (
                   <div 
                     key={index} 
@@ -834,11 +837,12 @@ export function SendEmailDialog({
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
-                {(attachments.length > 0 || attachProposalPdf || attachContractPdf) && (
+                {(requiredAttachment || attachments.length > 0 || attachProposalPdf || attachContractPdf) && (
                   <div className="text-sm flex items-center gap-2">
                     <span className="font-medium">Attachments:</span>
                     <span className="text-muted-foreground">
                       {[
+                        ...(requiredAttachment ? [requiredAttachment.filename] : []),
                         ...attachments.map(a => a.filename),
                         ...(attachProposalPdf && relatedQuoteId ? ['Proposal PDF (auto-generated)'] : []),
                         ...(attachContractPdf && contractHtml ? ['Agreement PDF (auto-generated)'] : [])
