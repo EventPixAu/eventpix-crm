@@ -75,6 +75,7 @@ import { EventBriefTemplatesManager } from '@/components/admin/EventBriefTemplat
 import { ClientBriefTemplatesManager } from '@/components/admin/ClientBriefTemplatesManager';
 import { EditingInstructionTemplatesManager } from '@/components/admin/EditingInstructionTemplatesManager';
 import EditorWorkflowsPanel from '@/components/admin/EditorWorkflowsPanel';
+import { SalesWorkflowTemplatesManager } from '@/components/admin/SalesWorkflowTemplatesManager';
 import { useAllStaffRoles } from '@/hooks/useAdminStaffRoles';
 
 const DEFAULT_ASSIGNMENT_ROLE_NAMES = ['Staff Admin', 'Staff Editor', 'Photographer', 'Assistant'];
@@ -935,6 +936,11 @@ export default function WorkflowsAdmin() {
         {/* Editing Instructions Tab */}
         <TabsContent value="editing-instructions">
           <EditingInstructionTemplatesManager />
+        </TabsContent>
+
+        {/* Sales Workflows Tab */}
+        <TabsContent value="sales">
+          <SalesWorkflowTemplatesManager />
         </TabsContent>
       </Tabs>
 
