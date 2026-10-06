@@ -2,6 +2,7 @@
 
 ## In progress
 - [ ] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
+- [ ] Reuse an existing contact without requiring it to be linked again.
 
 ## Done
 - [x] Add a Declined list page showing declined team members with event, date and reason (route `/declined`, Operations nav "Declined").
