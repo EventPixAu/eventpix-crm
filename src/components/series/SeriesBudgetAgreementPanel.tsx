@@ -321,17 +321,25 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   const totals = useMemo(() => {
     let perEventSubtotal = 0;
     let flatSubtotal = 0;
+    let gstTotal = 0;
     for (const it of items) {
       const price = Number(it.unit_price) || 0;
+      const mult = it.pricing_basis === 'per_event' ? activeEventCount : 1;
+      const lineTotal = price * mult;
+      // Unit prices are GST-inclusive (same convention as event budgets):
+      // the GST component of a line is total * rate / (1 + rate).
+      const rate = Number(it.tax_rate) || 0;
+      gstTotal += (lineTotal * rate) / (1 + rate);
       if (it.pricing_basis === 'per_event') {
-        perEventSubtotal += price * activeEventCount;
+        perEventSubtotal += lineTotal;
       } else {
-        flatSubtotal += price;
+        flatSubtotal += lineTotal;
       }
     }
     return {
       perEventSubtotal,
       flatSubtotal,
+      gstTotal,
       grandTotal: perEventSubtotal + flatSubtotal,
     };
   }, [items, activeEventCount]);
