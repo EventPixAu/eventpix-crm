@@ -352,7 +352,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       {
         description: '',
         unit_price: 0,
-        tax_rate: 0,
+        tax_rate: 0.1,
         pricing_basis: 'per_event',
         sort_order: prev.length,
       },
