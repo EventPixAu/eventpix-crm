@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "aa7929bf-d3a5-4d27-a969-60b188f78cdd",
+  "asset_id": "3c0d4ac1-069f-44b4-abb2-243ce443504d",
   "project_id": "dcd70af9-ddce-4029-bf16-c6aa1b8f31da",
-  "url": "/__l5e/assets-v1/aa7929bf-d3a5-4d27-a969-60b188f78cdd/Client_delivery_options.docx",
-  "r2_key": "a/v1/dcd70af9-ddce-4029-bf16-c6aa1b8f31da/aa7929bf-d3a5-4d27-a969-60b188f78cdd/Client_delivery_options.docx",
-  "original_filename": "Client_delivery_options.docx",
-  "size": 33359,
-  "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "created_at": "2026-10-05T23:18:55Z"
+  "url": "/__l5e/assets-v1/3c0d4ac1-069f-44b4-abb2-243ce443504d/Client_delivery_options.pdf",
+  "r2_key": "a/v1/dcd70af9-ddce-4029-bf16-c6aa1b8f31da/3c0d4ac1-069f-44b4-abb2-243ce443504d/Client_delivery_options.pdf",
+  "original_filename": "Client_delivery_options.pdf",
+  "size": 161605,
+  "content_type": "application/pdf",
+  "created_at": "2026-10-06T00:52:24Z"
 }
