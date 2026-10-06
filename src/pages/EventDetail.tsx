@@ -1663,6 +1663,11 @@ export default function EventDetail() {
                   currentUserId={user?.id}
                 />
               )}
+
+              {/* Mail History */}
+              {(isAdmin || canSeeSection('mail_history')) && id && (
+                <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
             </motion.div>
 
             {/* Column 3: Quick Actions, Workflow, Tasks, Contracts */}
