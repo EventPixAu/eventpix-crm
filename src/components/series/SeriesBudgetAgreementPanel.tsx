@@ -326,10 +326,9 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       const price = Number(it.unit_price) || 0;
       const mult = it.pricing_basis === 'per_event' ? activeEventCount : 1;
       const lineTotal = price * mult;
-      // Unit prices are GST-inclusive (same convention as event budgets):
-      // the GST component of a line is total * rate / (1 + rate).
+      // Unit prices are EX GST: GST is added on top of each line.
       const rate = Number(it.tax_rate) || 0;
-      gstTotal += (lineTotal * rate) / (1 + rate);
+      gstTotal += lineTotal * rate;
       if (it.pricing_basis === 'per_event') {
         perEventSubtotal += lineTotal;
       } else {
@@ -340,7 +339,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       perEventSubtotal,
       flatSubtotal,
       gstTotal,
-      grandTotal: perEventSubtotal + flatSubtotal,
+      grandTotal: perEventSubtotal + flatSubtotal + gstTotal,
     };
   }, [items, activeEventCount]);
 
