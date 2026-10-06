@@ -6,8 +6,8 @@ import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { deliveryChoiceLabel, deliveryPublicBaseUrl } from '@/lib/clientDeliveryOptions';
-import documentAsset from '@/assets/client-delivery-options.asset.json';
+import { deliveryChoiceLabel } from '@/lib/clientDeliveryOptions';
+import { prepareDeliveryEmail, deliveryGuideAttachment } from '@/lib/prepareDeliveryEmail';
 import { toast } from 'sonner';
 
 interface Props {
@@ -21,7 +21,7 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
   const handled = useRef(false);
   const [open, setOpen] = useState(false);
   const [preparing, setPreparing] = useState(false);
-  const [token, setToken] = useState('');
+  const [deliveryDetails, setDeliveryDetails] = useState<Awaited<ReturnType<typeof prepareDeliveryEmail>> | null>(null);
   const { data: preference } = useQuery({
     queryKey: ['event-delivery-preference', event.id],
     queryFn: async () => {
@@ -35,11 +35,8 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
   const prepare = async () => {
     setPreparing(true);
     try {
-      const { data, error } = await supabase.rpc('prepare_delivery_choice_request', { p_event_id: event.id });
-      if (error) throw error;
-      const result = data as { token?: string };
-      if (!result.token) throw new Error('Unable to prepare delivery link');
-      setToken(result.token);
+      const details = await prepareDeliveryEmail({ eventId: event.id });
+      setDeliveryDetails(details);
       setOpen(true);
     } catch (error) {
       toast.error('Unable to prepare delivery email', { description: error instanceof Error ? error.message : 'Please try again.' });
@@ -82,11 +79,11 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
         {preference.branding_notes && <p className="whitespace-pre-wrap break-words">{preference.branding_notes}</p>}
         <p>Confirmed {format(parseISO(preference.confirmed_at), 'd MMM yyyy, h:mm a')}</p>
       </div>}
-      {open && token && <SendEmailDialog open={open} onOpenChange={setOpen} context="delivery"
+      {open && deliveryDetails && <SendEmailDialog open={open} onOpenChange={setOpen} context="delivery"
         clientId={event.client_id || ''} clientName={event.client_name} eventId={event.id}
         leadId={event.lead_id} relatedQuoteId={event.quote_id || undefined}
-        mergeContext={{ eventName: event.event_name, eventDate: event.event_date, deliveryChoiceUrl: `${deliveryPublicBaseUrl()}/delivery-choice/${token}` }}
-        requiredAttachment={{ url: new URL(documentAsset.url, deliveryPublicBaseUrl()).href, filename: 'Client_delivery_options.docx', contentType: documentAsset.content_type }} />}
+        mergeContext={deliveryDetails}
+        requiredAttachment={deliveryGuideAttachment()} />}
     </div>
   );
 }
