@@ -11,8 +11,15 @@ function openForm() {
 }
 
 describe('client event confirmation', () => {
-  beforeEach(() => rpc.mockReset());
-  afterEach(cleanup);
+  beforeEach(() => {
+    rpc.mockReset();
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+  });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
   it('saves onsite contact and special instructions together with the delivery option', async () => {
     rpc.mockResolvedValueOnce({ data: { status: 'valid', event_name: 'Test event', choice: 'dropbox_only' } });
