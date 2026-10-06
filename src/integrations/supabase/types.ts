@@ -2872,9 +2872,13 @@ export type Database = {
           confirmed_at: string | null
           event_id: string
           expires_at: string
+          onsite_contact_email: string | null
+          onsite_contact_name: string | null
+          onsite_contact_phone: string | null
           requested_at: string
           response_token: string
           social_media_access: boolean
+          special_instructions: string | null
           timing: string | null
         }
         Insert: {
@@ -2883,9 +2887,13 @@ export type Database = {
           confirmed_at?: string | null
           event_id: string
           expires_at?: string
+          onsite_contact_email?: string | null
+          onsite_contact_name?: string | null
+          onsite_contact_phone?: string | null
           requested_at?: string
           response_token?: string
           social_media_access?: boolean
+          special_instructions?: string | null
           timing?: string | null
         }
         Update: {
@@ -2894,9 +2902,13 @@ export type Database = {
           confirmed_at?: string | null
           event_id?: string
           expires_at?: string
+          onsite_contact_email?: string | null
+          onsite_contact_name?: string | null
+          onsite_contact_phone?: string | null
           requested_at?: string
           response_token?: string
           social_media_access?: boolean
+          special_instructions?: string | null
           timing?: string | null
         }
         Relationships: [
@@ -4329,9 +4341,13 @@ export type Database = {
           event_id: string | null
           expires_at: string
           lead_id: string
+          onsite_contact_email: string | null
+          onsite_contact_name: string | null
+          onsite_contact_phone: string | null
           requested_at: string
           response_token: string
           social_media_access: boolean
+          special_instructions: string | null
           timing: string | null
         }
         Insert: {
@@ -4341,9 +4357,13 @@ export type Database = {
           event_id?: string | null
           expires_at?: string
           lead_id: string
+          onsite_contact_email?: string | null
+          onsite_contact_name?: string | null
+          onsite_contact_phone?: string | null
           requested_at?: string
           response_token?: string
           social_media_access?: boolean
+          special_instructions?: string | null
           timing?: string | null
         }
         Update: {
@@ -4353,9 +4373,13 @@ export type Database = {
           event_id?: string | null
           expires_at?: string
           lead_id?: string
+          onsite_contact_email?: string | null
+          onsite_contact_name?: string | null
+          onsite_contact_phone?: string | null
           requested_at?: string
           response_token?: string
           social_media_access?: boolean
+          special_instructions?: string | null
           timing?: string | null
         }
         Relationships: [
@@ -7932,6 +7956,10 @@ export type Database = {
       expire_compliance_documents: { Args: never; Returns: number }
       gen_random_bytes: { Args: { len: number }; Returns: string }
       gen_random_uuid: { Args: never; Returns: string }
+      get_booking_confirmation_request: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       get_client_portal_data: { Args: never; Returns: Json }
       get_contact_primary_company: {
         Args: { _contact_id: string }
@@ -8145,6 +8173,20 @@ export type Database = {
           p_contract_id: string
           p_signed_by_email?: string
           p_signed_by_name?: string
+        }
+        Returns: Json
+      }
+      submit_booking_confirmation: {
+        Args: {
+          p_branding_notes: string
+          p_choice: string
+          p_onsite_contact_email: string
+          p_onsite_contact_name: string
+          p_onsite_contact_phone: string
+          p_social_media_access: boolean
+          p_special_instructions: string
+          p_timing: string
+          p_token: string
         }
         Returns: Json
       }
