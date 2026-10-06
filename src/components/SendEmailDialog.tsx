@@ -40,6 +40,7 @@ import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { DELIVERY_TEMPLATE_NAME } from '@/lib/clientDeliveryOptions';
+import { deliveryGuideAttachment, prepareDeliveryEmail } from '@/lib/prepareDeliveryEmail';
 
 interface MergeFieldContext {
   eventName?: string;
@@ -121,6 +122,34 @@ export function SendEmailDialog({
   // Raw (unresolved) template text so merge fields can be re-resolved when context loads
   const rawTemplateRef = useRef<{ subject: string; body: string } | null>(null);
   const userEditedRef = useRef(false);
+  const isDeliveryEmail = context === 'delivery' || templates?.find(t => t.id === selectedTemplateId)?.name === DELIVERY_TEMPLATE_NAME;
+  const [deliveryDetails, setDeliveryDetails] = useState<Awaited<ReturnType<typeof prepareDeliveryEmail>> | null>(null);
+  const [deliveryPreparing, setDeliveryPreparing] = useState(false);
+  const [deliveryError, setDeliveryError] = useState('');
+  const effectiveMergeContext = isDeliveryEmail && deliveryDetails ? { ...mergeContext, ...deliveryDetails } : mergeContext;
+  const effectiveAttachment = isDeliveryEmail ? (requiredAttachment || deliveryGuideAttachment()) : requiredAttachment;
+  const deliveryReady = !isDeliveryEmail || (!!effectiveMergeContext?.deliveryChoiceUrl && !deliveryPreparing && !deliveryError);
+
+  useEffect(() => {
+    if (!open || !isDeliveryEmail) {
+      setDeliveryDetails(null);
+      setDeliveryError('');
+      setDeliveryPreparing(false);
+      return;
+    }
+    if (mergeContext?.deliveryChoiceUrl) return;
+    let cancelled = false;
+    setDeliveryPreparing(true);
+    setDeliveryError('');
+    void prepareDeliveryEmail({ eventId, leadId, quoteId: relatedQuoteId }).then(details => {
+      if (!cancelled) setDeliveryDetails(details);
+    }).catch(error => {
+      if (!cancelled) setDeliveryError(error instanceof Error ? error.message : 'Unable to prepare delivery email.');
+    }).finally(() => {
+      if (!cancelled) setDeliveryPreparing(false);
+    });
+    return () => { cancelled = true; };
+  }, [open, isDeliveryEmail, eventId, leadId, relatedQuoteId, mergeContext?.deliveryChoiceUrl]);
 
   // Temporary state for contact selector
   const [selectorContactId, setSelectorContactId] = useState<string | null>(null);
@@ -282,7 +311,7 @@ export function SendEmailDialog({
     setSubject(processMergeFields(raw.subject).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, ''));
     setBody(processMergeFields(raw.body));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mergeContext?.eventName, mergeContext?.eventDate, mergeContext?.venueName, mergeContext?.leadName, mergeContext?.quoteAcceptUrl, mergeContext?.contractSignUrl, mergeContext?.deliveryChoiceUrl, recipients[0]?.email]);
+  }, [open, mergeContext?.eventName, mergeContext?.eventDate, mergeContext?.venueName, mergeContext?.leadName, mergeContext?.quoteAcceptUrl, mergeContext?.contractSignUrl, mergeContext?.deliveryChoiceUrl, deliveryDetails, recipients[0]?.email]);
 
 
   // Reset form when dialog opens/closes
@@ -394,8 +423,8 @@ export function SendEmailDialog({
       || clientName?.trim().split(/\s+/)[0]
       || 'there';
     const recipientEmail = r?.email || clientEmail || '';
-    const eventDate = mergeContext?.eventDate 
-      ? new Date(`${mergeContext.eventDate.slice(0, 10)}T12:00:00`).toLocaleDateString('en-AU', { 
+    const eventDate = effectiveMergeContext?.eventDate 
+      ? new Date(`${effectiveMergeContext.eventDate.slice(0, 10)}T12:00:00`).toLocaleDateString('en-AU', { 
           weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
         })
       : '';
@@ -410,7 +439,7 @@ export function SendEmailDialog({
     let processed = text.replace(/\n/g, '<br>');
     
     return processed
-      .replace(/\{\{delivery\.button\}\}/gi, mergeContext?.deliveryChoiceUrl ? `<a href="${mergeContext.deliveryChoiceUrl}" style="display: inline-block; padding: 12px 24px; border: 2px solid currentColor; border-radius: 6px; font-weight: 600; text-decoration: none; margin: 16px 0;">Choose delivery option</a>` : '{{delivery.button}}')
+      .replace(/\{\{delivery\.button\}\}/gi, effectiveMergeContext?.deliveryChoiceUrl ? `<a href="${effectiveMergeContext.deliveryChoiceUrl}" style="display: inline-block; padding: 12px 24px; border: 2px solid currentColor; border-radius: 6px; font-weight: 600; text-decoration: none; margin: 16px 0;">Choose delivery option</a>` : '{{delivery.button}}')
       .replace(/\{\{client_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.first_name\}\}/gi, contactFirstName)
       .replace(/\{\{client\.primary_contact_name\}\}/gi, contactFirstName)
@@ -419,12 +448,12 @@ export function SendEmailDialog({
       .replace(/\{\{contact\.name\}\}/gi, contactFirstName)
       .replace(/\{\{contact_name\}\}/gi, contactFirstName)
       .replace(/\{\{contact\.email\}\}/gi, recipientEmail)
-      .replace(/\{\{event\.event_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
-      .replace(/\{\{event\.name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
+      .replace(/\{\{event\.event_name\}\}/gi, effectiveMergeContext?.eventName || mergeContext?.leadName || '')
+      .replace(/\{\{event\.name\}\}/gi, effectiveMergeContext?.eventName || mergeContext?.leadName || '')
       .replace(/\{\{event\.event_date\}\}/gi, eventDate)
       .replace(/\{\{event\.date\}\}/gi, eventDate)
-      .replace(/\{\{event\.venue\}\}/gi, mergeContext?.venueName || '')
-      .replace(/\{\{event\.venue_name\}\}/gi, mergeContext?.venueName || '')
+      .replace(/\{\{event\.venue\}\}/gi, effectiveMergeContext?.venueName || '')
+      .replace(/\{\{event\.venue_name\}\}/gi, effectiveMergeContext?.venueName || '')
       .replace(/\{\{lead\.name\}\}/gi, mergeContext?.leadName || '')
       .replace(/\{\{lead_or_job_name\}\}/gi, mergeContext?.eventName || mergeContext?.leadName || '')
       .replace(/\{\{quote\.link\}\}/gi, quoteButtonHtml)
@@ -466,21 +495,21 @@ export function SendEmailDialog({
   };
 
   const handleSend = async () => {
-    if (recipients.length === 0 || !subject) return;
+    if (recipients.length === 0 || !subject || !deliveryReady) return;
 
     setIsSending(true);
     let finalAttachments = [...attachments];
 
     // The delivery guide is mandatory; a failed download must never send a partial email.
-    if (requiredAttachment) {
+    if (effectiveAttachment) {
       try {
-        const response = await fetch(requiredAttachment.url);
+        const response = await fetch(effectiveAttachment.url);
         if (!response.ok) throw new Error('Document unavailable');
         const blob = await response.blob();
         if (!blob.size || (blob.type && !blob.type.includes('wordprocessingml') && blob.type !== 'application/octet-stream')) {
           throw new Error('Invalid document');
         }
-        finalAttachments.push({ filename: requiredAttachment.filename, contentType: requiredAttachment.contentType, content: await blobToBase64(blob) });
+        finalAttachments.push({ filename: effectiveAttachment.filename, contentType: effectiveAttachment.contentType, content: await blobToBase64(blob) });
       } catch {
         toast.error('The delivery document could not be attached. Please try again. No email was sent.');
         setIsSending(false);
@@ -489,7 +518,7 @@ export function SendEmailDialog({
     }
 
     // Generate PDF attachments once
-    if (attachProposalPdf && relatedQuoteId && context === 'quote') {
+    if (attachProposalPdf && relatedQuoteId && context === 'quote' && !isDeliveryEmail) {
       setIsGeneratingPdf(true);
       try {
         const result = await generatePdf.mutateAsync(relatedQuoteId);
@@ -506,7 +535,7 @@ export function SendEmailDialog({
       }
     }
 
-    if (attachContractPdf && contractHtml && context === 'contract') {
+    if (attachContractPdf && contractHtml && context === 'contract' && !isDeliveryEmail) {
       setIsGeneratingPdf(true);
       try {
         const filename = `Agreement-${(contractTitle || 'Contract').replace(/\s+/g, '_')}.pdf`;
@@ -550,8 +579,8 @@ export function SendEmailDialog({
           attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
           contactId: recipient.contactId || undefined,
           clientId: clientId || undefined,
-          leadId: leadId || undefined,
-          eventId: eventId || undefined,
+          leadId: leadId || deliveryDetails?.leadId || undefined,
+          eventId: deliveryDetails?.eventId || eventId || undefined,
           quoteId: relatedQuoteId || undefined,
           contractId: relatedContractId || undefined,
           templateId: selectedTemplateId || undefined,
@@ -566,7 +595,7 @@ export function SendEmailDialog({
 
     if (successCount > 0) {
       toast.success(`Email sent to ${successCount} recipient${successCount > 1 ? 's' : ''}`, { description: failCount > 0 ? `${failCount} failed to send` : undefined });
-      if (onSendSuccess) await onSendSuccess();
+      if (onSendSuccess && !isDeliveryEmail) await onSendSuccess();
       onOpenChange(false);
     }
   };
@@ -585,6 +614,9 @@ export function SendEmailDialog({
             Compose and send an email to the client. Select a template or write a custom message.
           </DialogDescription>
         </DialogHeader>
+
+        {deliveryPreparing && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Preparing delivery options…</p>}
+        {deliveryError && <p role="alert" className="text-sm text-destructive">{deliveryError}</p>}
 
         {!showPreview ? (
             <div className="space-y-4 py-4">
@@ -744,8 +776,8 @@ export function SendEmailDialog({
             <div className="space-y-2">
               <Label>Attachments</Label>
               <div className="flex flex-wrap gap-2">
-                {requiredAttachment && <div className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-sm">
-                  <Paperclip className="h-3 w-3" /><span>{requiredAttachment.filename}</span>
+                {effectiveAttachment && <div className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-sm">
+                  <Paperclip className="h-3 w-3" /><span>{effectiveAttachment.filename}</span>
                 </div>}
                 {attachments.map((att, index) => (
                   <div 
@@ -786,7 +818,7 @@ export function SendEmailDialog({
             </div>
 
             {/* Auto-attach Proposal PDF option for quotes */}
-            {context === 'quote' && relatedQuoteId && (
+            {context === 'quote' && relatedQuoteId && !isDeliveryEmail && (
               <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
                 <Checkbox
                   id="attachProposalPdf"
@@ -806,7 +838,7 @@ export function SendEmailDialog({
             )}
 
             {/* Auto-attach Contract PDF option for contracts */}
-            {context === 'contract' && contractHtml && (
+            {context === 'contract' && contractHtml && !isDeliveryEmail && (
               <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
                 <Checkbox
                   id="attachContractPdf"
@@ -837,15 +869,15 @@ export function SendEmailDialog({
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span> {subject}
                 </div>
-                {(requiredAttachment || attachments.length > 0 || attachProposalPdf || attachContractPdf) && (
+                {(effectiveAttachment || attachments.length > 0 || (!isDeliveryEmail && (attachProposalPdf || attachContractPdf))) && (
                   <div className="text-sm flex items-center gap-2">
                     <span className="font-medium">Attachments:</span>
                     <span className="text-muted-foreground">
                       {[
-                        ...(requiredAttachment ? [requiredAttachment.filename] : []),
+                         ...(effectiveAttachment ? [effectiveAttachment.filename] : []),
                         ...attachments.map(a => a.filename),
-                        ...(attachProposalPdf && relatedQuoteId ? ['Proposal PDF (auto-generated)'] : []),
-                        ...(attachContractPdf && contractHtml ? ['Agreement PDF (auto-generated)'] : [])
+                         ...(attachProposalPdf && relatedQuoteId && !isDeliveryEmail ? ['Proposal PDF (auto-generated)'] : []),
+                         ...(attachContractPdf && contractHtml && !isDeliveryEmail ? ['Agreement PDF (auto-generated)'] : [])
                       ].join(', ')}
                     </span>
                   </div>
@@ -872,7 +904,7 @@ export function SendEmailDialog({
               <Button variant="outline" onClick={() => setShowPreview(false)} disabled={isGeneratingPdf || isSending}>
                 Edit
               </Button>
-              <Button onClick={handleSend} disabled={isSending || isGeneratingPdf}>
+              <Button onClick={handleSend} disabled={isSending || isGeneratingPdf || !deliveryReady}>
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -897,7 +929,7 @@ export function SendEmailDialog({
                 <Eye className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              <Button onClick={handleSend} disabled={isSending || isGeneratingPdf || !hasValidRecipients || !subject}>
+              <Button onClick={handleSend} disabled={isSending || isGeneratingPdf || !hasValidRecipients || !subject || !deliveryReady}>
                 {isGeneratingPdf ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
