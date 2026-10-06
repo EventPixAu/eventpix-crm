@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Current request
-- [ ] Include onsite contact confirmation and special instructions in the shared delivery-options email and client response.
-- [ ] Show the response in Sales and Events, preserve it on conversion, and verify without sending live emails.
+- [x] Include onsite contact confirmation and special instructions in the shared delivery-options email and client response.
+- [x] Show the response in Sales and Events and preserve it on conversion; client submission verified with intercepted responses, without sending live emails or changing client data.
 
 ## Completed this update
 - [x] Show availability counts beside each default series team assignment, based on confirmed replies.
