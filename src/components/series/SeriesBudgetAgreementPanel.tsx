@@ -401,7 +401,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
         quote_name: quoteName || `${seriesName} — Series Agreement`,
         notes,
         terms_text: termsText,
-        subtotal: totals.grandTotal - totals.gstTotal,
+        subtotal: totals.perEventSubtotal + totals.flatSubtotal,
         tax_total: totals.gstTotal,
         total_estimate: totals.grandTotal,
         updated_at: new Date().toISOString(),
@@ -864,7 +864,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
                 <span>{activeEventCount}</span>
               </div>
               <div className="flex justify-between">
-                <span>Includes GST (10%)</span>
+                <span>GST (10%)</span>
                 <span className="font-mono">
                   ${totals.gstTotal.toFixed(2)}
                 </span>
