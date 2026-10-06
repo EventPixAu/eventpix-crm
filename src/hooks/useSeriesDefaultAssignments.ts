@@ -181,12 +181,18 @@
        for (const eventId of event_ids) {
          for (const assignment of default_assignments) {
            // Check if already assigned
-           const { data: existing } = await supabase
+           const { data: existing, error: lookupError } = await supabase
              .from('event_assignments')
              .select('id')
              .eq('event_id', eventId)
              .eq('user_id', assignment.user_id)
+             .limit(1)
              .maybeSingle();
+
+           if (lookupError) {
+             results.errors.push(`Event ${eventId}: ${lookupError.message}`);
+             continue;
+           }
            
            if (existing) {
              results.skipped++;
