@@ -4321,6 +4321,60 @@ export type Database = {
           },
         ]
       }
+      lead_delivery_preferences: {
+        Row: {
+          branding_notes: string | null
+          choice: string | null
+          confirmed_at: string | null
+          event_id: string | null
+          expires_at: string
+          lead_id: string
+          requested_at: string
+          response_token: string
+          social_media_access: boolean
+          timing: string | null
+        }
+        Insert: {
+          branding_notes?: string | null
+          choice?: string | null
+          confirmed_at?: string | null
+          event_id?: string | null
+          expires_at?: string
+          lead_id: string
+          requested_at?: string
+          response_token?: string
+          social_media_access?: boolean
+          timing?: string | null
+        }
+        Update: {
+          branding_notes?: string | null
+          choice?: string | null
+          confirmed_at?: string | null
+          event_id?: string | null
+          expires_at?: string
+          lead_id?: string
+          requested_at?: string
+          response_token?: string
+          social_media_access?: boolean
+          timing?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_delivery_preferences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_delivery_preferences_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: true
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_files: {
         Row: {
           created_at: string
@@ -8031,6 +8085,10 @@ export type Database = {
       mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
       prepare_delivery_choice_request: {
         Args: { p_event_id: string }
+        Returns: Json
+      }
+      prepare_lead_delivery_choice_request: {
+        Args: { p_lead_id: string }
         Returns: Json
       }
       provision_user_invitation: {
