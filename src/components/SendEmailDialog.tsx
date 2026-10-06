@@ -506,7 +506,9 @@ export function SendEmailDialog({
         const response = await fetch(effectiveAttachment.url);
         if (!response.ok) throw new Error('Document unavailable');
         const blob = await response.blob();
-        if (!blob.size || (blob.type && !blob.type.includes('wordprocessingml') && blob.type !== 'application/octet-stream')) {
+        const actualContentType = blob.type.split(';')[0].trim().toLowerCase();
+        const expectedContentType = effectiveAttachment.contentType.split(';')[0].trim().toLowerCase();
+        if (!blob.size || (actualContentType && actualContentType !== expectedContentType && actualContentType !== 'application/octet-stream')) {
           throw new Error('Invalid document');
         }
         finalAttachments.push({ filename: effectiveAttachment.filename, contentType: effectiveAttachment.contentType, content: await blobToBase64(blob) });
