@@ -25,7 +25,7 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
   const { data: preference } = useQuery({
     queryKey: ['event-delivery-preference', event.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('event_delivery_preferences').select('choice,timing,social_media_access,branding_notes,confirmed_at').eq('event_id', event.id).maybeSingle();
+      const { data, error } = await supabase.from('event_delivery_preferences').select('choice,timing,social_media_access,branding_notes,confirmed_at,onsite_contact_name,onsite_contact_phone,onsite_contact_email,special_instructions').eq('event_id', event.id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -77,6 +77,8 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
         <p>Dropbox included{preference.timing ? ` · ${preference.timing === 'immediate' ? 'Immediate' : 'Delayed'} delivery` : ''}</p>
         {preference.social_media_access && <p>Social media manager access requested</p>}
         {preference.branding_notes && <p className="whitespace-pre-wrap break-words">{preference.branding_notes}</p>}
+        {preference.onsite_contact_name && <div className="space-y-1 pt-2"><p className="font-medium text-foreground">Onsite contact</p><p className="break-words">{preference.onsite_contact_name} · {preference.onsite_contact_phone}</p>{preference.onsite_contact_email && <p className="break-words">{preference.onsite_contact_email}</p>}</div>}
+        {preference.onsite_contact_name && <div className="pt-2"><p className="font-medium text-foreground">Special instructions</p><p className="whitespace-pre-wrap break-words">{preference.special_instructions || 'None provided'}</p></div>}
         <p>Confirmed {format(parseISO(preference.confirmed_at), 'd MMM yyyy, h:mm a')}</p>
       </div>}
       {open && deliveryDetails && <SendEmailDialog open={open} onOpenChange={setOpen} context="delivery"

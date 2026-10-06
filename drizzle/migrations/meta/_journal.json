@@ -120,6 +120,13 @@
       "when": 1791247267743,
       "tag": "0016_lead_delivery_choices",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791327014604,
+      "tag": "0017_delivery_booking_confirmation_details",
+      "breakpoints": true
     }
   ]
 }

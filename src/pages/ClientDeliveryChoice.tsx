@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { DELIVERY_CHOICES, deliveryChoiceLabel, requiresDeliveryTiming } from '@/lib/clientDeliveryOptions';
 import documentAsset from '@/assets/client-delivery-options.asset.json';
 import { deliveryPublicBaseUrl } from '@/lib/clientDeliveryOptions';
 
-interface RequestData { status: string; event_name?: string; event_date?: string; choice?: string; timing?: string; social_media_access?: boolean; branding_notes?: string; confirmed_at?: string }
+interface RequestData { status: string; event_name?: string; event_date?: string; choice?: string; timing?: string; social_media_access?: boolean; branding_notes?: string; confirmed_at?: string; onsite_contact_name?: string; onsite_contact_phone?: string; onsite_contact_email?: string; special_instructions?: string }
 
 export default function ClientDeliveryChoice() {
   const { token } = useParams();
@@ -21,6 +22,10 @@ export default function ClientDeliveryChoice() {
   const [timing, setTiming] = useState('');
   const [social, setSocial] = useState(false);
   const [notes, setNotes] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState('');
@@ -31,13 +36,15 @@ export default function ClientDeliveryChoice() {
       if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
         setRequest({ status: 'invalid' }); return;
       }
-      const { data, error: loadError } = await supabase.rpc('get_delivery_choice_request', { p_token: token });
+      const { data, error: loadError } = await supabase.rpc('get_booking_confirmation_request', { p_token: token });
       if (!active) return;
       const result = loadError ? { status: 'error' } : data as unknown as RequestData;
       setRequest(result);
       setChoice(result.choice || ''); setTiming(result.timing || '');
       setSocial(result.social_media_access || false); setNotes(result.branding_notes || '');
-      setConfirmed(!!result.confirmed_at);
+      setContactName(result.onsite_contact_name || ''); setContactPhone(result.onsite_contact_phone || '');
+      setContactEmail(result.onsite_contact_email || ''); setInstructions(result.special_instructions || '');
+      setConfirmed(!!result.confirmed_at && !!result.onsite_contact_name && !!result.onsite_contact_phone);
     };
     void load();
     return () => { active = false; };
@@ -45,12 +52,14 @@ export default function ClientDeliveryChoice() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !choice || (requiresDeliveryTiming(choice) && !timing)) return;
+    if (!token || !choice || !contactName.trim() || !contactPhone.trim() || (requiresDeliveryTiming(choice) && !timing)) return;
     setSaving(true); setError('');
     try {
-      const { data, error: saveError } = await supabase.rpc('submit_delivery_choice', {
+      const { data, error: saveError } = await supabase.rpc('submit_booking_confirmation', {
         p_token: token, p_choice: choice, p_timing: requiresDeliveryTiming(choice) ? timing : '',
         p_social_media_access: social, p_branding_notes: notes,
+        p_onsite_contact_name: contactName, p_onsite_contact_phone: contactPhone,
+        p_onsite_contact_email: contactEmail, p_special_instructions: instructions,
       });
       if (saveError) throw saveError;
       if ((data as { status?: string })?.status !== 'confirmed') throw new Error('This link has expired. Please ask EventPix for a new link.');
@@ -69,12 +78,14 @@ export default function ClientDeliveryChoice() {
         </header>
         {confirmed ? <section className="space-y-4 border-t pt-6">
           <CheckCircle2 className="h-10 w-10 text-success" />
-          <h2 className="text-xl font-semibold">Your delivery choice is confirmed</h2>
+          <h2 className="text-xl font-semibold">Your event details are confirmed</h2>
           <p>{deliveryChoiceLabel(choice)}{requiresDeliveryTiming(choice) ? ` · ${timing === 'immediate' ? 'Immediate' : 'Delayed'}` : ''}</p>
           <p className="text-muted-foreground">Dropbox is included. Thank you — your preference has been saved for this event.</p>
           {social && <p>Social media manager access requested</p>}
           {notes && <p className="whitespace-pre-wrap break-words">{notes}</p>}
-          <Button variant="outline" onClick={() => setConfirmed(false)}>Change my choice</Button>
+          <div className="space-y-1 border-t pt-4"><h3 className="font-semibold">Onsite contact</h3><p className="break-words">{contactName}</p><p>{contactPhone}</p>{contactEmail && <p className="break-words">{contactEmail}</p>}</div>
+          <div className="space-y-1"><h3 className="font-semibold">Special instructions</h3><p className="whitespace-pre-wrap break-words">{instructions || 'None provided'}</p></div>
+          <Button variant="outline" onClick={() => setConfirmed(false)}>Change my details</Button>
         </section> : <form onSubmit={submit} className="space-y-6 border-t pt-6">
           <div className="space-y-3"><h2 className="text-xl font-semibold">Choose your photo delivery</h2><p className="text-muted-foreground">Dropbox is included for every event. Your edited and culled photos are delivered within two working days.</p>
             <Button asChild variant="link" className="h-auto p-0"><a href={new URL(documentAsset.url, deliveryPublicBaseUrl()).href} download={documentAsset.original_filename}>Read the delivery-options document</a></Button>
@@ -91,8 +102,17 @@ export default function ClientDeliveryChoice() {
           </RadioGroup></div>}
           <Label className="flex items-start gap-3" htmlFor="social-access"><Checkbox id="social-access" checked={social} onCheckedChange={value => setSocial(value === true)} /><span>Also provide access for our social media manager</span></Label>
           <div className="space-y-2"><Label htmlFor="branding-notes">Branding, social media contact or other notes (optional)</Label><Textarea id="branding-notes" value={notes} onChange={e => setNotes(e.target.value)} maxLength={2000} rows={4} /></div>
+          <section className="space-y-4 border-t pt-6">
+            <h2 className="text-xl font-semibold">Onsite contact</h2>
+            <div className="space-y-2"><Label htmlFor="onsite-name">Contact name</Label><Input id="onsite-name" autoComplete="name" required maxLength={200} value={contactName} onChange={e => setContactName(e.target.value)} /></div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2"><Label htmlFor="onsite-phone">Mobile number</Label><Input id="onsite-phone" type="tel" autoComplete="tel" required maxLength={100} value={contactPhone} onChange={e => setContactPhone(e.target.value)} /></div>
+              <div className="space-y-2"><Label htmlFor="onsite-email">Email (optional)</Label><Input id="onsite-email" type="email" autoComplete="email" maxLength={320} value={contactEmail} onChange={e => setContactEmail(e.target.value)} /></div>
+            </div>
+            <div className="space-y-2"><Label htmlFor="special-instructions">Special instructions (optional)</Label><Textarea id="special-instructions" value={instructions} onChange={e => setInstructions(e.target.value)} maxLength={4000} rows={4} /></div>
+          </section>
           {error && <p role="alert" className="text-destructive">{error}</p>}
-          <Button type="submit" disabled={saving || !choice || (requiresDeliveryTiming(choice) && !timing)}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Confirm delivery choice</Button>
+          <Button type="submit" disabled={saving || !choice || !contactName.trim() || !contactPhone.trim() || (requiresDeliveryTiming(choice) && !timing)}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Confirm event details</Button>
         </form>}
       </>}
     </div>

@@ -2,6 +2,7 @@ Email send handlers must reject unresolved `{{...}}` placeholders before deliver
 The lead On Hold - Date TBA transition clears dates and lead-only sessions in database triggers, because status can be changed from several screens.
 Lead-status display ordering is centralized in the shared lead-status hook, so detail and edit menus agree without changing stored statuses.
 Client delivery preferences use dedicated expiring tokens and separate lead/event preference tables; conversion carries the response and client link into the event without changing operational delivery settings or workflows.
+Client onsite details and special instructions are saved atomically with delivery confirmation in the preference tables and carried on conversion; existing event contacts are never overwritten by a client response.
 Sales and Events delivery-options emails share preparation and the existing Gmail review dialog with a mandatory asset-backed attachment; conversion opens a review window and never sends automatically.
 Delivery-choice client links and document fetches use a published origin even during local/preview review, because asset delivery and client access require public hosting.
 Mandatory email attachments validate against their declared asset MIME type, not a hardcoded document format, so replacing the guide preserves sending while rejecting invalid downloads.
