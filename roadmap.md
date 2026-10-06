@@ -1,8 +1,8 @@
 # Roadmap
 
-## Current
-- [ ] Show availability counts beside each default series team assignment.
-- [ ] Add an option to send a team invitation covering all dates in the series.
+## Completed this update
+- [x] Show availability counts beside each default series team assignment, based on confirmed replies.
+- [x] Add an option to send one team invitation covering all dates in the series; verified without sending live email.
 
 ## Done
 - [x] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
