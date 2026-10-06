@@ -5,7 +5,7 @@
  * - Send Email tab: Compose and send emails
  * - Mail History tab: View sent/received emails
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, Send, History } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import { MailHistoryPanel } from '@/components/MailHistoryPanel';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
-import type { CrmContact } from '@/hooks/useContactSearch';
+import { useContactById, type CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { DELIVERY_TEMPLATE_NAME } from '@/lib/clientDeliveryOptions';
@@ -36,6 +36,7 @@ interface LeadMailTabsProps {
   contactEmail?: string | null;
   defaultRecipientName?: string;
   defaultRecipientEmail?: string;
+  defaultRecipientContactId?: string | null;
   leadName?: string;
   maxItems?: number;
   forceTab?: string;
@@ -48,6 +49,7 @@ export function LeadMailTabs({
   contactEmail,
   defaultRecipientName,
   defaultRecipientEmail,
+  defaultRecipientContactId,
   leadName,
   maxItems = 10,
   forceTab,
@@ -67,16 +69,28 @@ export function LeadMailTabs({
   const sendEmail = useSendCrmEmail();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(defaultRecipientContactId || null);
   const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
   const [recipientEmail, setRecipientEmail] = useState(defaultRecipientEmail || '');
   const [recipientName, setRecipientName] = useState(defaultRecipientName || '');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const recipientEdited = useRef(false);
+  const { data: defaultContact } = useContactById(defaultRecipientContactId);
+
+  // Contact details arrive after the lead itself. Adopt them without replacing a staff-selected recipient.
+  useEffect(() => {
+    if (recipientEdited.current) return;
+    setSelectedContactId(defaultRecipientContactId || null);
+    setSelectedContact(defaultContact || null);
+    setRecipientEmail(defaultContact?.email || defaultRecipientEmail || '');
+    setRecipientName(defaultContact?.contact_name || defaultRecipientName || '');
+  }, [defaultRecipientContactId, defaultContact, defaultRecipientEmail, defaultRecipientName]);
 
   // Handle contact selection
   const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
+    recipientEdited.current = true;
     setSelectedContactId(contactId);
     setSelectedContact(contact || null);
     if (contact) {
@@ -210,7 +224,7 @@ export function LeadMailTabs({
                   id="email"
                   type="email"
                   value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  onChange={(e) => { recipientEdited.current = true; setRecipientEmail(e.target.value); }}
                   placeholder="email@example.com"
                   className="h-9"
                 />
@@ -220,7 +234,7 @@ export function LeadMailTabs({
                 <Input
                   id="name"
                   value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
+                  onChange={(e) => { recipientEdited.current = true; setRecipientName(e.target.value); }}
                   placeholder="Contact name"
                   className="h-9"
                 />

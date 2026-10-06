@@ -394,11 +394,13 @@ export default function LeadDetail(): JSX.Element {
           {/* Mail Tabs: Send Email + History */}
           <div ref={mailTabsRef}>
             <LeadMailTabs
+              key={lead.id}
               leadId={id!}
               clientId={(lead as any).client_id}
               contactEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
               defaultRecipientName={leadContacts[0]?.client_contact?.contact_name || leadContacts[0]?.contact_name}
               defaultRecipientEmail={leadContacts[0]?.client_contact?.email || leadContacts[0]?.contact_email}
+              defaultRecipientContactId={leadContacts[0]?.contact_id}
               leadName={lead.lead_name}
               maxItems={10}
               forceTab={forceMailTab}

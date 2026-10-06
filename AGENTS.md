@@ -4,3 +4,4 @@ Lead-status display ordering is centralized in the shared lead-status hook, so d
 Client delivery preferences use dedicated expiring tokens and separate lead/event preference tables; conversion carries the response and client link into the event without changing operational delivery settings or workflows.
 Sales and Events delivery-options emails share preparation and the existing Gmail review dialog with a mandatory asset-backed attachment; conversion opens a review window and never sends automatically.
 Delivery-choice client links and document fetches use a published origin even during local/preview review, because asset delivery and client access require public hosting.
+Lead email recipient defaults carry the existing enquiry contact ID and hydrate when contact data loads, without overwriting staff edits, because linked contacts must not appear as unlinked legacy recipients.
