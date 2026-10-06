@@ -181,17 +181,25 @@
        for (const eventId of event_ids) {
          for (const assignment of default_assignments) {
            // Check if already assigned
-           const { data: existing } = await supabase
+           const { data: existing, error: lookupError } = await supabase
              .from('event_assignments')
              .select('id')
              .eq('event_id', eventId)
              .eq('user_id', assignment.user_id)
+             .limit(1)
              .maybeSingle();
+
+           if (lookupError) {
+             results.errors.push(`Event ${eventId}: ${lookupError.message}`);
+             continue;
+           }
            
            if (existing) {
              results.skipped++;
              continue;
            }
+
+
            
            // Create assignment
            const { error } = await supabase
@@ -232,3 +240,24 @@
      },
    });
  }
+
+// One invitation to one team member, containing their complete series schedule.
+export function useSendSeriesInvitation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { series_id: string; user_id: string }) => {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { type: 'series_assignment', ...params },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Invitation could not be sent');
+      return data;
+    },
+    onSuccess: (_, params) => {
+      queryClient.invalidateQueries({ queryKey: ['series-events', params.series_id] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Series invitation sent');
+    },
+    onError: (error: Error) => toast.error('Invitation not sent', { description: error.message }),
+  });
+}

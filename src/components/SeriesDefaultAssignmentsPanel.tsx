@@ -1,5 +1,5 @@
  import { useState, useMemo } from 'react';
- import { Users, Plus, Trash2, RefreshCw, UserCheck, Loader2 } from 'lucide-react';
+ import { Users, Plus, Trash2, RefreshCw, UserCheck, Loader2, Mail } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,7 @@
    useUpdateSeriesDefaultAssignment,
    useRemoveSeriesDefaultAssignment,
    useSyncDefaultAssignmentsToEvents,
+   useSendSeriesInvitation,
  } from '@/hooks/useSeriesDefaultAssignments';
  import { useStaffDirectory } from '@/hooks/useStaff';
  import { useStaffRoles } from '@/hooks/useLookups';
@@ -46,7 +47,7 @@
  
  export function SeriesDefaultAssignmentsPanel({ seriesId }: SeriesDefaultAssignmentsPanelProps) {
    const { data: assignments = [], isLoading } = useSeriesDefaultAssignments(seriesId);
-   const { data: events = [] } = useSeriesEvents(seriesId);
+  const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useSeriesEvents(seriesId);
    const { data: staffMembers = [] } = useStaffDirectory();
    const { data: staffRoles = [] } = useStaffRoles();
    
@@ -54,11 +55,26 @@
    const updateAssignment = useUpdateSeriesDefaultAssignment();
    const removeAssignment = useRemoveSeriesDefaultAssignment();
    const syncToEvents = useSyncDefaultAssignmentsToEvents();
+   const sendSeriesInvitation = useSendSeriesInvitation();
    
    const [selectedUserId, setSelectedUserId] = useState('');
    const [selectedRoleId, setSelectedRoleId] = useState('');
    const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
    const [removeId, setRemoveId] = useState<string | null>(null);
+   const [inviteId, setInviteId] = useState<string | null>(null);
+   const invitedMember = assignments.find(assignment => assignment.id === inviteId);
+
+   const handleSendSeriesInvitation = async () => {
+     if (!invitedMember || !events.length) return;
+     const result = await syncToEvents.mutateAsync({
+       series_id: seriesId,
+       event_ids: events.map(event => event.id),
+       default_assignments: [invitedMember],
+     });
+     if (result.errors.length) return;
+     await sendSeriesInvitation.mutateAsync({ series_id: seriesId, user_id: invitedMember.user_id });
+     setInviteId(null);
+   };
    
    // Filter out already assigned staff
    const availableStaff = useMemo(() => {
@@ -66,6 +82,26 @@
      // StaffDirectoryEntry uses id as the user_id, and source 'profile' means it's a profile
      return staffMembers.filter(s => s.source === 'profile' && !assignedUserIds.has(s.id));
    }, [staffMembers, assignments]);
+
+  // Count each event once; all of the member's session assignments must be confirmed.
+  const confirmedEventCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const event of events) {
+      const memberAssignments = new Map<string, string[]>();
+      for (const assignment of event.event_assignments ?? []) {
+        if (!assignment.user_id) continue;
+        const statuses = memberAssignments.get(assignment.user_id) ?? [];
+        statuses.push(assignment.confirmation_status ?? 'pending');
+        memberAssignments.set(assignment.user_id, statuses);
+      }
+      for (const [userId, statuses] of memberAssignments) {
+        if (statuses.every(status => status === 'confirmed')) {
+          counts.set(userId, (counts.get(userId) ?? 0) + 1);
+        }
+      }
+    }
+    return counts;
+  }, [events]);
    
    // Count upcoming events
    const upcomingEventCount = useMemo(() => {
@@ -219,7 +255,8 @@
                  <TableRow>
                    <TableHead>Staff Member</TableHead>
                    <TableHead>Role</TableHead>
-                   <TableHead className="w-20"></TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead className="w-56">Actions</TableHead>
                  </TableRow>
                </TableHeader>
                <TableBody>
@@ -264,14 +301,46 @@
                        </Select>
                      </TableCell>
                      <TableCell>
+                       {eventsLoading ? (
+                         <span className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+                           <Loader2 className="h-4 w-4 animate-spin" />
+                           Loading status…
+                         </span>
+                       ) : eventsError ? (
+                         <span className="text-sm text-muted-foreground">Status unavailable</span>
+                       ) : (
+                         <Badge
+                           variant="secondary"
+                           className={(confirmedEventCounts.get(assignment.user_id) ?? 0) > 0
+                             ? 'border-success/30 bg-success/15 text-success'
+                             : 'text-muted-foreground'}
+                           title="Confirmed replies across the series; all assigned sessions in an event must be confirmed."
+                         >
+                           Available for {confirmedEventCounts.get(assignment.user_id) ?? 0} of {events.length} event{events.length !== 1 ? 's' : ''}
+                         </Badge>
+                       )}
+                     </TableCell>
+                     <TableCell>
+                       <div className="flex items-center justify-end gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => setInviteId(assignment.id)}
+                         disabled={eventsLoading || eventsError || !events.length || sendSeriesInvitation.isPending || syncToEvents.isPending}
+                       >
+                         <Mail className="mr-2 h-4 w-4" />
+                         Invite to all dates
+                       </Button>
                        <Button
                          variant="ghost"
                          size="icon"
                          onClick={() => setRemoveId(assignment.id)}
                          className="text-destructive hover:text-destructive"
+                         aria-label={`Remove ${assignment.user?.full_name || 'team member'}`}
                        >
                          <Trash2 className="h-4 w-4" />
                        </Button>
+                       </div>
                      </TableCell>
                    </TableRow>
                  ))}
@@ -301,6 +370,23 @@
        </Card>
        
        {/* Confirm Sync Dialog */}
+       <AlertDialog open={!!inviteId} onOpenChange={(open) => { if (!open && !sendSeriesInvitation.isPending && !syncToEvents.isPending) setInviteId(null); }}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Invite to all series dates?</AlertDialogTitle>
+             <AlertDialogDescription>
+               Send one invitation to {invitedMember?.user?.full_name || 'this team member'} at {invitedMember?.user?.email}, covering all {events.length} events. Missing assignments will be added first. They can confirm or decline each date separately; existing replies are kept.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel disabled={sendSeriesInvitation.isPending || syncToEvents.isPending}>Cancel</AlertDialogCancel>
+             <Button disabled={sendSeriesInvitation.isPending || syncToEvents.isPending} onClick={() => { void handleSendSeriesInvitation().catch(() => undefined); }}>
+               {sendSeriesInvitation.isPending || syncToEvents.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+               Send invitation
+             </Button>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
        <AlertDialog open={confirmSyncOpen} onOpenChange={setConfirmSyncOpen}>
          <AlertDialogContent>
            <AlertDialogHeader>

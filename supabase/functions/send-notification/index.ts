@@ -1,15 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
 
 interface NotificationRequest {
-  type: "assignment" | "assignment_confirmed" | "event_update";
+  type: "assignment" | "assignment_confirmed" | "event_update" | "lead_on_hold" | "series_assignment";
   event_id: string;
+  series_id?: string;
+  lead_id?: string;
+  dry_run?: boolean;
   user_id?: string;
   assignment_id?: string;
   user_ids?: string[];
@@ -284,7 +283,58 @@ const handler = async (req: Request): Promise<Response> => {
     if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { type, event_id, user_id, assignment_id, user_ids, lead_id }: NotificationRequest = await req.json();
+    const { type, event_id, user_id, assignment_id, user_ids, lead_id, series_id, dry_run }: NotificationRequest = await req.json();
+
+    if (type === 'series_assignment') {
+      if (!series_id || !user_id || !/^[0-9a-f-]{36}$/i.test(series_id) || !/^[0-9a-f-]{36}$/i.test(user_id)) {
+        return new Response(JSON.stringify({ error: 'Series and team member are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const { data: series, error: seriesError } = await supabaseUser.from('event_series').select('id, name').eq('id', series_id).maybeSingle();
+      const { data: defaultAssignment, error: defaultError } = await supabaseUser.from('series_default_assignments').select('id').eq('series_id', series_id).eq('user_id', user_id).maybeSingle();
+      if (seriesError || defaultError || !series || !defaultAssignment) throw new Error('Series or default team assignment not found');
+      const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', user_id).maybeSingle();
+      if (!profile?.email) throw new Error('This team member has no email address');
+      const { data: seriesEvents, error: eventsError } = await supabaseUser.from('events')
+        .select('*, event_assignments(id, user_id, session_id, confirm_token, confirmation_status), event_sessions(*)')
+        .eq('event_series_id', series_id).or('ops_status.is.null,ops_status.neq.cancelled').order('event_date');
+      if (eventsError) throw eventsError;
+      if (!seriesEvents?.length) throw new Error('There are no dates in this series');
+      const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
+      const invitationIds: string[] = [];
+      const calendarParts: string[] = [];
+      const blocks = seriesEvents.map(event => {
+        const assignments = event.event_assignments.filter((assignment: any) => assignment.user_id === user_id);
+        if (!assignments.length) throw new Error('Sync this team member to all dates before sending');
+        const sessions = [...event.event_sessions].sort((a: any, b: any) => a.session_date.localeCompare(b.session_date));
+        const assignedSessions = assignments.some((assignment: any) => !assignment.session_id) ? sessions : sessions.filter((session: any) => assignments.some((assignment: any) => assignment.session_id === session.id));
+        calendarParts.push(generateICS(event, event.calendar_sequence || 0, appUrl, undefined, assignedSessions));
+        const replies = assignments.map((assignment: any) => {
+          invitationIds.push(assignment.id);
+          const session = sessions.find((session: any) => session.id === assignment.session_id);
+          const date = session?.session_date || event.event_date;
+          const time = session?.arrival_time || session?.start_time || event.start_time;
+          const finish = session?.end_time || event.end_time;
+          const label = `${formatDate(date)}${session?.label ? ` · ${session.label}` : ''}${time ? ` · ${formatTime(time)}${finish ? ` – ${formatTime(finish)}` : ''}` : ''}`;
+          if (assignment.confirmation_status === 'on_hold') return `<p>${escapeHtml(label)} — On hold</p>`;
+          if (!assignment.confirm_token) throw new Error('An assignment is missing its confirmation link');
+          return `<p>${escapeHtml(label)}<br>Status: ${escapeHtml(assignment.confirmation_status)}<br><a href="${appUrl}/confirm-assignment/${encodeURIComponent(assignment.confirm_token)}">Click here to Confirm</a> &nbsp; <a href="${appUrl}/decline-assignment/${encodeURIComponent(assignment.confirm_token)}">Not available</a></p>`;
+        }).join('');
+        return `<section style="border-bottom:1px solid #ddd;padding:16px 0"><h2 style="font-size:18px">${escapeHtml(event.event_name)}</h2>${event.venue_name ? `<p>${escapeHtml(event.venue_name)}</p>` : ''}${replies}</section>`;
+      }).join('');
+      const subject = `Eventpix - Series invitation: ${series.name} - ${seriesEvents.length} events`;
+      const firstName = (profile.full_name || '').trim().split(/\s+/)[0] || 'there';
+      const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#fff;color:#111"><main style="max-width:640px;margin:0 auto;padding:24px"><h1>${escapeHtml(series.name)}</h1><p>Hi ${escapeHtml(firstName)},</p><p>You are invited to the following dates. Please confirm your availability for each date below.</p>${blocks}<p>Thanks,<br>Eventpix</p></main></body></html>`;
+      if (/\{\{[^}]+\}\}/.test(html + subject)) throw new Error('Invitation contains unfilled placeholders');
+      const timezones = new Set(calendarParts.flatMap(part => part.match(/BEGIN:VTIMEZONE[\s\S]*?END:VTIMEZONE/g) || []));
+      const entries = calendarParts.flatMap(part => part.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g) || []);
+      const calendar = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Eventpix//Event Management//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:REQUEST\r\n${[...timezones, ...entries].join('\r\n')}\r\nEND:VCALENDAR`;
+      if (dry_run === true) return new Response(JSON.stringify({ success: true, html, subject, event_count: seriesEvents.length, assignment_count: invitationIds.length, calendar }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      await sendViaGmailApi(profile.email, subject, html, calendar);
+      const { error: updateError } = await supabaseUser.from('event_assignments').update({ notified: true, notification_sent_at: new Date().toISOString() }).in('id', invitationIds);
+      if (updateError) console.error('Failed to record series invitation date:', updateError);
+      for (const event of seriesEvents) await logNotificationEmail(supabase, { recipientEmail: profile.email, recipientName: profile.full_name || profile.email, subject, eventId: event.id, sentBy: user.id });
+      return new Response(JSON.stringify({ success: true, event_count: seriesEvents.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (type === "lead_on_hold") {
       if (!lead_id || !/^[0-9a-f-]{36}$/i.test(lead_id)) {
@@ -323,7 +373,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ success: true, count }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).single();
+    const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).maybeSingle();
     if (eventError || !event) throw new Error(`Event not found: ${eventError?.message}`);
 
     let recipientEmail: string | null = null;
@@ -449,9 +499,10 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ success: true, message: `Notified ${results.length} staff members` }), { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    const html = buildEmailHtml(recipientName!, subject, event, appUrl, confirmToken);
+    if (!recipientName || !recipientEmail) throw new Error('Recipient email is missing');
+    const html = buildEmailHtml(recipientName, subject, event, appUrl, confirmToken);
     await sendViaGmailApi(`"${recipientName}" <${recipientEmail}>`, subject, html, icsContent);
-    await logNotificationEmail(supabase, { recipientEmail: recipientEmail!, recipientName: recipientName!, subject, eventId: event_id, sentBy: user.id });
+    await logNotificationEmail(supabase, { recipientEmail, recipientName, subject, eventId: event_id, sentBy: user.id });
     if (assignment_id) {
       const { error: assignmentUpdateError } = await supabaseUser
         .from("event_assignments")

@@ -208,7 +208,7 @@ export function useSeriesEvents(seriesId: string | undefined) {
           *,
           event_type:event_types!events_event_type_id_fkey(name),
           delivery_method:delivery_methods_lookup!events_delivery_method_id_fkey(name),
-          event_assignments(id, user_id)
+          event_assignments(id, user_id, confirmation_status)
         `)
         .eq('event_series_id', seriesId)
         .or('ops_status.is.null,ops_status.neq.cancelled')
