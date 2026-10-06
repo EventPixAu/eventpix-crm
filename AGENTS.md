@@ -6,3 +6,4 @@ Sales and Events delivery-options emails share preparation and the existing Gmai
 Delivery-choice client links and document fetches use a published origin even during local/preview review, because asset delivery and client access require public hosting.
 Mandatory email attachments validate against their declared asset MIME type, not a hardcoded document format, so replacing the guide preserves sending while rejecting invalid downloads.
 Lead email recipient defaults carry the existing enquiry contact ID and hydrate when contact data loads, without overwriting staff edits, because linked contacts must not appear as unlinked legacy recipients.
+Series default-assignment availability uses confirmed replies from the shared series-events query, counting each event once only when all of a member's session assignments are confirmed, so multi-session rows cannot inflate availability or imply full-event confirmation prematurely.
