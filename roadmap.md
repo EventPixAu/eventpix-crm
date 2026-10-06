@@ -2,6 +2,7 @@
 
 ## Current
 - [ ] Show availability counts beside each default series team assignment.
+- [ ] Add an option to send a team invitation covering all dates in the series.
 
 ## Done
 - [x] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
