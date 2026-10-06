@@ -321,17 +321,25 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
   const totals = useMemo(() => {
     let perEventSubtotal = 0;
     let flatSubtotal = 0;
+    let gstTotal = 0;
     for (const it of items) {
       const price = Number(it.unit_price) || 0;
+      const mult = it.pricing_basis === 'per_event' ? activeEventCount : 1;
+      const lineTotal = price * mult;
+      // Unit prices are GST-inclusive (same convention as event budgets):
+      // the GST component of a line is total * rate / (1 + rate).
+      const rate = Number(it.tax_rate) || 0;
+      gstTotal += (lineTotal * rate) / (1 + rate);
       if (it.pricing_basis === 'per_event') {
-        perEventSubtotal += price * activeEventCount;
+        perEventSubtotal += lineTotal;
       } else {
-        flatSubtotal += price;
+        flatSubtotal += lineTotal;
       }
     }
     return {
       perEventSubtotal,
       flatSubtotal,
+      gstTotal,
       grandTotal: perEventSubtotal + flatSubtotal,
     };
   }, [items, activeEventCount]);
@@ -344,7 +352,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       {
         description: '',
         unit_price: 0,
-        tax_rate: 0,
+        tax_rate: 0.1,
         pricing_basis: 'per_event',
         sort_order: prev.length,
       },
@@ -394,7 +402,8 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
         quote_name: quoteName || `${seriesName} — Series Agreement`,
         notes,
         terms_text: termsText,
-        subtotal: totals.grandTotal,
+        subtotal: totals.grandTotal - totals.gstTotal,
+        tax_total: totals.gstTotal,
         total_estimate: totals.grandTotal,
         updated_at: new Date().toISOString(),
       };
@@ -855,8 +864,14 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
                 <span>Events</span>
                 <span>{activeEventCount}</span>
               </div>
+              <div className="flex justify-between">
+                <span>Includes GST (10%)</span>
+                <span className="font-mono">
+                  ${totals.gstTotal.toFixed(2)}
+                </span>
+              </div>
               <div className="flex justify-between border-t pt-2 mt-2 font-semibold">
-                <span>Grand total</span>
+                <span>Grand total (incl GST)</span>
                 <span className="font-mono">
                   ${totals.grandTotal.toFixed(2)}
                 </span>
