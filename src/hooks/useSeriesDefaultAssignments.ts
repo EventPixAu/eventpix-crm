@@ -193,26 +193,7 @@
              continue;
            }
 
-// One invitation to one team member, containing their complete series schedule.
-export function useSendSeriesInvitation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (params: { series_id: string; user_id: string }) => {
-      const { data, error } = await supabase.functions.invoke('send-notification', {
-        body: { type: 'series_assignment', ...params },
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Invitation could not be sent');
-      return data;
-    },
-    onSuccess: (_, params) => {
-      queryClient.invalidateQueries({ queryKey: ['series-events', params.series_id] });
-      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
-      toast.success('Series invitation sent');
-    },
-    onError: (error: Error) => toast.error('Invitation not sent', { description: error.message }),
-  });
-}
+
            
            // Create assignment
            const { error } = await supabase
@@ -253,3 +234,24 @@ export function useSendSeriesInvitation() {
      },
    });
  }
+
+// One invitation to one team member, containing their complete series schedule.
+export function useSendSeriesInvitation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { series_id: string; user_id: string }) => {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { type: 'series_assignment', ...params },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Invitation could not be sent');
+      return data;
+    },
+    onSuccess: (_, params) => {
+      queryClient.invalidateQueries({ queryKey: ['series-events', params.series_id] });
+      queryClient.invalidateQueries({ queryKey: ['event-assignments'] });
+      toast.success('Series invitation sent');
+    },
+    onError: (error: Error) => toast.error('Invitation not sent', { description: error.message }),
+  });
+}
