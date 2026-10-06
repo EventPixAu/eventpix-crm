@@ -1,5 +1,8 @@
 # Roadmap
 
+## Current
+- [ ] Show availability counts beside each default series team assignment.
+
 ## Done
 - [x] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
 - [x] Reuse an existing contact without requiring it to be linked again.
