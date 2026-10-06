@@ -1,10 +1,8 @@
 # Roadmap
 
-## In progress
-- [ ] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
-- [ ] Reuse an existing contact without requiring it to be linked again.
-
 ## Done
+- [x] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
+- [x] Reuse an existing contact without requiring it to be linked again.
 - [x] Add a Declined list page showing declined team members with event, date and reason (route `/declined`, Operations nav "Declined").
 - [x] Record decline reason + declined_at when crew declines (Job Sheets dialog and public "Not available" page).
 - [x] Remove the assignment counts ("N confirmed / N pending") from the second row of the Events list — pills on the first row remain.
