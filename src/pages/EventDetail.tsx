@@ -1663,6 +1663,11 @@ export default function EventDetail() {
                   currentUserId={user?.id}
                 />
               )}
+
+              {/* Mail History */}
+              {(isAdmin || canSeeSection('mail_history')) && id && (
+                <MailHistoryPanel eventId={id} maxItems={5} />
+              )}
             </motion.div>
 
             {/* Column 3: Quick Actions, Workflow, Tasks, Contracts */}
@@ -1932,11 +1937,6 @@ export default function EventDetail() {
                   eventWebPageLink={(event as any).event_web_page_link || null}
                   isAdmin={isAdmin || isOperations || isSales}
                 />
-              )}
-
-              {/* Mail History */}
-              {(isAdmin || canSeeSection('mail_history')) && id && (
-                <MailHistoryPanel eventId={id} maxItems={5} />
               )}
 
               {/* Setup Tasks */}
