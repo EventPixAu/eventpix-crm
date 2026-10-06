@@ -4,7 +4,7 @@ import documentAsset from '@/assets/client-delivery-options.asset.json';
 
 export const deliveryGuideAttachment = () => ({
   url: new URL(documentAsset.url, deliveryPublicBaseUrl()).href,
-  filename: 'Client_delivery_options.docx',
+  filename: documentAsset.original_filename,
   contentType: documentAsset.content_type,
 });
 
