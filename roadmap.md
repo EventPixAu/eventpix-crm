@@ -1,5 +1,8 @@
 # Roadmap
 
+## In progress
+- [ ] Make the delivery-options email identical from Sales and Events, including the document and event-linked client response.
+
 ## Done
 - [x] Add a Declined list page showing declined team members with event, date and reason (route `/declined`, Operations nav "Declined").
 - [x] Record decline reason + declined_at when crew declines (Job Sheets dialog and public "Not available" page).
