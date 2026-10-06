@@ -26,6 +26,9 @@ import { useSendCrmEmail } from '@/hooks/useSendCrmEmail';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/integrations/supabase/client';
 import { getPublicBaseUrl } from '@/lib/utils';
+import { DELIVERY_TEMPLATE_NAME } from '@/lib/clientDeliveryOptions';
+import { LeadDeliveryChoicePanel } from '@/components/LeadDeliveryChoicePanel';
+import { SendEmailDialog } from '@/components/SendEmailDialog';
 
 interface LeadMailTabsProps {
   leadId: string;
@@ -70,6 +73,7 @@ export function LeadMailTabs({
   const [recipientName, setRecipientName] = useState(defaultRecipientName || '');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
 
   // Handle contact selection
   const handleContactChange = (contactId: string | null, contact?: CrmContact | null) => {
@@ -131,6 +135,11 @@ export function LeadMailTabs({
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId === 'none' ? '' : templateId);
     const template = templates?.find(t => t.id === templateId);
+    if (template?.name === DELIVERY_TEMPLATE_NAME) {
+      setSelectedTemplateId('');
+      setDeliveryOpen(true);
+      return;
+    }
     if (template) {
       setSubject(processMergeFields(template.subject));
       const rawBody = template.body_text || template.body_html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '');
@@ -284,6 +293,9 @@ export function LeadMailTabs({
           />
         </TabsContent>
       </Tabs>
+      <LeadDeliveryChoicePanel leadId={leadId} clientId={clientId} clientName={defaultRecipientName} clientEmail={defaultRecipientEmail} />
+      {deliveryOpen && <SendEmailDialog open={deliveryOpen} onOpenChange={setDeliveryOpen} context="delivery"
+        leadId={leadId} clientId={clientId || ''} clientName={recipientName} clientEmail={recipientEmail} />}
     </div>
   );
 }

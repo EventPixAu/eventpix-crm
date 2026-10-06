@@ -703,6 +703,7 @@ export default function LeadDetail(): JSX.Element {
       <SendEmailDialog
         open={isSendBudgetsOpen}
         onOpenChange={setIsSendBudgetsOpen}
+        leadId={lead.id}
         clientId={client?.id || ''}
         clientEmail={client?.primary_contact_email}
         clientName={client?.primary_contact_name}
