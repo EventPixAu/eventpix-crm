@@ -127,6 +127,13 @@
       "when": 1791327014604,
       "tag": "0017_delivery_booking_confirmation_details",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791353631739,
+      "tag": "0018_photo_delivery_choice_mode",
+      "breakpoints": true
     }
   ]
 }
