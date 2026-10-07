@@ -134,6 +134,13 @@
       "when": 1791353631739,
       "tag": "0018_photo_delivery_choice_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791415666900,
+      "tag": "0019_owner_response_notifications",
+      "breakpoints": true
     }
   ]
 }
