@@ -36,7 +36,7 @@ interface PublicQuoteData {
   valid_until: string | null;
   terms_text: string | null;
   accepted_at: string | null;
-  selection_mode: 'standard' | 'single_choice' | null;
+  selection_mode: 'standard' | 'single_choice' | 'photo_delivery_choice' | null;
   intro_text: string | null;
   quote_name: string | null;
   items: PublicQuoteItem[];
@@ -51,6 +51,7 @@ export default function PublicAcceptQuote() {
   const [accepted, setAccepted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [includeDelivery, setIncludeDelivery] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,6 +85,8 @@ export default function PublicAcceptQuote() {
   };
 
   const isSingleChoice = quote?.selection_mode === 'single_choice';
+  const isDeliveryChoice = quote?.selection_mode === 'photo_delivery_choice';
+  const isDeliveryItem = (i: PublicQuoteItem) => (i.group_label || '').trim().toLowerCase() === 'delivery';
 
   const handleAccept = async () => {
     if (!token || !formData.name.trim() || !formData.email.trim()) {
@@ -94,6 +97,10 @@ export default function PublicAcceptQuote() {
       toast.error('Please select one option');
       return;
     }
+    if (isDeliveryChoice && includeDelivery === null) {
+      toast.error('Please choose Photography only or Photography + Delivery');
+      return;
+    }
     setAccepting(true);
     try {
       const { data, error } = await supabase.rpc('accept_quote_public', {
@@ -101,6 +108,7 @@ export default function PublicAcceptQuote() {
         p_name: formData.name,
         p_email: formData.email,
         p_selected_item_id: isSingleChoice ? selectedItemId : null,
+        p_include_delivery: isDeliveryChoice ? includeDelivery : null,
       } as any);
       if (error) throw error;
       const result = data as { success: boolean; error?: string };
@@ -197,9 +205,20 @@ export default function PublicAcceptQuote() {
   const selectedItem = isSingleChoice
     ? quote.items.find((i) => i.id === selectedItemId) || null
     : null;
-  const selectedSubtotal = selectedItem ? selectedItem.quantity * selectedItem.unit_price : 0;
-  const selectedTax = isSingleChoice ? selectedSubtotal * 0.1 : (quote.tax_total || 0);
-  const selectedTotal = isSingleChoice ? selectedSubtotal + selectedTax : (quote.total_estimate || 0);
+  const sumEx = (list: PublicQuoteItem[]) => list.reduce((t, i) => t + i.quantity * i.unit_price, 0);
+  const photoItems = quote.items.filter((i) => !isDeliveryItem(i));
+  const photoOnlyEx = sumEx(photoItems);
+  const withDeliveryEx = sumEx(quote.items);
+  const visibleItems = isDeliveryChoice && includeDelivery === false ? photoItems : quote.items;
+  const selectedSubtotal = isSingleChoice
+    ? (selectedItem ? selectedItem.quantity * selectedItem.unit_price : 0)
+    : isDeliveryChoice
+    ? (includeDelivery === null ? 0 : includeDelivery ? withDeliveryEx : photoOnlyEx)
+    : (quote.subtotal || 0);
+  const isChoice = isSingleChoice || isDeliveryChoice;
+  const selectedTax = isChoice ? selectedSubtotal * 0.1 : (quote.tax_total || 0);
+  const selectedTotal = isChoice ? selectedSubtotal + selectedTax : (quote.total_estimate || 0);
+  const choiceMade = isSingleChoice ? !!selectedItem : isDeliveryChoice ? includeDelivery !== null : true;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -284,9 +303,40 @@ export default function PublicAcceptQuote() {
                   })}
                 </div>
               ) : (
-                (() => {
+                <>
+                {isDeliveryChoice && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {([
+                      { val: false, label: 'Photography only', ex: photoOnlyEx },
+                      { val: true, label: 'Photography + Delivery', ex: withDeliveryEx },
+                    ] as const).map((opt) => {
+                      const isSel = includeDelivery === opt.val;
+                      return (
+                        <label
+                          key={opt.label}
+                          className={`flex items-start gap-3 rounded-lg border p-4 cursor-pointer transition-colors ${
+                            isSel ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:border-muted-foreground/50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="delivery-option"
+                            checked={isSel}
+                            onChange={() => setIncludeDelivery(opt.val)}
+                            className="mt-1 h-4 w-4 accent-primary"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">{opt.label}</div>
+                            <div className="text-sm text-muted-foreground">{formatCurrency(opt.ex * 1.1)} incl. GST</div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                {(() => {
                   const groups: Record<string, PublicQuoteItem[]> = {};
-                  quote.items.forEach((item) => {
+                  visibleItems.forEach((item) => {
                     const key = item.group_label || 'Other';
                     if (!groups[key]) groups[key] = [];
                     groups[key].push(item);
@@ -313,7 +363,7 @@ export default function PublicAcceptQuote() {
                       </div>
                     ));
                   }
-                  return quote.items.map((item, index) => (
+                  return visibleItems.map((item, index) => (
                     <div key={index} className="flex justify-between items-start gap-8">
                       <div className="flex-1">
                         <div className="font-medium">{item.description}</div>
@@ -326,7 +376,8 @@ export default function PublicAcceptQuote() {
                       </div>
                     </div>
                   ));
-                })()
+                })()}
+                </>
               )}
 
               <Separator />
@@ -334,7 +385,7 @@ export default function PublicAcceptQuote() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Subtotal (ex GST)</span>
-                  <span>{formatCurrency(isSingleChoice ? selectedSubtotal : (quote.subtotal || 0))}</span>
+                  <span>{formatCurrency(selectedSubtotal)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">GST (10%)</span>
@@ -344,7 +395,7 @@ export default function PublicAcceptQuote() {
                   <span>Total (incl. GST)</span>
                   <span className="text-primary">{formatCurrency(selectedTotal)}</span>
                 </div>
-                {isSingleChoice && !selectedItem && (
+                {isChoice && !choiceMade && (
                   <p className="text-xs text-muted-foreground text-right">
                     Select an option above to see the total.
                   </p>
@@ -411,13 +462,13 @@ export default function PublicAcceptQuote() {
                   !formData.name.trim() ||
                   !formData.email.trim() ||
                   accepting ||
-                  (isSingleChoice && !selectedItemId)
+                  !choiceMade
                 }
               >
                 {accepting
                   ? 'Processing...'
-                  : isSingleChoice
-                  ? selectedItem
+                  : isChoice
+                  ? choiceMade
                     ? `Accept — ${formatCurrency(selectedTotal)}`
                     : 'Select an option to continue'
                   : 'Accept Quote'}
