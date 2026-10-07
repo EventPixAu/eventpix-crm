@@ -141,6 +141,13 @@
       "when": 1791415666900,
       "tag": "0019_owner_response_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791415749917,
+      "tag": "0020_fix_owner_lookup",
+      "breakpoints": true
     }
   ]
 }
