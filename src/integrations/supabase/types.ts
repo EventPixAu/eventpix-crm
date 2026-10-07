@@ -7782,6 +7782,7 @@ export type Database = {
         Args: {
           p_accepted_by_email?: string
           p_accepted_by_name?: string
+          p_include_delivery?: boolean
           p_quote_id: string
           p_selected_item_id?: string
         }
@@ -7790,6 +7791,7 @@ export type Database = {
       accept_quote_public: {
         Args: {
           p_email: string
+          p_include_delivery?: boolean
           p_name: string
           p_selected_item_id?: string
           p_token: string
