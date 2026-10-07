@@ -1789,16 +1789,20 @@ export default function EventDetail() {
                         contactName={primaryContactName}
                         eventId={event.id}
                         eventPortalToken={event.client_portal_token}
-                        contacts={eventContacts
-                          .filter(c => {
-                            const email = c.contact_email || c.client_contact?.email;
-                            return !!email;
-                          })
-                          .map(c => ({
-                            name: c.contact_name || c.client_contact?.contact_name || null,
-                            email: (c.contact_email || c.client_contact?.email)!,
-                          }))
-                        }
+                        contacts={[
+                          ...eventContacts
+                            .filter(c => {
+                              const email = c.contact_email || c.client_contact?.email;
+                              return !!email;
+                            })
+                            .map(c => ({
+                              name: c.contact_name || c.client_contact?.contact_name || null,
+                              email: (c.contact_email || c.client_contact?.email)!,
+                            })),
+                          ...(companyContacts as any[])
+                            .filter(c => !!c.email)
+                            .map(c => ({ name: c.contact_name || null, email: c.email as string })),
+                        ]}
                         className="flex-1 justify-start"
                         buttonSize="default"
                       />
