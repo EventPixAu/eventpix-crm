@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.photographer-agreement-sign]
 verify_jwt = false
+
+[functions.notify-owner-email]
+verify_jwt = false

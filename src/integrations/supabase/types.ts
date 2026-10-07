@@ -4800,6 +4800,7 @@ export type Database = {
         Row: {
           created_at: string
           delivery_channel: string
+          emailed_at: string | null
           entity_id: string | null
           entity_type: string | null
           id: string
@@ -4813,6 +4814,7 @@ export type Database = {
         Insert: {
           created_at?: string
           delivery_channel?: string
+          emailed_at?: string | null
           entity_id?: string | null
           entity_type?: string | null
           id?: string
@@ -4826,6 +4828,7 @@ export type Database = {
         Update: {
           created_at?: string
           delivery_channel?: string
+          emailed_at?: string | null
           entity_id?: string | null
           entity_type?: string | null
           id?: string
@@ -8113,6 +8116,16 @@ export type Database = {
         Returns: undefined
       }
       mark_quote_as_sent: { Args: { p_quote_id: string }; Returns: Json }
+      notify_owner_response: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_message: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
       prepare_delivery_choice_request: {
         Args: { p_event_id: string }
         Returns: Json
