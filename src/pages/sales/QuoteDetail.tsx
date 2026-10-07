@@ -779,27 +779,30 @@ export default function QuoteDetail() {
                 <p className="text-sm text-muted-foreground">
                   {(quote as any)?.selection_mode === 'single_choice'
                     ? 'Client will pick ONE of the items below. Only the chosen option is kept on acceptance.'
+                    : (quote as any)?.selection_mode === 'photo_delivery_choice'
+                    ? 'Client chooses Photography only or Photography + Delivery. Delivery-group items are removed if they pick Photography only.'
                     : 'Add products and packages to this quote.'}
                 </p>
               </div>
               <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-                <Label htmlFor="selection-mode-toggle" className="text-sm">
-                  Client picks one option
+                <Label htmlFor="selection-mode-select" className="text-sm">
+                  Client options
                 </Label>
-                <input
-                  id="selection-mode-toggle"
-                  type="checkbox"
-                  className="h-4 w-4 accent-primary cursor-pointer disabled:cursor-not-allowed"
+                <select
+                  id="selection-mode-select"
+                  className="h-8 rounded-md border bg-background px-2 text-sm disabled:cursor-not-allowed"
                   disabled={isLocked}
-                  checked={(quote as any)?.selection_mode === 'single_choice'}
+                  value={(quote as any)?.selection_mode || 'standard'}
                   onChange={async (e) => {
-                    const mode = e.target.checked ? 'single_choice' : 'standard';
+                    const mode = e.target.value;
                     await updateQuote.mutateAsync({ id: id!, selection_mode: mode } as any);
-                    toast.success(mode === 'single_choice'
-                      ? 'Switched to single-choice format'
-                      : 'Switched to standard format');
+                    toast.success('Client options updated');
                   }}
-                />
+                >
+                  <option value="standard">Accept everything</option>
+                  <option value="single_choice">Client picks one option</option>
+                  <option value="photo_delivery_choice">Photography only or Photography + Delivery</option>
+                </select>
               </div>
             </div>
 
