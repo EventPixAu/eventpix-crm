@@ -1799,9 +1799,11 @@ export default function EventDetail() {
                               name: c.contact_name || c.client_contact?.contact_name || null,
                               email: (c.contact_email || c.client_contact?.email)!,
                             })),
-                          ...(companyContacts as any[])
-                            .filter(c => !!c.email)
-                            .map(c => ({ name: c.contact_name || null, email: c.email as string })),
+                          ...((() => {
+                            const client = (event?.client_id ? (event as any).clients : clientByName) as any;
+                            const email = client?.primary_contact_email;
+                            return email ? [{ name: client.primary_contact_name || null, email }] : [];
+                          })()),
                         ]}
                         className="flex-1 justify-start"
                         buttonSize="default"
