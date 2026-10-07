@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { AdminReadinessQueues } from '@/components/AdminReadinessQueues';
 import { EscalationBanners } from '@/components/EscalationBanners';
 import { JobTasksDueDates } from '@/components/JobTasksDueDates';
+import { ResponsesPanel } from '@/components/ResponsesPanel';
 import { useAuth } from '@/lib/auth';
 import { useEvents } from '@/hooks/useEvents';
 
@@ -79,6 +80,10 @@ export default function OperationsDashboard() {
       />
 
       <EscalationBanners maxItems={3} />
+
+      <div className="mb-8">
+        <ResponsesPanel />
+      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <motion.div
