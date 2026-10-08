@@ -24,6 +24,6 @@ export function useUnreadResponsesCount() {
       return count || 0;
     },
     enabled: !!user?.id,
-    refetchInterval: 30000,
+    refetchInterval: 3600000, // check for new responses once an hour
   });
 }
