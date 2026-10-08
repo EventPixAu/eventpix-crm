@@ -56,13 +56,18 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                     to={item.href}
                     onClick={onItemClick}
                     className={cn(
-                      'flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors',
+                      'relative flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors',
                       isActive
                         ? 'bg-sidebar-accent text-sidebar-primary'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                        : item.highlight
+                          ? 'text-warning hover:bg-sidebar-accent/50'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                     )}
                   >
                     <item.icon className="h-5 w-5" />
+                    {item.highlight && !isActive && (
+                      <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-warning animate-pulse" />
+                    )}
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -119,11 +124,16 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                         'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                         isActive
                           ? 'bg-sidebar-accent text-sidebar-primary font-medium'
-                          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                          : item.highlight
+                            ? 'text-warning font-medium hover:bg-sidebar-accent/50'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                       )}
                     >
                       <item.icon className="h-4 w-4" />
                       {item.label}
+                      {item.highlight && !isActive && (
+                        <span className="ml-auto h-2 w-2 rounded-full bg-warning animate-pulse" />
+                      )}
                     </Link>
                   );
                 })}
@@ -181,11 +191,16 @@ export const SidebarNavItem = forwardRef<HTMLAnchorElement, SidebarNavItemProps>
           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1',
           isActive
             ? 'bg-sidebar-accent text-sidebar-primary'
-            : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+            : item.highlight
+              ? 'text-warning hover:bg-sidebar-accent/50'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
         )}
       >
         <item.icon className="h-5 w-5" />
         {item.label}
+        {item.highlight && !isActive && (
+          <span className="ml-auto h-2 w-2 rounded-full bg-warning animate-pulse" />
+        )}
       </Link>
     );
   }
