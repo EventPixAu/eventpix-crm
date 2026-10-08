@@ -9,6 +9,8 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** When true, the link is highlighted (e.g. new responses on the Dashboard). */
+  highlight?: boolean;
 }
 
 interface SidebarNavGroupProps {

@@ -28,7 +28,6 @@ import Dashboard from "./pages/Dashboard";
 import OperationsDashboard from "./pages/OperationsDashboard";
 import MyTasksDashboard from "./pages/MyTasksDashboard";
 import PhotographerDashboard from "./pages/PhotographerDashboard";
-import { useHasOwnJobTasks } from "@/hooks/useMyJobTasks";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import EventForm from "./pages/EventForm";
@@ -137,8 +136,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 /**
  * Role-based dashboard routing
- * - Admin/Operations: Full operations dashboard
- * - Sales: Sales dashboard
+ * - Admin/Operations/Sales: Operations dashboard (default landing page)
  * - Crew: Photographer-focused mobile dashboard
  */
 function RoleBasedDashboard() {
