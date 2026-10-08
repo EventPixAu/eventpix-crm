@@ -309,7 +309,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
           id: it.id,
           description: it.description,
           unit_price: Number(it.unit_price) || 0,
-          tax_rate: Number(it.tax_rate) || 0,
+          tax_rate: Number(it.tax_rate) || 0.1,
           pricing_basis: (it.pricing_basis as PricingBasis) || 'flat',
           sort_order: it.sort_order ?? idx,
         })),
@@ -327,7 +327,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       const mult = it.pricing_basis === 'per_event' ? activeEventCount : 1;
       const lineTotal = price * mult;
       // Unit prices are EX GST: GST is added on top of each line.
-      const rate = Number(it.tax_rate) || 0;
+      const rate = Number(it.tax_rate) || 0.1;
       gstTotal += lineTotal * rate;
       if (it.pricing_basis === 'per_event') {
         perEventSubtotal += lineTotal;
@@ -364,7 +364,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
       ...selected.map((s, i) => ({
         description: s.name + (s.description ? ` — ${s.description}` : ''),
         unit_price: s.unit_price,
-        tax_rate: s.tax_rate,
+        tax_rate: Number(s.tax_rate) || 0.1,
         pricing_basis: 'per_event' as const,
         sort_order: prev.length + i,
       })),
