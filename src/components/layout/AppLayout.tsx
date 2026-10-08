@@ -139,6 +139,7 @@ interface SidebarContentProps {
 }
 
 function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
+  const operationsItems = useOperationsItems();
   return (
     <>
       {/* CRM Section */}
@@ -191,6 +192,7 @@ function AdminSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
 
 function OperationsSidebarContent({ onItemClick, collapsed }: SidebarContentProps) {
   // Operations users see CRM, Sales, and Operations - but NOT Administration
+  const operationsItems = useOperationsItems();
   return (
     <>
       {/* CRM Section */}
