@@ -2,16 +2,34 @@ import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { Inbox, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useInAppNotifications';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth';
+import { useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useInAppNotifications';
 
 const linkFor = (t: string | null, id: string | null) =>
   !t || !id ? null : t === 'event' ? `/events/${id}` : t === 'lead' ? `/sales/leads/${id}` : null;
 
 export function ResponsesPanel() {
-  const { data = [], isLoading } = useNotifications(50);
+  const { user } = useAuth();
+  const { data = [], isLoading } = useQuery({
+    queryKey: ['notifications', user?.id, 'responses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user!.id)
+        .like('type', 'response_%')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data as { id: string; type: string; is_read: boolean; title: string; message: string | null; entity_type: string | null; entity_id: string | null; created_at: string }[];
+    },
+    enabled: !!user?.id,
+  });
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
-  const responses = data.filter((n) => n.type.startsWith('response_')).slice(0, 15);
+  const responses = data;
   const unread = responses.filter((n) => !n.is_read).length;
 
   return (
