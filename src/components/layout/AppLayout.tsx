@@ -54,6 +54,7 @@ import { useAuth } from '@/lib/auth';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SidebarNavGroup, SidebarNavItem, NavItem } from './SidebarNavGroup';
+import { useUnreadResponsesCount } from '@/hooks/useUnreadResponses';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -85,8 +86,11 @@ const salesItems: NavItem[] = [
 ];
 
 // ===== OPERATIONS SECTION (Cleaned of admin settings) =====
-const operationsItems: NavItem[] = [
-  { href: '/operations', label: 'Dashboard', icon: Home },
+// Dashboard link highlights (amber + pulsing dot) when unread responses exist.
+function useOperationsItems(): NavItem[] {
+  const { data: unreadResponses = 0 } = useUnreadResponsesCount();
+  return [
+  { href: '/operations', label: 'Dashboard', icon: Home, highlight: unreadResponses > 0 },
   { href: '/events', label: 'Events', icon: Calendar },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/admin/day-load', label: 'Day Load', icon: CalendarCheck },
@@ -95,7 +99,8 @@ const operationsItems: NavItem[] = [
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/venues', label: 'Venues', icon: Building2 },
   { href: '/declined', label: 'Declined', icon: XCircle },
-];
+  ];
+}
 
 // ===== ADMINISTRATION SECTION (Admin-only) =====
 const administrationItems: NavItem[] = [
