@@ -28,7 +28,6 @@ import Dashboard from "./pages/Dashboard";
 import OperationsDashboard from "./pages/OperationsDashboard";
 import MyTasksDashboard from "./pages/MyTasksDashboard";
 import PhotographerDashboard from "./pages/PhotographerDashboard";
-import { useHasOwnJobTasks } from "@/hooks/useMyJobTasks";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import EventForm from "./pages/EventForm";
@@ -137,13 +136,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 /**
  * Role-based dashboard routing
- * - Admin/Operations: Full operations dashboard
- * - Sales: Sales dashboard
+ * - Admin/Operations/Sales: Operations dashboard (default landing page)
  * - Crew: Photographer-focused mobile dashboard
  */
 function RoleBasedDashboard() {
   const { role, isAdmin, loading } = useAuth();
-  const { data: hasOwnTasks, isLoading: hasTasksLoading } = useHasOwnJobTasks();
 
   // Still resolving role — show spinner instead of prematurely redirecting
   if (loading) {
@@ -154,26 +151,10 @@ function RoleBasedDashboard() {
     );
   }
 
-   // Operations users who also hold event-role assignments land on a personal "My Tasks" dashboard.
-   // Admins and pure operations users (no personal assignments) keep the full Operations dashboard.
-   if (role === 'operations') {
-     if (hasTasksLoading) {
-       return (
-         <div className="min-h-screen flex items-center justify-center bg-background">
-           <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-         </div>
-       );
-     }
-     return <Navigate to={hasOwnTasks ? '/my-tasks' : '/operations'} replace />;
-   }
-   if (isAdmin) {
-     return <Navigate to="/operations" replace />;
-   }
-
-  // Sales users get sales dashboard
-  if (role === 'sales') {
-    return <Navigate to="/sales/dashboard" replace />;
-  }
+    // Operations Dashboard is the default landing page for all staff roles.
+    if (role === 'operations' || isAdmin || role === 'sales') {
+      return <Navigate to="/operations" replace />;
+    }
 
   // Crew (photographers) get the mobile-first photographer dashboard
   if (role === 'crew') {
