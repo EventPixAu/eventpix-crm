@@ -143,7 +143,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
  */
 function RoleBasedDashboard() {
   const { role, isAdmin, loading } = useAuth();
-  const { data: hasOwnTasks, isLoading: hasTasksLoading } = useHasOwnJobTasks();
 
   // Still resolving role — show spinner instead of prematurely redirecting
   if (loading) {
@@ -154,8 +153,6 @@ function RoleBasedDashboard() {
     );
   }
 
-   // Operations users who also hold event-role assignments land on a personal "My Tasks" dashboard.
-   // Admins and pure operations users (no personal assignments) keep the full Operations dashboard.
     // Operations Dashboard is the default landing page for all staff roles.
     if (role === 'operations' || isAdmin || role === 'sales') {
       return <Navigate to="/operations" replace />;
