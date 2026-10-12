@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Mail, Loader2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { deliveryChoiceLabel } from '@/lib/clientDeliveryOptions';
+import { deliveryChoiceLabel, DELIVERY_CHOICES, requiresDeliveryTiming } from '@/lib/clientDeliveryOptions';
 import { prepareDeliveryEmail, deliveryGuideAttachment } from '@/lib/prepareDeliveryEmail';
 import { toast } from 'sonner';
 
