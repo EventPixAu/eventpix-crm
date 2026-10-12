@@ -50,6 +50,9 @@ export function SendPortalLinkButton({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
+  // Default: one portal for all of this client's events
+  const [linkScope, setLinkScope] = useState<'all' | 'event'>('all');
+  const useEventLink = linkScope === 'event' && !!eventPortalToken;
   const sendEmail = useSendCrmEmail();
 
   // Build deduplicated contacts list from both props
@@ -93,7 +96,7 @@ export function SendPortalLinkButton({
     });
   };
 
-  const portalUrl = eventPortalToken
+  const portalUrl = useEventLink
     ? `${getPublicBaseUrl()}/event/${eventPortalToken}`
     : `${getPublicBaseUrl()}/client-login`;
 
@@ -108,13 +111,13 @@ export function SendPortalLinkButton({
 
         const bodyHtml = `
           <p>Hi ${firstName},</p>
-          <p>You can access your Client Portal to view your events, budgets and project details using the link below:</p>
+          <p>You can access your Client Portal to view all of your events, budgets and project details using the link below:</p>
           <p style="margin: 24px 0;">
             <a href="${portalUrl}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
               Open Client Portal
             </a>
           </p>
-          ${eventPortalToken
+          ${useEventLink
             ? '<p style="color: #666; font-size: 14px;">This link opens your event details directly, so no follow-up login email is needed.</p>'
             : `<p style="color: #666; font-size: 14px;">Simply enter your email address (<strong>${email}</strong>) and we'll send you a secure login link. No password needed.</p>`
           }
@@ -184,10 +187,25 @@ export function SendPortalLinkButton({
               <p><strong>To:</strong> {allContacts[0]?.name || allContacts[0]?.email}</p>
               <p><strong>Subject:</strong> Your Client Portal Access — Eventpixii</p>
               <p className="text-muted-foreground mt-2">
-                {eventPortalToken
+                {useEventLink
                   ? 'The email includes a direct event portal link — no follow-up login email required.'
                   : 'The email explains how to use the magic link login — no password required.'}
               </p>
+            </div>
+          )}
+
+          {eventPortalToken && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Which link?</p>
+              {([
+                ['all', 'All events for this client', 'One portal showing every event, budget and detail. Client signs in with their email.'],
+                ['event', 'This event only', 'Opens just this event directly, no sign-in.'],
+              ] as const).map(([value, label, hint]) => (
+                <label key={value} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 cursor-pointer">
+                  <input type="radio" name="portal-scope" className="mt-1" checked={linkScope === value} onChange={() => setLinkScope(value)} />
+                  <div><p className="text-sm font-medium">{label}</p><p className="text-xs text-muted-foreground">{hint}</p></div>
+                </label>
+              ))}
             </div>
           )}
 
