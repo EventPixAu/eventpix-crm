@@ -43,7 +43,7 @@ import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
 import { useEventContacts, useCreateEventContact, useUpdateEventContact } from '@/hooks/useEventContacts';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
-import type { Venue } from '@/hooks/useVenues';
+import { useActiveVenues, type Venue } from '@/hooks/useVenues';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -102,6 +102,7 @@ export default function EventForm() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  const { data: activeVenues = [] } = useActiveVenues();
   
   // Determine if form should be disabled due to lock
   const isFormLocked = isEditing && isLocked && !isUnlocked;
@@ -274,8 +275,15 @@ export default function EventForm() {
         notes: event.notes || '',
       });
       setSelectedClientId(event.client_id || null);
+      // Link the venue library record: prefer the stored venue_id, otherwise
+      // match the saved venue name against the library.
+      const nameKey = (event.venue_name || '').trim().toLowerCase();
+      const nameMatch = nameKey
+        ? activeVenues.find((v) => v.name.trim().toLowerCase() === nameKey)
+        : undefined;
+      setSelectedVenueId(event.venue_id || nameMatch?.id || null);
     }
-  }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId]);
+  }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId, activeVenues]);
 
   // Pre-populate from lead (conversion mode)
   useEffect(() => {
