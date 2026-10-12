@@ -102,6 +102,7 @@ export default function EventForm() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  const { data: activeVenues = [] } = useActiveVenues();
   
   // Determine if form should be disabled due to lock
   const isFormLocked = isEditing && isLocked && !isUnlocked;
