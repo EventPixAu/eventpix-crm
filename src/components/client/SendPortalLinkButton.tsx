@@ -111,23 +111,39 @@ export function SendPortalLinkButton({
 
         const bodyHtml = `
           <p>Hi ${firstName},</p>
-          <p>You can access your Client Portal to view all of your events, budgets and project details using the link below:</p>
+          <p>Welcome to your Eventpixii <strong>Client Portal</strong> — one place to see everything about your upcoming events with us.</p>
+
+          <h3 style="margin: 24px 0 8px; font-size: 16px;">What you'll find inside</h3>
+          <ul style="padding-left: 18px; margin: 0;">
+            <li style="margin-bottom: 6px;"><strong>All of your events</strong> — dates, venues and the current status of every event you have with us.</li>
+            <li style="margin-bottom: 6px;"><strong>Your event team</strong> — who is looking after each event, their roles and how to reach them on the day.</li>
+            <li style="margin-bottom: 6px;"><strong>Event details</strong> — session times, special instructions, and whether meals and parking are provided.</li>
+            <li style="margin-bottom: 6px;"><strong>Budgets & documents</strong> — budgets, agreements and confirmations as they are finalised.</li>
+            ${useEventLink ? '' : '<li style="margin-bottom: 6px;"><strong>Proposals in progress</strong> — so you can follow where things are up to.</li>'}
+          </ul>
+
+          <h3 style="margin: 24px 0 8px; font-size: 16px;">Getting started</h3>
+          ${useEventLink
+            ? '<p>Click the button below to open your event details directly — no sign-in needed.</p>'
+            : `<ol style="padding-left: 18px; margin: 0;">
+                 <li style="margin-bottom: 6px;">Click the button below.</li>
+                 <li style="margin-bottom: 6px;">Enter your email address (<strong>${email}</strong>).</li>
+                 <li style="margin-bottom: 6px;">We'll instantly email you a secure, one-click login link — no password needed.</li>
+               </ol>`
+          }
           <p style="margin: 24px 0;">
             <a href="${portalUrl}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
               Open Client Portal
             </a>
           </p>
-          ${useEventLink
-            ? '<p style="color: #666; font-size: 14px;">This link opens your event details directly, so no follow-up login email is needed.</p>'
-            : `<p style="color: #666; font-size: 14px;">Simply enter your email address (<strong>${email}</strong>) and we'll send you a secure login link. No password needed.</p>`
-          }
+          <p style="color: #666; font-size: 14px;">Whenever you want to come back, visit ${portalUrl} and enter your email. Questions? Simply reply to this email.</p>
           <p>Thanks,<br/>The Eventpixii Team</p>
         `.trim();
 
         await sendEmail.mutateAsync({
           recipientEmail: email,
           recipientName: contact?.name || undefined,
-          subject: 'Your Client Portal Access — Eventpixii',
+          subject: 'Introduction to your Client Portal — Eventpixii',
           bodyHtml,
           clientId,
           eventId,
@@ -185,7 +201,7 @@ export function SendPortalLinkButton({
           ) : (
             <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
               <p><strong>To:</strong> {allContacts[0]?.name || allContacts[0]?.email}</p>
-              <p><strong>Subject:</strong> Your Client Portal Access — Eventpixii</p>
+              <p><strong>Subject:</strong> Introduction to your Client Portal — Eventpixii</p>
               <p className="text-muted-foreground mt-2">
                 {useEventLink
                   ? 'The email includes a direct event portal link — no follow-up login email required.'
