@@ -64,6 +64,34 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [editContactType, setEditContactType] = useState<ContactType>('primary');
 
+  // Change client state
+  const queryClient = useQueryClient();
+  const { data: companies = [] } = useClients();
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [isSavingClient, setIsSavingClient] = useState(false);
+
+  const handleSaveClient = async () => {
+    const company = companies.find((c) => c.id === selectedCompanyId);
+    if (!company) return;
+    setIsSavingClient(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ client_id: company.id, client_name: company.business_name })
+        .eq('id', eventId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success(`Client changed to ${company.business_name}`);
+      setIsClientDialogOpen(false);
+    } catch (error: any) {
+      toast.error('Failed to change client', { description: error.message });
+    } finally {
+      setIsSavingClient(false);
+    }
+  };
+
   const getContactTypeLabel = (type: string) => {
     return CONTACT_TYPES.find(t => t.value === type)?.label || type;
   };
