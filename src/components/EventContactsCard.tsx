@@ -522,6 +522,38 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
         )}
       </div>
 
+      {/* Change Client Dialog */}
+      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Event Client</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Move this event to a different client company. Existing event contacts are kept as they are.
+            </p>
+            <SearchableCompanySelector
+              companies={companies}
+              selectedCompanyId={selectedCompanyId}
+              onSelect={setSelectedCompanyId}
+              onCreateNew={() => {}}
+              placeholder="Select the new client company..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsClientDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveClient}
+              disabled={!selectedCompanyId || selectedCompanyId === clientId || isSavingClient}
+            >
+              {isSavingClient ? 'Saving...' : 'Save Client'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add Contact Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">
