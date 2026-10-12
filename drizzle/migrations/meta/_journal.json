@@ -148,6 +148,13 @@
       "when": 1791415749917,
       "tag": "0020_fix_owner_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791765066212,
+      "tag": "0021_event_delivery_prefs_staff_write",
+      "breakpoints": true
     }
   ]
 }
