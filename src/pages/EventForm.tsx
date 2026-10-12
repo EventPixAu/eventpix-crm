@@ -275,8 +275,15 @@ export default function EventForm() {
         notes: event.notes || '',
       });
       setSelectedClientId(event.client_id || null);
+      // Link the venue library record: prefer the stored venue_id, otherwise
+      // match the saved venue name against the library.
+      const nameKey = (event.venue_name || '').trim().toLowerCase();
+      const nameMatch = nameKey
+        ? activeVenues.find((v) => v.name.trim().toLowerCase() === nameKey)
+        : undefined;
+      setSelectedVenueId(event.venue_id || nameMatch?.id || null);
     }
-  }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId]);
+  }, [event, eventTypes, deliveryMethods, form, eventTypeNameToId, deliveryMethodNameToId, activeVenues]);
 
   // Pre-populate from lead (conversion mode)
   useEffect(() => {
