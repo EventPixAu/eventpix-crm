@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Mail, Loader2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { deliveryChoiceLabel } from '@/lib/clientDeliveryOptions';
+import { deliveryChoiceLabel, DELIVERY_CHOICES, requiresDeliveryTiming } from '@/lib/clientDeliveryOptions';
 import { prepareDeliveryEmail, deliveryGuideAttachment } from '@/lib/prepareDeliveryEmail';
 import { toast } from 'sonner';
 
@@ -22,6 +25,36 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
   const [open, setOpen] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [deliveryDetails, setDeliveryDetails] = useState<Awaited<ReturnType<typeof prepareDeliveryEmail>> | null>(null);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideChoice, setOverrideChoice] = useState<string>('dropbox_only');
+  const [overrideTiming, setOverrideTiming] = useState<string>('immediate');
+  const [savingOverride, setSavingOverride] = useState(false);
+  const queryClient = useQueryClient();
+
+  const saveOverride = async () => {
+    setSavingOverride(true);
+    try {
+      const payload = {
+        event_id: event.id,
+        choice: overrideChoice,
+        timing: requiresDeliveryTiming(overrideChoice) ? overrideTiming : null,
+        social_media_access: false,
+        confirmed_at: new Date().toISOString(),
+      };
+      const { data: existing } = await supabase.from('event_delivery_preferences').select('event_id').eq('event_id', event.id).maybeSingle();
+      const { error } = existing
+        ? await supabase.from('event_delivery_preferences').update(payload).eq('event_id', event.id)
+        : await supabase.from('event_delivery_preferences').insert(payload);
+      if (error) throw error;
+      toast.success('Delivery preference recorded', { description: 'Standard delivery saved without emailing the client.' });
+      setOverrideOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['event-delivery-preference', event.id] });
+    } catch (error) {
+      toast.error('Unable to save preference', { description: error instanceof Error ? error.message : 'Please try again.' });
+    } finally {
+      setSavingOverride(false);
+    }
+  };
   const { data: preference } = useQuery({
     queryKey: ['event-delivery-preference', event.id],
     queryFn: async () => {
@@ -68,9 +101,14 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
     <div className="space-y-3 border-t pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">Client delivery preference</p>
-        {canSend && <Button variant="outline" size="sm" onClick={() => void prepare()} disabled={preparing}>
-          {preparing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}Send delivery options
-        </Button>}
+        <div className="flex flex-wrap items-center gap-2">
+          {canSend && <Button variant="outline" size="sm" onClick={() => void prepare()} disabled={preparing}>
+            {preparing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}Send delivery options
+          </Button>}
+          {canSend && <Button variant="outline" size="sm" onClick={() => setOverrideOpen(true)}>
+            <CheckCircle2 className="mr-2 h-4 w-4" />Record standard delivery
+          </Button>}
+        </div>
       </div>
       <p className="font-medium">{deliveryChoiceLabel(preference?.choice)}</p>
       {preference?.confirmed_at && <div className="space-y-1 text-sm text-muted-foreground">
@@ -86,6 +124,39 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
         leadId={event.lead_id} relatedQuoteId={event.quote_id || undefined}
         mergeContext={deliveryDetails}
         requiredAttachment={deliveryGuideAttachment()} />}
+      <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Record standard delivery</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Save the client's delivery preference without sending the delivery options email — for clients already on standard delivery.</p>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Delivery option</Label>
+              <Select value={overrideChoice} onValueChange={setOverrideChoice}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DELIVERY_CHOICES.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {requiresDeliveryTiming(overrideChoice) && <div className="space-y-2">
+              <Label>Delivery timing</Label>
+              <Select value={overrideTiming} onValueChange={setOverrideTiming}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="immediate">Immediate</SelectItem>
+                  <SelectItem value="delayed">Delayed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOverrideOpen(false)}>Cancel</Button>
+            <Button onClick={() => void saveOverride()} disabled={savingOverride}>
+              {savingOverride && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save preference
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
