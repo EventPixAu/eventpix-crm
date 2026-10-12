@@ -228,7 +228,24 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Client</p>
-              <p className="font-medium">{clientDetails?.business_name || clientName}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium">{clientDetails?.business_name || clientName}</p>
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setSelectedCompanyId(clientId || '');
+                      setIsClientDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Change Client
+                  </Button>
+                )}
+              </div>
 
               {(() => {
                 const onsiteName = onsiteContact?.name;
