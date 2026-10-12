@@ -124,6 +124,39 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
         leadId={event.lead_id} relatedQuoteId={event.quote_id || undefined}
         mergeContext={deliveryDetails}
         requiredAttachment={deliveryGuideAttachment()} />}
+      <Dialog open={overrideOpen} onOpenChange={setOverrideOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Record standard delivery</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Save the client's delivery preference without sending the delivery options email — for clients already on standard delivery.</p>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Delivery option</Label>
+              <Select value={overrideChoice} onValueChange={setOverrideChoice}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DELIVERY_CHOICES.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {requiresDeliveryTiming(overrideChoice) && <div className="space-y-2">
+              <Label>Delivery timing</Label>
+              <Select value={overrideTiming} onValueChange={setOverrideTiming}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="immediate">Immediate</SelectItem>
+                  <SelectItem value="delayed">Delayed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOverrideOpen(false)}>Cancel</Button>
+            <Button onClick={() => void saveOverride()} disabled={savingOverride}>
+              {savingOverride && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save preference
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
