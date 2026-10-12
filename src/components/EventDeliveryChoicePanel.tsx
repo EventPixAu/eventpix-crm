@@ -25,6 +25,36 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
   const [open, setOpen] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [deliveryDetails, setDeliveryDetails] = useState<Awaited<ReturnType<typeof prepareDeliveryEmail>> | null>(null);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideChoice, setOverrideChoice] = useState<string>('dropbox_only');
+  const [overrideTiming, setOverrideTiming] = useState<string>('immediate');
+  const [savingOverride, setSavingOverride] = useState(false);
+  const queryClient = useQueryClient();
+
+  const saveOverride = async () => {
+    setSavingOverride(true);
+    try {
+      const payload = {
+        event_id: event.id,
+        choice: overrideChoice,
+        timing: requiresDeliveryTiming(overrideChoice) ? overrideTiming : null,
+        social_media_access: false,
+        confirmed_at: new Date().toISOString(),
+      };
+      const { data: existing } = await supabase.from('event_delivery_preferences').select('event_id').eq('event_id', event.id).maybeSingle();
+      const { error } = existing
+        ? await supabase.from('event_delivery_preferences').update(payload).eq('event_id', event.id)
+        : await supabase.from('event_delivery_preferences').insert(payload);
+      if (error) throw error;
+      toast.success('Delivery preference recorded', { description: 'Standard delivery saved without emailing the client.' });
+      setOverrideOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['event-delivery-preference', event.id] });
+    } catch (error) {
+      toast.error('Unable to save preference', { description: error instanceof Error ? error.message : 'Please try again.' });
+    } finally {
+      setSavingOverride(false);
+    }
+  };
   const { data: preference } = useQuery({
     queryKey: ['event-delivery-preference', event.id],
     queryFn: async () => {
