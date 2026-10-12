@@ -12,11 +12,13 @@ import {
   FileText,
   ChevronRight,
   Users,
+  BookOpen,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
+import { PortalIntro } from '@/components/client/PortalIntro';
 import { toast } from 'sonner';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import type { Session } from '@supabase/supabase-js';
@@ -96,7 +98,30 @@ export default function ClientPortalDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(false);
   const navigate = useNavigate();
+
+  const introKey = userEmail ? `eventpixii_portal_intro_seen_${userEmail.toLowerCase()}` : null;
+
+  useEffect(() => {
+    if (!introKey) return;
+    try {
+      setShowIntro(!window.localStorage.getItem(introKey));
+    } catch {
+      setShowIntro(false);
+    }
+  }, [introKey]);
+
+  const dismissIntro = () => {
+    if (introKey) {
+      try {
+        window.localStorage.setItem(introKey, '1');
+      } catch {
+        /* storage unavailable — intro simply shows again next visit */
+      }
+    }
+    setShowIntro(false);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -235,14 +260,27 @@ export default function ClientPortalDashboard() {
               <p className="text-xs text-muted-foreground">{userEmail}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2 text-muted-foreground">
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowIntro(true)}
+              className="gap-2 text-muted-foreground"
+            >
+              <BookOpen className="h-4 w-4" />
+              Portal guide
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2 text-muted-foreground">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        {showIntro && <PortalIntro email={userEmail} onDismiss={dismissIntro} />}
+        {!showIntro && (<>
         {/* Companies */}
         {companies.length > 1 && (
           <div className="flex flex-wrap gap-2">
@@ -438,6 +476,7 @@ export default function ClientPortalDashboard() {
             </p>
           </div>
         )}
+        </>)}
       </main>
     </div>
   );
