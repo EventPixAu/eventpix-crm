@@ -24,6 +24,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ContactSelector } from '@/components/shared/ContactSelector';
+import { SearchableCompanySelector } from '@/components/crm/SearchableCompanySelector';
+import { useClients } from '@/hooks/useSales';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface EventContactsCardProps {
