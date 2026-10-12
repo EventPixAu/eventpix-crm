@@ -24,6 +24,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ContactSelector } from '@/components/shared/ContactSelector';
+import { SearchableCompanySelector } from '@/components/crm/SearchableCompanySelector';
+import { useClients } from '@/hooks/useSales';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useContactSearch';
 
 interface EventContactsCardProps {
@@ -59,6 +63,34 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
   // Edit existing contact state
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [editContactType, setEditContactType] = useState<ContactType>('primary');
+
+  // Change client state
+  const queryClient = useQueryClient();
+  const { data: companies = [] } = useClients();
+  const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [isSavingClient, setIsSavingClient] = useState(false);
+
+  const handleSaveClient = async () => {
+    const company = companies.find((c) => c.id === selectedCompanyId);
+    if (!company) return;
+    setIsSavingClient(true);
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ client_id: company.id, client_name: company.business_name })
+        .eq('id', eventId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success(`Client changed to ${company.business_name}`);
+      setIsClientDialogOpen(false);
+    } catch (error: any) {
+      toast.error('Failed to change client', { description: error.message });
+    } finally {
+      setIsSavingClient(false);
+    }
+  };
 
   const getContactTypeLabel = (type: string) => {
     return CONTACT_TYPES.find(t => t.value === type)?.label || type;
@@ -196,7 +228,24 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Client</p>
-              <p className="font-medium">{clientDetails?.business_name || clientName}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium">{clientDetails?.business_name || clientName}</p>
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setSelectedCompanyId(clientId || '');
+                      setIsClientDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="mr-1 h-3 w-3" />
+                    Change Client
+                  </Button>
+                )}
+              </div>
 
               {(() => {
                 const onsiteName = onsiteContact?.name;
@@ -472,6 +521,38 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
       </div>
         )}
       </div>
+
+      {/* Change Client Dialog */}
+      <Dialog open={isClientDialogOpen} onOpenChange={setIsClientDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Event Client</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Move this event to a different client company. Existing event contacts are kept as they are.
+            </p>
+            <SearchableCompanySelector
+              companies={companies}
+              selectedCompanyId={selectedCompanyId}
+              onSelect={setSelectedCompanyId}
+              onCreateNew={() => {}}
+              placeholder="Select the new client company..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsClientDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveClient}
+              disabled={!selectedCompanyId || selectedCompanyId === clientId || isSavingClient}
+            >
+              {isSavingClient ? 'Saving...' : 'Save Client'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Contact Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
