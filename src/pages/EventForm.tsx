@@ -43,7 +43,7 @@ import { useClientByBusinessName } from '@/hooks/useClientByBusinessName';
 import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
 import { useEventContacts, useCreateEventContact, useUpdateEventContact } from '@/hooks/useEventContacts';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
-import type { Venue } from '@/hooks/useVenues';
+import { useActiveVenues, type Venue } from '@/hooks/useVenues';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
