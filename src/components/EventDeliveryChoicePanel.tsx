@@ -101,9 +101,14 @@ export function EventDeliveryChoicePanel({ event, canSend }: Props) {
     <div className="space-y-3 border-t pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">Client delivery preference</p>
-        {canSend && <Button variant="outline" size="sm" onClick={() => void prepare()} disabled={preparing}>
-          {preparing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}Send delivery options
-        </Button>}
+        <div className="flex flex-wrap items-center gap-2">
+          {canSend && <Button variant="outline" size="sm" onClick={() => void prepare()} disabled={preparing}>
+            {preparing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}Send delivery options
+          </Button>}
+          {canSend && <Button variant="outline" size="sm" onClick={() => setOverrideOpen(true)}>
+            <CheckCircle2 className="mr-2 h-4 w-4" />Record standard delivery
+          </Button>}
+        </div>
       </div>
       <p className="font-medium">{deliveryChoiceLabel(preference?.choice)}</p>
       {preference?.confirmed_at && <div className="space-y-1 text-sm text-muted-foreground">
