@@ -105,6 +105,7 @@ import {
   useUpdateLeadStatus,
 } from '@/hooks/useLeadStatuses';
 import { AdminTrainingTools } from '@/components/AdminTrainingTools';
+import { isOnsiteStaffRole } from '@/lib/staffRoleScope';
 
 interface LookupTableProps {
   items: LookupItem[];
@@ -524,7 +525,14 @@ export default function AdminLookups() {
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
               >
                 <Briefcase className="h-4 w-4 mr-2" />
-                Staff Roles
+                Onsite Staff
+              </TabsTrigger>
+              <TabsTrigger
+                value="offsite-staff-roles"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+              >
+                <Briefcase className="h-4 w-4 mr-2" />
+                Offsite Staff
               </TabsTrigger>
               <TabsTrigger 
                 value="relationship-types"
@@ -666,23 +674,14 @@ export default function AdminLookups() {
             </TabsContent>
 
             <TabsContent value="staff-roles" className="m-0">
-              <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
-                <h3 className="text-sm font-medium">Event-specific staff roles</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  These values populate the role dropdown when assigning someone to an event. Team member categories are set separately on each Team profile.
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  <strong>Onsite</strong> roles appear on call sheets and in event pay calculations. Turn off for post-production roles (e.g. <em>Editor - Post</em>, <em>Editor - Zno</em>) that are workflow-only and not billed per event.
-                </p>
-              </div>
               <LookupTable
-                items={staffRoles}
+                items={staffRoles.filter(isOnsiteStaffRole)}
                 isLoading={staffRolesLoading}
-                onCreate={async (name) => { await createStaffRole.mutateAsync(name); }}
+                onCreate={async (name) => { await createStaffRole.mutateAsync({ name, is_onsite: true }); }}
                 onUpdate={async (id, updates) => { await updateStaffRole.mutateAsync({ id, ...updates }); }}
                 createPending={createStaffRole.isPending}
                 updatePending={updateStaffRole.isPending}
-                itemLabel="Staff Role"
+                itemLabel="Onsite Staff Role"
                 alphabetical
                 extraToggle={{
                   field: 'is_onsite',
@@ -690,6 +689,20 @@ export default function AdminLookups() {
                   description: 'Onsite = billed per event and shown on call sheets. Off = post-production / workflow only.',
                   defaultValue: true,
                 }}
+              />
+            </TabsContent>
+
+            <TabsContent value="offsite-staff-roles" className="m-0">
+              <LookupTable
+                items={staffRoles.filter(role => !isOnsiteStaffRole(role))}
+                isLoading={staffRolesLoading}
+                onCreate={async (name) => { await createStaffRole.mutateAsync({ name, is_onsite: false }); }}
+                onUpdate={async (id, updates) => { await updateStaffRole.mutateAsync({ id, ...updates }); }}
+                createPending={createStaffRole.isPending}
+                updatePending={updateStaffRole.isPending}
+                itemLabel="Offsite Staff Role"
+                alphabetical
+                extraToggle={{ field: 'is_onsite', header: 'Onsite', defaultValue: false }}
               />
             </TabsContent>
 

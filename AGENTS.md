@@ -1,4 +1,5 @@
 Email send handlers must reject unresolved `{{...}}` placeholders before delivery, because multiple compose screens and scheduled sends share the same sender.
+Onsite/offsite assignment selections and admin lookup lists share staffRoleScope and the existing staff_roles.is_onsite classification, preserving role IDs and historical assignments rather than introducing another role table.
 The lead On Hold - Date TBA transition clears dates and lead-only sessions in database triggers, because status can be changed from several screens.
 Lead-status display ordering is centralized in the shared lead-status hook, so detail and edit menus agree without changing stored statuses.
 Client delivery preferences use dedicated expiring tokens and separate lead/event preference tables; conversion carries the response and client link into the event without changing operational delivery settings or workflows.
