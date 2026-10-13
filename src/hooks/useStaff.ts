@@ -16,6 +16,8 @@ export interface StaffProfile {
 export interface StaffRole {
   id: string;
   name: string;
+  is_onsite?: boolean;
+  is_active?: boolean;
 }
 
 // Fetch all profiles that can be assigned to events (active status)

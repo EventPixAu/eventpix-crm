@@ -35,6 +35,8 @@ import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useAuth } from '@/lib/auth';
 import { useCreateCrewChecklistForUser } from '@/hooks/useCrewChecklists';
 import { getTimezoneOffset } from '@/lib/timezones';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { isOnsiteStaffRole } from '@/lib/staffRoleScope';
 
 // Combine a local date + time in an IANA timezone into a timestamptz ISO string
 function toTimestamptz(dateStr: string, timeStr: string, tz: string): string {
@@ -70,6 +72,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [staffScope, setStaffScope] = useState<'onsite' | 'offsite'>('onsite');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedSession, setSelectedSession] = useState('all');
   const [teamMemberSearch, setTeamMemberSearch] = useState('');
@@ -88,6 +91,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
   const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
+  const selectableRoles = roles.filter(r => r.is_active !== false && isOnsiteStaffRole(r) === (staffScope === 'onsite'));
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
   const { data: sessions = [] } = useEventSessions(eventId);
@@ -115,11 +119,11 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const selectedSessionForConflict = sessions.find(s => s.id === selectedSession);
   const conflictDate = selectedSessionForConflict?.session_date || event?.event_date || null;
   const conflictTz = (selectedSessionForConflict as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
-  const conflictStartStr = selectedSessionForConflict
-    ? toTimestamptz(conflictDate!, (selectedSessionForConflict.arrival_time || selectedSessionForConflict.start_time || '09:00').slice(0, 5), conflictTz)
+  const conflictStartStr = selectedSessionForConflict && conflictDate
+    ? toTimestamptz(conflictDate, (selectedSessionForConflict.arrival_time || selectedSessionForConflict.start_time || '09:00').slice(0, 5), conflictTz)
     : (event?.start_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.start_time || '09:00').slice(0, 5), conflictTz) : null));
-  const conflictEndStr = selectedSessionForConflict
-    ? toTimestamptz(conflictDate!, (selectedSessionForConflict.end_time || '23:59').slice(0, 5), conflictTz)
+  const conflictEndStr = selectedSessionForConflict && conflictDate
+    ? toTimestamptz(conflictDate, (selectedSessionForConflict.end_time || '23:59').slice(0, 5), conflictTz)
     : (event?.end_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.end_time || '23:59').slice(0, 5), conflictTz) : null));
 
   const eventStart = useMemo(() => conflictStartStr ? new Date(conflictStartStr) : null, [conflictStartStr]);
@@ -228,7 +232,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const requiresGuardrailOverride = hasGuardrailIssues && !guardrailOverridden;
 
   const handleAssignClick = () => {
-    if (!selectedUser) return;
+    if (!selectedUser || !selectableRoles.some(r => r.id === selectedRole)) return;
     
     // If there are guardrail issues and not yet overridden, show the dialog
     if (requiresGuardrailOverride) {
@@ -248,7 +252,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   };
   
   const executeAssignment = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || !selectableRoles.some(r => r.id === selectedRole)) return;
 
     // Find the selected profile to determine if it's from profiles or staff table
     const selectedProfile = profiles.find(p => p.id === selectedUser);
@@ -272,7 +276,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     };
 
     // Custom call time overrides the session default (not for post-event roles)
-    if (!isPostEventRole && callTimeChoice === 'custom' && customCallTime && sessionDate) {
+    if (staffScope === 'onsite' && !isPostEventRole && callTimeChoice === 'custom' && customCallTime && sessionDate) {
       assignmentData.call_time_at = toTimestamptz(sessionDate, customCallTime, sessionTz);
     }
 
@@ -430,7 +434,21 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           </Alert>
         ) : (
         <div className="space-y-3 pt-4 border-t">
-          <Label>Add Team Member ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
+          <Tabs value={staffScope} onValueChange={(value) => {
+            if (value !== 'onsite' && value !== 'offsite') return;
+            setStaffScope(value);
+            setSelectedRole('');
+            setSelectedUser('');
+            setTeamMemberSearch('');
+            setCallTimeChoice('default');
+            setCustomCallTime('');
+          }}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="onsite">Onsite Staff</TabsTrigger>
+              <TabsTrigger value="offsite">Offsite Staff</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Label>{staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'} ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
           
           {/* Session Selector */}
           {hasSessions && (
@@ -545,7 +563,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
                 <SelectValue placeholder="Select role for this event" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
+                {selectableRoles.map((role) => (
                   <SelectItem key={role.id} value={role.id}>
                     {role.name}
                   </SelectItem>
@@ -553,11 +571,11 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Edit this list in Admin → Lookups → Staff Roles.
+              Edit this list in Admin → Lookups → {staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'}.
             </p>
           </div>
 
-          {!isPostEventRole && (
+          {staffScope === 'onsite' && !isPostEventRole && (
           <div className="space-y-1.5">
             <Label>Call time</Label>
             <Select value={callTimeChoice} onValueChange={setCallTimeChoice}>
@@ -688,7 +706,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
 
           <Button
             onClick={handleAssignClick}
-            disabled={!selectedUser || createAssignment.isPending}
+            disabled={!selectedUser || !selectedRole || createAssignment.isPending}
             className="w-full"
             variant={hasGuardrailIssues && !guardrailOverridden ? "destructive" : "default"}
           >

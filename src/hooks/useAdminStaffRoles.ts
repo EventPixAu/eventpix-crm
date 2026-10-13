@@ -13,6 +13,7 @@ export interface StaffRoleLookup {
   name: string;
   description: string | null;
   is_active: boolean;
+  is_onsite: boolean;
   sort_order: number;
   created_at: string;
 }
@@ -38,22 +39,24 @@ export function useCreateStaffRole() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async (input: string | { name: string; is_onsite: boolean }) => {
+      const name = typeof input === 'string' ? input : input.name;
+      const is_onsite = /\bstaff\b/i.test(name) ? false : typeof input === 'string' ? true : input.is_onsite;
       // Get max sort_order
       const { data: maxData } = await supabase
         .from('staff_roles')
         .select('sort_order')
         .order('sort_order', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       const nextOrder = (maxData?.sort_order || 0) + 1;
 
       const { data, error } = await supabase
         .from('staff_roles')
-        .insert({ name, sort_order: nextOrder })
+        .insert({ name, is_onsite, sort_order: nextOrder })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -78,7 +81,7 @@ export function useUpdateStaffRole() {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
