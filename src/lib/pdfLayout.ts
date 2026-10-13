@@ -15,7 +15,7 @@ export function prepareAgreementLayout(content: HTMLElement): void {
   for (const paragraph of paragraphs) {
     const text = paragraph.textContent?.trim() || '';
     if (/^1\.\s+Parties$/i.test(text)) inClauses = true;
-    if (inClauses && /^\d+\.\s+[^\n]+$/.test(text) && text.length < 100) {
+    if (inClauses && /^\d+\.\s+[^\n]+$/.test(text) && text.length < 100 && !/[.!?]$/.test(text)) {
       paragraph.classList.add('agreement-heading');
     }
     if (/^(Event details|The Event|The Client|Client Contact|Venue|Event start date)$/i.test(text)) {
