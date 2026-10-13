@@ -68,7 +68,9 @@ export function appendAgreementSignatories(content: HTMLElement, record?: Agreem
   }
   const companyImage = document.createElement('img');
   companyImage.crossOrigin = 'anonymous';
-  companyImage.src = `${getPublicBaseUrl()}${eventpixSignature.url}`;
+  const publicBase = getPublicBaseUrl();
+  const assetBase = /^https:\/\//i.test(publicBase) ? publicBase : 'https://app.eventpix.com.au';
+  companyImage.src = `${assetBase}${eventpixSignature.url}`;
   companyImage.alt = 'Trevor Connell — authorised EventPix signature';
   companyImage.style.maxWidth = '240px';
   companyImage.style.width = '100%';
