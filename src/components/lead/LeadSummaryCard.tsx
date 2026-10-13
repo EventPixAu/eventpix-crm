@@ -291,7 +291,7 @@ export function LeadSummaryCard({
 
         {/* Enquiry message (from website form) */}
         {(() => {
-          const enquiryMessage = (lead as any).requirements_summary as string | null | undefined;
+          const enquiryMessage = lead.requirements_summary;
           if (!enquiryMessage?.trim()) return null;
           return (
             <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
