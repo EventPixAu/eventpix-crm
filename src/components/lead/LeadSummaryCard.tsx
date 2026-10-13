@@ -59,6 +59,7 @@ interface LeadSummaryCardProps {
     source?: string | null;
     venue_text?: string | null;
     event_website?: string | null;
+    requirements_summary?: string | null;
   };
   eventType?: { id: string; name: string } | null;
   leadSource?: { id: string; name: string } | null;
