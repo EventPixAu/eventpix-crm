@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Separate onsite/offsite assignment selections and lookup lists; classify Staff-prefixed roles offsite and verify.
 - [x] Include onsite contact confirmation and special instructions in the shared delivery-options email and client response.
 - [x] Show the response in Sales and Events and preserve it on conversion; client submission verified with intercepted responses, without sending live emails or changing client data.
 
