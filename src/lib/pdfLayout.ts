@@ -17,6 +17,7 @@ export function prepareAgreementLayout(content: HTMLElement): void {
     if (title > cssStart) initial.slice(0, title).forEach(paragraph => paragraph.remove());
   }
   normalizeAgreementDetails(content);
+  normalizeAgreementBudget(content);
   
   const paragraphs = Array.from(content.querySelectorAll('p'));
   if (!content.querySelector('h1') && paragraphs[0]) paragraphs[0].classList.add('agreement-title');
@@ -49,6 +50,36 @@ export function prepareAgreementLayout(content: HTMLElement): void {
   `;
   content.classList.add('agreement-pdf');
   content.prepend(style);
+}
+
+/** Keep legacy budget labels and their amounts together in every agreement view. */
+function normalizeAgreementBudget(content: HTMLElement): void {
+  const blocks = Array.from(content.querySelectorAll<HTMLElement>('p, tr'));
+  for (const block of blocks) {
+    if (!content.contains(block) || block.closest('td, th')) continue;
+    const cells = block.matches('tr') ? Array.from(block.querySelectorAll('td, th')) : [];
+    const text = cells.length
+      ? `${cells[0]?.textContent?.trim()}: ${cells.slice(1).map(cell => cell.textContent?.trim()).join(' ')}`
+      : block.textContent?.trim() || '';
+    const match = text.match(/^(Budget\s*\(ex\s*GST\))\s*:?\s*/i);
+    if (!match) continue;
+    let value = text.slice(match[0].length).trim();
+    let extra: Element | null = null;
+    if (!value) {
+      const next = block.nextElementSibling;
+      if (next?.matches('p') && /^(?:\$|\{\{)/.test(next.textContent?.trim() || '')) {
+        value = next.textContent?.trim() || '';
+        extra = next;
+      }
+    }
+    if (!value) continue;
+    const paragraph = document.createElement('p');
+    const label = document.createElement('strong');
+    label.textContent = `${match[1]}:`;
+    paragraph.append(label, document.createTextNode(` ${value}`));
+    block.replaceWith(paragraph);
+    extra?.remove();
+  }
 }
 
 /** Recognise legacy client headers without changing stored wording or team agreements. */
