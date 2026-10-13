@@ -556,7 +556,7 @@ export function SendEmailDialog({
 </head>
 <body>${contractHtml}</body>
 </html>`;
-        const pdfBlob = await htmlToPdfBlob(fullContractHtml, filename);
+        const pdfBlob = await htmlToPdfBlob(fullContractHtml, filename, { documentType: 'agreement' });
         const base64Content = await blobToBase64(pdfBlob);
         finalAttachments.push({ filename, content: base64Content, contentType: 'application/pdf' });
       } catch (error) {

@@ -3,10 +3,11 @@
  * 
  * Generates a PDF of a quote/proposal for email attachment.
  * Uses the generate-proposal-pdf edge function to create HTML,
- * then converts to PDF using html2pdf.js in the browser.
+ * then converts to PDF using html2canvas and jsPDF in the browser.
  */
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { measurePdfLayout, nextPdfPageEnd, prepareAgreementLayout } from '@/lib/pdfLayout';
 
 interface GeneratePdfResult {
   success: boolean;
@@ -39,7 +40,7 @@ export function useGenerateProposalPdf() {
  * Convert HTML to a PDF blob using html2canvas and jsPDF
  * This runs in the browser since Edge Functions can't render HTML to PDF directly
  */
-export async function htmlToPdfBlob(html: string, filename: string): Promise<Blob> {
+export async function htmlToPdfBlob(html: string, filename: string, options?: { documentType?: 'agreement' }): Promise<Blob> {
   // NOTE: We intentionally do NOT use html2pdf.js here.
   // html2pdf.js renders via an internal hidden overlay; in this app that path has
   // repeatedly resulted in blank canvases/PDFs for email attachments.
@@ -78,14 +79,14 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
 
   const contentEl = document.createElement('div');
   contentEl.innerHTML = bodyHtml;
+  if (options?.documentType === 'agreement') prepareAgreementLayout(contentEl);
   container.appendChild(contentEl);
 
   container.style.position = 'fixed';
   container.style.left = '-10000px';
   container.style.top = '0';
-  container.style.width = '210mm'; // A4 width
-  container.style.minHeight = '297mm'; // A4 height
-  container.style.padding = '20mm';
+  container.style.width = '180mm'; // A4 minus the PDF's 15mm side margins
+  container.style.padding = '0'; // Margins are applied once, on every PDF page
   container.style.backgroundColor = 'white';
   container.style.color = 'black';
   container.style.zIndex = '0';
@@ -97,10 +98,11 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
   container.style.lineHeight = '1.6';
   document.body.appendChild(container);
   
-  // Wait for any images or fonts to load
-  await new Promise(resolve => setTimeout(resolve, 200));
-  
   try {
+    await document.fonts.ready;
+    await Promise.all(Array.from(contentEl.querySelectorAll('img')).map(async image => {
+      try { await image.decode(); } catch { /* An unavailable logo must not block export. */ }
+    }));
     const marginsMm: [number, number, number, number] = [15, 15, 15, 15]; // top, right, bottom, left
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
@@ -109,6 +111,7 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
     const innerWidth = pdfPageWidth - marginsMm[1] - marginsMm[3];
     const innerHeight = pdfPageHeight - marginsMm[0] - marginsMm[2];
 
+    const layout = measurePdfLayout(contentEl);
     // Render DOM to canvas
     const canvas = await html2canvas(container, {
       scale: 2,
@@ -117,10 +120,13 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
       logging: false,
     });
 
-    // Split into A4 pages (similar approach to html2pdf's internal toPdf)
+    // Cut at measured paragraph/row boundaries, never through a rendered line.
     const pxFullHeight = canvas.height;
     const pxPageHeight = Math.floor(canvas.width * (innerHeight / innerWidth));
-    const nPages = Math.max(1, Math.ceil(pxFullHeight / pxPageHeight));
+    const scale = canvas.width / contentEl.getBoundingClientRect().width;
+    const scaled = (items: typeof layout.blocks) => items.map(item => ({ top: item.top * scale, bottom: item.bottom * scale }));
+    const blocks = scaled(layout.blocks);
+    const lines = scaled(layout.lines);
 
     const pageCanvas = document.createElement('canvas');
     const pageCtx = pageCanvas.getContext('2d');
@@ -129,11 +135,11 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
     pageCanvas.width = canvas.width;
     pageCanvas.height = pxPageHeight;
 
-    for (let page = 0; page < nPages; page++) {
-      // Trim final page
-      const isLast = page === nPages - 1;
-      const remaining = pxFullHeight - page * pxPageHeight;
-      const sliceHeight = isLast ? Math.min(pxPageHeight, remaining) : pxPageHeight;
+    let start = 0;
+    let page = 0;
+    while (start < pxFullHeight) {
+      const end = nextPdfPageEnd(start, pxPageHeight, pxFullHeight, blocks, lines);
+      const sliceHeight = Math.max(1, end - start);
 
       if (pageCanvas.height !== sliceHeight) pageCanvas.height = sliceHeight;
 
@@ -142,7 +148,7 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
       pageCtx.drawImage(
         canvas,
         0,
-        page * pxPageHeight,
+        start,
         canvas.width,
         sliceHeight,
         0,
@@ -156,6 +162,18 @@ export async function htmlToPdfBlob(html: string, filename: string): Promise<Blo
 
       if (page > 0) pdf.addPage();
       pdf.addImage(imgData, 'JPEG', marginsMm[3], marginsMm[0], innerWidth, pageHeightMm);
+      start += sliceHeight;
+      page += 1;
+    }
+
+    if (options?.documentType === 'agreement') {
+      pdf.setProperties({ title: filename });
+      for (let number = 1; number <= page; number++) {
+        pdf.setPage(number);
+        pdf.setFontSize(9);
+        pdf.setTextColor(80);
+        pdf.text(`Page ${number} of ${page}`, pdfPageWidth - 15, pdfPageHeight - 8, { align: 'right' });
+      }
     }
 
     return pdf.output('blob');

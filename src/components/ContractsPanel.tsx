@@ -679,7 +679,8 @@ export function ContractsPanel({
                             onClick={async () => {
                               try {
                                 toast.info('Generating PDF...');
-                                const blob = await htmlToPdfBlob(contract.rendered_html!, contract.title);
+                                if (!contract.rendered_html) return;
+                                const blob = await htmlToPdfBlob(contract.rendered_html, contract.title, { documentType: 'agreement' });
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
