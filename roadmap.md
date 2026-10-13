@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Improve agreement PDF spacing and page breaks; verify the Associations Forum Awards download without changing signed wording.
 - [x] Separate onsite/offsite assignment selections and lookup lists; classify Staff roles offsite; verified both lists in the signed-in preview and passed role tests.
 - [x] Include onsite contact confirmation and special instructions in the shared delivery-options email and client response.
 - [x] Show the response in Sales and Events and preserve it on conversion; client submission verified with intercepted responses, without sending live emails or changing client data.

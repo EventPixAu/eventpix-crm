@@ -1,0 +1,15 @@
+import { describe, expect, it } from 'vitest';
+import { nextPdfPageEnd } from './pdfLayout';
+
+describe('PDF page boundaries', () => {
+  it('moves a crossing paragraph to the next page without losing pixels', () => {
+    expect(nextPdfPageEnd(0, 1000, 2000, [{ top: 950, bottom: 1100 }], [])).toBe(950);
+    expect(nextPdfPageEnd(950, 1000, 2000, [{ top: 950, bottom: 1100 }], [])).toBe(1950);
+  });
+  it('splits oversized paragraphs only between lines', () => {
+    expect(nextPdfPageEnd(0, 1000, 2400, [{ top: 0, bottom: 2400 }], [{ top: 990, bottom: 1010 }])).toBe(990);
+  });
+  it('trims the last page without adding an empty page', () => {
+    expect(nextPdfPageEnd(1000, 1000, 1500, [], [])).toBe(1500);
+  });
+});
