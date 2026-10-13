@@ -288,6 +288,20 @@ export function LeadSummaryCard({
           </div>
         </div>
 
+        {/* Enquiry message (from website form) */}
+        {(() => {
+          const enquiryMessage = (lead as any).requirements_summary as string | null | undefined;
+          if (!enquiryMessage?.trim()) return null;
+          return (
+            <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+              <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                Enquiry message
+              </span>
+              <p className="text-sm whitespace-pre-wrap">{enquiryMessage.trim()}</p>
+            </div>
+          );
+        })()}
+
         {/* Lost reason dialog (triggered from status dropdown) */}
         <Dialog open={lostOpen} onOpenChange={setLostOpen}>
           <DialogContent>
