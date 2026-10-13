@@ -8,6 +8,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { measurePdfLayout, nextPdfPageEnd, prepareAgreementLayout } from '@/lib/pdfLayout';
+import { appendAgreementSignatories, type AgreementSigningRecord } from '@/lib/agreementSignatories';
 
 interface GeneratePdfResult {
   success: boolean;
@@ -40,7 +41,7 @@ export function useGenerateProposalPdf() {
  * Convert HTML to a PDF blob using html2canvas and jsPDF
  * This runs in the browser since Edge Functions can't render HTML to PDF directly
  */
-export async function htmlToPdfBlob(html: string, filename: string, options?: { documentType?: 'agreement' }): Promise<Blob> {
+export async function htmlToPdfBlob(html: string, filename: string, options?: { documentType?: 'agreement'; signingRecord?: AgreementSigningRecord }): Promise<Blob> {
   // NOTE: We intentionally do NOT use html2pdf.js here.
   // html2pdf.js renders via an internal hidden overlay; in this app that path has
   // repeatedly resulted in blank canvases/PDFs for email attachments.
@@ -79,7 +80,10 @@ export async function htmlToPdfBlob(html: string, filename: string, options?: { 
 
   const contentEl = document.createElement('div');
   contentEl.innerHTML = bodyHtml;
-  if (options?.documentType === 'agreement') prepareAgreementLayout(contentEl);
+  if (options?.documentType === 'agreement') {
+    prepareAgreementLayout(contentEl);
+    appendAgreementSignatories(contentEl, options.signingRecord);
+  }
   container.appendChild(contentEl);
 
   container.style.position = 'fixed';

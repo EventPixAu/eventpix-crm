@@ -680,7 +680,7 @@ export function ContractsPanel({
                               try {
                                 toast.info('Generating PDF...');
                                 if (!contract.rendered_html) return;
-                                const blob = await htmlToPdfBlob(contract.rendered_html, contract.title, { documentType: 'agreement' });
+                                const blob = await htmlToPdfBlob(contract.rendered_html, contract.title, { documentType: 'agreement', signingRecord: contract });
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
