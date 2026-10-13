@@ -5,7 +5,7 @@
  * Used in QuoteDetail and ContractList pages.
  */
 import { useState, useEffect } from 'react';
-import DOMPurify from 'dompurify';
+import { AgreementDocument } from '@/components/AgreementDocument';
 import { FileSignature, FileText, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -209,11 +209,8 @@ export function GenerateContractDialog({
                   Hide Preview
                 </Button>
               </div>
-              <div className="border rounded-lg p-4 bg-white max-h-[400px] overflow-y-auto">
-                <div 
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
-                />
+              <div className="border rounded-lg p-4 agreement-surface max-h-[400px] overflow-y-auto">
+                <AgreementDocument html={previewHtml} />
               </div>
             </div>
           )}
