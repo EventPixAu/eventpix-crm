@@ -112,6 +112,15 @@ export function SendPortalLinkButton({
         const bodyHtml = `
           <p>Hi ${firstName},</p>
           <p>Welcome to your Eventpixii <strong>Client Portal</strong> — one place to see everything about your upcoming events with us.</p>
+          ${useEventLink ? '' : `
+          <h3 style="margin: 24px 0 8px; font-size: 16px;">What's new</h3>
+          <ul style="padding-left: 18px; margin: 0;">
+            <li style="margin-bottom: 6px;"><strong>One sign-in for everything</strong> — you no longer need a separate link for each event. Sign in once with your email and every event for your organisation is there.</li>
+            <li style="margin-bottom: 6px;"><strong>Your events come first</strong> — events you're personally involved in appear at the top, marked "Your event".</li>
+            <li style="margin-bottom: 6px;"><strong>Everyone has their own login</strong> — each person signs in with their own email address and sees the events relevant to them. If a colleague needs access, just let us know.</li>
+          </ul>
+          `}
+
 
           <h3 style="margin: 24px 0 8px; font-size: 16px;">What you'll find inside</h3>
           <ul style="padding-left: 18px; margin: 0;">
