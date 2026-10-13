@@ -667,6 +667,30 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
     : null;
 
+  const [isPdfDownloading, setIsPdfDownloading] = useState(false);
+  const downloadAgreementPdf = async () => {
+    if (!contract?.rendered_html) return;
+    setIsPdfDownloading(true);
+    try {
+      toast.info('Generating PDF...');
+      const blob = await htmlToPdfBlob(contract.rendered_html, contract.title || seriesName, {
+        documentType: 'agreement',
+        signingRecord: contract,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(contract.title || seriesName || 'Series Agreement').replace(/[^a-zA-Z0-9 ]/g, '')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF downloaded');
+    } catch (err: any) {
+      toast.error('Failed to generate PDF', { description: err.message });
+    } finally {
+      setIsPdfDownloading(false);
+    }
+  };
+
   if (quoteLoading) {
     return <Skeleton className="h-64 w-full" />;
   }
