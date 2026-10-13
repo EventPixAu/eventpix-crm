@@ -57,18 +57,18 @@ export default function Events() {
     },
   });
 
-  // Fetch assignment status counts for all events (excludes offsite editor roles)
+  // Fetch assignment status counts for all events (every assigned person,
+  // including staff editors, so the list matches the event page's "Assigned Staff" count)
   const { data: assignmentCounts = {} } = useQuery({
     queryKey: ['event-assignment-counts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_assignments')
-        .select('event_id, user_id, staff_id, role_on_event, confirmation_status, staff_roles(name)');
+        .select('event_id, user_id, staff_id, role_on_event, confirmation_status');
       if (error) throw error;
       const counts: Record<string, { confirmed: number; pending: number; declined: number; total: number }> = {};
       (data || []).forEach((a: any) => {
-        const roleName: string = a.staff_roles?.name || a.role_on_event || '';
-        if (/editor|retoucher/i.test(roleName)) return;
+        if (!a.event_id) return;
         if (!counts[a.event_id]) counts[a.event_id] = { confirmed: 0, pending: 0, declined: 0, total: 0 };
         counts[a.event_id].total += 1;
         if (a.confirmation_status === 'confirmed') counts[a.event_id].confirmed += 1;
