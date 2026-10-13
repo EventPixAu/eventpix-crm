@@ -50,6 +50,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { AgreementDocument } from '@/components/AgreementDocument';
+import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
 
 interface CatalogSelectedItem {
   type: 'product' | 'package';
@@ -70,6 +71,7 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   Copy,
+  Download,
 } from 'lucide-react';
 
 interface Props {
