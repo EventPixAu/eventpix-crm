@@ -49,6 +49,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
+import { AgreementDocument } from '@/components/AgreementDocument';
 
 interface CatalogSelectedItem {
   type: 'product' | 'package';
@@ -1067,11 +1068,8 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
                     </div>
                   </div>
                 )}
-                <div className="rounded-md border p-4 max-h-80 overflow-auto bg-white text-black">
-                  <div
-                    className="prose prose-sm max-w-none text-black"
-                    dangerouslySetInnerHTML={{ __html: contract.rendered_html }}
-                  />
+                <div className="rounded-md border p-4 max-h-80 overflow-auto agreement-surface">
+                  <AgreementDocument html={contract.rendered_html} signingRecord={contract} />
                 </div>
               </>
             );

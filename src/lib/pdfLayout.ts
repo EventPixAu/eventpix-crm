@@ -1,4 +1,4 @@
-/** Export-only layout: never changes stored or signed agreement wording. */
+/** Shared presentation-only layout: never changes stored or signed agreement wording. */
 export function prepareAgreementLayout(content: HTMLElement): void {
   const nodes = Array.from(content.querySelectorAll('div'));
   for (const node of nodes) {
@@ -25,7 +25,7 @@ export function prepareAgreementLayout(content: HTMLElement): void {
   let inClauses = false;
   for (const paragraph of paragraphs) {
     const text = paragraph.textContent?.trim() || '';
-    if (/^1\.\s+Parties$/i.test(text)) inClauses = true;
+    if (/^1\.\s+[^\n]+$/i.test(text) && text.length < 100 && !/[.!?]$/.test(text)) inClauses = true;
     if (inClauses && /^\d+\.\s+[^\n]+$/.test(text) && text.length < 100 && !/[.!?]$/.test(text)) {
       paragraph.classList.add('agreement-heading');
     }
@@ -36,12 +36,12 @@ export function prepareAgreementLayout(content: HTMLElement): void {
   }
   const style = document.createElement('style');
   style.textContent = `
-    .agreement-pdf, .agreement-pdf div { font-size: 14px !important; line-height: 1.5 !important; }
-    .agreement-pdf { color: #000; background: #fff; }
-    .agreement-pdf p { margin: 0 0 10px; }
-    .agreement-pdf h1, .agreement-pdf .agreement-title { font-size: 24px !important; font-weight: 700; line-height: 1.25 !important; margin: 0 0 20px; }
-    .agreement-pdf h2, .agreement-pdf h3, .agreement-pdf .agreement-heading { font-size: 16px !important; font-weight: 700; margin: 18px 0 8px; }
-    .agreement-pdf .agreement-label { font-weight: 600; margin: 10px 0 2px; }
+    .agreement-pdf, .agreement-pdf div { font-size: 14px !important; line-height: 1.5 !important; white-space: normal !important; }
+    .agreement-pdf { color: hsl(var(--document-foreground, 0 0% 0%)); background: hsl(var(--document-background, 0 0% 100%)); overflow-wrap: anywhere; }
+    .agreement-pdf p { margin: 0 0 10px !important; }
+    .agreement-pdf h1, .agreement-pdf .agreement-title { font-size: 24px !important; font-weight: 700; line-height: 1.25 !important; margin: 0 0 20px !important; }
+    .agreement-pdf h2, .agreement-pdf h3, .agreement-pdf .agreement-heading { font-size: 16px !important; font-weight: 700; margin: 18px 0 8px !important; }
+    .agreement-pdf .agreement-label { font-weight: 600; margin: 10px 0 2px !important; }
     .agreement-pdf .agreement-bullet { padding-left: 14px; margin-bottom: 6px; }
     .agreement-pdf ul, .agreement-pdf ol { margin: 6px 0 12px; padding-left: 22px; }
     .agreement-pdf li { margin-bottom: 5px; }

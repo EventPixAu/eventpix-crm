@@ -8,7 +8,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { format } from 'date-fns';
-import DOMPurify from 'dompurify';
+import { AgreementDocument } from '@/components/AgreementDocument';
 import {
   FileSignature,
   Plus,
@@ -867,11 +867,8 @@ export function ContractsPanel({
               {selectedContract?.signed_at && ` • Signed: ${format(new Date(selectedContract.signed_at), 'PPp')}`}
             </DialogDescription>
           </DialogHeader>
-          <div className="border rounded-lg p-6 bg-white text-gray-900">
-            <div 
-              className="prose prose-sm max-w-none prose-gray"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedContract?.rendered_html || '') }}
-            />
+          <div className="border rounded-lg p-4 sm:p-6 agreement-surface">
+            <AgreementDocument html={selectedContract?.rendered_html || ''} signingRecord={selectedContract || undefined} />
           </div>
           <DialogFooter>
             <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>

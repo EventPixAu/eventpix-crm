@@ -1,5 +1,5 @@
 Email send handlers must reject unresolved `{{...}}` placeholders before delivery, because multiple compose screens and scheduled sends share the same sender.
-Agreement downloads and email attachments share export-only formatting, recorded client signing evidence and the owner-authorised asset-backed company signature, with DOM-aware PDF page cuts; stored signed wording stays untouched and the company default date follows the client date rather than export time.
+All client agreement electronic views, downloads and email attachments use the shared agreement layout and recorded signing evidence via AgreementDocument/pdfLayout; formatting is applied only at presentation time to preserve stored signed wording, with DOM-aware PDF page cuts and the company default date following the client date rather than export time.
 Onsite/offsite assignment selections and admin lookup lists share staffRoleScope and the existing staff_roles.is_onsite classification, preserving role IDs and historical assignments rather than introducing another role table.
 The lead On Hold - Date TBA transition clears dates and lead-only sessions in database triggers, because status can be changed from several screens.
 Lead-status display ordering is centralized in the shared lead-status hook, so detail and edit menus agree without changing stored statuses.

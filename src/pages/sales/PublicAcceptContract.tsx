@@ -6,7 +6,7 @@
  * Security: Only exposes minimal contract info, no internal data.
  */
 import { useState, useEffect } from 'react';
-import DOMPurify from 'dompurify';
+import { AgreementDocument } from '@/components/AgreementDocument';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CheckCircle, FileText, ExternalLink, Shield, PenLine } from 'lucide-react';
@@ -227,11 +227,8 @@ export default function PublicAcceptContract() {
           </CardHeader>
           <CardContent>
             {contract.rendered_html ? (
-              <div className="border rounded-lg p-6 bg-white text-gray-900 max-h-[400px] overflow-y-auto">
-                <div 
-                  className="prose prose-sm max-w-none prose-gray"
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.rendered_html) }}
-                />
+              <div className="border rounded-lg p-4 sm:p-6 agreement-surface">
+                <AgreementDocument html={contract.rendered_html} />
               </div>
             ) : contract.file_url ? (
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">

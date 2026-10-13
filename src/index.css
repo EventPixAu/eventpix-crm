@@ -15,6 +15,8 @@
     /* Dark navy background from #12223f */
     --background: 218 55% 16%;
     --foreground: 0 0% 98%;
+    --document-background: 0 0% 100%;
+    --document-foreground: 0 0% 0%;
 
     --card: 218 50% 12%;
     --card-foreground: 0 0% 98%;
@@ -118,6 +120,17 @@
 }
 
 /* Print styles for PDF generation */
+.agreement-surface {
+  background: hsl(var(--document-background));
+  color: hsl(var(--document-foreground));
+}
+.agreement-document h1, .agreement-document h2, .agreement-document h3 {
+  font-family: inherit;
+}
+@media (max-width: 640px) {
+  .agreement-document .signature > div { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
 @media print {
   body {
     background: white !important;
