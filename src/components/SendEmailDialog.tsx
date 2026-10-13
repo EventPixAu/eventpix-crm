@@ -556,7 +556,15 @@ export function SendEmailDialog({
 </head>
 <body>${contractHtml}</body>
 </html>`;
-        const pdfBlob = await htmlToPdfBlob(fullContractHtml, filename, { documentType: 'agreement' });
+        let signingRecord;
+        if (relatedContractId) {
+          const { data, error } = await supabase.from('contracts')
+            .select('status,signed_by_name,signed_by_email,signed_at,signature_data')
+            .eq('id', relatedContractId).maybeSingle();
+          if (error) throw error;
+          signingRecord = data || undefined;
+        }
+        const pdfBlob = await htmlToPdfBlob(fullContractHtml, filename, { documentType: 'agreement', signingRecord });
         const base64Content = await blobToBase64(pdfBlob);
         finalAttachments.push({ filename, content: base64Content, contentType: 'application/pdf' });
       } catch (error) {

@@ -26,6 +26,7 @@ export interface Contract {
   signed_at: string | null;
   signed_by_name: string | null;
   signed_by_email: string | null;
+  signature_data?: string | null;
   public_token: string | null;
   created_at: string;
   updated_at: string;
