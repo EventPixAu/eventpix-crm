@@ -3,6 +3,7 @@ import { getPublicBaseUrl } from '@/lib/utils';
 
 export interface AgreementSigningRecord {
   status?: string | null;
+  contract_status?: string | null;
   signed_by_name?: string | null;
   signed_by_email?: string | null;
   signed_at?: string | null;
@@ -11,7 +12,7 @@ export interface AgreementSigningRecord {
 
 /** Recorded client evidence alongside the company signature authorised by the owner. */
 export function appendAgreementSignatories(content: HTMLElement, record?: AgreementSigningRecord): void {
-  if (!record || record.status !== 'signed') return;
+  if (!record || (record.status !== 'signed' && record.contract_status !== 'signed')) return;
   const section = document.createElement('section');
   section.className = 'signature';
   const heading = document.createElement('h2');
