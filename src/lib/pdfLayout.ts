@@ -17,7 +17,7 @@ export function prepareAgreementLayout(content: HTMLElement): void {
     const date = headerParagraphs.find(paragraph => /^Date\s*:/i.test(paragraph.textContent?.trim() || ''));
     if (date) eventDetails.after(date);
     headerParagraphs
-      .filter(paragraph => /^The Client$/i.test(paragraph.textContent?.trim() || ''))
+      .filter(paragraph => /^Client Contact$/i.test(paragraph.textContent?.trim() || ''))
       .forEach(paragraph => paragraph.remove());
   }
   const paragraphs = Array.from(content.querySelectorAll('p'));
