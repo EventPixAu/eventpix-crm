@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Correct the agreement headings: retain “The Client” and remove “Client Contact” in electronic versions and PDFs.
+- [x] Correct the agreement headings: retain “The Client” and remove “Client Contact” in electronic versions and PDFs; verified electronic preview and downloaded PDF, with six existing tests passing.
 - [x] Apply the shared agreement format to all future client agreements and tidy electronic previews, client signing pages, creation previews and series agreements without changing stored signed wording; verified the signed-in electronic preview, visually checked all four PDF pages and passed six PDF tests.
 - [x] Move the agreement date into Event details and remove the “The Client” heading from the PDF, retaining the client name and stored signed wording; downloaded and visually verified the first page, with six existing PDF tests passing.
 - [x] Add the authorised EventPix signature alongside the client with the client's signing date; fixed image loading during local export and visually verified both signatures on the final PDF page; six tests passed.
