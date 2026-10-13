@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Apply the shared agreement format to all future client agreements and tidy electronic previews, client signing pages and series agreements without changing stored signed wording.
 - [x] Move the agreement date into Event details and remove the “The Client” heading from the PDF, retaining the client name and stored signed wording; downloaded and visually verified the first page, with six existing PDF tests passing.
 - [x] Add the authorised EventPix signature alongside the client with the client's signing date; fixed image loading during local export and visually verified both signatures on the final PDF page; six tests passed.
 - [x] Include recorded signatories in agreement PDF downloads and email attachments; verified signer name, email, Sydney signing date/time and signature image in the signed agreement download; five tests passed.

@@ -6,7 +6,7 @@
  */
 import { useState, useEffect } from 'react';
 import { getPublicBaseUrl } from '@/lib/utils';
-import DOMPurify from 'dompurify';
+import { AgreementDocument } from '@/components/AgreementDocument';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
@@ -323,20 +323,14 @@ export default function ContractDetail() {
                     onChange={(e) => setEditedText(e.target.value)}
                     className="min-h-[400px] bg-white text-gray-900 leading-relaxed"
                   />
-                  <div className="border rounded-lg p-4 bg-white text-gray-900 max-h-[300px] overflow-y-auto">
+                  <div className="border rounded-lg p-4 agreement-surface max-h-[300px] overflow-y-auto">
                     <p className="text-xs text-muted-foreground mb-2 font-sans">Preview:</p>
-                    <div
-                      className="prose prose-sm max-w-none prose-gray"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(editableTextToHtml(editedText)) }}
-                    />
+                    <AgreementDocument html={editableTextToHtml(editedText)} />
                   </div>
                 </div>
               ) : (contract as any).rendered_html ? (
-                <div className="border rounded-lg p-6 bg-white text-gray-900 max-h-[500px] overflow-y-auto">
-                  <div 
-                    className="prose prose-sm max-w-none prose-gray"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((contract as any).rendered_html) }}
-                  />
+                <div className="border rounded-lg p-4 sm:p-6 agreement-surface max-h-[500px] overflow-y-auto">
+                  <AgreementDocument html={(contract as any).rendered_html} signingRecord={contract} />
                 </div>
               ) : contract.file_url ? (
                 <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
