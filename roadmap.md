@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Include recorded signatories in agreement PDF downloads and email attachments; verify the signed agreement download.
 - [x] Improve agreement PDF spacing and page breaks; verified the signed-in Associations Forum Awards download and visually checked all four pages without changing signed wording.
 - [x] Separate onsite/offsite assignment selections and lookup lists; classify Staff roles offsite; verified both lists in the signed-in preview and passed role tests.
 - [x] Include onsite contact confirmation and special instructions in the shared delivery-options email and client response.
