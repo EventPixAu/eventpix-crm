@@ -9,6 +9,17 @@ export function prepareAgreementLayout(content: HTMLElement): void {
       .filter(part => part.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim())
       .map(part => `<p>${part.trim()}</p>`).join('');
   }
+  const detailParagraphs = Array.from(content.querySelectorAll('p'));
+  const eventDetails = detailParagraphs.find(paragraph => /^Event details$/i.test(paragraph.textContent?.trim() || ''));
+  if (eventDetails) {
+    const sectionEnd = detailParagraphs.findIndex(paragraph => /^1\.\s+Parties$/i.test(paragraph.textContent?.trim() || ''));
+    const headerParagraphs = sectionEnd < 0 ? detailParagraphs : detailParagraphs.slice(0, sectionEnd);
+    const date = headerParagraphs.find(paragraph => /^Date\s*:/i.test(paragraph.textContent?.trim() || ''));
+    if (date) eventDetails.after(date);
+    headerParagraphs
+      .filter(paragraph => /^The Client$/i.test(paragraph.textContent?.trim() || ''))
+      .forEach(paragraph => paragraph.remove());
+  }
   const paragraphs = Array.from(content.querySelectorAll('p'));
   if (!content.querySelector('h1') && paragraphs[0]) paragraphs[0].classList.add('agreement-title');
   let inClauses = false;
