@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Put Budget (ex GST) and its amount on one line throughout electronic agreement views and PDFs; verify CEW and other template previews.
+- [x] Put Budget (ex GST) and its amount on one line throughout electronic agreement views and PDFs; visually verified CEW in both formats, checked 13 template previews, and passed six existing tests.
 - [x] Review all client agreement templates and normalize legacy paragraph/table Event details headers in electronic previews and PDFs, without changing signed wording; checked 13 available template previews, fixed stray stylesheet text and preview merge fields, verified the signed CEW electronic view and all four PDF pages, and passed six existing tests. Series and photographer agreements retain their distinct metadata.
 - [x] Remove the standalone agreement date and put Event details labels and values on the same line in electronic agreements and PDFs, preserving signing dates and stored wording; visually verified both formats and passed six existing tests.
 - [x] Correct the agreement headings: retain “The Client” and remove “Client Contact” in electronic versions and PDFs; verified electronic preview and downloaded PDF, with six existing tests passing.
