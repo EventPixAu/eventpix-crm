@@ -65,6 +65,7 @@ interface Event {
   company_name: string;
   series_id?: string | null;
   series_name?: string | null;
+  is_assigned?: boolean;
   meal_provided?: boolean | null;
   parking_provided?: boolean | null;
   meal_provision_status?: string | null;
@@ -243,6 +244,9 @@ export default function ClientPortalDashboard() {
       }
       map.get(key)!.events.push(ev);
     }
+    for (const group of map.values()) {
+      group.events.sort((a, b) => Number(b.is_assigned ?? false) - Number(a.is_assigned ?? false));
+    }
     return Array.from(map.values()).sort((a, b) =>
       a.key === '__standalone__' ? 1 : b.key === '__standalone__' ? -1 : a.title.localeCompare(b.title)
     );
@@ -389,9 +393,14 @@ export default function ClientPortalDashboard() {
                                 <p className="text-xs text-muted-foreground">{event.company_name}</p>
                               )}
                             </div>
-                            <Badge className={statusColors[event.ops_status || ''] || 'bg-muted text-muted-foreground'}>
-                              {formatStatus(event.ops_status)}
-                            </Badge>
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge className={statusColors[event.ops_status || ''] || 'bg-muted text-muted-foreground'}>
+                                {formatStatus(event.ops_status)}
+                              </Badge>
+                              {event.is_assigned && (
+                                <Badge className="bg-primary/20 text-primary border-primary/30">Your event</Badge>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
