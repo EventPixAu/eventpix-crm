@@ -50,6 +50,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackagesDialog';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { AgreementDocument } from '@/components/AgreementDocument';
+import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
 
 interface CatalogSelectedItem {
   type: 'product' | 'package';
@@ -70,6 +71,7 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   Copy,
+  Download,
 } from 'lucide-react';
 
 interface Props {
@@ -665,6 +667,30 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
     ? `${getPublicBaseUrl()}/contract/sign/${contract.public_token}`
     : null;
 
+  const [isPdfDownloading, setIsPdfDownloading] = useState(false);
+  const downloadAgreementPdf = async () => {
+    if (!contract?.rendered_html) return;
+    setIsPdfDownloading(true);
+    try {
+      toast.info('Generating PDF...');
+      const blob = await htmlToPdfBlob(contract.rendered_html, contract.title || seriesName, {
+        documentType: 'agreement',
+        signingRecord: contract,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(contract.title || seriesName || 'Series Agreement').replace(/[^a-zA-Z0-9 ]/g, '')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF downloaded');
+    } catch (err: any) {
+      toast.error('Failed to generate PDF', { description: err.message });
+    } finally {
+      setIsPdfDownloading(false);
+    }
+  };
+
   if (quoteLoading) {
     return <Skeleton className="h-64 w-full" />;
   }
@@ -1023,6 +1049,16 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
               <Send className="h-4 w-4 mr-1" />
               {contract?.public_token ? 'Re-send agreement' : 'Send agreement'}
             </Button>
+            {contract?.rendered_html && (
+              <Button
+                variant="outline"
+                onClick={downloadAgreementPdf}
+                disabled={isPdfDownloading}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download PDF
+              </Button>
+            )}
             {contractLink && (
               <div className="flex items-center gap-2 ml-auto">
                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
