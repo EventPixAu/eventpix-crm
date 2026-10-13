@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Move the agreement date into Event details and remove the “The Client” heading from the PDF, retaining the client name and stored signed wording.
+- [x] Move the agreement date into Event details and remove the “The Client” heading from the PDF, retaining the client name and stored signed wording; downloaded and visually verified the first page, with six existing PDF tests passing.
 - [x] Add the authorised EventPix signature alongside the client with the client's signing date; fixed image loading during local export and visually verified both signatures on the final PDF page; six tests passed.
 - [x] Include recorded signatories in agreement PDF downloads and email attachments; verified signer name, email, Sydney signing date/time and signature image in the signed agreement download; five tests passed.
 - [x] Improve agreement PDF spacing and page breaks; verified the signed-in Associations Forum Awards download and visually checked all four pages without changing signed wording.
