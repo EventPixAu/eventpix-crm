@@ -2,39 +2,25 @@
 export function prepareAgreementLayout(content: HTMLElement): void {
   const nodes = Array.from(content.querySelectorAll('div'));
   for (const node of nodes) {
-    // Legacy plain-text contracts are one div with double BR separators.
+    // Legacy headers use both single and double BR separators.
     if (node.querySelector('p, h1, h2, table, div') || !node.querySelector('br')) continue;
-    const paragraphs = node.innerHTML.split(/(?:<br\s*\/?\s*>\s*){2,}/i);
+    const paragraphs = node.innerHTML.split(/<br\s*\/?\s*>/i);
     node.innerHTML = paragraphs
       .filter(part => part.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim())
       .map(part => `<p>${part.trim()}</p>`).join('');
   }
-  const detailParagraphs = Array.from(content.querySelectorAll('p'));
-  const eventDetails = detailParagraphs.find(paragraph => /^Event details$/i.test(paragraph.textContent?.trim() || ''));
-  if (eventDetails) {
-    const sectionEnd = detailParagraphs.findIndex(paragraph => /^1\.\s+Parties$/i.test(paragraph.textContent?.trim() || ''));
-    const headerParagraphs = sectionEnd < 0 ? detailParagraphs : detailParagraphs.slice(0, sectionEnd);
-    headerParagraphs
-      .filter(paragraph => /^(Date\s*:|Client Contact$)/i.test(paragraph.textContent?.trim() || ''))
-      .forEach(paragraph => paragraph.remove());
-    // Combine legacy label/value pairs only within the event header, not clauses.
-    const detailLabels = /^(The Event|The Client|Venue|Event date|Event start date)$/i;
-    for (const paragraph of headerParagraphs) {
-      const label = paragraph.textContent?.trim() || '';
-      if (!paragraph.isConnected && !content.contains(paragraph)) continue;
-      if (!detailLabels.test(label.replace(/:$/, ''))) continue;
-      const value = paragraph.nextElementSibling;
-      if (!(value instanceof HTMLParagraphElement) || !headerParagraphs.includes(value)) continue;
-      const valueText = value.textContent?.trim() || '';
-      if (!valueText || detailLabels.test(valueText.replace(/:$/, '')) || /^\d+\.\s/.test(valueText)) continue;
-      const strong = document.createElement('strong');
-      strong.textContent = `${label.replace(/:$/, '')}:`;
-      paragraph.replaceChildren(strong, document.createTextNode(' '), ...Array.from(value.childNodes));
-      value.remove();
-    }
+  
+  const initial = Array.from(content.querySelectorAll('p'));
+  const cssStart = initial.findIndex(paragraph => /^body\s*\{$/.test(paragraph.textContent?.trim() || ''));
+  if (cssStart >= 0) {
+    const title = initial.findIndex((paragraph, index) => index > cssStart && /Agreement$/i.test(paragraph.textContent?.trim() || ''));
+    if (title > cssStart) initial.slice(0, title).forEach(paragraph => paragraph.remove());
   }
+  normalizeAgreementDetails(content);
+  
   const paragraphs = Array.from(content.querySelectorAll('p'));
   if (!content.querySelector('h1') && paragraphs[0]) paragraphs[0].classList.add('agreement-title');
+  
   let inClauses = false;
   for (const paragraph of paragraphs) {
     const text = paragraph.textContent?.trim() || '';
@@ -42,11 +28,12 @@ export function prepareAgreementLayout(content: HTMLElement): void {
     if (inClauses && /^\d+\.\s+[^\n]+$/.test(text) && text.length < 100 && !/[.!?]$/.test(text)) {
       paragraph.classList.add('agreement-heading');
     }
-    if (/^(Event details|The Event|The Client|Client Contact|Venue|Event date|Event start date)$/i.test(text)) {
+    if (/^(Event details|The Event|The Client|Venue|Event date|Event start date)$/i.test(text)) {
       paragraph.classList.add('agreement-label');
     }
     if (/^[•●]\s/.test(text)) paragraph.classList.add('agreement-bullet');
   }
+  
   const style = document.createElement('style');
   style.textContent = `
     .agreement-pdf, .agreement-pdf div { font-size: 14px !important; line-height: 1.5 !important; white-space: normal !important; }
@@ -62,6 +49,112 @@ export function prepareAgreementLayout(content: HTMLElement): void {
   `;
   content.classList.add('agreement-pdf');
   content.prepend(style);
+}
+
+/** Recognise legacy client headers without changing stored wording or team agreements. */
+function normalizeAgreementDetails(content: HTMLElement): void {
+  const blocks = Array.from(content.querySelectorAll<HTMLElement>('p, h1, h2, h3, tr'));
+  // Find where clauses start to limit header search
+  const end = blocks.findIndex(block => /^(?:1\.\s+Parties|Services|Agreement Terms and Conditions|Photography in Brief)$/i.test(block.textContent?.trim() || ''));
+  const header = end < 0 ? blocks : blocks.slice(0, end);
+  
+  // Identify labels. Include Date/Agreement Date so we can catch and remove them.
+  const labels = /^(Client Contact|Event start date|Event date|Event Venue|Agreement Date|The Event|Event|Job\s*\/\s*(?:Assignment|Project|Event)|The Client|Client|Venue|Location|Date)\s*(?::|\t|$)/i;
+  
+  const details = header.find(block => /^(Event details|Job details|Series details)$/i.test(block.textContent?.trim() || ''));
+  const fields: { key: string; label: string; value: string; block: HTMLElement; extra?: HTMLElement }[] = [];
+  
+  for (let index = 0; index < header.length; index++) {
+    const block = header[index];
+    if (!content.contains(block)) continue;
+    
+    const cells = block.matches('tr') ? Array.from(block.querySelectorAll('td, th')) : [];
+    const text = cells.length 
+      ? `${cells[0]?.textContent?.trim()}: ${cells.slice(1).map(cell => cell.textContent?.trim()).join(' ')}` 
+      : block.textContent?.trim() || '';
+    
+    const match = text.match(labels) || text.match(/^(Client|Job\s*\/\s*Assignment)(?=\S)/i);
+    if (!match) continue;
+    
+    const labelText = match[1].toLowerCase();
+    let value = text.slice(match[0].length).replace(/^[:\s]+/, '').trim();
+    let extra: HTMLElement | undefined;
+    
+    // If no value in current block, look at next block
+    if (!value && !cells.length) {
+      const next = header[index + 1];
+      const nextText = next?.textContent?.trim() || '';
+      if (next && nextText && !labels.test(nextText) && !/^(Event details|Job details|Series details)$/i.test(nextText)) {
+        value = nextText;
+        extra = next;
+        index++;
+      }
+    }
+    
+    const afterDetails = details ? header.indexOf(block) > header.indexOf(details) : false;
+    
+    let key = '';
+    let displayLabel = '';
+    
+    if (/client contact/.test(labelText)) {
+      key = 'contact';
+    } else if (/client/.test(labelText)) {
+      key = 'client';
+      displayLabel = 'The Client';
+    } else if (/venue|location/.test(labelText)) {
+      key = 'venue';
+      displayLabel = 'Venue';
+    } else if (/date/.test(labelText)) {
+      // Standalone date before details block is treated as agreement date (to be removed)
+      if ((labelText === 'date' && !afterDetails) || labelText === 'agreement date') {
+        key = 'agreementDate';
+      } else {
+        key = 'eventDate';
+        displayLabel = /start date/.test(labelText) ? 'Event start date' : 'Event date';
+      }
+    } else {
+      key = 'event';
+      displayLabel = 'The Event';
+    }
+    
+    fields.push({ key, label: displayLabel, value, block, extra });
+  }
+  
+  // Safety check: only normalize if we have both an Event/Series and a Client.
+  // This avoids touching photographer agreements (team agreements) which typically use "Photographer".
+  const hasEvent = fields.some(f => f.key === 'event');
+  const hasClient = fields.some(f => f.key === 'client');
+  if (!hasEvent || !hasClient) return;
+  
+  const heading = document.createElement('p');
+  heading.textContent = 'Event details';
+  heading.classList.add('agreement-label');
+  
+  const anchor = details || fields[0]?.block;
+  if (!anchor) return;
+  const insertion = anchor.closest('table') || anchor;
+  insertion.before(heading);
+  
+  let previous: HTMLElement = heading;
+  // Consistent order: The Event, The Client, Venue, Event date/start date
+  for (const key of ['event', 'client', 'venue', 'eventDate']) {
+    const field = fields.find(item => item.key === key);
+    if (!field || !field.value) continue;
+    
+    const paragraph = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = `${field.label}:`;
+    paragraph.append(strong, document.createTextNode(` ${field.value}`));
+    previous.after(paragraph);
+    previous = paragraph;
+  }
+  
+  // Remove all original identified blocks (including standalone Date and Client Contact)
+  details?.remove();
+  for (const field of fields) {
+    field.block.remove();
+    field.extra?.remove();
+  }
 }
 
 export interface PdfBlock { top: number; bottom: number }

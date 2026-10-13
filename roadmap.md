@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Review all client agreement templates and normalize legacy paragraph/table Event details headers in electronic previews and PDFs, without changing signed wording; checked 13 available template previews, fixed stray stylesheet text and preview merge fields, verified the signed CEW electronic view and all four PDF pages, and passed six existing tests. Series and photographer agreements retain their distinct metadata.
 - [x] Remove the standalone agreement date and put Event details labels and values on the same line in electronic agreements and PDFs, preserving signing dates and stored wording; visually verified both formats and passed six existing tests.
 - [x] Correct the agreement headings: retain “The Client” and remove “Client Contact” in electronic versions and PDFs; verified electronic preview and downloaded PDF, with six existing tests passing.
 - [x] Apply the shared agreement format to all future client agreements and tidy electronic previews, client signing pages, creation previews and series agreements without changing stored signed wording; verified the signed-in electronic preview, visually checked all four PDF pages and passed six PDF tests.

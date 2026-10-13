@@ -5,7 +5,7 @@
  * Supports both plain text (preferred) and legacy HTML templates.
  */
 import { useState, useMemo } from 'react';
-import DOMPurify from 'dompurify';
+import { AgreementDocument } from '@/components/AgreementDocument';
 import { format } from 'date-fns';
 import { FileSignature, Plus, Edit2, Trash2, Eye, EyeOff, Check, X, RefreshCw, Archive, RotateCcw, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -245,7 +245,11 @@ export default function ContractTemplates() {
 
   // Convert basic markdown to HTML for preview
   const convertMarkdownToHtml = (text: string): string => {
-    let html = text;
+    const placeholders: string[] = [];
+    let html = text.replace(/\{\{[^{}]+\}\}/g, value => {
+      placeholders.push(value);
+      return `MERGEFIELD${placeholders.length - 1}TOKEN`;
+    });
     
     // Escape HTML entities first
     html = html
@@ -267,7 +271,7 @@ export default function ContractTemplates() {
     // Convert newlines to <br>
     html = html.replace(/\n/g, '<br>');
     
-    return html;
+    return html.replace(/MERGEFIELD(\d+)TOKEN/g, (_match, index: string) => placeholders[Number(index)] || '');
   };
 
   const renderPreviewContent = (template: ContractTemplate) => {
@@ -276,20 +280,10 @@ export default function ContractTemplates() {
     if (templateFormat === 'text') {
       const content = template.body_text || template.body_html || '';
       const htmlContent = convertMarkdownToHtml(content);
-      return (
-        <div 
-          className="prose prose-sm max-w-none text-sm leading-relaxed text-gray-900 prose-strong:text-gray-900"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
-        />
-      );
+      return <AgreementDocument html={`<div>${htmlContent}</div>`} />;
     }
     
-    return (
-      <div 
-        className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800 prose-li:text-gray-800 prose-strong:text-gray-900 text-gray-800"
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(template.body_html || '') }}
-      />
-    );
+    return <AgreementDocument html={template.body_html || ''} />;
   };
 
   return (
@@ -704,7 +698,7 @@ Date: {{today}}`}
               </Badge>
             </DialogTitle>
           </DialogHeader>
-          <div className="border rounded-lg p-6 bg-white min-h-[300px]">
+          <div className="agreement-surface border rounded-lg p-6 min-h-[300px]">
             {selectedTemplate && renderPreviewContent(selectedTemplate)}
           </div>
           <DialogFooter>
