@@ -425,6 +425,7 @@ export default function LeadDetail(): JSX.Element {
               source: lead.source,
               venue_text: (lead as any).venue_text,
               event_website: (lead as any).event_website,
+              requirements_summary: (lead as any).requirements_summary,
             }}
             eventType={eventType}
             leadSource={leadSource}

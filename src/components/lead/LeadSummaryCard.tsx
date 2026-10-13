@@ -59,6 +59,7 @@ interface LeadSummaryCardProps {
     source?: string | null;
     venue_text?: string | null;
     event_website?: string | null;
+    requirements_summary?: string | null;
   };
   eventType?: { id: string; name: string } | null;
   leadSource?: { id: string; name: string } | null;
@@ -287,6 +288,20 @@ export function LeadSummaryCard({
             </span>
           </div>
         </div>
+
+        {/* Enquiry message (from website form) */}
+        {(() => {
+          const enquiryMessage = lead.requirements_summary;
+          if (!enquiryMessage?.trim()) return null;
+          return (
+            <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+              <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                Enquiry message
+              </span>
+              <p className="text-sm whitespace-pre-wrap">{enquiryMessage.trim()}</p>
+            </div>
+          );
+        })()}
 
         {/* Lost reason dialog (triggered from status dropdown) */}
         <Dialog open={lostOpen} onOpenChange={setLostOpen}>
