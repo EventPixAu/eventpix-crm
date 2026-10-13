@@ -1964,7 +1964,9 @@ export default function EventDetail() {
         <TabsContent value="assignments">
           <div className="bg-card border border-border rounded-xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-display font-semibold">Assigned Staff</h2>
+              <h2 className="text-lg font-display font-semibold">
+                Assigned Staff ({assignments.length})
+              </h2>
               {isAdmin && id && (
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => setRecommendCrewOpen(true)}>
