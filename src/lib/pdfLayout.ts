@@ -14,11 +14,24 @@ export function prepareAgreementLayout(content: HTMLElement): void {
   if (eventDetails) {
     const sectionEnd = detailParagraphs.findIndex(paragraph => /^1\.\s+Parties$/i.test(paragraph.textContent?.trim() || ''));
     const headerParagraphs = sectionEnd < 0 ? detailParagraphs : detailParagraphs.slice(0, sectionEnd);
-    const date = headerParagraphs.find(paragraph => /^Date\s*:/i.test(paragraph.textContent?.trim() || ''));
-    if (date) eventDetails.after(date);
     headerParagraphs
-      .filter(paragraph => /^Client Contact$/i.test(paragraph.textContent?.trim() || ''))
+      .filter(paragraph => /^(Date\s*:|Client Contact$)/i.test(paragraph.textContent?.trim() || ''))
       .forEach(paragraph => paragraph.remove());
+    // Combine legacy label/value pairs only within the event header, not clauses.
+    const detailLabels = /^(The Event|The Client|Venue|Event date|Event start date)$/i;
+    for (const paragraph of headerParagraphs) {
+      const label = paragraph.textContent?.trim() || '';
+      if (!paragraph.isConnected && !content.contains(paragraph)) continue;
+      if (!detailLabels.test(label.replace(/:$/, ''))) continue;
+      const value = paragraph.nextElementSibling;
+      if (!(value instanceof HTMLParagraphElement) || !headerParagraphs.includes(value)) continue;
+      const valueText = value.textContent?.trim() || '';
+      if (!valueText || detailLabels.test(valueText.replace(/:$/, '')) || /^\d+\.\s/.test(valueText)) continue;
+      const strong = document.createElement('strong');
+      strong.textContent = `${label.replace(/:$/, '')}:`;
+      paragraph.replaceChildren(strong, document.createTextNode(' '), ...Array.from(value.childNodes));
+      value.remove();
+    }
   }
   const paragraphs = Array.from(content.querySelectorAll('p'));
   if (!content.querySelector('h1') && paragraphs[0]) paragraphs[0].classList.add('agreement-title');
@@ -29,7 +42,7 @@ export function prepareAgreementLayout(content: HTMLElement): void {
     if (inClauses && /^\d+\.\s+[^\n]+$/.test(text) && text.length < 100 && !/[.!?]$/.test(text)) {
       paragraph.classList.add('agreement-heading');
     }
-    if (/^(Event details|The Event|The Client|Client Contact|Venue|Event start date)$/i.test(text)) {
+    if (/^(Event details|The Event|The Client|Client Contact|Venue|Event date|Event start date)$/i.test(text)) {
       paragraph.classList.add('agreement-label');
     }
     if (/^[•●]\s/.test(text)) paragraph.classList.add('agreement-bullet');
