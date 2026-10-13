@@ -2,14 +2,20 @@
 export function prepareAgreementLayout(content: HTMLElement): void {
   const nodes = Array.from(content.querySelectorAll('div'));
   for (const node of nodes) {
-    // Legacy plain-text contracts are one div with double BR separators.
+    // Legacy headers use both single and double BR separators.
     if (node.querySelector('p, h1, h2, table, div') || !node.querySelector('br')) continue;
-    const paragraphs = node.innerHTML.split(/(?:<br\s*\/?\s*>\s*){2,}/i);
+    const paragraphs = node.innerHTML.split(/<br\s*\/?\s*>/i);
     node.innerHTML = paragraphs
       .filter(part => part.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim())
       .map(part => `<p>${part.trim()}</p>`).join('');
   }
   
+  const initial = Array.from(content.querySelectorAll('p'));
+  const cssStart = initial.findIndex(paragraph => /^body\s*\{$/.test(paragraph.textContent?.trim() || ''));
+  if (cssStart >= 0) {
+    const title = initial.findIndex((paragraph, index) => index > cssStart && /Agreement$/i.test(paragraph.textContent?.trim() || ''));
+    if (title > cssStart) initial.slice(0, title).forEach(paragraph => paragraph.remove());
+  }
   normalizeAgreementDetails(content);
   
   const paragraphs = Array.from(content.querySelectorAll('p'));
@@ -53,21 +59,21 @@ function normalizeAgreementDetails(content: HTMLElement): void {
   const header = end < 0 ? blocks : blocks.slice(0, end);
   
   // Identify labels. Include Date/Agreement Date so we can catch and remove them.
-  const labels = /^(The Event|The Series|Event|Series|Job\s*\\/\s*(?:Assignment|Project|Event)|The Client|Client|Event Venue|Venue|Location|Event start date|Event date|Agreement Date|Date|Client Contact)\s*(?::|\t|$)/i;
+  const labels = /^(Client Contact|Event start date|Event date|Event Venue|Agreement Date|The Event|Event|Job\s*\/\s*(?:Assignment|Project|Event)|The Client|Client|Venue|Location|Date)\s*(?::|\t|$)/i;
   
   const details = header.find(block => /^(Event details|Job details|Series details)$/i.test(block.textContent?.trim() || ''));
   const fields: { key: string; label: string; value: string; block: HTMLElement; extra?: HTMLElement }[] = [];
   
   for (let index = 0; index < header.length; index++) {
     const block = header[index];
-    if (!block.isConnected) continue;
+    if (!content.contains(block)) continue;
     
     const cells = block.matches('tr') ? Array.from(block.querySelectorAll('td, th')) : [];
     const text = cells.length 
       ? `${cells[0]?.textContent?.trim()}: ${cells.slice(1).map(cell => cell.textContent?.trim()).join(' ')}` 
       : block.textContent?.trim() || '';
     
-    const match = text.match(labels);
+    const match = text.match(labels) || text.match(/^(Client|Job\s*\/\s*Assignment)(?=\S)/i);
     if (!match) continue;
     
     const labelText = match[1].toLowerCase();
