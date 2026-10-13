@@ -1049,6 +1049,16 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
               <Send className="h-4 w-4 mr-1" />
               {contract?.public_token ? 'Re-send agreement' : 'Send agreement'}
             </Button>
+            {contract?.rendered_html && (
+              <Button
+                variant="outline"
+                onClick={downloadAgreementPdf}
+                disabled={isPdfDownloading}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download PDF
+              </Button>
+            )}
             {contractLink && (
               <div className="flex items-center gap-2 ml-auto">
                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
