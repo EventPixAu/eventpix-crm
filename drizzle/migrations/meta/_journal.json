@@ -155,6 +155,13 @@
       "when": 1791765066212,
       "tag": "0021_event_delivery_prefs_staff_write",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791849872519,
+      "tag": "0022_portal_prioritise_assigned_events",
+      "breakpoints": true
     }
   ]
 }
