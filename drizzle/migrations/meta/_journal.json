@@ -162,6 +162,13 @@
       "when": 1791849872519,
       "tag": "0022_portal_prioritise_assigned_events",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791939621263,
+      "tag": "0023_fix_conversion_assignment_session",
+      "breakpoints": true
     }
   ]
 }

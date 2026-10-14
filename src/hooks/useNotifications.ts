@@ -15,7 +15,8 @@ export async function releaseOnHoldAssignments(eventId: string) {
     .from('event_assignments')
     .select('id, user_id')
     .eq('event_id', eventId)
-    .eq('confirmation_status', 'on_hold');
+    // Sales-stage "on hold" assignments arrive as 'pending' after conversion.
+    .in('confirmation_status', ['on_hold', 'pending']);
 
   if (fetchError) throw fetchError;
   if (!assignments?.length) return { released: 0, notified: 0 };
