@@ -395,7 +395,7 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", assignment_id)
           .eq("event_id", event_id)
           .eq("user_id", user_id)
-          .eq("confirmation_status", "on_hold")
+          .in("confirmation_status", ["on_hold", "pending"])
           .select("id")
           .maybeSingle();
         if (releaseError) throw new Error(`Failed to release assignment: ${releaseError.message}`);
