@@ -1,4 +1,6 @@
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +18,7 @@ import {
   useUpdateEquipmentKit,
   useAddKitItem,
   useRemoveKitItem,
+  applyKitLocationToItems,
   EquipmentKit
 } from '@/hooks/useEquipmentKits';
 import { useEquipmentItems, type EquipmentItemWithOwner } from '@/hooks/useEquipment';
@@ -63,6 +66,7 @@ function filterByOwner(items: EquipmentItemWithOwner[], ownerFilter: string) {
 }
 
 export function EquipmentKitManager() {
+  const queryClient = useQueryClient();
   const { data: kits, isLoading } = useEquipmentKits();
   const { data: allItems } = useEquipmentItems();
 
@@ -125,6 +129,14 @@ export function EquipmentKitManager() {
 
     if (editingKit) {
       await updateKit.mutateAsync({ id: editingKit.id, ...kitData });
+      if (formData.location) {
+        try {
+          await applyKitLocationToItems(editingKit.id, formData.location);
+          queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
+        } catch (error) {
+          toast.error('Kit saved, but item locations could not be updated: ' + (error as Error).message);
+        }
+      }
     } else {
       const newKit = await createKit.mutateAsync(kitData);
       // Add any pending inventory items to the new kit
@@ -133,6 +145,14 @@ export function EquipmentKitManager() {
           await addKitItem.mutateAsync({ kitId: newKit.id, equipmentItemId: itemId });
         }
         setSelectedKitId(newKit.id);
+      }
+      if (newKit?.id && formData.location) {
+        try {
+          await applyKitLocationToItems(newKit.id, formData.location);
+          queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
+        } catch (error) {
+          toast.error('Kit created, but item locations could not be updated: ' + (error as Error).message);
+        }
       }
     }
 
