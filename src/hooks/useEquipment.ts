@@ -13,6 +13,7 @@ export interface EquipmentItem {
   brand: string | null;
   model: string | null;
   serial_number: string | null;
+  location: string | null;
   condition: EquipmentCondition;
   status: EquipmentStatus;
   notes: string | null;
