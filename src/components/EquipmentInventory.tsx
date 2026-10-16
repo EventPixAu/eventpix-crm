@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LocationCombobox } from '@/components/LocationCombobox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -121,6 +122,7 @@ export function EquipmentInventory() {
   const [sortField, setSortField] = useState<string>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [filterOwner, setFilterOwner] = useState<string>('all');
+  const [filterLocation, setFilterLocation] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -202,6 +204,7 @@ export function EquipmentInventory() {
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
     if (filterOwner === 'eventpixii' && item.owner_user_id !== null) return false;
     if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
+    if (filterLocation !== 'all' && (item.location || '') !== filterLocation) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const haystack = [
@@ -277,6 +280,12 @@ export function EquipmentInventory() {
     const allCategories = [...new Set([...activeNames, ...existingCategories])];
     return allCategories.filter(cat => cat.trim() !== '').sort();
   })();
+
+  // Location options: every location already saved on an equipment item
+  const locationOptions = [...new Set(
+    (items?.map(item => item.location) || [])
+      .filter((loc): loc is string => !!loc && loc.trim() !== '')
+  )].sort();
 
   if (isLoading) {
     return <div className="text-muted-foreground">Loading equipment...</div>;
@@ -379,11 +388,12 @@ export function EquipmentInventory() {
                 </div>
                 <div className="space-y-2">
                   <Label>Location</Label>
-                  <Input
+                  <LocationCombobox
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="e.g. Office storeroom"
+                    onChange={(location) => setFormData({ ...formData, location })}
+                    options={locationOptions}
                   />
+                  <p className="text-xs text-muted-foreground">Pick a saved location or type a new one.</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -464,6 +474,17 @@ export function EquipmentInventory() {
               <SelectItem value="all">All Owners</SelectItem>
               <SelectItem value="eventpixii">EventPix Only</SelectItem>
               <SelectItem value="photographer">Photographer Gear</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterLocation} onValueChange={setFilterLocation}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locationOptions.map((loc) => (
+                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <div className="relative flex-1 max-w-xs">

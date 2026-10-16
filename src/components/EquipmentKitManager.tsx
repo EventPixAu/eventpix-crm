@@ -19,6 +19,7 @@ import {
   EquipmentKit
 } from '@/hooks/useEquipmentKits';
 import { useEquipmentItems, type EquipmentItemWithOwner } from '@/hooks/useEquipment';
+import { LocationCombobox } from '@/components/LocationCombobox';
 
 function OwnerFilter({ items, value, onChange }: { items: EquipmentItemWithOwner[]; value: string; onChange: (v: string) => void }) {
   const owners = useMemo(() => {
@@ -64,6 +65,12 @@ function filterByOwner(items: EquipmentItemWithOwner[], ownerFilter: string) {
 export function EquipmentKitManager() {
   const { data: kits, isLoading } = useEquipmentKits();
   const { data: allItems } = useEquipmentItems();
+
+  // Location options: every location already saved on an equipment item
+  const locationOptions = [...new Set(
+    (allItems?.map(item => item.location) || [])
+      .filter((loc): loc is string => !!loc && loc.trim() !== '')
+  )].sort();
   const createKit = useCreateEquipmentKit();
   const updateKit = useUpdateEquipmentKit();
 
@@ -73,6 +80,7 @@ export function EquipmentKitManager() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    location: '',
     other_items: [] as string[],
     is_active: true,
   });
@@ -81,7 +89,7 @@ export function EquipmentKitManager() {
   const [ownerFilter, setOwnerFilter] = useState('all');
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', other_items: [], is_active: true });
+    setFormData({ name: '', description: '', location: '', other_items: [], is_active: true });
     setEditingKit(null);
     setNewOtherItem('');
     setPendingInventoryItems([]);
@@ -110,6 +118,7 @@ export function EquipmentKitManager() {
     const kitData = {
       name: formData.name,
       description: formData.description || null,
+      location: formData.location || null,
       other_items: formData.other_items.length > 0 ? formData.other_items : null,
       is_active: formData.is_active,
     };
@@ -147,6 +156,7 @@ export function EquipmentKitManager() {
     setFormData({
       name: kit.name,
       description: kit.description || '',
+      location: kit.location || '',
       other_items: kit.other_items || [],
       is_active: kit.is_active,
     });
@@ -199,6 +209,15 @@ export function EquipmentKitManager() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="What's included and when to use..."
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <LocationCombobox
+                    value={formData.location}
+                    onChange={(location) => setFormData({ ...formData, location })}
+                    options={locationOptions}
+                  />
+                  <p className="text-xs text-muted-foreground">Pick a saved location or type a new one.</p>
                 </div>
                 
                 {/* Equipment Inventory Items */}
@@ -317,6 +336,9 @@ export function EquipmentKitManager() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-sm text-muted-foreground">{kit.description || 'No description'}</p>
+                  {kit.location && (
+                    <p className="text-xs text-muted-foreground">Location: {kit.location}</p>
+                  )}
                   {kit.other_items && kit.other_items.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {kit.other_items.slice(0, 3).map((item, i) => (
