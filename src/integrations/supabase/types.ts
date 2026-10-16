@@ -2558,6 +2558,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          location: string | null
           name: string
           other_items: string[] | null
         }
@@ -2566,6 +2567,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
           name: string
           other_items?: string[] | null
         }
@@ -2574,6 +2576,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          location?: string | null
           name?: string
           other_items?: string[] | null
         }

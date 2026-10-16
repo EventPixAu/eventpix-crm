@@ -1,0 +1,1 @@
+ALTER TABLE public.equipment_kits ADD COLUMN location text;
