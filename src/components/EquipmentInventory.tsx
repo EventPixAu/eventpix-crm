@@ -6,13 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { LocationCombobox } from '@/components/LocationCombobox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search, CalendarDays, Loader2, ChevronsUpDown, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search, CalendarDays, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
   useEquipmentItems, 
@@ -125,8 +124,6 @@ export function EquipmentInventory() {
   const [filterOwner, setFilterOwner] = useState<string>('all');
   const [filterLocation, setFilterLocation] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationOpen, setLocationOpen] = useState(false);
-  const [locationQuery, setLocationQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -153,8 +150,6 @@ export function EquipmentInventory() {
       notes: '',
       owner_user_id: '',
     });
-    setLocationOpen(false);
-    setLocationQuery('');
     setEditingItem(null);
   };
 
@@ -393,79 +388,11 @@ export function EquipmentInventory() {
                 </div>
                 <div className="space-y-2">
                   <Label>Location</Label>
-                  <Popover open={locationOpen} onOpenChange={(open) => {
-                    setLocationOpen(open);
-                    if (!open) setLocationQuery('');
-                  }}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={locationOpen}
-                        className={"w-full justify-between font-normal " + (formData.location ? '' : 'text-muted-foreground')}
-                      >
-                        {formData.location || 'e.g. Office storeroom'}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                      <Command>
-                        <CommandInput
-                          value={locationQuery}
-                          onValueChange={setLocationQuery}
-                          placeholder="Search or type a new location..."
-                        />
-                        <CommandList>
-                          {locationQuery.trim() &&
-                            !locationOptions.some(loc => loc.toLowerCase() === locationQuery.trim().toLowerCase()) && (
-                              <CommandGroup>
-                                <CommandItem
-                                  value={"use " + locationQuery.trim()}
-                                  onSelect={() => {
-                                    setFormData({ ...formData, location: locationQuery.trim() });
-                                    setLocationOpen(false);
-                                    setLocationQuery('');
-                                  }}
-                                >
-                                  <Plus className="mr-2 h-4 w-4" />
-                                  Use "{locationQuery.trim()}"
-                                </CommandItem>
-                              </CommandGroup>
-                            )}
-                          <CommandGroup heading="Saved locations">
-                            {formData.location && (
-                              <CommandItem
-                                value="__no_location__"
-                                onSelect={() => {
-                                  setFormData({ ...formData, location: '' });
-                                  setLocationOpen(false);
-                                  setLocationQuery('');
-                                }}
-                              >
-                                <Check className={"mr-2 h-4 w-4 " + (formData.location ? 'opacity-0' : 'opacity-100')} />
-                                No location
-                              </CommandItem>
-                            )}
-                            {locationOptions.map((loc) => (
-                              <CommandItem
-                                key={loc}
-                                value={loc}
-                                onSelect={() => {
-                                  setFormData({ ...formData, location: loc });
-                                  setLocationOpen(false);
-                                  setLocationQuery('');
-                                }}
-                              >
-                                <Check className={"mr-2 h-4 w-4 " + (formData.location === loc ? 'opacity-100' : 'opacity-0')} />
-                                {loc}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <LocationCombobox
+                    value={formData.location}
+                    onChange={(location) => setFormData({ ...formData, location })}
+                    options={locationOptions}
+                  />
                   <p className="text-xs text-muted-foreground">Pick a saved location or type a new one.</p>
                 </div>
               </div>
