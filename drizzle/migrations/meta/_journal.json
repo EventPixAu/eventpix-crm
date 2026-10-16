@@ -169,6 +169,13 @@
       "when": 1791939621263,
       "tag": "0023_fix_conversion_assignment_session",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792186064310,
+      "tag": "0024_add_equipment_location",
+      "breakpoints": true
     }
   ]
 }
