@@ -369,12 +369,22 @@ export function EquipmentInventory() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Serial Number</Label>
-                <Input
-                  value={formData.serial_number}
-                  onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Serial Number</Label>
+                  <Input
+                    value={formData.serial_number}
+                    onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="e.g. Office storeroom"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Owner</Label>
@@ -503,6 +513,9 @@ export function EquipmentInventory() {
                 <TableCell className="capitalize">{item.category}</TableCell>
                 <TableCell>
                   {item.brand && item.model ? `${item.brand} ${item.model}` : item.brand || item.model || '—'}
+                  {item.location && (
+                    <div className="text-xs text-muted-foreground">{item.location}</div>
+                  )}
                 </TableCell>
                 <TableCell>{getConditionBadge(item.condition)}</TableCell>
                 <TableCell>{getStatusBadge(item.status)}</TableCell>
