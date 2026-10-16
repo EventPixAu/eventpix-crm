@@ -158,6 +158,7 @@ export function EquipmentInventory() {
       brand: formData.brand || null,
       model: formData.model || null,
       serial_number: formData.serial_number || null,
+      location: formData.location || null,
       notes: formData.notes || null,
       owner_user_id: formData.owner_user_id || null, // empty string -> null (EventPix)
     };
@@ -180,6 +181,7 @@ export function EquipmentInventory() {
       brand: item.brand || '',
       model: item.model || '',
       serial_number: item.serial_number || '',
+      location: item.location || '',
       condition: item.condition,
       status: item.status,
       notes: item.notes || '',
@@ -204,7 +206,7 @@ export function EquipmentInventory() {
       const q = searchQuery.toLowerCase();
       const haystack = [
         item.name, item.brand, item.model, item.serial_number,
-        item.category, item.owner?.full_name, item.notes
+        item.category, item.owner?.full_name, item.notes, item.location
       ].filter(Boolean).join(' ').toLowerCase();
       if (!haystack.includes(q)) return false;
     }
