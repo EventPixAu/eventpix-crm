@@ -2465,6 +2465,7 @@ export type Database = {
           condition: string
           created_at: string | null
           id: string
+          location: string | null
           model: string | null
           name: string
           notes: string | null
@@ -2479,6 +2480,7 @@ export type Database = {
           condition?: string
           created_at?: string | null
           id?: string
+          location?: string | null
           model?: string | null
           name: string
           notes?: string | null
@@ -2493,6 +2495,7 @@ export type Database = {
           condition?: string
           created_at?: string | null
           id?: string
+          location?: string | null
           model?: string | null
           name?: string
           notes?: string | null

@@ -128,6 +128,7 @@ export function EquipmentInventory() {
     brand: '',
     model: '',
     serial_number: '',
+    location: '',
     condition: 'good' as EquipmentCondition,
     status: 'available' as EquipmentStatus,
     notes: '',
@@ -141,6 +142,7 @@ export function EquipmentInventory() {
       brand: '',
       model: '',
       serial_number: '',
+      location: '',
       condition: 'good',
       status: 'available',
       notes: '',
@@ -156,6 +158,7 @@ export function EquipmentInventory() {
       brand: formData.brand || null,
       model: formData.model || null,
       serial_number: formData.serial_number || null,
+      location: formData.location || null,
       notes: formData.notes || null,
       owner_user_id: formData.owner_user_id || null, // empty string -> null (EventPix)
     };
@@ -178,6 +181,7 @@ export function EquipmentInventory() {
       brand: item.brand || '',
       model: item.model || '',
       serial_number: item.serial_number || '',
+      location: item.location || '',
       condition: item.condition,
       status: item.status,
       notes: item.notes || '',
@@ -202,7 +206,7 @@ export function EquipmentInventory() {
       const q = searchQuery.toLowerCase();
       const haystack = [
         item.name, item.brand, item.model, item.serial_number,
-        item.category, item.owner?.full_name, item.notes
+        item.category, item.owner?.full_name, item.notes, item.location
       ].filter(Boolean).join(' ').toLowerCase();
       if (!haystack.includes(q)) return false;
     }
@@ -365,12 +369,22 @@ export function EquipmentInventory() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Serial Number</Label>
-                <Input
-                  value={formData.serial_number}
-                  onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Serial Number</Label>
+                  <Input
+                    value={formData.serial_number}
+                    onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="e.g. Office storeroom"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Owner</Label>
@@ -499,6 +513,9 @@ export function EquipmentInventory() {
                 <TableCell className="capitalize">{item.category}</TableCell>
                 <TableCell>
                   {item.brand && item.model ? `${item.brand} ${item.model}` : item.brand || item.model || '—'}
+                  {item.location && (
+                    <div className="text-xs text-muted-foreground">{item.location}</div>
+                  )}
                 </TableCell>
                 <TableCell>{getConditionBadge(item.condition)}</TableCell>
                 <TableCell>{getStatusBadge(item.status)}</TableCell>
