@@ -140,6 +140,28 @@ export function useUpdateEquipmentKit() {
   });
 }
 
+/**
+ * Apply a kit's location to every equipment item currently in the kit,
+ * so items inherit the kit's storage location.
+ */
+export async function applyKitLocationToItems(kitId: string, location: string) {
+  if (!location) return;
+  const { data: kitItems, error: fetchError } = await supabase
+    .from('equipment_kit_items')
+    .select('equipment_item_id')
+    .eq('kit_id', kitId);
+  if (fetchError) throw fetchError;
+
+  const itemIds = (kitItems || []).map(i => i.equipment_item_id);
+  if (itemIds.length === 0) return;
+
+  const { error } = await supabase
+    .from('equipment_items')
+    .update({ location })
+    .in('id', itemIds);
+  if (error) throw error;
+}
+
 export function useAddKitItem() {
   const queryClient = useQueryClient();
 
@@ -152,10 +174,25 @@ export function useAddKitItem() {
         .single();
 
       if (error) throw error;
+
+      // The kit's location flows onto the item being added
+      const { data: kit } = await supabase
+        .from('equipment_kits')
+        .select('location')
+        .eq('id', kitId)
+        .maybeSingle();
+      if (kit?.location) {
+        await supabase
+          .from('equipment_items')
+          .update({ location: kit.location })
+          .eq('id', equipmentItemId);
+      }
+
       return data;
     },
     onSuccess: (_, { kitId }) => {
       queryClient.invalidateQueries({ queryKey: ['equipment-kit', kitId] });
+      queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
       toast.success('Item added to kit');
     },
     onError: (error) => {
