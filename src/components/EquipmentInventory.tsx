@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search, CalendarDays, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, ArrowUp, ArrowDown, ArrowUpDown, Search, CalendarDays, Loader2, ChevronsUpDown, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
   useEquipmentItems, 
@@ -121,7 +123,10 @@ export function EquipmentInventory() {
   const [sortField, setSortField] = useState<string>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [filterOwner, setFilterOwner] = useState<string>('all');
+  const [filterLocation, setFilterLocation] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [locationQuery, setLocationQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -148,6 +153,8 @@ export function EquipmentInventory() {
       notes: '',
       owner_user_id: '',
     });
+    setLocationOpen(false);
+    setLocationQuery('');
     setEditingItem(null);
   };
 
@@ -202,6 +209,7 @@ export function EquipmentInventory() {
     if (filterStatus !== 'all' && item.status !== filterStatus) return false;
     if (filterOwner === 'eventpixii' && item.owner_user_id !== null) return false;
     if (filterOwner === 'photographer' && item.owner_user_id === null) return false;
+    if (filterLocation !== 'all' && (item.location || '') !== filterLocation) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const haystack = [
@@ -277,6 +285,12 @@ export function EquipmentInventory() {
     const allCategories = [...new Set([...activeNames, ...existingCategories])];
     return allCategories.filter(cat => cat.trim() !== '').sort();
   })();
+
+  // Location options: every location already saved on an equipment item
+  const locationOptions = [...new Set(
+    (items?.map(item => item.location) || [])
+      .filter((loc): loc is string => !!loc && loc.trim() !== '')
+  )].sort();
 
   if (isLoading) {
     return <div className="text-muted-foreground">Loading equipment...</div>;
@@ -379,11 +393,80 @@ export function EquipmentInventory() {
                 </div>
                 <div className="space-y-2">
                   <Label>Location</Label>
-                  <Input
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="e.g. Office storeroom"
-                  />
+                  <Popover open={locationOpen} onOpenChange={(open) => {
+                    setLocationOpen(open);
+                    if (!open) setLocationQuery('');
+                  }}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={locationOpen}
+                        className={"w-full justify-between font-normal " + (formData.location ? '' : 'text-muted-foreground')}
+                      >
+                        {formData.location || 'e.g. Office storeroom'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                      <Command>
+                        <CommandInput
+                          value={locationQuery}
+                          onValueChange={setLocationQuery}
+                          placeholder="Search or type a new location..."
+                        />
+                        <CommandList>
+                          {locationQuery.trim() &&
+                            !locationOptions.some(loc => loc.toLowerCase() === locationQuery.trim().toLowerCase()) && (
+                              <CommandGroup>
+                                <CommandItem
+                                  value={"use " + locationQuery.trim()}
+                                  onSelect={() => {
+                                    setFormData({ ...formData, location: locationQuery.trim() });
+                                    setLocationOpen(false);
+                                    setLocationQuery('');
+                                  }}
+                                >
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Use "{locationQuery.trim()}"
+                                </CommandItem>
+                              </CommandGroup>
+                            )}
+                          <CommandGroup heading="Saved locations">
+                            {formData.location && (
+                              <CommandItem
+                                value="__no_location__"
+                                onSelect={() => {
+                                  setFormData({ ...formData, location: '' });
+                                  setLocationOpen(false);
+                                  setLocationQuery('');
+                                }}
+                              >
+                                <Check className={"mr-2 h-4 w-4 " + (formData.location ? 'opacity-0' : 'opacity-100')} />
+                                No location
+                              </CommandItem>
+                            )}
+                            {locationOptions.map((loc) => (
+                              <CommandItem
+                                key={loc}
+                                value={loc}
+                                onSelect={() => {
+                                  setFormData({ ...formData, location: loc });
+                                  setLocationOpen(false);
+                                  setLocationQuery('');
+                                }}
+                              >
+                                <Check className={"mr-2 h-4 w-4 " + (formData.location === loc ? 'opacity-100' : 'opacity-0')} />
+                                {loc}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-muted-foreground">Pick a saved location or type a new one.</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -464,6 +547,17 @@ export function EquipmentInventory() {
               <SelectItem value="all">All Owners</SelectItem>
               <SelectItem value="eventpixii">EventPix Only</SelectItem>
               <SelectItem value="photographer">Photographer Gear</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterLocation} onValueChange={setFilterLocation}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locationOptions.map((loc) => (
+                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <div className="relative flex-1 max-w-xs">
