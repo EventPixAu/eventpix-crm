@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 export const LEAD_CONTACT_ROLES = [
   { value: 'primary', label: 'Primary Contact' },
   { value: 'secondary', label: 'Secondary Contact' },
+  { value: 'client_contact', label: 'Client contact' },
+  { value: 'event_manager', label: 'Event Manager' },
   { value: 'on-site', label: 'On-site Contact' },
   { value: 'billing', label: 'Billing Contact' },
 ] as const;
