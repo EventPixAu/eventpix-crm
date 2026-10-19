@@ -50,7 +50,7 @@ export function SendPortalLinkButton({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
-  // Default: one portal for all of this client's events
+  // Default: one email sign-in for the recipient's personally linked events
   const [linkScope, setLinkScope] = useState<'all' | 'event'>('all');
   const useEventLink = linkScope === 'event' && !!eventPortalToken;
   const sendEmail = useSendCrmEmail();
@@ -115,16 +115,16 @@ export function SendPortalLinkButton({
           ${useEventLink ? '' : `
           <h3 style="margin: 24px 0 8px; font-size: 16px;">What's new</h3>
           <ul style="padding-left: 18px; margin: 0;">
-            <li style="margin-bottom: 6px;"><strong>One sign-in for everything</strong> — you no longer need a separate link for each event. Sign in once with your email and every event for your organisation is there.</li>
-            <li style="margin-bottom: 6px;"><strong>Your events come first</strong> — events you're personally involved in appear at the top, marked "Your event".</li>
-            <li style="margin-bottom: 6px;"><strong>Everyone has their own login</strong> — each person signs in with their own email address and sees the events relevant to them. If a colleague needs access, just let us know.</li>
+            <li style="margin-bottom: 6px;"><strong>One sign-in for your events</strong> — you no longer need a separate link for each event. Sign in once with your own email.</li>
+            <li style="margin-bottom: 6px;"><strong>Only the events you manage</strong> — your portal shows events and proposals where you are listed as a contact, not every event for your organisation.</li>
+            <li style="margin-bottom: 6px;"><strong>Shared event management</strong> — more than one person can be added to an event. Each signs in with their own email and sees that shared event. If a colleague needs access, just let us know.</li>
           </ul>
           `}
 
 
           <h3 style="margin: 24px 0 8px; font-size: 16px;">What you'll find inside</h3>
           <ul style="padding-left: 18px; margin: 0;">
-            <li style="margin-bottom: 6px;"><strong>All of your events</strong> — dates, venues and the current status of every event you have with us.</li>
+            <li style="margin-bottom: 6px;"><strong>Your events</strong> — dates, venues and the current status of events where you are listed as a contact.</li>
             <li style="margin-bottom: 6px;"><strong>Your event team</strong> — who is looking after each event, their roles and how to reach them on the day.</li>
             <li style="margin-bottom: 6px;"><strong>Event details</strong> — session times, special instructions, and whether meals and parking are provided.</li>
             <li style="margin-bottom: 6px;"><strong>Budgets & documents</strong> — budgets, agreements and confirmations as they are finalised.</li>
@@ -223,7 +223,7 @@ export function SendPortalLinkButton({
             <div className="space-y-2">
               <p className="text-sm font-medium">Which link?</p>
               {([
-                ['all', 'All events for this client', 'One portal showing every event, budget and detail. Client signs in with their email.'],
+                ['all', 'All events for this contact', 'Client signs in with their own email to see only events and proposals they are listed on.'],
                 ['event', 'This event only', 'Opens just this event directly, no sign-in.'],
               ] as const).map(([value, label, hint]) => (
                 <label key={value} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 cursor-pointer">

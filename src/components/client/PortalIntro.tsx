@@ -17,8 +17,8 @@ interface PortalIntroProps {
 const features = [
   {
     icon: Calendar,
-    title: 'All of your events',
-    text: 'Dates, venues and the current status of every event you have with us — including multi-event programs.',
+    title: 'Your events',
+    text: 'Dates, venues and status for events where you are listed as a contact — including your events within multi-event programs.',
   },
   {
     icon: Users,
@@ -47,7 +47,7 @@ export function PortalIntro({ email, onDismiss }: PortalIntroProps) {
             Introduction to your Client Portal
           </h1>
           <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            Everything about your events with Eventpixii, in one place.
+            Your events and proposals with Eventpixii, in one place. Only those where you are listed as a contact appear here.
             {email && (
               <>
                 {' '}You're signed in as <strong className="text-foreground">{email}</strong>.
@@ -94,7 +94,7 @@ export function PortalIntro({ email, onDismiss }: PortalIntroProps) {
             </li>
           </ol>
           <p className="text-xs text-muted-foreground">
-            Questions? Simply reply to any email from us and the team will get straight back to you.
+            Sharing responsibility for an event? We can add multiple contacts so each person sees it using their own email. Reply to any email from us to request access.
           </p>
         </div>
 
