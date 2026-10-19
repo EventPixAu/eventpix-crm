@@ -156,6 +156,8 @@ export function useDeleteEventContact() {
 
 export const CONTACT_TYPES = [
   { value: 'primary', label: 'Primary Contact' },
+  { value: 'client_contact', label: 'Client contact' },
+  { value: 'event_manager', label: 'Event Manager' },
   { value: 'onsite', label: 'On-Site Contact' },
   { value: 'social_media', label: 'Social Media Contact' },
   { value: 'other', label: 'Other' },
