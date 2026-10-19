@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Exclude cancelled events from operational warnings.
 - [ ] Make "Client contact" and "Event Manager" appear in the lead contacts role dropdown on the live site (code done and verified in preview; live bundle still ships the old four options — needs publish).
 
 - [x] Restrict client portals to personally linked events and proposals, support multiple managers on one event, update portal explanations; verified Rowena's three linked events in her signed-in portal and passed four SQL access tests.
