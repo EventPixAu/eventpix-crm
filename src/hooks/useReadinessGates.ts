@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { operationalWarningEvents } from '@/lib/operationalWarningEvents';
 import { addHours, parseISO, isBefore, isAfter } from 'date-fns';
 
 /**
@@ -97,6 +98,7 @@ export function useUpcomingEventsReadiness(options?: {
         .select(`
           id,
           event_name,
+          ops_status,
           client_name,
           event_date,
           venue_name,
@@ -127,7 +129,7 @@ export function useUpcomingEventsReadiness(options?: {
 
       const results: EventWithReadiness[] = [];
 
-      for (const event of events || []) {
+      for (const event of operationalWarningEvents(events || [])) {
         // Find first session
         const sessions = (event.event_sessions || []) as Array<{ session_date: string; start_time: string | null }>;
         const sortedSessions = sessions.sort((a, b) => {
@@ -256,6 +258,7 @@ export function useUpcomingDeliveriesReadiness(options?: {
         .select(`
           id,
           event_name,
+          ops_status,
           client_name,
           delivery_deadline,
           delivery_method_id,
@@ -277,7 +280,7 @@ export function useUpcomingDeliveriesReadiness(options?: {
 
       const results: DeliveryWithReadiness[] = [];
 
-      for (const event of events || []) {
+      for (const event of operationalWarningEvents(events || [])) {
         const deliveryRecords = (event.delivery_records || []) as Array<{
           id: string;
           delivery_link: string | null;
@@ -363,6 +366,7 @@ export function useReadinessSummary() {
         .select(`
           id,
           event_date,
+          ops_status,
           venue_name,
           venue_address,
           event_type_id,
@@ -381,7 +385,7 @@ export function useReadinessSummary() {
       let eventsNotReady = 0;
       let deliveriesAtRisk = 0;
 
-      for (const event of events || []) {
+      for (const event of operationalWarningEvents(events || [])) {
         // Pre-event readiness check
         const sessions = (event.event_sessions || []) as Array<{ id: string }>;
         const assignments = (event.event_assignments || []) as Array<{ id: string; user_id: string | null }>;

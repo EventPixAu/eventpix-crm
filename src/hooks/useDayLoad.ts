@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useGuardrailSettings } from './useGuardrails';
+import { operationalWarningEvents } from '@/lib/operationalWarningEvents';
 import { parseISO, differenceInMinutes, differenceInDays, addMinutes, isBefore } from 'date-fns';
 
 export interface DayLoadEvent {
@@ -123,19 +124,20 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
 
       const { data: events, error } = await query;
       if (error) throw error;
+      const warningEvents = operationalWarningEvents(events || []);
 
       // Process events to compute readiness and conflicts
       const processedEvents: DayLoadEvent[] = [];
       const staffEventMap = new Map<string, { eventId: string; eventName: string; startAt: string | null; endAt: string | null }[]>();
 
       // First pass: build staff assignment map
-      for (const event of events || []) {
+      for (const event of warningEvents) {
         for (const assignment of event.event_assignments || []) {
           if (!assignment.user_id) continue;
           if (!staffEventMap.has(assignment.user_id)) {
             staffEventMap.set(assignment.user_id, []);
           }
-          staffEventMap.get(assignment.user_id)!.push({
+          staffEventMap.get(assignment.user_id)?.push({
             eventId: event.id,
             eventName: event.event_name,
             startAt: event.start_at,
@@ -145,7 +147,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
       }
 
       // Second pass: process events with conflict detection
-      for (const event of events || []) {
+      for (const event of warningEvents) {
         const assignments = event.event_assignments || [];
         const sessions = event.event_sessions || [];
         const contacts = event.event_contacts || [];

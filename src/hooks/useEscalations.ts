@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { operationalWarningEvents } from '@/lib/operationalWarningEvents';
 import { parseISO, addHours, isWithinInterval, startOfDay, endOfDay, addDays, isBefore, format } from 'date-fns';
 
 export interface EscalationItem {
@@ -28,6 +29,7 @@ export function useEscalations() {
         .select(`
           id,
           event_name,
+          ops_status,
           event_date,
           start_at,
           end_at,
@@ -48,11 +50,12 @@ export function useEscalations() {
         .order('event_date', { ascending: true });
       
       if (error) throw error;
+      const warningEvents = operationalWarningEvents(events || []);
       
       const escalations: EscalationItem[] = [];
       
       // Analyze tomorrow's events
-      const tomorrowEvents = events?.filter(e => {
+      const tomorrowEvents = warningEvents.filter(e => {
         const eventDate = parseISO(e.event_date);
         return isWithinInterval(eventDate, { start: tomorrow, end: tomorrowEnd });
       }) || [];
@@ -118,7 +121,7 @@ export function useEscalations() {
       }
       
       // 5. Check today's events for staff conflicts (overlapping assignments)
-      const todayEvents = events?.filter(e => {
+      const todayEvents = warningEvents.filter(e => {
         const eventDate = parseISO(e.event_date);
         return isWithinInterval(eventDate, { start: today, end: todayEnd });
       }) || [];
@@ -132,7 +135,7 @@ export function useEscalations() {
           if (!userAssignments.has(assignment.user_id)) {
             userAssignments.set(assignment.user_id, []);
           }
-          userAssignments.get(assignment.user_id)!.push({
+          userAssignments.get(assignment.user_id)?.push({
             eventId: event.id,
             eventName: event.event_name,
             startAt: event.start_at,
