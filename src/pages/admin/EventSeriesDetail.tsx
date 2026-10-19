@@ -875,7 +875,7 @@ export default function EventSeriesDetail() {
                       ) : null}
                       {row.key === 'primary' && row.contact?.email && (
                         <div className="rounded-md border bg-muted/40 p-3 space-y-2">
-                          <div className="text-xs font-medium">Client portal link (all events)</div>
+                          <div className="text-xs font-medium">Client portal link (contact's events)</div>
                           <div className="flex flex-wrap items-center gap-2">
                             <a
                               href={portalLoginUrl}
