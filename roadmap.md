@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Restrict client portals to personally linked events and proposals, support multiple managers on one event, update portal explanations and verify Rowena's visibility.
+- [x] Restrict client portals to personally linked events and proposals, support multiple managers on one event, update portal explanations; verified Rowena's three linked events in her signed-in portal and passed four SQL access tests.
 - [x] Put Budget (ex GST) and its amount on one line throughout electronic agreement views and PDFs; visually verified CEW in both formats, checked 13 template previews, and passed six existing tests.
 - [x] Review all client agreement templates and normalize legacy paragraph/table Event details headers in electronic previews and PDFs, without changing signed wording; checked 13 available template previews, fixed stray stylesheet text and preview merge fields, verified the signed CEW electronic view and all four PDF pages, and passed six existing tests. Series and photographer agreements retain their distinct metadata.
 - [x] Remove the standalone agreement date and put Event details labels and values on the same line in electronic agreements and PDFs, preserving signing dates and stored wording; visually verified both formats and passed six existing tests.
@@ -35,4 +35,4 @@
 - [x] Add budget-to-event client delivery-options email with the supplied document.
 - [x] Provide an easy client delivery-choice response and show the confirmed choice on the event.
 - [x] Verify email preparation and client response without sending live test emails.
-- Add Location to equipment kits (saved-location dropdown, mirrors equipment items)
+- [x] Add Location to equipment kits (saved-location dropdown, mirrors equipment items); completed and verified in the preceding update.
