@@ -1,0 +1,92 @@
+CREATE OR REPLACE FUNCTION public.get_client_portal_data()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_email text;
+  v_company_ids uuid[];
+  v_event_ids uuid[];
+  v_lead_ids uuid[];
+  v_result jsonb;
+BEGIN
+  SELECT LOWER(BTRIM(email)) INTO v_email FROM auth.users WHERE id = auth.uid();
+  IF v_email IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Not authenticated');
+  END IF;
+
+  SELECT COALESCE(ARRAY_AGG(DISTINCT ec.event_id), ARRAY[]::uuid[]) INTO v_event_ids
+  FROM event_contacts ec
+  LEFT JOIN client_contacts cc ON cc.id = ec.client_contact_id
+  WHERE LOWER(BTRIM(COALESCE(NULLIF(BTRIM(ec.contact_email), ''), cc.email, ''))) = v_email;
+
+  SELECT COALESCE(ARRAY_AGG(DISTINCT ec.lead_id), ARRAY[]::uuid[]) INTO v_lead_ids
+  FROM enquiry_contacts ec
+  LEFT JOIN client_contacts cc ON cc.id = ec.contact_id
+  WHERE LOWER(BTRIM(COALESCE(NULLIF(BTRIM(ec.contact_email), ''), cc.email, ''))) = v_email;
+
+  SELECT COALESCE(ARRAY_AGG(DISTINCT company_id), ARRAY[]::uuid[]) INTO v_company_ids
+  FROM (
+    SELECT e.client_id AS company_id FROM events e
+    WHERE e.id = ANY(v_event_ids) AND COALESCE(e.ops_status, '') <> 'cancelled'
+    UNION
+    SELECT l.client_id FROM leads l WHERE l.id = ANY(v_lead_ids)
+      AND l.status NOT IN ('lost', 'cancelled') AND l.converted_job_id IS NULL
+  ) linked WHERE company_id IS NOT NULL;
+
+  SELECT jsonb_build_object(
+    'success', true,
+    'companies', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object('id', c.id, 'business_name', c.business_name, 'trading_name', c.trading_name)), '[]'::jsonb)
+      FROM clients c WHERE c.id = ANY(v_company_ids)
+    ),
+    'leads', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object(
+        'id', l.id, 'lead_name', l.lead_name, 'status', l.status,
+        'estimated_event_date', l.estimated_event_date, 'venue_text', l.venue_text,
+        'client_portal_token', l.client_portal_token, 'created_at', l.created_at,
+        'updated_at', l.updated_at, 'company_name', cl.business_name
+      ) ORDER BY l.created_at DESC), '[]'::jsonb)
+      FROM leads l LEFT JOIN clients cl ON cl.id = l.client_id
+      WHERE l.id = ANY(v_lead_ids)
+        AND l.status NOT IN ('lost', 'cancelled') AND l.converted_job_id IS NULL
+    ),
+    'events', (
+      SELECT COALESCE(jsonb_agg(jsonb_build_object(
+        'id', e.id, 'event_name', e.event_name, 'event_date', e.event_date,
+        'start_time', e.start_time, 'end_time', e.end_time,
+        'venue_name', e.venue_name, 'venue_address', e.venue_address,
+        'ops_status', e.ops_status, 'client_portal_token', e.client_portal_token,
+        'created_at', e.created_at, 'company_name', cl.business_name,
+        'series_id', e.event_series_id, 'series_name', es.name,
+        'is_assigned', true,
+        'meal_provided', CASE WHEN COALESCE(e.share_meal_info, false) THEN e.meal_provided ELSE NULL END,
+        'parking_provided', CASE WHEN COALESCE(e.share_parking_info, false) THEN e.parking_provided ELSE NULL END,
+        'meal_provision_status', CASE WHEN COALESCE(e.share_meal_info, false) THEN e.meal_provision_status ELSE NULL END,
+        'parking_provision_status', CASE WHEN COALESCE(e.share_parking_info, false) THEN e.parking_provision_status ELSE NULL END,
+        'crew', (
+          SELECT COALESCE(jsonb_agg(crew_member.item ORDER BY crew_member.name), '[]'::jsonb)
+          FROM (
+            SELECT p.full_name AS name, jsonb_build_object(
+              'name', p.full_name, 'role', sr.name,
+              'dietary_requirements', CASE WHEN COALESCE(e.share_team_dietary, false) THEN p.dietary_requirements ELSE NULL END,
+              'agency', NULL, 'phone', NULL, 'email', NULL, 'is_agency', false
+            ) AS item
+            FROM event_assignments ea JOIN profiles p ON p.id = ea.user_id
+            LEFT JOIN staff_roles sr ON sr.id = ea.staff_role_id WHERE ea.event_id = e.id
+            UNION ALL
+            SELECT ac.name, jsonb_build_object(
+              'name', ac.name, 'role', ac.role, 'dietary_requirements', NULL,
+              'agency', ac.agency, 'phone', ac.phone, 'email', ac.email, 'is_agency', true
+            ) AS item FROM event_agency_crew ac WHERE ac.event_id = e.id
+          ) crew_member
+        )
+      ) ORDER BY e.event_date), '[]'::jsonb)
+      FROM events e LEFT JOIN clients cl ON cl.id = e.client_id
+      LEFT JOIN event_series es ON es.id = e.event_series_id
+      WHERE e.id = ANY(v_event_ids) AND COALESCE(e.ops_status, '') <> 'cancelled'
+    )
+  ) INTO v_result;
+  RETURN v_result;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_client_portal_data() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_client_portal_data() TO authenticated, service_role;
