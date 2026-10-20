@@ -181,7 +181,7 @@ export function EventQrPanel({ eventId, qrFilePath, qrFileName, preRegistrationL
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <QrCode className="h-4 w-4" />
             QR Registration

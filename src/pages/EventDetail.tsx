@@ -1680,7 +1680,7 @@ export default function EventDetail() {
               {/* Quick Actions */}
               {canSeeSection('quick_actions') && <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                 <h2 className="text-lg font-display font-semibold mb-4">Quick Actions</h2>
-                <div className="space-y-2">
+                <div className="space-y-2 [&_button]:whitespace-normal [&_button]:h-auto [&_button]:min-w-0">
                   <Link to={`/events/${id}/day-of`} className="block">
                     <Button variant="default" className="w-full justify-start">
                       <Play className="h-4 w-4 mr-2" />

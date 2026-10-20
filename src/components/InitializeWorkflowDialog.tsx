@@ -195,7 +195,7 @@ export function InitializeWorkflowDialog({
     eventTypes.find(t => t.id === currentEventTypeId)?.name || workflowLabel;
   
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 min-w-0">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           {trigger || (
