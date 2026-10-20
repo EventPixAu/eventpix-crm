@@ -173,29 +173,29 @@ function StepItem({
         isOverdue && !step.is_completed && "border-destructive/50 bg-destructive/5",
         isDueToday && !step.is_completed && "border-warning/50 bg-warning/5",
       )}>
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0">
           {/* Quick completion checkbox - always visible for manual steps */}
           {!isAuto && isAdmin && (
             <Checkbox
               checked={step.is_completed}
               onCheckedChange={() => handleToggleComplete()}
               disabled={completeStep.isPending || uncompleteStep.isPending}
-              className="mt-0.5"
+              className="mt-0.5 shrink-0"
             />
           )}
           {isAuto && (
-            <div className="w-4 h-4 mt-0.5" /> 
+            <div className="w-4 h-4 mt-0.5 shrink-0" /> 
           )}
           
-          <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2 flex-1 min-w-0">
+          <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex items-start gap-2 flex-1 basis-48 min-w-0">
                 <RoleAbbrevBadge roleName={assignedRoleName} />
                 {isAdmin ? (
                   <button
                     onClick={() => onEdit(step)}
                     className={cn(
-                      "text-sm font-medium text-left hover:text-primary hover:underline transition-colors",
+                      "text-sm font-medium text-left min-w-0 break-words hover:text-primary hover:underline transition-colors",
                       step.is_completed && "line-through text-muted-foreground hover:text-muted-foreground"
                     )}
                     title="Click to edit"
@@ -204,7 +204,7 @@ function StepItem({
                   </button>
                 ) : (
                   <p className={cn(
-                    "text-sm font-medium",
+                    "text-sm font-medium min-w-0 break-words",
                     step.is_completed && "line-through text-muted-foreground"
                   )}>
                     {step.step_label}
@@ -244,7 +244,7 @@ function StepItem({
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0 ml-auto">
                 {isAdmin && (
                   <button
                     onClick={() => onEdit(step)}
