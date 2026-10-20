@@ -189,13 +189,13 @@ function StepItem({
           
           <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="flex items-start gap-2 min-w-0" style={{ flex: '1 1 12rem' }}>
-                <RoleAbbrevBadge roleName={assignedRoleName} />
+              <div className="flex flex-wrap items-start gap-2 min-w-0" style={{ flex: '1 1 12rem' }}>
+                <RoleAbbrevBadge roleName={assignedRoleName} className="shrink-0" />
                 {isAdmin ? (
                   <button
                     onClick={() => onEdit(step)}
                     className={cn(
-                      "text-sm font-medium text-left min-w-0 break-words hover:text-primary hover:underline transition-colors",
+                      "text-sm font-medium text-left flex-1 min-w-0 break-words hover:text-primary hover:underline transition-colors",
                       step.is_completed && "line-through text-muted-foreground hover:text-muted-foreground"
                     )}
                     title="Click to edit"
@@ -204,7 +204,7 @@ function StepItem({
                   </button>
                 ) : (
                   <p className={cn(
-                    "text-sm font-medium min-w-0 break-words",
+                    "text-sm font-medium flex-1 min-w-0 break-words",
                     step.is_completed && "line-through text-muted-foreground"
                   )}>
                     {step.step_label}
