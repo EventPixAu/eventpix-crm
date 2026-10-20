@@ -190,7 +190,7 @@ function StepItem({
           <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex flex-wrap items-start gap-2 min-w-0" style={{ flex: '1 1 12rem' }}>
-                <RoleAbbrevBadge roleName={assignedRoleName} className="shrink-0" />
+                <RoleAbbrevBadge roleName={assignedRoleName} />
                 {isAdmin ? (
                   <button
                     onClick={() => onEdit(step)}
