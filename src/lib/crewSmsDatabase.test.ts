@@ -78,3 +78,36 @@ describe('scheduled crew SMS database rules', () => {
     } finally { await db.close(); }
   });
 });
+
+describe('MASV ASAP delivery flag', () => {
+  const MASV_ASAP = '00000000-0000-0000-0000-000000000010';
+  const DROPBOX = '00000000-0000-0000-0000-000000000011';
+
+  async function flagSetup() {
+    const db = new PGlite();
+    await db.exec(`
+      CREATE TABLE delivery_methods_lookup(id uuid PRIMARY KEY, name text);
+      CREATE TABLE events(id uuid PRIMARY KEY, delivery_method_photographer_id uuid, crew_sms_masv_delivery boolean DEFAULT false);
+      INSERT INTO delivery_methods_lookup VALUES('${MASV_ASAP}','MASV ASAP'),('${DROPBOX}','Dropbox');
+    `);
+    await db.exec(readFileSync('drizzle/migrations/0033_crew_sms_masv_auto_from_delivery_method.sql', 'utf8'));
+    return db;
+  }
+
+  it('flags the event when the photographer delivery method is MASV ASAP', async () => {
+    const db = await flagSetup();
+    try {
+      await db.exec(`INSERT INTO events(id,delivery_method_photographer_id) VALUES('00000000-0000-0000-0000-000000000001','${MASV_ASAP}');`);
+      expect((await db.query('SELECT crew_sms_masv_delivery AS masv FROM events')).rows).toEqual([{ masv: true }]);
+    } finally { await db.close(); }
+  });
+
+  it('clears the flag when the delivery method changes away from MASV ASAP', async () => {
+    const db = await flagSetup();
+    try {
+      await db.exec(`INSERT INTO events(id,delivery_method_photographer_id) VALUES('00000000-0000-0000-0000-000000000001','${MASV_ASAP}');`);
+      await db.exec(`UPDATE events SET delivery_method_photographer_id='${DROPBOX}';`);
+      expect((await db.query('SELECT crew_sms_masv_delivery AS masv FROM events')).rows).toEqual([{ masv: false }]);
+    } finally { await db.close(); }
+  });
+});

@@ -134,21 +134,8 @@ export default function CrewSms() {
     enabled: !!isAdmin,
   });
 
-  const masvToggle = useMutation({
-    mutationFn: async ({ eventId, masv }: { eventId: string; masv: boolean }) => {
-      const { error } = await supabase
-        .from('events')
-        .update({ crew_sms_masv_delivery: masv })
-        .eq('id', eventId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crew-sms-masv-events'] });
-    },
-    onError: (err: Error) => {
-      toast.error('Could not save the MASV setting', { description: err.message });
-    },
-  });
+  // The MASV flag is maintained automatically by the database from each event's
+  // photographer delivery method (MASV ASAP) — no manual toggle here.
 
   const counts = useMemo(() => {
     const byStatus: Record<string, number> = {};
@@ -219,7 +206,7 @@ export default function CrewSms() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Delivery reminder — MASV ASAP events</label>
-              <p className="text-xs text-muted-foreground">Sent at event finish instead of the standard delivery reminder when an event is marked "Files via MASV ASAP" below.</p>
+              <p className="text-xs text-muted-foreground">Sent at event finish instead of the standard delivery reminder when the event's Delivery — Photographer method is MASV ASAP.</p>
               <Textarea value={masvTemplate} onChange={(e) => setMasvTemplate(e.target.value)} rows={3} />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -245,8 +232,8 @@ export default function CrewSms() {
           <CardHeader>
             <CardTitle>Files via MASV ASAP</CardTitle>
             <CardDescription>
-              Upcoming events (next 30 days). Turn on for events whose files are required via MASV immediately — crew
-              receive the MASV wording at event finish instead of the standard delivery reminder.
+              Upcoming events (next 30 days). This follows the event's Delivery — Photographer setting: events set to
+              MASV ASAP automatically get the MASV wording at event finish instead of the standard delivery reminder.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -261,12 +248,11 @@ export default function CrewSms() {
                       <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm text-muted-foreground">MASV ASAP</span>
-                      <Switch
-                        checked={!!ev.crew_sms_masv_delivery}
-                        disabled={masvToggle.isPending}
-                        onCheckedChange={(checked) => masvToggle.mutate({ eventId: ev.id, masv: checked })}
-                      />
+                      {ev.crew_sms_masv_delivery ? (
+                        <Badge>MASV ASAP</Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Standard</span>
+                      )}
                     </div>
                   </div>
                 ))}
