@@ -853,9 +853,12 @@ export default function EventDetail() {
   };
 
   const handleDelete = async () => {
-    if (id) {
+    if (!id) return;
+    try {
       await deleteEvent.mutateAsync(id);
       navigate('/events');
+    } catch {
+      // The error message is shown by the delete action.
     }
   };
 
