@@ -1653,6 +1653,95 @@ export type Database = {
           },
         ]
       }
+      crew_sms_dispatch_tickets: {
+        Row: {
+          created_at: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      crew_sms_logs: {
+        Row: {
+          body: string
+          created_at: string
+          due_at: string
+          error_code: string | null
+          event_id: string
+          id: string
+          phone: string
+          provider_message_id: string | null
+          recipient_key: string
+          reminder_type: string
+          sent_at: string | null
+          session_key: string
+          status: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          due_at: string
+          error_code?: string | null
+          event_id: string
+          id?: string
+          phone: string
+          provider_message_id?: string | null
+          recipient_key: string
+          reminder_type: string
+          sent_at?: string | null
+          session_key: string
+          status?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          due_at?: string
+          error_code?: string | null
+          event_id?: string
+          id?: string
+          phone?: string
+          provider_message_id?: string | null
+          recipient_key?: string
+          reminder_type?: string
+          sent_at?: string | null
+          session_key?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_sms_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crew_sms_settings: {
+        Row: {
+          enabled: boolean
+          enabled_at: string
+          id: boolean
+        }
+        Insert: {
+          enabled?: boolean
+          enabled_at?: string
+          id?: boolean
+        }
+        Update: {
+          enabled?: boolean
+          enabled_at?: string
+          id?: boolean
+        }
+        Relationships: []
+      }
       delivery_methods_lookup: {
         Row: {
           created_at: string | null
@@ -7874,6 +7963,7 @@ export type Database = {
         Returns: string
       }
       confirm_assignment_by_token: { Args: { _token: string }; Returns: Json }
+      consume_crew_sms_ticket: { Args: { _token: string }; Returns: boolean }
       contact_has_open_lead_or_active_event: {
         Args: { p_contact_id: string }
         Returns: boolean
@@ -7905,6 +7995,22 @@ export type Database = {
           p_template_id: string
         }
         Returns: string
+      }
+      crew_sms_candidates: {
+        Args: never
+        Returns: {
+          due_at: string
+          event_id: string
+          event_name: string
+          finish_at: string
+          phone: string
+          recipient_key: string
+          reminder_type: string
+          session_key: string
+          setup_at: string
+          timezone: string
+          venue_name: string
+        }[]
       }
       crew_update_venue: {
         Args: { _note?: string; _updates: Json; _venue_id: string }
