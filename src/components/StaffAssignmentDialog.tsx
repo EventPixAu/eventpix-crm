@@ -101,6 +101,9 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
   const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
+  // Offsite assignments and post-event roles schedule work on the post-event work date,
+  // so the session selector is hidden in that mode — the two date pickers never show together.
+  const isWorkDateMode = staffScope === 'offsite' || isPostEventRole;
   const selectableRoles = roles.filter(r => r.is_active !== false && isOnsiteStaffRole(r) === (staffScope === 'onsite'));
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
@@ -129,15 +132,15 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   // Check conflicts for selected user — prefer the selected session's date/times,
   // falling back to event-level times (most events only have times on sessions)
   const selectedSessionForConflict = sessions.find(s => s.id === selectedSession);
-  const conflictDate = isPostEventRole ? workDate || null : selectedSessionForConflict?.session_date || event?.event_date || null;
+  const conflictDate = isWorkDateMode ? workDate || null : selectedSessionForConflict?.session_date || event?.event_date || null;
   const { data: dateAvailability = [] } = useStaffAvailabilityByDate(conflictDate || undefined);
   const conflictTz = (selectedSessionForConflict as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
-  const conflictStartStr = isPostEventRole
+  const conflictStartStr = isWorkDateMode
     ? (conflictDate ? toTimestamptz(conflictDate, '09:00', conflictTz) : null)
     : selectedSessionForConflict && conflictDate
     ? toTimestamptz(conflictDate, (selectedSessionForConflict.arrival_time || selectedSessionForConflict.start_time || '09:00').slice(0, 5), conflictTz)
     : (event?.start_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.start_time || '09:00').slice(0, 5), conflictTz) : null));
-  const conflictEndStr = isPostEventRole
+  const conflictEndStr = isWorkDateMode
     ? (conflictDate ? toTimestamptz(conflictDate, '17:00', conflictTz) : null)
     : selectedSessionForConflict && conflictDate
     ? toTimestamptz(conflictDate, (selectedSessionForConflict.end_time || '23:59').slice(0, 5), conflictTz)
@@ -207,11 +210,18 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   
   // Filter assigned users by selected session context
   const assignedUserIds = useMemo(() => {
+    if (isWorkDateMode) {
+      // In work-date mode the duplicate check compares against the post-event work date.
+      return assignments
+        .filter((a) => a.session?.session_date === workDate)
+        .map((a) => a.user_id)
+        .filter(Boolean);
+    }
     return assignments
       .filter((a) => selectedSession === 'all' ? !a.session_id : a.session_id === selectedSession)
       .map((a) => a.user_id)
       .filter(Boolean);
-  }, [assignments, selectedSession]);
+  }, [assignments, selectedSession, isWorkDateMode, workDate]);
   
   // Filter profiles by location and already-assigned
   const availableProfiles = useMemo(() => {
@@ -274,11 +284,11 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   
   const executeAssignment = async () => {
     if (!selectedUser || !selectableRoles.some(r => r.id === selectedRole)) return;
-    if (isPostEventRole && !workDate) return;
+    if (isWorkDateMode && !workDate) return;
     setSavingAssignment(true);
     try {
     let assignmentSessionId = selectedSession !== 'all' ? selectedSession : undefined;
-    if (isPostEventRole) {
+    if (isWorkDateMode) {
       const existingPostSession = sessions.find(s => s.session_type === 'post_production' && s.session_date === workDate);
       if (existingPostSession) {
         assignmentSessionId = existingPostSession.id;
@@ -494,7 +504,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           </Tabs>
           <Label>{staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'} ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
 
-          {(staffScope === 'offsite' || isPostEventRole) && <div className="space-y-1.5">
+          {isWorkDateMode && <div className="space-y-1.5">
             <Label>Post-event work date</Label>
             <Popover open={workDateOpen} onOpenChange={setWorkDateOpen}>
               <PopoverTrigger asChild>
@@ -513,7 +523,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           </div>}
           
           {/* Session Selector */}
-          {hasSessions && !isPostEventRole && (
+          {hasSessions && !isWorkDateMode && (
             <Select value={selectedSession} onValueChange={(value) => {
               setSelectedSession(value);
               setSelectedUser('');
@@ -768,7 +778,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
 
           <Button
             onClick={handleAssignClick}
-            disabled={!selectedUser || !selectedRole || createAssignment.isPending || savingAssignment || (isPostEventRole && !workDate)}
+            disabled={!selectedUser || !selectedRole || createAssignment.isPending || savingAssignment || (isWorkDateMode && !workDate)}
             className="w-full"
             variant={hasGuardrailIssues && !guardrailOverridden ? "destructive" : "default"}
           >
