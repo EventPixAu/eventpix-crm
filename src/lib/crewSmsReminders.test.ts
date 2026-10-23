@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reminderDue, isDue, normalizeMobile, eligible, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_MASV_TEMPLATE, DEFAULT_DELIVERY_TEMPLATE } from '../../supabase/functions/process-crew-sms/reminders';
+import { reminderDue, isDue, normalizeMobile, eligible, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_MASV_TEMPLATE, DEFAULT_DELIVERY_TEMPLATE, followupRecentlySent } from '../../supabase/functions/process-crew-sms/reminders';
 
 describe('crew SMS rules', () => {
   it('sends setup reminder exactly 24 hours before setup, not event start', () => {
@@ -46,6 +46,11 @@ describe('crew SMS rules', () => {
     expect(deliveryBodyTemplate(true, { delivery_template_masv: 'Custom MASV' })).toBe('Custom MASV');
     expect(deliveryBodyTemplate(false, { delivery_template_masv: 'Custom MASV', delivery_template: 'Standard' })).toBe('Standard');
     expect(DEFAULT_MASV_TEMPLATE).not.toContain('job_sheet_link');
+  });
+  it('blocks a manual follow-up repeated within one hour but allows a later chase', () => {
+    const now = Date.parse('2026-10-23T03:00:00Z');
+    expect(followupRecentlySent(new Date(now - 30 * 60 * 1000).toISOString(), now)).toBe(true);
+    expect(followupRecentlySent(new Date(now - 90 * 60 * 1000).toISOString(), now)).toBe(false);
   });
   it('leaves unknown placeholders unresolved so unfinished templates are skipped, never sent wrong', () => {
     expect(renderTemplate('Hi {{unknown_field}}', { name: 'Sam' })).toBe('Hi {{unknown_field}}');
