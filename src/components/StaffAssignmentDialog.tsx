@@ -493,6 +493,24 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             </TabsList>
           </Tabs>
           <Label>{staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'} ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
+
+          {(staffScope === 'offsite' || isPostEventRole) && <div className="space-y-1.5">
+            <Label>Post-event work date</Label>
+            <Popover open={workDateOpen} onOpenChange={setWorkDateOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal" aria-label="Post-event work date">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {workDate ? format(parseISO(workDate), 'EEE, d MMM yyyy') : 'Select date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                <DateCalendar mode="single" selected={workDate ? parseISO(workDate) : undefined}
+                  defaultMonth={workDate ? parseISO(workDate) : undefined}
+                  onSelect={date => { if (date) { setWorkDate(format(date, 'yyyy-MM-dd')); setWorkDateOpen(false); } }}
+                  initialFocus className="pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>}
           
           {/* Session Selector */}
           {hasSessions && !isPostEventRole && (
@@ -618,24 +636,6 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               Edit this list in Admin → Lookups → {staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'}.
             </p>
           </div>
-
-          {isPostEventRole && <div className="space-y-1.5">
-            <Label>Post-event work date</Label>
-            <Popover open={workDateOpen} onOpenChange={setWorkDateOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal" aria-label="Post-event work date">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {workDate ? format(parseISO(workDate), 'EEE, d MMM yyyy') : 'Select date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                <DateCalendar mode="single" selected={workDate ? parseISO(workDate) : undefined}
-                  defaultMonth={workDate ? parseISO(workDate) : undefined}
-                  onSelect={date => { if (date) { setWorkDate(format(date, 'yyyy-MM-dd')); setWorkDateOpen(false); } }}
-                  initialFocus className="pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
-          </div>}
 
           {staffScope === 'onsite' && !isPostEventRole && (
           <div className="space-y-1.5">
