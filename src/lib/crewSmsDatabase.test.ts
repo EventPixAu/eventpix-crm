@@ -20,7 +20,7 @@ async function setup() {
   await db.exec(readFileSync('drizzle/migrations/0028_crew_sms_reminders.sql', 'utf8'));
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
-    INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,(now()+interval '24 hours'-interval '30 seconds')::time::text,'UTC','Test venue','ready';
+    INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
     INSERT INTO profiles VALUES('00000000-0000-0000-0000-000000000002','0412345678',true);
     INSERT INTO staff_roles VALUES('00000000-0000-0000-0000-000000000003','Photographer',true);
     INSERT INTO event_assignments VALUES('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001',NULL,'00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',NULL,'confirmed');
