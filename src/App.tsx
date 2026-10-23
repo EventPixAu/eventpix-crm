@@ -267,6 +267,7 @@ function AppRoutes() {
       <Route path="/admin/team-brief-templates" element={<ProtectedRoute><AdminGuard><TeamBriefTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/event-brief-templates" element={<ProtectedRoute><AdminGuard><EventBriefTemplates /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute><AdminGuard><UserManagement /></AdminGuard></ProtectedRoute>} />
+      <Route path="/admin/crew-sms" element={<ProtectedRoute><AdminGuard><CrewSms /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/insurance" element={<ProtectedRoute><AdminGuard><CompanyInsurance /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/role-visibility" element={<ProtectedRoute><AdminGuard><RoleVisibility /></AdminGuard></ProtectedRoute>} />
       <Route path="/admin/onboarding-guide" element={<ProtectedRoute><AdminGuard><OnboardingGuideEditor /></AdminGuard></ProtectedRoute>} />
