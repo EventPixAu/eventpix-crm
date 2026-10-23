@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { normalizeMobile, acceptedMessage, renderTemplate, DEFAULT_SETUP_TEMPLATE, DEFAULT_DELIVERY_TEMPLATE, JOB_SHEET_LINK } from './reminders.ts';
+import { normalizeMobile, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_SETUP_TEMPLATE, JOB_SHEET_LINK } from './reminders.ts';
 
 const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview']).default('process') }).strict();
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -42,11 +42,16 @@ Deno.serve(async req => {
       // Do not return account details or any credential-derived information.
       return reply({ configured: response.ok && result.response_code === 'SUCCESS', provider_status: response.status }, response.ok ? 200 : 502);
     }
-    const { data: templates, error: templatesError } = await db.from('crew_sms_settings').select('setup_template, delivery_template').eq('id', true).maybeSingle();
+    const { data: templates, error: templatesError } = await db.from('crew_sms_settings').select('setup_template, delivery_template, delivery_template_masv').eq('id', true).maybeSingle();
     if (templatesError) throw new Error('Cannot load SMS templates');
     const { data: candidates, error } = await db.rpc('crew_sms_candidates');
     if (error) throw new Error('Cannot load SMS reminders');
     if (parsed.data.mode === 'preview') return reply({ due: candidates?.length || 0 });
+    const masvEventIds = [...new Set((candidates || []).map((c) => c.event_id))];
+    const { data: masvRows } = masvEventIds.length
+      ? await db.from('events').select('id').in('id', masvEventIds).eq('crew_sms_masv_delivery', true)
+      : { data: [] as { id: string }[] };
+    const masvEvents = new Set((masvRows || []).map((r) => r.id));
     let sent = 0, failed = 0, skipped = 0;
     for (const c of candidates || []) {
       const phone = normalizeMobile(c.phone);
@@ -54,7 +59,7 @@ Deno.serve(async req => {
       const timeFormat = new Intl.DateTimeFormat('en-AU', { timeZone: c.timezone, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
       const body = c.reminder_type === 'setup'
         ? renderTemplate(templates?.setup_template || DEFAULT_SETUP_TEMPLATE, { event_name: c.event_name, venue: c.venue_name || 'TBC', setup_time: timeFormat.format(new Date(c.setup_at)), job_sheet_link: JOB_SHEET_LINK })
-        : renderTemplate(templates?.delivery_template || DEFAULT_DELIVERY_TEMPLATE, { event_name: c.event_name, finish_time: timeFormat.format(new Date(c.finish_at)), job_sheet_link: JOB_SHEET_LINK });
+        : renderTemplate(deliveryBodyTemplate(masvEvents.has(c.event_id), templates), { event_name: c.event_name, finish_time: timeFormat.format(new Date(c.finish_at)), job_sheet_link: JOB_SHEET_LINK });
       if (/\{\{[^}]*\}\}/.test(body)) { skipped++; continue; }
       const { data: log, error: claimError } = await db.from('crew_sms_logs').insert({ event_id: c.event_id, session_key: c.session_key, recipient_key: c.recipient_key, reminder_type: c.reminder_type, due_at: c.due_at, phone, body }).select('id').maybeSingle();
       if (claimError || !log) { if (claimError?.code !== '23505') failed++; else skipped++; continue; }

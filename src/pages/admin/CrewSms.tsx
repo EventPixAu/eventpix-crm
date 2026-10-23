@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 // Keep in sync with supabase/functions/process-crew-sms/reminders.ts DEFAULT_*_TEMPLATE
 const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
 const DEFAULT_DELIVERY_TEMPLATE = 'EventPix: {{event_name}} has finished. Please follow the delivery/upload instructions in your job sheet: {{job_sheet_link}}';
+const DEFAULT_MASV_TEMPLATE = 'EventPix: {{event_name}} has finished. Your files are required to be sent via MASV now - no editing required.';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
@@ -44,7 +45,7 @@ export default function CrewSms() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_sms_settings')
-        .select('id, enabled, enabled_at, setup_template, delivery_template')
+        .select('id, enabled, enabled_at, setup_template, delivery_template, delivery_template_masv')
         .eq('id', true)
         .maybeSingle();
       if (error) throw error;
@@ -89,10 +90,12 @@ export default function CrewSms() {
 
   const [setupTemplate, setSetupTemplate] = useState('');
   const [deliveryTemplate, setDeliveryTemplate] = useState('');
+  const [masvTemplate, setMasvTemplate] = useState('');
   useEffect(() => {
     if (settings) {
       setSetupTemplate(settings.setup_template ?? '');
       setDeliveryTemplate(settings.delivery_template ?? '');
+      setMasvTemplate(settings.delivery_template_masv ?? '');
     }
   }, [settings]);
 
@@ -100,7 +103,7 @@ export default function CrewSms() {
     mutationFn: async () => {
       const { error } = await supabase
         .from('crew_sms_settings')
-        .upsert({ id: true, setup_template: setupTemplate, delivery_template: deliveryTemplate });
+        .upsert({ id: true, setup_template: setupTemplate, delivery_template: deliveryTemplate, delivery_template_masv: masvTemplate });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -109,6 +112,41 @@ export default function CrewSms() {
     },
     onError: (err: Error) => {
       toast.error('Could not save the templates', { description: err.message });
+    },
+  });
+
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['crew-sms-masv-events'],
+    queryFn: async () => {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const horizon = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, event_name, event_date, crew_sms_masv_delivery')
+        .gte('event_date', today)
+        .lte('event_date', horizon)
+        .neq('ops_status', 'cancelled')
+        .order('event_date', { ascending: true })
+        .limit(30);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!isAdmin,
+  });
+
+  const masvToggle = useMutation({
+    mutationFn: async ({ eventId, masv }: { eventId: string; masv: boolean }) => {
+      const { error } = await supabase
+        .from('events')
+        .update({ crew_sms_masv_delivery: masv })
+        .eq('id', eventId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-masv-events'] });
+    },
+    onError: (err: Error) => {
+      toast.error('Could not save the MASV setting', { description: err.message });
     },
   });
 
@@ -179,6 +217,11 @@ export default function CrewSms() {
               <label className="text-sm font-medium">Delivery reminder — sent at event finish</label>
               <Textarea value={deliveryTemplate} onChange={(e) => setDeliveryTemplate(e.target.value)} rows={3} />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Delivery reminder — MASV ASAP events</label>
+              <p className="text-xs text-muted-foreground">Sent at event finish instead of the standard delivery reminder when an event is marked "Files via MASV ASAP" below.</p>
+              <Textarea value={masvTemplate} onChange={(e) => setMasvTemplate(e.target.value)} rows={3} />
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => saveTemplates.mutate()} disabled={saveTemplates.isPending}>
                 Save templates
@@ -189,11 +232,46 @@ export default function CrewSms() {
                 onClick={() => {
                   setSetupTemplate(DEFAULT_SETUP_TEMPLATE);
                   setDeliveryTemplate(DEFAULT_DELIVERY_TEMPLATE);
+                  setMasvTemplate(DEFAULT_MASV_TEMPLATE);
                 }}
               >
                 Restore default wording
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Files via MASV ASAP</CardTitle>
+            <CardDescription>
+              Upcoming events (next 30 days). Turn on for events whose files are required via MASV immediately — crew
+              receive the MASV wording at event finish instead of the standard delivery reminder.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!upcomingEvents?.length ? (
+              <p className="text-sm text-muted-foreground py-2">No upcoming events in the next 30 days.</p>
+            ) : (
+              <div className="divide-y">
+                {upcomingEvents.map((ev) => (
+                  <div key={ev.id} className="flex items-center justify-between gap-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{ev.event_name}</p>
+                      <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm text-muted-foreground">MASV ASAP</span>
+                      <Switch
+                        checked={!!ev.crew_sms_masv_delivery}
+                        disabled={masvToggle.isPending}
+                        onCheckedChange={(checked) => masvToggle.mutate({ eventId: ev.id, masv: checked })}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

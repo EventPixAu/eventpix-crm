@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reminderDue, isDue, normalizeMobile, eligible, acceptedMessage, renderTemplate } from '../../supabase/functions/process-crew-sms/reminders';
+import { reminderDue, isDue, normalizeMobile, eligible, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_MASV_TEMPLATE, DEFAULT_DELIVERY_TEMPLATE } from '../../supabase/functions/process-crew-sms/reminders';
 
 describe('crew SMS rules', () => {
   it('sends setup reminder exactly 24 hours before setup, not event start', () => {
@@ -39,6 +39,13 @@ describe('crew SMS rules', () => {
   it('renders template merge fields with actual values', () => {
     expect(renderTemplate('Reminder - {{event_name}} at {{venue}}. Setup {{setup_time}}: {{job_sheet_link}}', { event_name: 'Gala', venue: 'Hall', setup_time: '8:30am', job_sheet_link: 'https://x' }))
       .toBe('Reminder - Gala at Hall. Setup 8:30am: https://x');
+  });
+  it('uses the MASV ASAP wording only for events flagged for MASV delivery', () => {
+    expect(deliveryBodyTemplate(true, null)).toBe('EventPix: {{event_name}} has finished. Your files are required to be sent via MASV now - no editing required.');
+    expect(deliveryBodyTemplate(false, null)).toBe(DEFAULT_DELIVERY_TEMPLATE);
+    expect(deliveryBodyTemplate(true, { delivery_template_masv: 'Custom MASV' })).toBe('Custom MASV');
+    expect(deliveryBodyTemplate(false, { delivery_template_masv: 'Custom MASV', delivery_template: 'Standard' })).toBe('Standard');
+    expect(DEFAULT_MASV_TEMPLATE).not.toContain('job_sheet_link');
   });
   it('leaves unknown placeholders unresolved so unfinished templates are skipped, never sent wrong', () => {
     expect(renderTemplate('Hi {{unknown_field}}', { name: 'Sam' })).toBe('Hi {{unknown_field}}');
