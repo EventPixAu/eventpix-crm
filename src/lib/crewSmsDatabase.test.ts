@@ -18,6 +18,7 @@ async function setup() {
     CREATE TABLE event_assignments(id uuid PRIMARY KEY,event_id uuid,staff_id uuid,user_id uuid,staff_role_id uuid,session_id uuid,confirmation_status text);
   `);
   await db.exec(readFileSync('drizzle/migrations/0028_crew_sms_reminders.sql', 'utf8'));
+  await db.exec(readFileSync('drizzle/migrations/0029_hourly_crew_sms_window.sql', 'utf8'));
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
     INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
@@ -29,6 +30,13 @@ async function setup() {
 }
 
 describe('scheduled crew SMS database rules', () => {
+  it('still selects reminders one hour after their target time', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`UPDATE crew_sms_settings SET enabled_at=now()-interval '2 hours'; UPDATE events SET event_date=(now()+interval '23 hours')::date,setup_time=to_char(now()+interval '23 hours','HH24:MI:SS');`);
+      expect((await db.query(`SELECT reminder_type FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'setup'}]);
+    } finally { await db.close(); }
+  });
   it('selects the setup reminder 24 hours before the stored Setup time', async () => {
     const db = await setup();
     try {
