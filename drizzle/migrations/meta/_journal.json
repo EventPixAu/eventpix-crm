@@ -225,6 +225,13 @@
       "when": 1792721949114,
       "tag": "0031_crew_sms_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792723060766,
+      "tag": "0032_crew_sms_masv_delivery_option",
+      "breakpoints": true
     }
   ]
 }

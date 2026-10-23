@@ -1727,6 +1727,7 @@ export type Database = {
       crew_sms_settings: {
         Row: {
           delivery_template: string | null
+          delivery_template_masv: string | null
           enabled: boolean
           enabled_at: string
           id: boolean
@@ -1734,6 +1735,7 @@ export type Database = {
         }
         Insert: {
           delivery_template?: string | null
+          delivery_template_masv?: string | null
           enabled?: boolean
           enabled_at?: string
           id?: boolean
@@ -1741,6 +1743,7 @@ export type Database = {
         }
         Update: {
           delivery_template?: string | null
+          delivery_template_masv?: string | null
           enabled?: boolean
           enabled_at?: string
           id?: boolean
@@ -3700,6 +3703,7 @@ export type Database = {
           coverage_package_id: string | null
           created_at: string | null
           created_by: string | null
+          crew_sms_masv_delivery: boolean
           date_status: string | null
           delivery_deadline: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
@@ -3794,6 +3798,7 @@ export type Database = {
           coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          crew_sms_masv_delivery?: boolean
           date_status?: string | null
           delivery_deadline?: string | null
           delivery_method?:
@@ -3890,6 +3895,7 @@ export type Database = {
           coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          crew_sms_masv_delivery?: boolean
           date_status?: string | null
           delivery_deadline?: string | null
           delivery_method?:
