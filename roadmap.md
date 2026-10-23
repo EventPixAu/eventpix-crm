@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Show the saved Delivery date on the event Overview beneath Delivery - Photographer; verify in the signed-in preview.
+- [x] Show the saved Delivery date on the event Overview beneath Delivery - Photographer; signed-in Roundtable PER verified Wednesday 28 October 2026, build OK.
 - [x] Show the post-event work date immediately on the Offsite Staff tab, before a role is selected; signed-in preview verified default and calendar selection.
 - [x] Allow post-event team assignments on a selected work date, defaulting to the Delivery deadline, with conflicts checked on that date; verified Monday 2 November default, date selection and saved assignment in the signed-in UI; temporary test records removed; four tests passed.
 - [x] Show either the post-event work date picker or the session selector in the assignment dialog, never both: Offsite and post-event roles use the work date, Onsite uses the session; verified on the Melbourne Cup event in the signed-in preview.
