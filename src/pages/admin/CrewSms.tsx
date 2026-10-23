@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 // Keep in sync with supabase/functions/process-crew-sms/reminders.ts DEFAULT_*_TEMPLATE
 const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
 const DEFAULT_DELIVERY_TEMPLATE = 'EventPix: {{event_name}} has finished. Please follow the delivery/upload instructions in your job sheet: {{job_sheet_link}}';
+const DEFAULT_MASV_TEMPLATE = 'EventPix: {{event_name}} has finished. Your files are required to be sent via MASV now - no editing required.';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
@@ -44,7 +45,7 @@ export default function CrewSms() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_sms_settings')
-        .select('id, enabled, enabled_at, setup_template, delivery_template')
+        .select('id, enabled, enabled_at, setup_template, delivery_template, delivery_template_masv')
         .eq('id', true)
         .maybeSingle();
       if (error) throw error;
@@ -89,10 +90,12 @@ export default function CrewSms() {
 
   const [setupTemplate, setSetupTemplate] = useState('');
   const [deliveryTemplate, setDeliveryTemplate] = useState('');
+  const [masvTemplate, setMasvTemplate] = useState('');
   useEffect(() => {
     if (settings) {
       setSetupTemplate(settings.setup_template ?? '');
       setDeliveryTemplate(settings.delivery_template ?? '');
+      setMasvTemplate(settings.delivery_template_masv ?? '');
     }
   }, [settings]);
 
@@ -100,7 +103,7 @@ export default function CrewSms() {
     mutationFn: async () => {
       const { error } = await supabase
         .from('crew_sms_settings')
-        .upsert({ id: true, setup_template: setupTemplate, delivery_template: deliveryTemplate });
+        .upsert({ id: true, setup_template: setupTemplate, delivery_template: deliveryTemplate, delivery_template_masv: masvTemplate });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -179,6 +182,11 @@ export default function CrewSms() {
               <label className="text-sm font-medium">Delivery reminder — sent at event finish</label>
               <Textarea value={deliveryTemplate} onChange={(e) => setDeliveryTemplate(e.target.value)} rows={3} />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Delivery reminder — MASV ASAP events</label>
+              <p className="text-xs text-muted-foreground">Sent at event finish instead of the standard delivery reminder when an event is marked "Files via MASV ASAP" below.</p>
+              <Textarea value={masvTemplate} onChange={(e) => setMasvTemplate(e.target.value)} rows={3} />
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => saveTemplates.mutate()} disabled={saveTemplates.isPending}>
                 Save templates
@@ -189,6 +197,7 @@ export default function CrewSms() {
                 onClick={() => {
                   setSetupTemplate(DEFAULT_SETUP_TEMPLATE);
                   setDeliveryTemplate(DEFAULT_DELIVERY_TEMPLATE);
+                  setMasvTemplate(DEFAULT_MASV_TEMPLATE);
                 }}
               >
                 Restore default wording
