@@ -1,10 +1,26 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { normalizeMobile, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_SETUP_TEMPLATE, JOB_SHEET_LINK } from './reminders.ts';
+import { normalizeMobile, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_SETUP_TEMPLATE, JOB_SHEET_LINK, FOLLOWUP_RESEND_WINDOW_MS } from './reminders.ts';
 
-const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview']).default('process') }).strict();
+const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview', 'followup']).default('process'), event_id: z.string().uuid().optional() }).strict();
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+type Db = ReturnType<typeof createClient>;
+async function deliver(db: Db, headers: Record<string, string>, logId: string, phone: string, body: string): Promise<'sent' | 'failed'> {
+  try {
+    const response = await fetch('https://rest.clicksend.com/v3/sms/send', { method: 'POST', headers, body: JSON.stringify({ messages: [{ source: 'Eventpixii', from: 'EventPix', to: phone, body, custom_string: logId }] }), signal: AbortSignal.timeout(15000) });
+    const result = await response.json();
+    const messageId = response.ok ? acceptedMessage(result) : null;
+    const { error: updateError } = await db.from('crew_sms_logs').update({ status: messageId ? 'sent' : 'failed', provider_message_id: messageId, sent_at: messageId ? new Date().toISOString() : null, error_code: messageId ? null : `HTTP_${response.status}_${String(result.response_code || 'REJECTED').replace(/[^A-Z_]/g, '')}` }).eq('id', logId);
+    if (updateError) throw new Error('Delivery result could not be recorded');
+    return messageId ? 'sent' : 'failed';
+  } catch {
+    // Ambiguous network failures must not be automatically resent, to avoid duplicate paid SMS.
+    await db.from('crew_sms_logs').update({ status: 'unknown', error_code: 'DELIVERY_UNCONFIRMED' }).eq('id', logId);
+    return 'failed';
+  }
+}
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
