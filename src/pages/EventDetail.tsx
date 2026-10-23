@@ -1166,6 +1166,20 @@ export default function EventDetail() {
                     </div>
                   </div>
 
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Calendar className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm text-muted-foreground">Delivery Date</p>
+                      <p className="font-medium">
+                        {(event as any).delivery_deadline
+                          ? format(parseISO((event as any).delivery_deadline.slice(0, 10)), 'EEEE, MMMM d, yyyy')
+                          : 'Not set'}
+                      </p>
+                    </div>
+                  </div>
+
                   <EventDeliveryChoicePanel event={event} canSend={isAdmin || isOperations || isSales} />
 
                   <EventVenueEditor
