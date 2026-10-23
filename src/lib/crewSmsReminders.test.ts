@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reminderDue, isDue, normalizeMobile, eligible, acceptedMessage } from '../../supabase/functions/process-crew-sms/reminders';
+import { reminderDue, isDue, normalizeMobile, eligible, acceptedMessage, renderTemplate } from '../../supabase/functions/process-crew-sms/reminders';
 
 describe('crew SMS rules', () => {
   it('sends setup reminder exactly 24 hours before setup, not event start', () => {
@@ -35,5 +35,13 @@ describe('crew SMS rules', () => {
   it('requires individual ClickSend acceptance, not just HTTP success', () => {
     expect(acceptedMessage({ response_code: 'SUCCESS', data: { messages: [{ status: 'INVALID_RECIPIENT' }] } })).toBeNull();
     expect(acceptedMessage({ response_code: 'SUCCESS', data: { messages: [{ status: 'SUCCESS', message_id: 'accepted' }] } })).toBe('accepted');
+  });
+  it('renders template merge fields with actual values', () => {
+    expect(renderTemplate('Reminder - {{event_name}} at {{venue}}. Setup {{setup_time}}: {{job_sheet_link}}', { event_name: 'Gala', venue: 'Hall', setup_time: '8:30am', job_sheet_link: 'https://x' }))
+      .toBe('Reminder - Gala at Hall. Setup 8:30am: https://x');
+  });
+  it('leaves unknown placeholders unresolved so unfinished templates are skipped, never sent wrong', () => {
+    expect(renderTemplate('Hi {{unknown_field}}', { name: 'Sam' })).toBe('Hi {{unknown_field}}');
+    expect(/\{\{[^}]*\}\}/.test(renderTemplate('Hi {{unknown_field}}', {}))).toBe(true);
   });
 });

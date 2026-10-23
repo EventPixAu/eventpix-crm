@@ -19,3 +19,11 @@ export function acceptedMessage(result: { response_code?: string; data?: { messa
   const message = result.data?.messages?.[0];
   return result.response_code === 'SUCCESS' && message?.status === 'SUCCESS' && message.message_id ? message.message_id : null;
 }
+
+export const JOB_SHEET_LINK = 'https://app.eventpix.com.au/my-job-sheets';
+export const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
+export const DEFAULT_DELIVERY_TEMPLATE = 'EventPix: {{event_name}} has finished. Please follow the delivery/upload instructions in your job sheet: {{job_sheet_link}}';
+
+export function renderTemplate(template: string, fields: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) => fields[key] ?? match);
+}
