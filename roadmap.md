@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Allow post-event team assignments on a selected work date, defaulting to the Delivery deadline, with conflicts checked on that date.
+- [x] Allow post-event team assignments on a selected work date, defaulting to the Delivery deadline, with conflicts checked on that date; verified Monday 2 November default, date selection and saved assignment in the signed-in UI; temporary test records removed; four tests passed.
 - [x] Replace minute-by-minute SMS checks with hourly checks (24/day); Trevor accepts up to one hour delay, and the reminder window is widened to prevent missed sends.
 - [x] Connect shared ClickSend account and activate crew SMS reminders 24 hours before setup and at finish; credentials verified, 12 tests passed, cancelled events excluded, no live test text sent.
 - [x] Crew SMS review screen at /admin/crew-sms: reminders on/off toggle (admin-updateable settings) and sent-text log with status filter and message detail.
