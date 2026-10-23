@@ -37,6 +37,12 @@ import { useCreateCrewChecklistForUser } from '@/hooks/useCrewChecklists';
 import { getTimezoneOffset } from '@/lib/timezones';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isOnsiteStaffRole } from '@/lib/staffRoleScope';
+import { Calendar as DateCalendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { postEventWorkDate, postEventSessionInput } from '@/lib/postEventAssignment';
+import { toast } from 'sonner';
 
 // Combine a local date + time in an IANA timezone into a timestamptz ISO string
 function toTimestamptz(dateStr: string, timeStr: string, tz: string): string {
@@ -81,6 +87,10 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [callTimeChoice, setCallTimeChoice] = useState('default');
   const [customCallTime, setCustomCallTime] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
+  const [workDate, setWorkDate] = useState('');
+  const [workDateOpen, setWorkDateOpen] = useState(false);
+  const [savingAssignment, setSavingAssignment] = useState(false);
+  const queryClient = useQueryClient();
   
   // Guardrail state
   const [guardrailChecks, setGuardrailChecks] = useState<{ hardBlocks: GuardrailCheck[]; softBlocks: GuardrailCheck[] } | null>(null);
@@ -95,6 +105,9 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
   const { data: sessions = [] } = useEventSessions(eventId);
+  useEffect(() => {
+    if (open) setWorkDate(postEventWorkDate(event?.delivery_deadline));
+  }, [open, event?.delivery_deadline]);
   
   // Auto-select a session when sessions exist (no more "All Sessions" general assignments)
   useEffect(() => {
@@ -112,17 +125,21 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const createCrewChecklist = useCreateCrewChecklistForUser();
   
   // Fetch availability for the event date
-  const { data: dateAvailability = [] } = useStaffAvailabilityByDate(event?.event_date);
 
   // Check conflicts for selected user — prefer the selected session's date/times,
   // falling back to event-level times (most events only have times on sessions)
   const selectedSessionForConflict = sessions.find(s => s.id === selectedSession);
-  const conflictDate = selectedSessionForConflict?.session_date || event?.event_date || null;
+  const conflictDate = isPostEventRole ? workDate || null : selectedSessionForConflict?.session_date || event?.event_date || null;
+  const { data: dateAvailability = [] } = useStaffAvailabilityByDate(conflictDate || undefined);
   const conflictTz = (selectedSessionForConflict as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
-  const conflictStartStr = selectedSessionForConflict && conflictDate
+  const conflictStartStr = isPostEventRole
+    ? (conflictDate ? toTimestamptz(conflictDate, '09:00', conflictTz) : null)
+    : selectedSessionForConflict && conflictDate
     ? toTimestamptz(conflictDate, (selectedSessionForConflict.arrival_time || selectedSessionForConflict.start_time || '09:00').slice(0, 5), conflictTz)
     : (event?.start_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.start_time || '09:00').slice(0, 5), conflictTz) : null));
-  const conflictEndStr = selectedSessionForConflict && conflictDate
+  const conflictEndStr = isPostEventRole
+    ? (conflictDate ? toTimestamptz(conflictDate, '17:00', conflictTz) : null)
+    : selectedSessionForConflict && conflictDate
     ? toTimestamptz(conflictDate, (selectedSessionForConflict.end_time || '23:59').slice(0, 5), conflictTz)
     : (event?.end_at || (conflictDate ? toTimestamptz(conflictDate, ((event as any)?.end_time || '23:59').slice(0, 5), conflictTz) : null));
 
@@ -138,34 +155,38 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   
   // Check for availability and routing conflicts when user is selected
   useEffect(() => {
-    if (selectedUser && event) {
+    let current = true;
+    setGuardrailChecks(null);
+    setWarnings([]);
+    if (selectedUser && event && conflictDate) {
       // Check legacy conflicts
       checkConflicts.mutate({
         userId: selectedUser,
         eventId,
-        eventDate: event.event_date,
-        startAt: event.start_at,
-        endAt: event.end_at,
+        eventDate: conflictDate,
+        startAt: conflictStartStr,
+        endAt: conflictEndStr,
       }, {
-        onSuccess: (result) => setWarnings(result),
+        onSuccess: (result) => { if (current) setWarnings(result); },
       });
       
       // Check guardrails
       checkGuardrails.mutate({
         userId: selectedUser,
         eventId,
-        eventDate: event.event_date,
-        startAt: event.start_at || null,
-        endAt: event.end_at || null,
+        eventDate: conflictDate,
+        startAt: conflictStartStr,
+        endAt: conflictEndStr,
       }, {
-        onSuccess: (result) => setGuardrailChecks(result),
+        onSuccess: (result) => { if (current) setGuardrailChecks(result); },
       });
     } else {
       setWarnings([]);
       setGuardrailChecks(null);
     }
     setGuardrailOverridden(false);
-  }, [selectedUser, event?.event_date, event?.start_at, event?.end_at]);
+    return () => { current = false; };
+  }, [selectedUser, conflictDate, conflictStartStr, conflictEndStr]);
   
   // Get user availability status
   const selectedUserAvailability = useMemo(() => {
@@ -253,6 +274,23 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   
   const executeAssignment = async () => {
     if (!selectedUser || !selectableRoles.some(r => r.id === selectedRole)) return;
+    if (isPostEventRole && !workDate) return;
+    setSavingAssignment(true);
+    try {
+    let assignmentSessionId = selectedSession !== 'all' ? selectedSession : undefined;
+    if (isPostEventRole) {
+      const existingPostSession = sessions.find(s => s.session_type === 'post_production' && s.session_date === workDate);
+      if (existingPostSession) {
+        assignmentSessionId = existingPostSession.id;
+      } else {
+        const { data, error } = await supabase.from('event_sessions')
+          .insert(postEventSessionInput(eventId, workDate, conflictTz)).select('id').maybeSingle();
+        if (error) throw error;
+        if (!data) throw new Error('Unable to save the post-event work date.');
+        assignmentSessionId = data.id;
+        queryClient.invalidateQueries({ queryKey: ['event-sessions', eventId] });
+      }
+    }
 
     // Find the selected profile to determine if it's from profiles or staff table
     const selectedProfile = profiles.find(p => p.id === selectedUser);
@@ -270,7 +308,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     } = {
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
-      session_id: selectedSession !== 'all' ? selectedSession : undefined,
+      session_id: assignmentSessionId,
       assignment_notes: assignmentNotes || undefined,
       confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
@@ -317,6 +355,11 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
     // Don't reset selectedSession - keep it for consecutive assignments to same session
     setGuardrailChecks(null);
     setGuardrailOverridden(false);
+    } catch (error) {
+      toast.error('Unable to assign team member', { description: error instanceof Error ? error.message : 'Please try again.' });
+    } finally {
+      setSavingAssignment(false);
+    }
   };
 
   const handleRemove = async (assignmentId: string) => {
@@ -395,6 +438,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
                       <p className="text-xs text-muted-foreground capitalize">
                         {getAssignmentRole(assignment)}
                       </p>
+                      {assignment.session?.session_date && <p className="text-xs text-muted-foreground">{format(parseISO(assignment.session.session_date), 'EEE, d MMM yyyy')}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -451,7 +495,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           <Label>{staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'} ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
           
           {/* Session Selector */}
-          {hasSessions && (
+          {hasSessions && !isPostEventRole && (
             <Select value={selectedSession} onValueChange={(value) => {
               setSelectedSession(value);
               setSelectedUser('');
@@ -574,6 +618,24 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
               Edit this list in Admin → Lookups → {staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'}.
             </p>
           </div>
+
+          {isPostEventRole && <div className="space-y-1.5">
+            <Label>Post-event work date</Label>
+            <Popover open={workDateOpen} onOpenChange={setWorkDateOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal" aria-label="Post-event work date">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {workDate ? format(parseISO(workDate), 'EEE, d MMM yyyy') : 'Select date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                <DateCalendar mode="single" selected={workDate ? parseISO(workDate) : undefined}
+                  defaultMonth={workDate ? parseISO(workDate) : undefined}
+                  onSelect={date => { if (date) { setWorkDate(format(date, 'yyyy-MM-dd')); setWorkDateOpen(false); } }}
+                  initialFocus className="pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>}
 
           {staffScope === 'onsite' && !isPostEventRole && (
           <div className="space-y-1.5">
@@ -706,7 +768,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
 
           <Button
             onClick={handleAssignClick}
-            disabled={!selectedUser || !selectedRole || createAssignment.isPending}
+            disabled={!selectedUser || !selectedRole || createAssignment.isPending || savingAssignment || (isPostEventRole && !workDate)}
             className="w-full"
             variant={hasGuardrailIssues && !guardrailOverridden ? "destructive" : "default"}
           >
