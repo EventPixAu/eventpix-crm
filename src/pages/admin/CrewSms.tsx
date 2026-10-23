@@ -243,7 +243,7 @@ export default function CrewSms() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Files via MASV ASAP</CardTitle>
+            <CardTitle>Sent texts</CardTitle>
             <CardDescription>Most recent 100 records.</CardDescription>
             <div className="flex items-center gap-2 pt-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
