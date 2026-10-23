@@ -313,10 +313,7 @@ export function useDeleteEvent() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', id);
+      const { error } = await (supabase.rpc as any)('delete_event_safely', { _event_id: id });
       
       if (error) throw error;
     },
