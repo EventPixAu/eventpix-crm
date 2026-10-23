@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  PackageCheck,
   AlertTriangle,
   MapPin,
   Plus,
@@ -388,6 +389,18 @@ export default function Events() {
                           <span className="hidden sm:flex items-center gap-1 truncate">
                             <MapPin className="h-3.5 w-3.5" />
                             {event.venue_name}
+                          </span>
+                        </>
+                      )}
+                      {(event as any).delivery_deadline && (
+                        <>
+                          <span className="hidden sm:inline">•</span>
+                          <span
+                            className="flex items-center gap-1"
+                            title="Delivery deadline"
+                          >
+                            <PackageCheck className="h-3.5 w-3.5" />
+                            Delivery {format(parseISO((event as any).delivery_deadline), 'd MMM yyyy')}
                           </span>
                         </>
                       )}
