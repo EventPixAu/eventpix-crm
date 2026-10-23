@@ -244,8 +244,7 @@ export default function CrewSms() {
                               </TableCell>
                             </TableRow>
                           )}
-                        </>
-                      );
+                        </Fragment>
                     })}
                   </TableBody>
                 </Table>
