@@ -45,6 +45,7 @@ import {
   FileSignature,
   TrendingUp,
   Layers,
+  MessageSquare,
   UserCircle,
   Shield,
   XCircle,
