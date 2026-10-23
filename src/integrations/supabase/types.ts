@@ -8024,6 +8024,20 @@ export type Database = {
           venue_name: string
         }[]
       }
+      crew_sms_followup_recipients: {
+        Args: { _event_id: string }
+        Returns: {
+          event_id: string
+          event_name: string
+          finish_at: string
+          masv: boolean
+          phone: string
+          recipient_key: string
+          session_key: string
+          timezone: string
+          venue_name: string
+        }[]
+      }
       crew_update_venue: {
         Args: { _note?: string; _updates: Json; _venue_id: string }
         Returns: {
