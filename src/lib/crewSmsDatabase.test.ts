@@ -10,7 +10,7 @@ async function setup() {
     CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;
     CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
-    CREATE TABLE events(id uuid PRIMARY KEY,event_name text,event_date date,start_time time,end_time time,setup_time text,timezone text,venue_name text,ops_status text);
+    CREATE TABLE events(id uuid PRIMARY KEY,event_name text,event_date date,start_time time,end_time time,setup_time text,timezone text,venue_name text,ops_status text,crew_sms_masv_delivery boolean DEFAULT false);
     CREATE TABLE event_sessions(id uuid PRIMARY KEY,event_id uuid,session_date date,start_time time,end_time time,arrival_time time,timezone text,venue_name text);
     CREATE TABLE profiles(id uuid PRIMARY KEY,phone text,is_active boolean);
     CREATE TABLE staff(id uuid PRIMARY KEY,user_id uuid,name text,phone text,status text);
@@ -19,6 +19,7 @@ async function setup() {
   `);
   await db.exec(readFileSync('drizzle/migrations/0028_crew_sms_reminders.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0029_hourly_crew_sms_window.sql', 'utf8'));
+  await db.exec(readFileSync('drizzle/migrations/0034_crew_sms_manual_followup.sql', 'utf8'));
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
     INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
@@ -75,6 +76,32 @@ describe('scheduled crew SMS database rules', () => {
       await db.exec(`INSERT INTO crew_sms_dispatch_tickets(token) VALUES('00000000-0000-0000-0000-000000000005');`);
       expect((await db.query(`SELECT consume_crew_sms_ticket('00000000-0000-0000-0000-000000000005') AS ok`)).rows).toEqual([{ok:true}]);
       expect((await db.query(`SELECT consume_crew_sms_ticket('00000000-0000-0000-0000-000000000005') AS ok`)).rows).toEqual([{ok:false}]);
+    } finally { await db.close(); }
+  });
+});
+
+describe('manual follow-up texts', () => {
+  const EVENT = '00000000-0000-0000-0000-000000000001';
+  it('lists confirmed onsite crew for a finished event regardless of the schedule', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`UPDATE events SET event_date=(now()-interval '1 day')::date;`);
+      const { rows } = await db.query(`SELECT recipient_key, phone FROM crew_sms_followup_recipients('${EVENT}')`);
+      expect(rows).toEqual([{ recipient_key: '00000000-0000-0000-0000-000000000002', phone: '0412345678' }]);
+    } finally { await db.close(); }
+  });
+  it('excludes cancelled events from manual follow-ups', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`UPDATE events SET ops_status='cancelled';`);
+      expect((await db.query(`SELECT * FROM crew_sms_followup_recipients('${EVENT}')`)).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('allows follow-up entries in the send log', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`INSERT INTO crew_sms_logs(event_id,session_key,recipient_key,reminder_type,due_at,phone,body) VALUES('${EVENT}','event:followup:1','crew','followup',now(),'0412345678','Follow up')`);
+      expect((await db.query(`SELECT reminder_type FROM crew_sms_logs`)).rows).toEqual([{ reminder_type: 'followup' }]);
     } finally { await db.close(); }
   });
 });
