@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 
 // Keep in sync with supabase/functions/process-crew-sms/reminders.ts DEFAULT_*_TEMPLATE
@@ -32,6 +33,7 @@ const STATUS_VARIANTS: Record<string, { label: string; variant: 'default' | 'sec
 const TYPE_LABELS: Record<string, string> = {
   setup: 'Setup reminder (24h before)',
   delivery: 'Delivery reminder (at finish)',
+  followup: 'Manual follow-up',
 };
 
 export default function CrewSms() {
@@ -136,6 +138,48 @@ export default function CrewSms() {
 
   // The MASV flag is maintained automatically by the database from each event's
   // photographer delivery method (MASV ASAP) — no manual toggle here.
+
+  const { data: recentEvents } = useQuery({
+    queryKey: ['crew-sms-followup-events'],
+    queryFn: async () => {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const since = format(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, event_name, event_date, crew_sms_masv_delivery')
+        .gte('event_date', since)
+        .lte('event_date', today)
+        .neq('ops_status', 'cancelled')
+        .order('event_date', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!isAdmin,
+  });
+
+  const followupMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      const { data, error } = await supabase.functions.invoke('process-crew-sms', {
+        body: { mode: 'followup', event_id: eventId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { sent: number; failed: number; skipped: number };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-logs'] });
+      toast.success(`Follow-up sent to ${result.sent} crew member${result.sent === 1 ? '' : 's'}`, {
+        description: result.skipped > 0 ? `${result.skipped} skipped (no mobile number or already chased within the last hour).` : undefined,
+      });
+      if (result.failed > 0) {
+        toast.error(`${result.failed} text${result.failed === 1 ? '' : 's'} failed — check the Sent texts log below.`);
+      }
+    },
+    onError: (err: Error) => {
+      toast.error('Could not send the follow-up', { description: err.message });
+    },
+  });
 
   const counts = useMemo(() => {
     const byStatus: Record<string, number> = {};
@@ -253,6 +297,62 @@ export default function CrewSms() {
                       ) : (
                         <span className="text-sm text-muted-foreground">Standard</span>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Send a follow-up text</CardTitle>
+            <CardDescription>
+              Manually send the delivery reminder to confirmed onsite crew of a recent event, right now — MASV ASAP
+              events get the MASV wording, everything else gets the standard delivery wording. Anyone already chased
+              in the last hour is skipped, so a double-click can't send a duplicate text. This works even when the
+              automatic reminders switch above is off.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!recentEvents?.length ? (
+              <p className="text-sm text-muted-foreground py-2">No events in the last 14 days.</p>
+            ) : (
+              <div className="divide-y">
+                {recentEvents.map((ev) => (
+                  <div key={ev.id} className="flex items-center justify-between gap-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{ev.event_name}</p>
+                      <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {ev.crew_sms_masv_delivery && <Badge>MASV ASAP</Badge>}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline" disabled={followupMutation.isPending}>
+                            Send follow-up
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Send follow-up text?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This immediately texts every confirmed onsite crew member for {ev.event_name}
+                              {ev.crew_sms_masv_delivery
+                                ? ' with the MASV ASAP wording ("Your files are required to be sent via MASV now - no editing required.").'
+                                : ' with the standard delivery reminder wording.'}
+                              {' '}Each text is charged to the shared ClickSend account.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => followupMutation.mutate(ev.id)}>
+                              Send now
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}
