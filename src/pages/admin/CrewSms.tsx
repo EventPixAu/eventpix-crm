@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { ChevronDown, ChevronRight, MessageSquare, RefreshCw } from 'lucide-react';
@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { DEFAULT_SETUP_TEMPLATE, DEFAULT_DELIVERY_TEMPLATE } from '../../supabase/functions/process-crew-sms/reminders';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
@@ -39,7 +41,7 @@ export default function CrewSms() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_sms_settings')
-        .select('id, enabled, enabled_at')
+        .select('id, enabled, enabled_at, setup_template, delivery_template')
         .eq('id', true)
         .maybeSingle();
       if (error) throw error;
