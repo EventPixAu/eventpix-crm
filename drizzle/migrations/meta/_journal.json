@@ -211,6 +211,13 @@
       "when": 1792721328047,
       "tag": "0029_hourly_crew_sms_window",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792721486687,
+      "tag": "0030_crew_sms_admin_settings",
+      "breakpoints": true
     }
   ]
 }
