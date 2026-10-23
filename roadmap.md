@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Prevent the general photographer assignment from repeating under the editing date; signed-in Roundtable BNE verified Nigel appears once on the shoot date and only Nat on 29 October; five tests passed, build OK.
 - [x] Show the saved Delivery date on the event Overview beneath Delivery - Photographer; signed-in Roundtable PER verified Wednesday 28 October 2026, build OK.
 - [x] Show the post-event work date immediately on the Offsite Staff tab, before a role is selected; signed-in preview verified default and calendar selection.
 - [x] Allow post-event team assignments on a selected work date, defaulting to the Delivery deadline, with conflicts checked on that date; verified Monday 2 November default, date selection and saved assignment in the signed-in UI; temporary test records removed; four tests passed.
