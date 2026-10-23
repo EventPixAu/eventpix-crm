@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { ChevronDown, ChevronRight, MessageSquare, RefreshCw } from 'lucide-react';
@@ -192,7 +192,7 @@ export default function CrewSms() {
                     {logs.map((log) => {
                       const event = Array.isArray(log.events) ? log.events[0] : log.events;
                       return (
-                        <>
+                        <Fragment key={log.id}>
                           <TableRow
                             key={log.id}
                             className="cursor-pointer"
