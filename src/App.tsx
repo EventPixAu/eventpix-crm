@@ -84,6 +84,7 @@ import DayLoadView from "./pages/admin/DayLoadView";
 import DeliveryMetrics from "./pages/admin/DeliveryMetrics";
 import PhotographerTrends from "./pages/admin/PhotographerTrends";
 import UserManagement from "./pages/admin/UserManagement";
+import CrewSms from "./pages/admin/CrewSms";
 import RoleVisibility from "./pages/admin/RoleVisibility";
 import OnboardingGuideEditor from "./pages/admin/OnboardingGuideEditor";
 import CompanyInsurance from "./pages/admin/CompanyInsurance";
