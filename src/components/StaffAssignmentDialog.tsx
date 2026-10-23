@@ -504,7 +504,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           </Tabs>
           <Label>{staffScope === 'onsite' ? 'Onsite Staff' : 'Offsite Staff'} ({remainingSlots} slot{remainingSlots !== 1 ? 's' : ''} remaining)</Label>
 
-          {(staffScope === 'offsite' || isPostEventRole) && <div className="space-y-1.5">
+          {isWorkDateMode && <div className="space-y-1.5">
             <Label>Post-event work date</Label>
             <Popover open={workDateOpen} onOpenChange={setWorkDateOpen}>
               <PopoverTrigger asChild>
@@ -523,7 +523,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
           </div>}
           
           {/* Session Selector */}
-          {hasSessions && !isPostEventRole && (
+          {hasSessions && !isWorkDateMode && (
             <Select value={selectedSession} onValueChange={(value) => {
               setSelectedSession(value);
               setSelectedUser('');
@@ -778,7 +778,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
 
           <Button
             onClick={handleAssignClick}
-            disabled={!selectedUser || !selectedRole || createAssignment.isPending || savingAssignment || (isPostEventRole && !workDate)}
+            disabled={!selectedUser || !selectedRole || createAssignment.isPending || savingAssignment || (isWorkDateMode && !workDate)}
             className="w-full"
             variant={hasGuardrailIssues && !guardrailOverridden ? "destructive" : "default"}
           >
