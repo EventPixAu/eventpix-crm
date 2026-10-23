@@ -232,6 +232,13 @@
       "when": 1792723060766,
       "tag": "0032_crew_sms_masv_delivery_option",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792723572514,
+      "tag": "0033_crew_sms_masv_auto_from_delivery_method",
+      "breakpoints": true
     }
   ]
 }
