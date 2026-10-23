@@ -117,25 +117,6 @@ export default function CrewSms() {
     },
   });
 
-  const { data: upcomingEvents } = useQuery({
-    queryKey: ['crew-sms-masv-events'],
-    queryFn: async () => {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const horizon = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, event_name, event_date, crew_sms_masv_delivery')
-        .gte('event_date', today)
-        .lte('event_date', horizon)
-        .neq('ops_status', 'cancelled')
-        .order('event_date', { ascending: true })
-        .limit(30);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!isAdmin,
-  });
-
   // The MASV flag is maintained automatically by the database from each event's
   // photographer delivery method (MASV ASAP) — no manual toggle here.
 
@@ -272,38 +253,6 @@ export default function CrewSms() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Files via MASV ASAP</CardTitle>
-            <CardDescription>
-              Upcoming events (next 30 days). This follows the event's Delivery — Photographer setting: events set to
-              MASV ASAP automatically get the MASV wording at event finish instead of the standard delivery reminder.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!upcomingEvents?.length ? (
-              <p className="text-sm text-muted-foreground py-2">No upcoming events in the next 30 days.</p>
-            ) : (
-              <div className="divide-y">
-                {upcomingEvents.map((ev) => (
-                  <div key={ev.id} className="flex items-center justify-between gap-4 py-2.5">
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{ev.event_name}</p>
-                      <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {ev.crew_sms_masv_delivery ? (
-                        <Badge>MASV ASAP</Badge>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Standard</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
