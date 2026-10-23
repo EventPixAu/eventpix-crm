@@ -218,6 +218,13 @@
       "when": 1792721486687,
       "tag": "0030_crew_sms_admin_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792721949114,
+      "tag": "0031_crew_sms_templates",
+      "breakpoints": true
     }
   ]
 }
