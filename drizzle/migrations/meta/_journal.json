@@ -204,6 +204,13 @@
       "when": 1792720966739,
       "tag": "0028_crew_sms_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792721328047,
+      "tag": "0029_hourly_crew_sms_window",
+      "breakpoints": true
     }
   ]
 }
