@@ -1,0 +1,2 @@
+DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.crew_sms_candidates()'::regprocedure) INTO definition; IF position('interval ''10 minutes''' in definition)=0 THEN RAISE EXCEPTION 'SMS timing window not found'; END IF; EXECUTE replace(definition,'interval ''10 minutes''','interval ''65 minutes'''); END $$;
+COMMENT ON FUNCTION public.crew_sms_candidates() IS 'Hourly crew reminders: 65 minute lookback permits up to one hour delay plus execution jitter; send logs deduplicate overlapping windows.';

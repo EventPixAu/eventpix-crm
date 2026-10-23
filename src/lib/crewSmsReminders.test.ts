@@ -16,6 +16,11 @@ describe('crew SMS rules', () => {
     expect(isDue(3000, 2000, 0)).toBe(false);
     expect(isDue(2000, 2000, 1500)).toBe(true);
   });
+  it('includes reminders up to one hour late for hourly checks', () => {
+    const now = Date.parse('2026-10-23T03:00:00Z');
+    expect(isDue(now - 60 * 60 * 1000, now, 0)).toBe(true);
+    expect(isDue(now - 66 * 60 * 1000, now, 0)).toBe(false);
+  });
   it('only sends to confirmed onsite crew on non-cancelled events', () => {
     expect(eligible('confirmed', true, 'cancelled')).toBe(false);
     expect(eligible('pending', true, 'ready')).toBe(false);

@@ -3,7 +3,7 @@ export function reminderDue(kind: ReminderKind, setup: string, finish: string): 
   return kind === 'setup' ? Date.parse(setup) - 24 * 60 * 60 * 1000 : Date.parse(finish);
 }
 export function isDue(due: number, now: number, enabledAt: number): boolean {
-  return Number.isFinite(due) && due >= enabledAt && due <= now && due > now - 10 * 60 * 1000;
+  return Number.isFinite(due) && due >= enabledAt && due <= now && due > now - 65 * 60 * 1000;
 }
 export function normalizeMobile(value: string): string | null {
   const phone = value.replace(/[\s()-]/g, '');
