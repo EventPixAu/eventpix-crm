@@ -59,7 +59,7 @@ Deno.serve(async req => {
       const timeFormat = new Intl.DateTimeFormat('en-AU', { timeZone: c.timezone, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
       const body = c.reminder_type === 'setup'
         ? renderTemplate(templates?.setup_template || DEFAULT_SETUP_TEMPLATE, { event_name: c.event_name, venue: c.venue_name || 'TBC', setup_time: timeFormat.format(new Date(c.setup_at)), job_sheet_link: JOB_SHEET_LINK })
-        : renderTemplate(templates?.delivery_template || DEFAULT_DELIVERY_TEMPLATE, { event_name: c.event_name, finish_time: timeFormat.format(new Date(c.finish_at)), job_sheet_link: JOB_SHEET_LINK });
+        : renderTemplate(deliveryBodyTemplate(masvEvents.has(c.event_id), templates), { event_name: c.event_name, finish_time: timeFormat.format(new Date(c.finish_at)), job_sheet_link: JOB_SHEET_LINK });
       if (/\{\{[^}]*\}\}/.test(body)) { skipped++; continue; }
       const { data: log, error: claimError } = await db.from('crew_sms_logs').insert({ event_id: c.event_id, session_key: c.session_key, recipient_key: c.recipient_key, reminder_type: c.reminder_type, due_at: c.due_at, phone, body }).select('id').maybeSingle();
       if (claimError || !log) { if (claimError?.code !== '23505') failed++; else skipped++; continue; }
