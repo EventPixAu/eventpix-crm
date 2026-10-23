@@ -32,3 +32,10 @@ export function deliveryBodyTemplate(masv: boolean, templates: { delivery_templa
 export function renderTemplate(template: string, fields: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) => fields[key] ?? match);
 }
+
+// Manual follow-ups: a recipient already chased within this window is skipped,
+// so an accidental double-click cannot send a duplicate paid text.
+export const FOLLOWUP_RESEND_WINDOW_MS = 60 * 60 * 1000;
+export function followupRecentlySent(createdAt: string, now: number): boolean {
+  return now - Date.parse(createdAt) < FOLLOWUP_RESEND_WINDOW_MS;
+}
