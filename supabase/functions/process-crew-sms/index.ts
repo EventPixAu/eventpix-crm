@@ -60,6 +60,27 @@ Deno.serve(async req => {
     }
     const { data: templates, error: templatesError } = await db.from('crew_sms_settings').select('setup_template, delivery_template, delivery_template_masv').eq('id', true).maybeSingle();
     if (templatesError) throw new Error('Cannot load SMS templates');
+    if (parsed.data.mode === 'followup') {
+      // Admin-triggered manual follow-up: tickets never authorize this branch.
+      if (!parsed.data.event_id) return reply({ error: 'event_id required' }, 400);
+      const { data: recipients, error: recipientsError } = await db.rpc('crew_sms_followup_recipients', { _event_id: parsed.data.event_id });
+      if (recipientsError) throw new Error('Cannot load follow-up recipients');
+      const cutoff = new Date(Date.now() - FOLLOWUP_RESEND_WINDOW_MS).toISOString();
+      const { data: recent } = await db.from('crew_sms_logs').select('recipient_key').eq('event_id', parsed.data.event_id).eq('reminder_type', 'followup').in('status', ['sending', 'sent', 'unknown']).gte('created_at', cutoff);
+      const chased = new Set((recent || []).map((r: { recipient_key: string }) => r.recipient_key));
+      let sent = 0, failed = 0, skipped = 0;
+      for (const r of recipients || []) {
+        const phone = normalizeMobile(r.phone || '');
+        if (!phone || chased.has(r.recipient_key)) { skipped++; continue; }
+        const timeFormat = new Intl.DateTimeFormat('en-AU', { timeZone: r.timezone, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+        const body = renderTemplate(deliveryBodyTemplate(r.masv, templates), { event_name: r.event_name, finish_time: timeFormat.format(new Date(r.finish_at)), job_sheet_link: JOB_SHEET_LINK });
+        if (/\{\{[^}]*\}\}/.test(body)) { skipped++; continue; }
+        const { data: log, error: claimError } = await db.from('crew_sms_logs').insert({ event_id: r.event_id, session_key: `${r.session_key}:followup:${Date.now()}`, recipient_key: r.recipient_key, reminder_type: 'followup', due_at: new Date().toISOString(), phone, body }).select('id').maybeSingle();
+        if (claimError || !log) { if (claimError?.code !== '23505') failed++; else skipped++; continue; }
+        if (await deliver(db, headers, log.id, phone, body) === 'sent') sent++; else failed++;
+      }
+      return reply({ sent, failed, skipped });
+    }
     const { data: candidates, error } = await db.rpc('crew_sms_candidates');
     if (error) throw new Error('Cannot load SMS reminders');
     if (parsed.data.mode === 'preview') return reply({ due: candidates?.length || 0 });
@@ -87,18 +108,7 @@ Deno.serve(async req => {
         if (removeError) failed++; else skipped++;
         continue;
       }
-      try {
-        const response = await fetch('https://rest.clicksend.com/v3/sms/send', { method: 'POST', headers, body: JSON.stringify({ messages: [{ source: 'Eventpixii', from: 'EventPix', to: phone, body, custom_string: log.id }] }), signal: AbortSignal.timeout(15000) });
-        const result = await response.json();
-        const messageId = response.ok ? acceptedMessage(result) : null;
-        const { error: updateError } = await db.from('crew_sms_logs').update({ status: messageId ? 'sent' : 'failed', provider_message_id: messageId, sent_at: messageId ? new Date().toISOString() : null, error_code: messageId ? null : `HTTP_${response.status}_${String(result.response_code || 'REJECTED').replace(/[^A-Z_]/g, '')}` }).eq('id', log.id);
-        if (updateError) throw new Error('Delivery result could not be recorded');
-        if (messageId) sent++; else failed++;
-      } catch {
-        // Ambiguous network failures must not be automatically resent, to avoid duplicate paid SMS.
-        await db.from('crew_sms_logs').update({ status: 'unknown', error_code: 'DELIVERY_UNCONFIRMED' }).eq('id', log.id);
-        failed++;
-      }
+      if (await deliver(db, headers, log.id, phone, body) === 'sent') sent++; else failed++;
     }
     return reply({ sent, failed, skipped });
   } catch {
