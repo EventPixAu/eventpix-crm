@@ -109,6 +109,7 @@ import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/ho
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
+import { assignmentsForSessionDay } from '@/lib/postEventAssignment';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -2009,7 +2010,6 @@ export default function EventDetail() {
 
                 {/* Group sessions by date so multiple sessions on the same day display together */}
                 {(() => {
-                  const generalAssigns = assignments.filter(a => !a.session_id);
                   const byDate = new Map<string, typeof eventSessions>();
                   eventSessions.forEach(s => {
                     const key = s.session_date;
@@ -2018,12 +2018,9 @@ export default function EventDetail() {
                   });
                   const sortedDates = Array.from(byDate.keys()).sort();
                   return sortedDates.map(date => {
-                    const daySessions = byDate.get(date)!;
-                    const sessionIds = daySessions.map(s => s.id);
-                    const dayAssigns = [
-                      ...generalAssigns,
-                      ...assignments.filter(a => a.session_id && sessionIds.includes(a.session_id)),
-                    ];
+                    const daySessions = byDate.get(date);
+                    if (!daySessions) return null;
+                    const dayAssigns = assignmentsForSessionDay(assignments, daySessions);
                     // Build a short range/label summary for the day's sessions
                     const sessionSummaries = daySessions.map(s => {
                       const parts: string[] = [];
