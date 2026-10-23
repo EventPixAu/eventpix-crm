@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Show the post-event work date immediately on the Offsite Staff tab, before a role is selected.
+- [x] Show the post-event work date immediately on the Offsite Staff tab, before a role is selected; signed-in preview verified default and calendar selection.
 - [x] Allow post-event team assignments on a selected work date, defaulting to the Delivery deadline, with conflicts checked on that date; verified Monday 2 November default, date selection and saved assignment in the signed-in UI; temporary test records removed; four tests passed.
 - [x] Replace minute-by-minute SMS checks with hourly checks (24/day); Trevor accepts up to one hour delay, and the reminder window is widened to prevent missed sends.
 - [x] Connect shared ClickSend account and activate crew SMS reminders 24 hours before setup and at finish; credentials verified, 12 tests passed, cancelled events excluded, no live test text sent.
