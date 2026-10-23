@@ -115,6 +115,41 @@ export default function CrewSms() {
     },
   });
 
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['crew-sms-masv-events'],
+    queryFn: async () => {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const horizon = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, event_name, event_date, crew_sms_masv_delivery')
+        .gte('event_date', today)
+        .lte('event_date', horizon)
+        .neq('ops_status', 'cancelled')
+        .order('event_date', { ascending: true })
+        .limit(30);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!isAdmin,
+  });
+
+  const masvToggle = useMutation({
+    mutationFn: async ({ eventId, masv }: { eventId: string; masv: boolean }) => {
+      const { error } = await supabase
+        .from('events')
+        .update({ crew_sms_masv_delivery: masv })
+        .eq('id', eventId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-masv-events'] });
+    },
+    onError: (err: Error) => {
+      toast.error('Could not save the MASV setting', { description: err.message });
+    },
+  });
+
   const counts = useMemo(() => {
     const byStatus: Record<string, number> = {};
     (logs ?? []).forEach((log) => {
