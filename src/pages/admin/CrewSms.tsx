@@ -15,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+const STATUS_VARIANTS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   sent: { label: 'Sent', variant: 'default' },
   sending: { label: 'Sending', variant: 'secondary' },
   failed: { label: 'Failed', variant: 'destructive' },
