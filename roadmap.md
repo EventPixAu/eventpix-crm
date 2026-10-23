@@ -5,6 +5,7 @@
 - [x] Connect shared ClickSend account and activate crew SMS reminders 24 hours before setup and at finish; credentials verified, 12 tests passed, cancelled events excluded, no live test text sent.
 - [x] Crew SMS review screen at /admin/crew-sms: reminders on/off toggle (admin-updateable settings) and sent-text log with status filter and message detail.
 - [x] Editable SMS message templates: setup/delivery wording stored in crew_sms_settings, edited on the Crew SMS page with merge fields; unresolved placeholders skip sending; edge function redeployed to read templates.
+- [x] Manual follow-up SMS: admin-only "Send follow-up" on the Crew SMS page texts confirmed onsite crew with the delivery/MASV wording; one-hour resend guard per recipient prevents duplicate paid texts; 23 tests passed, function deployed.
 - [x] Fix the event Delete button; removed the accidental BNE Dinner entry through the signed-in UI and verified it returned to Events.
 - [x] Exclude cancelled events from Day Load, escalation banners and readiness warnings before conflict calculations; test passed and signed-in Day Load verified for 21 October with AIEF careers day absent.
 - [ ] Make "Client contact" and "Event Manager" appear in the lead contacts role dropdown on the live site (code done and verified in preview; live bundle still ships the old four options — needs publish).
