@@ -23,6 +23,11 @@ export function acceptedMessage(result: { response_code?: string; data?: { messa
 export const JOB_SHEET_LINK = 'https://app.eventpix.com.au/my-job-sheets';
 export const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
 export const DEFAULT_DELIVERY_TEMPLATE = 'EventPix: {{event_name}} has finished. Please follow the delivery/upload instructions in your job sheet: {{job_sheet_link}}';
+export const DEFAULT_MASV_TEMPLATE = 'EventPix: {{event_name}} has finished. Your files are required to be sent via MASV now - no editing required.';
+
+export function deliveryBodyTemplate(masv: boolean, templates: { delivery_template?: string | null; delivery_template_masv?: string | null } | null): string {
+  return masv ? (templates?.delivery_template_masv || DEFAULT_MASV_TEMPLATE) : (templates?.delivery_template || DEFAULT_DELIVERY_TEMPLATE);
+}
 
 export function renderTemplate(template: string, fields: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key: string) => fields[key] ?? match);
