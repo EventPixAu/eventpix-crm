@@ -1726,19 +1726,25 @@ export type Database = {
       }
       crew_sms_settings: {
         Row: {
+          delivery_template: string | null
           enabled: boolean
           enabled_at: string
           id: boolean
+          setup_template: string | null
         }
         Insert: {
+          delivery_template?: string | null
           enabled?: boolean
           enabled_at?: string
           id?: boolean
+          setup_template?: string | null
         }
         Update: {
+          delivery_template?: string | null
           enabled?: boolean
           enabled_at?: string
           id?: boolean
+          setup_template?: string | null
         }
         Relationships: []
       }

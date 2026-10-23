@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { ChevronDown, ChevronRight, MessageSquare, RefreshCw } from 'lucide-react';
@@ -8,10 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+
+// Keep in sync with supabase/functions/process-crew-sms/reminders.ts DEFAULT_*_TEMPLATE
+const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
+const DEFAULT_DELIVERY_TEMPLATE = 'EventPix: {{event_name}} has finished. Please follow the delivery/upload instructions in your job sheet: {{job_sheet_link}}';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
 
@@ -39,7 +44,7 @@ export default function CrewSms() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('crew_sms_settings')
-        .select('id, enabled, enabled_at')
+        .select('id, enabled, enabled_at, setup_template, delivery_template')
         .eq('id', true)
         .maybeSingle();
       if (error) throw error;
@@ -79,6 +84,31 @@ export default function CrewSms() {
     },
     onError: (err: Error) => {
       toast.error('Could not save the setting', { description: err.message });
+    },
+  });
+
+  const [setupTemplate, setSetupTemplate] = useState('');
+  const [deliveryTemplate, setDeliveryTemplate] = useState('');
+  useEffect(() => {
+    if (settings) {
+      setSetupTemplate(settings.setup_template ?? '');
+      setDeliveryTemplate(settings.delivery_template ?? '');
+    }
+  }, [settings]);
+
+  const saveTemplates = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('crew_sms_settings')
+        .upsert({ id: true, setup_template: setupTemplate, delivery_template: deliveryTemplate });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-settings'] });
+      toast.success('Message templates saved');
+    },
+    onError: (err: Error) => {
+      toast.error('Could not save the templates', { description: err.message });
     },
   });
 
@@ -127,6 +157,42 @@ export default function CrewSms() {
                 disabled={settingsLoading || toggleMutation.isPending}
                 onCheckedChange={(checked) => toggleMutation.mutate(checked)}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Message templates</CardTitle>
+            <CardDescription>
+              The exact wording of the texts. Merge fields: {'{{event_name}}'}, {'{{venue}}'}, {'{{setup_time}}'} and
+              {'{{finish_time}}'} (delivery reminder), {'{{job_sheet_link}}'}. Any merge field left unresolved makes
+              the text skip sending rather than go out with placeholders in it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Setup reminder — sent 24 hours before setup</label>
+              <Textarea value={setupTemplate} onChange={(e) => setSetupTemplate(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Delivery reminder — sent at event finish</label>
+              <Textarea value={deliveryTemplate} onChange={(e) => setDeliveryTemplate(e.target.value)} rows={3} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => saveTemplates.mutate()} disabled={saveTemplates.isPending}>
+                Save templates
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setSetupTemplate(DEFAULT_SETUP_TEMPLATE);
+                  setDeliveryTemplate(DEFAULT_DELIVERY_TEMPLATE);
+                }}
+              >
+                Restore default wording
+              </Button>
             </div>
           </CardContent>
         </Card>
