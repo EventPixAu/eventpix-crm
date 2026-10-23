@@ -101,6 +101,9 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const { data: profiles = [] } = useStaffDirectoryWithLocation();
   const { data: roles = [] } = useStaffRoles();
   const isPostEventRole = roles.find((r) => r.id === selectedRole)?.name?.toLowerCase().includes('post event') ?? false;
+  // Offsite assignments and post-event roles schedule work on the post-event work date,
+  // so the session selector is hidden in that mode — the two date pickers never show together.
+  const isWorkDateMode = staffScope === 'offsite' || isPostEventRole;
   const selectableRoles = roles.filter(r => r.is_active !== false && isOnsiteStaffRole(r) === (staffScope === 'onsite'));
   const { data: locations = [] } = useLocations();
   const { data: event } = useEvent(eventId);
@@ -129,7 +132,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   // Check conflicts for selected user — prefer the selected session's date/times,
   // falling back to event-level times (most events only have times on sessions)
   const selectedSessionForConflict = sessions.find(s => s.id === selectedSession);
-  const conflictDate = isPostEventRole ? workDate || null : selectedSessionForConflict?.session_date || event?.event_date || null;
+  const conflictDate = isWorkDateMode ? workDate || null : selectedSessionForConflict?.session_date || event?.event_date || null;
   const { data: dateAvailability = [] } = useStaffAvailabilityByDate(conflictDate || undefined);
   const conflictTz = (selectedSessionForConflict as any)?.timezone || (event as any)?.timezone || 'Australia/Sydney';
   const conflictStartStr = isPostEventRole
