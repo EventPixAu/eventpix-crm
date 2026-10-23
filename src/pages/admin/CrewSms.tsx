@@ -243,6 +243,40 @@ export default function CrewSms() {
 
         <Card>
           <CardHeader>
+            <CardTitle>Files via MASV ASAP</CardTitle>
+            <CardDescription>
+              Upcoming events (next 30 days). Turn on for events whose files are required via MASV immediately — crew
+              receive the MASV wording at event finish instead of the standard delivery reminder.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!upcomingEvents?.length ? (
+              <p className="text-sm text-muted-foreground py-2">No upcoming events in the next 30 days.</p>
+            ) : (
+              <div className="divide-y">
+                {upcomingEvents.map((ev) => (
+                  <div key={ev.id} className="flex items-center justify-between gap-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{ev.event_name}</p>
+                      <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm text-muted-foreground">MASV ASAP</span>
+                      <Switch
+                        checked={!!ev.crew_sms_masv_delivery}
+                        disabled={masvToggle.isPending}
+                        onCheckedChange={(checked) => masvToggle.mutate({ eventId: ev.id, masv: checked })}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Sent texts</CardTitle>
             <CardDescription>Most recent 100 records.</CardDescription>
             <div className="flex items-center gap-2 pt-2">
