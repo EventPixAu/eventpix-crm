@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { normalizeMobile, acceptedMessage, renderTemplate, DEFAULT_SETUP_TEMPLATE, DEFAULT_DELIVERY_TEMPLATE, JOB_SHEET_LINK } from './reminders.ts';
+import { normalizeMobile, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_SETUP_TEMPLATE, JOB_SHEET_LINK } from './reminders.ts';
 
 const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview']).default('process') }).strict();
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -42,11 +42,16 @@ Deno.serve(async req => {
       // Do not return account details or any credential-derived information.
       return reply({ configured: response.ok && result.response_code === 'SUCCESS', provider_status: response.status }, response.ok ? 200 : 502);
     }
-    const { data: templates, error: templatesError } = await db.from('crew_sms_settings').select('setup_template, delivery_template').eq('id', true).maybeSingle();
+    const { data: templates, error: templatesError } = await db.from('crew_sms_settings').select('setup_template, delivery_template, delivery_template_masv').eq('id', true).maybeSingle();
     if (templatesError) throw new Error('Cannot load SMS templates');
     const { data: candidates, error } = await db.rpc('crew_sms_candidates');
     if (error) throw new Error('Cannot load SMS reminders');
     if (parsed.data.mode === 'preview') return reply({ due: candidates?.length || 0 });
+    const masvEventIds = [...new Set((candidates || []).map((c) => c.event_id))];
+    const { data: masvRows } = masvEventIds.length
+      ? await db.from('events').select('id').in('id', masvEventIds).eq('crew_sms_masv_delivery', true)
+      : { data: [] as { id: string }[] };
+    const masvEvents = new Set((masvRows || []).map((r) => r.id));
     let sent = 0, failed = 0, skipped = 0;
     for (const c of candidates || []) {
       const phone = normalizeMobile(c.phone);
