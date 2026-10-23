@@ -1,7 +1,8 @@
 # Roadmap
 
 ## Current request
-- [ ] Connect the shared ClickSend account securely and add crew SMS reminders 24 hours before setup and at event finish.
+- [ ] Replace minute-by-minute SMS checks with a lower-frequency schedule after Trevor chooses an acceptable reminder delay.
+- [x] Connect shared ClickSend account and activate crew SMS reminders 24 hours before setup and at finish; credentials verified, 12 tests passed, cancelled events excluded, no live test text sent.
 - [x] Fix the event Delete button; removed the accidental BNE Dinner entry through the signed-in UI and verified it returned to Events.
 - [x] Exclude cancelled events from Day Load, escalation banners and readiness warnings before conflict calculations; test passed and signed-in Day Load verified for 21 October with AIEF careers day absent.
 - [ ] Make "Client contact" and "Event Manager" appear in the lead contacts role dropdown on the live site (code done and verified in preview; live bundle still ships the old four options — needs publish).
