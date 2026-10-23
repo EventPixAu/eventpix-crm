@@ -117,25 +117,6 @@ export default function CrewSms() {
     },
   });
 
-  const { data: upcomingEvents } = useQuery({
-    queryKey: ['crew-sms-masv-events'],
-    queryFn: async () => {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const horizon = format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, event_name, event_date, crew_sms_masv_delivery')
-        .gte('event_date', today)
-        .lte('event_date', horizon)
-        .neq('ops_status', 'cancelled')
-        .order('event_date', { ascending: true })
-        .limit(30);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!isAdmin,
-  });
-
   // The MASV flag is maintained automatically by the database from each event's
   // photographer delivery method (MASV ASAP) — no manual toggle here.
 
