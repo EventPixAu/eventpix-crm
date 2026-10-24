@@ -110,6 +110,7 @@ import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 import { assignmentsForSessionDay } from '@/lib/postEventAssignment';
+import { filterVisibleAssignments, filterVisibleSessions } from '@/lib/editorVisibility';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -783,6 +784,20 @@ export default function EventDetail() {
     
     return recipients;
   }, [event, assignments, eventContacts, clientByName, companyContacts]);
+
+  // Editor (offsite/post-event) detail is visible only to admins and the assigned editor
+  const editorViewer = useMemo(
+    () => ({ isAdmin, userId: user?.id, userEmail: user?.email ?? undefined }),
+    [isAdmin, user?.id, user?.email]
+  );
+  const visibleAssignments = useMemo(
+    () => filterVisibleAssignments(assignments, editorViewer),
+    [assignments, editorViewer]
+  );
+  const visibleSessions = useMemo(
+    () => filterVisibleSessions(eventSessions, assignments, editorViewer),
+    [eventSessions, assignments, editorViewer]
+  );
   
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
