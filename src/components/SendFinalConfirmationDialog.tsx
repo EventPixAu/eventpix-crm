@@ -413,7 +413,7 @@ export function SendFinalConfirmationDialog({
           <div className="space-y-2">
             <Label>Recipients</Label>
             <div className="space-y-1.5">
-              {recipients.map(r => (
+              {visibleRecipients.map(r => (
                 <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <Checkbox
                     checked={selectedRecipients.includes(r.id)}
@@ -423,7 +423,7 @@ export function SendFinalConfirmationDialog({
                   <span className="text-muted-foreground">({r.email})</span>
                 </label>
               ))}
-              {recipients.length === 0 && (
+              {visibleRecipients.length === 0 && (
                 <p className="text-sm text-muted-foreground">No recipients available. Add contacts to this event first.</p>
               )}
             </div>
