@@ -110,6 +110,7 @@ import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 import { assignmentsForSessionDay } from '@/lib/postEventAssignment';
+import { filterVisibleAssignments, filterVisibleSessions } from '@/lib/editorVisibility';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -783,6 +784,20 @@ export default function EventDetail() {
     
     return recipients;
   }, [event, assignments, eventContacts, clientByName, companyContacts]);
+
+  // Editor (offsite/post-event) detail is visible only to admins and the assigned editor
+  const editorViewer = useMemo(
+    () => ({ isAdmin, userId: user?.id, userEmail: user?.email ?? undefined }),
+    [isAdmin, user?.id, user?.email]
+  );
+  const visibleAssignments = useMemo(
+    () => filterVisibleAssignments(assignments, editorViewer),
+    [assignments, editorViewer]
+  );
+  const visibleSessions = useMemo(
+    () => filterVisibleSessions(eventSessions, assignments, editorViewer),
+    [eventSessions, assignments, editorViewer]
+  );
   
   const eventTypeMap = useMemo(() => {
     return eventTypes.reduce((acc, et) => {
@@ -1246,7 +1261,7 @@ export default function EventDetail() {
                       </Button>
                     )}
                   </div>
-                  <SessionsDisplay eventId={id} assignments={assignments} />
+                  <SessionsDisplay eventId={id} assignments={visibleAssignments} visibleSessions={visibleSessions} />
                 </div>
               )}
 
@@ -1271,19 +1286,19 @@ export default function EventDetail() {
                 />
                )}
                {/* Assigned Team (summary) */}
-               {canSeeSection('contacts') && (assignments.length > 0 || agencyCrew.length > 0) && (
+               {canSeeSection('contacts') && (visibleAssignments.length > 0 || agencyCrew.length > 0) && (
                  <div className="bg-card border border-border rounded-xl p-5 shadow-card">
                    <div className="flex items-center justify-between mb-4">
                      <h2 className="text-lg font-display font-semibold flex items-center gap-2">
                        <Users className="h-4 w-4" />
-                        Assigned Team ({assignments.length + agencyCrew.length})
+                        Assigned Team ({visibleAssignments.length + agencyCrew.length})
                      </h2>
                      <Button variant="outline" size="sm" onClick={() => setActiveTab('assignments')}>
                        Manage
                      </Button>
                    </div>
                    <div className="space-y-2">
-                     {assignments.map((a: any) => {
+                     {visibleAssignments.map((a: any) => {
                        const name = a.profile?.full_name || a.staff?.name || 'Unknown';
                       const role = a.staff_role?.name || a.role_on_event || a.staff?.role || 'Staff';
                       const phone = a.profile?.phone || a.staff?.phone || null;
@@ -1995,14 +2010,14 @@ export default function EventDetail() {
                 </div>
               )}
             </div>
-            {assignments.length === 0 ? (
+            {visibleAssignments.length === 0 ? (
               <p className="text-muted-foreground text-sm">No staff assigned yet</p>
             ) : (
               <div className="space-y-6">
                 {/* If there are no sessions, just show all assignments flat */}
-                {eventSessions.length === 0 && (
+                {visibleSessions.length === 0 && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {assignments.map(assignment => (
+                    {visibleAssignments.map(assignment => (
                       <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} />
                     ))}
                   </div>
@@ -2011,7 +2026,7 @@ export default function EventDetail() {
                 {/* Group sessions by date so multiple sessions on the same day display together */}
                 {(() => {
                   const byDate = new Map<string, typeof eventSessions>();
-                  eventSessions.forEach(s => {
+                  visibleSessions.forEach(s => {
                     const key = s.session_date;
                     if (!byDate.has(key)) byDate.set(key, [] as any);
                     (byDate.get(key) as any).push(s);
@@ -2020,7 +2035,7 @@ export default function EventDetail() {
                   return sortedDates.map(date => {
                     const daySessions = byDate.get(date);
                     if (!daySessions) return null;
-                    const dayAssigns = assignmentsForSessionDay(assignments, daySessions);
+                    const dayAssigns = assignmentsForSessionDay(visibleAssignments, daySessions);
                     // Build a short range/label summary for the day's sessions
                     const sessionSummaries = daySessions.map(s => {
                       const parts: string[] = [];
@@ -2060,7 +2075,7 @@ export default function EventDetail() {
             )}
           </div>
 
-          {id && <EventAgencyCrewPanel eventId={id} crew={agencyCrew} sessions={eventSessions} canManage={isAdmin || isOperations} />}
+          {id && <EventAgencyCrewPanel eventId={id} crew={agencyCrew} sessions={visibleSessions} canManage={isAdmin || isOperations} />}
 
           {/* Crew Checklists - admin/ops only */}
           {(isAdmin || isOperations) && id && assignments.length > 0 && (

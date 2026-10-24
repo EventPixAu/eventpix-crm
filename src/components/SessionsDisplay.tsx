@@ -13,10 +13,13 @@ interface SessionsDisplayProps {
   compact?: boolean;
   className?: string;
   assignments?: EventAssignment[];
+  /** Optional pre-filtered sessions (e.g. hiding post-event editing sessions from non-admins); overrides the internal fetch */
+  visibleSessions?: Array<{ id: string; session_date: string; label?: string | null; start_time?: string | null; end_time?: string | null; arrival_time?: string | null; venue_name?: string | null; venue_address?: string | null; session_type?: string | null }>;
 }
 
-export function SessionsDisplay({ eventId, compact = false, className, assignments = [] }: SessionsDisplayProps) {
-  const { data: sessions = [], isLoading } = useEventSessions(eventId);
+export function SessionsDisplay({ eventId, compact = false, className, assignments = [], visibleSessions }: SessionsDisplayProps) {
+  const { data: fetchedSessions = [], isLoading } = useEventSessions(eventId);
+  const sessions = (visibleSessions ?? fetchedSessions) as typeof fetchedSessions;
   const { data: eventCallTime } = useQuery({
     queryKey: ['event-call-time', eventId],
     queryFn: async () => {

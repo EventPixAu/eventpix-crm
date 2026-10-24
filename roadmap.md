@@ -51,3 +51,4 @@
 - [x] Provide an easy client delivery-choice response and show the confirmed choice on the event.
 - [x] Verify email preparation and client response without sending live test emails.
 - [x] Add Location to equipment kits (saved-location dropdown, mirrors equipment items); completed and verified in the preceding update.
+- [x] Keep editor/offsite detail internal: post-event sessions and editors excluded from client Final Confirmation (schedule + recipients), and on the event page visible only to admins and the assigned editor (src/lib/editorVisibility.ts, 8 tests).

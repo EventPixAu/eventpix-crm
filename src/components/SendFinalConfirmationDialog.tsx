@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
 import { getPublicBaseUrl } from '@/lib/utils';
+import { filterClientSessions, filterClientConfirmationRecipients } from '@/lib/editorVisibility';
 
 interface Recipient {
   id: string;
@@ -154,7 +155,7 @@ function buildConfirmationBody(
   }
 
   // Multi-session layout: group schedule + crew per day
-  const liveSessions = sessions.filter(s => s.session_type !== 'post-production');
+  const liveSessions = filterClientSessions(sessions);
 
   if (liveSessions.length > 1) {
     lines.push('');
@@ -308,6 +309,12 @@ export function SendFinalConfirmationDialog({
     [recipients]
   );
 
+  // Offsite crew (editors/retouchers) are never offered as recipients of client-facing confirmations
+  const visibleRecipients = useMemo(
+    () => filterClientConfirmationRecipients(recipients, assignments),
+    [recipients, assignments]
+  );
+
   const primaryContactName = eventData.primary_contact_name ||
     clientRecipients[0]?.name || eventData.client_name;
 
@@ -406,7 +413,7 @@ export function SendFinalConfirmationDialog({
           <div className="space-y-2">
             <Label>Recipients</Label>
             <div className="space-y-1.5">
-              {recipients.map(r => (
+              {visibleRecipients.map(r => (
                 <label key={r.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <Checkbox
                     checked={selectedRecipients.includes(r.id)}
@@ -416,7 +423,7 @@ export function SendFinalConfirmationDialog({
                   <span className="text-muted-foreground">({r.email})</span>
                 </label>
               ))}
-              {recipients.length === 0 && (
+              {visibleRecipients.length === 0 && (
                 <p className="text-sm text-muted-foreground">No recipients available. Add contacts to this event first.</p>
               )}
             </div>
