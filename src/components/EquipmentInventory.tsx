@@ -462,7 +462,7 @@ export function EquipmentInventory() {
                   placeholder="Any notes about this item..."
                 />
               </div>
-              {editingItem && <AllocationInfo equipmentItemId={editingItem.id} />}
+              {editingItem && <AllocationInfo equipmentItemId={editingItem.id} kits={kitsByItem[editingItem.id] ?? []} />}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
