@@ -49,10 +49,17 @@ function AllocationInfo({ equipmentItemId, kits }: { equipmentItemId: string; ki
 
   if (isLoading) return null;
   if (!allocations || allocations.length === 0) {
+    if (kits.length === 0) return null;
     return (
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Allocation History</Label>
-        <p className="text-sm text-muted-foreground italic">No allocation history</p>
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />Kits</Label>
+          <div className="flex flex-wrap gap-1">
+            {kits.map((kitName) => (
+              <Badge key={kitName} variant="outline">{kitName}</Badge>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
