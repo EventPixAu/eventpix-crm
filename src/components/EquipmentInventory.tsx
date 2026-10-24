@@ -115,6 +115,29 @@ export function EquipmentInventory() {
   const updateItem = useUpdateEquipmentItem();
   const deleteItem = useDeleteEquipmentItem();
 
+  // Kit membership: which kits each item belongs to (equipment_kit_items -> equipment_kits)
+  const { data: kitMemberships = [] } = useQuery({
+    queryKey: ['equipment-kit-membership'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipment_kit_items')
+        .select('equipment_item_id, kit:equipment_kits(id, name, is_active)')
+        .order('created_at');
+      if (error) throw error;
+      return (data || []) as { equipment_item_id: string; kit: { id: string; name: string; is_active: boolean } | null }[];
+    },
+  });
+
+  const kitsByItem = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const m of kitMemberships) {
+      if (!m.kit?.name) continue;
+      (map[m.equipment_item_id] ||= []).push(m.kit.name);
+    }
+    return map;
+  }, [kitMemberships]);
+
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EquipmentItemWithOwner | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
