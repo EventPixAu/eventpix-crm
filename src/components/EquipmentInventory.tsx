@@ -27,7 +27,7 @@ import {
 import { useEquipmentCategories } from '@/hooks/useLookups';
 import { useStaffDirectory } from '@/hooks/useStaff';
 
-function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
+function AllocationInfo({ equipmentItemId, kits }: { equipmentItemId: string; kits: string[] }) {
   // Fetch ALL allocations (current + history)
   const { data: allocations, isLoading } = useQuery({
     queryKey: ['equipment-item-allocations', equipmentItemId],
@@ -49,10 +49,17 @@ function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
 
   if (isLoading) return null;
   if (!allocations || allocations.length === 0) {
+    if (kits.length === 0) return null;
     return (
-      <div className="space-y-2">
-        <Label className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Allocation History</Label>
-        <p className="text-sm text-muted-foreground italic">No allocation history</p>
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />Kits</Label>
+          <div className="flex flex-wrap gap-1">
+            {kits.map((kitName) => (
+              <Badge key={kitName} variant="outline">{kitName}</Badge>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -62,6 +69,17 @@ function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
 
   return (
     <div className="space-y-3">
+      {/* Kit membership */}
+      {kits.length > 0 && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />Kits</Label>
+          <div className="flex flex-wrap gap-1">
+            {kits.map((kitName) => (
+              <Badge key={kitName} variant="outline">{kitName}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Current allocation */}
       {active.length > 0 && (
         <div className="space-y-2">
@@ -114,6 +132,29 @@ export function EquipmentInventory() {
   const createItem = useCreateEquipmentItem();
   const updateItem = useUpdateEquipmentItem();
   const deleteItem = useDeleteEquipmentItem();
+
+  // Kit membership: which kits each item belongs to (equipment_kit_items -> equipment_kits)
+  const { data: kitMemberships = [] } = useQuery({
+    queryKey: ['equipment-kit-membership'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('equipment_kit_items')
+        .select('equipment_item_id, kit:equipment_kits(id, name, is_active)')
+        .order('created_at');
+      if (error) throw error;
+      return (data || []) as { equipment_item_id: string; kit: { id: string; name: string; is_active: boolean } | null }[];
+    },
+  });
+
+  const kitsByItem = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const m of kitMemberships) {
+      if (!m.kit?.name) continue;
+      (map[m.equipment_item_id] ||= []).push(m.kit.name);
+    }
+    return map;
+  }, [kitMemberships]);
+
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EquipmentItemWithOwner | null>(null);
@@ -428,7 +469,7 @@ export function EquipmentInventory() {
                   placeholder="Any notes about this item..."
                 />
               </div>
-              {editingItem && <AllocationInfo equipmentItemId={editingItem.id} />}
+              {editingItem && <AllocationInfo equipmentItemId={editingItem.id} kits={kitsByItem[editingItem.id] ?? []} />}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
@@ -517,6 +558,7 @@ export function EquipmentInventory() {
                 <span className="flex items-center">Condition<SortIcon field="condition" /></span>
               </TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Kits</TableHead>
               <TableHead className="w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -541,6 +583,19 @@ export function EquipmentInventory() {
                 <TableCell>{getConditionBadge(item.condition)}</TableCell>
                 <TableCell>{getStatusBadge(item.status)}</TableCell>
                 <TableCell>
+                  {(kitsByItem[item.id]?.length ?? 0) > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {kitsByItem[item.id].map((kitName) => (
+                        <Badge key={kitName} variant="outline" className="font-normal">
+                          {kitName}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" onClick={() => handleEdit(item)}>
                       <Edit2 className="h-4 w-4" />
@@ -554,7 +609,7 @@ export function EquipmentInventory() {
             ))}
             {sortedItems.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No equipment items found
                 </TableCell>
               </TableRow>
