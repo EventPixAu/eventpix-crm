@@ -540,6 +540,7 @@ export function EquipmentInventory() {
                 <span className="flex items-center">Condition<SortIcon field="condition" /></span>
               </TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Kits</TableHead>
               <TableHead className="w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -563,6 +564,19 @@ export function EquipmentInventory() {
                 </TableCell>
                 <TableCell>{getConditionBadge(item.condition)}</TableCell>
                 <TableCell>{getStatusBadge(item.status)}</TableCell>
+                <TableCell>
+                  {(kitsByItem[item.id]?.length ?? 0) > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {kitsByItem[item.id].map((kitName) => (
+                        <Badge key={kitName} variant="outline" className="font-normal">
+                          {kitName}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" onClick={() => handleEdit(item)}>
