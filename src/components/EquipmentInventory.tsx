@@ -27,7 +27,7 @@ import {
 import { useEquipmentCategories } from '@/hooks/useLookups';
 import { useStaffDirectory } from '@/hooks/useStaff';
 
-function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
+function AllocationInfo({ equipmentItemId, kits }: { equipmentItemId: string; kits: string[] }) {
   // Fetch ALL allocations (current + history)
   const { data: allocations, isLoading } = useQuery({
     queryKey: ['equipment-item-allocations', equipmentItemId],
@@ -62,6 +62,17 @@ function AllocationInfo({ equipmentItemId }: { equipmentItemId: string }) {
 
   return (
     <div className="space-y-3">
+      {/* Kit membership */}
+      {kits.length > 0 && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />Kits</Label>
+          <div className="flex flex-wrap gap-1">
+            {kits.map((kitName) => (
+              <Badge key={kitName} variant="outline">{kitName}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Current allocation */}
       {active.length > 0 && (
         <div className="space-y-2">
