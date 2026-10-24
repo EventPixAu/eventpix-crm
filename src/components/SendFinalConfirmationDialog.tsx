@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
 import { getPublicBaseUrl } from '@/lib/utils';
+import { filterClientSessions, filterClientConfirmationRecipients } from '@/lib/editorVisibility';
 
 interface Recipient {
   id: string;
@@ -154,7 +155,7 @@ function buildConfirmationBody(
   }
 
   // Multi-session layout: group schedule + crew per day
-  const liveSessions = sessions.filter(s => s.session_type !== 'post-production');
+  const liveSessions = filterClientSessions(sessions);
 
   if (liveSessions.length > 1) {
     lines.push('');
@@ -306,6 +307,12 @@ export function SendFinalConfirmationDialog({
   const clientRecipients = useMemo(
     () => recipients.filter(r => r.type === 'client'),
     [recipients]
+  );
+
+  // Offsite crew (editors/retouchers) are never offered as recipients of client-facing confirmations
+  const visibleRecipients = useMemo(
+    () => filterClientConfirmationRecipients(recipients, assignments),
+    [recipients, assignments]
   );
 
   const primaryContactName = eventData.primary_contact_name ||
