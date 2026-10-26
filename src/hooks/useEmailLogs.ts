@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { emailOpenedDateSuffix } from '@/lib/emailStatusDates';
 
 export interface EmailLog {
   id: string;
@@ -248,7 +249,7 @@ export function useLogEmailSend() {
 }
 
 // Get email status display info
-export function getEmailStatusInfo(status: EmailLog['status']) {
+export function getEmailStatusInfo(status: EmailLog['status'], openedAt?: string | null) {
   switch (status) {
     case 'pending':
       return { label: 'Pending', color: 'text-muted-foreground', bgColor: 'bg-muted' };
@@ -257,7 +258,7 @@ export function getEmailStatusInfo(status: EmailLog['status']) {
     case 'delivered':
       return { label: 'Delivered', color: 'text-info', bgColor: 'bg-info/10' };
     case 'opened':
-      return { label: 'Opened', color: 'text-success', bgColor: 'bg-success/10' };
+      return { label: `Opened${emailOpenedDateSuffix(openedAt)}`, color: 'text-success', bgColor: 'bg-success/10' };
     case 'clicked':
       return { label: 'Clicked', color: 'text-success', bgColor: 'bg-success/10' };
     case 'bounced':

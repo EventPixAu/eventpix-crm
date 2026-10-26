@@ -1766,8 +1766,8 @@ export default function EventDetail() {
                         Send Email
                       </span>
                       {emailStatuses && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.send_email.status, emailStatuses.send_email.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.send_email.status, emailStatuses.send_email.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.send_email.status, emailStatuses.send_email.sentAt, emailStatuses.send_email.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.send_email.status, emailStatuses.send_email.sentAt, emailStatuses.send_email.openedAt).label}
                         </Badge>
                       )}
                     </Button>
@@ -1779,8 +1779,8 @@ export default function EventDetail() {
                         Send Final Confirmation (Client & Team)
                       </span>
                       {emailStatuses && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.final_confirmation.status, emailStatuses.final_confirmation.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.final_confirmation.status, emailStatuses.final_confirmation.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.final_confirmation.status, emailStatuses.final_confirmation.sentAt, emailStatuses.final_confirmation.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.final_confirmation.status, emailStatuses.final_confirmation.sentAt, emailStatuses.final_confirmation.openedAt).label}
                         </Badge>
                       )}
                     </Button>
@@ -1790,8 +1790,8 @@ export default function EventDetail() {
                       <QrCode className="h-4 w-4 mr-2" />
                       <span className="flex-1 text-left">Send Live Access (Client & Team)</span>
                       {emailStatuses && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.live_access.status, emailStatuses.live_access.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.live_access.status, emailStatuses.live_access.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.live_access.status, emailStatuses.live_access.sentAt, emailStatuses.live_access.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.live_access.status, emailStatuses.live_access.sentAt, emailStatuses.live_access.openedAt).label}
                         </Badge>
                       )}
                     </Button>
@@ -1807,8 +1807,8 @@ export default function EventDetail() {
                         Send Dropbox/SmugMug Link (Client)
                       </span>
                       {emailStatuses && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status, emailStatuses.dropbox_delivery.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.dropbox_delivery.status, emailStatuses.dropbox_delivery.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.dropbox_delivery.status, emailStatuses.dropbox_delivery.sentAt, emailStatuses.dropbox_delivery.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.dropbox_delivery.status, emailStatuses.dropbox_delivery.sentAt, emailStatuses.dropbox_delivery.openedAt).label}
                         </Badge>
                       )}
                     </Button>
@@ -1842,8 +1842,8 @@ export default function EventDetail() {
                         buttonSize="default"
                       />
                       {emailStatuses && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 shrink-0', getActionStatusDisplay(emailStatuses.portal_link.status, emailStatuses.portal_link.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.portal_link.status, emailStatuses.portal_link.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 shrink-0', getActionStatusDisplay(emailStatuses.portal_link.status, emailStatuses.portal_link.sentAt, emailStatuses.portal_link.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.portal_link.status, emailStatuses.portal_link.sentAt, emailStatuses.portal_link.openedAt).label}
                         </Badge>
                       )}
                     </div>
@@ -1859,8 +1859,8 @@ export default function EventDetail() {
                         Send Updated Details to Team
                       </span>
                       {emailStatuses && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.team_update.status, emailStatuses.team_update.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.team_update.status, emailStatuses.team_update.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.team_update.status, emailStatuses.team_update.sentAt, emailStatuses.team_update.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.team_update.status, emailStatuses.team_update.sentAt, emailStatuses.team_update.openedAt).label}
                         </Badge>
                       )}
                     </Button>
@@ -1876,8 +1876,8 @@ export default function EventDetail() {
                         Request Files from Photographer
                       </span>
                       {emailStatuses?.request_files && (
-                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.request_files.status, emailStatuses.request_files.sentAt).className)}>
-                          {getActionStatusDisplay(emailStatuses.request_files.status, emailStatuses.request_files.sentAt).label}
+                        <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', getActionStatusDisplay(emailStatuses.request_files.status, emailStatuses.request_files.sentAt, emailStatuses.request_files.openedAt).className)}>
+                          {getActionStatusDisplay(emailStatuses.request_files.status, emailStatuses.request_files.sentAt, emailStatuses.request_files.openedAt).label}
                         </Badge>
                       )}
                     </Button>

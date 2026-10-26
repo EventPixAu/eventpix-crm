@@ -4,12 +4,15 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { format, parseISO } from 'date-fns';
+import { emailStatusDate } from '@/lib/emailStatusDates';
 
 export type EmailActionType = 'send_email' | 'final_confirmation' | 'portal_link' | 'team_update' | 'live_access' | 'dropbox_delivery' | 'request_files';
 
 export interface EmailActionStatus {
   status: 'not_sent' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
   sentAt: string | null;
+  openedAt: string | null;
 }
 
 export function useEventEmailActionStatuses(eventId: string | undefined) {
@@ -17,13 +20,13 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
     queryKey: ['event-email-action-statuses', eventId],
     queryFn: async (): Promise<Record<EmailActionType, EmailActionStatus>> => {
       const result: Record<EmailActionType, EmailActionStatus> = {
-        send_email: { status: 'not_sent', sentAt: null },
-        final_confirmation: { status: 'not_sent', sentAt: null },
-        portal_link: { status: 'not_sent', sentAt: null },
-        team_update: { status: 'not_sent', sentAt: null },
-        live_access: { status: 'not_sent', sentAt: null },
-        dropbox_delivery: { status: 'not_sent', sentAt: null },
-        request_files: { status: 'not_sent', sentAt: null },
+        send_email: { status: 'not_sent', sentAt: null, openedAt: null },
+        final_confirmation: { status: 'not_sent', sentAt: null, openedAt: null },
+        portal_link: { status: 'not_sent', sentAt: null, openedAt: null },
+        team_update: { status: 'not_sent', sentAt: null, openedAt: null },
+        live_access: { status: 'not_sent', sentAt: null, openedAt: null },
+        dropbox_delivery: { status: 'not_sent', sentAt: null, openedAt: null },
+        request_files: { status: 'not_sent', sentAt: null, openedAt: null },
       };
 
       if (!eventId) return result;
@@ -73,6 +76,7 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
           result[actionType] = {
             status: s,
             sentAt: log.sent_at,
+            openedAt: log.opened_at,
           };
         }
       }
@@ -85,11 +89,12 @@ export function useEventEmailActionStatuses(eventId: string | undefined) {
 }
 
 /** Get display props for an email action status */
-export function getActionStatusDisplay(status: EmailActionStatus['status'], sentAt?: string | null) {
-  const dateSuffix = sentAt
-    ? ` · ${new Date(sentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+export function getActionStatusDisplay(status: EmailActionStatus['status'], sentAt?: string | null, openedAt?: string | null) {
+  const recordedDate = emailStatusDate(status, sentAt, openedAt);
+  const dateSuffix = recordedDate
+    ? ` · ${format(parseISO(recordedDate), 'd MMM yyyy')}`
     : '';
-  const fullTitle = sentAt ? new Date(sentAt).toLocaleString() : undefined;
+  const fullTitle = recordedDate ? format(parseISO(recordedDate), 'd MMM yyyy, h:mm a') : undefined;
   switch (status) {
     case 'opened':
     case 'clicked':

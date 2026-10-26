@@ -78,7 +78,7 @@ function getStatusIcon(status: EmailLog['status']) {
 function EmailLogItem({ log }: { log: EmailLog }) {
   const TypeIcon = getEmailTypeIcon(log.email_type);
   const StatusIcon = getStatusIcon(log.status);
-  const statusInfo = getEmailStatusInfo(log.status);
+  const statusInfo = getEmailStatusInfo(log.status, log.opened_at);
   const isInbound = log.direction === 'inbound';
   const DirectionIcon = isInbound ? ArrowDownLeft : ArrowUpRight;
   
@@ -105,7 +105,7 @@ function EmailLogItem({ log }: { log: EmailLog }) {
       
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               {isInbound && (
