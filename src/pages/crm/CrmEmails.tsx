@@ -604,7 +604,7 @@ export default function CrmEmails() {
                     </TableHeader>
                     <TableBody>
                       {outboundEmails.map((email) => {
-                        const statusInfo = getEmailStatusInfo(email.status);
+                        const statusInfo = getEmailStatusInfo(email.status, email.opened_at);
                         return (
                           <TableRow
                             key={email.id}
