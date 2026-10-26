@@ -2039,6 +2039,8 @@ export default function EventDetail() {
                     // Build a short range/label summary for the day's sessions
                     const sessionSummaries = daySessions.map(s => {
                       const parts: string[] = [];
+                      const arrival = (s as any).arrival_time;
+                      if (arrival) parts.push(`Arrive ${formatSessionTime(arrival)} ·`);
                       if (s.start_time) {
                         parts.push(
                           `${formatSessionTime(s.start_time)}${s.end_time ? ` – ${formatSessionTime(s.end_time)}` : ''}`

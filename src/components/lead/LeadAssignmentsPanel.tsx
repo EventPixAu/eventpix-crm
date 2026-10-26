@@ -46,6 +46,7 @@ interface SessionInfo {
   label: string | null;
   start_time: string | null;
   end_time: string | null;
+  arrival_time: string | null;
 }
 
 function AssignmentRow({
@@ -133,7 +134,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_sessions')
-        .select('id, session_date, label, start_time, end_time')
+        .select('id, session_date, label, start_time, end_time, arrival_time')
         .eq('lead_id', leadId)
         .order('session_date')
         .order('sort_order');
@@ -273,14 +274,19 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
                 return (
                   <div key={session.id} className="border border-border rounded-lg p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
                         <Calendar className="h-3.5 w-3.5 text-primary" />
                         <span className="text-sm font-medium">
                           {formatSessionDate(session.session_date)}
                         </span>
+                        {session.arrival_time && (
+                          <span className="text-xs text-muted-foreground">
+                            Arrive {formatTime(session.arrival_time)} ·
+                          </span>
+                        )}
                         {session.start_time && (
                           <span className="text-xs text-muted-foreground">
-                            {formatTime(session.start_time)}
+                            Start {formatTime(session.start_time)}
                             {session.end_time ? ` – ${formatTime(session.end_time)}` : ''}
                           </span>
                         )}
