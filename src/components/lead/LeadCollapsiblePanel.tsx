@@ -70,6 +70,8 @@ export function LeadCollapsiblePanel({
             <Button 
               variant="default" 
               size="icon" 
+              aria-label={addLabel}
+              title={addLabel}
               className="h-8 w-8 rounded-full bg-emerald-500 hover:bg-emerald-600"
               onClick={(e) => {
                 e.stopPropagation();
