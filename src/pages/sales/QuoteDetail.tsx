@@ -779,6 +779,8 @@ export default function QuoteDetail() {
                 <p className="text-sm text-muted-foreground">
                   {(quote as any)?.selection_mode === 'single_choice'
                     ? 'Client will pick ONE of the items below. Only the chosen option is kept on acceptance.'
+                    : (quote as any)?.selection_mode === 'multi_choice'
+                    ? 'Client ticks any of the items below (1, 2 or all). Unticked items are removed on acceptance.'
                     : (quote as any)?.selection_mode === 'photo_delivery_choice'
                     ? 'Client chooses Photography only or Photography + Delivery. Delivery-group items are removed if they pick Photography only.'
                     : 'Add products and packages to this quote.'}
@@ -801,6 +803,7 @@ export default function QuoteDetail() {
                 >
                   <option value="standard">Accept everything</option>
                   <option value="single_choice">Client picks one option</option>
+                  <option value="multi_choice">Client picks any items</option>
                   <option value="photo_delivery_choice">Photography only or Photography + Delivery</option>
                 </select>
               </div>

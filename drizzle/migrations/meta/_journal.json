@@ -260,6 +260,13 @@
       "when": 1793054452921,
       "tag": "0036_admin_unlock_accepted_quotes",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793054793321,
+      "tag": "0037_quote_multi_choice",
+      "breakpoints": true
     }
   ]
 }

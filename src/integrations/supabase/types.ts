@@ -7895,6 +7895,7 @@ export type Database = {
           p_include_delivery?: boolean
           p_quote_id: string
           p_selected_item_id?: string
+          p_selected_item_ids?: string[]
         }
         Returns: Json
       }
@@ -7904,6 +7905,7 @@ export type Database = {
           p_include_delivery?: boolean
           p_name: string
           p_selected_item_id?: string
+          p_selected_item_ids?: string[]
           p_token: string
         }
         Returns: Json

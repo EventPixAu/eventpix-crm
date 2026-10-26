@@ -36,7 +36,7 @@ interface PublicQuoteData {
   valid_until: string | null;
   terms_text: string | null;
   accepted_at: string | null;
-  selection_mode: 'standard' | 'single_choice' | 'photo_delivery_choice' | null;
+  selection_mode: 'standard' | 'single_choice' | 'multi_choice' | 'photo_delivery_choice' | null;
   intro_text: string | null;
   quote_name: string | null;
   items: PublicQuoteItem[];
@@ -51,6 +51,7 @@ export default function PublicAcceptQuote() {
   const [accepted, setAccepted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [includeDelivery, setIncludeDelivery] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,7 +85,8 @@ export default function PublicAcceptQuote() {
     }
   };
 
-  const isSingleChoice = quote?.selection_mode === 'single_choice';
+  const isMultiChoice = quote?.selection_mode === 'multi_choice';
+  const isSingleChoice = quote?.selection_mode === 'single_choice' || isMultiChoice;
   const isDeliveryChoice = quote?.selection_mode === 'photo_delivery_choice';
   const isDeliveryItem = (i: PublicQuoteItem) => (i.group_label || '').trim().toLowerCase() === 'delivery';
 
@@ -93,7 +95,11 @@ export default function PublicAcceptQuote() {
       toast.error('Please fill in all fields');
       return;
     }
-    if (isSingleChoice && !selectedItemId) {
+    if (isMultiChoice && selectedItemIds.length === 0) {
+      toast.error('Please select at least one item');
+      return;
+    }
+    if (isSingleChoice && !isMultiChoice && !selectedItemId) {
       toast.error('Please select one option');
       return;
     }
@@ -107,7 +113,8 @@ export default function PublicAcceptQuote() {
         p_token: token,
         p_name: formData.name,
         p_email: formData.email,
-        p_selected_item_id: isSingleChoice ? selectedItemId : null,
+        p_selected_item_id: isSingleChoice && !isMultiChoice ? selectedItemId : null,
+        p_selected_item_ids: isMultiChoice ? selectedItemIds : null,
         p_include_delivery: isDeliveryChoice ? includeDelivery : null,
       } as any);
       if (error) throw error;
@@ -210,7 +217,10 @@ export default function PublicAcceptQuote() {
   const photoOnlyEx = sumEx(photoItems);
   const withDeliveryEx = sumEx(quote.items);
   const visibleItems = isDeliveryChoice && includeDelivery === false ? photoItems : quote.items;
-  const selectedSubtotal = isSingleChoice
+  const multiItems = quote.items.filter((i) => selectedItemIds.includes(i.id));
+  const selectedSubtotal = isMultiChoice
+    ? sumEx(multiItems)
+    : isSingleChoice
     ? (selectedItem ? selectedItem.quantity * selectedItem.unit_price : 0)
     : isDeliveryChoice
     ? (includeDelivery === null ? 0 : includeDelivery ? withDeliveryEx : photoOnlyEx)
@@ -218,7 +228,7 @@ export default function PublicAcceptQuote() {
   const isChoice = isSingleChoice || isDeliveryChoice;
   const selectedTax = isChoice ? selectedSubtotal * 0.1 : (quote.tax_total || 0);
   const selectedTotal = isChoice ? selectedSubtotal + selectedTax : (quote.total_estimate || 0);
-  const choiceMade = isSingleChoice ? !!selectedItem : isDeliveryChoice ? includeDelivery !== null : true;
+  const choiceMade = isMultiChoice ? multiItems.length > 0 : isSingleChoice ? !!selectedItem : isDeliveryChoice ? includeDelivery !== null : true;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -247,7 +257,7 @@ export default function PublicAcceptQuote() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              {isSingleChoice ? 'Choose Your Option' : 'Quote Summary'}
+              {isMultiChoice ? 'Choose Your Items' : isSingleChoice ? 'Choose Your Option' : 'Quote Summary'}
             </CardTitle>
             {quote.valid_until && (
               <CardDescription>
@@ -256,7 +266,9 @@ export default function PublicAcceptQuote() {
             )}
             {isSingleChoice && (
               <CardDescription>
-                Select one of the options below — only your selected option will be confirmed.
+                {isMultiChoice
+                  ? 'Tick the items you would like — only your selected items will be confirmed.'
+                  : 'Select one of the options below — only your selected option will be confirmed.'}
               </CardDescription>
             )}
           </CardHeader>
@@ -265,7 +277,7 @@ export default function PublicAcceptQuote() {
               {isSingleChoice ? (
                 <div className="space-y-3">
                   {quote.items.map((item) => {
-                    const isSel = selectedItemId === item.id;
+                    const isSel = isMultiChoice ? selectedItemIds.includes(item.id) : selectedItemId === item.id;
                     const lineTotal = item.quantity * item.unit_price;
                     const incGst = lineTotal * 1.1;
                     return (
@@ -276,11 +288,15 @@ export default function PublicAcceptQuote() {
                         }`}
                       >
                         <input
-                          type="radio"
+                          type={isMultiChoice ? 'checkbox' : 'radio'}
                           name="quote-option"
                           value={item.id}
                           checked={isSel}
-                          onChange={() => setSelectedItemId(item.id)}
+                          onChange={() =>
+                            isMultiChoice
+                              ? setSelectedItemIds((prev) => prev.includes(item.id) ? prev.filter((x) => x !== item.id) : [...prev, item.id])
+                              : setSelectedItemId(item.id)
+                          }
                           className="mt-1 h-4 w-4 accent-primary"
                         />
                         <div className="flex-1">
@@ -427,7 +443,7 @@ export default function PublicAcceptQuote() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
-              {isSingleChoice ? 'Accept Selected Option' : 'Accept Quote'}
+              {isMultiChoice ? 'Accept Selected Items' : isSingleChoice ? 'Accept Selected Option' : 'Accept Quote'}
             </CardTitle>
             <CardDescription>
               Enter your details below to accept{isSingleChoice ? ' your selected option' : ' this quote'}.
