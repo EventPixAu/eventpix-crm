@@ -67,6 +67,8 @@ import {
 } from '@/hooks/useSalesWorkflow';
 import { useLeadSessions } from '@/hooks/useEventSessions';
 import { useLeadEmailLogs } from '@/hooks/useEmailLogs';
+import { useQuoteOpenedDates } from '@/hooks/useQuoteOpenedDates';
+import { emailOpenedDateSuffix } from '@/lib/emailStatusDates';
 import { useLeadContacts } from '@/hooks/useLeadContacts';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
@@ -98,6 +100,7 @@ export default function LeadDetail(): JSX.Element {
   const isCreateMode = id === 'new';
   
   const { data: lead, isLoading } = useLead(isCreateMode ? undefined : id);
+  const { data: openedDates = {} } = useQuoteOpenedDates((lead?.quotes || []).filter(q => q.status === 'opened').map(q => q.id));
   const updateLead = useUpdateLead();
   const updateQuote = useUpdateQuote();
   const deleteQuote = useDeleteQuote();
@@ -494,7 +497,7 @@ export default function LeadDetail(): JSX.Element {
                       variant={quote.status === 'rejected' ? 'destructive' : quote.status === 'accepted' ? 'default' : quote.status === 'sent' || quote.status === 'opened' ? 'secondary' : 'outline'} 
                       className="text-xs capitalize"
                     >
-                      {quote.status || 'draft'}
+                      {quote.status || 'draft'}{quote.status === 'opened' ? emailOpenedDateSuffix(openedDates[quote.id]) : ''}
                     </Badge>
                   </Link>
                   <div className="flex items-center gap-2">

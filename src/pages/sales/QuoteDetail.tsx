@@ -67,6 +67,8 @@ import { useAddPackageToQuote } from '@/hooks/usePackages';
 import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
 import { QuoteFilesPanel } from '@/components/quote/QuoteFilesPanel';
 import { useQuery } from '@tanstack/react-query';
+import { useQuoteOpenedDates } from '@/hooks/useQuoteOpenedDates';
+import { emailOpenedDateSuffix } from '@/lib/emailStatusDates';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -87,6 +89,7 @@ const GROUP_LABELS = [
 
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
+  const { data: openedDates = {} } = useQuoteOpenedDates(id ? [id] : []);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAdmin } = useAuth();
@@ -575,7 +578,7 @@ export default function QuoteDetail() {
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">{(quote as any).quote_name || quote.quote_number || `Budget ${quote.id.slice(0, 8)}`}</h1>
               <Badge variant={statusConfig.variant}>
-                {statusConfig.label}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
+                {statusConfig.label}{quote.status === 'opened' ? emailOpenedDateSuffix(openedDates[quote.id]) : ''}{quoteVersion > 1 ? ` v${quoteVersion}` : ''}
               </Badge>
             </div>
           </div>

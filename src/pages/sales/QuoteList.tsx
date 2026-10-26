@@ -30,6 +30,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useQuotes, useCreateQuote } from '@/hooks/useSales';
+import { useQuoteOpenedDates } from '@/hooks/useQuoteOpenedDates';
+import { emailOpenedDateSuffix } from '@/lib/emailStatusDates';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -42,6 +44,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secon
 export default function QuoteList() {
   const navigate = useNavigate();
   const { data: quotes, isLoading } = useQuotes();
+  const { data: openedDates = {} } = useQuoteOpenedDates((quotes || []).filter(q => q.status === 'opened').map(q => q.id));
   const createQuote = useCreateQuote();
   
   const [search, setSearch] = useState('');
@@ -200,7 +203,7 @@ export default function QuoteList() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusConfig.variant}>
-                          {statusConfig.label}
+                          {statusConfig.label}{quote.status === 'opened' ? emailOpenedDateSuffix(openedDates[quote.id]) : ''}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
