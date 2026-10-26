@@ -72,6 +72,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { ContractsPanel } from '@/components/ContractsPanel';
+import { ExistingBudgetDialog } from '@/components/lead/ExistingBudgetDialog';
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { ConvertToEventDialog } from '@/components/ConvertToEventDialog';
 import {
@@ -139,6 +140,7 @@ export default function LeadDetail(): JSX.Element {
   const [sendBudgetsBody, setSendBudgetsBody] = useState('');
   const [sendBudgetsUrl, setSendBudgetsUrl] = useState<string | undefined>(undefined);
   const [isSendingBudgets, setIsSendingBudgets] = useState(false);
+  const [isBudgetChoiceOpen, setIsBudgetChoiceOpen] = useState(false);
 
   if (isLoading && !isCreateMode) {
     return (
@@ -185,6 +187,22 @@ export default function LeadDetail(): JSX.Element {
   const eventType = lead.event_type as any;
   const leadSource = lead.lead_source as any;
   const quotes = (lead as any).quotes || [];
+
+  const handleCreateBudget = async () => {
+    if (!id || createQuote.isPending) return;
+    try {
+      const newQuote = await createQuote.mutateAsync({
+        status: 'draft',
+        lead_id: id,
+        client_id: client?.id ?? null,
+        quote_name: lead.lead_name ?? null,
+      } as any);
+      setIsBudgetChoiceOpen(false);
+      navigate(`/sales/quotes/${newQuote.id}`);
+    } catch {
+      // Error toast is handled by the mutation.
+    }
+  };
 
   // Get main shoot from first session, falling back to the lead's estimated event date
   const mainSession = sessions[0];
@@ -461,17 +479,12 @@ export default function LeadDetail(): JSX.Element {
                 {isSendingBudgets ? 'Preparing...' : quotes.length === 1 ? 'Send Budget' : 'Send Budgets'}
               </Button>
             ) : undefined}
-            onAdd={async () => {
-              try {
-                const newQuote = await createQuote.mutateAsync({
-                  status: 'draft',
-                  lead_id: id!,
-                  client_id: client?.id ?? null,
-                  quote_name: lead.lead_name ?? null,
-                } as any);
-                navigate(`/sales/quotes/${newQuote.id}`);
-              } catch (err) {
-                // toast handled by hook
+            addLabel={quotes.length > 0 ? 'Open budget' : 'New budget'}
+            onAdd={() => {
+              if (quotes.length > 0) {
+                setIsBudgetChoiceOpen(true);
+              } else {
+                void handleCreateBudget();
               }
             }}
             isEmpty={quotes.length === 0}
@@ -611,6 +624,13 @@ export default function LeadDetail(): JSX.Element {
       </div>
 
       {/* Apply Template Dialog */}
+      <ExistingBudgetDialog
+        open={isBudgetChoiceOpen}
+        onOpenChange={setIsBudgetChoiceOpen}
+        budgets={quotes}
+        onCreate={() => void handleCreateBudget()}
+        isCreating={createQuote.isPending}
+      />
       <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
         <DialogContent>
           <DialogHeader>
