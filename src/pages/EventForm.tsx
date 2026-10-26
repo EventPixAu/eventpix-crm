@@ -714,7 +714,7 @@ export default function EventForm() {
             </div>
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-              <h3 className="font-display font-semibold">Contact</h3>
+              <h3 className="font-display font-semibold">{isEditing ? 'Client & Contacts' : 'Contact'}</h3>
 
               <FormField
                 control={form.control}
@@ -746,40 +746,13 @@ export default function EventForm() {
                 )}
               />
 
-              {isEditing && id && (
-                <div className="space-y-2">
-                  <FormLabel>Primary Contact</FormLabel>
-                  {clientContacts.length > 0 ? (
-                    <Select
-                      value={primaryEventContact?.client_contact_id || ''}
-                      onValueChange={handlePrimaryContactSelect}
-                      disabled={isFormLocked || createEventContact.isPending || updateEventContact.isPending}
-                    >
-                      <SelectTrigger className="bg-secondary">
-                        <SelectValue placeholder="Select primary contact" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientContacts.map((contact) => (
-                          <SelectItem key={contact.id} value={contact.id}>
-                            {contact.contact_name}
-                            {contact.email && (
-                              <span className="text-muted-foreground ml-2">({contact.email})</span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      No CRM contacts for this client yet — add one in the Event Contacts section below.
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Used for contracts, agreements and client emails for this event.
-                  </p>
-                </div>
-              )}
-
+              {isEditing && id ? (
+                <EventContactsEditor
+                  eventId={id}
+                  clientId={event?.client_id}
+                  disabled={isFormLocked}
+                />
+              ) : (
               <div className="grid sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -857,6 +830,7 @@ export default function EventForm() {
                   )}
                 />
               </div>
+              )}
             </div>
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
@@ -967,16 +941,6 @@ export default function EventForm() {
               </div>
             )}
 
-            {/* Event Contacts Section - only show when editing */}
-            {isEditing && id && (
-              <div className="bg-card border border-border rounded-xl p-5">
-                <EventContactsEditor 
-                  eventId={id} 
-                  clientId={event?.client_id} 
-                  disabled={isFormLocked} 
-                />
-              </div>
-            )}
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
               <h3 className="font-display font-semibold">Crew Logistics</h3>
