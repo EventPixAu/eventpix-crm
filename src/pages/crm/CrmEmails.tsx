@@ -593,13 +593,13 @@ export default function CrmEmails() {
                     <p className="text-sm mt-1">Emails you send will appear here with their delivery status</p>
                   </div>
                 ) : (
-                  <Table>
+                  <Table className="table-fixed">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>To</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Sent</TableHead>
+                        <TableHead className="w-[30%]">To</TableHead>
+                        <TableHead className="w-[21%]">Status</TableHead>
+                        <TableHead className="w-[29%]">Subject</TableHead>
+                        <TableHead className="w-[20%]">Sent</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -624,15 +624,15 @@ export default function CrmEmails() {
                             <TableCell>
                               <Badge
                                 variant="outline"
-                                className={`text-xs ${statusInfo.color} ${statusInfo.bgColor} border-transparent`}
+                                className={`text-xs whitespace-normal rounded-md ${statusInfo.color} ${statusInfo.bgColor} border-transparent`}
                               >
                                 {statusInfo.label}
                               </Badge>
                             </TableCell>
                             <TableCell className="max-w-[300px]">
-                              <span className="truncate text-sm">{email.subject}</span>
+                              <span className="block truncate text-sm">{email.subject}</span>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            <TableCell className="text-sm text-muted-foreground">
                               {email.sent_at
                                 ? format(new Date(email.sent_at), 'dd MMM yyyy, h:mm a')
                                 : email.created_at
