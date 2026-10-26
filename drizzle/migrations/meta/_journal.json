@@ -253,6 +253,13 @@
       "when": 1792728575858,
       "tag": "0035_assignment_scoped_session_conflicts",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793054452921,
+      "tag": "0036_admin_unlock_accepted_quotes",
+      "breakpoints": true
     }
   ]
 }

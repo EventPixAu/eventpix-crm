@@ -1,0 +1,1 @@
+CREATE POLICY "Admins can unlock accepted quotes" ON public.quotes FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin') AND status = 'accepted'::quote_status) WITH CHECK (public.has_role(auth.uid(), 'admin'));
