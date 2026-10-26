@@ -16,8 +16,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useQuoteOpenedDates } from '@/hooks/useQuoteOpenedDates';
-import { emailOpenedDateSuffix } from '@/lib/emailStatusDates';
 
 interface EventQuotesPanelProps {
   eventId: string;
@@ -102,11 +100,6 @@ export function EventQuotesPanel({
     },
     enabled: !!eventId,
   });
-
-  const { data: openedDates = {} } = useQuoteOpenedDates([
-    ...quotes.filter(q => q.status === 'opened').map(q => q.id),
-    ...(seriesQuote?.status === 'opened' ? [seriesQuote.id] : []),
-  ]);
 
   const createAddendum = useMutation({
     mutationFn: async () => {
@@ -225,7 +218,7 @@ export function EventQuotesPanel({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Badge variant={statusVariant(quote.status)} className="capitalize text-xs">
-                {statusLabel(quote.status)}{quote.status === 'opened' ? emailOpenedDateSuffix(openedDates[quote.id]) : ''}
+                {statusLabel(quote.status)}
               </Badge>
               {quote.is_locked && (
                 <Badge variant="outline" className="text-xs">Locked</Badge>
