@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Fix the budget action opening a new empty budget instead of the existing budget; verify on Graduation — Bemin Secondary College.
 - [x] Include recorded opened dates in CRM Sent emails, lead/client/event mail history and every event email Quick Action; campaign recipient dates already present. Verified 200 actual opened emails and Roundtable BNE actions while signed in, five date-evidence tests passed, build OK; awaiting publish for the live site.
 - [x] Ensure Operations / Event Series is visible and accessible to every admin, including Nat; granted Nat full admin access as requested and verified her Event Series list and User Management page while signed in as Nat.
 - [x] Prevent the general photographer assignment from repeating under the editing date; signed-in Roundtable BNE verified Nigel appears once on the shoot date and only Nat on 29 October; five tests passed, build OK.
