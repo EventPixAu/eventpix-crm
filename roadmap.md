@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Ensure Operations / Event Series is visible and accessible to every admin, including Nat.
+- [x] Ensure Operations / Event Series is visible and accessible to every admin, including Nat; granted Nat full admin access as requested and verified her Event Series list and User Management page while signed in as Nat.
 - [x] Prevent the general photographer assignment from repeating under the editing date; signed-in Roundtable BNE verified Nigel appears once on the shoot date and only Nat on 29 October; five tests passed, build OK.
 - [x] Show the saved Delivery date on the event Overview beneath Delivery - Photographer; signed-in Roundtable PER verified Wednesday 28 October 2026, build OK.
 - [x] Show the post-event work date immediately on the Offsite Staff tab, before a role is selected; signed-in preview verified default and calendar selection.
