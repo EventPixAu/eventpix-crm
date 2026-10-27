@@ -269,6 +269,7 @@ Deno.serve(async (req) => {
             arrival_time,
             timezone,
             label,
+            session_type,
             venue_name,
             venue_address
           )
@@ -342,6 +343,7 @@ Deno.serve(async (req) => {
               arrival_time,
               timezone,
               label,
+              session_type,
               venue_name,
               venue_address
             )
@@ -409,6 +411,10 @@ Deno.serve(async (req) => {
       // If event has sessions, create one VEVENT per session
       if (sessions.length > 0) {
         for (const session of sessions) {
+          // Post-event (editing) sessions are internal work dates - keep them out of subscribed calendars.
+          if ((session.session_type || '').replace(/_/g, '-').toLowerCase() === 'post-production') {
+            continue;
+          }
           const sessionDate = session.session_date;
           // Filter by date range
           if (sessionDate < format(pastDate, 'yyyy-MM-dd') || sessionDate > format(futureDate, 'yyyy-MM-dd')) {
