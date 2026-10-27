@@ -54,12 +54,14 @@ function EventTile({ event }: { event: CalendarEvent }) {
           ? "bg-orange-100 dark:bg-orange-900/30 border-orange-500 hover:bg-orange-200 dark:hover:bg-orange-900/50"
           : event.needs_attention
           ? "bg-amber-100 dark:bg-amber-900/30 border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+          : event.is_post_event
+          ? "bg-slate-200 dark:bg-slate-500/30 border-slate-400 hover:bg-slate-300 dark:hover:bg-slate-500/40"
           : "bg-primary/10 border-primary hover:bg-primary/20"
       )}
     >
       <div className="flex items-center gap-1">
         {displayTime && (
-          <span className="font-medium text-primary shrink-0">
+          <span className={cn("font-medium shrink-0", event.is_post_event ? "text-slate-700 dark:text-slate-200" : "text-primary")}>
             {format(new Date(`2000-01-01T${displayTime}`), 'h:mm a')}
           </span>
         )}
@@ -99,6 +101,8 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
           ? "border-orange-300 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30"
           : event.needs_attention
           ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          : event.is_post_event
+          ? "border-slate-400 bg-slate-100 dark:bg-slate-900/40 hover:bg-slate-200 dark:hover:bg-slate-900/60"
           : "border-border bg-card hover:bg-muted/50"
       )}
     >

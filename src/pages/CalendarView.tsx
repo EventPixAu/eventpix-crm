@@ -92,6 +92,8 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
           ? "bg-orange-100 dark:bg-orange-900/30 border-orange-500 hover:bg-orange-200 dark:hover:bg-orange-900/50"
           : event.needs_attention
           ? "bg-amber-100 dark:bg-amber-900/30 border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+          : event.is_post_event
+          ? "bg-slate-200 dark:bg-slate-500/30 border-slate-400 hover:bg-slate-300 dark:hover:bg-slate-500/40"
           : seriesColor
           ? `${seriesColor.bg} ${seriesColor.border} hover:opacity-80`
           : "bg-amber-50 dark:bg-amber-100 border-primary hover:bg-amber-100 dark:hover:bg-amber-200"
@@ -101,7 +103,7 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
         {(event.arrival_time || event.start_time) && (
           <span className={cn(
             "font-medium shrink-0",
-            seriesColor ? seriesColor.text : "text-amber-700"
+            event.is_post_event ? "text-slate-700 dark:text-slate-200" : seriesColor ? seriesColor.text : "text-amber-700"
           )}>
             {format(new Date(`2000-01-01T${event.arrival_time || event.start_time}`), 'h:mm a')}
           </span>
@@ -165,6 +167,8 @@ function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesC
           ? "border-orange-300 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30"
           : event.needs_attention
           ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          : event.is_post_event
+          ? "border-slate-400 bg-slate-100 dark:bg-slate-900/40 hover:bg-slate-200 dark:hover:bg-slate-900/60"
           : seriesColor
           ? `${seriesColor.border} ${seriesColor.bg} hover:opacity-80`
           : "border-border bg-card hover:bg-muted/50"
