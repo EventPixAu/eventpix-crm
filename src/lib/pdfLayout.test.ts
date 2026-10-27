@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { nextPdfPageEnd } from './pdfLayout';
+import { nextPdfPageEnd, prepareAgreementLayout } from './pdfLayout';
+
+describe('agreement headings', () => {
+  it('renders Event details at clause-heading size alongside 1. Parties', () => {
+    const content = document.createElement('div');
+    content.innerHTML = [
+      '<p>Meet &amp; Greet Photography Services Agreement</p>',
+      '<p>Event details</p>',
+      '<p>The Event: Wentworth Con MEL</p>',
+      '<p>The Client: KClark Productions LLC</p>',
+      '<p>1. Parties</p>',
+      '<p>EventPix and the Client.</p>',
+    ].join('');
+    prepareAgreementLayout(content);
+    const details = Array.from(content.querySelectorAll('p'))
+      .find(paragraph => paragraph.textContent?.trim() === 'Event details');
+    const parties = Array.from(content.querySelectorAll('p'))
+      .find(paragraph => paragraph.textContent?.trim() === '1. Parties');
+    expect(details?.classList.contains('agreement-heading')).toBe(true);
+    expect(details?.classList.contains('agreement-label')).toBe(false);
+    expect(parties?.classList.contains('agreement-heading')).toBe(true);
+  });
+});
 
 describe('PDF page boundaries', () => {
   it('moves a crossing paragraph to the next page without losing pixels', () => {
