@@ -28,6 +28,7 @@ export interface CalendarEvent {
   needs_attention: boolean;
   is_delivered: boolean;
   is_lead?: boolean; // Flag for leads shown on calendar
+  is_post_event?: boolean; // post_production (editing) session entry
   confirmation_status?: string | null; // staff's availability confirmation for this event
 }
 
@@ -213,7 +214,7 @@ export function useAdminCalendarEvents(
           delivery_deadline,
           event_assignments!left(id, user_id),
           delivery_records!left(id, delivered_at),
-          event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, venue_name, venue_address)
+          event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, session_type, venue_name, venue_address)
         `)
         .neq('ops_status', 'cancelled')
         .order('event_date', { ascending: true });
@@ -324,6 +325,7 @@ export function useAdminCalendarEvents(
                 has_conflict: conflictEventIds.has(event.id),
                 needs_attention: needsAttention,
                 is_delivered: !!deliveryRecord?.delivered_at,
+                is_post_event: (session.session_type || '') === 'post_production',
               });
             }
           });
@@ -400,7 +402,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
             delivery_method_id,
             delivery_deadline,
             delivery_records!left(id, delivered_at),
-            event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, venue_name, venue_address)
+            event_sessions!left(id, session_date, arrival_time, start_time, end_time, timezone, label, session_type, venue_name, venue_address)
           )
         `)
         .eq('user_id', user.id)
@@ -457,6 +459,7 @@ export function useStaffCalendarEvents(currentMonth: Date) {
                 has_conflict: conflictEventIds.has(event.id),
                 needs_attention: needsAttention,
                 is_delivered: !!deliveryRecord?.delivered_at,
+                is_post_event: (session.session_type || '') === 'post_production',
                 confirmation_status: confirmationStatus,
               });
             }
