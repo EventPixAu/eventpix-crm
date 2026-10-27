@@ -29,7 +29,9 @@ export function prepareAgreementLayout(content: HTMLElement): void {
     if (inClauses && /^\d+\.\s+[^\n]+$/.test(text) && text.length < 100 && !/[.!?]$/.test(text)) {
       paragraph.classList.add('agreement-heading');
     }
-    if (/^(Event details|The Event|The Client|Venue|Event date|Event start date)$/i.test(text)) {
+    if (/^(Event details|Job details|Series details)$/i.test(text)) {
+      paragraph.classList.add('agreement-heading');
+    } else if (/^(The Event|The Client|Venue|Event date|Event start date)$/i.test(text)) {
       paragraph.classList.add('agreement-label');
     }
     if (/^[•●]\s/.test(text)) paragraph.classList.add('agreement-bullet');
@@ -159,7 +161,7 @@ function normalizeAgreementDetails(content: HTMLElement): void {
   
   const heading = document.createElement('p');
   heading.textContent = 'Event details';
-  heading.classList.add('agreement-label');
+  heading.classList.add('agreement-heading');
   
   const anchor = details || fields[0]?.block;
   if (!anchor) return;
