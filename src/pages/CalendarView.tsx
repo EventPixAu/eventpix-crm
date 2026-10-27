@@ -90,10 +90,10 @@ function EventTile({ event, seriesColorMap }: { event: CalendarEvent; seriesColo
         "block text-xs p-1.5 rounded transition-colors truncate border-l-2",
         event.has_conflict 
           ? "bg-orange-100 dark:bg-orange-900/30 border-orange-500 hover:bg-orange-200 dark:hover:bg-orange-900/50"
-          : event.needs_attention
-          ? "bg-amber-100 dark:bg-amber-900/30 border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50"
           : event.is_post_event
           ? "bg-slate-200 dark:bg-slate-500/30 border-slate-400 hover:bg-slate-300 dark:hover:bg-slate-500/40"
+          : event.needs_attention
+          ? "bg-amber-100 dark:bg-amber-900/30 border-amber-500 hover:bg-amber-200 dark:hover:bg-amber-900/50"
           : seriesColor
           ? `${seriesColor.bg} ${seriesColor.border} hover:opacity-80`
           : "bg-amber-50 dark:bg-amber-100 border-primary hover:bg-amber-100 dark:hover:bg-amber-200"
@@ -165,10 +165,10 @@ function ListViewItem({ event, seriesColorMap }: { event: CalendarEvent; seriesC
         "flex items-center gap-4 p-4 rounded-lg border transition-colors",
         event.has_conflict
           ? "border-orange-300 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30"
-          : event.needs_attention
-          ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30"
           : event.is_post_event
           ? "border-slate-400 bg-slate-100 dark:bg-slate-900/40 hover:bg-slate-200 dark:hover:bg-slate-900/60"
+          : event.needs_attention
+          ? "border-amber-300 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30"
           : seriesColor
           ? `${seriesColor.border} ${seriesColor.bg} hover:opacity-80`
           : "border-border bg-card hover:bg-muted/50"
