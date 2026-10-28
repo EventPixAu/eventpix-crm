@@ -24,15 +24,18 @@ export interface EventAssignment {
   notification_sent_at: string | null;
   call_time_at?: string | null;
   wrap_time_at?: string | null;
+  pay_rate_snapshot?: import('@/lib/assignmentRateSnapshot').AssignmentRate | null;
   profile?: {
     id: string;
     full_name: string | null;
     email: string;
     phone?: string | null;
+    is_salaried?: boolean;
   } | null;
   staff_role?: {
     id: string;
     name: string;
+    is_onsite?: boolean;
   } | null;
   session?: {
     id: string;

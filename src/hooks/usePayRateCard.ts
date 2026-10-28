@@ -15,6 +15,7 @@ export interface PayRateCardEntry {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  unit_rate_product_id?: string | null;
 }
 
 export interface SeriesFixedRate {

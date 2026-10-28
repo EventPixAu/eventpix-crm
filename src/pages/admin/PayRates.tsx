@@ -17,6 +17,7 @@ import {
   type RateMode,
 } from '@/hooks/usePayRateCard';
 import { useStaffRoles } from '@/hooks/useStaff';
+import { Link } from 'react-router-dom';
 
 export default function PayRates() {
   const { data: rateCard = [], isLoading } = usePayRateCard();
@@ -172,14 +173,15 @@ export default function PayRates() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-end">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}>
+                          {entry.unit_rate_product_id ? <Button variant="link" size="sm" asChild><Link to="/sales/products">Products</Link></Button> : <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}>
                             <Pencil className="h-3.5 w-3.5" />
-                          </Button>
+                          </Button>}
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => { if (confirm('Remove this rate?')) deleteRate.mutate(entry.id); }}
                             disabled={deleteRate.isPending}
+                            hidden={!!entry.unit_rate_product_id}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>
