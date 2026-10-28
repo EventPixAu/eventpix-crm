@@ -2760,6 +2760,7 @@ export type Database = {
           created_at: string | null
           decline_reason: string | null
           declined_at: string | null
+          equipment_amount: number
           estimated_cost: number | null
           event_id: string
           hourly_rate_override: number | null
@@ -2788,6 +2789,7 @@ export type Database = {
           created_at?: string | null
           decline_reason?: string | null
           declined_at?: string | null
+          equipment_amount?: number
           estimated_cost?: number | null
           event_id: string
           hourly_rate_override?: number | null
@@ -2816,6 +2818,7 @@ export type Database = {
           created_at?: string | null
           decline_reason?: string | null
           declined_at?: string | null
+          equipment_amount?: number
           estimated_cost?: number | null
           event_id?: string
           hourly_rate_override?: number | null
