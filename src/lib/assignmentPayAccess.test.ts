@@ -1,0 +1,14 @@
+import { describe, expect, it } from 'vitest';
+import { assignmentPayAccess } from './assignmentPayAccess';
+
+describe('assignment pay presentation access', () => {
+  it('photographers can see their own pay but cannot add travel or parking', () => {
+    expect(assignmentPayAccess({ isSelf: true })).toEqual({ canView: true, canEdit: false });
+  });
+  it('does not show another team member’s pay', () => {
+    expect(assignmentPayAccess({ isSelf: false })).toEqual({ canView: false, canEdit: false });
+  });
+  it('allows the admin to manually add travel and parking', () => {
+    expect(assignmentPayAccess({ isAdmin: true })).toEqual({ canView: true, canEdit: true });
+  });
+});
