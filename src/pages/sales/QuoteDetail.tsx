@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
   Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon, Link2,
-  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown
+  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown, Sparkles
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -66,7 +66,7 @@ import { QuoteDiscountDialog } from '@/components/quote/QuoteDiscountDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
 import { QuoteFilesPanel } from '@/components/quote/QuoteFilesPanel';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
