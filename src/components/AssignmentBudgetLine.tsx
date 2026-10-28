@@ -7,12 +7,12 @@ import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
 import { assignmentSessionHours } from '@/lib/assignmentPayHours';
+import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
-  const canView = isAdmin || isOperations || isSelf;
-  const canEdit = isAdmin || isOperations;
+  const { canView, canEdit } = assignmentPayAccess({ isAdmin, isOperations, isSelf });
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
   const { data: eventSessions = [] } = useEventSessions(eventId);
