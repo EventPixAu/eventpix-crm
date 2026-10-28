@@ -6,7 +6,7 @@ const shoot = { id: 'shoot', session_type: 'live', start_time: '08:30:00', end_t
 const editing = { id: 'editing', session_type: 'post_production', start_time: '09:00:00', end_time: '17:00:00' };
 
 describe('separate photography and editing pay hours', () => {
-  it('pays Nigel three hours for the first two-hour call, excluding editing', () => {
+  it('pays Nigel three units for the first two-hour call, excluding editing', () => {
     const hours = assignmentSessionHours({ staff_role: { name: 'Photographer' } }, [shoot, editing]);
     expect(hours).toBe(2);
     expect(assignmentPaidHours(hours, 2) * 125).toBe(375);

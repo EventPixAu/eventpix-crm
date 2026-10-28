@@ -8,7 +8,7 @@ import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
 import { assignmentSessionHours } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
-import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
+import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
@@ -24,7 +24,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
-  const [editingTravel, setEditingTravel] = useState(false);
+  const [editingField, setEditingField] = useState<'travel_amount' | 'equipment_amount' | null>(null);
   const [travelInput, setTravelInput] = useState('');
 
   // Fetch assignment allowances
@@ -52,6 +52,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry.hourly_rate) || 0;
   const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
   const minHours = Number(rateEntry.minimum_paid_hours) || 0;
+  const hasHoursOverride = (assignment as any).hours_override != null;
+  const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
   const basePay = isFixedMode ? fixedRate : hourlyRate * callHours;
 
@@ -63,8 +65,9 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   }, 0);
 
   const travel = Number((assignment as any).travel_amount || 0);
+  const equipment = Number((assignment as any).equipment_amount || 0);
   const lightingTotal = lightingPayTotal(lightingPay, assignment.id);
-  const totalWithExtras = basePay + extrasTotal + travel + lightingTotal;
+  const totalWithExtras = basePay + extrasTotal + travel + equipment + lightingTotal;
 
   const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
   const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
@@ -117,19 +120,19 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
     }
   };
 
-  const handleUpdateTravel = async (newAmount: number) => {
+  const handleUpdateManual = async (field: 'travel_amount' | 'equipment_amount', newAmount: number) => {
     const safe = isNaN(newAmount) || newAmount < 0 ? 0 : newAmount;
     const { error } = await supabase
       .from('event_assignments')
-      .update({ travel_amount: safe })
+      .update({ [field]: safe } as any)
       .eq('id', assignment.id);
     if (error) {
-      toast.error('Failed to update travel', { description: error.message });
+      toast.error('Failed to update', { description: error.message });
     } else {
       queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
       queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
     }
-    setEditingTravel(false);
+    setEditingField(null);
   };
 
 
@@ -284,11 +287,12 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       )}
 
       {/* Total */}
-      {(extrasTotal > 0 || travel > 0 || lightingTotal > 0) && (
+      {(
+
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50">
           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium">
-            Total: ${totalWithExtras.toFixed(2)}
+            Total: ${totalWithExtras.toFixed(2)} (ex GST)
           </span>
         </div>
       )}

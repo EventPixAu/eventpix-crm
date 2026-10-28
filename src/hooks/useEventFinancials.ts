@@ -90,6 +90,7 @@ export function useEventFinancials(eventId: string | undefined) {
           hourly_rate_override,
           hours_override,
           travel_amount,
+          equipment_amount,
           session_id,
           role_on_event,
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (name, is_onsite),
@@ -205,7 +206,7 @@ export function useEventFinancials(eventId: string | undefined) {
         const amount = al.override_amount ?? (al as any).pay_allowances?.amount ?? 0;
         expectedStaffCost += amount * (al.quantity || 1);
       }
-      expectedStaffCost += (assignments || []).reduce((sum, a) => sum + Number(a.travel_amount || 0), 0);
+      expectedStaffCost += (assignments || []).reduce((sum, a) => sum + Number(a.travel_amount || 0) + Number((a as any).equipment_amount || 0), 0);
       if (assignmentIds.length) {
         const { data: lighting, error } = await supabase.from('quote_lighting_pay').select('unit_rate').in('assignment_id', assignmentIds);
         if (error) throw error;
