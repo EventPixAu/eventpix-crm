@@ -15,37 +15,32 @@ export function StandardUnitRates({ isAdmin }: { isAdmin: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [client, setClient] = useState('');
-  const [photographer, setPhotographer] = useState('');
   const [saving, setSaving] = useState(false);
   if (!product) return null;
-  const photographerRate = Number(product.photographer_unit_rate ?? 0);
   const save = async () => {
-    const clientRate = Number(client), teamRate = Number(photographer);
-    if (!Number.isFinite(clientRate) || !Number.isFinite(teamRate) || clientRate <= 0 || teamRate <= 0) {
-      toast.error('Enter positive unit rates'); return;
+    const clientRate = Number(client);
+    if (!Number.isFinite(clientRate) || clientRate <= 0) {
+      toast.error('Enter a positive client unit rate'); return;
     }
     setSaving(true);
-    const { error } = await supabase.from('products').update({ unit_price: clientRate, photographer_unit_rate: teamRate }).eq('id', product.id);
+    const { error } = await supabase.from('products').update({ unit_price: clientRate }).eq('id', product.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ['products'] });
-    qc.invalidateQueries({ queryKey: ['pay-rate-card'] });
-    toast.success('Standard unit rates saved'); setOpen(false);
+    toast.success('Client unit rate saved'); setOpen(false);
   };
   return <section className="border-b border-border pb-4 flex flex-wrap items-center gap-4">
-    <h2 className="font-semibold">Standard unit rates</h2>
+    <h2 className="font-semibold">Standard client unit rate</h2>
     <span className="text-sm">Client (ex GST): <strong>${Number(product.unit_price).toFixed(2)}</strong></span>
-    <span className="text-sm">Photographer: <strong>${photographerRate.toFixed(2)}</strong></span>
     {isAdmin && <Button variant="outline" size="sm" onClick={() => {
-      setClient(String(product.unit_price)); setPhotographer(String(photographerRate)); setOpen(true);
-    }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit unit rates</Button>}
+      setClient(String(product.unit_price)); setOpen(true);
+    }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit client rate</Button>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent>
-      <DialogHeader><DialogTitle>Standard unit rates — new work</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>Client unit rate — new budgets</DialogTitle></DialogHeader>
       <div className="space-y-4">
         <div className="space-y-2"><Label htmlFor="client-unit-rate">Client unit rate (ex GST)</Label><Input id="client-unit-rate" type="number" min="0.01" step="0.01" value={client} onChange={e => setClient(e.target.value)} /></div>
-        <div className="space-y-2"><Label htmlFor="photographer-unit-rate">Photographer unit rate</Label><Input id="photographer-unit-rate" type="number" min="0.01" step="0.01" value={photographer} onChange={e => setPhotographer(e.target.value)} /></div>
       </div>
-      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button disabled={saving} onClick={save}>Save rates</Button></DialogFooter>
+      <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button disabled={saving} onClick={save}>Save rate</Button></DialogFooter>
     </DialogContent></Dialog>
   </section>;
 }
