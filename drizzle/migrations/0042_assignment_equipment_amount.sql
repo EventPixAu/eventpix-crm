@@ -1,0 +1,2 @@
+ALTER TABLE public.event_assignments ADD COLUMN IF NOT EXISTS equipment_amount numeric NOT NULL DEFAULT 0;
+COMMENT ON COLUMN public.event_assignments.travel_amount IS 'Manually entered additional expenses (e.g. extra travel/parking) beyond the included preparation unit';

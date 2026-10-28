@@ -81,6 +81,7 @@ export function useMyJobSheets() {
           staff_role_id,
           role_on_event,
           travel_amount,
+          equipment_amount,
           staff_role:staff_roles!event_assignments_staff_role_id_fkey(id, name, is_onsite),
           session:event_sessions!event_assignments_session_id_fkey(id, session_date, label, start_time, end_time, arrival_time, session_type),
           call_time_at,
