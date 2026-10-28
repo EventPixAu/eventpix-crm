@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Apply clarified minimum: first two-hour call pays three hours covering travel/setup; 2.5-hour coverage also pays three hours, arrival excluded.
 - [x] Remove the additional paid hour from team coverage pay: 9am–11:30am with 8:45am setup is three paid hours; shared rounding used by assignment displays, payment summary, financial totals and rate examples; 15 tests passed including unchanged client budget pricing, actual two-hour assignment verified at $250; awaiting publish.
 - [x] Show own pay in photographer dashboard, My Job Sheets and job detail with limited travel/parking note and manually controlled combined additional travel/parking; verified Nigel’s $375 read-only pay, admin save/reload/restore of $25 extra, seven tests passed, build OK; awaiting publish.
 - [x] Separate photographer payment hours from post-event editing in assignment pay and financial totals; retain Nat’s assignment unchanged.

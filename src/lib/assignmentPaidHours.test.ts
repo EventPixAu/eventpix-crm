@@ -9,10 +9,14 @@ describe('team coverage-hour pay blocks', () => {
     expect(assignmentPaidHours(hours, 2)).toBe(3);
     expect(assignmentPaidHours(hours, 2) * 125).toBe(375);
   });
-  it('does not add a paid hour to a two-hour call', () => {
-    expect(assignmentPaidHours(2, 2)).toBe(2);
+  it('pays three hours for the first two-hour call to cover travel and setup', () => {
+    expect(assignmentPaidHours(2, 2)).toBe(3);
+    expect(assignmentPaidHours(2, 2) * 125).toBe(375);
   });
-  it('retains the two-hour minimum call', () => {
-    expect(assignmentPaidHours(1, 2)).toBe(2);
+  it('retains the three-hour paid minimum for shorter coverage', () => {
+    expect(assignmentPaidHours(1, 2)).toBe(3);
+  });
+  it('does not add another hour once coverage exceeds the minimum', () => {
+    expect(assignmentPaidHours(4, 2)).toBe(4);
   });
 });
