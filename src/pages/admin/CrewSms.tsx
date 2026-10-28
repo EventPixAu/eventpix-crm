@@ -139,6 +139,32 @@ export default function CrewSms() {
     enabled: !!isAdmin,
   });
 
+  // Most recent sent text (delivery reminder or follow-up) per event, for the
+  // follow-up list so admins can see when each event's crew was last chased.
+  const { data: lastSentByEvent } = useQuery({
+    queryKey: ['crew-sms-last-sent'],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('crew_sms_logs')
+        .select('event_id, sent_at, reminder_type')
+        .in('reminder_type', ['delivery', 'followup'])
+        .eq('status', 'sent')
+        .gte('sent_at', since)
+        .order('sent_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      const map: Record<string, { sent_at: string; reminder_type: string }> = {};
+      (data ?? []).forEach((row) => {
+        if (row.event_id && !map[row.event_id]) {
+          map[row.event_id] = { sent_at: row.sent_at, reminder_type: row.reminder_type };
+        }
+      });
+      return map;
+    },
+    enabled: !!isAdmin,
+  });
+
   const followupMutation = useMutation({
     mutationFn: async (eventId: string) => {
       const { data, error } = await supabase.functions.invoke('process-crew-sms', {
@@ -150,6 +176,7 @@ export default function CrewSms() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['crew-sms-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-last-sent'] });
       toast.success(`Follow-up sent to ${result.sent} crew member${result.sent === 1 ? '' : 's'}`, {
         description: result.skipped > 0 ? `${result.skipped} skipped (no mobile number or already chased within the last hour).` : undefined,
       });
@@ -274,6 +301,17 @@ export default function CrewSms() {
                     <div className="min-w-0">
                       <p className="font-medium truncate">{ev.event_name}</p>
                       <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
+                      {(() => {
+                        const lastSent = lastSentByEvent?.[ev.id];
+                        return lastSent ? (
+                          <p className="text-xs text-muted-foreground">
+                            Last text sent {format(parseISO(lastSent.sent_at), 'd MMM, h:mma')}
+                            {lastSent.reminder_type === 'followup' ? ' (follow-up)' : ''}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No texts sent yet</p>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {ev.crew_sms_masv_delivery && <Badge>MASV ASAP</Badge>}
