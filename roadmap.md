@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Keep AI session budget preparation visible beside Products & Packages in every editable budget, empty or populated.
 - [x] Apply clarified minimum: first two-hour call pays three hours covering travel/setup; 2.5-hour coverage also pays three hours, arrival excluded. Shared rounding applied across pay views and totals; 13 tests passed including unchanged client budget pricing, actual two-hour assignment verified at $375; awaiting publish.
 - [x] Show own pay in photographer dashboard, My Job Sheets and job detail with limited travel/parking note and manually controlled combined additional travel/parking; verified Nigel’s $375 read-only pay, admin save/reload/restore of $25 extra, seven tests passed, build OK; awaiting publish.
 - [x] Separate photographer payment hours from post-event editing in assignment pay and financial totals; retain Nat’s assignment unchanged.
