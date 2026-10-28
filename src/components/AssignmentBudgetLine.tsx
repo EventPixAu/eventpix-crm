@@ -11,12 +11,15 @@ import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
 import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
+import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
 export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
   const { canView, canEdit } = assignmentPayAccess({ isAdmin, isOperations, isSelf });
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
   const { data: eventSessions = [] } = useEventSessions(eventId);
+  const { data: lightingPay = [] } = useLightingPay(eventId);
   const queryClient = useQueryClient();
   const [addingExtra, setAddingExtra] = useState(false);
   const [editingAllowanceId, setEditingAllowanceId] = useState<string | null>(null);
@@ -38,7 +41,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   });
 
   const roleId = assignment.staff_role_id;
-  const rateEntry = rateCard.find(r => r.staff_role_id === roleId);
+  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId));
 
   if (!canView || isLoading || !rateEntry) return null;
 
@@ -46,10 +49,10 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
   const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
-  const hourlyRate = Number(rateEntry.hourly_rate) || 0;
+  const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry.hourly_rate) || 0;
   const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
   const minHours = Number(rateEntry.minimum_paid_hours) || 0;
-  const callHours = assignmentPaidHours(sessionHours, minHours);
+  const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
   const basePay = isFixedMode ? fixedRate : hourlyRate * callHours;
 
   // Calculate extras total
@@ -60,7 +63,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   }, 0);
 
   const travel = Number((assignment as any).travel_amount || 0);
-  const totalWithExtras = basePay + extrasTotal + travel;
+  const lightingTotal = lightingPayTotal(lightingPay, assignment.id);
+  const totalWithExtras = basePay + extrasTotal + travel + lightingTotal;
 
   const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
   const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
@@ -143,6 +147,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       </div>
 
       <p className="pl-5 text-xs text-muted-foreground">This rate includes limited travel and parking.</p>
+      {lightingTotal > 0 && <p className="pl-5 text-xs text-muted-foreground">+ Studio lighting kit: ${lightingTotal.toFixed(2)}</p>}
 
       {/* Additional travel and parking (manually entered) */}
       {(canEdit || travel > 0) && (
@@ -277,7 +282,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       )}
 
       {/* Total */}
-      {(extrasTotal > 0 || travel > 0) && (
+      {(extrasTotal > 0 || travel > 0 || lightingTotal > 0) && (
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50">
           <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-medium">

@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { assignmentSessionHours } from '@/lib/assignmentPayHours';
 import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
+import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
+import type { AssignmentRate } from '@/lib/assignmentRateSnapshot';
 
 export interface MatchedPayment {
   id: string;
@@ -71,9 +73,10 @@ export function useEventFinancials(eventId: string | undefined) {
           )
         `)
         .eq('id', eventId)
-        .single();
+        .maybeSingle();
       
       if (eventError) throw eventError;
+      if (!event) throw new Error('Event not found');
       
       // Fetch assignments with session times for pay calculation
       const { data: assignments, error: assignError } = await supabase
@@ -83,6 +86,10 @@ export function useEventFinancials(eventId: string | undefined) {
           user_id,
           staff_role_id,
           estimated_cost,
+          pay_rate_snapshot,
+          hourly_rate_override,
+          hours_override,
+          travel_amount,
           session_id,
           role_on_event,
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (name, is_onsite),
@@ -104,7 +111,7 @@ export function useEventFinancials(eventId: string | undefined) {
       // Fetch rate card entries
       const { data: rateCard } = await supabase
         .from('pay_rate_card')
-        .select('staff_role_id, hourly_rate, minimum_paid_hours');
+        .select('staff_role_id, hourly_rate, minimum_paid_hours, fixed_rate, rate_mode');
       
       // Fetch series fixed rates if applicable
       let seriesRates: { staff_role_id: string; fixed_rate: number }[] = [];
@@ -162,7 +169,7 @@ export function useEventFinancials(eventId: string | undefined) {
       const isPaid = event.invoice_status === 'paid_in_full' || matchedPaymentsTotal > 0;
       
       // Build rate card lookup by staff_role_id
-      const rateMap = new Map<string, { hourly_rate: number; minimum_paid_hours: number }>();
+      const rateMap = new Map<string, AssignmentRate>();
       (rateCard || []).forEach(r => rateMap.set(r.staff_role_id, r));
       
       const seriesRateMap = new Map<string, number>();
@@ -182,14 +189,14 @@ export function useEventFinancials(eventId: string | undefined) {
         }
         
         // Otherwise use rate card
-        const rate = rateMap.get(roleId);
+        const rate = assignmentRateSnapshot({ pay_rate_snapshot: assignment.pay_rate_snapshot as unknown as AssignmentRate | null }, rateMap.get(roleId));
         if (!rate) continue;
         
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0) continue;
         
-        const callHours = assignmentPaidHours(sessionHours, rate.minimum_paid_hours ?? 0);
-        const basePay = rate.hourly_rate * callHours;
+        const callHours = Number(assignment.hours_override ?? assignmentPaidHours(sessionHours, rate.minimum_paid_hours ?? 0));
+        const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
         expectedStaffCost += basePay;
       }
       
@@ -197,6 +204,12 @@ export function useEventFinancials(eventId: string | undefined) {
       for (const al of allowances) {
         const amount = al.override_amount ?? (al as any).pay_allowances?.amount ?? 0;
         expectedStaffCost += amount * (al.quantity || 1);
+      }
+      expectedStaffCost += (assignments || []).reduce((sum, a) => sum + Number(a.travel_amount || 0), 0);
+      if (assignmentIds.length) {
+        const { data: lighting, error } = await supabase.from('quote_lighting_pay').select('unit_rate').in('assignment_id', assignmentIds);
+        if (error) throw error;
+        expectedStaffCost += (lighting || []).reduce((sum, row) => sum + Number(row.unit_rate), 0);
       }
       
       // Calculate Xero-synced expense totals by category

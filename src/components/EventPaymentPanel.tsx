@@ -23,6 +23,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
 import { isPostEventSession } from '@/lib/editorVisibility';
+import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
+import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
+import { LightingPayAllocation } from '@/components/LightingPayAllocation';
 
 interface Props {
   eventId: string;
@@ -61,7 +64,7 @@ interface PayLine {
   hours: number;
   rate: number;
   pay: number;
-  formula: 'photographer' | 'editor' | 'fixed';
+  formula: 'photographer' | 'editor' | 'fixed' | 'lighting';
 }
 
 export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId }: Props) {
@@ -69,6 +72,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   const { data: eventSessions = [] } = useEventSessions(eventId);
   const { data: rateCard = [] } = usePayRateCard();
   const { data: allStaffRoles = [] } = useStaffRoles();
+  const { data: lightingPay = [] } = useLightingPay(eventId);
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rateInput, setRateInput] = useState('');
@@ -128,7 +132,8 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       const roleName = (a as any).staff_role?.name || a.role_on_event || '';
 
       // Fixed per-event rate takes precedence
-      const fixedAmount = a.staff_role_id ? fixedByRole.get(a.staff_role_id) : undefined;
+      const savedRate = assignmentRateSnapshot(a, rateCard.find(r => r.staff_role_id === a.staff_role_id));
+      const fixedAmount = savedRate?.rate_mode === 'fixed' ? Number(savedRate.fixed_rate) : undefined;
       if (fixedAmount && fixedAmount > 0) {
         const name =
           (a as any).profile?.full_name ||
@@ -155,7 +160,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         continue;
       }
 
-      const rateEntry = rateCard.find(r => r.staff_role_id === a.staff_role_id);
+      const rateEntry = savedRate;
       const baseRate = Number(
         (a as any).hourly_rate_override ??
         rateEntry?.hourly_rate ??
@@ -241,12 +246,22 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       } // end session loop
     }
 
+    for (const a of assignments) {
+      const amount = lightingPayTotal(lightingPay, a.id);
+      if (!amount) continue;
+      const name = a.profile?.full_name || a.profile?.email || a.staff?.name || 'Unassigned';
+      const key = a.user_id || a.staff_id || name;
+      const member = map.get(key) || { userId: a.user_id, name, lines: [], total: 0 };
+      member.lines.push({ assignmentId: a.id, date: a.session?.session_date ?? null, label: 'Studio lighting kit', startEnd: '—', callTime: '—', hours: 1, rate: amount, pay: amount, formula: 'lighting', key: `${a.id}-lighting` } as PayLine);
+      member.total += amount;
+      map.set(key, member);
+    }
     // Sort each member's lines by date
     for (const m of map.values()) {
       m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard, eventSessions, allStaffRoles]);
+  }, [assignments, rateCard, eventSessions, allStaffRoles, lightingPay]);
 
   // Filter for non-admin/ops viewers — show only their own row
   const visibleMembers = useMemo(() => {
@@ -255,7 +270,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   }, [grouped, canView, currentUserId]);
 
   if (!canView && !hasOwnAssignment) return null;
-  if (visibleMembers.length === 0) return null;
+  if (visibleMembers.length === 0 && !canView) return null;
 
   const grandTotal = visibleMembers.reduce((sum, m) => sum + m.total, 0);
 
@@ -334,6 +349,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {canView && <LightingPayAllocation eventId={eventId} />}
         {visibleMembers.map(member => (
           <div key={member.name} className="border border-border rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
@@ -344,7 +360,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
               {member.lines.map(line => {
                 const isEditing = editingId === line.assignmentId;
                 const isEditingHours = editingHoursId === line.assignmentId;
-                const canEdit = isAdmin || isOperations;
+                const canEdit = (isAdmin || isOperations) && line.formula !== 'lighting';
                 const editableHours = line.formula !== 'fixed';
                 return (
                   <div
@@ -384,7 +400,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                           }}
                           title={canEdit && editableHours ? 'Click to override hours' : undefined}
                         >
-                          {line.hours}hrs
+                          {line.hours}{line.formula === 'lighting' ? ' unit' : 'hrs'}
                           {canEdit && editableHours && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
                         </button>
                       )}
@@ -412,7 +428,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                           }}
                           title={canEdit ? 'Click to edit rate' : undefined}
                         >
-                          ${(Number(line.rate) || 0).toFixed(0)}{line.formula === 'fixed' ? '' : '/hr'}
+                          ${(Number(line.rate) || 0).toFixed(0)}{line.formula === 'fixed' ? '' : line.formula === 'lighting' ? '/unit' : '/hr'}
                           {canEdit && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
                         </button>
                       )}

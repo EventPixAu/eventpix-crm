@@ -51,6 +51,7 @@ import {
   type ProductInsert,
 } from '@/hooks/useProducts';
 import { useAuth } from '@/lib/auth';
+import { StandardUnitRates } from '@/components/sales/StandardUnitRates';
 
 export default function ProductList() {
   const { isAdmin } = useAuth();
@@ -162,6 +163,7 @@ export default function ProductList() {
         </TabsList>
 
         <TabsContent value="products" className="space-y-4">
+          <StandardUnitRates isAdmin={isAdmin} />
           <div className="flex justify-end">
             <Button onClick={handleOpenCreate}>
               <Plus className="mr-2 h-4 w-4" />

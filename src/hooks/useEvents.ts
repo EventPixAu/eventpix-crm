@@ -24,15 +24,18 @@ export interface EventAssignment {
   notification_sent_at: string | null;
   call_time_at?: string | null;
   wrap_time_at?: string | null;
+  pay_rate_snapshot?: import('@/lib/assignmentRateSnapshot').AssignmentRate | null;
   profile?: {
     id: string;
     full_name: string | null;
     email: string;
     phone?: string | null;
+    is_salaried?: boolean;
   } | null;
   staff_role?: {
     id: string;
     name: string;
+    is_onsite?: boolean;
   } | null;
   session?: {
     id: string;
@@ -128,7 +131,8 @@ export function useEventAssignments(eventId: string | undefined) {
           ),
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (
             id,
-            name
+            name,
+            is_onsite
           ),
           session:event_sessions!event_assignments_session_id_fkey (
             id,
@@ -149,7 +153,7 @@ export function useEventAssignments(eventId: string | undefined) {
         .eq('event_id', eventId);
       
       if (error) throw error;
-      return data as EventAssignment[];
+      return data as unknown as EventAssignment[];
     },
     enabled: !!eventId,
   });
