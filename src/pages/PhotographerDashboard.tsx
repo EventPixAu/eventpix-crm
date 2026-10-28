@@ -2,7 +2,7 @@
  * PhotographerDashboard - Mobile-first dashboard for photographers
  * 
  * Shows ONLY events they are assigned to.
- * Excludes all financial data.
+ * Includes own assignment pay only; excludes client financial data.
  * Quick access to job sheets, calendar, and help.
  */
 import { useMemo, useState } from 'react';
@@ -30,6 +30,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAuth } from '@/lib/auth';
 import { useMyJobSheets, MyJobSheet } from '@/hooks/useMyJobSheets';
 import { cn } from '@/lib/utils';
+import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 
 type FilterType = 'all' | 'today' | 'upcoming' | 'past';
 
@@ -149,6 +150,8 @@ function JobCard({ job, showFullDate = false }: { job: MyJobSheet; showFullDate?
 
               <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 self-center" />
             </div>
+            <AssignmentBudgetLine assignment={job.pay_assignment} eventId={job.id} isAdmin={false} isSelf />
+
           </CardContent>
         </Card>
       </motion.div>
