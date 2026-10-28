@@ -275,6 +275,29 @@ export default function QuoteDetail() {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
   };
 
+  const [isGeneratingBudget, setIsGeneratingBudget] = useState(false);
+  const queryClient = useQueryClient();
+
+  // AI: build draft line items from the linked event/enquiry sessions.
+  const handleGenerateFromSessions = async () => {
+    if (!id || isNewQuote || isGeneratingBudget) return;
+    setIsGeneratingBudget(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-budget-from-sessions', {
+        body: { quote_id: id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const count = data?.items?.length ?? 0;
+      toast.success(`Added ${count} item${count === 1 ? '' : 's'} from the event sessions — review prices before sending`);
+      await queryClient.invalidateQueries({ queryKey: ['quote-items', id] });
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not build a budget from the sessions');
+    } finally {
+      setIsGeneratingBudget(false);
+    }
+  };
+
   const handleAddItem = async () => {
     if (!id || !newItem.description.trim()) return;
     
