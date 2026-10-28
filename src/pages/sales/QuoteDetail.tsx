@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { 
   ArrowLeft, FileText, Building2, DollarSign, Send, CheckCircle, 
   Plus, Trash2, ExternalLink, Copy, Mail, RefreshCw, Link as LinkIcon, Link2,
-  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown
+  Save, FolderOpen, Edit2, Calendar, Clock, MapPin, User, Phone, ChevronDown, Sparkles
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -66,7 +66,7 @@ import { QuoteDiscountDialog } from '@/components/quote/QuoteDiscountDialog';
 import { useAddPackageToQuote } from '@/hooks/usePackages';
 import { ProposedServicesEditor } from '@/components/ProposedServicesEditor';
 import { QuoteFilesPanel } from '@/components/quote/QuoteFilesPanel';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
@@ -273,6 +273,31 @@ export default function QuoteDetail() {
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(value);
+  };
+
+  const [isGeneratingBudget, setIsGeneratingBudget] = useState(false);
+  const queryClient = useQueryClient();
+
+  // AI: build draft line items from the linked event/enquiry sessions.
+  const handleGenerateFromSessions = async () => {
+    if (!id || isNewQuote || isGeneratingBudget) return;
+    setIsGeneratingBudget(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-budget-from-sessions', {
+        body: { quote_id: id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const count = data?.items?.length ?? 0;
+      toast.success(`Added ${count} item${count === 1 ? '' : 's'} from the event sessions — review prices before sending`);
+      await queryClient.invalidateQueries({ queryKey: ['quote-items', id] });
+      await queryClient.invalidateQueries({ queryKey: ['quotes', id] });
+      await queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    } catch (e: any) {
+      toast.error(e?.message || 'Could not build a budget from the sessions');
+    } finally {
+      setIsGeneratingBudget(false);
+    }
   };
 
   const handleAddItem = async () => {
@@ -816,14 +841,27 @@ export default function QuoteDetail() {
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   You currently don't have any product or package added to your Quote. Click the button below to start adding them.
                 </p>
-                <Button 
-                  size="lg" 
-                  onClick={() => setIsProductsDialogOpen(true)}
-                  disabled={isLocked}
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Products & Packages
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button 
+                    size="lg" 
+                    onClick={() => setIsProductsDialogOpen(true)}
+                    disabled={isLocked}
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Products & Packages
+                  </Button>
+                  {!isNewQuote && (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={handleGenerateFromSessions}
+                      disabled={isLocked || isGeneratingBudget}
+                    >
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      {isGeneratingBudget ? 'Building budget…' : 'Create budget from Event Sessions'}
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
               /* Items Table */
@@ -844,6 +882,17 @@ export default function QuoteDetail() {
                         <Plus className="h-4 w-4 mr-2" />
                         Add Products & Packages
                       </Button>
+                      {!isNewQuote && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleGenerateFromSessions}
+                          disabled={isGeneratingBudget}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          {isGeneratingBudget ? 'Building…' : 'Create from Sessions'}
+                        </Button>
+                      )}
                       <Button size="sm" variant="outline" onClick={() => setIsAddItemOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Custom Item
