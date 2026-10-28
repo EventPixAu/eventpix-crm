@@ -106,6 +106,7 @@ import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { usePayRateCard, calculatePayFromRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
+import { assignmentSessionHours } from '@/lib/assignmentPayHours';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
@@ -157,26 +158,7 @@ function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSe
 
   if (isLoading || !rateEntry) return null;
 
-  // Calculate session duration in hours - use assignment's session, fallback to event sessions
-  const session = (assignment as any).session;
-  let sessionHours: number | null = null;
-  if (session?.start_time && session?.end_time) {
-    const [sh, sm] = session.start_time.split(':').map(Number);
-    const [eh, em] = session.end_time.split(':').map(Number);
-    sessionHours = (eh * 60 + em - (sh * 60 + sm)) / 60;
-    if (sessionHours <= 0) sessionHours = null;
-  }
-  // Fallback: use longest event session when assignment has no linked session
-  if (!sessionHours && eventSessions.length > 0) {
-    for (const es of eventSessions) {
-      if (es.start_time && es.end_time) {
-        const [sh, sm] = es.start_time.split(':').map(Number);
-        const [eh, em] = es.end_time.split(':').map(Number);
-        const h = (eh * 60 + em - (sh * 60 + sm)) / 60;
-        if (h > 0 && (sessionHours === null || h > sessionHours)) sessionHours = h;
-      }
-    }
-  }
+  const sessionHours = assignmentSessionHours(assignment, eventSessions);
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
   const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
