@@ -3,7 +3,7 @@
  * 
  * PHOTOGRAPHER ROLE BOUNDARIES:
  * - Only fetches events assigned to the current user
- * - Excludes ALL financial data (costs, rates, invoices)
+ * - Excludes client financial data; includes only the current user’s assignment pay
  * - Includes only operational data photographers need:
  *   - Event time, date, venue
  *   - On-site contact
@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import { addDays, isBefore } from 'date-fns';
+import type { EventAssignment } from '@/hooks/useEvents';
 
 export interface JobSheetSession {
   id: string;
@@ -33,6 +34,7 @@ export interface JobSheetSession {
 export interface MyJobSheet {
   id: string;
   assignment_id: string;
+  pay_assignment: EventAssignment;
   event_name: string;
   event_date: string;
   arrival_time: string | null;
@@ -75,6 +77,12 @@ export function useMyJobSheets() {
           event_id,
           session_id,
           confirmation_status,
+          user_id,
+          staff_role_id,
+          role_on_event,
+          travel_amount,
+          staff_role:staff_roles!event_assignments_staff_role_id_fkey(id, name, is_onsite),
+          session:event_sessions!event_assignments_session_id_fkey(id, session_date, label, start_time, end_time, arrival_time, session_type),
           call_time_at,
           events!inner(
             id,
@@ -211,6 +219,7 @@ export function useMyJobSheets() {
         return {
           id: event.id,
           assignment_id: a.id,
+          pay_assignment: { ...a, session: assignedSession || a.session } as unknown as EventAssignment,
           event_name: event.event_name,
           event_date: assignedSession?.session_date || event.event_date,
           arrival_time: arrivalTime,

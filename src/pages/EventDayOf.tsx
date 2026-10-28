@@ -65,6 +65,7 @@ import { AllEventContacts } from '@/components/crew/AllEventContacts';
 import { EventEquipmentByRole } from '@/components/crew/EventEquipmentByRole';
 import { PhotographerChecklist } from '@/components/crew/PhotographerChecklist';
 import { PhotographerGuides } from '@/components/crew/PhotographerGuides';
+import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -926,6 +927,18 @@ export default function EventDayOf() {
           />
         </motion.section>
       )}
+
+        {displayAssignments.some(a => a.user_id === user?.id) && (
+          <section className="mx-4 mb-4 print:hidden" aria-label="Your pay">
+            <h2 className="text-base font-semibold">Your pay</h2>
+            {displayAssignments.filter(a => !!user?.id && a.user_id === user.id).map(assignment => (
+              <div key={assignment.id}>
+                {assignment.session?.label && <p className="mt-2 text-sm font-medium">{assignment.session.label}</p>}
+                <AssignmentBudgetLine assignment={assignment} eventId={assignment.event_id} isAdmin={false} isSelf />
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* Photographer Guides - quick access to knowledge base articles */}
         <PhotographerGuides />

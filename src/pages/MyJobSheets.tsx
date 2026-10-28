@@ -3,7 +3,7 @@
  * 
  * PHOTOGRAPHER ROLE BOUNDARIES:
  * - Shows ONLY assigned events with essential operational details
- * - NO financial data (costs, rates, invoices)
+ * - Own assignment pay only; no client financial data
  * - NO client contact details beyond on-site contact
  * - NO admin-only features
  * 
@@ -57,6 +57,7 @@ import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 
 type FilterMode = 'upcoming' | 'today' | 'past';
 
@@ -299,6 +300,8 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
                 </Badge>
               )}
             </div>
+
+            <AssignmentBudgetLine assignment={job.pay_assignment} eventId={job.id} isAdmin={false} isSelf />
 
             {/* Confirm / decline availability buttons */}
             {!isEventPast && (!job.confirmation_status || job.confirmation_status === 'pending') && (
