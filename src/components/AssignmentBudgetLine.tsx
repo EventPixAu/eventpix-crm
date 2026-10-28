@@ -133,60 +133,62 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   };
 
 
+  const manualLine = (label: string, value: number, field: 'travel_amount' | 'equipment_amount') => {
+    const editing = editingField === field;
+    return (
+      <div className="flex flex-wrap items-center gap-2 pl-5">
+        <span className="text-xs text-muted-foreground">
+          {label}:{' '}
+          {canEdit && editing ? (
+            <span className="inline-flex items-center gap-1">
+              $<input
+                type="number" step="0.01" min="0"
+                className="w-20 h-5 text-xs bg-background border border-border rounded px-1 text-foreground"
+                value={travelInput}
+                onChange={(e) => setTravelInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleUpdateManual(field, parseFloat(travelInput) || 0);
+                  if (e.key === 'Escape') setEditingField(null);
+                }}
+                onBlur={() => handleUpdateManual(field, parseFloat(travelInput) || 0)}
+                autoFocus
+              />
+            </span>
+          ) : (
+            <Button variant="link" size="sm"
+              className={`h-auto p-0 text-xs font-medium text-foreground ${canEdit ? '' : 'disabled:opacity-100'}`}
+              onClick={() => { if (!canEdit) return; setTravelInput(String(value)); setEditingField(field); }}
+              disabled={!canEdit}
+            >
+              ${value.toFixed(2)}
+            </Button>
+          )}
+        </span>
+      </div>
+    );
+  };
+
+  const rateLabel = `$${hourlyRate.toFixed(2)}/unit`;
+
   return (
     <div className="mt-2 pt-2 border-t border-border space-y-1">
       <div className="flex flex-wrap items-center gap-2">
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">
-          Pay: <span className="font-medium text-foreground">
-            {isFixedMode
-              ? `$${fixedRate.toFixed(2)} fixed = $${basePay.toFixed(2)}`
-              : `$${hourlyRate.toFixed(2)}/hr × ${callHours}hrs = $${basePay.toFixed(2)}`}
-          </span>
-        </span>
+        <span className="text-xs text-muted-foreground">Pay ({isFixedMode ? 'set rate' : rateLabel})</span>
       </div>
-
-      <p className="pl-5 text-xs text-muted-foreground">This rate includes limited travel and parking.</p>
-      {lightingTotal > 0 && <p className="pl-5 text-xs text-muted-foreground">+ Studio lighting kit: ${lightingTotal.toFixed(2)}</p>}
-
-      {/* Additional travel and parking (manually entered) */}
-      {(canEdit || travel > 0) && (
-        <div className="flex flex-wrap items-center gap-2 pl-5">
-          <span className="text-xs text-muted-foreground">
-            + Additional travel & parking:{' '}
-            {canEdit && editingTravel ? (
-              <span className="inline-flex items-center gap-1">
-                $<input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className="w-20 h-5 text-xs bg-background border border-border rounded px-1 text-foreground"
-                  value={travelInput}
-                  onChange={(e) => setTravelInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleUpdateTravel(parseFloat(travelInput) || 0);
-                    if (e.key === 'Escape') setEditingTravel(false);
-                  }}
-                  onBlur={() => handleUpdateTravel(parseFloat(travelInput) || 0)}
-                  autoFocus
-                />
-              </span>
-            ) : (
-              <Button variant="link" size="sm"
-                className={`h-auto p-0 text-xs font-medium text-foreground ${canEdit ? '' : 'disabled:opacity-100'}`}
-                onClick={() => {
-                  if (!canEdit) return;
-                  setTravelInput(String(travel));
-                  setEditingTravel(true);
-                }}
-                disabled={!canEdit}
-              >
-                ${travel.toFixed(2)}
-              </Button>
-            )}
-          </span>
-        </div>
+      {isFixedMode ? (
+        <p className="pl-5 text-xs text-muted-foreground">Set rate: <span className="font-medium text-foreground">${fixedRate.toFixed(2)}</span></p>
+      ) : hasHoursOverride ? (
+        <p className="pl-5 text-xs text-muted-foreground">Photography (adjusted): {callHours} units = <span className="font-medium text-foreground">${basePay.toFixed(2)}</span></p>
+      ) : (
+        <>
+          <p className="pl-5 text-xs text-muted-foreground">Photography: {coverageUnits}hrs ({coverageUnits} units) = <span className="font-medium text-foreground">${(coverageUnits * hourlyRate).toFixed(2)}</span></p>
+          <p className="pl-5 text-xs text-muted-foreground">Preparation, travel and parking: ({PREP_TRAVEL_UNITS} unit) = <span className="font-medium text-foreground">${(PREP_TRAVEL_UNITS * hourlyRate).toFixed(2)}</span></p>
+        </>
       )}
+      {lightingTotal > 0 && <p className="pl-5 text-xs text-muted-foreground">Studio lighting kit: <span className="font-medium text-foreground">${lightingTotal.toFixed(2)}</span></p>}
+      {manualLine('Additional equipment', equipment, 'equipment_amount')}
+      {manualLine('Additional expenses', travel, 'travel_amount')}
 
       {/* Extras */}
       {assignmentAllowances.map((aa: any) => {
