@@ -880,6 +880,17 @@ export default function QuoteDetail() {
                         <Plus className="h-4 w-4 mr-2" />
                         Add Products & Packages
                       </Button>
+                      {!isNewQuote && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleGenerateFromSessions}
+                          disabled={isGeneratingBudget}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          {isGeneratingBudget ? 'Building…' : 'Create from Sessions'}
+                        </Button>
+                      )}
                       <Button size="sm" variant="outline" onClick={() => setIsAddItemOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Custom Item
