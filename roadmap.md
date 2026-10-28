@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Correct session-generated budgets to use Products rates and the photography minimum charge; repaired the ANZAHPE draft (Welcome reception $1,100 ex GST; total $6,050 ex GST), removed invented editing charge already included in coverage, deployed function, passed five pricing tests and verified generation/save/reload on a temporary draft then removed it.
 - [x] AI "Create budget from Event Sessions" button on the Budget page: new generate-budget-from-sessions edge function builds draft line items from linked event/enquiry sessions via Lovable AI (structured output, ex-GST prices, 10% tax enforced server-side, fixed group labels); verified end to end on the ANZAHPE 2027 draft budget (6 items from 6 sessions, totals $6,725 ex GST) while signed in; generated items left in place for Trevor's price review; awaiting publish.
 - [x] Fix the lead budget action: offer existing budgets before explicitly creating another; signed-in Bemin verification opened the original Photo 1 budget with all three items, without creating a budget; build OK, awaiting publish.
 - [x] Include recorded opened dates in CRM Sent emails, lead/client/event mail history and every event email Quick Action; campaign recipient dates already present. Verified 200 actual opened emails and Roundtable BNE actions while signed in, five date-evidence tests passed, build OK; awaiting publish for the live site.
