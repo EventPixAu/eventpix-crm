@@ -100,6 +100,7 @@ function useOperationsItems(): NavItem[] {
   { href: '/equipment', label: 'Equipment', icon: Wrench },
   { href: '/venues', label: 'Venues', icon: Building2 },
   { href: '/declined', label: 'Declined', icon: XCircle },
+  { href: '/admin/crew-sms', label: 'Crew SMS', icon: MessageSquare },
   ];
 }
 
@@ -116,7 +117,6 @@ const administrationItems: NavItem[] = [
   { href: '/admin/event-brief-templates', label: 'Event Brief Templates', icon: FileText },
   { href: '/admin/workflows', label: 'Workflows', icon: ClipboardList },
   { href: '/admin/lookups', label: 'Lookups', icon: Settings },
-  { href: '/admin/crew-sms', label: 'Crew SMS', icon: MessageSquare },
   { href: '/admin/pay-rates', label: 'Pay Rates', icon: DollarSign },
   { href: '/admin/invoices', label: 'Xero Sync', icon: DollarSign },
   { href: '/admin/margins', label: 'Margin Report', icon: TrendingUp },

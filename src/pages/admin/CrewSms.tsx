@@ -301,6 +301,17 @@ export default function CrewSms() {
                     <div className="min-w-0">
                       <p className="font-medium truncate">{ev.event_name}</p>
                       <p className="text-sm text-muted-foreground">{format(parseISO(ev.event_date), 'EEE d MMM yyyy')}</p>
+                      {(() => {
+                        const lastSent = lastSentByEvent?.[ev.id];
+                        return lastSent ? (
+                          <p className="text-xs text-muted-foreground">
+                            Last text sent {format(parseISO(lastSent.sent_at), 'd MMM, h:mma')}
+                            {lastSent.reminder_type === 'followup' ? ' (follow-up)' : ''}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No texts sent yet</p>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {ev.crew_sms_masv_delivery && <Badge>MASV ASAP</Badge>}
