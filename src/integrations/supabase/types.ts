@@ -2768,6 +2768,7 @@ export type Database = {
           notes: string | null
           notification_sent_at: string | null
           notified: boolean | null
+          pay_rate_snapshot: Json | null
           responsible_for_delivery: boolean
           role_on_event: string | null
           session_id: string | null
@@ -2795,6 +2796,7 @@ export type Database = {
           notes?: string | null
           notification_sent_at?: string | null
           notified?: boolean | null
+          pay_rate_snapshot?: Json | null
           responsible_for_delivery?: boolean
           role_on_event?: string | null
           session_id?: string | null
@@ -2822,6 +2824,7 @@ export type Database = {
           notes?: string | null
           notification_sent_at?: string | null
           notified?: boolean | null
+          pay_rate_snapshot?: Json | null
           responsible_for_delivery?: boolean
           role_on_event?: string | null
           session_id?: string | null
@@ -5141,6 +5144,7 @@ export type Database = {
           notes: string | null
           rate_mode: string
           staff_role_id: string
+          unit_rate_product_id: string | null
           updated_at: string
         }
         Insert: {
@@ -5152,6 +5156,7 @@ export type Database = {
           notes?: string | null
           rate_mode?: string
           staff_role_id: string
+          unit_rate_product_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -5163,6 +5168,7 @@ export type Database = {
           notes?: string | null
           rate_mode?: string
           staff_role_id?: string
+          unit_rate_product_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -5171,6 +5177,13 @@ export type Database = {
             columns: ["staff_role_id"]
             isOneToOne: true
             referencedRelation: "staff_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pay_rate_card_unit_rate_product_id_fkey"
+            columns: ["unit_rate_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -5357,6 +5370,7 @@ export type Database = {
           name: string
           package_discount_amount: number | null
           package_discount_percent: number | null
+          photographer_unit_rate: number | null
           tax_rate: number | null
           unit_price: number
           updated_at: string | null
@@ -5371,6 +5385,7 @@ export type Database = {
           name: string
           package_discount_amount?: number | null
           package_discount_percent?: number | null
+          photographer_unit_rate?: number | null
           tax_rate?: number | null
           unit_price?: number
           updated_at?: string | null
@@ -5385,6 +5400,7 @@ export type Database = {
           name?: string
           package_discount_amount?: number | null
           package_discount_percent?: number | null
+          photographer_unit_rate?: number | null
           tax_rate?: number | null
           unit_price?: number
           updated_at?: string | null
@@ -5703,6 +5719,45 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_lighting_pay: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          id: string
+          quote_item_id: string
+          unit_rate: number
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          id?: string
+          quote_item_id: string
+          unit_rate: number
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          quote_item_id?: string
+          unit_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_lighting_pay_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "event_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lighting_pay_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: true
+            referencedRelation: "quote_items"
             referencedColumns: ["id"]
           },
         ]
@@ -7915,6 +7970,10 @@ export type Database = {
         Returns: Json
       }
       admin_sync_staff_assignments: { Args: never; Returns: number }
+      allocate_lighting_pay: {
+        Args: { _assignment_id?: string; _quote_item_id: string }
+        Returns: undefined
+      }
       apply_default_step_assignees: {
         Args: { p_user_id: string }
         Returns: number
