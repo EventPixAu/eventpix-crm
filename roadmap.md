@@ -24,7 +24,9 @@
 - [x] Remove the duplicate "Files via MASV ASAP" upcoming-events card from the Crew SMS page — the follow-up list already shows which events are MASV ASAP; page verified in preview with four cards and no overflow.
 - [x] Fix the event Delete button; removed the accidental BNE Dinner entry through the signed-in UI and verified it returned to Events.
 - [x] Exclude cancelled events from Day Load, escalation banners and readiness warnings before conflict calculations; test passed and signed-in Day Load verified for 21 October with AIEF careers day absent.
-- [ ] Make "Client contact" and "Event Manager" appear in the lead contacts role dropdown on the live site (code done and verified in preview; live bundle still ships the old four options — needs publish).
+- [x] Make "Client contact" and "Event Manager" appear in the lead contacts role dropdown on the live site (code done and verified in preview; publish requested 28 Oct 2026 so the live bundle carries the new options).
+
+- [x] Publish the accumulated client-facing and team-pay work (photographer own-pay display, session budget pricing, Products/Pay Rates split, lighting pay, agreement and portal fixes) to app.eventpix.com.au — publishing requested 28 Oct 2026.
 
 - [x] Restrict client portals to personally linked events and proposals, support multiple managers on one event, update portal explanations; verified Rowena's three linked events in her signed-in portal and passed four SQL access tests.
 - [x] Put Budget (ex GST) and its amount on one line throughout electronic agreement views and PDFs; visually verified CEW in both formats, checked 13 template previews, and passed six existing tests.
