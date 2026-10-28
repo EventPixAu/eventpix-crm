@@ -8152,6 +8152,10 @@ export type Database = {
         Args: { p_token: string }
         Returns: {
           accepted_at: string
+          discount_amount: number
+          discount_groups: string[]
+          discount_label: string
+          discount_percent: number
           id: string
           intro_text: string
           quote_name: string

@@ -267,6 +267,13 @@
       "when": 1793054793321,
       "tag": "0037_quote_multi_choice",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793157159734,
+      "tag": "0038_quote_public_discount",
+      "breakpoints": true
     }
   ]
 }
