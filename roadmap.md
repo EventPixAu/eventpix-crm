@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Remove the additional paid hour from team coverage pay: 9am–11:30am with 8:45am setup is three paid hours; preserve client budget pricing.
 - [x] Show own pay in photographer dashboard, My Job Sheets and job detail with limited travel/parking note and manually controlled combined additional travel/parking; verified Nigel’s $375 read-only pay, admin save/reload/restore of $25 extra, seven tests passed, build OK; awaiting publish.
 - [x] Separate photographer payment hours from post-event editing in assignment pay and financial totals; retain Nat’s assignment unchanged.
 - [x] Correct session-generated budgets to use Products rates and the photography minimum charge; repaired the ANZAHPE draft (Welcome reception $1,100 ex GST; total $6,050 ex GST), removed invented editing charge already included in coverage, deployed function, passed five pricing tests and verified generation/save/reload on a temporary draft then removed it.
