@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     const { data: lead } = leadId
       ? await supabase
           .from("leads")
-          .select("id, event_name, event_date, venue_name, event_types!leads_event_type_id_fkey(name)")
+          .select("id, lead_name, estimated_event_date, venue_text, requirements_summary, event_types!leads_event_type_id_fkey(name)")
           .eq("id", leadId)
           .maybeSingle()
       : { data: null as any };
@@ -159,9 +159,10 @@ Deno.serve(async (req) => {
     const contextLines = [
       event?.event_name && `Event: ${event.event_name}`,
       (event as any)?.event_types?.name && `Type: ${(event as any).event_types.name}`,
-      !event && lead?.event_name && `Enquiry: ${lead.event_name}`,
+      !event && lead?.lead_name && `Enquiry: ${lead.lead_name}`,
       !event && (lead as any)?.event_types?.name && `Type: ${(lead as any).event_types.name}`,
-      (event?.venue_name || lead?.venue_name) && `Venue: ${event?.venue_name || lead?.venue_name}`,
+      !event && lead?.requirements_summary && `Requirements: ${lead.requirements_summary}`,
+      (event?.venue_name || lead?.venue_text) && `Venue: ${event?.venue_name || lead?.venue_text}`,
       event?.coverage_details && `Coverage details: ${event.coverage_details}`,
     ].filter(Boolean).join("\n");
 
