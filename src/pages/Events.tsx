@@ -43,7 +43,13 @@ export default function Events() {
   const { data: deliveryMethods = [] } = useDeliveryMethods();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('upcoming');
+  const [statusFilter, setStatusFilterState] = useState<string>(() => {
+    try { return sessionStorage.getItem('events.statusFilter') || 'upcoming'; } catch { return 'upcoming'; }
+  });
+  const setStatusFilter = (v: string) => {
+    setStatusFilterState(v);
+    try { sessionStorage.setItem('events.statusFilter', v); } catch { /* ignore */ }
+  };
   const [deliveryFilter, setDeliveryFilter] = useState('all');
 
   const { data: eventSessions = [] } = useQuery({
