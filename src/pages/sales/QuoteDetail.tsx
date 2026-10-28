@@ -811,6 +811,13 @@ export default function QuoteDetail() {
                     : 'Add products and packages to this quote.'}
                 </p>
               </div>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {!isNewQuote && !isLocked && (
+                  <Button variant="outline" onClick={handleGenerateFromSessions} disabled={isGeneratingBudget}>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {isGeneratingBudget ? 'Building budget…' : 'Create budget from Event Sessions'}
+                  </Button>
+                )}
               <div className="flex items-center gap-2 rounded-md border px-3 py-2">
                 <Label htmlFor="selection-mode-select" className="text-sm">
                   Client options
@@ -832,6 +839,7 @@ export default function QuoteDetail() {
                   <option value="photo_delivery_choice">Photography only or Photography + Delivery</option>
                 </select>
               </div>
+              </div>
             </div>
 
             {!items?.length ? (
@@ -850,17 +858,6 @@ export default function QuoteDetail() {
                     <Plus className="h-5 w-5 mr-2" />
                     Add Products & Packages
                   </Button>
-                  {!isNewQuote && (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={handleGenerateFromSessions}
-                      disabled={isLocked || isGeneratingBudget}
-                    >
-                      <Sparkles className="h-5 w-5 mr-2" />
-                      {isGeneratingBudget ? 'Building budget…' : 'Create budget from Event Sessions'}
-                    </Button>
-                  )}
                 </div>
               </div>
             ) : (
@@ -869,7 +866,7 @@ export default function QuoteDetail() {
                 <CardHeader className="flex flex-row items-center justify-between py-4">
                   <div />
                   {!isLocked && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button size="sm" variant="outline" onClick={() => setIsApplyTemplateOpen(true)}>
                         <FolderOpen className="h-4 w-4 mr-2" />
                         Apply Template
@@ -882,17 +879,6 @@ export default function QuoteDetail() {
                         <Plus className="h-4 w-4 mr-2" />
                         Add Products & Packages
                       </Button>
-                      {!isNewQuote && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleGenerateFromSessions}
-                          disabled={isGeneratingBudget}
-                        >
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          {isGeneratingBudget ? 'Building…' : 'Create from Sessions'}
-                        </Button>
-                      )}
                       <Button size="sm" variant="outline" onClick={() => setIsAddItemOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Custom Item
