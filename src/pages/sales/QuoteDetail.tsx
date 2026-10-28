@@ -291,6 +291,8 @@ export default function QuoteDetail() {
       const count = data?.items?.length ?? 0;
       toast.success(`Added ${count} item${count === 1 ? '' : 's'} from the event sessions — review prices before sending`);
       await queryClient.invalidateQueries({ queryKey: ['quote-items', id] });
+      await queryClient.invalidateQueries({ queryKey: ['quotes', id] });
+      await queryClient.invalidateQueries({ queryKey: ['quotes'] });
     } catch (e: any) {
       toast.error(e?.message || 'Could not build a budget from the sessions');
     } finally {
