@@ -13,6 +13,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createOpenAI } from "npm:@ai-sdk/openai";
 import { streamText, Output } from "npm:ai";
 import { z } from "npm:zod@3";
+import { photographyPrice, coverageDays, catalogueItem } from "./pricing.ts";
 import {
   createLovableAiGatewayRunIdFetch,
   getLovableAiGatewayRunId,
@@ -36,6 +37,7 @@ const ItemSchema = z.object({
   unit_price: z.number(),
   group_label: z.string(),
   product_id: z.string().nullable(),
+  session_dates: z.array(z.string()),
 });
 const BudgetSchema = z.object({ items: z.array(ItemSchema) });
 
@@ -144,11 +146,14 @@ Deno.serve(async (req) => {
     }
 
     // Active product catalogue so the AI can reuse existing products/prices.
-    const { data: products } = await supabase
+    const { data: products, error: productError } = await supabase
       .from("products")
       .select("id, name, description, unit_price, tax_rate, is_package")
       .eq("is_active", true)
       .order("name", { ascending: true });
+    if (productError) return jsonResponse({ error: productError.message }, 500);
+    if (!products?.length) return jsonResponse({ error: "Add active rates in Products first. No estimated rates will be used." }, 400);
+    const days = coverageDays(sessions);
 
     const sessionLines = sessions.map((s: any) => {
       const hours = s.start_time && s.end_time
@@ -175,11 +180,11 @@ Deno.serve(async (req) => {
 Given the event/enquiry details, its sessions, and the existing product catalogue, propose the budget line items.
 
 Rules:
-- Base quantities on the sessions: coverage items are priced per hour of session time (use each session's start/end; ignore arrival time); one coverage item per session day unless a catalogue product clearly covers the whole event.
-- Prefer catalogue products: when an item matches a catalogue product, set product_id to that product's id and reuse its unit_price; otherwise set product_id to null and estimate a fair Australian market price.
+- For photography, produce one coverage item per session day, combining all live sessions on that date and excluding post_production sessions. Set session_dates to that single yyyy-MM-dd date. Use EPX1 and quantity = max(total coverage hours that day, 2) + 1. Ignore arrival times. First two hours cost three hourly units; each additional hour costs one. The server calculates photography prices from the sessions and Products, not your estimates.
+- Every item MUST use an active catalogue product_id and its unit_price. Never estimate market rates or create unmatched items. For non-coverage items set session_dates to [].
 - ALL prices are in AUD and EX GST. Never include GST in unit_price. Tax is added on top by the system.
 - Set group_label to exactly one of: ${GROUP_LABELS.join(", ")}.
-- Include editing/post-production and delivery items when sessions imply photo or video coverage.
+- Do not add separate editing or delivery merely because there is photography: catalogue coverage includes these. Only include additional services when explicitly requested and matched to a catalogue product.
 - Do not invent travel, equipment or add-on items unless the details mention them.
 - Keep descriptions short and client-facing (no internal codes).`;
 
@@ -222,7 +227,6 @@ Rules:
 
     // Validate against the catalogue and the fixed group labels; tax is
     // enforced server-side (10% GST, ex-GST prices) and never from the AI.
-    const catalogById = new Map((products || []).map((p: any) => [p.id, p]));
     const { data: existingItems } = await supabase
       .from("quote_items")
       .select("sort_order")
@@ -231,17 +235,26 @@ Rules:
       .limit(1);
     let sortOrder = (existingItems?.[0]?.sort_order ?? -1) + 1;
 
-    const rows = (proposed?.items || [])
-      .filter((i) => i.description?.trim() && Number.isFinite(i.unit_price) && i.unit_price >= 0)
+    const items = proposed?.items || [];
+    const photographyItems = items.filter(i => i.group_label === 'Photography' && i.session_dates.length > 0);
+    const pricedItems = photographyItems.length ? [
+      ...days.map(day => ({
+        description: photographyItems.find(i => i.session_dates.includes(day.date))?.description || `${day.date} — ${day.labels.join(', ') || 'Photography coverage'}`,
+        group_label: 'Photography',
+        ...photographyPrice(day.hours, products),
+      })),
+      ...items.filter(i => !photographyItems.includes(i)).map(i => ({ ...i, ...catalogueItem(i, products) })),
+    ] : items.map(i => ({ ...i, ...catalogueItem(i, products) }));
+    const rows = pricedItems
+      .filter(i => i.description?.trim())
       .map((i) => {
-        const product = i.product_id ? catalogById.get(i.product_id) : undefined;
         return {
           quote_id: quoteId,
-          product_id: product ? product.id : null,
+          product_id: i.product_id,
           description: i.description.trim(),
           quantity: Number.isFinite(i.quantity) && i.quantity > 0 ? i.quantity : 1,
           unit_price: Math.round(i.unit_price * 100) / 100,
-          tax_rate: product ? (product.tax_rate ?? 0.1) : 0.1,
+          tax_rate: 0.1,
           group_label: (GROUP_LABELS as readonly string[]).includes(i.group_label)
             ? i.group_label
             : "Photography",

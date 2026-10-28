@@ -1,4 +1,5 @@
 Email send handlers must reject unresolved `{{...}}` placeholders before delivery, because multiple compose screens and scheduled sends share the same sender.
+Session-budget pricing is enforced by the edge function's pricing helper from current Products and source session durations, not AI prices or quantities; AI supplies descriptions and catalogue matches only, so invented market rates cannot be saved.
 Lead budget actions offer existing budgets through ExistingBudgetDialog before creating another, preserving multiple-budget support without silently inserting empty duplicates.
 Individual email status dates use the shared emailStatusDates helpers; Opened labels use recorded opened_at evidence rather than sent_at so histories and event quick actions agree.
 Operational warning lists use operationalWarningEvents before readiness and conflict calculations, so cancelled jobs neither raise warnings nor create conflicts for active jobs.
