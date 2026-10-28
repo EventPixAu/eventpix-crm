@@ -288,6 +288,13 @@
       "when": 1793166734897,
       "tag": "0040_separate_client_and_team_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793171901079,
+      "tag": "0041_team_only_reference_reads",
+      "breakpoints": true
     }
   ]
 }
