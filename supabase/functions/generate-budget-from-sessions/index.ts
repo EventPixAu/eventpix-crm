@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
 
     const { data: quote, error: quoteError } = await supabase
       .from("quotes")
-      .select("id, status, event_id, lead_id, client_id, title")
+      .select("id, status, event_id, linked_event_id, lead_id, client_id, quote_name")
       .eq("id", quoteId)
       .maybeSingle();
     if (quoteError) return jsonResponse({ error: quoteError.message }, 500);
@@ -90,11 +90,12 @@ Deno.serve(async (req) => {
 
     // Resolve the linked event (either side of the relationship) and lead.
     let event: any = null;
-    if (quote.event_id) {
+    const directEventId = quote.event_id || quote.linked_event_id;
+    if (directEventId) {
       const { data } = await supabase
         .from("events")
         .select("id, event_name, event_date, venue_name, coverage_details, lead_id, event_types!events_event_type_id_fkey(name)")
-        .eq("id", quote.event_id)
+        .eq("id", directEventId)
         .maybeSingle();
       event = data;
     }
