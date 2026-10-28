@@ -8,6 +8,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { assignmentSessionHours } from '@/lib/assignmentPayHours';
 
 export interface MatchedPayment {
   id: string;
@@ -41,16 +42,6 @@ export interface EventFinancials {
   totalExpenses: number;
   profit: number;
   profitMargin: number;
-}
-
-/**
- * Calculate session duration in hours from time strings (HH:MM:SS).
- */
-function calcSessionHours(startTime: string | null, endTime: string | null): number {
-  if (!startTime || !endTime) return 0;
-  const [sh, sm] = startTime.split(':').map(Number);
-  const [eh, em] = endTime.split(':').map(Number);
-  return (eh * 60 + em - (sh * 60 + sm)) / 60;
 }
 
 export function useEventFinancials(eventId: string | undefined) {
@@ -92,6 +83,8 @@ export function useEventFinancials(eventId: string | undefined) {
           staff_role_id,
           estimated_cost,
           session_id,
+          role_on_event,
+          staff_role:staff_roles!event_assignments_staff_role_id_fkey (name, is_onsite),
           event_sessions:session_id (
             start_time,
             end_time
@@ -102,7 +95,7 @@ export function useEventFinancials(eventId: string | undefined) {
       // Fetch event sessions as fallback for assignments without a session_id
       const { data: eventSessions } = await supabase
         .from('event_sessions')
-        .select('start_time, end_time')
+        .select('id, start_time, end_time, session_type')
         .eq('event_id', eventId);
       
       if (assignError) throw assignError;
@@ -174,13 +167,6 @@ export function useEventFinancials(eventId: string | undefined) {
       const seriesRateMap = new Map<string, number>();
       seriesRates.forEach(r => seriesRateMap.set(r.staff_role_id, r.fixed_rate));
       
-      // Calculate fallback session hours from event sessions
-      let fallbackHours = 0;
-      if (eventSessions && eventSessions.length > 0) {
-        // Use the longest session as fallback
-        fallbackHours = Math.max(...eventSessions.map(s => calcSessionHours(s.start_time, s.end_time)));
-      }
-      
       // Calculate expected staff cost from rate card
       let expectedStaffCost = 0;
       for (const assignment of assignments || []) {
@@ -198,8 +184,7 @@ export function useEventFinancials(eventId: string | undefined) {
         const rate = rateMap.get(roleId);
         if (!rate) continue;
         
-        const session = assignment.event_sessions as any;
-        const sessionHours = calcSessionHours(session?.start_time, session?.end_time) || fallbackHours;
+        const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0) continue;
         
         // Formula: hourly_rate × (ceil(session_hours) + 1)
