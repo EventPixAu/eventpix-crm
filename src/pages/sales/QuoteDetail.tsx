@@ -839,14 +839,27 @@ export default function QuoteDetail() {
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   You currently don't have any product or package added to your Quote. Click the button below to start adding them.
                 </p>
-                <Button 
-                  size="lg" 
-                  onClick={() => setIsProductsDialogOpen(true)}
-                  disabled={isLocked}
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add Products & Packages
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button 
+                    size="lg" 
+                    onClick={() => setIsProductsDialogOpen(true)}
+                    disabled={isLocked}
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add Products & Packages
+                  </Button>
+                  {!isNewQuote && (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={handleGenerateFromSessions}
+                      disabled={isLocked || isGeneratingBudget}
+                    >
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      {isGeneratingBudget ? 'Building budget…' : 'Create budget from Event Sessions'}
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
               /* Items Table */
