@@ -4,6 +4,7 @@ import { Plus, Trash2, Calendar, Clock, MapPin, GripVertical, Globe, Film, Loade
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -252,6 +253,9 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
                         </button>
                       )}
                     </div>
+                    {session.notes && (
+                      <p className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap">{session.notes}</p>
+                    )}
                   </div>
 
                   {!disabled && (
@@ -417,6 +421,17 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
                 placeholder="Full address"
               />
               <p className="text-xs text-muted-foreground">Timezone is set automatically from the address; daylight saving follows the session date.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="session_notes">Notes</Label>
+              <Textarea
+                id="session_notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="e.g., Shot list, special requirements"
+                rows={4}
+              />
             </div>
           </div>
 
