@@ -281,6 +281,13 @@
       "when": 1793166324232,
       "tag": "0039_product_unit_rates_and_lighting_pay",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793166734897,
+      "tag": "0040_separate_client_and_team_rates",
+      "breakpoints": true
     }
   ]
 }
