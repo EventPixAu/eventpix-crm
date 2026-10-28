@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Show own pay in photographer login with limited travel/parking note and manually controlled additional travel/parking.
+- [x] Show own pay in photographer dashboard, My Job Sheets and job detail with limited travel/parking note and manually controlled combined additional travel/parking; verified Nigel’s $375 read-only pay, admin save/reload/restore of $25 extra, seven tests passed, build OK; awaiting publish.
 - [x] Separate photographer payment hours from post-event editing in assignment pay and financial totals; retain Nat’s assignment unchanged.
 - [x] Correct session-generated budgets to use Products rates and the photography minimum charge; repaired the ANZAHPE draft (Welcome reception $1,100 ex GST; total $6,050 ex GST), removed invented editing charge already included in coverage, deployed function, passed five pricing tests and verified generation/save/reload on a temporary draft then removed it.
 - [x] AI "Create budget from Event Sessions" button on the Budget page: new generate-budget-from-sessions edge function builds draft line items from linked event/enquiry sessions via Lovable AI (structured output, ex-GST prices, 10% tax enforced server-side, fixed group labels); verified end to end on the ANZAHPE 2027 draft budget (6 items from 6 sessions, totals $6,725 ex GST) while signed in; generated items left in place for Trevor's price review; awaiting publish.
