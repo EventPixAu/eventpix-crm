@@ -33,6 +33,10 @@ interface PublicQuoteData {
   subtotal: number | null;
   tax_total: number | null;
   total_estimate: number | null;
+  discount_percent: number | null;
+  discount_amount: number | null;
+  discount_label: string | null;
+  discount_groups: string[] | null;
   valid_until: string | null;
   terms_text: string | null;
   accepted_at: string | null;
@@ -226,8 +230,36 @@ export default function PublicAcceptQuote() {
     ? (includeDelivery === null ? 0 : includeDelivery ? withDeliveryEx : photoOnlyEx)
     : (quote.subtotal || 0);
   const isChoice = isSingleChoice || isDeliveryChoice;
-  const selectedTax = isChoice ? selectedSubtotal * 0.1 : (quote.tax_total || 0);
-  const selectedTotal = isChoice ? selectedSubtotal + selectedTax : (quote.total_estimate || 0);
+
+  // Discount (matches the proposal summary): percentage applies to the
+  // discountable groups; a fixed amount is capped at the eligible subtotal.
+  const discountPct = quote.discount_percent || 0;
+  const discountAmt = quote.discount_amount || 0;
+  const discountLabel = quote.discount_label || '';
+  const discountGroups = quote.discount_groups || null;
+  const hasDiscount = discountPct > 0 || discountAmt > 0;
+  const eligibleSubtotal = (() => {
+    if (!hasDiscount) return 0;
+    const base = isMultiChoice
+      ? multiItems
+      : isSingleChoice && selectedItem
+      ? [selectedItem]
+      : isDeliveryChoice
+      ? visibleItems
+      : quote.items;
+    const scoped = discountGroups && discountGroups.length > 0
+      ? base.filter((i) => discountGroups.includes(i.group_label || 'Other'))
+      : base;
+    return sumEx(scoped);
+  })();
+  const discountValue = hasDiscount
+    ? discountPct > 0
+      ? eligibleSubtotal * discountPct / 100
+      : Math.min(discountAmt, eligibleSubtotal)
+    : 0;
+  const discountedSubtotal = Math.max(0, selectedSubtotal - discountValue);
+  const selectedTax = isChoice ? discountedSubtotal * 0.1 : (quote.tax_total || 0);
+  const selectedTotal = isChoice ? discountedSubtotal + selectedTax : (quote.total_estimate || 0);
   const choiceMade = isMultiChoice ? multiItems.length > 0 : isSingleChoice ? !!selectedItem : isDeliveryChoice ? includeDelivery !== null : true;
 
   return (
@@ -403,6 +435,14 @@ export default function PublicAcceptQuote() {
                   <span className="text-muted-foreground">Subtotal (ex GST)</span>
                   <span>{formatCurrency(selectedSubtotal)}</span>
                 </div>
+                {hasDiscount && discountValue > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">
+                      {`Discount (ex GST)${discountLabel ? ` – ${discountLabel}` : ''}${discountPct > 0 ? ` (${discountPct}%)` : ''}${discountGroups?.length ? ` on ${discountGroups.join(', ')}` : ''}`}
+                    </span>
+                    <span className="text-green-700">-{formatCurrency(discountValue)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">GST (10%)</span>
                   <span>{formatCurrency(selectedTax)}</span>
