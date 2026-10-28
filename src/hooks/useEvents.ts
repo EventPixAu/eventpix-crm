@@ -131,7 +131,8 @@ export function useEventAssignments(eventId: string | undefined) {
           ),
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (
             id,
-            name
+            name,
+            is_onsite
           ),
           session:event_sessions!event_assignments_session_id_fkey (
             id,
@@ -152,7 +153,7 @@ export function useEventAssignments(eventId: string | undefined) {
         .eq('event_id', eventId);
       
       if (error) throw error;
-      return data as EventAssignment[];
+      return data as unknown as EventAssignment[];
     },
     enabled: !!eventId,
   });

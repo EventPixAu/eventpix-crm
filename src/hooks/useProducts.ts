@@ -15,6 +15,7 @@ export interface Product {
   name: string;
   description: string | null;
   unit_price: number;
+  photographer_unit_rate?: number | null;
   tax_rate: number;
   is_active: boolean;
   is_package: boolean;
