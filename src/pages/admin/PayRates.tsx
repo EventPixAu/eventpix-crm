@@ -107,7 +107,7 @@ export default function PayRates() {
                   Each role uses one of two modes:
                 </p>
                 <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-2">
-                  <li><strong>Hourly</strong> — pay = (ceil(session hours) + 1) × hourly rate. The +1hr covers setup, travel, pack-down.</li>
+                  <li><strong>Hourly</strong> — the first two-hour call pays three hours to cover travel and setup. Longer coverage rounds up to whole-hour blocks, with a three-hour paid minimum. Arrival/setup time is not counted separately.</li>
                   <li><strong>Set Rate</strong> — flat amount paid per event regardless of session length (e.g. LBA Stage Photographer = $650).</li>
                 </ul>
                 <p className="text-muted-foreground">

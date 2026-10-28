@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
 
 export type RateMode = 'hourly' | 'fixed';
 
@@ -203,13 +204,12 @@ export function useDeletePayAllowance() {
 
 /**
  * Calculate pay for an assignment based on rate card + session duration.
- * Formula: (ceil(session_hours) + 1) × rate — the extra hour covers setup, travel, pack-down.
+ * Whole coverage-hour blocks, excluding setup; honor the role's minimum call.
  */
 export function calculatePayFromRateCard(
   hourlyRate: number,
-  _minimumPaidHours: number,
+  minimumPaidHours: number,
   sessionDurationHours: number
 ): number {
-  const callHours = Math.ceil(sessionDurationHours);
-  return hourlyRate * (callHours + 1);
+  return hourlyRate * assignmentPaidHours(sessionDurationHours, minimumPaidHours);
 }

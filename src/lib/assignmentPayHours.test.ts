@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { assignmentSessionHours } from './assignmentPayHours';
+import { assignmentPaidHours } from './assignmentPaidHours';
 
 const shoot = { id: 'shoot', session_type: 'live', start_time: '08:30:00', end_time: '10:30:00' };
 const editing = { id: 'editing', session_type: 'post_production', start_time: '09:00:00', end_time: '17:00:00' };
 
 describe('separate photography and editing pay hours', () => {
-  it('pays Nigel three hours at $125 for the two-hour shoot, not nine', () => {
+  it('pays Nigel three hours for the first two-hour call, excluding editing', () => {
     const hours = assignmentSessionHours({ staff_role: { name: 'Photographer' } }, [shoot, editing]);
     expect(hours).toBe(2);
-    expect((Math.ceil(Math.max(hours, 2)) + 1) * 125).toBe(375);
+    expect(assignmentPaidHours(hours, 2) * 125).toBe(375);
   });
   it('retains Nat’s separately linked eight-hour editing session', () => {
     expect(assignmentSessionHours({ session: editing, staff_role: { name: 'Staff Editor', is_onsite: false } }, [shoot, editing])).toBe(8);

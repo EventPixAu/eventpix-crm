@@ -2,8 +2,7 @@
  * EventPaymentPanel
  * 
  * Per-event team payment summary. Calculates per-assignment pay using two formulas:
- *  - Photographer / Videographer: ceil(session_hours) hours billed, plus +1hr that absorbs call/setup time.
- *      pay = (ceil(session_hours) + 1) × rate
+ *  - Photographer / Videographer: whole coverage-hour blocks, excluding setup.
  *  - Editor / Assistant (and others): from call_time to session end, in 0.5hr brackets.
  *      pay = ceil(call_to_end × 2) / 2 × rate
  *
@@ -22,6 +21,8 @@ import { useStaffRoles } from '@/hooks/useLookups';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
+import { isPostEventSession } from '@/lib/editorVisibility';
 
 interface Props {
   eventId: string;
@@ -166,12 +167,13 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
       const boundSession = (a as any).session;
       const sessionsToBill = boundSession?.start_time && boundSession?.end_time
         ? [boundSession]
-        : eventSessions.filter(s => s.start_time && s.end_time);
+        : eventSessions.filter(s => s.start_time && s.end_time && !isPostEventSession(s));
       if (sessionsToBill.length === 0) continue;
 
       for (const session of sessionsToBill) {
-        const startMin = parseHHMM(session.start_time)!;
-        const endMin = parseHHMM(session.end_time)!;
+        const startMin = parseHHMM(session.start_time);
+        const endMin = parseHHMM(session.end_time);
+        if (startMin === null || endMin === null) continue;
         if (endMin <= startMin) continue;
 
       const isPhotog = isPhotographerRole(roleName);
@@ -184,7 +186,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         pay = hours * baseRate;
       } else if (isPhotog) {
         const rawHours = (endMin - startMin) / 60;
-        const billed = Math.ceil(rawHours) + 1;
+        const billed = assignmentPaidHours(rawHours, Number(rateEntry?.minimum_paid_hours) || 0);
         hours = billed;
         pay = billed * baseRate;
       } else {

@@ -9,6 +9,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { assignmentSessionHours } from '@/lib/assignmentPayHours';
+import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
 
 export interface MatchedPayment {
   id: string;
@@ -187,9 +188,8 @@ export function useEventFinancials(eventId: string | undefined) {
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0) continue;
         
-        // Formula: hourly_rate × (ceil(session_hours) + 1)
-        const callHours = Math.ceil(sessionHours);
-        const basePay = rate.hourly_rate * (callHours + 1);
+        const callHours = assignmentPaidHours(sessionHours, rate.minimum_paid_hours ?? 0);
+        const basePay = rate.hourly_rate * callHours;
         expectedStaffCost += basePay;
       }
       

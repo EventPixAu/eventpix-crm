@@ -8,6 +8,7 @@ import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
 import { assignmentSessionHours } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
+import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -48,9 +49,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const hourlyRate = Number(rateEntry.hourly_rate) || 0;
   const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
   const minHours = Number(rateEntry.minimum_paid_hours) || 0;
-  const effectiveHours = Math.max(sessionHours || 0, minHours);
-  const callHours = Math.ceil(effectiveHours);
-  const basePay = isFixedMode ? fixedRate : hourlyRate * (callHours + 1);
+  const callHours = assignmentPaidHours(sessionHours, minHours);
+  const basePay = isFixedMode ? fixedRate : hourlyRate * callHours;
 
   // Calculate extras total
   const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
@@ -137,7 +137,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
           Pay: <span className="font-medium text-foreground">
             {isFixedMode
               ? `$${fixedRate.toFixed(2)} fixed = $${basePay.toFixed(2)}`
-              : `$${hourlyRate.toFixed(2)}/hr × ${callHours + 1}hrs = $${basePay.toFixed(2)}`}
+              : `$${hourlyRate.toFixed(2)}/hr × ${callHours}hrs = $${basePay.toFixed(2)}`}
           </span>
         </span>
       </div>
