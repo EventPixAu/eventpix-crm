@@ -8269,6 +8269,7 @@ export type Database = {
         | { Args: { _user_id: string }; Returns: boolean }
       is_photographer: { Args: { _user_id: string }; Returns: boolean }
       is_sales: { Args: never; Returns: boolean }
+      is_team_member: { Args: { _user_id: string }; Returns: boolean }
       log_audit_entry: {
         Args: {
           p_action: Database["public"]["Enums"]["audit_action"]
