@@ -28,6 +28,8 @@ async function setup(clock?: string) {
   await db.exec(readFileSync('drizzle/migrations/0045_crew_sms_shared_schedule_preview.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0046_crew_sms_individual_switches.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0047_crew_sms_event_series_settings.sql', 'utf8'));
+  await db.exec(`ALTER TABLE events ADD COLUMN delivery_deadline_photographer date, ADD COLUMN delivery_deadline_guests date, ADD COLUMN delivery_deadline date;`);
+  await db.exec(readFileSync('drizzle/migrations/0049_crew_sms_photographer_delivery_date.sql', 'utf8'));
   if (clock) await db.exec(`DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.crew_sms_candidates()'::regprocedure) INTO definition; EXECUTE replace(definition,'now()','timestamptz ''${clock}'''); END $$;`);
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
@@ -142,6 +144,43 @@ describe('scheduled crew SMS database rules', () => {
     try {
       const { rows } = await db.query(`SELECT reminder_type,session_key,due_at=timestamptz '2026-11-01T09:00:00+11:00' AS exact FROM crew_sms_candidates()`);
       expect(rows).toEqual([{reminder_type:'delivery',session_key:'00000000-0000-0000-0000-000000000006',exact:true}]);
+    } finally { await db.close(); }
+  });
+  it('uses Photographer date at 9am minus 24 hours ahead of editing for standard and MASV texts', async () => {
+    const db = await editingSetup('2026-10-31T09:00:00+11:00');
+    try {
+      await db.exec(`UPDATE events SET delivery_deadline_photographer='2026-11-01';`);
+      const query = `SELECT reminder_type,due_at=timestamptz '2026-10-31T09:00:00+11:00' AS exact FROM crew_sms_candidates()`;
+      expect((await db.query(query)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
+      await db.exec(`UPDATE events SET crew_sms_masv_delivery=true;`);
+      expect((await db.query(query)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
+      expect((await db.query(`SELECT * FROM crew_sms_logs`)).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('does not let Guest or Client dates alter file-delivery reminders', async () => {
+    const db = await editingSetup('2026-11-01T09:00:00+11:00');
+    try {
+      await db.exec(`UPDATE events SET delivery_deadline_guests='2026-11-06',delivery_deadline='2026-11-07';`);
+      expect((await db.query(`SELECT reminder_type,due_at=timestamptz '2026-11-01T09:00:00+11:00' AS exact FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
+    } finally { await db.close(); }
+  });
+  it('never sends a Photographer-date reminder before shoot finish', async () => {
+    const db = await editingSetup('2026-10-30T22:00:00+11:00');
+    try {
+      await db.exec(`UPDATE events SET delivery_deadline_photographer='2026-10-30';`);
+      expect((await db.query(`SELECT reminder_type,due_at=timestamptz '2026-10-30T21:30:00+11:00' AS exact FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
+    } finally { await db.close(); }
+  });
+  it('recalculates previews when Photographer date changes and restores editing fallback when cleared', async () => {
+    const db = await editingSetup('2026-10-31T09:00:00+11:00');
+    try {
+      const query = `SELECT to_char(due_at AT TIME ZONE timezone,'YYYY-MM-DD HH24:MI') AS due FROM crew_sms_schedule('2026-10-29','2026-11-05') WHERE reminder_type='delivery'`;
+      await db.exec(`UPDATE events SET delivery_deadline_photographer='2026-11-01';`);
+      expect((await db.query(query)).rows).toEqual([{due:'2026-10-31 09:00'}]);
+      await db.exec(`UPDATE events SET delivery_deadline_photographer='2026-11-03';`);
+      expect((await db.query(query)).rows).toEqual([{due:'2026-11-02 09:00'}]);
+      await db.exec(`UPDATE events SET delivery_deadline_photographer=NULL;`);
+      expect((await db.query(query)).rows).toEqual([{due:'2026-11-01 09:00'}]);
     } finally { await db.close(); }
   });
   it('does not send standard delivery at Friday finish when editing is Monday', async () => {

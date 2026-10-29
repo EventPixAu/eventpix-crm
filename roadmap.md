@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Schedule delivery SMS from the Photographer delivery date at 9am local minus 24 hours, ahead of editing-session fallback; switches, LBA exclusion and duplicate protection retained. 30 database tests passed; signed-in save/reload changed HOB preview to 31 October 9am for 1 November delivery, original blank date restored, no texts sent; timing live, wording awaits publish.
 - [x] Add separate Photographer, Guests and Client delivery dates in that order to event Edit and Overview; existing client deadlines and SMS timing retained; three tests passed, signed-in independent save/reload verified and original dates restored, build OK; awaits publish.
 - [x] Exclude LBA automatic setup/delivery SMS and add separate switches in new-series setup, series Settings and event forms; event overrides otherwise inherit series defaults for existing/new events. 38 tests passed; signed-in preview shows four Churchill reminders and no LBA, series save/reload/restore verified, LBA switches off and event choices verified. No texts sent; LBA exclusion is live, controls await publish.
 - [x] Allow each upcoming crew SMS to be switched off/on; disabled previews retained, sender candidates and post-claim checks skip disabled reminders; 35 tests passed, signed-in off/reload/on verified with all 16 rows retained, original setting restored and no texts sent. Controls await publish.
