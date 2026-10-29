@@ -3,7 +3,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-async function setup() {
+async function setup(clock?: string) {
   const db = new PGlite();
   await db.exec(`
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -11,7 +11,7 @@ async function setup() {
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;
     CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
     CREATE TABLE events(id uuid PRIMARY KEY,event_name text,event_date date,start_time time,end_time time,setup_time text,timezone text,venue_name text,ops_status text,crew_sms_masv_delivery boolean DEFAULT false);
-    CREATE TABLE event_sessions(id uuid PRIMARY KEY,event_id uuid,session_date date,start_time time,end_time time,arrival_time time,timezone text,venue_name text);
+    CREATE TABLE event_sessions(id uuid PRIMARY KEY,event_id uuid,session_date date,start_time time,end_time time,arrival_time time,timezone text,venue_name text,session_type text DEFAULT 'live');
     CREATE TABLE profiles(id uuid PRIMARY KEY,phone text,is_active boolean);
     CREATE TABLE staff(id uuid PRIMARY KEY,user_id uuid,name text,phone text,status text);
     CREATE TABLE staff_roles(id uuid PRIMARY KEY,name text,is_onsite boolean);
@@ -20,6 +20,8 @@ async function setup() {
   await db.exec(readFileSync('drizzle/migrations/0028_crew_sms_reminders.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0029_hourly_crew_sms_window.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0034_crew_sms_manual_followup.sql', 'utf8'));
+  const timingSql = readFileSync('drizzle/migrations/0043_crew_sms_editing_delivery_timing.sql', 'utf8');
+  await db.exec(clock ? timingSql.split('now()').join(`timestamptz '${clock}'`) : timingSql);
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
     INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
@@ -31,6 +33,48 @@ async function setup() {
 }
 
 describe('scheduled crew SMS database rules', () => {
+  async function editingSetup(clock: string) {
+    const db = await setup(clock);
+    await db.exec(`
+      UPDATE crew_sms_settings SET enabled_at='2026-10-23T00:00:00Z';
+      UPDATE events SET event_date='2026-10-30',start_time='18:30',end_time='21:30',setup_time='18:15',timezone='Australia/Hobart';
+      INSERT INTO event_sessions(id,event_id,session_date,start_time,end_time,arrival_time,timezone,session_type) VALUES
+      ('00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000001','2026-10-30','18:30','21:30','18:15','Australia/Hobart','live'),
+      ('00000000-0000-0000-0000-000000000007','00000000-0000-0000-0000-000000000001','2026-11-02','09:00','17:00','09:00','Australia/Hobart','post_production');
+    `);
+    return db;
+  }
+  it('delays Friday files until Sunday 9am for Monday 9am editing', async () => {
+    const db = await editingSetup('2026-11-01T09:00:00+11:00');
+    try {
+      const { rows } = await db.query(`SELECT reminder_type,session_key,due_at=timestamptz '2026-11-01T09:00:00+11:00' AS exact FROM crew_sms_candidates()`);
+      expect(rows).toEqual([{reminder_type:'delivery',session_key:'00000000-0000-0000-0000-000000000006',exact:true}]);
+    } finally { await db.close(); }
+  });
+  it('does not send standard delivery at Friday finish when editing is Monday', async () => {
+    const db = await editingSetup('2026-10-30T22:00:00+11:00');
+    try { expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(0); }
+    finally { await db.close(); }
+  });
+  it('keeps MASV ASAP at Friday finish despite Monday editing', async () => {
+    const db = await editingSetup('2026-10-30T22:00:00+11:00');
+    try {
+      await db.exec('UPDATE events SET crew_sms_masv_delivery=true');
+      expect((await db.query(`SELECT reminder_type,due_at=timestamptz '2026-10-30T21:30:00+11:00' AS exact FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
+    } finally { await db.close(); }
+  });
+  it('does not send photographer setup texts for the Monday editing session', async () => {
+    const db = await editingSetup('2026-11-01T09:00:00+11:00');
+    try { expect((await db.query(`SELECT * FROM crew_sms_candidates() WHERE reminder_type='setup'`)).rows).toHaveLength(0); }
+    finally { await db.close(); }
+  });
+  it('retains delayed delivery for shoots older than the previous two-day scan limit', async () => {
+    const db = await editingSetup('2026-11-01T09:00:00+11:00');
+    try {
+      await db.exec(`UPDATE events SET event_date='2026-10-26'; UPDATE event_sessions SET session_date='2026-10-26' WHERE session_type='live';`);
+      expect((await db.query(`SELECT reminder_type FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'delivery'}]);
+    } finally { await db.close(); }
+  });
   it('still selects reminders one hour after their target time', async () => {
     const db = await setup();
     try {

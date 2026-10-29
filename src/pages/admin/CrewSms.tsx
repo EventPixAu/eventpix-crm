@@ -32,7 +32,7 @@ const STATUS_VARIANTS: Record<string, { label: string; variant: 'default' | 'sec
 
 const TYPE_LABELS: Record<string, string> = {
   setup: 'Setup reminder (24h before)',
-  delivery: 'Delivery reminder (at finish)',
+  delivery: 'Delivery reminder',
   followup: 'Manual follow-up',
 };
 
@@ -203,7 +203,7 @@ export default function CrewSms() {
     <AppLayout>
       <PageHeader
         title="Crew SMS Reminders"
-        description="Texts to crew and photographers via ClickSend — a setup reminder 24 hours before event setup, and a delivery reminder at event finish time."
+        description="Setup reminders 24 hours before setup; file reminders 24 hours before scheduled editing, otherwise at event finish."
       />
 
       <div className="space-y-4 max-w-6xl">
@@ -215,7 +215,7 @@ export default function CrewSms() {
             </CardTitle>
             <CardDescription>
               Checks run hourly. Each crew member receives one setup reminder per event and one delivery
-              reminder at event finish. Cancelled events and offsite or declined assignments are excluded.
+              reminder 24 hours before scheduled editing, otherwise at event finish. MASV ASAP stays at event finish. Cancelled events and offsite or declined assignments are excluded.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -253,7 +253,7 @@ export default function CrewSms() {
               <Textarea value={setupTemplate} onChange={(e) => setSetupTemplate(e.target.value)} rows={3} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Delivery reminder — sent at event finish</label>
+              <label className="text-sm font-medium">Delivery reminder — 24 hours before editing, otherwise at finish</label>
               <Textarea value={deliveryTemplate} onChange={(e) => setDeliveryTemplate(e.target.value)} rows={3} />
             </div>
             <div className="space-y-1.5">
