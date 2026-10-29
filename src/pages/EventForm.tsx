@@ -845,101 +845,43 @@ export default function EventForm() {
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
               <h3 className="font-display font-semibold">Delivery</h3>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="delivery_method_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Method - Client</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || undefined}>
-                        <FormControl>
-                          <SelectTrigger className="bg-secondary">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {deliveryMethods.map((method) => (
-                            <SelectItem key={method.id} value={method.id}>
-                              {method.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="delivery_method_guests_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Method - Guests</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || undefined}>
-                        <FormControl>
-                          <SelectTrigger className="bg-secondary">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {deliveryMethods.map((method) => (
-                            <SelectItem key={method.id} value={method.id}>
-                              {method.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="delivery_method_photographer_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery - Photographer</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || undefined}>
-                        <FormControl>
-                          <SelectTrigger className="bg-secondary">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {deliveryMethods.map((method) => (
-                            <SelectItem key={method.id} value={method.id}>
-                              {method.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-              </div>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {eventDeliveryDateFields.map(({ name, label }) => (
+              {eventDeliveryDateFields.map(({ name, label, method, recipient }) => (
+                <div key={name} className="grid grid-cols-2 gap-4">
                   <FormField
-                    key={name}
+                    control={form.control}
+                    name={method}
+                    render={({ field }) => (
+                      <FormItem className="min-w-0">
+                        <FormLabel>Delivery - {recipient}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || undefined} disabled={isFormLocked}>
+                          <FormControl>
+                            <SelectTrigger className="bg-secondary"><SelectValue placeholder="Select method" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {deliveryMethods.map((deliveryMethod) => (
+                              <SelectItem key={deliveryMethod.id} value={deliveryMethod.id}>{deliveryMethod.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
                     control={form.control}
                     name={name}
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{label}</FormLabel>
+                      <FormItem className="min-w-0">
+                        <FormLabel>Delivery date</FormLabel>
                         <FormControl>
-                          <Input {...field} type="date" className="bg-secondary" disabled={isFormLocked} />
+                          <Input {...field} aria-label={label} type="date" className="bg-secondary min-w-0" disabled={isFormLocked} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
             {/* Sessions Section - only show when editing */}
