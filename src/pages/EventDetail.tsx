@@ -1650,6 +1650,7 @@ export default function EventDetail() {
                         eventId={id} 
                         currentTemplateId={(event as any).workflow_template_id}
                         currentEventTypeId={(event as any).workflow_event_type_id || (event as any).event_type_id}
+                        assignedEventTypeId={event.workflow_event_type_id}
                         workflowLabel={eventTypes.find(type => type.id === event.workflow_event_type_id)?.name}
                         isSeriesEvent={!!(event as any).event_series_id}
                       />

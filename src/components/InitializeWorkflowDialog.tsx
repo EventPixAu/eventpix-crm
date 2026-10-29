@@ -38,6 +38,7 @@ interface InitializeWorkflowDialogProps {
   eventId: string;
   currentTemplateId?: string | null;
   currentEventTypeId?: string | null;
+  assignedEventTypeId?: string | null;
   workflowLabel?: string | null;
   trigger?: React.ReactNode;
   /** When the event belongs to a series, series-level steps are excluded (they live on the series checklist). */
@@ -48,6 +49,7 @@ export function InitializeWorkflowDialog({
   eventId,
   currentTemplateId,
   currentEventTypeId,
+  assignedEventTypeId,
   workflowLabel,
   trigger,
   isSeriesEvent = false,
@@ -192,7 +194,7 @@ export function InitializeWorkflowDialog({
 
   // Show the workflow that is actually assigned to this job, not the event's category
   const resolvedWorkflowLabel =
-    eventTypes.find(t => t.id === currentEventTypeId)?.name || workflowLabel;
+    eventTypes.find(t => t.id === assignedEventTypeId)?.name || workflowLabel;
   
   return (
     <div className="flex items-center gap-2 min-w-0">
