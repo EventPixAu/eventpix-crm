@@ -302,6 +302,13 @@
       "when": 1793228772918,
       "tag": "0042_assignment_equipment_amount",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793250772907,
+      "tag": "0043_crew_sms_editing_delivery_timing",
+      "breakpoints": true
     }
   ]
 }
