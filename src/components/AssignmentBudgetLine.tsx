@@ -6,9 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
-import { assignmentSessionHours, assignmentPaySession } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
-import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS, alignedCallUnits } from '@/lib/assignmentPaidHours';
+import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
@@ -46,7 +46,6 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   if (!canView || isLoading || !rateEntry) return null;
 
   const sessionHours = assignmentSessionHours(assignment, eventSessions);
-  const paySession = assignmentPaySession(assignment as any, eventSessions);
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
   const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
@@ -56,12 +55,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
-  // Whole-clock-hour calls (arrival and finish on the hour) pay the call span itself, no separate prep unit.
-  const alignedUnits = alignedCallUnits(
-    (paySession as any)?.arrival_time || paySession?.start_time || null,
-    paySession?.end_time || null,
-  );
-  const payUnits = hasHoursOverride ? callHours : (alignedUnits ?? assignmentPaidHours(sessionHours, minHours));
+  const { units: payUnits, mergedCall } = assignmentPayUnits(assignment as any, eventSessions, minHours);
+  const alignedUnits = mergedCall ? payUnits : null;
   const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
 
   // Calculate extras total
