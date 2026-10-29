@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Synchronize actual assigned workflow steps when an event's Event Type changes, keeping workflow progress where steps are shared.
 - [x] Keep client rates in Products and photographer rates exclusively in existing Pay Rates; removed cross-link, verified independent $275/$125 editing and one selected photographer's $125 lighting pay saved/reloaded; temporary allocation removed, 20 tests passed, build OK; awaiting publish.
 - [x] Keep AI session budget preparation visible beside Products & Packages in every editable budget, empty or populated; verified on Trevor’s new Q-1882a894 and a second draft without generating or changing items; five pricing tests passed, build OK; awaiting publish.
 - [x] Apply clarified minimum: first two-hour call pays three hours covering travel/setup; 2.5-hour coverage also pays three hours, arrival excluded. Shared rounding applied across pay views and totals; 13 tests passed including unchanged client budget pricing, actual two-hour assignment verified at $375; awaiting publish.
