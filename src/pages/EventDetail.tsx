@@ -751,11 +751,13 @@ export default function EventDetail() {
                           value={event.event_type_id || ''}
                           onValueChange={async (value) => {
                             setIsUpdatingStatus(true);
-                            await updateEvent.mutateAsync({
-                              id: event.id,
-                              event_type_id: value,
-                            });
-                            setIsUpdatingStatus(false);
+                            try {
+                              await updateEvent.mutateAsync({ id: event.id, event_type_id: value });
+                            } catch {
+                              // The shared save action displays the error.
+                            } finally {
+                              setIsUpdatingStatus(false);
+                            }
                           }}
                           disabled={isUpdatingStatus}
                         >
@@ -1648,7 +1650,8 @@ export default function EventDetail() {
                         eventId={id} 
                         currentTemplateId={(event as any).workflow_template_id}
                         currentEventTypeId={(event as any).workflow_event_type_id || (event as any).event_type_id}
-                        workflowLabel={getEventTypeName()}
+                        assignedEventTypeId={event.workflow_event_type_id}
+                        workflowLabel={eventTypes.find(type => type.id === event.workflow_event_type_id)?.name}
                         isSeriesEvent={!!(event as any).event_series_id}
                       />
                     </div>
