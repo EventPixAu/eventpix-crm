@@ -6,9 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
-import { assignmentSessionHours } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPaySession } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
-import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
+import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS, alignedCallUnits } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
