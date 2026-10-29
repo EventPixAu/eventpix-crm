@@ -45,4 +45,8 @@ describe('team payment units', () => {
     const session = { start_time: '17:00:00', end_time: '21:00:00' };
     expect(assignmentPayUnits({ session, hours_override: 6 }, [session], 2)).toEqual({ units: 6, mergedCall: false });
   });
+  it('an event call time of 10:30 keeps 11:00–16:00 on coverage + preparation units', () => {
+    const session = { start_time: '11:00:00', end_time: '16:00:00' };
+    expect(assignmentPayUnits({ session }, [session], 2, '10:30:00')).toEqual({ units: 6, mergedCall: false });
+  });
 });
