@@ -3,7 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { normalizeMobile, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_SETUP_TEMPLATE, JOB_SHEET_LINK, FOLLOWUP_RESEND_WINDOW_MS } from './reminders.ts';
 
-const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview', 'followup']).default('process'), event_id: z.string().uuid().optional() }).strict();
+const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview', 'followup', 'upcoming']).default('process'), event_id: z.string().uuid().optional() }).strict();
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 type Db = ReturnType<typeof createClient>;
@@ -48,6 +48,33 @@ Deno.serve(async req => {
       }
     }
     if (!authorized) return reply({ error: 'Unauthorized' }, 401);
+    if (parsed.data.mode === 'upcoming') {
+      const from = new Date();
+      const until = new Date(from.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const { data: schedule, error } = await db.rpc('crew_sms_schedule', { _from: from.toISOString(), _until: until.toISOString() });
+      if (error) throw new Error('Cannot load upcoming reminders');
+      const { data: settings, error: settingsError } = await db.from('crew_sms_settings').select('enabled, setup_template, delivery_template, delivery_template_masv').eq('id', true).maybeSingle();
+      if (settingsError) throw new Error('Cannot load SMS settings');
+      const eventIds = [...new Set((schedule || []).map(c => c.event_id))];
+      if (!eventIds.length) return reply({ reminders: [], enabled: settings?.enabled ?? false });
+      const [claimsResult, eventsResult, assignmentsResult] = await Promise.all([
+        db.from('crew_sms_logs').select('event_id,session_key,recipient_key,reminder_type').in('event_id', eventIds),
+        db.from('events').select('id,crew_sms_masv_delivery').in('id', eventIds),
+        db.from('event_assignments').select('event_id,user_id,staff_id,profiles(full_name),staff(name,user_id)').in('event_id', eventIds),
+      ]);
+      if (claimsResult.error || eventsResult.error || assignmentsResult.error) throw new Error('Cannot load schedule details');
+      const reminders = (schedule || []).filter(c => !claimsResult.data?.some(l => l.event_id === c.event_id && l.session_key === c.session_key && l.recipient_key === c.recipient_key && l.reminder_type === c.reminder_type)).map(c => {
+        const phone = normalizeMobile(c.phone || '');
+        const masv = eventsResult.data?.some(e => e.id === c.event_id && e.crew_sms_masv_delivery) ?? false;
+        const assignment = assignmentsResult.data?.find(a => a.event_id === c.event_id && (a.user_id === c.recipient_key || a.staff_id === c.recipient_key || a.staff?.user_id === c.recipient_key));
+        const timeFormat = new Intl.DateTimeFormat('en-AU', { timeZone: c.timezone, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+        const body = c.reminder_type === 'setup'
+          ? renderTemplate(settings?.setup_template || DEFAULT_SETUP_TEMPLATE, { event_name: c.event_name, venue: c.venue_name || 'TBC', setup_time: timeFormat.format(new Date(c.setup_at)), job_sheet_link: JOB_SHEET_LINK })
+          : renderTemplate(deliveryBodyTemplate(masv, settings), { event_name: c.event_name, finish_time: timeFormat.format(new Date(c.finish_at)), job_sheet_link: JOB_SHEET_LINK });
+        return { event_id: c.event_id, session_key: c.session_key, recipient_key: c.recipient_key, event_name: c.event_name, recipient_name: assignment?.profiles?.full_name || assignment?.staff?.name || 'Team member', reminder_type: c.reminder_type, due_at: c.due_at, expected_at: new Date(Math.ceil(Date.parse(c.due_at) / 3600000) * 3600000).toISOString(), timezone: c.timezone, phone, body, blocked: !phone ? 'Invalid mobile number' : /\{\{[^}]*\}\}/.test(body) ? 'Unresolved message fields' : null };
+      }).sort((a,b) => Date.parse(a.due_at)-Date.parse(b.due_at));
+      return reply({ reminders, enabled: settings?.enabled ?? false });
+    }
     const username = Deno.env.get('CLICKSEND_USERNAME');
     const apiKey = Deno.env.get('CLICKSEND_API_KEY');
     if (!username || !apiKey) return reply({ error: 'ClickSend is not configured' }, 503);

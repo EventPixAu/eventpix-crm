@@ -316,6 +316,13 @@
       "when": 1793251034528,
       "tag": "0044_crew_sms_masv_scheduled_delivery_priority",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793251542524,
+      "tag": "0045_crew_sms_shared_schedule_preview",
+      "breakpoints": true
     }
   ]
 }

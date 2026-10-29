@@ -21,8 +21,10 @@ async function setup(clock?: string) {
   await db.exec(readFileSync('drizzle/migrations/0029_hourly_crew_sms_window.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0034_crew_sms_manual_followup.sql', 'utf8'));
   const timingSql = readFileSync('drizzle/migrations/0043_crew_sms_editing_delivery_timing.sql', 'utf8');
-  await db.exec(clock ? timingSql.split('now()').join(`timestamptz '${clock}'`) : timingSql);
+  await db.exec(timingSql);
   await db.exec(readFileSync('drizzle/migrations/0044_crew_sms_masv_scheduled_delivery_priority.sql', 'utf8'));
+  await db.exec(readFileSync('drizzle/migrations/0045_crew_sms_shared_schedule_preview.sql', 'utf8'));
+  if (clock) await db.exec(`DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.crew_sms_candidates()'::regprocedure) INTO definition; EXECUTE replace(definition,'now()','timestamptz ''${clock}'''); END $$;`);
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
     INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
@@ -34,6 +36,16 @@ async function setup(clock?: string) {
 }
 
 describe('scheduled crew SMS database rules', () => {
+  it('previews only reminders in the requested next-seven-days window without creating logs', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`UPDATE crew_sms_settings SET enabled_at='2026-10-01'; UPDATE events SET event_date='2026-11-02',setup_time='09:00',end_time='17:00',timezone='Australia/Sydney';`);
+      expect((await db.query(`SELECT reminder_type FROM crew_sms_schedule('2026-10-29T16:24:00+11:00','2026-11-05T16:24:00+11:00') ORDER BY due_at`)).rows).toEqual([{reminder_type:'setup'},{reminder_type:'delivery'}]);
+      await db.exec(`UPDATE events SET event_date='2026-11-07';`);
+      expect((await db.query(`SELECT * FROM crew_sms_schedule('2026-10-29T16:24:00+11:00','2026-11-05T16:24:00+11:00')`)).rows).toHaveLength(0);
+      expect((await db.query('SELECT * FROM crew_sms_logs')).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
   async function editingSetup(clock: string) {
     const db = await setup(clock);
     await db.exec(`
