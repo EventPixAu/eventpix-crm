@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assignmentPaidHours, assignmentCoverageUnits, alignedCallUnits } from './assignmentPaidHours';
-import { assignmentSessionHours } from './assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits, assignmentCallStartTime } from './assignmentPayHours';
 
 describe('team payment units', () => {
   it('6:30pm–9:30pm pays 3 photography units + 1 prep unit = $500', () => {
@@ -30,5 +30,19 @@ describe('team payment units', () => {
   });
   it('calls that finish on a half hour are not aligned', () => {
     expect(alignedCallUnits('17:00:00', '20:30:00')).toBeNull();
+  });
+  it('whole-clock-hour call with on-the-hour arrival merges prep into the call units', () => {
+    const session = { start_time: '17:00:00', end_time: '21:00:00' };
+    const assignment = { session, call_time_at: '2026-12-24T17:00:00+00:00' };
+    expect(assignmentCallStartTime(assignment, session)).toBe('17:00');
+    expect(assignmentPayUnits(assignment, [session], 2)).toEqual({ units: 4, mergedCall: true });
+  });
+  it('call before the hour keeps coverage + preparation units', () => {
+    const session = { start_time: '18:30:00', end_time: '21:30:00', arrival_time: '18:15:00' };
+    expect(assignmentPayUnits({ session }, [session], 2)).toEqual({ units: 4, mergedCall: false });
+  });
+  it('a manual hours override wins over the aligned-call rule', () => {
+    const session = { start_time: '17:00:00', end_time: '21:00:00' };
+    expect(assignmentPayUnits({ session, hours_override: 6 }, [session], 2)).toEqual({ units: 6, mergedCall: false });
   });
 });
