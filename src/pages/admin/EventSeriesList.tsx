@@ -43,6 +43,7 @@ import {
 import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { CrewSmsSettings } from '@/components/CrewSmsSettings';
 
 export default function EventSeriesList() {
   const navigate = useNavigate();
@@ -56,6 +57,8 @@ export default function EventSeriesList() {
   const [newSeriesType, setNewSeriesType] = useState<'multi_venue' | 'single_venue'>('multi_venue');
   const [newVenueName, setNewVenueName] = useState('');
   const [newVenueAddress, setNewVenueAddress] = useState('');
+  const [newSetupSms, setNewSetupSms] = useState(true);
+  const [newDeliverySms, setNewDeliverySms] = useState(true);
   
   const { data: series = [], isLoading } = useEventSeries();
   const { data: eventTypes = [] } = useEventTypes();
@@ -94,6 +97,8 @@ export default function EventSeriesList() {
       default_coverage_details: newCoverage || null,
       notes: newNotes || null,
       is_active: true,
+      crew_sms_setup_enabled: newSetupSms,
+      crew_sms_delivery_enabled: newDeliverySms,
       series_type: newSeriesType,
       default_venue_name: newSeriesType === 'single_venue' ? (newVenueName.trim() || null) : null,
       default_venue_address: newSeriesType === 'single_venue' ? (newVenueAddress.trim() || null) : null,
@@ -113,6 +118,8 @@ export default function EventSeriesList() {
     setNewSeriesType('multi_venue');
     setNewVenueName('');
     setNewVenueAddress('');
+    setNewSetupSms(true);
+    setNewDeliverySms(true);
   };
 
   const handleToggleActive = async (id: string, currentActive: boolean) => {
@@ -256,6 +263,9 @@ export default function EventSeriesList() {
                   />
                 </div>
               </div>
+              <CrewSmsSettings setup={newSetupSms} delivery={newDeliverySms}
+                lba={/\bLBA\b/i.test(`${newName} ${eventTypes.find(t => t.id === newEventTypeId)?.name || ''}`)}
+                onChange={(kind, value) => kind === 'setup' ? setNewSetupSms(value ?? true) : setNewDeliverySms(value ?? true)} />
               <DialogFooter>
                 <Button variant="outline" onClick={() => { resetForm(); setCreateOpen(false); }}>
                   Cancel

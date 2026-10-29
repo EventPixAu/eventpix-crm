@@ -28,6 +28,8 @@ export interface EventSeries {
 
 export type CreateEventSeriesInput = {
   name: string;
+  crew_sms_setup_enabled?: boolean;
+  crew_sms_delivery_enabled?: boolean;
   event_type_id?: string | null;
   default_coverage_details?: string | null;
   default_delivery_method_id?: string | null;
