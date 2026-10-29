@@ -806,15 +806,12 @@ export default function EventDetail() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <Input
-                              type="date"
+                            <CalendarDatePicker
                               aria-label={label}
-                              title={label}
-                              value={event[name] || ''}
-                              className="h-8 w-full min-w-0 px-1 text-xs"
+                              value={event[name]}
                               disabled={isUpdatingStatus}
-                              onChange={async (e) => {
-                                const value = e.target.value || null;
+                              className="h-8 w-full min-w-0 text-xs"
+                              onChange={async (value) => {
                                 setIsUpdatingStatus(true);
                                 try {
                                   await updateEvent.mutateAsync({ id: event.id, [name]: value });
