@@ -59,6 +59,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { CalendarDatePicker } from '@/components/CalendarDatePicker';
 import { eventDeliveryDateFields } from '@/lib/eventDeliveryDates';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent, type EventAssignment } from '@/hooks/useEvents';

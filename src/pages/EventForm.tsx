@@ -874,7 +874,13 @@ export default function EventForm() {
                       <FormItem className="min-w-0">
                         <FormLabel>Delivery date</FormLabel>
                         <FormControl>
-                          <Input {...field} aria-label={label} type="date" className="bg-secondary min-w-0" disabled={isFormLocked} />
+                          <CalendarDatePicker
+                            aria-label={label}
+                            value={field.value}
+                            disabled={isFormLocked}
+                            className="bg-secondary min-w-0"
+                            onChange={(value) => field.onChange(value ?? '')}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
