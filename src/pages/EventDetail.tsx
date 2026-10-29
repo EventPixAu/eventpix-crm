@@ -59,6 +59,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { eventDeliveryDateFields } from '@/lib/eventDeliveryDates';
 import { useAuth } from '@/lib/auth';
 import { useEvent, useEventAssignments, useDeleteEvent, useUpdateEvent, type EventAssignment } from '@/hooks/useEvents';
 import { useEventSessions } from '@/hooks/useEventSessions';
@@ -889,19 +890,38 @@ export default function EventDetail() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Calendar className="h-4 w-4 text-primary" />
+                  {eventDeliveryDateFields.map(({ name, label }) => (
+                    <div key={name} className="flex items-start gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Calendar className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-muted-foreground">{label}</p>
+                        {isAdmin ? (
+                          <Input
+                            type="date"
+                            aria-label={label}
+                            value={event[name] || ''}
+                            className="h-8 w-full max-w-[200px] mt-1"
+                            disabled={isUpdatingStatus}
+                            onChange={async (e) => {
+                              const value = e.target.value || null;
+                              setIsUpdatingStatus(true);
+                              try {
+                                await updateEvent.mutateAsync({ id: event.id, [name]: value });
+                              } finally {
+                                setIsUpdatingStatus(false);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <p className="font-medium">
+                            {event[name] ? format(parseISO(event[name].slice(0, 10)), 'EEEE, MMMM d, yyyy') : 'Not set'}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground">Delivery Date</p>
-                      <p className="font-medium">
-                        {(event as any).delivery_deadline
-                          ? format(parseISO((event as any).delivery_deadline.slice(0, 10)), 'EEEE, MMMM d, yyyy')
-                          : 'Not set'}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
 
                   <EventDeliveryChoicePanel event={event} canSend={isAdmin || isOperations || isSales} />
 

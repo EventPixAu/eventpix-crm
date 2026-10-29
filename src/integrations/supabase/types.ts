@@ -3752,6 +3752,8 @@ export type Database = {
           crew_sms_setup_enabled: boolean | null
           date_status: string | null
           delivery_deadline: string | null
+          delivery_deadline_guests: string | null
+          delivery_deadline_photographer: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
           delivery_method_guests_id: string | null
           delivery_method_id: string | null
@@ -3849,6 +3851,8 @@ export type Database = {
           crew_sms_setup_enabled?: boolean | null
           date_status?: string | null
           delivery_deadline?: string | null
+          delivery_deadline_guests?: string | null
+          delivery_deadline_photographer?: string | null
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null
@@ -3948,6 +3952,8 @@ export type Database = {
           crew_sms_setup_enabled?: boolean | null
           date_status?: string | null
           delivery_deadline?: string | null
+          delivery_deadline_guests?: string | null
+          delivery_deadline_photographer?: string | null
           delivery_method?:
             | Database["public"]["Enums"]["delivery_method"]
             | null

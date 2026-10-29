@@ -45,6 +45,7 @@ import { useEventContacts, useCreateEventContact, useUpdateEventContact } from '
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import { useActiveVenues, type Venue } from '@/hooks/useVenues';
 import { CrewSmsSettings } from '@/components/CrewSmsSettings';
+import { eventDeliveryDateFields, eventDeliveryDateValues } from '@/lib/eventDeliveryDates';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -66,6 +67,8 @@ const eventSchema = z.object({
   delivery_method_guests_id: z.string().optional().nullable(),
   delivery_method_photographer_id: z.string().optional().nullable(),
   delivery_deadline: z.string().optional(),
+  delivery_deadline_photographer: z.string().optional(),
+  delivery_deadline_guests: z.string().optional(),
   meal_provided: z.string().optional(),
   parking_provided: z.string().optional(),
   notes: z.string().optional(),
@@ -147,6 +150,8 @@ export default function EventForm() {
       delivery_method_guests_id: null,
       delivery_method_photographer_id: null,
       delivery_deadline: '',
+      delivery_deadline_photographer: '',
+      delivery_deadline_guests: '',
       meal_provided: '',
       parking_provided: '',
       notes: '',
@@ -275,6 +280,8 @@ export default function EventForm() {
         delivery_method_guests_id: (event as any).delivery_method_guests_id || null,
         delivery_method_photographer_id: (event as any).delivery_method_photographer_id || null,
         delivery_deadline: event.delivery_deadline || '',
+        delivery_deadline_photographer: event.delivery_deadline_photographer || '',
+        delivery_deadline_guests: event.delivery_deadline_guests || '',
         meal_provided: (event as any).meal_provision_status || ((event as any).meal_provided === true ? 'yes' : (event as any).meal_provided === false ? 'no' : ''),
         parking_provided: (event as any).parking_provision_status || ((event as any).parking_provided === true ? 'yes' : (event as any).parking_provided === false ? 'no' : ''),
         notes: event.notes || '',
@@ -327,6 +334,8 @@ export default function EventForm() {
         delivery_method_guests_id: null,
         delivery_method_photographer_id: null,
         delivery_deadline: deliveryDeadline,
+        delivery_deadline_photographer: '',
+        delivery_deadline_guests: '',
         meal_provided: '',
         parking_provided: '',
         notes: sourceLead.notes || '',
@@ -380,7 +389,7 @@ export default function EventForm() {
       delivery_method_id: values.delivery_method_id || null,
       delivery_method_guests_id: values.delivery_method_guests_id || null,
       delivery_method_photographer_id: values.delivery_method_photographer_id || null,
-      delivery_deadline: values.delivery_deadline || null,
+      ...eventDeliveryDateValues(values),
       meal_provided: values.meal_provided === 'yes' ? true : values.meal_provided === 'no' ? false : null,
       parking_provided: values.parking_provided === 'yes' ? true : values.parking_provided === 'no' ? false : null,
       meal_provision_status: values.meal_provided || null,
@@ -912,19 +921,24 @@ export default function EventForm() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="delivery_deadline"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Deadline</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="date" className="bg-secondary" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {eventDeliveryDateFields.map(({ name, label }) => (
+                  <FormField
+                    key={name}
+                    control={form.control}
+                    name={name}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="date" className="bg-secondary" disabled={isFormLocked} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
               </div>
             </div>
 
