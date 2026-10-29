@@ -40,6 +40,7 @@ import { useAuth } from '@/lib/auth';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
+import { EquipmentItemSelect } from './EquipmentItemSelect';
 import { StaffEquipmentPreview } from './StaffEquipmentPreview';
 import { AdditionalEquipmentNotes } from './AdditionalEquipmentNotes';
 
@@ -465,18 +466,13 @@ export function EventEquipmentPanel({ eventId, assignments = [] }: EventEquipmen
                     Allocate Individual Item
                   </Label>
                   <div className="flex gap-2">
-                    <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select item..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableItems?.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name} ({item.category})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <EquipmentItemSelect
+                      items={availableItems || []}
+                      value={selectedItemId}
+                      onValueChange={setSelectedItemId}
+                      placeholder="Select item..."
+                      className="flex-1"
+                    />
                     <Button onClick={handleAllocateItem} disabled={!selectedItemId || allocateEquipment.isPending}>
                       Allocate
                     </Button>

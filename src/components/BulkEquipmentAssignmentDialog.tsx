@@ -25,6 +25,7 @@ import { useProfiles, useStaffRoles } from '@/hooks/useStaff';
 import { useAvailableEquipment } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useBulkAllocateEquipment } from '@/hooks/useBulkEquipmentAllocation';
+import { EquipmentItemSelect } from './EquipmentItemSelect';
 import { toast } from 'sonner';
 
 interface BulkEquipmentAssignmentDialogProps {
@@ -192,18 +193,12 @@ export function BulkEquipmentAssignmentDialog({
             </div>
 
             {allocationType === 'item' ? (
-              <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select equipment item..." />
-                </SelectTrigger>
-                <SelectContent className="bg-background">
-                  {availableItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name} ({item.category})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <EquipmentItemSelect
+                items={availableItems}
+                value={selectedItemId}
+                onValueChange={setSelectedItemId}
+                placeholder="Select equipment item..."
+              />
             ) : (
               <Select value={selectedKitId} onValueChange={setSelectedKitId}>
                 <SelectTrigger>
