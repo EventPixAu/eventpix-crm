@@ -779,145 +779,56 @@ export default function EventDetail() {
                     </div>
                   </div>
 
-                  {/* Delivery Method - Guests */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Package className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Delivery Method - Guests</p>
-                      {isAdmin ? (
-                        <Select
-                          value={event.delivery_method_guests_id || ''}
-                          onValueChange={async (value) => {
-                            setIsUpdatingStatus(true);
-                            await updateEvent.mutateAsync({
-                              id: event.id,
-                              delivery_method_guests_id: value,
-                            });
-                            setIsUpdatingStatus(false);
-                          }}
-                          disabled={isUpdatingStatus}
-                        >
-                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {deliveryMethods.map((method) => (
-                              <SelectItem key={method.id} value={method.id}>
-                                {method.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="font-medium capitalize">{getDeliveryMethodName('delivery_method_guests_id') || 'Not set'}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Delivery Method - Client */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Package className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Delivery Method - Client</p>
-                      {isAdmin ? (
-                        <Select
-                          value={event.delivery_method_id || ''}
-                          onValueChange={async (value) => {
-                            setIsUpdatingStatus(true);
-                            await updateEvent.mutateAsync({
-                              id: event.id,
-                              delivery_method_id: value,
-                            });
-                            setIsUpdatingStatus(false);
-                          }}
-                          disabled={isUpdatingStatus}
-                        >
-                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {deliveryMethods.map((method) => (
-                              <SelectItem key={method.id} value={method.id}>
-                                {method.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="font-medium capitalize">{getDeliveryMethodName('delivery_method_id') || 'Not set'}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Delivery - Photographer */}
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Package className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Delivery - Photographer</p>
-                      {isAdmin ? (
-                        <Select
-                          value={(event as any).delivery_method_photographer_id || ''}
-                          onValueChange={async (value) => {
-                            setIsUpdatingStatus(true);
-                            await updateEvent.mutateAsync({
-                              id: event.id,
-                              delivery_method_photographer_id: value,
-                            } as any);
-                            setIsUpdatingStatus(false);
-                          }}
-                          disabled={isUpdatingStatus}
-                        >
-                          <SelectTrigger className="h-8 w-full max-w-[200px] mt-1">
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {deliveryMethods.map((method) => (
-                              <SelectItem key={method.id} value={method.id}>
-                                {method.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="font-medium capitalize">{getDeliveryMethodName('delivery_method_photographer_id') || 'Not set'}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {eventDeliveryDateFields.map(({ name, label }) => (
-                    <div key={name} className="flex items-start gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Calendar className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-muted-foreground">{label}</p>
+                  {eventDeliveryDateFields.map(({ name, label, method, recipient }) => (
+                    <div key={name} className="min-w-0 space-y-1">
+                      <p className="text-sm text-muted-foreground">Delivery - {recipient}</p>
+                      <div className="grid grid-cols-2 gap-2 min-w-0">
                         {isAdmin ? (
-                          <Input
-                            type="date"
-                            aria-label={label}
-                            value={event[name] || ''}
-                            className="h-8 w-full max-w-[200px] mt-1"
-                            disabled={isUpdatingStatus}
-                            onChange={async (e) => {
-                              const value = e.target.value || null;
-                              setIsUpdatingStatus(true);
-                              try {
-                                await updateEvent.mutateAsync({ id: event.id, [name]: value });
-                              } finally {
-                                setIsUpdatingStatus(false);
-                              }
-                            }}
-                          />
+                          <>
+                            <Select
+                              value={event[method] || ''}
+                              disabled={isUpdatingStatus}
+                              onValueChange={async (value) => {
+                                setIsUpdatingStatus(true);
+                                try {
+                                  await updateEvent.mutateAsync({ id: event.id, [method]: value });
+                                } finally {
+                                  setIsUpdatingStatus(false);
+                                }
+                              }}
+                            >
+                              <SelectTrigger aria-label={`Delivery - ${recipient}`} className="h-8 w-full min-w-0 text-xs [&>span]:truncate">
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {deliveryMethods.map((deliveryMethod) => (
+                                  <SelectItem key={deliveryMethod.id} value={deliveryMethod.id}>{deliveryMethod.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="date"
+                              aria-label={label}
+                              title={label}
+                              value={event[name] || ''}
+                              className="h-8 w-full min-w-0 px-1 text-xs"
+                              disabled={isUpdatingStatus}
+                              onChange={async (e) => {
+                                const value = e.target.value || null;
+                                setIsUpdatingStatus(true);
+                                try {
+                                  await updateEvent.mutateAsync({ id: event.id, [name]: value });
+                                } finally {
+                                  setIsUpdatingStatus(false);
+                                }
+                              }}
+                            />
+                          </>
                         ) : (
-                          <p className="font-medium">
-                            {event[name] ? format(parseISO(event[name].slice(0, 10)), 'EEEE, MMMM d, yyyy') : 'Not set'}
-                          </p>
+                          <>
+                            <p className="font-medium break-words">{getDeliveryMethodName(method) || 'Not set'}</p>
+                            <p className="font-medium">{event[name] ? format(parseISO(event[name].slice(0, 10)), 'd MMM yyyy') : 'Not set'}</p>
+                          </>
                         )}
                       </div>
                     </div>

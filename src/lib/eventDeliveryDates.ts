@@ -1,7 +1,7 @@
 export const eventDeliveryDateFields = [
-  { name: 'delivery_deadline_photographer', label: 'Delivery Date - Photographer' },
-  { name: 'delivery_deadline_guests', label: 'Delivery Date - Guests' },
-  { name: 'delivery_deadline', label: 'Delivery Date - Client' },
+  { name: 'delivery_deadline_photographer', label: 'Delivery Date - Photographer', method: 'delivery_method_photographer_id', recipient: 'Photographer' },
+  { name: 'delivery_deadline_guests', label: 'Delivery Date - Guests', method: 'delivery_method_guests_id', recipient: 'Guests' },
+  { name: 'delivery_deadline', label: 'Delivery Date - Client', method: 'delivery_method_id', recipient: 'Client' },
 ] as const;
 
 type DeliveryDateValues = Partial<Record<(typeof eventDeliveryDateFields)[number]['name'], string | null>>;
