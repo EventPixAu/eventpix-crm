@@ -150,7 +150,7 @@ function JobCard({ job, showFullDate = false }: { job: MyJobSheet; showFullDate?
 
               <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 self-center" />
             </div>
-            <AssignmentBudgetLine assignment={job.pay_assignment} eventId={job.id} isAdmin={false} isSelf />
+            <AssignmentBudgetLine assignment={job.pay_assignment} eventId={job.id} isAdmin={false} isSelf eventCallTime={job.arrival_time} />
 
           </CardContent>
         </Card>

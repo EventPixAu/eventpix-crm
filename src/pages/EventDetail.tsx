@@ -126,7 +126,7 @@ function formatSessionTime(timeStr: string): string {
 // EditingInstructionsPanel removed — replaced by Crew Checklists panel on Assignments tab.
 
 
-function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string }) {
+function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
@@ -352,7 +352,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
         </div>
       )}
       <div className="md:w-1/2">
-        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
+        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} eventCallTime={eventCallTime} />
       </div>
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
@@ -1726,7 +1726,7 @@ export default function EventDetail() {
                 {visibleSessions.length === 0 && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {visibleAssignments.map(assignment => (
-                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} />
+                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} />
                     ))}
                   </div>
                 )}
@@ -1773,7 +1773,7 @@ export default function EventDetail() {
                         ) : (
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {dayAssigns.map(assignment => (
-                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} />
+                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} />
                             ))}
                           </div>
                         )}

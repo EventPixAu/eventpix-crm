@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
-import { assignmentSessionHours } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
 import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
-export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
+export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null }) {
   const { canView, canEdit } = assignmentPayAccess({ isAdmin, isOperations, isSelf });
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
@@ -55,7 +55,9 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
-  const basePay = isFixedMode ? fixedRate : hourlyRate * callHours;
+  const { units: payUnits, mergedCall } = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
+  const alignedUnits = mergedCall ? payUnits : null;
+  const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
 
   // Calculate extras total
   const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
@@ -186,6 +188,11 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       ) : hasHoursOverride ? (
         <div className="pl-5 min-w-0 space-y-0.5">
           <p className="text-xs text-muted-foreground">Photography (adjusted) · {callHours} units</p>
+          <p className="text-xs font-medium text-foreground">${basePay.toFixed(2)}</p>
+        </div>
+      ) : alignedUnits != null ? (
+        <div className="pl-5 min-w-0 space-y-0.5">
+          <p className="text-xs text-muted-foreground">Photography, preparation and travel · {alignedUnits} units</p>
           <p className="text-xs font-medium text-foreground">${basePay.toFixed(2)}</p>
         </div>
       ) : (

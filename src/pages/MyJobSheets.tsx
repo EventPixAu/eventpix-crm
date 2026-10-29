@@ -301,7 +301,7 @@ function JobSheetCard({ job }: { job: ReturnType<typeof useMyJobSheets>['data'][
               )}
             </div>
 
-            <AssignmentBudgetLine assignment={job.pay_assignment} eventId={job.id} isAdmin={false} isSelf />
+            <AssignmentBudgetLine assignment={job.pay_assignment} eventId={job.id} isAdmin={false} isSelf eventCallTime={job.arrival_time} />
 
             {/* Confirm / decline availability buttons */}
             {!isEventPast && (!job.confirmation_status || job.confirmation_status === 'pending') && (

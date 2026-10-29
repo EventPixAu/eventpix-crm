@@ -21,7 +21,7 @@ import { useStaffRoles } from '@/hooks/useLookups';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
+import { assignmentPaidHours, alignedCallUnitsFromMinutes } from '@/lib/assignmentPaidHours';
 import { isPostEventSession } from '@/lib/editorVisibility';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
@@ -190,8 +190,9 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         hours = Number(hoursOverride);
         pay = hours * baseRate;
       } else if (isPhotog) {
-        const rawHours = (endMin - startMin) / 60;
-        const billed = assignmentPaidHours(rawHours, Number(rateEntry?.minimum_paid_hours) || 0);
+        const callMin = extractTimeMinutes((a as any).call_time_at) ?? startMin;
+        const aligned = alignedCallUnitsFromMinutes(callMin, endMin);
+        const billed = aligned ?? assignmentPaidHours((endMin - startMin) / 60, Number(rateEntry?.minimum_paid_hours) || 0);
         hours = billed;
         pay = billed * baseRate;
       } else {
