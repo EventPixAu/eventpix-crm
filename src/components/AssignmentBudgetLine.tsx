@@ -179,6 +179,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-xs text-muted-foreground">Pay ({isFixedMode ? 'set rate' : rateLabel})</span>
       </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 items-start">
       {isFixedMode ? (
         <p className="pl-5 text-xs text-muted-foreground">Set rate: <span className="font-medium text-foreground">${fixedRate.toFixed(2)}</span></p>
       ) : hasHoursOverride ? (
@@ -285,6 +286,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
           </Button>
         )
       )}
+      </div>
 
       {/* Total */}
       {(
