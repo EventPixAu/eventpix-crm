@@ -1653,6 +1653,38 @@ export type Database = {
           },
         ]
       }
+      crew_sms_disabled_reminders: {
+        Row: {
+          disabled_at: string
+          event_id: string
+          recipient_key: string
+          reminder_type: string
+          session_key: string
+        }
+        Insert: {
+          disabled_at?: string
+          event_id: string
+          recipient_key: string
+          reminder_type: string
+          session_key: string
+        }
+        Update: {
+          disabled_at?: string
+          event_id?: string
+          recipient_key?: string
+          reminder_type?: string
+          session_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crew_sms_disabled_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crew_sms_dispatch_tickets: {
         Row: {
           created_at: string
@@ -8393,6 +8425,16 @@ export type Database = {
       }
       set_contact_status_manual: {
         Args: { p_contact_id: string; p_status: string }
+        Returns: undefined
+      }
+      set_crew_sms_reminder_enabled: {
+        Args: {
+          _enabled: boolean
+          _event_id: string
+          _recipient_key: string
+          _reminder_type: string
+          _session_key: string
+        }
         Returns: undefined
       }
       set_decline_reason_by_token: {
