@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Add separate Photographer, Guests and Client delivery dates in that order, retaining existing client deadlines and SMS timing.
 - [x] Exclude LBA automatic setup/delivery SMS and add separate switches in new-series setup, series Settings and event forms; event overrides otherwise inherit series defaults for existing/new events. 38 tests passed; signed-in preview shows four Churchill reminders and no LBA, series save/reload/restore verified, LBA switches off and event choices verified. No texts sent; LBA exclusion is live, controls await publish.
 - [x] Allow each upcoming crew SMS to be switched off/on; disabled previews retained, sender candidates and post-claim checks skip disabled reminders; 35 tests passed, signed-in off/reload/on verified with all 16 rows retained, original setting restored and no texts sent. Controls await publish.
 - [x] Add next-seven-days scheduled SMS previews under Operations / Crew SMS; shared sender timing, prior-claim exclusion, saved message previews and expected hourly send times; 31 tests passed, signed-in real list showed 16 texts and Churchill preview expanded, no texts sent; build OK, page awaits publish.
