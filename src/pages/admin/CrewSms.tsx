@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { UpcomingCrewSms } from '@/components/UpcomingCrewSms';
 
 // Keep in sync with supabase/functions/process-crew-sms/reminders.ts DEFAULT_*_TEMPLATE
 const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
@@ -83,6 +84,7 @@ export default function CrewSms() {
     },
     onSuccess: (_data, enabled) => {
       queryClient.invalidateQueries({ queryKey: ['crew-sms-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-upcoming'] });
       toast.success(enabled ? 'Crew SMS reminders turned on' : 'Crew SMS reminders turned off');
     },
     onError: (err: Error) => {
@@ -111,6 +113,7 @@ export default function CrewSms() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crew-sms-settings'] });
       toast.success('Message templates saved');
+      queryClient.invalidateQueries({ queryKey: ['crew-sms-upcoming'] });
     },
     onError: (err: Error) => {
       toast.error('Could not save the templates', { description: err.message });
@@ -237,6 +240,8 @@ export default function CrewSms() {
             </div>
           </CardContent>
         </Card>
+
+        <UpcomingCrewSms />
 
         <Card>
           <CardHeader>
