@@ -46,6 +46,7 @@ import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import { useActiveVenues, type Venue } from '@/hooks/useVenues';
 import { CrewSmsSettings } from '@/components/CrewSmsSettings';
 import { eventDeliveryDateFields, eventDeliveryDateValues } from '@/lib/eventDeliveryDates';
+import { CalendarDatePicker } from '@/components/CalendarDatePicker';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
