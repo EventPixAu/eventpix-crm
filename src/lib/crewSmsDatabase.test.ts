@@ -21,7 +21,7 @@ async function setup(clock?: string) {
   await db.exec(readFileSync('drizzle/migrations/0029_hourly_crew_sms_window.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0034_crew_sms_manual_followup.sql', 'utf8'));
   const timingSql = readFileSync('drizzle/migrations/0043_crew_sms_editing_delivery_timing.sql', 'utf8');
-  await db.exec(clock ? timingSql.replaceAll('now()', `timestamptz '${clock}'`) : timingSql);
+  await db.exec(clock ? timingSql.split('now()').join(`timestamptz '${clock}'`) : timingSql);
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
     INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
