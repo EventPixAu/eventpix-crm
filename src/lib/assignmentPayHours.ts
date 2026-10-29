@@ -22,6 +22,15 @@ function duration(session: PaySession): number {
   return Number.isFinite(hours) && hours > 0 ? hours : 0;
 }
 
+/** The session whose hours drive pay: a linked session, otherwise the longest eligible session. */
+export function assignmentPaySession(assignment: PayAssignment, sessions: PaySession[]): PaySession | null {
+  if (assignment.session) return assignment.session;
+  const offsite = isOffsiteAssignment(assignment) ||
+    (!!assignment.staff_role && !isOnsiteStaffRole(assignment.staff_role));
+  const eligible = sessions.filter(s => isPostEventSession({ id: s.id || '', session_type: s.session_type }) === offsite);
+  return eligible.reduce<PaySession | null>((best, s) => (!best || duration(s) > duration(best) ? s : best), null);
+}
+
 /** Unlinked shoot assignments must never inherit another person's editing hours. */
 export function assignmentSessionHours(assignment: PayAssignment, sessions: PaySession[]): number {
   if (assignment.session) return duration(assignment.session);
