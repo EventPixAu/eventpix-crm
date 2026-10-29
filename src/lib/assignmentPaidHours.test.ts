@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentPaidHours, assignmentCoverageUnits } from './assignmentPaidHours';
+import { assignmentPaidHours, assignmentCoverageUnits, alignedCallUnits } from './assignmentPaidHours';
 import { assignmentSessionHours } from './assignmentPayHours';
 
 describe('team payment units', () => {
@@ -17,5 +17,18 @@ describe('team payment units', () => {
   });
   it('partial hours round up to whole units', () => {
     expect(assignmentPaidHours(2.5, 2)).toBe(4);
+  });
+  it('5:00–9:00 call with arrival on the hour is 4 units, no separate prep unit', () => {
+    expect(alignedCallUnits('17:00:00', '21:00:00')).toBe(4);
+  });
+  it('arrival before the hour keeps coverage + preparation units', () => {
+    expect(alignedCallUnits('16:30:00', '21:00:00')).toBeNull();
+    expect(alignedCallUnits('18:15:00', '21:30:00')).toBeNull();
+  });
+  it('whole-hour span shorter than the minimum call still pays 3 units', () => {
+    expect(alignedCallUnits('17:00:00', '19:00:00')).toBe(3);
+  });
+  it('calls that finish on a half hour are not aligned', () => {
+    expect(alignedCallUnits('17:00:00', '20:30:00')).toBeNull();
   });
 });
