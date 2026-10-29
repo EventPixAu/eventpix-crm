@@ -344,6 +344,13 @@
       "when": 1793254105541,
       "tag": "0048_event_recipient_delivery_dates",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793255200381,
+      "tag": "0049_crew_sms_photographer_delivery_date",
+      "breakpoints": true
     }
   ]
 }
