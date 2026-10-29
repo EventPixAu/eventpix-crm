@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [x] Delay standard photographer delivery SMS until 24 hours before scheduled post-event editing; preserve MASV ASAP at finish, hourly checks and duplicate protection; both Churchill events verified due Sunday 1 November 9am local; 28 tests passed, signed-in page verified, no texts sent, build OK.
+- [ ] Apply scheduled post-event delivery timing to ALL delivery SMS, including MASV ASAP: 24 hours before the work session, not event finish; retain hourly checks and duplicate protection; verify without sending texts.
 - [x] Synchronize actual workflow steps on inline and full-form Event Type changes; retain matching-step completion, notes and assignees; three tests passed, signed-in Zno change saved 31 matching steps and survived reload, temporary event removed, build OK; awaiting publish.
 - [x] Keep client rates in Products and photographer rates exclusively in existing Pay Rates; removed cross-link, verified independent $275/$125 editing and one selected photographer's $125 lighting pay saved/reloaded; temporary allocation removed, 20 tests passed, build OK; awaiting publish.
 - [x] Keep AI session budget preparation visible beside Products & Packages in every editable budget, empty or populated; verified on Trevor’s new Q-1882a894 and a second draft without generating or changing items; five pricing tests passed, build OK; awaiting publish.
