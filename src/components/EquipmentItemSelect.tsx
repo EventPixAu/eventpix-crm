@@ -83,17 +83,17 @@ export function EquipmentItemSelect({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[340px] p-0" align="start">
+      <PopoverContent
+        className="p-0"
+        align="start"
+        style={{ width: 'var(--radix-popover-trigger-width)' }}
+      >
         <Command shouldFilter={false}>
-          <div className="flex items-center border-b px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-            <CommandInput
-              placeholder="Search equipment..."
-              value={search}
-              onValueChange={setSearch}
-              className="border-0 focus:ring-0"
-            />
-          </div>
+          <CommandInput
+            placeholder="Search equipment..."
+            value={search}
+            onValueChange={setSearch}
+          />
           <div className="border-b p-2">
             <Select
               value={category}
