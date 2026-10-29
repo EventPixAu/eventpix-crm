@@ -1,5 +1,6 @@
 import { isOffsiteAssignment, isPostEventSession } from './editorVisibility';
 import { isOnsiteStaffRole } from './staffRoleScope';
+import { alignedCallUnits, assignmentPaidHours } from './assignmentPaidHours';
 
 interface PaySession {
   id?: string;
