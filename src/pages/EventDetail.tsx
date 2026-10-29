@@ -77,7 +77,6 @@ import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
-import { useApplyEventTypeWorkflow } from '@/hooks/useEventWorkflowSteps';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { EventBudgetCard } from '@/components/EventBudgetCard';
 import { EventQuotesPanel } from '@/components/EventQuotesPanel';
@@ -752,11 +751,13 @@ export default function EventDetail() {
                           value={event.event_type_id || ''}
                           onValueChange={async (value) => {
                             setIsUpdatingStatus(true);
-                            await updateEvent.mutateAsync({
-                              id: event.id,
-                              event_type_id: value,
-                            });
-                            setIsUpdatingStatus(false);
+                            try {
+                              await updateEvent.mutateAsync({ id: event.id, event_type_id: value });
+                            } catch {
+                              // The shared save action displays the error.
+                            } finally {
+                              setIsUpdatingStatus(false);
+                            }
                           }}
                           disabled={isUpdatingStatus}
                         >
@@ -1649,7 +1650,7 @@ export default function EventDetail() {
                         eventId={id} 
                         currentTemplateId={(event as any).workflow_template_id}
                         currentEventTypeId={(event as any).workflow_event_type_id || (event as any).event_type_id}
-                        workflowLabel={getEventTypeName()}
+                        workflowLabel={eventTypes.find(type => type.id === event.workflow_event_type_id)?.name}
                         isSeriesEvent={!!(event as any).event_series_id}
                       />
                     </div>

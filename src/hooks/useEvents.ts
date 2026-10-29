@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+import { applyEventTypeWorkflow } from '@/hooks/useEventWorkflowSteps';
 
 type EventRow = Database['public']['Tables']['events']['Row'];
 type EventInsert = Database['public']['Tables']['events']['Insert'];
@@ -284,6 +285,13 @@ export function useUpdateEvent() {
 
   return useMutation({
     mutationFn: async ({ id, updated_at: originalUpdatedAt, ...event }: Omit<EventUpdate, 'updated_at'> & { id: string; updated_at?: string }) => {
+      let eventTypeChanged = false;
+      if (event.event_type_id) {
+        const { data: previous, error: previousError } = await supabase.from('events')
+          .select('event_type_id').eq('id', id).maybeSingle();
+        if (previousError) throw previousError;
+        eventTypeChanged = previous?.event_type_id !== event.event_type_id;
+      }
       let query = supabase
         .from('events')
         .update(event)
@@ -300,13 +308,21 @@ export function useUpdateEvent() {
       if (error) throw error;
       if (!data) throw new Error('This event was modified by another user. Please refresh and try again.');
 
+      if (eventTypeChanged && event.event_type_id) {
+        await applyEventTypeWorkflow({ eventId: id, eventTypeId: event.event_type_id });
+      }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', id] });
+      queryClient.invalidateQueries({ queryKey: ['next-task-per-event'] });
+      queryClient.invalidateQueries({ queryKey: ['job-tasks-with-due-dates'] });
       toast.success('Event updated successfully');
     },
     onError: (error: Error) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event-workflow-steps'] });
       toast.error('Failed to update event', { description: error.message });
     },
   });

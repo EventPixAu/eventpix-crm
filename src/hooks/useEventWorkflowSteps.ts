@@ -749,11 +749,7 @@ export function useDeleteWorkflowStep() {
 
 // Apply the workflow configured for an event type (Administration → Workflows → Event Type Defaults)
 // directly to an event. Completed steps are preserved by label.
-export function useApplyEventTypeWorkflow() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
+export async function applyEventTypeWorkflow({
       eventId,
       eventTypeId,
     }: {
@@ -776,13 +772,13 @@ export function useApplyEventTypeWorkflow() {
       if (defaultsError) throw defaultsError;
 
       const stepIds = (defaults || []).map(d => d.master_step_id);
-      if (stepIds.length === 0) return 0;
-
-      const { data: masterSteps, error: stepsError } = await supabase
+      let masterQuery = supabase
         .from('workflow_master_steps')
         .select('*')
-        .in('id', stepIds)
         .eq('is_active', true);
+      // Match the assignment dialog: unconfigured types use all active steps.
+      if (stepIds.length > 0) masterQuery = masterQuery.in('id', stepIds);
+      const { data: masterSteps, error: stepsError } = await masterQuery;
       if (stepsError) throw stepsError;
 
       // Series-level steps live on the series checklist only (standalone events keep them).
@@ -806,14 +802,15 @@ export function useApplyEventTypeWorkflow() {
         }
       }
 
-      // Preserve completed steps by label
-      const { data: existing } = await supabase
+      // Retain completion evidence, notes and team delegation for shared steps.
+      const { data: existing, error: existingError } = await supabase
         .from('event_workflow_steps')
-        .select('step_label, is_completed, completed_at, completed_by, notes')
+        .select('step_label, is_completed, completed_at, completed_by, notes, assigned_to')
         .eq('event_id', eventId);
-      const completedByLabel = new Map<string, any>();
+      if (existingError) throw existingError;
+      const existingByLabel = new Map<string, any>();
       (existing || []).forEach((s: any) => {
-        if (s.is_completed) completedByLabel.set(s.step_label, s);
+        if (!existingByLabel.has(s.step_label) || s.is_completed) existingByLabel.set(s.step_label, s);
       });
 
       const eventDate = new Date(event.main_shoot_date || event.event_date);
@@ -844,7 +841,7 @@ export function useApplyEventTypeWorkflow() {
           dueDate = calculated.toISOString().split('T')[0];
         }
 
-        const preserved = completedByLabel.get(step.label);
+        const preserved = existingByLabel.get(step.label);
         return {
           event_id: eventId,
           template_item_id: null,
@@ -856,8 +853,8 @@ export function useApplyEventTypeWorkflow() {
           is_completed: preserved?.is_completed ?? false,
           completed_at: preserved?.completed_at ?? null,
           completed_by: preserved?.completed_by ?? null,
-          notes: step.help_text,
-          assigned_to: (step as any).default_assignee_user_id ?? null,
+          notes: preserved ? preserved.notes : step.help_text,
+          assigned_to: preserved ? preserved.assigned_to : (step as any).default_assignee_user_id ?? null,
         };
       });
 
@@ -872,8 +869,18 @@ export function useApplyEventTypeWorkflow() {
         .insert(steps);
       if (insertError) throw insertError;
 
+      const { error: trackingError } = await supabase.from('events')
+        .update({ workflow_event_type_id: eventTypeId, workflow_template_id: null })
+        .eq('id', eventId);
+      if (trackingError) throw trackingError;
+
       return steps.length;
-    },
+}
+
+export function useApplyEventTypeWorkflow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: applyEventTypeWorkflow,
     onSuccess: (count, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: ['event-workflow-steps', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
