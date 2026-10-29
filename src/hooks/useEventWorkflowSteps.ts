@@ -755,7 +755,7 @@ export async function applyEventTypeWorkflow({
     }: {
       eventId: string;
       eventTypeId: string;
-    }) => {
+    }) {
       const { data: event, error: eventError } = await supabase
         .from('events')
         .select('event_date, main_shoot_date, booking_date, created_at, delivery_deadline, lead_id, event_series_id')
