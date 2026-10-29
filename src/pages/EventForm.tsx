@@ -44,6 +44,7 @@ import { useClientContacts, getBestPhone } from '@/hooks/useClientContacts';
 import { useEventContacts, useCreateEventContact, useUpdateEventContact } from '@/hooks/useEventContacts';
 import { VenueSuggestInput } from '@/components/VenueSuggestInput';
 import { useActiveVenues, type Venue } from '@/hooks/useVenues';
+import { CrewSmsSettings } from '@/components/CrewSmsSettings';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -68,6 +69,8 @@ const eventSchema = z.object({
   meal_provided: z.string().optional(),
   parking_provided: z.string().optional(),
   notes: z.string().optional(),
+  crew_sms_setup_enabled: z.boolean().nullable().optional(),
+  crew_sms_delivery_enabled: z.boolean().nullable().optional(),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -147,6 +150,8 @@ export default function EventForm() {
       meal_provided: '',
       parking_provided: '',
       notes: '',
+      crew_sms_setup_enabled: null,
+      crew_sms_delivery_enabled: null,
     },
   });
 
@@ -273,6 +278,8 @@ export default function EventForm() {
         meal_provided: (event as any).meal_provision_status || ((event as any).meal_provided === true ? 'yes' : (event as any).meal_provided === false ? 'no' : ''),
         parking_provided: (event as any).parking_provision_status || ((event as any).parking_provided === true ? 'yes' : (event as any).parking_provided === false ? 'no' : ''),
         notes: event.notes || '',
+        crew_sms_setup_enabled: event.crew_sms_setup_enabled,
+        crew_sms_delivery_enabled: event.crew_sms_delivery_enabled,
       });
       setSelectedClientId(event.client_id || null);
       // Link the venue library record: prefer the stored venue_id, otherwise
@@ -379,6 +386,8 @@ export default function EventForm() {
       meal_provision_status: values.meal_provided || null,
       parking_provision_status: values.parking_provided || null,
       notes: values.notes || null,
+      crew_sms_setup_enabled: values.crew_sms_setup_enabled ?? null,
+      crew_sms_delivery_enabled: values.crew_sms_delivery_enabled ?? null,
     };
     
     // If converting from lead, add lead_id and client_id
@@ -935,6 +944,14 @@ export default function EventForm() {
 
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
               <h3 className="font-display font-semibold">Crew Logistics</h3>
+              <CrewSmsSettings
+                setup={form.watch('crew_sms_setup_enabled') ?? null}
+                delivery={form.watch('crew_sms_delivery_enabled') ?? null}
+                inherit
+                disabled={isFormLocked}
+                lba={/\bLBA\b/i.test(`${form.watch('event_name')} ${eventTypes.find(t => t.id === form.watch('event_type_id'))?.name || ''}`)}
+                onChange={(kind, value) => form.setValue(kind === 'setup' ? 'crew_sms_setup_enabled' : 'crew_sms_delivery_enabled', value, { shouldDirty: true })}
+              />
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <FormField

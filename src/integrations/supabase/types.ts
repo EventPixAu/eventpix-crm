@@ -3307,6 +3307,8 @@ export type Database = {
         Row: {
           additional_contact_ids: string[]
           created_at: string | null
+          crew_sms_delivery_enabled: boolean
+          crew_sms_setup_enabled: boolean
           default_call_time: string | null
           default_contact_id: string | null
           default_coverage_details: string | null
@@ -3342,6 +3344,8 @@ export type Database = {
         Insert: {
           additional_contact_ids?: string[]
           created_at?: string | null
+          crew_sms_delivery_enabled?: boolean
+          crew_sms_setup_enabled?: boolean
           default_call_time?: string | null
           default_contact_id?: string | null
           default_coverage_details?: string | null
@@ -3377,6 +3381,8 @@ export type Database = {
         Update: {
           additional_contact_ids?: string[]
           created_at?: string | null
+          crew_sms_delivery_enabled?: boolean
+          crew_sms_setup_enabled?: boolean
           default_call_time?: string | null
           default_contact_id?: string | null
           default_coverage_details?: string | null
@@ -3741,7 +3747,9 @@ export type Database = {
           coverage_package_id: string | null
           created_at: string | null
           created_by: string | null
+          crew_sms_delivery_enabled: boolean | null
           crew_sms_masv_delivery: boolean
+          crew_sms_setup_enabled: boolean | null
           date_status: string | null
           delivery_deadline: string | null
           delivery_method: Database["public"]["Enums"]["delivery_method"] | null
@@ -3836,7 +3844,9 @@ export type Database = {
           coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          crew_sms_delivery_enabled?: boolean | null
           crew_sms_masv_delivery?: boolean
+          crew_sms_setup_enabled?: boolean | null
           date_status?: string | null
           delivery_deadline?: string | null
           delivery_method?:
@@ -3933,7 +3943,9 @@ export type Database = {
           coverage_package_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          crew_sms_delivery_enabled?: boolean | null
           crew_sms_masv_delivery?: boolean
+          crew_sms_setup_enabled?: boolean | null
           date_status?: string | null
           delivery_deadline?: string | null
           delivery_method?:
@@ -8119,6 +8131,10 @@ export type Database = {
           timezone: string
           venue_name: string
         }[]
+      }
+      crew_sms_event_enabled: {
+        Args: { _event_id: string; _kind: string }
+        Returns: boolean
       }
       crew_sms_followup_recipients: {
         Args: { _event_id: string }

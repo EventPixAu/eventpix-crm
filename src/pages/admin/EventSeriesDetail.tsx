@@ -94,6 +94,7 @@ import { SeriesLevelStepsPanel } from '@/components/series/SeriesLevelStepsPanel
  import { SeriesDefaultEquipmentPanel } from '@/components/SeriesDefaultEquipmentPanel';
  import { ListChecks, DollarSign } from 'lucide-react';
  import { SeriesBudgetAgreementPanel } from '@/components/series/SeriesBudgetAgreementPanel';
+import { CrewSmsSettings } from '@/components/CrewSmsSettings';
 
 export default function EventSeriesDetail() {
   const { id } = useParams<{ id: string }>();
@@ -2136,6 +2137,16 @@ export default function EventSeriesDetail() {
                   />
                 </div>
                 
+                <CrewSmsSettings
+                  setup={series.crew_sms_setup_enabled}
+                  delivery={series.crew_sms_delivery_enabled}
+                  lba={/\bLBA\b/i.test(`${series.name} ${eventTypes.find(t => t.id === series.event_type_id)?.name || ''}`)}
+                  disabled={!isAdmin || updateSeries.isPending}
+                  onChange={async (kind, value) => {
+                    await updateSeries.mutateAsync({ id: series.id, [kind === 'setup' ? 'crew_sms_setup_enabled' : 'crew_sms_delivery_enabled']: value ?? true });
+                    queryClient.invalidateQueries({ queryKey: ['crew-sms-upcoming'] });
+                  }}
+                />
                 <div className="flex items-center justify-between pt-2">
                   <Label>Active</Label>
                   <Switch

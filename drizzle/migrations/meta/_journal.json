@@ -330,6 +330,13 @@
       "when": 1793252080673,
       "tag": "0046_crew_sms_individual_switches",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793252660043,
+      "tag": "0047_crew_sms_event_series_settings",
+      "breakpoints": true
     }
   ]
 }

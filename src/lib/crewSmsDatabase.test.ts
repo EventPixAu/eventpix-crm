@@ -10,7 +10,9 @@ async function setup(clock?: string) {
     CREATE SCHEMA auth;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000099'::uuid $$;
     CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce(current_setting('test.is_admin',true),'false')='true' $$;
-    CREATE TABLE events(id uuid PRIMARY KEY,event_name text,event_date date,start_time time,end_time time,setup_time text,timezone text,venue_name text,ops_status text,crew_sms_masv_delivery boolean DEFAULT false);
+    CREATE TABLE events(id uuid PRIMARY KEY,event_name text,event_date date,start_time time,end_time time,setup_time text,timezone text,venue_name text,ops_status text,crew_sms_masv_delivery boolean DEFAULT false,event_series_id uuid,event_type_id uuid);
+    CREATE TABLE event_types(id uuid PRIMARY KEY,name text);
+    CREATE TABLE event_series(id uuid PRIMARY KEY,name text,event_type_id uuid);
     CREATE TABLE event_sessions(id uuid PRIMARY KEY,event_id uuid,session_date date,start_time time,end_time time,arrival_time time,timezone text,venue_name text,session_type text DEFAULT 'live');
     CREATE TABLE profiles(id uuid PRIMARY KEY,phone text,is_active boolean);
     CREATE TABLE staff(id uuid PRIMARY KEY,user_id uuid,name text,phone text,status text);
@@ -25,10 +27,11 @@ async function setup(clock?: string) {
   await db.exec(readFileSync('drizzle/migrations/0044_crew_sms_masv_scheduled_delivery_priority.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0045_crew_sms_shared_schedule_preview.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0046_crew_sms_individual_switches.sql', 'utf8'));
+  await db.exec(readFileSync('drizzle/migrations/0047_crew_sms_event_series_settings.sql', 'utf8'));
   if (clock) await db.exec(`DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.crew_sms_candidates()'::regprocedure) INTO definition; EXECUTE replace(definition,'now()','timestamptz ''${clock}'''); END $$;`);
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
-    INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
+    INSERT INTO events(id,event_name,event_date,start_time,end_time,setup_time,timezone,venue_name,ops_status) SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
     INSERT INTO profiles VALUES('00000000-0000-0000-0000-000000000002','0412345678',true);
     INSERT INTO staff_roles VALUES('00000000-0000-0000-0000-000000000003','Photographer',true);
     INSERT INTO event_assignments VALUES('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000001',NULL,'00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',NULL,'confirmed');
@@ -37,6 +40,38 @@ async function setup(clock?: string) {
 }
 
 describe('scheduled crew SMS database rules', () => {
+  it('never schedules LBA setup or delivery texts based on event name, event type or series', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`UPDATE crew_sms_settings SET enabled_at=now()-interval '2 days'; UPDATE events SET crew_sms_setup_enabled=true,crew_sms_delivery_enabled=true,event_name='LBA Bayside';`);
+      expect((await db.query(`SELECT * FROM crew_sms_schedule(now()-interval '2 days',now()+interval '7 days')`)).rows).toHaveLength(0);
+      await db.exec(`INSERT INTO event_types VALUES('00000000-0000-0000-0000-000000000020','Awards - LBA'); UPDATE events SET event_name='Bayside',event_type_id='00000000-0000-0000-0000-000000000020';`);
+      expect((await db.query(`SELECT * FROM crew_sms_schedule(now()-interval '2 days',now()+interval '7 days')`)).rows).toHaveLength(0);
+      await db.exec(`INSERT INTO event_series(id,name) VALUES('00000000-0000-0000-0000-000000000021','LBA NSW 2026'); UPDATE events SET event_type_id=NULL,event_series_id='00000000-0000-0000-0000-000000000021';`);
+      expect((await db.query(`SELECT * FROM crew_sms_schedule(now()-interval '2 days',now()+interval '7 days')`)).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('applies separate series setup and delivery switches to existing and future events', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`INSERT INTO event_series(id,name,crew_sms_setup_enabled,crew_sms_delivery_enabled) VALUES('00000000-0000-0000-0000-000000000021','Test series',false,true); UPDATE events SET event_series_id='00000000-0000-0000-0000-000000000021';`);
+      expect((await db.query(`SELECT crew_sms_event_enabled(id,'setup') AS setup,crew_sms_event_enabled(id,'delivery') AS delivery FROM events`)).rows).toEqual([{setup:false,delivery:true}]);
+      expect((await db.query(`SELECT * FROM crew_sms_candidates()`)).rows).toHaveLength(0);
+      await db.exec(`UPDATE event_series SET crew_sms_setup_enabled=true,crew_sms_delivery_enabled=false; INSERT INTO events(id,event_name,event_series_id) VALUES('00000000-0000-0000-0000-000000000022','Future event','00000000-0000-0000-0000-000000000021');`);
+      expect((await db.query(`SELECT crew_sms_event_enabled(id,'setup') AS setup,crew_sms_event_enabled(id,'delivery') AS delivery FROM events`)).rows).toEqual([{setup:true,delivery:false},{setup:true,delivery:false}]);
+    } finally { await db.close(); }
+  });
+  it('allows event overrides and restores inheritance without changing other events', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`INSERT INTO event_series(id,name,crew_sms_setup_enabled,crew_sms_delivery_enabled) VALUES('00000000-0000-0000-0000-000000000021','Test series',true,true); UPDATE events SET event_series_id='00000000-0000-0000-0000-000000000021',crew_sms_setup_enabled=false;`);
+      expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(0);
+      expect((await db.query(`SELECT crew_sms_event_enabled(id,'delivery') AS delivery FROM events`)).rows).toEqual([{delivery:true}]);
+      await db.exec(`UPDATE events SET crew_sms_setup_enabled=NULL;`);
+      expect((await db.query('SELECT reminder_type FROM crew_sms_candidates()')).rows).toEqual([{reminder_type:'setup'}]);
+      expect((await db.query('SELECT * FROM crew_sms_logs')).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
   it('switches off only the selected recipient/session/type while retaining its preview', async () => {
     const db = await setup();
     try {

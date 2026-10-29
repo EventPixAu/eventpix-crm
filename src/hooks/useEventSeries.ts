@@ -5,6 +5,8 @@ import type { Json } from '@/integrations/supabase/types';
 
 export interface EventSeries {
   id: string;
+  crew_sms_setup_enabled: boolean;
+  crew_sms_delivery_enabled: boolean;
   name: string;
   event_type_id: string | null;
   default_coverage_details: string | null;
@@ -26,6 +28,8 @@ export interface EventSeries {
 
 export type CreateEventSeriesInput = {
   name: string;
+  crew_sms_setup_enabled?: boolean;
+  crew_sms_delivery_enabled?: boolean;
   event_type_id?: string | null;
   default_coverage_details?: string | null;
   default_delivery_method_id?: string | null;
