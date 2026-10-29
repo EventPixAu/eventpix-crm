@@ -11,7 +11,7 @@ interface CalendarDatePickerProps {
   value?: string | null;
   onChange: (value: string | null) => void;
   placeholder?: string;
-  ariaLabel?: string;
+  "aria-label"?: string;
   disabled?: boolean;
   className?: string;
   /** Months shown side by side when open (default 2, covering ~9 weeks) */
@@ -26,7 +26,7 @@ export function CalendarDatePicker({
   value,
   onChange,
   placeholder = "dd/mm/yyyy",
-  ariaLabel,
+  "aria-label": ariaLabelProp,
   disabled,
   className,
   numberOfMonths = 2,
