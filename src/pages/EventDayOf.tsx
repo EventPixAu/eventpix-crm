@@ -934,7 +934,7 @@ export default function EventDayOf() {
             {displayAssignments.filter(a => !!user?.id && a.user_id === user.id).map(assignment => (
               <div key={assignment.id}>
                 {assignment.session?.label && <p className="mt-2 text-sm font-medium">{assignment.session.label}</p>}
-                <AssignmentBudgetLine assignment={assignment} eventId={assignment.event_id} isAdmin={false} isSelf />
+                <AssignmentBudgetLine assignment={assignment} eventId={assignment.event_id} isAdmin={false} isSelf eventCallTime={(displayEvent as any)?.call_time} />
               </div>
             ))}
           </section>

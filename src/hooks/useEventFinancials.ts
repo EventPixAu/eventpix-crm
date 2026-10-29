@@ -57,6 +57,7 @@ export function useEventFinancials(eventId: string | undefined) {
         .from('events')
         .select(`
           id,
+          call_time,
           invoice_status,
           invoice_paid_at,
           invoice_amount,
@@ -195,7 +196,7 @@ export function useEventFinancials(eventId: string | undefined) {
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0) continue;
         
-        const { units: callHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0);
+        const { units: callHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
         expectedStaffCost += basePay;
       }

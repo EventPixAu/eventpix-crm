@@ -352,7 +352,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
         </div>
       )}
       <div className="md:w-1/2">
-        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} />
+        <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} eventCallTime={(event as any)?.call_time} />
       </div>
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
