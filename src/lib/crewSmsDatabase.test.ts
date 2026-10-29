@@ -8,8 +8,8 @@ async function setup(clock?: string) {
   await db.exec(`
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
     CREATE SCHEMA auth;
-    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;
-    CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
+    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '00000000-0000-0000-0000-000000000099'::uuid $$;
+    CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT coalesce(current_setting('test.is_admin',true),'false')='true' $$;
     CREATE TABLE events(id uuid PRIMARY KEY,event_name text,event_date date,start_time time,end_time time,setup_time text,timezone text,venue_name text,ops_status text,crew_sms_masv_delivery boolean DEFAULT false);
     CREATE TABLE event_sessions(id uuid PRIMARY KEY,event_id uuid,session_date date,start_time time,end_time time,arrival_time time,timezone text,venue_name text,session_type text DEFAULT 'live');
     CREATE TABLE profiles(id uuid PRIMARY KEY,phone text,is_active boolean);
@@ -24,6 +24,7 @@ async function setup(clock?: string) {
   await db.exec(timingSql);
   await db.exec(readFileSync('drizzle/migrations/0044_crew_sms_masv_scheduled_delivery_priority.sql', 'utf8'));
   await db.exec(readFileSync('drizzle/migrations/0045_crew_sms_shared_schedule_preview.sql', 'utf8'));
+  await db.exec(readFileSync('drizzle/migrations/0046_crew_sms_individual_switches.sql', 'utf8'));
   if (clock) await db.exec(`DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.crew_sms_candidates()'::regprocedure) INTO definition; EXECUTE replace(definition,'now()','timestamptz ''${clock}'''); END $$;`);
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
@@ -36,6 +37,50 @@ async function setup(clock?: string) {
 }
 
 describe('scheduled crew SMS database rules', () => {
+  it('switches off only the selected recipient/session/type while retaining its preview', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`SET test.is_admin='true';
+        UPDATE events SET setup_time=to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS');
+        INSERT INTO profiles VALUES('00000000-0000-0000-0000-000000000008','0499999999',true);
+        INSERT INTO event_assignments SELECT '00000000-0000-0000-0000-000000000009',event_id,NULL,'00000000-0000-0000-0000-000000000008',staff_role_id,NULL,'confirmed' FROM event_assignments LIMIT 1;
+        SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','event','00000000-0000-0000-0000-000000000002','delivery',false);
+      `);
+      // Another reminder type remains due for the same recipient.
+      expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(2);
+      await db.exec(`SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','different-session','00000000-0000-0000-0000-000000000002','setup',false);`);
+      expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(2);
+      await db.exec(`SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','event','00000000-0000-0000-0000-000000000002','setup',false);`);
+      expect((await db.query('SELECT recipient_key FROM crew_sms_candidates()')).rows).toEqual([{recipient_key:'00000000-0000-0000-0000-000000000008'}]);
+      expect((await db.query(`SELECT * FROM crew_sms_schedule(now()-interval '65 minutes',now()+interval '1 microsecond') WHERE reminder_type='setup'`)).rows).toHaveLength(2);
+      expect((await db.query('SELECT * FROM crew_sms_logs')).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('can switch a disabled text back on without creating send claims', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`SET test.is_admin='true'; SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','event','00000000-0000-0000-0000-000000000002','setup',false);`);
+      expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(0);
+      await db.exec(`SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','event','00000000-0000-0000-0000-000000000002','setup',true);`);
+      expect((await db.query('SELECT reminder_type FROM crew_sms_candidates()')).rows).toEqual([{reminder_type:'setup'}]);
+      expect((await db.query('SELECT * FROM crew_sms_disabled_reminders')).rows).toHaveLength(0);
+      expect((await db.query('SELECT * FROM crew_sms_logs')).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('rejects switch changes from non-admin users', async () => {
+    const db = await setup();
+    try {
+      await expect(db.exec(`SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','event','crew','setup',false);`)).rejects.toThrow('Admin access required');
+      expect((await db.query('SELECT * FROM crew_sms_disabled_reminders')).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('does not report a processed or in-flight text as switched off', async () => {
+    const db = await setup();
+    try {
+      await db.exec(`SET test.is_admin='true'; INSERT INTO crew_sms_logs(event_id,session_key,recipient_key,reminder_type,due_at,phone,body) VALUES('00000000-0000-0000-0000-000000000001','event','crew','setup',now(),'0412345678','Reminder');`);
+      await expect(db.exec(`SELECT set_crew_sms_reminder_enabled('00000000-0000-0000-0000-000000000001','event','crew','setup',false);`)).rejects.toThrow('already being sent');
+    } finally { await db.close(); }
+  });
   it('previews only reminders in the requested next-seven-days window without creating logs', async () => {
     const db = await setup();
     try {
