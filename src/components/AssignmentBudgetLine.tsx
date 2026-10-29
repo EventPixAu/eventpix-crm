@@ -61,7 +61,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
     (paySession as any)?.arrival_time || paySession?.start_time || null,
     paySession?.end_time || null,
   );
-  const basePay = isFixedMode ? fixedRate : hourlyRate * callHours;
+  const payUnits = hasHoursOverride ? callHours : (alignedUnits ?? assignmentPaidHours(sessionHours, minHours));
+  const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
 
   // Calculate extras total
   const extrasTotal = assignmentAllowances.reduce((sum: number, aa: any) => {
@@ -192,6 +193,11 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       ) : hasHoursOverride ? (
         <div className="pl-5 min-w-0 space-y-0.5">
           <p className="text-xs text-muted-foreground">Photography (adjusted) · {callHours} units</p>
+          <p className="text-xs font-medium text-foreground">${basePay.toFixed(2)}</p>
+        </div>
+      ) : alignedUnits != null ? (
+        <div className="pl-5 min-w-0 space-y-0.5">
+          <p className="text-xs text-muted-foreground">Photography, preparation and travel · {alignedUnits} units</p>
           <p className="text-xs font-medium text-foreground">${basePay.toFixed(2)}</p>
         </div>
       ) : (
