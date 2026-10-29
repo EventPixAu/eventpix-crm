@@ -1,20 +1,37 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 
 interface UpcomingReminder {
   event_id: string; session_key: string; recipient_key: string; event_name: string;
   recipient_name: string; reminder_type: string; due_at: string; expected_at: string;
-  timezone: string; phone: string | null; body: string; blocked: string | null;
+  timezone: string; phone: string | null; body: string; blocked: string | null; disabled: boolean;
 }
 
 export function UpcomingCrewSms() {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const toggleReminder = useMutation({
+    mutationFn: async ({ reminder, enabled }: { reminder: UpcomingReminder; enabled: boolean }) => {
+      const { error } = await supabase.rpc('set_crew_sms_reminder_enabled', {
+        _event_id: reminder.event_id, _session_key: reminder.session_key,
+        _recipient_key: reminder.recipient_key, _reminder_type: reminder.reminder_type, _enabled: enabled,
+      });
+      if (error) throw error;
+    },
+    onSuccess: async (_result, { enabled }) => {
+      await queryClient.invalidateQueries({ queryKey: ['crew-sms-upcoming'] });
+      toast.success(enabled ? 'Scheduled text switched on' : 'Scheduled text switched off');
+    },
+    onError: (error: Error) => toast.error('Could not change this text', { description: error.message }),
+  });
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['crew-sms-upcoming'],
     queryFn: async () => {
@@ -48,7 +65,11 @@ export function UpcomingCrewSms() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{r.reminder_type === 'setup' ? 'Setup' : 'Delivery'}</Badge>
-                    <Badge variant={r.blocked ? 'destructive' : 'outline'}>{r.blocked || (data.enabled ? 'Scheduled' : 'Paused')}</Badge>
+                    <Badge variant={!r.disabled && r.blocked ? 'destructive' : 'outline'}>{r.disabled ? 'Switched off' : r.blocked || (data.enabled ? 'Scheduled' : 'Paused')}</Badge>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Switch checked={!r.disabled} disabled={toggleReminder.isPending} aria-label={`${r.reminder_type === 'setup' ? 'Setup' : 'Delivery'} text for ${r.recipient_name} — ${r.event_name}`} onCheckedChange={enabled => toggleReminder.mutate({ reminder: r, enabled })} />
+                      {r.disabled ? 'Off' : 'On'}
+                    </label>
                     <Button size="sm" variant="ghost" aria-label={`Preview ${r.reminder_type} message for ${r.event_name}`} aria-expanded={expanded === key} onClick={() => setExpanded(expanded === key ? null : key)}>{expanded === key ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</Button>
                   </div>
                 </div>

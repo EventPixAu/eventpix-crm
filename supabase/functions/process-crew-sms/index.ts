@@ -57,12 +57,13 @@ Deno.serve(async req => {
       if (settingsError) throw new Error('Cannot load SMS settings');
       const eventIds = [...new Set((schedule || []).map(c => c.event_id))];
       if (!eventIds.length) return reply({ reminders: [], enabled: settings?.enabled ?? false });
-      const [claimsResult, eventsResult, assignmentsResult] = await Promise.all([
+      const [claimsResult, eventsResult, assignmentsResult, disabledResult] = await Promise.all([
         db.from('crew_sms_logs').select('event_id,session_key,recipient_key,reminder_type').in('event_id', eventIds),
         db.from('events').select('id,crew_sms_masv_delivery').in('id', eventIds),
         db.from('event_assignments').select('event_id,user_id,staff_id,profiles(full_name),staff(name,user_id)').in('event_id', eventIds),
+        db.from('crew_sms_disabled_reminders').select('event_id,session_key,recipient_key,reminder_type').in('event_id', eventIds),
       ]);
-      if (claimsResult.error || eventsResult.error || assignmentsResult.error) throw new Error('Cannot load schedule details');
+      if (claimsResult.error || eventsResult.error || assignmentsResult.error || disabledResult.error) throw new Error('Cannot load schedule details');
       const reminders = (schedule || []).filter(c => !claimsResult.data?.some(l => l.event_id === c.event_id && l.session_key === c.session_key && l.recipient_key === c.recipient_key && l.reminder_type === c.reminder_type)).map(c => {
         const phone = normalizeMobile(c.phone || '');
         const masv = eventsResult.data?.some(e => e.id === c.event_id && e.crew_sms_masv_delivery) ?? false;
@@ -71,7 +72,8 @@ Deno.serve(async req => {
         const body = c.reminder_type === 'setup'
           ? renderTemplate(settings?.setup_template || DEFAULT_SETUP_TEMPLATE, { event_name: c.event_name, venue: c.venue_name || 'TBC', setup_time: timeFormat.format(new Date(c.setup_at)), job_sheet_link: JOB_SHEET_LINK })
           : renderTemplate(deliveryBodyTemplate(masv, settings), { event_name: c.event_name, finish_time: timeFormat.format(new Date(c.finish_at)), job_sheet_link: JOB_SHEET_LINK });
-        return { event_id: c.event_id, session_key: c.session_key, recipient_key: c.recipient_key, event_name: c.event_name, recipient_name: assignment?.profiles?.full_name || assignment?.staff?.name || 'Team member', reminder_type: c.reminder_type, due_at: c.due_at, expected_at: new Date(Math.ceil(Date.parse(c.due_at) / 3600000) * 3600000).toISOString(), timezone: c.timezone, phone, body, blocked: !phone ? 'Invalid mobile number' : /\{\{[^}]*\}\}/.test(body) ? 'Unresolved message fields' : null };
+        const disabled = disabledResult.data?.some(d => d.event_id === c.event_id && d.session_key === c.session_key && d.recipient_key === c.recipient_key && d.reminder_type === c.reminder_type) ?? false;
+        return { event_id: c.event_id, session_key: c.session_key, recipient_key: c.recipient_key, event_name: c.event_name, recipient_name: assignment?.profiles?.full_name || assignment?.staff?.name || 'Team member', reminder_type: c.reminder_type, due_at: c.due_at, expected_at: new Date(Math.ceil(Date.parse(c.due_at) / 3600000) * 3600000).toISOString(), timezone: c.timezone, phone, body, disabled, blocked: !phone ? 'Invalid mobile number' : /\{\{[^}]*\}\}/.test(body) ? 'Unresolved message fields' : null };
       }).sort((a,b) => Date.parse(a.due_at)-Date.parse(b.due_at));
       return reply({ reminders, enabled: settings?.enabled ?? false });
     }
