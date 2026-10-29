@@ -77,6 +77,7 @@ import { EventTasksCard } from '@/components/EventTasksCard';
 import { SendOpsEmailDialog } from '@/components/SendOpsEmailDialog';
 import { JobWorkflowRail } from '@/components/JobWorkflowRail';
 import { InitializeWorkflowDialog } from '@/components/InitializeWorkflowDialog';
+import { useApplyEventTypeWorkflow } from '@/hooks/useEventWorkflowSteps';
 import { ContractsPanel } from '@/components/ContractsPanel';
 import { EventBudgetCard } from '@/components/EventBudgetCard';
 import { EventQuotesPanel } from '@/components/EventQuotesPanel';
