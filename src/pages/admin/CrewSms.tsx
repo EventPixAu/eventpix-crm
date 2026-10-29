@@ -203,7 +203,7 @@ export default function CrewSms() {
     <AppLayout>
       <PageHeader
         title="Crew SMS Reminders"
-        description="Setup reminders 24 hours before setup; file reminders 24 hours before scheduled editing, otherwise at event finish."
+        description="Setup reminders 24 hours before setup; all file reminders 24 hours before scheduled post-event delivery, otherwise at event finish."
       />
 
       <div className="space-y-4 max-w-6xl">
@@ -215,7 +215,7 @@ export default function CrewSms() {
             </CardTitle>
             <CardDescription>
               Checks run hourly. Each crew member receives one setup reminder per event and one delivery
-              reminder 24 hours before scheduled editing, otherwise at event finish. MASV ASAP stays at event finish. Cancelled events and offsite or declined assignments are excluded.
+              reminder 24 hours before scheduled post-event delivery, otherwise at event finish. This also applies to MASV. Cancelled events and offsite or declined assignments are excluded.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -253,12 +253,12 @@ export default function CrewSms() {
               <Textarea value={setupTemplate} onChange={(e) => setSetupTemplate(e.target.value)} rows={3} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Delivery reminder — 24 hours before editing, otherwise at finish</label>
+              <label className="text-sm font-medium">Delivery reminder — 24 hours before post-event delivery, otherwise at finish</label>
               <Textarea value={deliveryTemplate} onChange={(e) => setDeliveryTemplate(e.target.value)} rows={3} />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Delivery reminder — MASV ASAP events</label>
-              <p className="text-xs text-muted-foreground">Sent at event finish instead of the standard delivery reminder when the event's Delivery — Photographer method is MASV ASAP.</p>
+              <p className="text-xs text-muted-foreground">MASV wording follows the same timing: 24 hours before scheduled post-event delivery, or at event finish when none is scheduled.</p>
               <Textarea value={masvTemplate} onChange={(e) => setMasvTemplate(e.target.value)} rows={3} />
             </div>
             <div className="flex flex-wrap gap-2">

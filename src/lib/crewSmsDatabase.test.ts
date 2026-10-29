@@ -22,6 +22,7 @@ async function setup(clock?: string) {
   await db.exec(readFileSync('drizzle/migrations/0034_crew_sms_manual_followup.sql', 'utf8'));
   const timingSql = readFileSync('drizzle/migrations/0043_crew_sms_editing_delivery_timing.sql', 'utf8');
   await db.exec(clock ? timingSql.split('now()').join(`timestamptz '${clock}'`) : timingSql);
+  await db.exec(readFileSync('drizzle/migrations/0044_crew_sms_masv_scheduled_delivery_priority.sql', 'utf8'));
   await db.exec(`
     INSERT INTO crew_sms_settings VALUES(true,true,now()-interval '1 minute');
     INSERT INTO events SELECT '00000000-0000-0000-0000-000000000001','SMS test',(now()+interval '24 hours'-interval '30 seconds')::date,'12:00',now()::time,to_char(now()+interval '24 hours'-interval '30 seconds','HH24:MI:SS'),'UTC','Test venue','ready';
@@ -56,10 +57,24 @@ describe('scheduled crew SMS database rules', () => {
     try { expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(0); }
     finally { await db.close(); }
   });
-  it('keeps MASV ASAP at Friday finish despite Monday editing', async () => {
+  it('does not send MASV at Friday finish when post-event delivery is Monday', async () => {
     const db = await editingSetup('2026-10-30T22:00:00+11:00');
     try {
       await db.exec('UPDATE events SET crew_sms_masv_delivery=true');
+      expect((await db.query('SELECT * FROM crew_sms_candidates()')).rows).toHaveLength(0);
+    } finally { await db.close(); }
+  });
+  it('sends MASV on Sunday 9am for Monday 9am post-event delivery', async () => {
+    const db = await editingSetup('2026-11-01T09:00:00+11:00');
+    try {
+      await db.exec('UPDATE events SET crew_sms_masv_delivery=true');
+      expect((await db.query(`SELECT reminder_type,due_at=timestamptz '2026-11-01T09:00:00+11:00' AS exact FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
+    } finally { await db.close(); }
+  });
+  it('retains MASV finish reminders only without scheduled post-event delivery', async () => {
+    const db = await editingSetup('2026-10-30T22:00:00+11:00');
+    try {
+      await db.exec(`UPDATE events SET crew_sms_masv_delivery=true; DELETE FROM event_sessions WHERE session_type='post_production';`);
       expect((await db.query(`SELECT reminder_type,due_at=timestamptz '2026-10-30T21:30:00+11:00' AS exact FROM crew_sms_candidates()`)).rows).toEqual([{reminder_type:'delivery',exact:true}]);
     } finally { await db.close(); }
   });
