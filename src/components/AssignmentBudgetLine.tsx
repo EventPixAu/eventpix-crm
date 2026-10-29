@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
-export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean }) {
+export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null }) {
   const { canView, canEdit } = assignmentPayAccess({ isAdmin, isOperations, isSelf });
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
@@ -55,7 +55,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
-  const { units: payUnits, mergedCall } = assignmentPayUnits(assignment as any, eventSessions, minHours);
+  const { units: payUnits, mergedCall } = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
   const alignedUnits = mergedCall ? payUnits : null;
   const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
 
