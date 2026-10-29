@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Add next-seven-days scheduled SMS previews under Operations / Crew SMS, using shared sender timing and eligibility without sending texts.
+- [x] Add next-seven-days scheduled SMS previews under Operations / Crew SMS; shared sender timing, prior-claim exclusion, saved message previews and expected hourly send times; 31 tests passed, signed-in real list showed 16 texts and Churchill preview expanded, no texts sent; build OK, page awaits publish.
 - [x] Apply scheduled post-event delivery timing to ALL delivery SMS, including MASV ASAP: 24 hours before the work session, not event finish; live exception removed, 30 tests passed, signed-in page verified, no texts sent; hourly checks and duplicate protection retained.
 - [x] Synchronize actual workflow steps on inline and full-form Event Type changes; retain matching-step completion, notes and assignees; three tests passed, signed-in Zno change saved 31 matching steps and survived reload, temporary event removed, build OK; awaiting publish.
 - [x] Keep client rates in Products and photographer rates exclusively in existing Pay Rates; removed cross-link, verified independent $275/$125 editing and one selected photographer's $125 lighting pay saved/reloaded; temporary allocation removed, 20 tests passed, build OK; awaiting publish.
