@@ -8,8 +8,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { assignmentSessionHours } from '@/lib/assignmentPayHours';
-import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
+import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import type { AssignmentRate } from '@/lib/assignmentRateSnapshot';
 
@@ -196,7 +195,7 @@ export function useEventFinancials(eventId: string | undefined) {
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0) continue;
         
-        const callHours = Number(assignment.hours_override ?? assignmentPaidHours(sessionHours, rate.minimum_paid_hours ?? 0));
+        const { units: callHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0);
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
         expectedStaffCost += basePay;
       }
