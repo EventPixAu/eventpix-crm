@@ -40,6 +40,7 @@ import { useAuth } from '@/lib/auth';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import { BulkEquipmentAssignmentDialog } from './BulkEquipmentAssignmentDialog';
 import { AllocatePhotographerKitDialog } from './AllocatePhotographerKitDialog';
+import { EquipmentItemSelect } from './EquipmentItemSelect';
 import { StaffEquipmentPreview } from './StaffEquipmentPreview';
 import { AdditionalEquipmentNotes } from './AdditionalEquipmentNotes';
 

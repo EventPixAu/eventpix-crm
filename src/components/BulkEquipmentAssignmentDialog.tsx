@@ -25,6 +25,7 @@ import { useProfiles, useStaffRoles } from '@/hooks/useStaff';
 import { useAvailableEquipment } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { useBulkAllocateEquipment } from '@/hooks/useBulkEquipmentAllocation';
+import { EquipmentItemSelect } from './EquipmentItemSelect';
 import { toast } from 'sonner';
 
 interface BulkEquipmentAssignmentDialogProps {
