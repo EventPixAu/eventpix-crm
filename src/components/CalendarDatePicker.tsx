@@ -45,7 +45,7 @@ export function CalendarDatePicker({
         <Button
           type="button"
           variant="outline"
-          aria-label={ariaLabel}
+          aria-label={ariaLabelProp}
           disabled={disabled}
           className={cn(
             "justify-start text-left font-normal",
