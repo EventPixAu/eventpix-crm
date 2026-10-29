@@ -337,6 +337,13 @@
       "when": 1793252660043,
       "tag": "0047_crew_sms_event_series_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793254105541,
+      "tag": "0048_event_recipient_delivery_dates",
+      "breakpoints": true
     }
   ]
 }
