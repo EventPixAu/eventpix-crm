@@ -54,9 +54,9 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const sessionHours = assignmentSessionHours(assignment, eventSessions);
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
-  const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
+  const isFixedMode = rateEntry?.rate_mode === 'fixed';
   const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry?.hourly_rate) || 0;
-  const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
+  const fixedRate = Number(rateEntry?.fixed_rate) || 0;
   const minHours = Number(rateEntry?.minimum_paid_hours) || 0;
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
