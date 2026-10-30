@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Current request
-- [ ] Send an On Hold invitation when a photographer is added to a lead and include their scoped tentative booking in My Calendar and subscribed calendars.
-- [ ] Add a resend invitation action beside each lead team assignment, with genuine sent/error feedback.
-- [ ] Check for other outstanding On Hold lead invitations and report them without sending automatically.
+- [x] Send an On Hold invitation when a photographer is added to a lead and include their scoped tentative booking in My Calendar and subscribed calendars. Four tests passed; Jasmina’s actual Bemin hold and subscribed feed verified, sender deployed; My Calendar changes await publish. Her personal signed-in calendar view was not exercised.
+- [x] Add a resend invitation action beside each lead team assignment, with genuine sent/error feedback. Sent Jasmina’s Bemin invitation once at 12:38pm Sydney; Gmail accepted, sent record and date survived reload, layout verified; controls await publish.
+- [x] Check for other outstanding On Hold lead invitations and report them without sending automatically. No other active leads have unsent invitations; older entries are Won leads and were not sent.
 - [x] Move editable team pay calculations to the event Overview Payment section; keep a read-only summary on the Assignments tab and preserve detailed photographer own-pay views. 20 tests passed; signed-in Melbourne Cup units saved/reloaded at $750, matching summary verified, original $625 restored; Payment retains Warren’s $160 and combined $785 total; build OK, awaits publish.
 - [x] Schedule delivery SMS from the Photographer delivery date at 9am local minus 24 hours, ahead of editing-session fallback; switches, LBA exclusion and duplicate protection retained. 30 database tests passed; signed-in save/reload changed HOB preview to 31 October 9am for 1 November delivery, original blank date restored, no texts sent; timing live, wording awaits publish.
 - [x] Add separate Photographer, Guests and Client delivery dates in that order to event Edit and Overview; existing client deadlines and SMS timing retained; three tests passed, signed-in independent save/reload verified and original dates restored, build OK; awaits publish.
