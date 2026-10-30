@@ -6,6 +6,7 @@ import { useEventAssignments } from '@/hooks/useEvents';
 import { filterVisibleAssignments } from '@/lib/editorVisibility';
 import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 import { LightingPayAllocation } from '@/components/LightingPayAllocation';
+import { eventPayCalculationVisible } from '@/lib/assignmentPayAccess';
 
 interface Props {
   eventId: string;
@@ -18,7 +19,7 @@ interface Props {
 /** Event-page pay editing uses the same breakdown as team job sheets and assignment summaries. */
 export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId, eventCallTime }: Props) {
   const { data: assignments = [] } = useEventAssignments(eventId);
-  const canManage = isAdmin || isOperations;
+  const canManage = eventPayCalculationVisible({ isAdmin, isOperations });
   const [totals, setTotals] = useState<Record<string, number>>({});
   const recordTotal = useCallback((id: string, total: number) => setTotals(current => current[id] === total ? current : { ...current, [id]: total }), []);
   const members = useMemo(() => {
@@ -35,7 +36,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
     return Array.from(grouped.entries()).sort(([, a], [, b]) => a.name.localeCompare(b.name));
   }, [assignments, canManage, isAdmin, currentUserId]);
 
-  if (!canManage && members.length === 0) return null;
+  if (!canManage) return null;
 
   return (
     <Card>
