@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { format, parseISO } from "https://esm.sh/date-fns@3";
+import { leadHoldEntries, type LeadHold } from '../_shared/leadHoldCalendar.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -198,8 +199,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) throw new Error('Calendar service is not configured');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Verify the token matches the user's feed token
@@ -207,7 +209,7 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('id, calendar_feed_token')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile || profile.calendar_feed_token !== token) {
       return new Response("Invalid token", { 
@@ -245,6 +247,9 @@ Deno.serve(async (req) => {
     // For privileged users, show all events AND leads. Otherwise, only events assigned to them.
     let assignedEvents: any[] = [];
     let leads: any[] = [];
+    const { data: holdRows, error: holdError } = await supabase.rpc('lead_calendar_holds', { _user_id: userId });
+    if (holdError) throw holdError;
+    const holds: LeadHold[] = (holdRows || []).filter((hold: LeadHold) => hold.session_date >= format(leadPastDate, 'yyyy-MM-dd') && hold.session_date <= format(futureDate, 'yyyy-MM-dd'));
     
     if (isPrivilegedUser) {
       // Fetch all confirmed events
@@ -366,6 +371,7 @@ Deno.serve(async (req) => {
     // Collect all unique timezones used
     const usedTimezones = new Set<string>();
     usedTimezones.add('Australia/Sydney'); // Always include default
+    holds.forEach(hold => usedTimezones.add(hold.timezone));
 
     // Build ICS content
     const icsLines: string[] = [
@@ -677,6 +683,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    icsLines.push(...leadHoldEntries(holds));
     icsLines.push('END:VCALENDAR');
 
     const icsContent = icsLines.join('\r\n');

@@ -28,6 +28,7 @@ export interface CalendarEvent {
   needs_attention: boolean;
   is_delivered: boolean;
   is_lead?: boolean; // Flag for leads shown on calendar
+  calendar_key?: string;
   is_post_event?: boolean; // post_production (editing) session entry
   confirmation_status?: string | null; // staff's availability confirmation for this event
 }
@@ -420,6 +421,28 @@ export function useStaffCalendarEvents(currentMonth: Date) {
 
       const today = new Date();
       const calendarEntries: CalendarEvent[] = [];
+
+      const { data: holds, error: holdsError } = await supabase.rpc('lead_calendar_holds', { _user_id: user.id });
+      if (holdsError) throw holdsError;
+      const seenHolds = new Set<string>();
+      for (const hold of holds || []) {
+        if (hold.session_date < rangeStart || hold.session_date > rangeEnd) continue;
+        const key = `lead-${hold.lead_id}-${hold.session_id || 'main'}`;
+        if (seenHolds.has(key)) continue;
+        seenHolds.add(key);
+        calendarEntries.push({
+          id: hold.lead_id, calendar_key: key,
+          event_name: hold.session_label ? `${hold.lead_name} — ${hold.session_label}` : hold.lead_name,
+          client_name: '', event_date: hold.session_date,
+          arrival_time: hold.arrival_time, start_time: hold.start_time, end_time: hold.end_time,
+          start_at: null, end_at: null, timezone: hold.timezone, venue_name: hold.venue_name,
+          venue_address: null, onsite_contact_name: null, onsite_contact_phone: null,
+          event_type_id: null, event_series_id: null, event_series_name: null,
+          delivery_method_id: null, delivery_deadline: null, assignment_count: 0,
+          has_conflict: false, needs_attention: false, is_delivered: false,
+          is_lead: true, confirmation_status: 'on_hold',
+        });
+      }
 
       (assignedEvents || []).forEach(a => {
         const event = a.events as any;

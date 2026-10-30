@@ -14,6 +14,8 @@ export interface LeadAssignment {
   confirmed_at: string | null;
   created_at: string | null;
   created_by: string | null;
+  notification_sent_at?: string | null;
+  notification_error?: string | null;
   profile?: {
     id: string;
     full_name: string | null;
@@ -89,14 +91,22 @@ export function useCreateLeadAssignment() {
           confirmation_status: 'on_hold',
         } as any)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (!data) throw new Error('Assignment was not saved');
+      const { data: invitation, error: inviteError } = await supabase.functions.invoke('send-notification', {
+        body: { type: 'lead_assignment', lead_id: params.lead_id, assignment_id: data.id },
+      });
+      return { assignment: data, inviteError: inviteError?.message || invitation?.error, warning: invitation?.warning };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['lead-assignments', variables.lead_id] });
-      toast.success('Staff assigned');
+      queryClient.invalidateQueries({ queryKey: ['staff-calendar-events'] });
+      queryClient.invalidateQueries({ queryKey: ['email-logs'] });
+      if (result.inviteError) toast.error('Team member assigned, but the invitation was not confirmed sent. Use Resend invitation to try again.');
+      else if (result.warning) toast.warning(result.warning);
+      else toast.success('Team member assigned and On Hold invitation sent');
     },
     onError: (error: Error) => {
       toast.error('Failed to assign staff: ' + error.message);
@@ -119,10 +129,31 @@ export function useDeleteLeadAssignment() {
     },
     onSuccess: (leadId) => {
       queryClient.invalidateQueries({ queryKey: ['lead-assignments', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['staff-calendar-events'] });
       toast.success('Assignment removed');
     },
     onError: (error: Error) => {
       toast.error('Failed to remove assignment: ' + error.message);
     },
+  });
+}
+
+export function useResendLeadInvitation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, leadId }: { id: string; leadId: string }) => {
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: { type: 'lead_assignment', lead_id: leadId, assignment_id: id },
+      });
+      if (error || data?.error) throw new Error(error?.message || data.error);
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['lead-assignments', variables.leadId] });
+      queryClient.invalidateQueries({ queryKey: ['email-logs'] });
+      if (data?.warning) toast.warning(data.warning);
+      else toast.success('On Hold invitation sent');
+    },
+    onError: (error: Error) => toast.error('Invitation could not be confirmed sent: ' + error.message),
   });
 }
