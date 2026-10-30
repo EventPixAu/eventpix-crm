@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,8 @@ interface Props {
 export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId, eventCallTime }: Props) {
   const { data: assignments = [] } = useEventAssignments(eventId);
   const canManage = isAdmin || isOperations;
+  const [totals, setTotals] = useState<Record<string, number>>({});
+  const recordTotal = useCallback((id: string, total: number) => setTotals(current => current[id] === total ? current : { ...current, [id]: total }), []);
   const members = useMemo(() => {
     const visible = filterVisibleAssignments(assignments, { isAdmin, userId: currentUserId })
       .filter(a => !a.profile?.is_salaried && (canManage || a.user_id === currentUserId));
@@ -45,7 +47,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
         {members.length === 0 && <p className="text-sm text-muted-foreground">No paid team assignments</p>}
         {members.map(([key, member]) => (
           <section key={key} className="border-t border-border pt-3 space-y-3">
-            <h3 className="font-medium text-sm">{member.name}</h3>
+            <div className="flex flex-wrap justify-between gap-2 text-sm font-medium"><h3>{member.name}</h3><span>${member.assignments.reduce((sum, a) => sum + (totals[a.id] || 0), 0).toFixed(2)}</span></div>
             {member.assignments.map(assignment => (
               <div key={assignment.id} className="min-w-0">
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -53,11 +55,12 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
                   <span>{assignment.staff_role?.name || assignment.role_on_event || 'Team'}</span>
                   {assignment.session?.start_time && assignment.session?.end_time && <span>{assignment.session.start_time.slice(0, 5)} – {assignment.session.end_time.slice(0, 5)}</span>}
                 </div>
-                <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={assignment.user_id === currentUserId} eventCallTime={eventCallTime} />
+                <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={assignment.user_id === currentUserId} eventCallTime={eventCallTime} onTotal={recordTotal} />
               </div>
             ))}
           </section>
         ))}
+        {members.length > 0 && <div className="flex flex-wrap justify-between gap-2 pt-3 border-t border-border text-sm font-semibold"><span>Total (ex GST)</span><span>${members.reduce((sum, [, member]) => sum + member.assignments.reduce((subtotal, a) => subtotal + (totals[a.id] || 0), 0), 0).toFixed(2)}</span></div>}
       </CardContent>
     </Card>
   );

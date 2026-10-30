@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DollarSign, Plus, Trash2, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
-import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits, assignmentPaySession, assignmentCallStartTime } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
 import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
-export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false, fallbackRate, fallbackHours, onTotal }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean; fallbackRate?: number; fallbackHours?: number; onTotal?: (assignmentId: string, total: number) => void }) {
+export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false, onTotal }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean; onTotal?: (assignmentId: string, total: number) => void }) {
   const access = assignmentPayAccess({ isAdmin, isOperations, isSelf, summary });
   const canView = access.canView;
   const canEdit = access.canEdit && !summary;
@@ -47,21 +47,26 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   });
 
   const roleId = assignment.staff_role_id;
-  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId)) ?? (fallbackRate != null ? { hourly_rate: fallbackRate, minimum_paid_hours: 0, rate_mode: 'hourly' } : undefined);
-
-  if (!canView || isLoading || !rateEntry) return null;
+  const roleName = assignment.staff_role?.name || assignment.role_on_event || '';
+  const roleKeyword = /photograph|videograph/i.test(roleName) ? /photograph|videograph/i : /assistant/i.test(roleName) ? /assistant/i : /editor|edit/i;
+  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId) ?? rateCard.find(r => roleName && roleKeyword.test(r.staff_roles?.name || '')));
 
   const sessionHours = assignmentSessionHours(assignment, eventSessions);
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
   const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
-  const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry.hourly_rate) || 0;
+  const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry?.hourly_rate) || 0;
   const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
-  const minHours = Number(rateEntry.minimum_paid_hours) || 0;
+  const minHours = Number(rateEntry?.minimum_paid_hours) || 0;
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
   const calculated = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
+  const hourlyRole = !/photograph|videograph/i.test(roleName);
+  const session = assignmentPaySession(assignment, eventSessions);
+  const start = assignmentCallStartTime(assignment, session);
+  const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
+  const fallbackHours = hourlyRole ? Math.ceil(Math.max(0, start && session?.end_time ? (minutes(session.end_time) - minutes(start)) / 60 : sessionHours) * 2) / 2 : undefined;
   const payUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
   const mergedCall = calculated.mergedCall;
   const alignedUnits = mergedCall ? payUnits : null;
@@ -78,6 +83,11 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const equipment = Number((assignment as any).equipment_amount || 0);
   const lightingTotal = lightingPayTotal(lightingPay, assignment.id);
   const totalWithExtras = basePay + extrasTotal + travel + equipment + lightingTotal;
+  useEffect(() => {
+    if (canView && !isLoading && rateEntry) onTotal?.(assignment.id, totalWithExtras);
+  }, [canView, isLoading, !!rateEntry, assignment.id, totalWithExtras, onTotal]);
+
+  if (!canView || isLoading || !rateEntry) return null;
 
   const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
   const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
