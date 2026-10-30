@@ -5,7 +5,7 @@
  * Allows adding/removing staff per session or as general assignments.
  */
 import { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, Clock, UserPlus, Calendar } from 'lucide-react';
+import { Users, Plus, Trash2, Clock, UserPlus, Calendar, Send, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ import {
   useLeadAssignments,
   useCreateLeadAssignment,
   useDeleteLeadAssignment,
+  useResendLeadInvitation,
   LeadAssignment,
 } from '@/hooks/useLeadAssignments';
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
@@ -57,6 +58,7 @@ function AssignmentRow({
   leadId: string;
 }) {
   const deleteAssignment = useDeleteLeadAssignment();
+  const resendInvitation = useResendLeadInvitation();
   const name = assignment.profile?.full_name || 'Unknown';
   const initials = name
     .split(' ')
@@ -66,27 +68,37 @@ function AssignmentRow({
     .slice(0, 2);
 
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors">
+    <div className="flex flex-wrap items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors">
       <Avatar className="h-8 w-8">
         <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
       </Avatar>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-[140px] basis-[140px]">
         <div className="text-sm font-medium truncate">{name}</div>
         {assignment.staff_role?.name && (
           <div className="text-xs text-muted-foreground">
             {assignment.staff_role.name}
           </div>
         )}
+        <div className="text-xs text-muted-foreground break-words">
+          {assignment.notification_error ? 'Last invitation failed' : assignment.notification_sent_at
+            ? `Invitation sent ${format(parseISO(assignment.notification_sent_at), 'd MMM, h:mm a')}`
+            : 'Invitation not sent'}
+        </div>
       </div>
 
       <Badge
         variant="outline"
-        className="text-xs bg-slate-500/10 text-slate-400 border-slate-500/30"
+        className="text-xs text-muted-foreground border-border shrink-0"
       >
         <Clock className="h-3 w-3 mr-1" />
         On Hold
       </Badge>
+
+      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Resend invitation" aria-label={`Resend invitation to ${name}`}
+        disabled={resendInvitation.isPending} onClick={() => resendInvitation.mutate({ id: assignment.id, leadId })}>
+        {resendInvitation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+      </Button>
 
       <Button
         variant="ghost"
@@ -165,7 +177,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
   sessions.forEach((s) => sessionAssignments.set(s.id, []));
   assignments.forEach((a) => {
     if (a.session_id && sessionAssignments.has(a.session_id)) {
-      sessionAssignments.get(a.session_id)!.push(a);
+      sessionAssignments.get(a.session_id)?.push(a);
     }
   });
 

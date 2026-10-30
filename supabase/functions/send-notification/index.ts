@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { leadHoldEntries } from '../_shared/leadHoldCalendar.ts';
 
 
 interface NotificationRequest {
-  type: "assignment" | "assignment_confirmed" | "event_update" | "lead_on_hold" | "series_assignment";
-  event_id: string;
+  type: "assignment" | "assignment_confirmed" | "event_update" | "lead_on_hold" | "series_assignment" | "lead_assignment";
+  event_id?: string;
   series_id?: string;
   lead_id?: string;
   dry_run?: boolean;
@@ -67,6 +68,7 @@ function buildMimeWithIcs(to: string, subject: string, html: string, icsContent?
 }
 
 async function sendViaGmailApi(to: string, subject: string, html: string, icsContent?: string): Promise<void> {
+  if (/\{\{[\s\S]*?\}\}/.test(subject + html + (icsContent || ''))) throw new Error('Email contains unfilled placeholders');
   const accessToken = await getGmailAccessToken();
   const mime = buildMimeWithIcs(to, subject, html, icsContent);
   const raw = base64UrlEncode(mime);
@@ -75,7 +77,8 @@ async function sendViaGmailApi(to: string, subject: string, html: string, icsCon
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify({ raw }),
   });
-  if (!resp.ok) throw new Error(`Gmail API error: ${await resp.text()}`);
+  const responseBody = await resp.text();
+  if (!resp.ok) throw new Error(`Gmail API error: ${responseBody}`);
 }
 
 // ── ICS helpers ──
@@ -252,9 +255,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) throw new Error('Notification service is not configured');
     const appUrl = Deno.env.get("APP_URL") || "https://app.eventpix.com.au";
 
     const authHeader = req.headers.get('Authorization');
@@ -284,6 +288,41 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const { type, event_id, user_id, assignment_id, user_ids, lead_id, series_id, dry_run }: NotificationRequest = await req.json();
+
+    if (type === 'lead_assignment') {
+      if (!assignment_id || !lead_id) throw new Error('Lead and assignment are required');
+      const { data: assignment, error: assignmentError } = await supabaseUser.from('lead_assignments')
+        .select('id, user_id, session_id, confirmation_status').eq('id', assignment_id).eq('lead_id', lead_id).maybeSingle();
+      if (assignmentError || !assignment?.user_id || assignment.confirmation_status !== 'on_hold') throw new Error('On Hold assignment not found');
+      const { data: lead, error: leadError } = await supabaseUser.from('leads').select('id, lead_name, status, converted_job_id').eq('id', lead_id).maybeSingle();
+      if (leadError || !lead || lead.converted_job_id || ['lost','won','converted'].includes(lead.status.toLowerCase())) throw new Error('This lead is no longer available for an On Hold invitation');
+      const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', assignment.user_id).maybeSingle();
+      if (!profile?.email) throw new Error('This team member has no email address');
+      const { data: allHolds, error: holdsError } = await supabase.rpc('lead_calendar_holds', { _user_id: assignment.user_id });
+      if (holdsError) throw holdsError;
+      const holds = (allHolds || []).filter((hold: any) => hold.assignment_id === assignment_id);
+      const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
+      const firstName = (profile.full_name || '').trim().split(/\s+/)[0] || 'there';
+      const details = holds.map((hold: any) => `<p><strong>${escapeHtml(formatDate(hold.session_date))}${hold.session_label ? ` · ${escapeHtml(hold.session_label)}` : ''}</strong><br>${hold.arrival_time ? `Arrive ${formatTime(hold.arrival_time)} · ` : ''}${hold.start_time ? `Start ${formatTime(hold.start_time)}` : ''}${hold.end_time ? ` – ${formatTime(hold.end_time)}` : ''} (${escapeHtml(hold.timezone)})${hold.venue_name ? `<br>${escapeHtml(hold.venue_name)}` : ''}</p>`).join('');
+      const subject = `Eventpix - On Hold invitation: ${lead.lead_name}`;
+      const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#fff;color:#111"><main style="max-width:600px;margin:0 auto;padding:24px"><h1>On Hold invitation</h1><p>Hi ${escapeHtml(firstName)},</p><p>Please hold the following booking while we await client confirmation.</p><h2>${escapeHtml(lead.lead_name)}</h2>${details || '<p>Date and times are to be confirmed; no dated calendar booking has been added.</p>'}<p>This is a tentative booking, not a confirmed job. We will contact you when the client confirms.</p><p><a href="${appUrl}/my-calendar">View My Calendar</a></p><p>Thanks,<br>Eventpix</p></main></body></html>`;
+      const timezones = [...new Set(holds.map((hold: any) => hold.timezone))].map(tz => getVTimezone(String(tz))).filter(Boolean);
+      const entries = leadHoldEntries(holds);
+      const calendar = entries.length ? ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Eventpix//Lead Holds//EN','CALSCALE:GREGORIAN','METHOD:REQUEST',...timezones,...entries,'END:VCALENDAR'].join('\r\n') : undefined;
+      if (dry_run) return new Response(JSON.stringify({ success: true, subject, html, calendar, recipient_email: profile.email }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      try {
+        await sendViaGmailApi(profile.email, subject, html, calendar);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invitation could not be sent';
+        await supabase.from('lead_assignments').update({ notification_error: message }).eq('id', assignment_id);
+        await supabase.from('email_logs').insert({ lead_id, email_type: 'crew_notification', recipient_email: profile.email, recipient_name: profile.full_name || profile.email, subject, status: 'failed', error_message: message, sent_by: user.id, direction: 'outbound' });
+        throw error;
+      }
+      const sentAt = new Date().toISOString();
+      const { error: logError } = await supabase.from('email_logs').insert({ lead_id, email_type: 'crew_notification', recipient_email: profile.email, recipient_name: profile.full_name || profile.email, subject, body_html: html, body_preview: subject, status: 'sent', sent_at: sentAt, sent_by: user.id, direction: 'outbound' });
+      const { error: recordError } = await supabase.from('lead_assignments').update({ notification_sent_at: sentAt, notification_error: null }).eq('id', assignment_id);
+      return new Response(JSON.stringify({ success: true, sent_at: sentAt, warning: logError || recordError ? 'Email sent, but its history could not be fully recorded. Do not resend solely because of this warning.' : undefined }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (type === 'series_assignment') {
       if (!series_id || !user_id || !/^[0-9a-f-]{36}$/i.test(series_id) || !/^[0-9a-f-]{36}$/i.test(user_id)) {

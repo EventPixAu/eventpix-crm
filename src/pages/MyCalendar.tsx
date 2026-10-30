@@ -47,7 +47,7 @@ function EventTile({ event }: { event: CalendarEvent }) {
   
   return (
     <Link
-      to={`/events/${event.id}`}
+      to={event.is_lead ? '/my-calendar' : `/events/${event.id}`}
       className={cn(
         "block text-xs p-1.5 rounded transition-colors truncate border-l-2",
         event.has_conflict 
@@ -79,7 +79,8 @@ function EventTile({ event }: { event: CalendarEvent }) {
       {suburb && (
         <span className="text-muted-foreground truncate block">{suburb}</span>
       )}
-      {event.confirmation_status !== 'confirmed' && (
+      {event.confirmation_status === 'on_hold' && <Badge variant="secondary" className="mt-1 text-[10px]">On Hold</Badge>}
+      {event.confirmation_status !== 'confirmed' && event.confirmation_status !== 'on_hold' && (
         <span className="mt-1 inline-flex items-center gap-1 rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
           <CheckCircle className="h-2.5 w-2.5" />
           Confirm
@@ -94,7 +95,7 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
   
   return (
     <Link
-      to={`/events/${event.id}`}
+      to={event.is_lead ? '/my-calendar' : `/events/${event.id}`}
       className={cn(
         "flex items-center gap-4 p-4 rounded-lg border transition-colors",
         event.has_conflict
@@ -152,7 +153,8 @@ function ListViewItem({ event }: { event: CalendarEvent }) {
           )}
         </div>
       </div>
-      {event.confirmation_status !== 'confirmed' && (
+      {event.confirmation_status === 'on_hold' && <Badge variant="secondary" className="shrink-0">On Hold</Badge>}
+      {event.confirmation_status !== 'confirmed' && event.confirmation_status !== 'on_hold' && (
         <span className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-orange-500 hover:bg-orange-600 px-3 py-1.5 text-xs font-medium text-white">
           <CheckCircle className="h-3.5 w-3.5" />
           Confirm Availability
@@ -194,7 +196,7 @@ export default function MyCalendar() {
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
       }
-      map.get(dateKey)!.push(event);
+      map.get(dateKey)?.push(event);
     });
     map.forEach((dayEvents) => {
       dayEvents.sort((a, b) => {
@@ -308,7 +310,7 @@ export default function MyCalendar() {
           className="space-y-3"
         >
           {sortedListEvents.map((event) => (
-            <ListViewItem key={event.id} event={event} />
+            <ListViewItem key={event.calendar_key || `${event.id}-${event.event_date}`} event={event} />
           ))}
         </motion.div>
       ) : viewMode === 'week' ? (
@@ -349,7 +351,7 @@ export default function MyCalendar() {
                   )}
                 >
                   {dayEvents.map((event) => (
-                    <EventTile key={event.id} event={event} />
+                    <EventTile key={event.calendar_key || `${event.id}-${event.event_date}`} event={event} />
                   ))}
                 </div>
               );
@@ -404,7 +406,7 @@ export default function MyCalendar() {
                   </div>
                   <div className="space-y-1">
                     {dayEvents.slice(0, 2).map((event) => (
-                      <EventTile key={event.id} event={event} />
+                      <EventTile key={event.calendar_key || `${event.id}-${event.event_date}`} event={event} />
                     ))}
                     {dayEvents.length > 2 && (
                       <p className="text-xs text-muted-foreground">
