@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Move editable team pay calculations to the event Overview Payment section; keep a read-only summary on the Assignments tab and preserve detailed photographer own-pay views. 20 tests passed; signed-in Melbourne Cup units saved/reloaded at $750, matching summary verified, original $625 restored; Payment retains Warren’s $160 and combined $785 total; build OK, awaits publish.
 - [x] Schedule delivery SMS from the Photographer delivery date at 9am local minus 24 hours, ahead of editing-session fallback; switches, LBA exclusion and duplicate protection retained. 30 database tests passed; signed-in save/reload changed HOB preview to 31 October 9am for 1 November delivery, original blank date restored, no texts sent; timing live, wording awaits publish.
 - [x] Add separate Photographer, Guests and Client delivery dates in that order to event Edit and Overview; existing client deadlines and SMS timing retained; three tests passed, signed-in independent save/reload verified and original dates restored, build OK; awaits publish.
 - [x] Exclude LBA automatic setup/delivery SMS and add separate switches in new-series setup, series Settings and event forms; event overrides otherwise inherit series defaults for existing/new events. 38 tests passed; signed-in preview shows four Churchill reminders and no LBA, series save/reload/restore verified, LBA switches off and event choices verified. No texts sent; LBA exclusion is live, controls await publish.

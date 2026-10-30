@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { DollarSign, Plus, Trash2 } from 'lucide-react';
+import { DollarSign, Plus, Trash2, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
-import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits, assignmentPaySession, assignmentCallStartTime } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
 import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
@@ -14,8 +14,10 @@ import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
-export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null }) {
-  const { canView, canEdit } = assignmentPayAccess({ isAdmin, isOperations, isSelf });
+export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false, onTotal }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean; onTotal?: (assignmentId: string, total: number) => void }) {
+  const access = assignmentPayAccess({ isAdmin, isOperations, isSelf, summary });
+  const canView = access.canView;
+  const canEdit = access.canEdit && !summary;
   const { data: rateCard = [], isLoading } = usePayRateCard();
   const { data: allAllowances = [] } = usePayAllowances();
   const { data: eventSessions = [] } = useEventSessions(eventId);
@@ -26,6 +28,10 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const [editAmount, setEditAmount] = useState('');
   const [editingField, setEditingField] = useState<'travel_amount' | 'equipment_amount' | null>(null);
   const [travelInput, setTravelInput] = useState('');
+  const [editingCalculation, setEditingCalculation] = useState(false);
+  const [unitsInput, setUnitsInput] = useState('');
+  const [rateInput, setRateInput] = useState('');
+  const [savingCalculation, setSavingCalculation] = useState(false);
 
   // Fetch assignment allowances
   const { data: assignmentAllowances = [] } = useQuery({
@@ -41,21 +47,28 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   });
 
   const roleId = assignment.staff_role_id;
-  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId));
-
-  if (!canView || isLoading || !rateEntry) return null;
+  const roleName = assignment.staff_role?.name || assignment.role_on_event || '';
+  const roleKeyword = /photograph|videograph/i.test(roleName) ? /photograph|videograph/i : /assistant/i.test(roleName) ? /assistant/i : /editor|edit/i;
+  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId) ?? rateCard.find(r => roleName && roleKeyword.test(r.staff_roles?.name || '')));
 
   const sessionHours = assignmentSessionHours(assignment, eventSessions);
 
   // Enforce minimum paid hours (e.g. 2hr minimum call)
-  const isFixedMode = (rateEntry as any).rate_mode === 'fixed';
-  const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry.hourly_rate) || 0;
-  const fixedRate = Number((rateEntry as any).fixed_rate) || 0;
-  const minHours = Number(rateEntry.minimum_paid_hours) || 0;
+  const isFixedMode = rateEntry?.rate_mode === 'fixed';
+  const hourlyRate = Number((assignment as any).hourly_rate_override ?? rateEntry?.hourly_rate) || 0;
+  const fixedRate = Number(rateEntry?.fixed_rate) || 0;
+  const minHours = Number(rateEntry?.minimum_paid_hours) || 0;
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
-  const { units: payUnits, mergedCall } = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
+  const calculated = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
+  const hourlyRole = !/photograph|videograph/i.test(roleName);
+  const session = assignmentPaySession(assignment, eventSessions);
+  const start = assignmentCallStartTime(assignment, session, session?.start_time);
+  const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
+  const fallbackHours = hourlyRole ? Math.ceil(Math.max(0, start && session?.end_time ? (minutes(session.end_time) - minutes(start)) / 60 : sessionHours) * 2) / 2 : undefined;
+  const payUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
+  const mergedCall = calculated.mergedCall;
   const alignedUnits = mergedCall ? payUnits : null;
   const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
 
@@ -70,6 +83,11 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const equipment = Number((assignment as any).equipment_amount || 0);
   const lightingTotal = lightingPayTotal(lightingPay, assignment.id);
   const totalWithExtras = basePay + extrasTotal + travel + equipment + lightingTotal;
+  useEffect(() => {
+    if (canView && !isLoading && rateEntry) onTotal?.(assignment.id, totalWithExtras);
+  }, [canView, isLoading, !!rateEntry, assignment.id, totalWithExtras, onTotal]);
+
+  if (!canView || isLoading || !rateEntry) return null;
 
   const activeAllowanceIds = new Set(assignmentAllowances.map((aa: any) => aa.allowance_id || aa.pay_allowances?.id));
   const availableExtras = allAllowances.filter(a => a.is_active && !activeAllowanceIds.has(a.id));
@@ -173,17 +191,70 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
 
   const rateLabel = `$${hourlyRate.toFixed(2)}/unit`;
 
+  const saveCalculation = async (reset = false) => {
+    const units = Number(unitsInput);
+    const rate = Number(rateInput);
+    if (!reset && (!Number.isFinite(units) || units < 0 || !Number.isFinite(rate) || rate < 0)) {
+      toast.error('Enter valid units and rate');
+      return;
+    }
+    setSavingCalculation(true);
+    const { error } = await supabase.from('event_assignments').update({
+      hours_override: reset ? null : units,
+      hourly_rate_override: reset ? null : rate,
+    }).eq('id', assignment.id);
+    setSavingCalculation(false);
+    if (error) {
+      toast.error('Failed to update pay', { description: error.message });
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
+    queryClient.invalidateQueries({ queryKey: ['my-job-sheets'] });
+    setEditingCalculation(false);
+  };
+
+  if (summary) {
+    return (
+      <div className="mt-2 pt-2 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="font-medium">Pay: ${totalWithExtras.toFixed(2)} (ex GST)</span>
+        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} units × ${hourlyRate.toFixed(2)}`}{extrasTotal + travel + equipment + lightingTotal > 0 ? ' + extras' : ''}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-2 pt-2 border-t border-border space-y-1">
       <div className="flex flex-wrap items-center gap-2">
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-xs text-muted-foreground">Pay ({isFixedMode ? 'set rate' : rateLabel})</span>
+        {canEdit && !isFixedMode && !editingCalculation && (
+          <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Edit pay calculation" title="Edit pay calculation" onClick={() => {
+            setUnitsInput(String(payUnits));
+            setRateInput(String(hourlyRate));
+            setEditingCalculation(true);
+          }}><Pencil className="h-3 w-3" /></Button>
+        )}
       </div>
+      {canEdit && editingCalculation && (
+        <div className="flex flex-wrap items-end gap-2 text-xs pb-2">
+          <label className="space-y-1">Payment units<input aria-label="Payment units" type="number" min="0" step="0.5" value={unitsInput} onChange={e => setUnitsInput(e.target.value)} className="block w-24 h-8 bg-background border border-border rounded px-2 text-foreground" /></label>
+          <label className="space-y-1">Rate per unit ($)<input aria-label="Rate per unit" type="number" min="0" step="0.01" value={rateInput} onChange={e => setRateInput(e.target.value)} className="block w-28 h-8 bg-background border border-border rounded px-2 text-foreground" /></label>
+          <Button size="sm" variant="outline" disabled={savingCalculation} onClick={() => saveCalculation(true)}>Reset</Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Cancel pay edit" title="Cancel" disabled={savingCalculation} onClick={() => setEditingCalculation(false)}><X className="h-4 w-4" /></Button>
+          <Button size="icon" className="h-8 w-8" aria-label="Save pay calculation" title="Save" disabled={savingCalculation} onClick={() => saveCalculation()}><Check className="h-4 w-4" /></Button>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 items-start">
       {isFixedMode ? (
         <div className="pl-5 min-w-0 space-y-0.5">
           <p className="text-xs text-muted-foreground">Set rate</p>
           <p className="text-xs font-medium text-foreground">${fixedRate.toFixed(2)}</p>
+        </div>
+      ) : fallbackHours != null ? (
+        <div className="pl-5 min-w-0 space-y-0.5">
+          <p className="text-xs text-muted-foreground">{assignment.staff_role?.name || assignment.role_on_event || 'Team'} · {payUnits} hours</p>
+          <p className="text-xs font-medium text-foreground">${basePay.toFixed(2)}</p>
         </div>
       ) : hasHoursOverride ? (
         <div className="pl-5 min-w-0 space-y-0.5">

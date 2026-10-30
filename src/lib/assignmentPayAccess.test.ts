@@ -11,4 +11,8 @@ describe('assignment pay presentation access', () => {
   it('allows the admin to manually add travel and parking', () => {
     expect(assignmentPayAccess({ isAdmin: true })).toEqual({ canView: true, canEdit: true });
   });
+  it('keeps the Assignments summary read-only for admins and operations', () => {
+    expect(assignmentPayAccess({ isAdmin: true, summary: true })).toEqual({ canView: true, canEdit: false });
+    expect(assignmentPayAccess({ isOperations: true, summary: true })).toEqual({ canView: true, canEdit: false });
+  });
 });
