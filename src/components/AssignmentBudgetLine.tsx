@@ -14,8 +14,8 @@ import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
-export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean }) {
-  const access = assignmentPayAccess({ isAdmin, isOperations, isSelf });
+export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false, fallbackRate, fallbackHours, onTotal }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean; fallbackRate?: number; fallbackHours?: number; onTotal?: (assignmentId: string, total: number) => void }) {
+  const access = assignmentPayAccess({ isAdmin, isOperations, isSelf, summary });
   const canView = access.canView;
   const canEdit = access.canEdit && !summary;
   const { data: rateCard = [], isLoading } = usePayRateCard();
@@ -47,7 +47,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   });
 
   const roleId = assignment.staff_role_id;
-  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId));
+  const rateEntry = assignmentRateSnapshot(assignment, rateCard.find(r => r.staff_role_id === roleId)) ?? (fallbackRate != null ? { hourly_rate: fallbackRate, minimum_paid_hours: 0, rate_mode: 'hourly' } : undefined);
 
   if (!canView || isLoading || !rateEntry) return null;
 
@@ -61,7 +61,9 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const hasHoursOverride = (assignment as any).hours_override != null;
   const coverageUnits = assignmentCoverageUnits(sessionHours, minHours);
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
-  const { units: payUnits, mergedCall } = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
+  const calculated = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
+  const payUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
+  const mergedCall = calculated.mergedCall;
   const alignedUnits = mergedCall ? payUnits : null;
   const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
 
@@ -238,6 +240,11 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
         <div className="pl-5 min-w-0 space-y-0.5">
           <p className="text-xs text-muted-foreground">Set rate</p>
           <p className="text-xs font-medium text-foreground">${fixedRate.toFixed(2)}</p>
+        </div>
+      ) : fallbackHours != null ? (
+        <div className="pl-5 min-w-0 space-y-0.5">
+          <p className="text-xs text-muted-foreground">{assignment.staff_role?.name || assignment.role_on_event || 'Team'} · {payUnits} hours</p>
+          <p className="text-xs font-medium text-foreground">${basePay.toFixed(2)}</p>
         </div>
       ) : hasHoursOverride ? (
         <div className="pl-5 min-w-0 space-y-0.5">
