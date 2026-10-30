@@ -64,7 +64,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const calculated = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
   const hourlyRole = !/photograph|videograph/i.test(roleName);
   const session = assignmentPaySession(assignment, eventSessions);
-  const start = assignmentCallStartTime(assignment, session);
+  const start = assignmentCallStartTime(assignment, session, session?.start_time);
   const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
   const fallbackHours = hourlyRole ? Math.ceil(Math.max(0, start && session?.end_time ? (minutes(session.end_time) - minutes(start)) / 60 : sessionHours) * 2) / 2 : undefined;
   const payUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
