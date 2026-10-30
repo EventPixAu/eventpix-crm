@@ -358,6 +358,13 @@
       "when": 1793324161018,
       "tag": "0050_lead_assignment_invitations_calendar",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1793324408033,
+      "tag": "0051_lead_hold_status_case",
+      "breakpoints": true
     }
   ]
 }
