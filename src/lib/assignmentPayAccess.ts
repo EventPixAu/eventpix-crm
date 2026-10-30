@@ -9,3 +9,11 @@ export function assignmentPayAccess({ isAdmin = false, isOperations = false, isS
     canEdit: !summary && (isAdmin || isOperations),
   };
 }
+
+/** Event Overview calculations are management-only; own-pay summaries remain visible separately. */
+export function eventPayCalculationVisible({ isAdmin = false, isOperations = false }: {
+  isAdmin?: boolean;
+  isOperations?: boolean;
+}) {
+  return isAdmin || isOperations;
+}
