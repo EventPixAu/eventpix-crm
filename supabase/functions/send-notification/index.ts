@@ -295,7 +295,7 @@ const handler = async (req: Request): Promise<Response> => {
         .select('id, user_id, session_id, confirmation_status').eq('id', assignment_id).eq('lead_id', lead_id).maybeSingle();
       if (assignmentError || !assignment?.user_id || assignment.confirmation_status !== 'on_hold') throw new Error('On Hold assignment not found');
       const { data: lead, error: leadError } = await supabaseUser.from('leads').select('id, lead_name, status, converted_job_id').eq('id', lead_id).maybeSingle();
-      if (leadError || !lead || lead.converted_job_id || ['lost','won','converted'].includes(lead.status)) throw new Error('This lead is no longer available for an On Hold invitation');
+      if (leadError || !lead || lead.converted_job_id || ['lost','won','converted'].includes(lead.status.toLowerCase())) throw new Error('This lead is no longer available for an On Hold invitation');
       const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', assignment.user_id).maybeSingle();
       if (!profile?.email) throw new Error('This team member has no email address');
       const { data: allHolds, error: holdsError } = await supabase.rpc('lead_calendar_holds', { _user_id: assignment.user_id });

@@ -73,14 +73,14 @@ function AssignmentRow({
         <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
       </Avatar>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-[140px] basis-[140px]">
         <div className="text-sm font-medium truncate">{name}</div>
         {assignment.staff_role?.name && (
           <div className="text-xs text-muted-foreground">
             {assignment.staff_role.name}
           </div>
         )}
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-muted-foreground break-words">
           {assignment.notification_error ? 'Last invitation failed' : assignment.notification_sent_at
             ? `Invitation sent ${format(parseISO(assignment.notification_sent_at), 'd MMM, h:mm a')}`
             : 'Invitation not sent'}

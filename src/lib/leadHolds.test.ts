@@ -34,12 +34,13 @@ describe('On Hold invitation calendars', () => {
         CREATE TABLE event_sessions(id uuid, lead_id uuid, label text, session_date date, arrival_time time, start_time time, end_time time, timezone text, venue_name text, session_type text);
       `);
       await db.exec(readFileSync('drizzle/migrations/0050_lead_assignment_invitations_calendar.sql','utf8'));
+      await db.exec(readFileSync('drizzle/migrations/0051_lead_hold_status_case.sql','utf8'));
       await db.exec(`INSERT INTO leads VALUES ('00000000-0000-0000-0000-000000000010','Graduation','2026-12-03',null,null,'Lakeside','budget_sent',null);
         INSERT INTO event_sessions VALUES ('00000000-0000-0000-0000-000000000020','00000000-0000-0000-0000-000000000010','Tuesday','2026-12-03','16:00','18:00','23:00','Australia/Melbourne','Lakeside','main'), ('00000000-0000-0000-0000-000000000021','00000000-0000-0000-0000-000000000010','Wednesday','2026-12-04','16:00','18:00','23:00','Australia/Melbourne','Lakeside','main');
         INSERT INTO lead_assignments VALUES ('00000000-0000-0000-0000-000000000030','00000000-0000-0000-0000-000000000010','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000020','on_hold');`);
       expect((await db.query('SELECT session_date::text,arrival_time::text FROM lead_calendar_holds()')).rows).toEqual([{ session_date: '2026-12-03', arrival_time: '16:00:00' }]);
       expect((await db.query("SELECT * FROM lead_calendar_holds('00000000-0000-0000-0000-000000000002')")).rows).toHaveLength(0);
-      for (const status of ['lost','won','on_hold_date_tba']) {
+      for (const status of ['lost','won','Won','Lost','on_hold_date_tba']) {
         await db.exec(`UPDATE leads SET status='${status}'`);
         expect((await db.query('SELECT * FROM lead_calendar_holds()')).rows).toHaveLength(0);
       }
