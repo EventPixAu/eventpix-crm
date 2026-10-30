@@ -1,30 +1,10 @@
-/**
- * EventPaymentPanel
- * 
- * Per-event team payment summary. Calculates per-assignment pay using two formulas:
- *  - Photographer / Videographer: whole coverage-hour blocks, excluding setup.
- *  - Editor / Assistant (and others): from call_time to session end, in 0.5hr brackets.
- *      pay = ceil(call_to_end × 2) / 2 × rate
- *
- * Hourly rate is editable per-assignment (stored as hourly_rate_override on event_assignments).
- * Visible to Admins, Operations, and the assigned team member only.
- */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
-import { DollarSign, Pencil, Check, X } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useEventAssignments } from '@/hooks/useEvents';
-import { useEventSessions } from '@/hooks/useEventSessions';
-import { usePayRateCard } from '@/hooks/usePayRateCard';
-import { useStaffRoles } from '@/hooks/useLookups';
-import { supabase } from '@/lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { assignmentPaidHours, alignedCallUnitsFromMinutes } from '@/lib/assignmentPaidHours';
-import { isPostEventSession } from '@/lib/editorVisibility';
-import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
-import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
+import { filterVisibleAssignments } from '@/lib/editorVisibility';
+import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 import { LightingPayAllocation } from '@/components/LightingPayAllocation';
 
 interface Props {
@@ -32,450 +12,52 @@ interface Props {
   isAdmin: boolean;
   isOperations: boolean;
   currentUserId?: string;
+  eventCallTime?: string | null;
 }
 
-function isPhotographerRole(name: string | null | undefined): boolean {
-  const n = (name || '').toLowerCase();
-  return n.includes('photograph') || n.includes('videograph');
-}
-
-function parseHHMM(t: string | null | undefined): number | null {
-  if (!t) return null;
-  const [h, m] = t.split(':').map(Number);
-  if (isNaN(h) || isNaN(m)) return null;
-  return h * 60 + m;
-}
-
-/** Extract hour-of-day from an ISO timestamp (uses local time components from the ISO string itself). */
-function extractTimeMinutes(iso: string | null | undefined): number | null {
-  if (!iso) return null;
-  // Use the time portion of the ISO string directly to avoid TZ shifts
-  const m = iso.match(/T(\d{2}):(\d{2})/);
-  if (!m) return null;
-  return Number(m[1]) * 60 + Number(m[2]);
-}
-
-interface PayLine {
-  assignmentId: string;
-  date: string | null;
-  label: string;
-  startEnd: string;
-  callTime: string;
-  hours: number;
-  rate: number;
-  pay: number;
-  formula: 'photographer' | 'editor' | 'fixed' | 'lighting';
-}
-
-export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId }: Props) {
+/** Event-page pay editing uses the same breakdown as team job sheets and assignment summaries. */
+export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserId, eventCallTime }: Props) {
   const { data: assignments = [] } = useEventAssignments(eventId);
-  const { data: eventSessions = [] } = useEventSessions(eventId);
-  const { data: rateCard = [] } = usePayRateCard();
-  const { data: allStaffRoles = [] } = useStaffRoles();
-  const { data: lightingPay = [] } = useLightingPay(eventId);
-  const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [rateInput, setRateInput] = useState('');
-  const [editingHoursId, setEditingHoursId] = useState<string | null>(null);
-  const [hoursInput, setHoursInput] = useState('');
-
-  const canView = isAdmin || isOperations;
-  // If not admin/ops, only show if the current user has an assignment on this event
-  const hasOwnAssignment = !!currentUserId && assignments.some(a => a.user_id === currentUserId);
-
-  const grouped = useMemo(() => {
-    type Member = {
-      userId: string | null;
-      name: string;
-      lines: PayLine[];
-      total: number;
-    };
-    const map = new Map<string, Member>();
-
-    // Build name-keyed fallback (hourly rates only) for assignments without staff_role_id
-    const rateByKeyword = new Map<string, number>();
-    for (const r of rateCard) {
-      if ((r as any).rate_mode !== 'hourly') continue;
-      const nm = ((r as any).staff_roles?.name || '').toLowerCase().trim();
-      const rate = Number(r.hourly_rate) || 0;
-      if (!rate) continue;
-      if (nm === 'photographer' || nm === 'videographer') rateByKeyword.set('photographer', rate);
-      else if (nm === 'editor') rateByKeyword.set('editor', rate);
-      else if (nm === 'assistant') rateByKeyword.set('assistant', rate);
+  const canManage = isAdmin || isOperations;
+  const members = useMemo(() => {
+    const visible = filterVisibleAssignments(assignments, { isAdmin, userId: currentUserId })
+      .filter(a => !a.profile?.is_salaried && (canManage || a.user_id === currentUserId));
+    const grouped = new Map<string, { name: string; assignments: typeof assignments }>();
+    for (const assignment of visible) {
+      const name = assignment.profile?.full_name || assignment.profile?.email || assignment.staff?.name || 'Unassigned';
+      const key = assignment.user_id || assignment.staff_id || assignment.id;
+      const member = grouped.get(key) || { name, assignments: [] };
+      member.assignments.push(assignment);
+      grouped.set(key, member);
     }
-    const resolveRateByName = (name: string): number => {
-      const n = name.toLowerCase();
-      if (n.includes('photograph') || n.includes('videograph')) return rateByKeyword.get('photographer') || 0;
-      if (n.includes('editor') || n.includes('edit')) return rateByKeyword.get('editor') || 0;
-      if (n.includes('assistant')) return rateByKeyword.get('assistant') || 0;
-      return 0;
-    };
+    return Array.from(grouped.entries()).sort(([, a], [, b]) => a.name.localeCompare(b.name));
+  }, [assignments, canManage, isAdmin, currentUserId]);
 
-    // Set Rate roles: { staff_role_id → fixed amount }
-    const fixedByRole = new Map<string, number>();
-    for (const r of rateCard) {
-      if ((r as any).rate_mode === 'fixed') {
-        fixedByRole.set(r.staff_role_id, Number((r as any).fixed_rate) || 0);
-      }
-    }
-
-    // Build a set of role IDs marked as off-site (post-production only — not paid per event)
-    const offsiteRoleIds = new Set(
-      allStaffRoles.filter(r => r.is_onsite === false).map(r => r.id)
-    );
-
-    for (const a of assignments) {
-      // Skip salaried team members — they're not paid per event
-      if ((a as any).profile?.is_salaried) continue;
-      // Skip off-site roles (post-production editors, retouchers) — handled by workflow, not call-sheet pay
-      if (a.staff_role_id && offsiteRoleIds.has(a.staff_role_id)) continue;
-      const roleName = (a as any).staff_role?.name || a.role_on_event || '';
-
-      // Fixed per-event rate takes precedence
-      const savedRate = assignmentRateSnapshot(a, rateCard.find(r => r.staff_role_id === a.staff_role_id));
-      const fixedAmount = savedRate?.rate_mode === 'fixed' ? Number(savedRate.fixed_rate) : undefined;
-      if (fixedAmount && fixedAmount > 0) {
-        const name =
-          (a as any).profile?.full_name ||
-          (a as any).profile?.email ||
-          (a as any).staff?.name ||
-          'Unassigned';
-        const key = a.user_id || a.staff_id || name;
-        const line: PayLine = {
-          assignmentId: a.id,
-          date: null,
-          label: `${roleName || 'Crew'} · Fixed rate`,
-          startEnd: '—',
-          callTime: '—',
-          hours: 0,
-          rate: fixedAmount,
-          pay: fixedAmount,
-          formula: 'fixed',
-        };
-        (line as any).key = `${a.id}-fixed`;
-        const existing = map.get(key) || { userId: a.user_id, name, lines: [], total: 0 };
-        existing.lines.push(line);
-        existing.total += fixedAmount;
-        map.set(key, existing);
-        continue;
-      }
-
-      const rateEntry = savedRate;
-      const baseRate = Number(
-        (a as any).hourly_rate_override ??
-        rateEntry?.hourly_rate ??
-        resolveRateByName(roleName)
-      ) || 0;
-      if (!baseRate) continue;
-
-      // Determine sessions to bill: bound session, else all event sessions
-      const boundSession = (a as any).session;
-      const sessionsToBill = boundSession?.start_time && boundSession?.end_time
-        ? [boundSession]
-        : eventSessions.filter(s => s.start_time && s.end_time && !isPostEventSession(s));
-      if (sessionsToBill.length === 0) continue;
-
-      for (const session of sessionsToBill) {
-        const startMin = parseHHMM(session.start_time);
-        const endMin = parseHHMM(session.end_time);
-        if (startMin === null || endMin === null) continue;
-        if (endMin <= startMin) continue;
-
-      const isPhotog = isPhotographerRole(roleName);
-      const hoursOverride = (a as any).hours_override;
-      const hasOverride = hoursOverride != null && !isNaN(Number(hoursOverride));
-      let hours: number;
-      let pay: number;
-      if (hasOverride) {
-        hours = Number(hoursOverride);
-        pay = hours * baseRate;
-      } else if (isPhotog) {
-        const callMin = extractTimeMinutes((a as any).call_time_at) ?? startMin;
-        const aligned = alignedCallUnitsFromMinutes(callMin, endMin);
-        const billed = aligned ?? assignmentPaidHours((endMin - startMin) / 60, Number(rateEntry?.minimum_paid_hours) || 0);
-        hours = billed;
-        pay = billed * baseRate;
-      } else {
-        // Editor/assistant: call -> end, 0.5hr brackets
-        const callMin = extractTimeMinutes((a as any).call_time_at) ?? startMin;
-        const raw = (endMin - callMin) / 60;
-        const rounded = Math.ceil(raw * 2) / 2;
-        hours = rounded;
-        pay = rounded * baseRate;
-      }
-
-      const name =
-        (a as any).profile?.full_name ||
-        (a as any).profile?.email ||
-        (a as any).staff?.name ||
-        'Unassigned';
-      const key = a.user_id || a.staff_id || name;
-
-      const callTimeStr = (() => {
-        const ct = extractTimeMinutes((a as any).call_time_at);
-        if (ct == null) return '—';
-        const hh = Math.floor(ct / 60);
-        const mm = ct % 60;
-        const d = new Date();
-        d.setHours(hh, mm, 0, 0);
-        return format(d, 'h:mm a');
-      })();
-
-      const fmtT = (mins: number) => {
-        const d = new Date();
-        d.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
-        return format(d, 'h:mm a');
-      };
-
-      const line: PayLine = {
-        assignmentId: a.id,
-        date: session.session_date,
-        label: `${roleName || 'Crew'}${session.label ? ' · ' + session.label : ''}`,
-        startEnd: `${fmtT(startMin)} – ${fmtT(endMin)}`,
-        callTime: callTimeStr,
-        hours,
-        rate: baseRate,
-        pay,
-        formula: isPhotog ? 'photographer' : 'editor',
-      };
-      (line as any).key = `${a.id}-${session.id}`;
-
-      const existing = map.get(key) || { userId: a.user_id, name, lines: [], total: 0 };
-      existing.lines.push(line);
-      existing.total += pay;
-      map.set(key, existing);
-      } // end session loop
-    }
-
-    for (const a of assignments) {
-      const amount = lightingPayTotal(lightingPay, a.id);
-      if (!amount) continue;
-      const name = a.profile?.full_name || a.profile?.email || a.staff?.name || 'Unassigned';
-      const key = a.user_id || a.staff_id || name;
-      const member = map.get(key) || { userId: a.user_id, name, lines: [], total: 0 };
-      member.lines.push({ assignmentId: a.id, date: a.session?.session_date ?? null, label: 'Studio lighting kit', startEnd: '—', callTime: '—', hours: 1, rate: amount, pay: amount, formula: 'lighting', key: `${a.id}-lighting` } as PayLine);
-      member.total += amount;
-      map.set(key, member);
-    }
-    // Sort each member's lines by date
-    for (const m of map.values()) {
-      m.lines.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignments, rateCard, eventSessions, allStaffRoles, lightingPay]);
-
-  // Filter for non-admin/ops viewers — show only their own row
-  const visibleMembers = useMemo(() => {
-    if (canView) return grouped;
-    return grouped.filter(m => m.userId === currentUserId);
-  }, [grouped, canView, currentUserId]);
-
-  if (!canView && !hasOwnAssignment) return null;
-  if (visibleMembers.length === 0 && !canView) return null;
-
-  const grandTotal = visibleMembers.reduce((sum, m) => sum + m.total, 0);
-
-  const saveRate = async (assignmentId: string) => {
-    const parsed = parseFloat(rateInput);
-    if (isNaN(parsed) || parsed < 0) {
-      toast.error('Enter a valid rate');
-      return;
-    }
-    const { error } = await supabase
-      .from('event_assignments')
-      .update({ hourly_rate_override: parsed })
-      .eq('id', assignmentId);
-    if (error) {
-      toast.error('Failed to save rate', { description: error.message });
-    } else {
-      toast.success('Rate updated');
-      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-      setEditingId(null);
-    }
-  };
-
-  const clearOverride = async (assignmentId: string) => {
-    const { error } = await supabase
-      .from('event_assignments')
-      .update({ hourly_rate_override: null })
-      .eq('id', assignmentId);
-    if (error) {
-      toast.error('Failed to reset rate', { description: error.message });
-    } else {
-      toast.success('Rate reset to card');
-      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-      setEditingId(null);
-    }
-  };
-
-  const saveHours = async (assignmentId: string) => {
-    const parsed = parseFloat(hoursInput);
-    if (isNaN(parsed) || parsed < 0) {
-      toast.error('Enter valid hours');
-      return;
-    }
-    const { error } = await supabase
-      .from('event_assignments')
-      .update({ hours_override: parsed } as any)
-      .eq('id', assignmentId);
-    if (error) {
-      toast.error('Failed to save hours', { description: error.message });
-    } else {
-      toast.success('Hours updated');
-      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-      setEditingHoursId(null);
-    }
-  };
-
-  const clearHoursOverride = async (assignmentId: string) => {
-    const { error } = await supabase
-      .from('event_assignments')
-      .update({ hours_override: null } as any)
-      .eq('id', assignmentId);
-    if (error) {
-      toast.error('Failed to reset hours', { description: error.message });
-    } else {
-      toast.success('Hours reset to calculated');
-      queryClient.invalidateQueries({ queryKey: ['event-assignments', eventId] });
-      setEditingHoursId(null);
-    }
-  };
+  if (!canManage && members.length === 0) return null;
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <DollarSign className="h-4 w-4" />
-          Payment
-        </CardTitle>
+        <CardTitle className="flex items-center gap-2 text-base"><DollarSign className="h-4 w-4" />Payment</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {canView && <LightingPayAllocation eventId={eventId} />}
-        {visibleMembers.map(member => (
-          <div key={member.name} className="border border-border rounded-lg p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="font-medium text-sm">{member.name}</div>
-              <div className="text-sm font-semibold">${(Number(member.total) || 0).toFixed(2)}</div>
-            </div>
-            <div className="space-y-1.5">
-              {member.lines.map(line => {
-                const isEditing = editingId === line.assignmentId;
-                const isEditingHours = editingHoursId === line.assignmentId;
-                const canEdit = (isAdmin || isOperations) && line.formula !== 'lighting';
-                const editableHours = line.formula !== 'fixed';
-                return (
-                  <div
-                    key={(line as any).key || line.assignmentId}
-                    className="grid grid-cols-12 gap-2 items-center text-xs text-muted-foreground"
-                  >
-                    <div className="col-span-3">
-                      {line.date ? format(parseISO(line.date), 'EEE d MMM') : '—'}
-                    </div>
-                    <div className="col-span-4 truncate" title={line.label}>
-                      <span className="text-foreground">{line.label}</span>
-                      <div className="text-[10px] opacity-70">
-                        Call {line.callTime} · {line.startEnd}
-                      </div>
-                    </div>
-                    <div className="col-span-2 text-right">
-                      {isEditingHours && canEdit && editableHours ? (
-                        <div className="inline-flex items-center gap-1">
-                          <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            className="w-14 h-6 text-xs bg-background border border-border rounded px-1 text-foreground"
-                            value={hoursInput}
-                            onChange={e => setHoursInput(e.target.value)}
-                            autoFocus
-                          />
-                          <span>hrs</span>
-                        </div>
-                      ) : (
-                        <button
-                          className={canEdit && editableHours ? 'hover:text-primary' : ''}
-                          disabled={!canEdit || !editableHours}
-                          onClick={() => {
-                            setEditingHoursId(line.assignmentId);
-                            setHoursInput(String(line.hours));
-                          }}
-                          title={canEdit && editableHours ? 'Click to override hours' : undefined}
-                        >
-                          {line.hours}{line.formula === 'lighting' ? ' unit' : 'hrs'}
-                          {canEdit && editableHours && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
-                        </button>
-                      )}
-                    </div>
-                    <div className="col-span-2 text-right">
-                      {isEditing && canEdit ? (
-                        <div className="inline-flex items-center gap-1">
-                          $<input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            className="w-16 h-6 text-xs bg-background border border-border rounded px-1 text-foreground"
-                            value={rateInput}
-                            onChange={e => setRateInput(e.target.value)}
-                            autoFocus
-                          />
-                        </div>
-                      ) : (
-                        <button
-                          className={canEdit ? 'hover:text-primary' : ''}
-                          disabled={!canEdit}
-                          onClick={() => {
-                            setEditingId(line.assignmentId);
-                            setRateInput(String(line.rate));
-                          }}
-                          title={canEdit ? 'Click to edit rate' : undefined}
-                        >
-                          ${(Number(line.rate) || 0).toFixed(0)}{line.formula === 'fixed' ? '' : line.formula === 'lighting' ? '/unit' : '/hr'}
-                          {canEdit && <Pencil className="h-2.5 w-2.5 inline ml-1 opacity-50" />}
-                        </button>
-                      )}
-                    </div>
-                    <div className="col-span-1 text-right text-foreground font-medium">
-                      ${(Number(line.pay) || 0).toFixed(0)}
-                    </div>
-                    {isEditing && canEdit && (
-                      <div className="col-span-12 flex justify-end gap-1">
-                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => clearOverride(line.assignmentId)}>
-                          Reset
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setEditingId(null)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" className="h-6 px-2" onClick={() => saveRate(line.assignmentId)}>
-                          <Check className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                    {isEditingHours && canEdit && editableHours && (
-                      <div className="col-span-12 flex justify-end gap-1">
-                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => clearHoursOverride(line.assignmentId)}>
-                          Reset
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setEditingHoursId(null)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                        <Button size="sm" className="h-6 px-2" onClick={() => saveHours(line.assignmentId)}>
-                          <Check className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {canManage && <LightingPayAllocation eventId={eventId} />}
+        {members.length === 0 && <p className="text-sm text-muted-foreground">No paid team assignments</p>}
+        {members.map(([key, member]) => (
+          <section key={key} className="border-t border-border pt-3 space-y-3">
+            <h3 className="font-medium text-sm">{member.name}</h3>
+            {member.assignments.map(assignment => (
+              <div key={assignment.id} className="min-w-0">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  {assignment.session?.session_date && <span>{format(parseISO(assignment.session.session_date), 'EEE d MMM')}</span>}
+                  <span>{assignment.staff_role?.name || assignment.role_on_event || 'Team'}</span>
+                  {assignment.session?.start_time && assignment.session?.end_time && <span>{assignment.session.start_time.slice(0, 5)} – {assignment.session.end_time.slice(0, 5)}</span>}
+                </div>
+                <AssignmentBudgetLine assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={assignment.user_id === currentUserId} eventCallTime={eventCallTime} />
+              </div>
+            ))}
+          </section>
         ))}
-
-        {canView && visibleMembers.length > 1 && (
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-sm font-medium">Total</span>
-            <span className="text-base font-semibold">${(Number(grandTotal) || 0).toFixed(2)}</span>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
