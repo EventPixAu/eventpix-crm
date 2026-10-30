@@ -4441,6 +4441,8 @@ export type Database = {
           created_by: string | null
           id: string
           lead_id: string
+          notification_error: string | null
+          notification_sent_at: string | null
           role_on_event: string | null
           session_id: string | null
           staff_role_id: string | null
@@ -4454,6 +4456,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           lead_id: string
+          notification_error?: string | null
+          notification_sent_at?: string | null
           role_on_event?: string | null
           session_id?: string | null
           staff_role_id?: string | null
@@ -4467,6 +4471,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           lead_id?: string
+          notification_error?: string | null
+          notification_sent_at?: string | null
           role_on_event?: string | null
           session_id?: string | null
           staff_role_id?: string | null
@@ -8343,6 +8349,22 @@ export type Database = {
       is_photographer: { Args: { _user_id: string }; Returns: boolean }
       is_sales: { Args: never; Returns: boolean }
       is_team_member: { Args: { _user_id: string }; Returns: boolean }
+      lead_calendar_holds: {
+        Args: { _user_id?: string }
+        Returns: {
+          arrival_time: string
+          assignment_id: string
+          end_time: string
+          lead_id: string
+          lead_name: string
+          session_date: string
+          session_id: string
+          session_label: string
+          start_time: string
+          timezone: string
+          venue_name: string
+        }[]
+      }
       log_audit_entry: {
         Args: {
           p_action: Database["public"]["Enums"]["audit_action"]

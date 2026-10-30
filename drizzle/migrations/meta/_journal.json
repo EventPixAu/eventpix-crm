@@ -351,6 +351,13 @@
       "when": 1793255200381,
       "tag": "0049_crew_sms_photographer_delivery_date",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793324161018,
+      "tag": "0050_lead_assignment_invitations_calendar",
+      "breakpoints": true
     }
   ]
 }
