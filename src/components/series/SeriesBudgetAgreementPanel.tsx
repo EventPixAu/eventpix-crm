@@ -51,6 +51,7 @@ import { AddProductsPackagesDialog } from '@/components/quote/AddProductsPackage
 import { SendEmailDialog } from '@/components/SendEmailDialog';
 import { AgreementDocument } from '@/components/AgreementDocument';
 import { htmlToPdfBlob } from '@/hooks/useGenerateProposalPdf';
+import { SeriesTeamRates } from './SeriesTeamRates';
 
 interface CatalogSelectedItem {
   type: 'product' | 'package';
@@ -697,6 +698,7 @@ export function SeriesBudgetAgreementPanel({ seriesId, seriesName }: Props) {
 
   return (
     <div className="space-y-6">
+      <SeriesTeamRates seriesId={seriesId} />
       {/* SERIES BUDGET */}
       <Card>
         <CardHeader>
