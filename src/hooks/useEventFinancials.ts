@@ -114,16 +114,6 @@ export function useEventFinancials(eventId: string | undefined) {
         .from('pay_rate_card')
         .select('staff_role_id, hourly_rate, minimum_paid_hours, fixed_rate, rate_mode');
       
-      // Fetch series fixed rates if applicable
-      let seriesRates: { staff_role_id: string; fixed_rate: number }[] = [];
-      if (event.event_series_id) {
-        const { data } = await supabase
-          .from('series_fixed_rates')
-          .select('staff_role_id, fixed_rate')
-          .eq('series_id', event.event_series_id);
-        seriesRates = data || [];
-      }
-      
       // Fetch all allowances for these assignments
       const assignmentIds = (assignments || []).map(a => a.id);
       let allowances: { assignment_id: string; override_amount: number | null; quantity: number; allowance_id: string }[] = [];
@@ -173,28 +163,18 @@ export function useEventFinancials(eventId: string | undefined) {
       const rateMap = new Map<string, AssignmentRate>();
       (rateCard || []).forEach(r => rateMap.set(r.staff_role_id, r));
       
-      const seriesRateMap = new Map<string, number>();
-      seriesRates.forEach(r => seriesRateMap.set(r.staff_role_id, r.fixed_rate));
-      
       // Calculate expected staff cost from rate card
       let expectedStaffCost = 0;
       for (const assignment of assignments || []) {
         const roleId = assignment.staff_role_id;
         if (!roleId) continue;
         
-        // Check for series fixed rate first
-        const fixedRate = seriesRateMap.get(roleId);
-        if (fixedRate !== undefined) {
-          expectedStaffCost += fixedRate;
-          continue;
-        }
-        
-        // Otherwise use rate card
+        // Series fixed rates are frozen in the assignment snapshot on creation.
         const rate = assignmentRateSnapshot({ pay_rate_snapshot: assignment.pay_rate_snapshot as unknown as AssignmentRate | null }, rateMap.get(roleId));
         if (!rate) continue;
         
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
-        if (sessionHours <= 0) continue;
+        if (sessionHours <= 0 && rate.rate_mode !== 'fixed') continue;
         
         const { units: callHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
