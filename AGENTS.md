@@ -32,3 +32,4 @@ Event recipient delivery dates use eventDeliveryDates for ordered fields and ind
 Lead assignment invitations use the existing authorized Gmail notification sender, recording sent/error evidence on the assignment; lead_calendar_holds exposes only the requesting person's scoped active lead schedule, and shared leadHoldEntries keeps invitation and subscription calendar UIDs and tentative timing consistent without granting crew CRM access.
 Shared client pickers use a summary-only projection; client detail queries retain full records so list loading never transfers unused notes and billing data.
 Personal checklist reads synchronize only their fetched checklist when template content differs; never invoke template-wide synchronization on the five-second polling path.
+Related session reads use fetchScopedRows to bound IDs and paginate results without losing records at response limits.
