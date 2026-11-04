@@ -101,12 +101,13 @@ async function syncChecklistItemsToTemplate(
   const orderUpdates = templateItems
     .map((item) => ({ item, existing: existingByText.get(item.item_text) }))
     .filter(({ item, existing }) => existing && existing.sort_order !== item.sort_order)
-    .map(({ item, existing }) =>
-      supabase
+    .flatMap(({ item, existing }) => {
+      if (!existing) return [];
+      return [supabase
         .from('crew_checklist_items')
         .update({ sort_order: item.sort_order })
-        .eq('id', existing!.id)
-    );
+        .eq('id', existing.id)];
+    });
 
   await Promise.all([
     ...orderUpdates,
@@ -121,7 +122,7 @@ async function syncChecklistItemsToTemplate(
     const existing = existingByText.get(templateItem.item_text);
     const inserted = insertedByText.get(templateItem.item_text);
     return {
-      ...(inserted || existing!),
+      ...(inserted || existing),
       sort_order: templateItem.sort_order,
       item_text: templateItem.item_text,
       is_done: existing?.is_done ?? inserted?.is_done ?? false,
@@ -172,8 +173,6 @@ export function useMyCrewChecklist(eventId: string | undefined) {
     queryKey: ['my-crew-checklist', eventId, user?.id],
     queryFn: async (): Promise<CrewChecklist | null> => {
       if (!eventId || !user?.id) return null;
-
-      await supabase.rpc('sync_my_crew_checklist_from_template', { _event_id: eventId });
 
       const { data: checklist, error } = await supabase
         .from('crew_checklists')
