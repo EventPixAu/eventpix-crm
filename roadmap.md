@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Make the "Request Files from Photographer" email editable in Admin / Email templates: new Request Files trigger type, seeded default template with merge fields kept per recipient, and the event Quick Action now uses the saved template wording; signed-in preview verified the template row and the pre-filled event dialog, build OK. Editing controls await publishing for app.eventpix.com.au.
 - [x] Add fixed team rates by role to Series Budget using existing series settings; new assignment snapshots freeze matching fixed rates and financials share those saved rates. Eleven tests passed; signed-in LBA Assistant $220 save/reload verified and temporary rate removed, original settings restored; build OK. Existing assignments unchanged; controls await publishing.
 - [x] Send an On Hold invitation when a photographer is added to a lead and include their scoped tentative booking in My Calendar and subscribed calendars. Four tests passed; Jasmina’s actual Bemin hold and subscribed feed verified, sender deployed; My Calendar changes await publish. Her personal signed-in calendar view was not exercised.
 - [x] Add a resend invitation action beside each lead team assignment, with genuine sent/error feedback. Sent Jasmina’s Bemin invitation once at 12:38pm Sydney; Gmail accepted, sent record and date survived reload, layout verified; controls await publish.

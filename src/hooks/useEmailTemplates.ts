@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 // Types
-export type EmailTriggerType = 'manual' | 'quote_sent' | 'quote_followup' | 'booking_confirmed' | 'event_reminder' | 'enquiry_received' | 'contract_sent';
+export type EmailTriggerType = 'manual' | 'quote_sent' | 'quote_followup' | 'booking_confirmed' | 'event_reminder' | 'enquiry_received' | 'contract_sent' | 'request_files';
 export type TemplateFormat = 'text' | 'html';
 
 export interface EmailTemplate {

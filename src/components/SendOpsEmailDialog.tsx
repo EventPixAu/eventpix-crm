@@ -203,8 +203,10 @@ export function SendOpsEmailDialog({
       return;
     }
     if (template) {
-      setSubject(replaceMergeFields(template.subject));
-      setBody(replaceMergeFields(template.body_html));
+      // Keep per-recipient merge fields (e.g. {{recipient_name}}) intact so they resolve for each recipient at send time
+      const keepsRecipientField = template.trigger_type === 'request_files';
+      setSubject(keepsRecipientField ? template.subject : replaceMergeFields(template.subject));
+      setBody(keepsRecipientField ? (template.body_text || template.body_html) : replaceMergeFields(template.body_html));
     }
   };
 
