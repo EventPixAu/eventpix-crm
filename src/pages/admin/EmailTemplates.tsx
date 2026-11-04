@@ -68,6 +68,7 @@ const TRIGGER_OPTIONS: { value: EmailTriggerType; label: string }[] = [
   { value: 'quote_followup', label: 'Quote Follow-up' },
   { value: 'booking_confirmed', label: 'Booking Confirmed' },
   { value: 'event_reminder', label: 'Event Reminder' },
+  { value: 'request_files', label: 'Request Files' },
 ];
 
 interface FormData {

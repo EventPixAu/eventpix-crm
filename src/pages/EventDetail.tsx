@@ -101,6 +101,7 @@ import { SendFinalConfirmationDialog } from '@/components/SendFinalConfirmationD
 import { SendTeamUpdateDialog } from '@/components/SendTeamUpdateDialog';
 import { releaseOnHoldAssignments, useSendNotification } from '@/hooks/useNotifications';
 import { useEventEmailActionStatuses, getActionStatusDisplay } from '@/hooks/useEventEmailActionStatus';
+import { useActiveEmailTemplates } from '@/hooks/useEmailTemplates';
 import { getPublicBaseUrl, cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { setClientStatusAuto } from '@/lib/clientStatusAuto';
@@ -390,6 +391,8 @@ export default function EventDetail() {
   const [liveAccessOpen, setLiveAccessOpen] = useState(false);
   const [dropboxEmailOpen, setDropboxEmailOpen] = useState(false);
   const [requestFilesOpen, setRequestFilesOpen] = useState(false);
+  const { data: activeEmailTemplates } = useActiveEmailTemplates();
+  const requestFilesTemplate = activeEmailTemplates?.find(t => t.trigger_type === 'request_files' && t.is_active);
 
   // If the event is not linked to a client (client_id is null), try resolving by legacy client_name.
   const { data: clientByName } = useClientByBusinessName(event?.client_id ? undefined : event?.client_name);
@@ -1952,8 +1955,10 @@ export default function EventDetail() {
           }}
           recipients={emailRecipients.filter(r => r.type === 'photographer' || r.type === 'assistant')}
           
-          initialSubject={`Request to upload files – ${event.event_name}`}
-          initialBody={(() => {
+          initialSubject={requestFilesTemplate?.subject ?? `Request to upload files – ${event.event_name}`}
+          initialBody={requestFilesTemplate
+            ? (requestFilesTemplate.body_text || requestFilesTemplate.body_html)
+            : (() => {
             const eventDate = event.event_date ? format(parseISO(event.event_date), 'EEEE d MMMM yyyy') : '';
             return `Hi {{recipient_name}},\n` +
               `Thank you for shooting ${event.event_name}${eventDate ? ` on ${eventDate}` : ''}.\n` +
