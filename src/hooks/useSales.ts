@@ -14,7 +14,8 @@ import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 // Types
-type Client = Database['public']['Tables']['clients']['Row'];
+type Client = Pick<Database['public']['Tables']['clients']['Row'],
+  'id' | 'business_name' | 'primary_contact_name' | 'primary_contact_email' | 'primary_contact_phone' | 'created_at'>;
 type ClientInsert = Database['public']['Tables']['clients']['Insert'];
 type ClientUpdate = Database['public']['Tables']['clients']['Update'];
 
@@ -36,7 +37,7 @@ export function useClients() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, business_name, primary_contact_name, primary_contact_email, primary_contact_phone, created_at')
         .order('business_name', { ascending: true });
       
       if (error) throw error;

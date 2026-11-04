@@ -35,6 +35,7 @@ import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { CompanyStatusBadgeDropdown } from '@/components/lead/CompanyStatusBadgeDropdown';
+import { fetchScopedRows } from '@/lib/scopedRows';
 
 export default function Events() {
   const { isAdmin } = useAuth();
@@ -51,17 +52,19 @@ export default function Events() {
     try { sessionStorage.setItem('events.statusFilter', v); } catch { /* ignore */ }
   };
   const [deliveryFilter, setDeliveryFilter] = useState('all');
+  const eventIds = useMemo(() => events.map(event => event.id).sort(), [events]);
 
   const { data: eventSessions = [] } = useQuery({
-    queryKey: ['event-list-sessions'],
+    queryKey: ['event-list-sessions', eventIds],
     queryFn: async () => {
-      const { data, error } = await supabase
+      return fetchScopedRows(eventIds, (ids, from, to) => supabase
         .from('event_sessions')
         .select('event_id, session_date')
-        .not('event_id', 'is', null);
-      if (error) throw error;
-      return data || [];
+        .in('event_id', ids)
+        .order('id')
+        .range(from, to));
     },
+    enabled: eventIds.length > 0,
   });
 
   // Fetch assignment status counts for all events (every assigned person,
