@@ -227,30 +227,33 @@ export default function CompanyList() {
       if (error) throw error;
 
       const clientIdSet = new Set(clientsData?.map(c => c.id) || []);
+      if (clientIdSet.size === 0) return [];
+      const scopedIds = [...clientIdSet];
+      const scopeSmallResult = scopedIds.length <= 100;
 
       // Get contact counts, primary contacts, tags, and events
       // Fetch ALL contacts with client_id to avoid .in() limit issues with large datasets
+      let contactsQuery = supabase.from('client_contacts').select('client_id, tags, source');
+      let associationsQuery = supabase.from('contact_company_associations').select(`
+        company_id, contact_id, is_primary,
+        contact:client_contacts(contact_name, email, tags, source)
+      `).eq('is_active', true);
+      let eventsQuery = supabase.from('events').select('client_id, event_date, ops_status');
+      if (scopeSmallResult) {
+        contactsQuery = contactsQuery.in('client_id', scopedIds);
+        associationsQuery = associationsQuery.in('company_id', scopedIds);
+        eventsQuery = eventsQuery.in('client_id', scopedIds);
+      } else {
+        contactsQuery = contactsQuery.not('client_id', 'is', null);
+        eventsQuery = eventsQuery.not('client_id', 'is', null);
+      }
       const [contactsResult, associationsResult, eventsResult] = await Promise.all([
         // Get all contacts that have a client_id (direct link)
-        supabase
-          .from('client_contacts')
-          .select('client_id, tags, source')
-          .not('client_id', 'is', null),
+        contactsQuery,
         // Get all contact_company_associations (for count and primary contacts)
-        supabase
-          .from('contact_company_associations')
-          .select(`
-            company_id,
-            contact_id,
-            is_primary,
-            contact:client_contacts(contact_name, email, tags, source)
-          `)
-          .eq('is_active', true),
+        associationsQuery,
         // Get all events for these clients
-        supabase
-          .from('events')
-          .select('client_id, event_date, ops_status')
-          .not('client_id', 'is', null)
+        eventsQuery
       ]);
 
       // Build count map and tags map from contacts
