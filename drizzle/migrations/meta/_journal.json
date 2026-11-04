@@ -372,6 +372,20 @@
       "when": 1793572825042,
       "tag": "0052_series_assignment_rate_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793751000000,
+      "tag": "0053_request_files_trigger_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793751060000,
+      "tag": "0054_request_files_default_template",
+      "breakpoints": true
     }
   ]
 }
