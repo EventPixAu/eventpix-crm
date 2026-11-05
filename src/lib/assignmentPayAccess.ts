@@ -1,12 +1,19 @@
-export function assignmentPayAccess({ isAdmin = false, isOperations = false, isSelf = false, summary = false }: {
+/** Staff-role allocations do not need pay presentation; stored financial records remain unchanged. */
+export function assignmentHasPayDisplay(roleName: string | null | undefined): boolean {
+  return !/^staff\b/i.test(roleName?.trim() || '');
+}
+
+export function assignmentPayAccess({ isAdmin = false, isOperations = false, isSelf = false, summary = false, roleName }: {
   isAdmin?: boolean;
   isOperations?: boolean;
   isSelf?: boolean;
   summary?: boolean;
+  roleName?: string | null;
 }) {
+  const hasPayDisplay = assignmentHasPayDisplay(roleName);
   return {
-    canView: isAdmin || isOperations || isSelf,
-    canEdit: !summary && (isAdmin || isOperations),
+    canView: hasPayDisplay && (isAdmin || isOperations || isSelf),
+    canEdit: hasPayDisplay && !summary && (isAdmin || isOperations),
   };
 }
 

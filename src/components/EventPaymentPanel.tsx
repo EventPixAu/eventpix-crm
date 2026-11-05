@@ -6,7 +6,7 @@ import { useEventAssignments } from '@/hooks/useEvents';
 import { filterVisibleAssignments } from '@/lib/editorVisibility';
 import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 import { LightingPayAllocation } from '@/components/LightingPayAllocation';
-import { eventPayCalculationVisible } from '@/lib/assignmentPayAccess';
+import { assignmentHasPayDisplay, eventPayCalculationVisible } from '@/lib/assignmentPayAccess';
 
 interface Props {
   eventId: string;
@@ -24,7 +24,7 @@ export function EventPaymentPanel({ eventId, isAdmin, isOperations, currentUserI
   const recordTotal = useCallback((id: string, total: number) => setTotals(current => current[id] === total ? current : { ...current, [id]: total }), []);
   const members = useMemo(() => {
     const visible = filterVisibleAssignments(assignments, { isAdmin, userId: currentUserId })
-      .filter(a => !a.profile?.is_salaried && (canManage || a.user_id === currentUserId));
+      .filter(a => assignmentHasPayDisplay(a.staff_role?.name || a.role_on_event) && !a.profile?.is_salaried && (canManage || a.user_id === currentUserId));
     const grouped = new Map<string, { name: string; assignments: typeof assignments }>();
     for (const assignment of visible) {
       const name = assignment.profile?.full_name || assignment.profile?.email || assignment.staff?.name || 'Unassigned';
