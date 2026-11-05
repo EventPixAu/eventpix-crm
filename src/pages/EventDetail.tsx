@@ -115,6 +115,7 @@ import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 import { assignmentsForSessionDay } from '@/lib/postEventAssignment';
 import { filterVisibleAssignments, filterVisibleSessions } from '@/lib/editorVisibility';
 import { assignmentLocalTime } from '@/lib/assignmentLocalTime';
+import { AssignmentCallTimeEditor } from '@/components/AssignmentCallTimeEditor';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -130,7 +131,7 @@ function formatSessionTime(timeStr: string): string {
 // EditingInstructionsPanel removed — replaced by Crew Checklists panel on Assignments tab.
 
 
-function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime, eventTimezone }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null; eventTimezone?: string | null }) {
+function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime, eventTimezone, eventDate }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null; eventTimezone?: string | null; eventDate?: string | null }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
@@ -224,12 +225,14 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             const finishTime = assignmentLocalTime(wrapIso || sessionEnd, timezone);
             const callLabel = callTime ? formatSessionTime(callTime) : null;
             const finishLabel = finishTime ? formatSessionTime(finishTime) : null;
-            return callLabel && finishLabel ? (
-              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+            return (
+              <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
                 <Clock className="h-3 w-3" />
-                Call time: <span className="text-foreground font-medium">{callLabel} – {finishLabel}</span>
-              </p>
-            ) : null;
+                Call time: <span className="text-foreground font-medium">{callLabel || 'Not set'}{finishLabel ? ` – ${finishLabel}` : ''}</span>
+                {isAdmin && <AssignmentCallTimeEditor assignmentId={assignment.id} eventId={eventId}
+                  date={assignment.session?.session_date || eventDate || null} timezone={timezone} callTime={callTime} name={name} />}
+              </div>
+            );
           })()}
           {assignment.assignment_notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
@@ -1639,7 +1642,7 @@ export default function EventDetail() {
                 {visibleSessions.length === 0 && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {visibleAssignments.map(assignment => (
-                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} />
+                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} eventDate={event.event_date} />
                     ))}
                   </div>
                 )}
@@ -1686,7 +1689,7 @@ export default function EventDetail() {
                         ) : (
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {dayAssigns.map(assignment => (
-                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} />
+                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} eventDate={event.event_date} />
                             ))}
                           </div>
                         )}

@@ -33,3 +33,4 @@ Lead assignment invitations use the existing authorized Gmail notification sende
 Shared client pickers use a summary-only projection; client detail queries retain full records so list loading never transfers unused notes and billing data.
 Personal checklist reads synchronize only their fetched checklist when template content differs; never invoke template-wide synchronization on the five-second polling path.
 Related session reads use fetchScopedRows to bound IDs and paginate results without losing records at response limits.
+Call-time card edits update only call_time_at using session-local date/zone; reset restores session timing.
