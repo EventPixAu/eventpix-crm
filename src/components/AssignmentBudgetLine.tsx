@@ -15,7 +15,7 @@ import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 
 export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false, onTotal }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean; onTotal?: (assignmentId: string, total: number) => void }) {
-  const access = assignmentPayAccess({ isAdmin, isOperations, isSelf, summary });
+  const access = assignmentPayAccess({ isAdmin, isOperations, isSelf, summary, roleName: assignment.staff_role?.name || assignment.role_on_event });
   const canView = access.canView;
   const canEdit = access.canEdit && !summary;
   const { data: rateCard = [], isLoading } = usePayRateCard();

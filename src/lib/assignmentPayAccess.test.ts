@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentPayAccess, eventPayCalculationVisible } from './assignmentPayAccess';
+import { assignmentHasPayDisplay, assignmentPayAccess, eventPayCalculationVisible } from './assignmentPayAccess';
 
 describe('assignment pay presentation access', () => {
+  it.each(['Staff Admin', 'Staff Editor - Zno Gallery (post event)', 'Staff Editor - Onsite', ' staff Editor - Offsite '])('excludes %s allocations from pay presentation for everyone', roleName => {
+    expect(assignmentHasPayDisplay(roleName)).toBe(false);
+    expect(assignmentPayAccess({ isAdmin: true, roleName })).toEqual({ canView: false, canEdit: false });
+    expect(assignmentPayAccess({ isOperations: true, summary: true, roleName })).toEqual({ canView: false, canEdit: false });
+    expect(assignmentPayAccess({ isSelf: true, summary: true, roleName })).toEqual({ canView: false, canEdit: false });
+  });
+  it.each(['Photographer - Zno live', 'Videographer', 'LBA-Assistant', 'LBA NSW-Studio'])('retains existing pay access for %s', roleName => {
+    expect(assignmentHasPayDisplay(roleName)).toBe(true);
+    expect(assignmentPayAccess({ isSelf: true, summary: true, roleName })).toEqual({ canView: true, canEdit: false });
+  });
   it('photographers can see their own pay but cannot add travel or parking', () => {
     expect(assignmentPayAccess({ isSelf: true })).toEqual({ canView: true, canEdit: false });
   });
