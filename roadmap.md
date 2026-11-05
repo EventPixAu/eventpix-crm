@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Correct assignment custom call/wrap timestamps to local session time and verify Tanya’s Gungahlin call time without changing the saved booking.
+- [x] Correct assignment custom call/wrap timestamps to local session time and align pay timestamp resolution; 21 tests passed, signed-in Gungahlin verified Tanya at 6pm–10pm, saved booking unchanged, build OK; awaits publishing.
 - [x] Add Live (Off-site) to session types with existing live call-time fields; ten tests passed, signed-in selection saved/reloaded with call 17:00 and coverage 17:30–21:00. Original test event restored, build OK; awaits publishing.
 - [x] Hide pay presentation for Staff-role allocations in shared pay views and event Payment grouping; preserve photographer pay and stored financial records. Fourteen tests passed; signed-in SA Fellows Dinner shows John’s $375 summary and calculation without Nat’s Staff Editor pay, build OK; awaits publishing.
 - [x] Confirm app publication and apply safe client/session/checklist speed fixes: shared client payload 750035 → 212098 bytes for the same 962 rows; company search scopes related reads; event-list sessions scoped and paginated; personal checklist polling no longer invokes template-wide writes, with completion evidence retained. Ten tests passed and signed-in company search/event sessions verified; instance unchanged, health at 49% memory and 5/60 connections.
