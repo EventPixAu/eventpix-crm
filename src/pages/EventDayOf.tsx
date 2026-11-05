@@ -66,6 +66,7 @@ import { EventEquipmentByRole } from '@/components/crew/EventEquipmentByRole';
 import { PhotographerChecklist } from '@/components/crew/PhotographerChecklist';
 import { PhotographerGuides } from '@/components/crew/PhotographerGuides';
 import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
+import { assignmentHasPayDisplay } from '@/lib/assignmentPayAccess';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -263,6 +264,7 @@ export default function EventDayOf() {
   // Use cached data if offline
   const displayEvent = isOffline && cachedData ? cachedData.event : event;
   const displayAssignments = isOffline && cachedData ? cachedData.assignments : assignments;
+  const ownPaidAssignments = displayAssignments.filter(a => !!user?.id && a.user_id === user.id && assignmentHasPayDisplay(a.staff_role?.name || a.role_on_event));
   const displayWorksheets = isOffline && cachedData ? cachedData.worksheets : worksheets;
   const displayWorksheetItems = isOffline && cachedData ? cachedData.worksheetItems : worksheetItems;
 
@@ -928,10 +930,10 @@ export default function EventDayOf() {
         </motion.section>
       )}
 
-        {displayAssignments.some(a => a.user_id === user?.id) && (
+        {ownPaidAssignments.length > 0 && (
           <section className="mx-4 mb-4 print:hidden" aria-label="Your pay">
             <h2 className="text-base font-semibold">Your pay</h2>
-            {displayAssignments.filter(a => !!user?.id && a.user_id === user.id).map(assignment => (
+            {ownPaidAssignments.map(assignment => (
               <div key={assignment.id}>
                 {assignment.session?.label && <p className="mt-2 text-sm font-medium">{assignment.session.label}</p>}
                 <AssignmentBudgetLine assignment={assignment} eventId={assignment.event_id} isAdmin={false} isSelf eventCallTime={(displayEvent as any)?.call_time} />
