@@ -64,6 +64,7 @@ export function SessionsDisplay({ eventId, compact = false, className, assignmen
             <Badge key={session.id} variant="outline" className="text-xs">
               {format(new Date(session.session_date), 'MMM d')}
               {session.label && ` - ${session.label}`}
+              {session.session_type === 'live_offsite' && ' · Live (Off-site)'}
               {session.start_time && ` @ ${format(new Date(`2000-01-01T${session.start_time}`), 'h:mm a')}`}
             </Badge>
           ))}
@@ -95,6 +96,9 @@ export function SessionsDisplay({ eventId, compact = false, className, assignmen
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     {session.label && (
                       <span className="font-medium">{session.label}</span>
+                    )}
+                    {session.session_type === 'live_offsite' && (
+                      <Badge variant="outline" className="text-xs">Live (Off-site)</Badge>
                     )}
                     {(session as any).session_type === 'post_production' && (
                       <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">
