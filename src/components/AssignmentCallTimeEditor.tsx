@@ -30,7 +30,7 @@ export function AssignmentCallTimeEditor({ assignmentId, eventId, date, timezone
       if (!data?.length) throw new Error('The call time could not be saved.');
     },
     onSuccess: () => {
-      for (const queryKey of [['event-assignments', eventId], ['event-financials', eventId], ['my-job-sheets'], ['calendar-events']]) {
+      for (const queryKey of [['event-assignments', eventId], ['event-financials', eventId], ['my-job-sheets'], ['admin-calendar-events'], ['staff-calendar-events']]) {
         queryClient.invalidateQueries({ queryKey });
       }
       setEditing(false);
