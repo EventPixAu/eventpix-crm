@@ -45,6 +45,7 @@ export interface EventAssignment {
     start_time: string | null;
     end_time: string | null;
     arrival_time: string | null;
+    timezone?: string | null;
   } | null;
   // Legacy staff relation
   staff?: {
@@ -141,7 +142,8 @@ export function useEventAssignments(eventId: string | undefined) {
             label,
             start_time,
             end_time,
-            arrival_time
+            arrival_time,
+            timezone
           ),
           staff:staff_id (
             id,

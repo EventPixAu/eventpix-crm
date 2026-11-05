@@ -32,8 +32,8 @@ describe('team payment units', () => {
     expect(alignedCallUnits('17:00:00', '20:30:00')).toBeNull();
   });
   it('whole-clock-hour call with on-the-hour arrival merges prep into the call units', () => {
-    const session = { start_time: '17:00:00', end_time: '21:00:00' };
-    const assignment = { session, call_time_at: '2026-12-24T17:00:00+00:00' };
+    const session = { start_time: '17:00:00', end_time: '21:00:00', timezone: 'Australia/Sydney' };
+    const assignment = { session, call_time_at: '2026-12-24T06:00:00+00:00' };
     expect(assignmentCallStartTime(assignment, session)).toBe('17:00');
     expect(assignmentPayUnits(assignment, [session], 2)).toEqual({ units: 4, mergedCall: true });
   });

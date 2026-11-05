@@ -114,6 +114,7 @@ import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
 import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 import { assignmentsForSessionDay } from '@/lib/postEventAssignment';
 import { filterVisibleAssignments, filterVisibleSessions } from '@/lib/editorVisibility';
+import { assignmentLocalTime } from '@/lib/assignmentLocalTime';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -129,7 +130,7 @@ function formatSessionTime(timeStr: string): string {
 // EditingInstructionsPanel removed — replaced by Crew Checklists panel on Assignments tab.
 
 
-function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null }) {
+function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime, eventTimezone }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null; eventTimezone?: string | null }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
@@ -218,32 +219,11 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             const wrapIso = assignment.wrap_time_at;
             const sessionArrival = assignment.session?.arrival_time || assignment.session?.start_time;
             const sessionEnd = assignment.session?.end_time;
-            let callLabel: string | null = null;
-            let finishLabel: string | null = null;
-            if (callIso) {
-              const m = String(callIso).match(/T(\d{2}):(\d{2})/);
-              if (m) {
-                const d = new Date();
-                d.setHours(Number(m[1]), Number(m[2]), 0, 0);
-                callLabel = format(d, 'h:mm a');
-              }
-            } else if (sessionArrival) {
-              const [h, mm] = String(sessionArrival).split(':').map(Number);
-              if (!isNaN(h) && !isNaN(mm)) {
-                const d = new Date();
-                d.setHours(h, mm, 0, 0);
-                callLabel = format(d, 'h:mm a');
-              }
-            }
-            const finishTime = wrapIso || sessionEnd;
-            if (finishTime) {
-              const m = String(finishTime).match(/T?(\d{2}):(\d{2})/);
-              if (m) {
-                const d = new Date();
-                d.setHours(Number(m[1]), Number(m[2]), 0, 0);
-                finishLabel = format(d, 'h:mm a');
-              }
-            }
+            const timezone = assignment.session?.timezone || eventTimezone || 'Australia/Sydney';
+            const callTime = assignmentLocalTime(callIso || sessionArrival, timezone);
+            const finishTime = assignmentLocalTime(wrapIso || sessionEnd, timezone);
+            const callLabel = callTime ? formatSessionTime(callTime) : null;
+            const finishLabel = finishTime ? formatSessionTime(finishTime) : null;
             return callLabel && finishLabel ? (
               <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                 <Clock className="h-3 w-3" />
@@ -1659,7 +1639,7 @@ export default function EventDetail() {
                 {visibleSessions.length === 0 && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {visibleAssignments.map(assignment => (
-                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} />
+                      <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} />
                     ))}
                   </div>
                 )}
@@ -1706,7 +1686,7 @@ export default function EventDetail() {
                         ) : (
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {dayAssigns.map(assignment => (
-                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id!} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} />
+                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} />
                             ))}
                           </div>
                         )}

@@ -1,12 +1,14 @@
 import { isOffsiteAssignment, isPostEventSession } from './editorVisibility';
 import { isOnsiteStaffRole } from './staffRoleScope';
 import { alignedCallUnits, assignmentPaidHours } from './assignmentPaidHours';
+import { assignmentLocalTime } from './assignmentLocalTime';
 
 interface PaySession {
   id?: string;
   start_time?: string | null;
   end_time?: string | null;
   session_type?: string | null;
+  timezone?: string | null;
 }
 
 interface PayAssignment {
@@ -45,8 +47,8 @@ export function assignmentSessionHours(assignment: PayAssignment, sessions: PayS
 export function assignmentCallStartTime(assignment: { call_time_at?: string | null }, session: PaySession | null, eventCallTime?: string | null): string | null {
   const iso = assignment.call_time_at;
   if (iso) {
-    const m = String(iso).match(/T(\d{2}):(\d{2})/);
-    if (m) return `${m[1]}:${m[2]}`;
+    const localTime = assignmentLocalTime(iso, session?.timezone || 'Australia/Sydney');
+    if (localTime) return localTime;
   }
   return eventCallTime || (session as any)?.arrival_time || session?.start_time || null;
 }
