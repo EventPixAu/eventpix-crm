@@ -46,6 +46,7 @@ interface SessionFormData {
 
 const SESSION_TYPES = [
   { value: 'live', label: 'Live (On-site)' },
+  { value: 'live_offsite', label: 'Live (Off-site)' },
   { value: 'post_production', label: 'Post-Production' },
 ];
 
@@ -199,6 +200,9 @@ export function EventSessionsEditor({ eventId, leadId, disabled, hideHeader, def
                     <div className="flex items-center gap-2 mb-1">
                       {session.label && (
                         <span className="font-medium text-sm">{session.label}</span>
+                      )}
+                      {session.session_type === 'live_offsite' && (
+                        <Badge variant="outline" className="text-xs">Live (Off-site)</Badge>
                       )}
                       {(session as any).session_type === 'post_production' && (
                         <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400">
