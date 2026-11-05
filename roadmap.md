@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Add Live (Off-site) to session types with existing live call-time fields; verify saved selection and timing.
+- [x] Add Live (Off-site) to session types with existing live call-time fields; ten tests passed, signed-in selection saved/reloaded with call 17:00 and coverage 17:30–21:00. Original test event restored, build OK; awaits publishing.
 - [x] Hide pay presentation for Staff-role allocations in shared pay views and event Payment grouping; preserve photographer pay and stored financial records. Fourteen tests passed; signed-in SA Fellows Dinner shows John’s $375 summary and calculation without Nat’s Staff Editor pay, build OK; awaits publishing.
 - [x] Confirm app publication and apply safe client/session/checklist speed fixes: shared client payload 750035 → 212098 bytes for the same 962 rows; company search scopes related reads; event-list sessions scoped and paginated; personal checklist polling no longer invokes template-wide writes, with completion evidence retained. Ten tests passed and signed-in company search/event sessions verified; instance unchanged, health at 49% memory and 5/60 connections.
 - [ ] Repair the blocked database history and apply remaining published-database speed fixes: existing 0053/0054 snapshots duplicate 0052's ID and parent. Main-history metadata edits are prohibited; awaiting a supported platform repair before the migration tool can run. No database SQL applied.
