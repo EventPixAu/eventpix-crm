@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assignmentLocalTime } from './assignmentLocalTime';
+import { assignmentPayUnits } from './assignmentPayHours';
 
 describe('assignment local clock times', () => {
   it('shows Tanya’s saved 7am UTC call as 6pm Sydney in November', () => {
@@ -13,5 +14,10 @@ describe('assignment local clock times', () => {
   });
   it('leaves local session times unchanged', () => {
     expect(assignmentLocalTime('16:00:00', 'Australia/Sydney')).toBe('16:00');
+  });
+  it('calculates Tanya’s call as 6pm–10pm, not a fifteen-hour UTC call', () => {
+    const session = { start_time: '17:00:00', end_time: '22:00:00', timezone: 'Australia/Sydney' };
+    expect(assignmentPayUnits({ session, call_time_at: '2026-11-25T07:00:00Z' }, [session], 2))
+      .toEqual({ units: 4, mergedCall: true });
   });
 });
