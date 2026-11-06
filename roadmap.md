@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Add category search to the series Equipment tab's "Add Default Equipment" item picker by reusing the shared searchable picker (search matches name/brand/model/category plus a category filter); signed-in Santa - The Palms verified 157 items, search "lighting" 47 / "camera" 59 / "phone" 10, category list audio…stands & tripods, audio filter 4 rows with 0 off-category, one item added then removed and the temporary row deleted from the database; kits keep their existing name list (kits have no category). Build OK; awaits publishing.
 - [x] Add admin/operations expense editing (including travel/parking) on team cards, sharing existing assignment expenses with Overview pay and financial totals; 17 tests passed, Warren $25.50 saved/reloaded and original zero restored, build OK; awaits publishing.
 - [x] Fix general series assignment cards showing no call time despite session arrival; use the displayed day's live session as fallback, retaining individual overrides and correct edit date.
 - [x] Allow choosing series invitation dates per team member; synchronize and email only selected events, preserving existing replies and all-date selection. Four tests passed; signed-in Santa - The palms two-date dry run returned only two email dates/calendar entries, desktop/mobile verified, no email sent; sender deployed, controls await publishing.
