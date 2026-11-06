@@ -30,7 +30,6 @@ import { useAuth } from '@/lib/auth';
 import { useMarginReport } from '@/hooks/useMarginReport';
 import { useEventSeries } from '@/hooks/useEventSeries';
 import { cn } from '@/lib/utils';
-import { stripLbaPrefix } from '@/lib/eventNaming';
 
 type DatePreset = 'this_month' | 'last_month' | 'last_90_days' | 'year_to_date' | 'all_time' | 'custom';
 
@@ -172,7 +171,7 @@ export default function MarginReport() {
             <SelectItem value="all">All Series</SelectItem>
             {seriesList?.map((series) => (
               <SelectItem key={series.id} value={series.id}>
-                {stripLbaPrefix(series.name)}
+                {series.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -287,7 +286,7 @@ export default function MarginReport() {
                               {event.eventName}
                               {event.seriesName && (
                                 <Badge variant="outline" className="ml-2 text-xs">
-                                  {stripLbaPrefix(event.seriesName)}
+                                  {event.seriesName}
                                 </Badge>
                               )}
                             </TableCell>
@@ -341,7 +340,7 @@ export default function MarginReport() {
                       <TableBody>
                         {marginData.series.map((series) => (
                           <TableRow key={series.seriesId}>
-                            <TableCell className="font-medium">{stripLbaPrefix(series.seriesName)}</TableCell>
+                            <TableCell className="font-medium">{series.seriesName}</TableCell>
                             <TableCell className="text-right">{series.eventCount}</TableCell>
                             <TableCell className="text-right">{formatCurrency(series.totalQuoted)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(series.totalCost)}</TableCell>
