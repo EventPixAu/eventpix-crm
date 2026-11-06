@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useSeriesDefaultEquipment';
 import { useEquipmentItems } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
+import { EquipmentItemSelect } from '@/components/EquipmentItemSelect';
 import { useSeriesEvents } from '@/hooks/useEventSeries';
 
 interface Props { seriesId: string; }
@@ -122,25 +123,12 @@ export function SeriesDefaultEquipmentPanel({ seriesId }: Props) {
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <label className="text-sm font-medium mb-1.5 block">Equipment Item</label>
-                  <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an item..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableItems.map(item => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.name}
-                          {item.brand ? ` — ${item.brand}` : ''}
-                          {item.category ? ` (${item.category})` : ''}
-                        </SelectItem>
-                      ))}
-                      {availableItems.length === 0 && (
-                        <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                          No available items
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <EquipmentItemSelect
+                    items={availableItems}
+                    value={selectedItemId}
+                    onValueChange={setSelectedItemId}
+                    placeholder="Select an item..."
+                  />
                 </div>
                 <div className="w-64">
                   <label className="text-sm font-medium mb-1.5 block">Notes (optional)</label>
