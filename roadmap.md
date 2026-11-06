@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [ ] Add admin/operations expense editing (including travel/parking) on team cards, sharing existing assignment expenses with Overview pay and financial totals.
 - [x] Fix general series assignment cards showing no call time despite session arrival; use the displayed day's live session as fallback, retaining individual overrides and correct edit date.
 - [x] Allow choosing series invitation dates per team member; synchronize and email only selected events, preserving existing replies and all-date selection. Four tests passed; signed-in Santa - The palms two-date dry run returned only two email dates/calendar entries, desktop/mobile verified, no email sent; sender deployed, controls await publishing.
 - [x] REVERTED: the "LBA" prefix cleanup belonged to Awardspixii, not Eventpixii. Restored all 47 original event names from historical email subjects (preserving dash/double-space variants, e.g. "LBA - Adelaide", "LBA  Camden"); removed stripLbaPrefix helper/tests and all form/report stripping; memory updated so it is never re-applied. Champions/SBC untouched throughout.
