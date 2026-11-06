@@ -1,4 +1,7 @@
  import { useState, useMemo } from 'react';
+ import { format, parseISO } from 'date-fns';
+ import { Checkbox } from '@/components/ui/checkbox';
+ import { selectedSeriesInvitationEvents } from '../../supabase/functions/_shared/seriesInvitationEvents';
  import { Users, Plus, Trash2, RefreshCw, UserCheck, Loader2, Mail } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -62,17 +65,25 @@
    const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
    const [removeId, setRemoveId] = useState<string | null>(null);
    const [inviteId, setInviteId] = useState<string | null>(null);
+   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
    const invitedMember = assignments.find(assignment => assignment.id === inviteId);
+   const inviteBusy = sendSeriesInvitation.isPending || syncToEvents.isPending;
+   const openInvitation = (assignmentId: string) => {
+     setSelectedEventIds(events.map(event => event.id));
+     setInviteId(assignmentId);
+   };
 
    const handleSendSeriesInvitation = async () => {
-     if (!invitedMember || !events.length) return;
+     if (!invitedMember || !selectedEventIds.length || inviteBusy) return;
+     const invitationEvents = selectedSeriesInvitationEvents(events, selectedEventIds);
+     const eventIds = invitationEvents.map(event => event.id);
      const result = await syncToEvents.mutateAsync({
        series_id: seriesId,
-       event_ids: events.map(event => event.id),
+       event_ids: eventIds,
        default_assignments: [invitedMember],
      });
      if (result.errors.length) return;
-     await sendSeriesInvitation.mutateAsync({ series_id: seriesId, user_id: invitedMember.user_id });
+     await sendSeriesInvitation.mutateAsync({ series_id: seriesId, user_id: invitedMember.user_id, event_ids: eventIds });
      setInviteId(null);
    };
    
@@ -325,11 +336,11 @@
                        <Button
                          variant="outline"
                          size="sm"
-                         onClick={() => setInviteId(assignment.id)}
+                         onClick={() => openInvitation(assignment.id)}
                          disabled={eventsLoading || eventsError || !events.length || sendSeriesInvitation.isPending || syncToEvents.isPending}
                        >
                          <Mail className="mr-2 h-4 w-4" />
-                         Invite to all dates
+                         Invite to dates…
                        </Button>
                        <Button
                          variant="ghost"
@@ -373,14 +384,41 @@
        <AlertDialog open={!!inviteId} onOpenChange={(open) => { if (!open && !sendSeriesInvitation.isPending && !syncToEvents.isPending) setInviteId(null); }}>
          <AlertDialogContent>
            <AlertDialogHeader>
-             <AlertDialogTitle>Invite to all series dates?</AlertDialogTitle>
+             <AlertDialogTitle>Select invitation dates</AlertDialogTitle>
              <AlertDialogDescription>
-               Send one invitation to {invitedMember?.user?.full_name || 'this team member'} at {invitedMember?.user?.email}, covering all {events.length} events. Missing assignments will be added first. They can confirm or decline each date separately; existing replies are kept.
+               Send one invitation to {invitedMember?.user?.full_name || 'this team member'} at {invitedMember?.user?.email}. Missing assignments on selected dates will be added; existing replies are kept.
              </AlertDialogDescription>
            </AlertDialogHeader>
+           <label className="flex items-center gap-3 border-b pb-3 text-sm font-medium">
+             <Checkbox
+               aria-label="Select all dates"
+               checked={selectedEventIds.length === events.length ? true : selectedEventIds.length ? 'indeterminate' : false}
+               disabled={inviteBusy}
+               onCheckedChange={(checked) => setSelectedEventIds(checked === true ? events.map(event => event.id) : [])}
+             />
+             Select all dates
+             <span className="ml-auto text-muted-foreground">{selectedEventIds.length} of {events.length}</span>
+           </label>
+           <div className="max-h-[45vh] overflow-y-auto space-y-1">
+             {events.map(event => (
+               <label key={event.id} className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-3 hover:bg-muted">
+                 <Checkbox
+                   className="mt-0.5 shrink-0"
+                   aria-label={`Invite on ${format(parseISO(event.event_date), 'EEEE d MMM yyyy')} — ${event.event_name}`}
+                   checked={selectedEventIds.includes(event.id)}
+                   disabled={inviteBusy}
+                   onCheckedChange={(checked) => setSelectedEventIds(ids => checked === true ? [...new Set([...ids, event.id])] : ids.filter(id => id !== event.id))}
+                 />
+                 <span className="min-w-0 text-sm">
+                   <span className="block font-medium">{format(parseISO(event.event_date), 'EEEE d MMM yyyy')}</span>
+                   <span className="block break-words text-muted-foreground">{event.event_name}</span>
+                 </span>
+               </label>
+             ))}
+           </div>
            <AlertDialogFooter>
              <AlertDialogCancel disabled={sendSeriesInvitation.isPending || syncToEvents.isPending}>Cancel</AlertDialogCancel>
-             <Button disabled={sendSeriesInvitation.isPending || syncToEvents.isPending} onClick={() => { void handleSendSeriesInvitation().catch(() => undefined); }}>
+             <Button disabled={!selectedEventIds.length || eventsLoading || eventsError || inviteBusy} onClick={() => { void handleSendSeriesInvitation().catch(() => undefined); }}>
                {sendSeriesInvitation.isPending || syncToEvents.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
                Send invitation
              </Button>

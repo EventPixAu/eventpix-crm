@@ -241,11 +241,12 @@
    });
  }
 
-// One invitation to one team member, containing their complete series schedule.
+// One invitation to one team member, containing only the selected series events.
 export function useSendSeriesInvitation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { series_id: string; user_id: string }) => {
+    mutationFn: async (params: { series_id: string; user_id: string; event_ids: string[] }) => {
+      if (!params.event_ids.length) throw new Error('Select at least one event date');
       const { data, error } = await supabase.functions.invoke('send-notification', {
         body: { type: 'series_assignment', ...params },
       });
