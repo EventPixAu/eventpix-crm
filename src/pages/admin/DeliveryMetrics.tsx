@@ -117,7 +117,7 @@ export default function DeliveryMetrics() {
               <SelectContent>
                 <SelectItem value="all">All Series</SelectItem>
                 {seriesList?.filter(s => s.is_active).map(series => (
-                  <SelectItem key={series.id} value={series.id}>{series.name}</SelectItem>
+                  <SelectItem key={series.id} value={series.id}>{stripLbaPrefix(series.name)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -267,7 +267,7 @@ export default function DeliveryMetrics() {
                       <div>
                         <p className="font-medium">{event.eventName}</p>
                         {event.seriesName && (
-                          <p className="text-sm text-muted-foreground">{event.seriesName}</p>
+                          <p className="text-sm text-muted-foreground">{stripLbaPrefix(event.seriesName)}</p>
                         )}
                       </div>
                     </TableCell>

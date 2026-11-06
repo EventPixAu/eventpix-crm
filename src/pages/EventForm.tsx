@@ -370,7 +370,7 @@ export default function EventForm() {
 
   const onSubmit = async (values: EventFormValues) => {
     const cleanValues: any = {
-      event_name: values.event_name,
+      event_name: stripLbaPrefix(values.event_name),
       event_type_id: values.event_type_id,
       event_date: values.event_date,
       client_name: values.client_name,
