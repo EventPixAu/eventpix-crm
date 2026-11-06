@@ -115,7 +115,9 @@ import { useEventAgencyCrew } from '@/hooks/useEventAgencyCrew';
 import { assignmentsForSessionDay } from '@/lib/postEventAssignment';
 import { filterVisibleAssignments, filterVisibleSessions } from '@/lib/editorVisibility';
 import { assignmentLocalTime } from '@/lib/assignmentLocalTime';
+import { assignmentCardSession } from '@/lib/assignmentCardSession';
 import { AssignmentCallTimeEditor } from '@/components/AssignmentCallTimeEditor';
+import { AssignmentExpenseEditor } from '@/components/AssignmentExpenseEditor';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -131,7 +133,7 @@ function formatSessionTime(timeStr: string): string {
 // EditingInstructionsPanel removed — replaced by Crew Checklists panel on Assignments tab.
 
 
-function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime, eventTimezone, eventDate }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null; eventTimezone?: string | null; eventDate?: string | null }) {
+function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUserId, eventCallTime, eventTimezone, eventDate, fallbackSession }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; currentUserId?: string; eventCallTime?: string | null; eventTimezone?: string | null; eventDate?: string | null; fallbackSession?: EventAssignment['session'] }) {
   const sendNotification = useSendNotification();
   const queryClient = useQueryClient();
   const [editingRole, setEditingRole] = useState(false);
@@ -218,9 +220,10 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
           {!role?.toLowerCase().includes('post event') && (() => {
             const callIso = assignment.call_time_at;
             const wrapIso = assignment.wrap_time_at;
-            const sessionArrival = assignment.session?.arrival_time || assignment.session?.start_time;
-            const sessionEnd = assignment.session?.end_time;
-            const timezone = assignment.session?.timezone || eventTimezone || 'Australia/Sydney';
+            const session = assignment.session || fallbackSession;
+            const sessionArrival = session?.arrival_time || session?.start_time || eventCallTime;
+            const sessionEnd = session?.end_time;
+            const timezone = session?.timezone || eventTimezone || 'Australia/Sydney';
             const callTime = assignmentLocalTime(callIso || sessionArrival, timezone);
             const finishTime = assignmentLocalTime(wrapIso || sessionEnd, timezone);
             const callLabel = callTime ? formatSessionTime(callTime) : null;
@@ -230,7 +233,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
                 <Clock className="h-3 w-3" />
                 Call time: <span className="text-foreground font-medium">{callLabel || 'Not set'}{finishLabel ? ` – ${finishLabel}` : ''}</span>
                 {isAdmin && <AssignmentCallTimeEditor assignmentId={assignment.id} eventId={eventId}
-                  date={assignment.session?.session_date || eventDate || null} timezone={timezone} callTime={callTime} name={name} />}
+                  date={session?.session_date || eventDate || null} timezone={timezone} callTime={callTime} name={name} />}
               </div>
             );
           })()}
@@ -339,6 +342,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
       )}
       <div>
         <AssignmentBudgetLine summary assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} eventCallTime={eventCallTime} />
+        <AssignmentExpenseEditor assignmentId={assignment.id} eventId={eventId} amount={Number(assignment.travel_amount) || 0} name={name} roleName={role} isAdmin={isAdmin} isOperations={isOperations} />
       </div>
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
@@ -1689,7 +1693,7 @@ export default function EventDetail() {
                         ) : (
                           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {dayAssigns.map(assignment => (
-                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} eventDate={event.event_date} />
+                              <AssignmentCard key={assignment.id} assignment={assignment} eventId={id || ''} isAdmin={isAdmin} isOperations={isOperations} currentUserId={user?.id} eventCallTime={(event as any)?.call_time} eventTimezone={event.timezone} eventDate={date} fallbackSession={assignmentCardSession(assignment.session_id, daySessions)} />
                             ))}
                           </div>
                         )}

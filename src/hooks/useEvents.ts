@@ -25,6 +25,7 @@ export interface EventAssignment {
   notification_sent_at: string | null;
   call_time_at?: string | null;
   wrap_time_at?: string | null;
+  travel_amount?: number | null;
   pay_rate_snapshot?: import('@/lib/assignmentRateSnapshot').AssignmentRate | null;
   profile?: {
     id: string;
