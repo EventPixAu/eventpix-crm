@@ -2,12 +2,14 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { leadHoldEntries } from '../_shared/leadHoldCalendar.ts';
+import { selectedSeriesInvitationEvents } from '../_shared/seriesInvitationEvents.ts';
 
 
 interface NotificationRequest {
   type: "assignment" | "assignment_confirmed" | "event_update" | "lead_on_hold" | "series_assignment" | "lead_assignment";
   event_id?: string;
   series_id?: string;
+  event_ids?: string[];
   lead_id?: string;
   dry_run?: boolean;
   user_id?: string;
@@ -287,7 +289,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!(roleRows || []).some((r: any) => allowedRoles.has(r.role))) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { type, event_id, user_id, assignment_id, user_ids, lead_id, series_id, dry_run }: NotificationRequest = await req.json();
+    const { type, event_id, user_id, assignment_id, user_ids, lead_id, series_id, event_ids, dry_run }: NotificationRequest = await req.json();
 
     if (type === 'lead_assignment') {
       if (!assignment_id || !lead_id) throw new Error('Lead and assignment are required');
@@ -333,17 +335,18 @@ const handler = async (req: Request): Promise<Response> => {
       if (seriesError || defaultError || !series || !defaultAssignment) throw new Error('Series or default team assignment not found');
       const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', user_id).maybeSingle();
       if (!profile?.email) throw new Error('This team member has no email address');
-      const { data: seriesEvents, error: eventsError } = await supabaseUser.from('events')
+      const { data: availableEvents, error: eventsError } = await supabaseUser.from('events')
         .select('*, event_assignments(id, user_id, session_id, confirm_token, confirmation_status), event_sessions(*)')
         .eq('event_series_id', series_id).or('ops_status.is.null,ops_status.neq.cancelled').order('event_date');
       if (eventsError) throw eventsError;
+      const seriesEvents = selectedSeriesInvitationEvents(availableEvents || [], event_ids);
       if (!seriesEvents?.length) throw new Error('There are no dates in this series');
       const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
       const invitationIds: string[] = [];
       const calendarParts: string[] = [];
       const blocks = seriesEvents.map(event => {
         const assignments = event.event_assignments.filter((assignment: any) => assignment.user_id === user_id);
-        if (!assignments.length) throw new Error('Sync this team member to all dates before sending');
+        if (!assignments.length) throw new Error('Sync this team member to the selected dates before sending');
         const sessions = [...event.event_sessions].sort((a: any, b: any) => a.session_date.localeCompare(b.session_date));
         const assignedSessions = assignments.some((assignment: any) => !assignment.session_id) ? sessions : sessions.filter((session: any) => assignments.some((assignment: any) => assignment.session_id === session.id));
         calendarParts.push(generateICS(event, event.calendar_sequence || 0, appUrl, undefined, assignedSessions));
