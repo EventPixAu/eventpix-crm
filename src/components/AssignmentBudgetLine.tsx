@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
+import { superAmount, SUPER_RATE } from '@/lib/employmentSuper';
 
 export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperations, isSelf, eventCallTime, summary = false, onTotal }: { assignment: EventAssignment; eventId: string; isAdmin: boolean; isOperations?: boolean; isSelf?: boolean; eventCallTime?: string | null; summary?: boolean; onTotal?: (assignmentId: string, total: number) => void }) {
   const access = assignmentPayAccess({ isAdmin, isOperations, isSelf, summary, roleName: assignment.staff_role?.name || assignment.role_on_event });
@@ -82,7 +83,9 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const travel = Number((assignment as any).travel_amount || 0);
   const equipment = Number((assignment as any).equipment_amount || 0);
   const lightingTotal = lightingPayTotal(lightingPay, assignment.id);
-  const totalWithExtras = basePay + extrasTotal + travel + equipment + lightingTotal;
+  const employmentType = (rateEntry as any)?.employment_type ?? rateCard.find(r => r.staff_role_id === roleId)?.employment_type;
+  const superPay = superAmount(basePay, employmentType);
+  const totalWithExtras = basePay + superPay + extrasTotal + travel + equipment + lightingTotal;
   useEffect(() => {
     if (canView && !isLoading && rateEntry) onTotal?.(assignment.id, totalWithExtras);
   }, [canView, isLoading, !!rateEntry, assignment.id, totalWithExtras, onTotal]);
@@ -218,7 +221,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       <div className="mt-2 pt-2 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="font-medium">Pay: ${totalWithExtras.toFixed(2)} (ex GST)</span>
-        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} units × ${hourlyRate.toFixed(2)}`}{extrasTotal + travel + equipment + lightingTotal > 0 ? ' + extras' : ''}</span>
+        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} units × ${hourlyRate.toFixed(2)}`}{superPay > 0 ? ' + 12% Super' : ''}{extrasTotal + travel + equipment + lightingTotal > 0 ? ' + extras' : ''}</span>
       </div>
     );
   }
@@ -277,6 +280,12 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
             <p className="text-xs font-medium text-foreground">${(PREP_TRAVEL_UNITS * hourlyRate).toFixed(2)}</p>
           </div>
         </>
+      )}
+      {superPay > 0 && (
+        <div className="pl-5 min-w-0 space-y-0.5">
+          <p className="text-xs text-muted-foreground">Superannuation ({Math.round(SUPER_RATE * 100)}%)</p>
+          <p className="text-xs font-medium text-foreground">${superPay.toFixed(2)}</p>
+        </div>
       )}
       {lightingTotal > 0 && (
         <div className="pl-5 min-w-0 space-y-0.5">

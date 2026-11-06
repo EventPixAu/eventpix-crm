@@ -3,6 +3,7 @@ export interface AssignmentRate {
   minimum_paid_hours: number | null;
   fixed_rate?: number | null;
   rate_mode?: string;
+  employment_type?: string | null;
 }
 
 export function assignmentRateSnapshot(
