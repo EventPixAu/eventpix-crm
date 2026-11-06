@@ -112,7 +112,7 @@ export function useEventFinancials(eventId: string | undefined) {
       // Fetch rate card entries
       const { data: rateCard } = await supabase
         .from('pay_rate_card')
-        .select('staff_role_id, hourly_rate, minimum_paid_hours, fixed_rate, rate_mode');
+        .select('staff_role_id, hourly_rate, minimum_paid_hours, fixed_rate, rate_mode, employment_type');
       
       // Fetch all allowances for these assignments
       const assignmentIds = (assignments || []).map(a => a.id);
@@ -178,7 +178,7 @@ export function useEventFinancials(eventId: string | undefined) {
         
         const { units: callHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
-        expectedStaffCost += basePay;
+        expectedStaffCost += basePay + superAmount(basePay, rate.employment_type ?? rateMap.get(roleId)?.employment_type);
       }
       
       // Add allowances/extras to expected cost

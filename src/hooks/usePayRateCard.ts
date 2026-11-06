@@ -16,6 +16,7 @@ export interface PayRateCardEntry {
   created_at: string;
   updated_at: string;
   unit_rate_product_id?: string | null;
+  employment_type?: 'contract' | 'employee';
 }
 
 export interface SeriesFixedRate {
@@ -53,9 +54,11 @@ export function useUpsertPayRate() {
       minimum_paid_hours?: number | null;
       fixed_rate?: number | null;
       notes?: string | null;
+      employment_type?: 'contract' | 'employee';
     }) => {
       const payload: any = {
         rate_mode: entry.rate_mode,
+        employment_type: entry.employment_type ?? 'contract',
         hourly_rate: entry.rate_mode === 'hourly' ? (entry.hourly_rate ?? 0) : null,
         minimum_paid_hours: entry.rate_mode === 'hourly' ? (entry.minimum_paid_hours ?? 0) : null,
         fixed_rate: entry.rate_mode === 'fixed' ? (entry.fixed_rate ?? 0) : null,
