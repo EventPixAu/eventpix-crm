@@ -17,6 +17,7 @@ import {
   type RateMode,
 } from '@/hooks/usePayRateCard';
 import { useStaffRoles } from '@/hooks/useStaff';
+import { sortByDisplayName } from '@/lib/alphabeticalName';
 
 export default function PayRates() {
   const { data: rateCard = [], isLoading } = usePayRateCard();
