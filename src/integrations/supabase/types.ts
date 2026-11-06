@@ -8049,6 +8049,10 @@ export type Database = {
         Args: { p_contact_id: string }
         Returns: undefined
       }
+      apply_series_rate_to_upcoming: {
+        Args: { _series_id: string; _staff_role_id: string }
+        Returns: number
+      }
       auto_complete_workflow_step: {
         Args: {
           p_entity_id: string
