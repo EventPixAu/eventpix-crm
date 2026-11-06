@@ -85,3 +85,4 @@
 - [x] Verify email preparation and client response without sending live test emails.
 - [x] Add Location to equipment kits (saved-location dropdown, mirrors equipment items); completed and verified in the preceding update.
 - [x] Keep editor/offsite detail internal: post-event sessions and editors excluded from client Final Confirmation (schedule + recipients), and on the event page visible only to admins and the assigned editor (src/lib/editorVisibility.ts, 8 tests).
+- [x] Rate Card: hourly or event rate, each as Contract or Employee (+12uper added to pay); series Team rates pick only from Rate Card.

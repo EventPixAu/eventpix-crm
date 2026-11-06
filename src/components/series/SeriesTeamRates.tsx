@@ -18,7 +18,7 @@ export function SeriesTeamRates({ seriesId }: { seriesId: string }) {
   const { data: card = [] } = usePayRateCard();
   const save = useUpsertSeriesFixedRate();
   const cardRate = (id: string) => { const c = card.find(x => x.staff_role_id === id); return c ? (c.rate_mode === 'fixed' ? c.fixed_rate : c.hourly_rate) : null; };
-  const cardLabel = (id: string) => { const c = card.find(x => x.staff_role_id === id); return c ? (c.rate_mode === 'fixed' ? `$${Number(c.fixed_rate).toFixed(2)} / event` : `$${Number(c.hourly_rate).toFixed(2)} / hr`) : ''; };
+  const cardLabel = (id: string) => { const c = card.find(x => x.staff_role_id === id); return c ? (c.rate_mode === 'fixed' ? `$${Number(c.fixed_rate).toFixed(2)} / event` : `$${Number(c.hourly_rate).toFixed(2)} / hr`) + (c.employment_type === "employee" ? " + 12% Super" : "") : "";
   const pickRole = (id: string) => { setRoleId(id); const r = cardRate(id); if (r != null) setAmount(String(r)); };
   const qc = useQueryClient();
   const [editing, setEditing] = useState<string | null>(null);
