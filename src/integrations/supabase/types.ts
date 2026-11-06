@@ -5196,6 +5196,7 @@ export type Database = {
       pay_rate_card: {
         Row: {
           created_at: string
+          employment_type: string
           fixed_rate: number | null
           hourly_rate: number | null
           id: string
@@ -5208,6 +5209,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          employment_type?: string
           fixed_rate?: number | null
           hourly_rate?: number | null
           id?: string
@@ -5220,6 +5222,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          employment_type?: string
           fixed_rate?: number | null
           hourly_rate?: number | null
           id?: string
