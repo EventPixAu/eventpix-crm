@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Allow choosing series invitation dates per team member; synchronize and email only selected events, preserving existing replies and all-date selection.
+- [x] Allow choosing series invitation dates per team member; synchronize and email only selected events, preserving existing replies and all-date selection. Four tests passed; signed-in Santa - The palms two-date dry run returned only two email dates/calendar entries, desktop/mobile verified, no email sent; sender deployed, controls await publishing.
 - [x] REVERTED: the "LBA" prefix cleanup belonged to Awardspixii, not Eventpixii. Restored all 47 original event names from historical email subjects (preserving dash/double-space variants, e.g. "LBA - Adelaide", "LBA  Camden"); removed stripLbaPrefix helper/tests and all form/report stripping; memory updated so it is never re-applied. Champions/SBC untouched throughout.
 - [x] Allow direct admin call-time editing on assignment cards with save/cancel and session-default reset; eight tests passed, signed-in Tanya 4:15pm save/reload verified then original 6pm restored, mobile input verified, no invitation sent; awaits publishing.
 - [x] Correct assignment custom call/wrap timestamps to local session time and align pay timestamp resolution; 21 tests passed, signed-in Gungahlin verified Tanya at 6pm–10pm, saved booking unchanged, build OK; awaits publishing.
