@@ -543,7 +543,16 @@ export default function EventForm() {
                   <FormItem>
                     <FormLabel>Event Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., Smith Wedding" className="bg-secondary" />
+                      <Input
+                        {...field}
+                        onBlur={() => {
+                          field.onBlur();
+                          const stripped = stripLbaPrefix(field.value || '');
+                          if (stripped !== field.value) field.onChange(stripped);
+                        }}
+                        placeholder="e.g., Smith Wedding"
+                        className="bg-secondary"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
