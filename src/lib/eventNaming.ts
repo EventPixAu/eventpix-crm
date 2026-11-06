@@ -8,5 +8,5 @@
  */
 export const stripLbaPrefix = (name: string): string => {
   const stripped = name.replace(/^\s*LBA(?![A-Za-z])[\s\-–—]*/i, '').trim();
-  return stripped || name.trim();
+  return stripped || name.trim().replace(/[\s\-–—]+$/, '') || name.trim();
 };
