@@ -49,7 +49,10 @@ export default function PayRates() {
   } | null>(null);
 
   const usedRoleIds = new Set(rateCard.map(r => r.staff_role_id));
-  const availableRoles = staffRoles.filter(r => !usedRoleIds.has(r.id) || editEntry?.staff_role_id === r.id);
+  const availableRoles = sortByDisplayName(
+    staffRoles.filter(r => !usedRoleIds.has(r.id) || editEntry?.staff_role_id === r.id),
+    r => r.name,
+  );
 
   const openAdd = () => {
     setEditEntry({ staff_role_id: '', rate_mode: 'hourly', hourly_rate: 0, minimum_paid_hours: 3, fixed_rate: 0, notes: '', employment_type: 'contract' });

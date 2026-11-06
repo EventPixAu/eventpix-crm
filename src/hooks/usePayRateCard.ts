@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { assignmentPaidHours } from '@/lib/assignmentPaidHours';
+import { sortByDisplayName } from '@/lib/alphabeticalName';
 
 export type RateMode = 'hourly' | 'fixed';
 
@@ -38,7 +39,7 @@ export function usePayRateCard() {
         .select('*, staff_roles:staff_role_id(id, name, is_onsite)')
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data as (PayRateCardEntry & { staff_roles: { id: string; name: string; is_onsite?: boolean } })[];
+      return sortByDisplayName(data as (PayRateCardEntry & { staff_roles: { id: string; name: string; is_onsite?: boolean } })[], r => r.staff_roles?.name);
     },
   });
 }
@@ -106,7 +107,7 @@ export function useSeriesFixedRates(seriesId?: string) {
         .eq('series_id', seriesId)
         .order('created_at');
       if (error) throw error;
-      return data as (SeriesFixedRate & { staff_roles: { id: string; name: string } })[];
+      return sortByDisplayName(data as (SeriesFixedRate & { staff_roles: { id: string; name: string } })[], r => r.staff_roles?.name);
     },
     enabled: !!seriesId,
   });
