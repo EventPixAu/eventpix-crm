@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { useStaffRoles } from '@/hooks/useStaff';
-import { useSeriesFixedRates, useUpsertSeriesFixedRate } from '@/hooks/usePayRateCard';
+import { usePayRateCard, useSeriesFixedRates, useUpsertSeriesFixedRate } from '@/hooks/usePayRateCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,12 +15,16 @@ export function SeriesTeamRates({ seriesId }: { seriesId: string }) {
   const { isAdmin } = useAuth();
   const { data: rates = [], isLoading, isError } = useSeriesFixedRates(seriesId);
   const { data: roles = [] } = useStaffRoles();
+  const { data: card = [] } = usePayRateCard();
   const save = useUpsertSeriesFixedRate();
+  const cardRate = (id: string) => { const c = card.find(x => x.staff_role_id === id); return c ? (c.rate_mode === 'fixed' ? c.fixed_rate : c.hourly_rate) : null; };
+  const cardLabel = (id: string) => { const c = card.find(x => x.staff_role_id === id); return c ? (c.rate_mode === 'fixed' ? `$${Number(c.fixed_rate).toFixed(2)} / event` : `$${Number(c.hourly_rate).toFixed(2)} / hr`) : ''; };
+  const pickRole = (id: string) => { setRoleId(id); const r = cardRate(id); if (r != null) setAmount(String(r)); };
   const qc = useQueryClient();
   const [editing, setEditing] = useState<string | null>(null);
   const [roleId, setRoleId] = useState('');
   const [amount, setAmount] = useState('');
-  const availableRoles = roles.filter(r => r.is_active !== false && !rates.some(rate => rate.staff_role_id === r.id));
+  const availableRoles = card.map(c => ({ id: c.staff_role_id, name: c.staff_roles?.name || 'Team role' })).filter(r => !rates.some(rate => rate.staff_role_id === r.id));
 
   async function saveRate() {
     const fixedRate = Number(amount);
@@ -46,7 +50,7 @@ export function SeriesTeamRates({ seriesId }: { seriesId: string }) {
         <h3 className="flex items-center gap-2 text-lg font-semibold"><DollarSign className="h-5 w-5" />Team rates</h3>
         {isAdmin && <Button size="sm" variant="outline" disabled={editing !== null || isLoading || isError} onClick={() => { setEditing('new'); setRoleId(''); setAmount(''); }}><Plus className="h-4 w-4 mr-2" />Add role rate</Button>}
       </div>
-      <p className="text-sm text-muted-foreground">Session rates for photographers and assistants — not hourly rates. Per person, per session · ex GST · applies to all upcoming events in this series (completed events unchanged)</p>
+      <p className="text-sm text-muted-foreground">Session rates for photographers and assistants — not hourly rates. Per person, per session · ex GST · applies to all upcoming events in this series (completed events unchanged). Roles and starting amounts come from the Rate Card.</p>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading rates…</p> : isError ? <p className="text-sm text-destructive">Unable to load team rates.</p> : rates.length === 0 ? <p className="text-sm text-muted-foreground">No team rates saved.</p> : (
         <div className="divide-y divide-border">
           {rates.map(rate => <div key={rate.id} className="flex items-center justify-between gap-4 py-3">
@@ -59,9 +63,9 @@ export function SeriesTeamRates({ seriesId }: { seriesId: string }) {
       )}
       {editing !== null && <form className="flex flex-wrap items-end gap-3" onSubmit={e => { e.preventDefault(); void saveRate(); }}>
         <div className="w-full sm:w-64 space-y-1"><Label>Team role</Label>
-          <Select value={roleId} onValueChange={setRoleId} disabled={editing !== 'new' || save.isPending}>
+          <Select value={roleId} onValueChange={pickRole} disabled={editing !== 'new' || save.isPending}>
             <SelectTrigger aria-label="Team role"><SelectValue placeholder="Select role" /></SelectTrigger>
-            <SelectContent>{(editing === 'new' ? availableRoles : roles.filter(r => r.id === roleId)).map(role => <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{(editing === 'new' ? availableRoles : roles.filter(r => r.id === roleId)).map(role => <SelectItem key={role.id} value={role.id}>{role.name}{cardLabel(role.id) ? ` · ${cardLabel(role.id)}` : ''}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="w-44 space-y-1"><Label htmlFor="series-team-fixed-rate">Session rate (ex GST)</Label><Input id="series-team-fixed-rate" type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} disabled={save.isPending} /></div>
