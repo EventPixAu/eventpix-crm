@@ -29,6 +29,7 @@ import {
 } from '@/hooks/useReadinessGates';
 import { useEventSeries } from '@/hooks/useEventSeries';
 import { cn } from '@/lib/utils';
+import { stripLbaPrefix } from '@/lib/eventNaming';
 
 function ReadinessStatusBadge({ status }: { status: 'ready' | 'partially_ready' | 'not_ready' | 'at_risk' | 'overdue' }) {
   const config = {

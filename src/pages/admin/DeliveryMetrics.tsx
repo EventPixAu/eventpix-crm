@@ -21,6 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useDeliveryMetrics } from '@/hooks/useDeliveryMetrics';
 import { useEventTypes } from '@/hooks/useLookups';
 import { useEventSeries } from '@/hooks/useEventSeries';
+import { stripLbaPrefix } from '@/lib/eventNaming';
 
 export default function DeliveryMetrics() {
   const [dateRange, setDateRange] = useState('3m');

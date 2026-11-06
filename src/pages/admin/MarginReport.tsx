@@ -30,6 +30,7 @@ import { useAuth } from '@/lib/auth';
 import { useMarginReport } from '@/hooks/useMarginReport';
 import { useEventSeries } from '@/hooks/useEventSeries';
 import { cn } from '@/lib/utils';
+import { stripLbaPrefix } from '@/lib/eventNaming';
 
 type DatePreset = 'this_month' | 'last_month' | 'last_90_days' | 'year_to_date' | 'all_time' | 'custom';
 
