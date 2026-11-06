@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Package, Plus, Trash2, RefreshCw, Boxes, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Package, Plus, Trash2, RefreshCw, Boxes, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ import {
 import { useEquipmentItems } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { EquipmentItemSelect } from '@/components/EquipmentItemSelect';
+import { equipmentDeepLink } from '@/lib/equipmentDeepLink';
 import { useSeriesEvents } from '@/hooks/useEventSeries';
 
 interface Props { seriesId: string; }
@@ -235,7 +237,14 @@ export function SeriesDefaultEquipmentPanel({ seriesId }: Props) {
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {d.kit?.name || d.equipment_item?.name || 'Unknown'}
+                      <Link
+                        to={equipmentDeepLink(d)}
+                        title={d.kit_id ? 'Open this kit in Equipment' : 'Open this item in Equipment'}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        {d.kit_id ? d.kit?.name || 'Unknown' : d.equipment_item?.name || 'Unknown'}
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {d.equipment_item

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -232,6 +233,22 @@ export function EquipmentInventory() {
     });
     setDialogOpen(true);
   };
+
+  // Deep link: /equipment?tab=inventory&item=<id> opens that item's details
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepItemId = searchParams.get('item');
+
+  useEffect(() => {
+    if (!deepItemId || !items) return;
+    const target = items.find(i => i.id === deepItemId);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('item');
+      return next;
+    }, { replace: true });
+    if (target) handleEdit(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepItemId, items]);
 
   const handleDelete = async (id: string) => {
     if (deleteItem.isPending) return;
