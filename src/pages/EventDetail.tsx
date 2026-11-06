@@ -117,6 +117,7 @@ import { filterVisibleAssignments, filterVisibleSessions } from '@/lib/editorVis
 import { assignmentLocalTime } from '@/lib/assignmentLocalTime';
 import { assignmentCardSession } from '@/lib/assignmentCardSession';
 import { AssignmentCallTimeEditor } from '@/components/AssignmentCallTimeEditor';
+import { AssignmentExpenseEditor } from '@/components/AssignmentExpenseEditor';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -341,6 +342,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
       )}
       <div>
         <AssignmentBudgetLine summary assignment={assignment} eventId={eventId} isAdmin={isAdmin} isOperations={isOperations} isSelf={!!currentUserId && assignment.user_id === currentUserId} eventCallTime={eventCallTime} />
+        <AssignmentExpenseEditor assignmentId={assignment.id} eventId={eventId} amount={Number(assignment.travel_amount) || 0} name={name} roleName={role} isAdmin={isAdmin} isOperations={isOperations} />
       </div>
       <StaffWorkflowPanel eventId={eventId} assignment={assignment} />
     </div>
