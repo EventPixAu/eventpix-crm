@@ -6,6 +6,7 @@
  * When Xero expenses are synced, they override the expected values.
  * Access: Admin only
  */
+import { superAmount } from '@/lib/employmentSuper';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
