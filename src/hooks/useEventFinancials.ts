@@ -162,7 +162,7 @@ export function useEventFinancials(eventId: string | undefined) {
       
       // Build rate card lookup by staff_role_id
       const rateMap = new Map<string, AssignmentRate>();
-      (rateCard || []).forEach(r => rateMap.set(r.staff_role_id, r));
+      ((rateCard as unknown as (AssignmentRate & { staff_role_id: string })[]) || []).forEach(r => rateMap.set(r.staff_role_id, r));
       
       // Calculate expected staff cost from rate card
       let expectedStaffCost = 0;
