@@ -44,6 +44,7 @@ import { useEventTypes, useDeliveryMethods } from '@/hooks/useLookups';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
 import { supabase } from '@/lib/supabase';
+import { stripLbaPrefix } from '@/lib/eventNaming';
 
 interface BulkEventRow {
   id: string;
@@ -279,8 +280,8 @@ export function BulkEventCreationDialog({
 
       return {
         event_name: isSingleVenue
-          ? `${series.name} - ${row.event_date ? format(parseISO(row.event_date), 'd MMM yyyy') : (row.venue_name || seriesDefaultVenue)}`
-          : `${series.name} - ${row.city || venueName}`,
+          ? `${stripLbaPrefix(series.name)} - ${row.event_date ? format(parseISO(row.event_date), 'd MMM yyyy') : (row.venue_name || seriesDefaultVenue)}`
+          : `${stripLbaPrefix(series.name)} - ${row.city || venueName}`,
         client_name: clientName || series.name,
         event_date: row.event_date,
         start_time: row.start_time || undefined,

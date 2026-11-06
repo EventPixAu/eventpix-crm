@@ -29,6 +29,7 @@ import {
 } from '@/hooks/useReadinessGates';
 import { useEventSeries } from '@/hooks/useEventSeries';
 import { cn } from '@/lib/utils';
+import { stripLbaPrefix } from '@/lib/eventNaming';
 
 function ReadinessStatusBadge({ status }: { status: 'ready' | 'partially_ready' | 'not_ready' | 'at_risk' | 'overdue' }) {
   const config = {
@@ -313,7 +314,7 @@ export function AdminReadinessQueues({ defaultTab = 'events' }: AdminReadinessQu
                     <SelectItem value="all">All Series</SelectItem>
                     {seriesList.filter(s => s.is_active).map(series => (
                       <SelectItem key={series.id} value={series.id}>
-                        {series.name}
+                        {stripLbaPrefix(series.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>

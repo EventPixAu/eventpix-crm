@@ -47,6 +47,7 @@ import { useActiveVenues, type Venue } from '@/hooks/useVenues';
 import { CrewSmsSettings } from '@/components/CrewSmsSettings';
 import { eventDeliveryDateFields, eventDeliveryDateValues } from '@/lib/eventDeliveryDates';
 import { CalendarDatePicker } from '@/components/CalendarDatePicker';
+import { stripLbaPrefix } from '@/lib/eventNaming';
 
 const eventSchema = z.object({
   event_name: z.string().min(1, 'Event name is required'),
@@ -370,7 +371,7 @@ export default function EventForm() {
 
   const onSubmit = async (values: EventFormValues) => {
     const cleanValues: any = {
-      event_name: values.event_name,
+      event_name: stripLbaPrefix(values.event_name),
       event_type_id: values.event_type_id,
       event_date: values.event_date,
       client_name: values.client_name,
@@ -542,7 +543,16 @@ export default function EventForm() {
                   <FormItem>
                     <FormLabel>Event Name</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g., Smith Wedding" className="bg-secondary" />
+                      <Input
+                        {...field}
+                        onBlur={() => {
+                          field.onBlur();
+                          const stripped = stripLbaPrefix(field.value || '');
+                          if (stripped !== field.value) field.onChange(stripped);
+                        }}
+                        placeholder="e.g., Smith Wedding"
+                        className="bg-secondary"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
