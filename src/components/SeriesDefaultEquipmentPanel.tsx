@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Package, Plus, Trash2, RefreshCw, Boxes, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Package, Plus, Trash2, RefreshCw, Boxes, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -235,7 +236,25 @@ export function SeriesDefaultEquipmentPanel({ seriesId }: Props) {
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {d.kit?.name || d.equipment_item?.name || 'Unknown'}
+                      {d.kit_id ? (
+                        <Link
+                          to={`/equipment?tab=kits&kit=${d.kit_id}`}
+                          title="Open this kit in Equipment"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          {d.kit?.name || 'Unknown'}
+                          <ExternalLink className="h-3 w-3 opacity-60" />
+                        </Link>
+                      ) : (
+                        <Link
+                          to={`/equipment?tab=inventory&item=${d.equipment_item_id ?? ''}`}
+                          title="Open this item in Equipment"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          {d.equipment_item?.name || 'Unknown'}
+                          <ExternalLink className="h-3 w-3 opacity-60" />
+                        </Link>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {d.equipment_item

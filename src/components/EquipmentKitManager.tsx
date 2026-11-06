@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -91,6 +92,27 @@ export function EquipmentKitManager() {
   const [newOtherItem, setNewOtherItem] = useState('');
   const [pendingInventoryItems, setPendingInventoryItems] = useState<string[]>([]);
   const [ownerFilter, setOwnerFilter] = useState('all');
+
+  // Deep link: /equipment?tab=kits&kit=<id> opens that kit
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepKitId = searchParams.get('kit');
+
+  useEffect(() => {
+    if (!deepKitId || !kits) return;
+    const target = kits.find(k => k.id === deepKitId);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('kit');
+      return next;
+    }, { replace: true });
+    if (target) {
+      setSelectedKitId(target.id);
+      window.setTimeout(() => {
+        document.getElementById(`equipment-kit-${target.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepKitId, kits]);
 
   const resetForm = () => {
     setFormData({ name: '', description: '', location: '', other_items: [], is_active: true });
@@ -340,6 +362,7 @@ export function EquipmentKitManager() {
             {kits?.map((kit) => (
               <Card 
                 key={kit.id} 
+                id={`equipment-kit-${kit.id}`}
                 className={`cursor-pointer transition-colors ${selectedKitId === kit.id ? 'border-primary' : ''}`}
                 onClick={() => setSelectedKitId(kit.id)}
               >
