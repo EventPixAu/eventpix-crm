@@ -36,6 +36,7 @@ export default function PayRates() {
     minimum_paid_hours: number;
     fixed_rate: number;
     notes: string;
+    employment_type: 'contract' | 'employee';
   } | null>(null);
 
   const [allowanceDialogOpen, setAllowanceDialogOpen] = useState(false);
@@ -51,7 +52,7 @@ export default function PayRates() {
   const availableRoles = staffRoles.filter(r => !usedRoleIds.has(r.id) || editEntry?.staff_role_id === r.id);
 
   const openAdd = () => {
-    setEditEntry({ staff_role_id: '', rate_mode: 'hourly', hourly_rate: 0, minimum_paid_hours: 3, fixed_rate: 0, notes: '' });
+    setEditEntry({ staff_role_id: '', rate_mode: 'hourly', hourly_rate: 0, minimum_paid_hours: 3, fixed_rate: 0, notes: '', employment_type: 'contract' });
     setDialogOpen(true);
   };
 
@@ -64,6 +65,7 @@ export default function PayRates() {
       minimum_paid_hours: entry.minimum_paid_hours ?? 3,
       fixed_rate: entry.fixed_rate ?? 0,
       notes: entry.notes || '',
+      employment_type: entry.employment_type === 'employee' ? 'employee' : 'contract',
     });
     setDialogOpen(true);
   };
@@ -147,6 +149,7 @@ export default function PayRates() {
                   <TableRow>
                     <TableHead>Role</TableHead>
                     <TableHead>Mode</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="w-[100px]" />
@@ -158,7 +161,12 @@ export default function PayRates() {
                       <TableCell className="font-medium">{entry.staff_roles?.name || '—'}</TableCell>
                       <TableCell>
                         <Badge variant={entry.rate_mode === 'fixed' ? 'default' : 'outline'}>
-                          {entry.rate_mode === 'fixed' ? 'Set Rate' : 'Hourly'}
+                          {entry.rate_mode === 'fixed' ? 'Event Rate' : 'Hourly'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={entry.employment_type === 'employee' ? 'secondary' : 'outline'}>
+                          {entry.employment_type === 'employee' ? 'Employee +12% Super' : 'Contract'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -227,7 +235,21 @@ export default function PayRates() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="hourly">Hourly</SelectItem>
-                      <SelectItem value="fixed">Set Rate (flat per event)</SelectItem>
+                      <SelectItem value="fixed">Event Rate (flat per event/session)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Engagement</Label>
+                  <Select
+                    value={editEntry.employment_type}
+                    onValueChange={v => setEditEntry({ ...editEntry, employment_type: v as 'contract' | 'employee' })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="contract">Contract rate</SelectItem>
+                      <SelectItem value="employee">Employee rate (+12% Super added to pay)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
