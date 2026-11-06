@@ -25,6 +25,7 @@ import {
 import { useEquipmentItems } from '@/hooks/useEquipment';
 import { useActiveEquipmentKits } from '@/hooks/useEquipmentKits';
 import { EquipmentItemSelect } from '@/components/EquipmentItemSelect';
+import { equipmentDeepLink } from '@/lib/equipmentDeepLink';
 import { useSeriesEvents } from '@/hooks/useEventSeries';
 
 interface Props { seriesId: string; }
@@ -236,25 +237,14 @@ export function SeriesDefaultEquipmentPanel({ seriesId }: Props) {
                       )}
                     </TableCell>
                     <TableCell className="font-medium">
-                      {d.kit_id ? (
-                        <Link
-                          to={`/equipment?tab=kits&kit=${d.kit_id}`}
-                          title="Open this kit in Equipment"
-                          className="inline-flex items-center gap-1 text-primary hover:underline"
-                        >
-                          {d.kit?.name || 'Unknown'}
-                          <ExternalLink className="h-3 w-3 opacity-60" />
-                        </Link>
-                      ) : (
-                        <Link
-                          to={`/equipment?tab=inventory&item=${d.equipment_item_id ?? ''}`}
-                          title="Open this item in Equipment"
-                          className="inline-flex items-center gap-1 text-primary hover:underline"
-                        >
-                          {d.equipment_item?.name || 'Unknown'}
-                          <ExternalLink className="h-3 w-3 opacity-60" />
-                        </Link>
-                      )}
+                      <Link
+                        to={equipmentDeepLink(d)}
+                        title={d.kit_id ? 'Open this kit in Equipment' : 'Open this item in Equipment'}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        {d.kit_id ? d.kit?.name || 'Unknown' : d.equipment_item?.name || 'Unknown'}
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </Link>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {d.equipment_item
