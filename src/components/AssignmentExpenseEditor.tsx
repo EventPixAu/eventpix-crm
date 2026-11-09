@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { assignmentExpenseAmount } from '@/lib/assignmentExpense';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
+import { usePayAllowances } from '@/hooks/usePayRateCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function AssignmentExpenseEditor({ assignmentId, eventId, amount, name, roleName, isAdmin, isOperations }: {
   assignmentId: string; eventId: string; amount: number; name: string; roleName: string; isAdmin: boolean; isOperations?: boolean;
@@ -14,6 +16,8 @@ export function AssignmentExpenseEditor({ assignmentId, eventId, amount, name, r
   const [editing, setEditing] = useState(false);
   const [input, setInput] = useState('');
   const queryClient = useQueryClient();
+  const { data: allowances = [] } = usePayAllowances();
+  const addOns = allowances.filter(a => a.is_active && a.unit === 'flat');
   const canEdit = assignmentPayAccess({ isAdmin, isOperations, roleName }).canEdit;
   const save = useMutation({
     mutationFn: async () => {
@@ -38,6 +42,17 @@ export function AssignmentExpenseEditor({ assignmentId, eventId, amount, name, r
         <Input id={`expense-${assignmentId}`} aria-label={`Additional expenses for ${name}`} type="number" min="0" step="0.01" value={input}
           onChange={e => setInput(e.target.value)} className="h-8 w-28 text-xs" disabled={save.isPending}
           onKeyDown={e => { if (e.key === 'Enter' && assignmentExpenseAmount(input) !== null) save.mutate(); if (e.key === 'Escape') setEditing(false); }} />
+        {addOns.length > 0 && <Select value="__none__" onValueChange={id => {
+          const a = addOns.find(x => x.id === id); if (!a) return;
+          const current = assignmentExpenseAmount(input) ?? 0;
+          setInput(String(Math.round((current + Number(a.amount)) * 100) / 100));
+        }}>
+          <SelectTrigger className="h-8 w-44 text-xs" aria-label={`Add an add-on for ${name}`}><SelectValue placeholder="Add from add-ons" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__" disabled>Add from add-ons…</SelectItem>
+            {addOns.map(a => <SelectItem key={a.id} value={a.id}>{a.name} — ${Number(a.amount).toFixed(2)}</SelectItem>)}
+          </SelectContent>
+        </Select>}
         <Button size="icon" className="h-8 w-8" aria-label={`Save expenses for ${name}`} title="Save expenses" disabled={save.isPending || assignmentExpenseAmount(input) === null} onClick={() => save.mutate()}>
           {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         </Button>
