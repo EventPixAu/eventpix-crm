@@ -188,20 +188,22 @@ function StepItem({
           )}
           
           <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="flex flex-wrap items-start gap-2 min-w-0" style={{ flex: '1 1 12rem' }}>
-                <RoleAbbrevBadge roleName={assignedRoleName} />
+            <div className="flex flex-col gap-2 min-w-0">
+              <div className="w-full min-w-0 space-y-2">
+                <div className="flex items-start gap-2 min-w-0">
+                  <div className="shrink-0"><RoleAbbrevBadge roleName={assignedRoleName} /></div>
                 {isAdmin ? (
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => onEdit(step)}
                     className={cn(
-                      "text-sm font-medium text-left flex-1 min-w-0 break-words hover:text-primary hover:underline transition-colors",
+                      "h-auto p-0 text-sm font-medium text-left flex-1 min-w-0 whitespace-normal break-words justify-start hover:bg-transparent hover:text-primary hover:underline transition-colors",
                       step.is_completed && "line-through text-muted-foreground hover:text-muted-foreground"
                     )}
                     title="Click to edit"
                   >
                     {step.step_label}
-                  </button>
+                  </Button>
                 ) : (
                   <p className={cn(
                     "text-sm font-medium flex-1 min-w-0 break-words",
@@ -210,8 +212,9 @@ function StepItem({
                     {step.step_label}
                   </p>
                 )}
+                </div>
                     
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0">
                   {isAuto && (
                     <span className="text-xs bg-info/10 text-info px-1.5 py-0.5 rounded">
                       Auto: {getAutoTriggerLabel(step.auto_trigger_event)}
@@ -220,7 +223,7 @@ function StepItem({
                   
                   {step.due_date && (
                     <span className={cn(
-                      "text-xs flex items-center gap-1",
+                      "text-xs flex items-center gap-1 shrink-0 whitespace-nowrap",
                       isOverdue && "text-destructive",
                       isDueToday && "text-warning",
                       !isOverdue && !isDueToday && "text-muted-foreground"
@@ -231,7 +234,7 @@ function StepItem({
                   )}
                   
                   {step.assigned_to && step.assigned_to_profile && (
-                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                    <span className="max-w-full break-words text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                       {step.assigned_to_profile.full_name || step.assigned_to_profile.email}
                     </span>
                   )}
@@ -244,34 +247,40 @@ function StepItem({
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 shrink-0 ml-auto">
+              <div className="flex items-center gap-0.5 shrink-0 self-end">
                 {isAdmin && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => onEdit(step)}
-                    className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                    className="h-6 w-6 text-muted-foreground hover:text-primary"
                     title="Edit step"
+                    aria-label="Edit step"
                   >
                     <Pencil className="h-4 w-4" />
-                  </button>
+                  </Button>
                 )}
                 {isAdmin && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={handleDelete}
                     disabled={deleteStep.isPending}
-                    className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
                     title="Remove step"
+                    aria-label="Remove step"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
                 )}
                 <CollapsibleTrigger asChild>
-                  <button className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" aria-label={isExpanded ? 'Collapse step' : 'Expand step'}>
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4" />
                     ) : (
                       <ChevronDown className="h-4 w-4" />
                     )}
-                  </button>
+                  </Button>
                 </CollapsibleTrigger>
               </div>
             </div>
@@ -423,7 +432,7 @@ export function JobWorkflowRail({ eventId, isAdmin }: JobWorkflowRailProps) {
         </div>
         
         {/* Steps List with ScrollArea - completed float to top */}
-        <ScrollArea className="h-[400px] pr-3" ref={scrollAreaRef}>
+        <ScrollArea className="h-[400px] pr-3 [&_[data-radix-scroll-area-viewport]>div]:!block" ref={scrollAreaRef}>
           <div className="relative">
             {orderedSteps
               .map((step) => {
