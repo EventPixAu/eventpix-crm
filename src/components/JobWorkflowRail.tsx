@@ -188,8 +188,8 @@ function StepItem({
           )}
           
           <Collapsible open={isExpanded} onOpenChange={onToggle} className="flex-1 min-w-0">
-            <div className="flex items-start gap-2">
-              <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex flex-col gap-2 min-w-0">
+              <div className="w-full min-w-0 space-y-2">
                 <div className="flex items-start gap-2 min-w-0">
                   <div className="shrink-0"><RoleAbbrevBadge roleName={assignedRoleName} /></div>
                 {isAdmin ? (
@@ -247,7 +247,7 @@ function StepItem({
                 </div>
               </div>
               
-              <div className="flex items-center gap-0.5 shrink-0">
+              <div className="flex items-center gap-0.5 shrink-0 self-end">
                 {isAdmin && (
                   <Button
                     variant="ghost"
