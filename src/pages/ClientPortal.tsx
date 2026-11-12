@@ -120,6 +120,7 @@ interface PortalData {
     coc_file_name: string | null;
     coc_signed_url: string | null;
   }>;
+  team_certificates?: ClientCertificate[];
 }
 
 function formatTime(time: string | null): string {
@@ -699,6 +700,8 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
             </div>
           </motion.div>
         )}
+
+        {(data.team_certificates?.length ?? 0) > 0 && <ClientCertificates title="Team Certificates" certificates={data.team_certificates || []} />}
 
         {/* Footer */}
         <div className="text-center py-8 border-t border-white/10">
