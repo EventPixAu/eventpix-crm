@@ -197,6 +197,8 @@ function AppRoutes() {
     <Routes>
       {/* Public routes - no auth required */}
       <Route path="/auth" element={<Auth />} />
+      <Route path="/login" element={<Navigate to="/auth" replace />} />
+      <Route path="/team-login" element={<Navigate to="/auth" replace />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/g/:qrToken" element={<GalleryPublic />} />
       <Route path="/accept/:token" element={<PublicAcceptQuote />} />
