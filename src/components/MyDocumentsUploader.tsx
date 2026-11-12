@@ -329,7 +329,10 @@ export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClos
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                onClick={() => !selectedFile && fileInputRef.current?.click()}
+                onClick={(event) => {
+                  if (event.target === fileInputRef.current) return;
+                  if (!selectedFile) fileInputRef.current?.click();
+                }}
                 className={cn(
                   "relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
                   "flex flex-col items-center justify-center gap-2 text-center",
