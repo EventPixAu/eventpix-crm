@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase';
+import { ClientCertificates, type ClientCertificate } from '@/components/client/ClientCertificates';
 
 interface PortalContract {
   id: string;

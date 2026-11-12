@@ -22,6 +22,7 @@ import { PortalIntro } from '@/components/client/PortalIntro';
 import { toast } from 'sonner';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import type { Session } from '@supabase/supabase-js';
+import { ClientCertificates, type ClientCertificate } from '@/components/client/ClientCertificates';
 
 interface Company {
   id: string;
@@ -98,6 +99,9 @@ export default function ClientPortalDashboard() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [companyCertificates, setCompanyCertificates] = useState<ClientCertificate[]>([]);
+  const [teamCertificates, setTeamCertificates] = useState<Record<string, ClientCertificate[]>>({});
+  const [certificateError, setCertificateError] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showIntro, setShowIntro] = useState(false);
   const navigate = useNavigate();
@@ -177,6 +181,13 @@ export default function ClientPortalDashboard() {
       setCompanies(result.companies || []);
       setLeads(result.leads || []);
       setEvents(result.events || []);
+      const certificates = await supabase.functions.invoke('client-certificates');
+      if (!mounted) return;
+      if (certificates.error) setCertificateError(true);
+      else {
+        setCompanyCertificates(certificates.data?.company || []);
+        setTeamCertificates(Object.fromEntries((certificates.data?.events || []).map((e: any) => [e.event_id, e.certificates])));
+      }
       setLoading(false);
     }
 
@@ -296,6 +307,8 @@ export default function ClientPortalDashboard() {
             ))}
           </div>
         )}
+
+        {certificateError ? <p className="text-sm text-destructive">Certificates could not be loaded. Please refresh to try again.</p> : <ClientCertificates title="EventPix Certificates" certificates={companyCertificates} />}
 
         {/* Active Leads (Sales Stage) */}
         {leads.length > 0 && (
@@ -449,6 +462,8 @@ export default function ClientPortalDashboard() {
                               <p className="text-xs text-muted-foreground">To be confirmed</p>
                             )}
                           </div>
+
+                          {(teamCertificates[event.id]?.length ?? 0) > 0 && <ClientCertificates title="Team Certificates" certificates={teamCertificates[event.id]} />}
 
                           {event.client_portal_token && (
                             <a

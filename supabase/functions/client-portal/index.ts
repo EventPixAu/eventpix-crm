@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { teamCertificates } from '../_shared/clientCertificates.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -306,6 +307,7 @@ serve(async (req) => {
       live_feed_link: (event as any).live_feed_link || null,
       event_web_page_link: (event as any).event_web_page_link || null,
       insurance_policies,
+      team_certificates: await teamCertificates(supabase, event.id),
     };
 
     return new Response(JSON.stringify(response), {
