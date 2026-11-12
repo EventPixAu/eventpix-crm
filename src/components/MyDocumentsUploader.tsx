@@ -21,17 +21,24 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
   useComplianceDocumentTypes,
-  useMyComplianceDocuments,
+  useStaffComplianceDocuments,
   useUploadComplianceDocument,
   DOCUMENT_STATUS_CONFIG,
   type ComplianceDocumentType,
   type StaffComplianceDocumentWithType,
 } from '@/hooks/useCompliance';
+import { useAuth } from '@/lib/auth';
 
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export function MyDocumentsUploader() {
+export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClose, dialogOnly = false }: {
+  userId?: string;
+  selectedDocumentType?: ComplianceDocumentType | null;
+  onUploadClose?: () => void;
+  dialogOnly?: boolean;
+} = {}) {
+  const { user } = useAuth();
   const [uploadingType, setUploadingType] = useState<ComplianceDocumentType | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [issuedDate, setIssuedDate] = useState('');
@@ -45,8 +52,27 @@ export function MyDocumentsUploader() {
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const { data: documentTypes, isLoading: typesLoading } = useComplianceDocumentTypes();
-  const { data: myDocuments, isLoading: docsLoading } = useMyComplianceDocuments();
+  const { data: myDocuments, isLoading: docsLoading } = useStaffComplianceDocuments(userId || user?.id);
   const uploadMutation = useUploadComplianceDocument();
+
+  useEffect(() => {
+    if (!selectedDocumentType) return;
+    const existing = myDocuments?.find(doc => doc.document_type_id === selectedDocumentType.id);
+    setUploadingType(selectedDocumentType);
+    setSelectedFile(null);
+    setFileError(null);
+    setIssuedDate(existing?.issued_date || '');
+    setExpiryDate(existing?.expiry_date || '');
+    setPolicyNumber(existing?.policy_number || '');
+    setRenewalDueDate(existing?.renewal_due_date || '');
+    setRenewalPaidDate(existing?.renewal_paid_date || '');
+  }, [selectedDocumentType]);
+
+  const closeUploadDialog = () => {
+    if (uploadMutation.isPending) return;
+    setUploadingType(null);
+    onUploadClose?.();
+  };
 
   const isLoading = typesLoading || docsLoading;
 
@@ -158,6 +184,7 @@ export function MyDocumentsUploader() {
 
     uploadMutation.mutate({
       file: selectedFile,
+      userId,
       documentTypeId: uploadingType.id,
       issuedDate: issuedDate || undefined,
       expiryDate: expiryDate || undefined,
@@ -167,6 +194,7 @@ export function MyDocumentsUploader() {
     }, {
       onSuccess: () => {
         setUploadingType(null);
+        onUploadClose?.();
         setSelectedFile(null);
         setIssuedDate('');
         setExpiryDate('');
@@ -211,6 +239,7 @@ export function MyDocumentsUploader() {
 
   return (
     <div className="space-y-6">
+      {!dialogOnly && <>
       {/* Info Card */}
       <Card className="border-blue-200 bg-blue-50/50">
         <CardContent className="pt-4">
@@ -280,9 +309,10 @@ export function MyDocumentsUploader() {
         </Card>
       )}
 
+      </>}
       {/* Upload Dialog */}
-      <Dialog open={!!uploadingType} onOpenChange={() => setUploadingType(null)}>
-        <DialogContent>
+      <Dialog open={!!uploadingType} onOpenChange={(open) => { if (!open) closeUploadDialog(); }}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
             <DialogDescription>
@@ -420,7 +450,7 @@ export function MyDocumentsUploader() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadingType(null)}>
+            <Button variant="outline" onClick={closeUploadDialog} disabled={uploadMutation.isPending}>
               Cancel
             </Button>
             <Button 

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { MyDocumentsUploader } from '@/components/MyDocumentsUploader';
 import {
   useComplianceDocumentTypes,
   useStaffComplianceDocuments,
@@ -48,6 +49,7 @@ export function StaffCompliancePanel({
   currentOnboardingStatus = 'incomplete' 
 }: StaffCompliancePanelProps) {
   const [reviewingDoc, setReviewingDoc] = useState<StaffComplianceDocumentWithType | null>(null);
+  const [uploadingType, setUploadingType] = useState<ComplianceDocumentType | null>(null);
   const [reviewStatus, setReviewStatus] = useState<'valid' | 'rejected'>('valid');
   const [reviewNotes, setReviewNotes] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -216,6 +218,7 @@ export function StaffCompliancePanel({
                   document={doc}
                   getExpiryWarning={getExpiryWarning}
                   onReview={setReviewingDoc}
+                  onUpload={() => setUploadingType(docType)}
                 />
               );
             })}
@@ -244,6 +247,7 @@ export function StaffCompliancePanel({
                     document={doc}
                     getExpiryWarning={getExpiryWarning}
                     onReview={setReviewingDoc}
+                    onUpload={() => setUploadingType(docType)}
                   />
                 );
               })}
@@ -251,6 +255,13 @@ export function StaffCompliancePanel({
           </CardContent>
         </Card>
       )}
+
+      <MyDocumentsUploader
+        userId={userId}
+        selectedDocumentType={uploadingType}
+        onUploadClose={() => setUploadingType(null)}
+        dialogOnly
+      />
 
       {/* Review Dialog */}
       <Dialog open={!!reviewingDoc} onOpenChange={() => setReviewingDoc(null)}>
@@ -398,17 +409,19 @@ function DocumentRow({
   document,
   getExpiryWarning,
   onReview,
+  onUpload,
 }: {
   docType: ComplianceDocumentType;
   document?: StaffComplianceDocumentWithType;
   getExpiryWarning: (date: string | null) => { level: string; text: string } | null;
   onReview: (doc: StaffComplianceDocumentWithType) => void;
+  onUpload: () => void;
 }) {
   const expiryWarning = document ? getExpiryWarning(document.expiry_date) : null;
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border bg-card">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         {document?.status === 'valid' ? (
           <FileCheck className="h-5 w-5 text-green-500" />
         ) : document?.status === 'pending_review' ? (
@@ -456,7 +469,7 @@ function DocumentRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         {document ? (
           <>
             <Badge variant={DOCUMENT_STATUS_CONFIG[document.status].variant}>
@@ -478,6 +491,10 @@ function DocumentRow({
         ) : (
           <Badge variant="outline">Not uploaded</Badge>
         )}
+        <Button size="sm" variant="outline" onClick={onUpload}>
+          <Upload className="mr-2 h-4 w-4" />
+          {document ? 'Replace' : 'Upload'}
+        </Button>
       </div>
     </div>
   );
