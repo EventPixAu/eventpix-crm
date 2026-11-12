@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Add a contact-scoped series client view and an admin “View as Client” button; retain per-event details and certificate access. Vanessa’s Southlands preview shows all eight personally linked dates, EventPix certificates and Nicole’s now-approved WWCC; desktop/mobile checked without overflow, five tests passed, build OK. Preview sender deployed; pages await publishing. Real client-session check not exercised.
 - [x] Restore certificate upload controls on Team Compliance; signed-in upload/save/reload/private file read verified and temporary document removed; ownership tests passed, build OK; awaits publishing.
 - [x] Add EventPix company certificates to the client dashboard and approved allocated-team compliance certificates to dashboard/job details; identity, tax, agreements, editors and declined allocations excluded. Real PLI/Workers Comp files and job PLI/WWCC/induction files opened successfully; nine tests passed, desktop/mobile checked. A real client-account job dashboard was not exercised; functions deployed, pages await publishing.
 - [x] Allow clicking a series default equipment name to open it: item names open Equipment / Inventory with that item's details, kit names open Equipment / Kits with that kit selected and its items listed; signed-in Santa - The Palms verified all three names link correctly, "Asus Vivo" opened its details (name field Asus Vivo, parameter cleared) and "OPP 6x8" opened "Items in \"OPP 6x8\"" with 3 rows; four deep-link tests passed, build OK; awaits publishing.

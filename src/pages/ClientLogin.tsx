@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, Mail, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,13 +14,16 @@ export default function ClientLogin() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [linkSent, setLinkSent] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const seriesId = searchParams.get('series');
+  const portalPath = seriesId && /^[0-9a-f-]{36}$/i.test(seriesId) ? `/portal/series/${seriesId}` : '/portal';
 
   // If already logged in, redirect to portal
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate('/portal');
+      if (session) navigate(portalPath);
     });
-  }, [navigate]);
+  }, [navigate, portalPath]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +34,7 @@ export default function ClientLogin() {
       const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
         body: {
           email: email.trim(),
-          redirectTo: `${window.location.origin}/portal`,
+          redirectTo: `${window.location.origin}${portalPath}`,
         },
       });
 
