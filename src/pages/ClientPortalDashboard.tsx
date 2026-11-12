@@ -267,12 +267,12 @@ export default function ClientPortalDashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <img src={eventpixLogo} alt="Eventpixii" className="h-8" />
             <div>
               <h1 className="text-sm font-semibold text-foreground">Client Portal</h1>
-              <p className="text-xs text-muted-foreground">{userEmail}</p>
+              <p className="text-xs text-muted-foreground break-all">{userEmail}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
