@@ -228,7 +228,7 @@ export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClos
     return null;
   };
 
-  if (isLoading) {
+  if (isLoading && !dialogOnly) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-48 w-full" />
