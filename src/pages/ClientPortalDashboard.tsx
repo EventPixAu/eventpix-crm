@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import type { Session } from '@supabase/supabase-js';
 import { ClientCertificates, type ClientCertificate } from '@/components/client/ClientCertificates';
+import { seriesClientEvents } from '../../supabase/functions/_shared/seriesClientScope';
 
 interface Company {
   id: string;
@@ -94,6 +95,11 @@ function formatStatus(s: string | null) {
 }
 
 export default function ClientPortalDashboard() {
+  const { seriesId } = useParams();
+  const [searchParams] = useSearchParams();
+  const preview = searchParams.get('preview') === '1';
+  const contactId = searchParams.get('contact');
+  const [seriesTitle, setSeriesTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -111,11 +117,11 @@ export default function ClientPortalDashboard() {
   useEffect(() => {
     if (!introKey) return;
     try {
-      setShowIntro(!window.localStorage.getItem(introKey));
+      setShowIntro(!seriesId && !preview && !window.localStorage.getItem(introKey));
     } catch {
       setShowIntro(false);
     }
-  }, [introKey]);
+  }, [introKey, seriesId, preview]);
 
   const dismissIntro = () => {
     if (introKey) {
@@ -143,7 +149,7 @@ export default function ClientPortalDashboard() {
     const scheduleLoginRedirect = () => {
       clearRedirectTimer();
       redirectTimer = setTimeout(() => {
-        if (mounted && !loadedForUserId) navigate('/client-login');
+        if (mounted && !loadedForUserId) navigate(seriesId ? `/client-login?series=${seriesId}` : '/client-login');
       }, 2500);
     };
 
@@ -160,7 +166,9 @@ export default function ClientPortalDashboard() {
 
       setUserEmail(session.user.email ?? null);
 
-      const { data, error: rpcError } = await supabase.rpc('get_client_portal_data');
+      const { data, error: rpcError } = preview
+        ? await supabase.functions.invoke('series-client-preview', { body: { seriesId, contactId } })
+        : await supabase.rpc('get_client_portal_data');
       
       if (!mounted) return;
 
@@ -179,9 +187,12 @@ export default function ClientPortalDashboard() {
       }
 
       setCompanies(result.companies || []);
-      setLeads(result.leads || []);
-      setEvents(result.events || []);
-      const certificates = await supabase.functions.invoke('client-certificates');
+      const visibleEvents = seriesId ? seriesClientEvents<Event>(result.events || [], seriesId) : (result.events || []);
+      setLeads(seriesId ? [] : result.leads || []);
+      setEvents(visibleEvents);
+      setSeriesTitle(result.series_name || visibleEvents[0]?.series_name || null);
+      if (preview) setUserEmail(result.email || null);
+      const certificates = preview ? { data: result.certificates, error: null } : await supabase.functions.invoke('client-certificates');
       if (!mounted) return;
       if (certificates.error) setCertificateError(true);
       else {
@@ -210,7 +221,7 @@ export default function ClientPortalDashboard() {
       clearRedirectTimer();
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, seriesId, preview, contactId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -253,7 +264,7 @@ export default function ClientPortalDashboard() {
           events: [],
         });
       }
-      map.get(key)!.events.push(ev);
+      map.get(key)?.events.push(ev);
     }
     for (const group of map.values()) {
       group.events.sort((a, b) => Number(b.is_assigned ?? false) - Number(a.is_assigned ?? false));
@@ -285,15 +296,16 @@ export default function ClientPortalDashboard() {
               <BookOpen className="h-4 w-4" />
               Portal guide
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2 text-muted-foreground">
+            {preview ? <Button variant="outline" asChild><Link to={`/admin/series/${seriesId}`}>Back to Series</Link></Button> : <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2 text-muted-foreground">
               <LogOut className="h-4 w-4" />
               Sign out
-            </Button>
+            </Button>}
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        {seriesId && <div className="space-y-2"><h1 className="text-2xl font-semibold">{seriesTitle || 'Event Series'}</h1>{!preview && <Button variant="outline" asChild><Link to="/portal">All projects</Link></Button>}</div>}
         {showIntro && <PortalIntro email={userEmail} onDismiss={dismissIntro} />}
         {!showIntro && (<>
         {/* Companies */}
@@ -389,6 +401,7 @@ export default function ClientPortalDashboard() {
                 <p className="text-xs text-muted-foreground mb-4">
                   {group.events.length} event{group.events.length === 1 ? '' : 's'}
                 </p>
+                {!seriesId && group.key !== '__standalone__' && <Button variant="outline" asChild className="mb-4"><Link to={`/portal/series/${group.key}`}>View Series<ChevronRight className="h-4 w-4 ml-2" /></Link></Button>}
                 <div className="grid gap-4 sm:grid-cols-2">
                   {group.events.map((event, i) => (
                     <motion.div

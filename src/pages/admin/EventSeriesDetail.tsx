@@ -207,13 +207,13 @@ export default function EventSeriesDetail() {
   const contactPhone = (c: any) => c?.phone_mobile || c?.phone || c?.phone_office || null;
 
   // Client portal (all events) link for the primary contact
-  const portalLoginUrl = `${getPublicBaseUrl()}/client-login`;
+  const portalLoginUrl = `${getPublicBaseUrl()}/client-login?series=${id}`;
   const [sendingPortalLink, setSendingPortalLink] = useState(false);
   const sendPortalLink = async (email: string) => {
     setSendingPortalLink(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-client-magic-link', {
-        body: { email, redirectTo: `${getPublicBaseUrl()}/portal` },
+        body: { email, redirectTo: `${getPublicBaseUrl()}/portal/series/${id}` },
       });
       if (error || (data as any)?.error) {
         toast.error('Unable to send portal link', {
@@ -660,6 +660,9 @@ export default function EventSeriesDetail() {
         description="Program Control Centre - Manage events, staffing, and delivery"
         actions={
           <div className="flex gap-2 flex-wrap">
+            {isAdmin && <Button variant="outline" disabled={!primaryContact?.email} onClick={() => navigate(`/portal/series/${id}?preview=1&contact=${selectedContactId}`)}>
+              <Eye className="h-4 w-4 mr-2" />View as Client
+            </Button>}
             {unassignedEventIds.length > 0 && (
               <Button variant="outline" onClick={() => setRecommendCrewOpen(true)}>
                 <Wand2 className="h-4 w-4 mr-2" />

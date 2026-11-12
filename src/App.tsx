@@ -207,6 +207,7 @@ function AppRoutes() {
       <Route path="/lead/:token" element={<ClientPortal portalFunction="lead-portal" />} />
       <Route path="/client-login" element={<ClientLogin />} />
       <Route path="/portal" element={<ClientPortalDashboard />} />
+      <Route path="/portal/series/:seriesId" element={<ClientPortalDashboard />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/confirm-assignment/:token" element={<ConfirmAssignment />} />
       <Route path="/delivery-choice/:token" element={<ClientDeliveryChoice />} />
