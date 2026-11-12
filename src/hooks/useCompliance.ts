@@ -186,6 +186,7 @@ export function useUploadComplianceDocument() {
   return useMutation({
     mutationFn: async ({
       file,
+      userId,
       documentTypeId,
       issuedDate,
       expiryDate,
@@ -194,6 +195,7 @@ export function useUploadComplianceDocument() {
       renewalPaidDate,
     }: {
       file: File;
+      userId?: string;
       documentTypeId: string;
       issuedDate?: string;
       expiryDate?: string;
@@ -202,11 +204,12 @@ export function useUploadComplianceDocument() {
       renewalPaidDate?: string;
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
+      const targetUserId = userId || user.id;
 
       // Upload file to storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `${targetUserId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('compliance-documents')
@@ -218,12 +221,14 @@ export function useUploadComplianceDocument() {
       const urlData = { publicUrl: `compliance-documents/${filePath}` };
 
       // Check if document already exists for this type
-      const { data: existing } = await supabase
+      const { data: existing, error: lookupError } = await supabase
         .from('staff_compliance_documents')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .eq('document_type_id', documentTypeId)
-        .single();
+        .maybeSingle();
+
+      if (lookupError) throw lookupError;
 
       if (existing) {
         // Update existing document
@@ -245,7 +250,7 @@ export function useUploadComplianceDocument() {
           })
           .eq('id', existing.id)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         return data;
@@ -254,7 +259,7 @@ export function useUploadComplianceDocument() {
         const { data, error } = await supabase
           .from('staff_compliance_documents')
           .insert({
-            user_id: user.id,
+            user_id: targetUserId,
             document_type_id: documentTypeId,
             document_url: urlData.publicUrl,
             file_name: file.name,
@@ -266,7 +271,7 @@ export function useUploadComplianceDocument() {
             status: 'pending_review',
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         return data;
