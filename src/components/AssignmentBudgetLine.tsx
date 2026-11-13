@@ -69,7 +69,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const start = assignmentCallStartTime(assignment, session, session?.start_time);
   const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
   const fallbackHours = hourlyRole ? Math.ceil(Math.max(0, start && session?.end_time ? (minutes(session.end_time) - minutes(start)) / 60 : sessionHours) * 2) / 2 : undefined;
-  const lightingCount = lightingPay.filter(row => row.assignment_id === assignment.id).length;
+  const lightingAllowanceCount = assignmentAllowances.filter((aa: any) => /lighting/i.test(aa.pay_allowances?.name || '')).reduce((n: number, aa: any) => n + (aa.quantity || 1), 0);
+  const lightingCount = lightingPay.filter(row => row.assignment_id === assignment.id).length + lightingAllowanceCount;
   const rawUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
   const payUnits = hasHoursOverride ? rawUnits : unitsAfterLightingSetup(rawUnits, lightingCount);
   const mergedCall = calculated.mergedCall;
@@ -219,12 +220,18 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
     setEditingCalculation(false);
   };
 
+  const summaryExtras: string[] = [
+    ...(lightingTotal > 0 ? [`Studio lighting kit $${lightingTotal.toFixed(2)}`] : []),
+    ...assignmentAllowances.map((aa: any) => `${aa.pay_allowances?.name || 'Extra'} $${(Number(aa.override_amount ?? aa.pay_allowances?.amount ?? 0) * (aa.quantity || 1)).toFixed(2)}`),
+    ...(equipment > 0 ? [`equipment $${equipment.toFixed(2)}`] : []),
+    ...(travel > 0 ? [`expenses $${travel.toFixed(2)}`] : []),
+  ];
   if (summary) {
     return (
       <div className="mt-2 pt-2 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="font-medium">Pay: ${totalWithExtras.toFixed(2)} (ex GST)</span>
-        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} units × ${hourlyRate.toFixed(2)}`}{superPay > 0 ? ' + 12% Super' : ''}{extrasTotal + travel + equipment + lightingTotal > 0 ? ' + extras' : ''}</span>
+        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} units × ${hourlyRate.toFixed(2)}`}{superPay > 0 ? ' + 12% Super' : ''}{summaryExtras.map(x => ` + ${x}`).join('')}</span>
       </div>
     );
   }

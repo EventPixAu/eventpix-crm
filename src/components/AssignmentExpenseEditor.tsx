@@ -34,6 +34,20 @@ export function AssignmentExpenseEditor({ assignmentId, eventId, amount, name, r
     },
     onError: (error: Error) => toast.error('Unable to save expenses', { description: error.message }),
   });
+  // Add-ons are saved as named allowances so they show by name (e.g. Studio Lighting Kit) on the pay summary.
+  const addOn = useMutation({
+    mutationFn: async (allowanceId: string) => {
+      if (!canEdit) throw new Error('Not allowed');
+      const { error } = await supabase.from('assignment_allowances').insert({ assignment_id: assignmentId, allowance_id: allowanceId, quantity: 1 } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      for (const queryKey of [['assignment-allowances', assignmentId], ['event-financials', eventId], ['my-job-sheets']]) queryClient.invalidateQueries({ queryKey });
+      setEditing(false);
+      toast.success('Add-on added');
+    },
+    onError: (error: Error) => toast.error('Unable to add add-on', { description: error.message }),
+  });
   if (!canEdit) return null;
   return <div className="mt-2 text-xs">
     {editing ? <div className="space-y-1">
@@ -44,8 +58,7 @@ export function AssignmentExpenseEditor({ assignmentId, eventId, amount, name, r
           onKeyDown={e => { if (e.key === 'Enter' && assignmentExpenseAmount(input) !== null) save.mutate(); if (e.key === 'Escape') setEditing(false); }} />
         {addOns.length > 0 && <Select value="__none__" onValueChange={id => {
           const a = addOns.find(x => x.id === id); if (!a) return;
-          const current = assignmentExpenseAmount(input) ?? 0;
-          setInput(String(Math.round((current + Number(a.amount)) * 100) / 100));
+          addOn.mutate(a.id);
         }}>
           <SelectTrigger className="h-8 w-44 text-xs" aria-label={`Add an add-on for ${name}`}><SelectValue placeholder="Add from add-ons" /></SelectTrigger>
           <SelectContent>

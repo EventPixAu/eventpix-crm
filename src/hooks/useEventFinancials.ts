@@ -122,7 +122,7 @@ export function useEventFinancials(eventId: string | undefined) {
       if (assignmentIds.length > 0) {
         const { data } = await supabase
           .from('assignment_allowances')
-          .select('assignment_id, override_amount, quantity, allowance_id, pay_allowances:allowance_id(amount)')
+          .select('assignment_id, override_amount, quantity, allowance_id, pay_allowances:allowance_id(amount, name)')
           .in('assignment_id', assignmentIds);
         allowances = (data || []) as any;
       }
@@ -185,7 +185,7 @@ export function useEventFinancials(eventId: string | undefined) {
         if (sessionHours <= 0 && rate.rate_mode !== 'fixed') continue;
         
         const { units: rawCallHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
-        const callHours = (assignment as any).hours_override != null ? rawCallHours : unitsAfterLightingSetup(rawCallHours, lightingRows.filter(r => r.assignment_id === assignment.id).length);
+        const callHours = (assignment as any).hours_override != null ? rawCallHours : unitsAfterLightingSetup(rawCallHours, lightingRows.filter(r => r.assignment_id === assignment.id).length + allowances.filter((al: any) => al.assignment_id === assignment.id && /lighting/i.test(al.pay_allowances?.name || '')).reduce((n: number, al: any) => n + (al.quantity || 1), 0));
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
         expectedStaffCost += basePay + superAmount(basePay, rate.employment_type ?? rateMap.get(roleId)?.employment_type);
       }
