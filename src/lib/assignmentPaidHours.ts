@@ -33,3 +33,13 @@ export function alignedCallUnits(arrivalTime?: string | null, endTime?: string |
   if (!Number.isFinite(ah) || !Number.isFinite(eh)) return null;
   return alignedCallUnitsFromMinutes(ah * 60 + am, eh * 60 + em);
 }
+
+/**
+ * Studio lighting setup hour sits inside the call time (photographer arrives early to set up),
+ * and is paid separately as the lighting unit, so it comes out of the call units.
+ * e.g. 4:00-11:00 call with lighting = 6 call units (5 photo + 1 prep) + 1 lighting = 7 units.
+ */
+export function unitsAfterLightingSetup(callUnits: number, lightingAllocations: number): number {
+  if (lightingAllocations <= 0) return callUnits;
+  return Math.max(3, callUnits - lightingAllocations);
+}
