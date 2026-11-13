@@ -10,6 +10,7 @@ import { superAmount } from '@/lib/employmentSuper';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
+import { unitsAfterLightingSetup } from '@/lib/assignmentPaidHours';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import type { AssignmentRate } from '@/lib/assignmentRateSnapshot';
 
@@ -166,6 +167,12 @@ export function useEventFinancials(eventId: string | undefined) {
       
       // Calculate expected staff cost from rate card
       let expectedStaffCost = 0;
+      const lightingRows: { assignment_id: string; unit_rate: number }[] = [];
+      if (assignmentIds.length) {
+        const { data: lighting, error } = await supabase.from('quote_lighting_pay').select('assignment_id, unit_rate').in('assignment_id', assignmentIds);
+        if (error) throw error;
+        lightingRows.push(...((lighting || []) as any));
+      }
       for (const assignment of assignments || []) {
         const roleId = assignment.staff_role_id;
         if (!roleId) continue;
@@ -177,7 +184,8 @@ export function useEventFinancials(eventId: string | undefined) {
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0 && rate.rate_mode !== 'fixed') continue;
         
-        const { units: callHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
+        const { units: rawCallHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
+        const callHours = (assignment as any).hours_override != null ? rawCallHours : unitsAfterLightingSetup(rawCallHours, lightingRows.filter(r => r.assignment_id === assignment.id).length);
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
         expectedStaffCost += basePay + superAmount(basePay, rate.employment_type ?? rateMap.get(roleId)?.employment_type);
       }
@@ -188,11 +196,7 @@ export function useEventFinancials(eventId: string | undefined) {
         expectedStaffCost += amount * (al.quantity || 1);
       }
       expectedStaffCost += (assignments || []).reduce((sum, a) => sum + Number(a.travel_amount || 0) + Number((a as any).equipment_amount || 0), 0);
-      if (assignmentIds.length) {
-        const { data: lighting, error } = await supabase.from('quote_lighting_pay').select('unit_rate').in('assignment_id', assignmentIds);
-        if (error) throw error;
-        expectedStaffCost += (lighting || []).reduce((sum, row) => sum + Number(row.unit_rate), 0);
-      }
+      expectedStaffCost += lightingRows.reduce((sum, row) => sum + Number(row.unit_rate), 0);
       
       // Calculate Xero-synced expense totals by category
       let travelAccommodationCost = 0;

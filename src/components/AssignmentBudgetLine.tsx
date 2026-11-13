@@ -12,6 +12,7 @@ import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from 
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
+import { unitsAfterLightingSetup } from '@/lib/assignmentPaidHours';
 import { useLightingPay, lightingPayTotal } from '@/hooks/useLightingPay';
 import { superAmount, SUPER_RATE } from '@/lib/employmentSuper';
 
@@ -68,7 +69,9 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const start = assignmentCallStartTime(assignment, session, session?.start_time);
   const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
   const fallbackHours = hourlyRole ? Math.ceil(Math.max(0, start && session?.end_time ? (minutes(session.end_time) - minutes(start)) / 60 : sessionHours) * 2) / 2 : undefined;
-  const payUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
+  const lightingCount = lightingPay.filter(row => row.assignment_id === assignment.id).length;
+  const rawUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
+  const payUnits = hasHoursOverride ? rawUnits : unitsAfterLightingSetup(rawUnits, lightingCount);
   const mergedCall = calculated.mergedCall;
   const alignedUnits = mergedCall ? payUnits : null;
   const basePay = isFixedMode ? fixedRate : hourlyRate * payUnits;
