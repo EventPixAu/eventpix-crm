@@ -122,7 +122,7 @@ export function useEventFinancials(eventId: string | undefined) {
       if (assignmentIds.length > 0) {
         const { data } = await supabase
           .from('assignment_allowances')
-          .select('assignment_id, override_amount, quantity, allowance_id, pay_allowances:allowance_id(amount)')
+          .select('assignment_id, override_amount, quantity, allowance_id, pay_allowances:allowance_id(amount, name)')
           .in('assignment_id', assignmentIds);
         allowances = (data || []) as any;
       }
