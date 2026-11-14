@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface SendNotificationParams {
-  type: 'assignment' | 'assignment_confirmed' | 'event_update';
+  type: 'assignment' | 'assignment_confirmed' | 'event_update' | 'phone_kit_request';
   event_id: string;
   user_id?: string;
   assignment_id?: string;

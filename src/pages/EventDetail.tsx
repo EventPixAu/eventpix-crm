@@ -118,6 +118,7 @@ import { assignmentLocalTime } from '@/lib/assignmentLocalTime';
 import { assignmentCardSession } from '@/lib/assignmentCardSession';
 import { AssignmentCallTimeEditor } from '@/components/AssignmentCallTimeEditor';
 import { AssignmentExpenseEditor } from '@/components/AssignmentExpenseEditor';
+import { AssignmentPhoneKit } from '@/components/AssignmentPhoneKit';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -240,6 +241,8 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
           {assignment.assignment_notes && (
             <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
           )}
+          <AssignmentPhoneKit eventId={eventId} userId={assignment.user_id} staffId={assignment.staff_id}
+            assignmentId={assignment.id} notes={assignment.assignment_notes} canRequest={isAdmin || isOperations} />
         </div>
       </div>
       {isAdmin && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, addDays, startOfDay, isAfter, parseISO } from 'date-fns';
 import {
@@ -214,6 +214,7 @@ function useUpdateMyProfile() {
 }
 
 export default function StaffMe() {
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = useMyProfile();
   const { data: upcomingEvents = [], isLoading: eventsLoading } = useUpcomingAssignments();
@@ -322,7 +323,7 @@ export default function StaffMe() {
         description="Manage your details and preferences"
       />
       
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs defaultValue={searchParams.get('tab') === 'equipment' && !isAssistant ? 'equipment' : 'profile'} className="space-y-6">
         <TabsList>
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />

@@ -43,6 +43,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { postEventWorkDate, postEventSessionInput } from '@/lib/postEventAssignment';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
+import { AssignmentPhoneKit } from '@/components/AssignmentPhoneKit';
+import { PHONE_KIT_MARKER } from '@/lib/phoneUploadKit';
 
 // Combine a local date + time in an IANA timezone into a timestamptz ISO string
 function toTimestamptz(dateStr: string, timeStr: string, tz: string): string {
@@ -84,6 +87,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
   const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const [teamMemberSearchFocused, setTeamMemberSearchFocused] = useState(false);
   const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [phoneKitRequired, setPhoneKitRequired] = useState(false);
   const [callTimeChoice, setCallTimeChoice] = useState('default');
   const [customCallTime, setCustomCallTime] = useState('');
   const [warnings, setWarnings] = useState<AssignmentWarning[]>([]);
@@ -319,7 +323,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
       event_id: eventId,
       staff_role_id: selectedRole || undefined,
       session_id: assignmentSessionId,
-      assignment_notes: assignmentNotes || undefined,
+      assignment_notes: [!isWorkDateMode && phoneKitRequired ? PHONE_KIT_MARKER : '', assignmentNotes].filter(Boolean).join('\n') || undefined,
       confirmation_status: event?.ops_status === 'awaiting_details' ? 'on_hold' : 'pending',
     };
 
@@ -449,6 +453,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
                         {getAssignmentRole(assignment)}
                       </p>
                       {assignment.session?.session_date && <p className="text-xs text-muted-foreground">{format(parseISO(assignment.session.session_date), 'EEE, d MMM yyyy')}</p>}
+                      <AssignmentPhoneKit eventId={eventId} userId={assignment.user_id} staffId={assignment.staff_id} assignmentId={assignment.id} notes={assignment.assignment_notes} canRequest />
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -676,6 +681,17 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
             )}
           </div>
           )}
+
+          {!isWorkDateMode && <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="phone-kit-required">Phone upload kit required</Label>
+              <Switch id="phone-kit-required" checked={phoneKitRequired} onCheckedChange={setPhoneKitRequired} />
+            </div>
+            <AssignmentPhoneKit eventId={eventId}
+              userId={profiles.find(p => p.id === selectedUser)?.source === 'staff' ? null : selectedUser}
+              staffId={profiles.find(p => p.id === selectedUser)?.source === 'staff' ? selectedUser : null}
+              required={phoneKitRequired} />
+          </div>}
 
           <Textarea
             placeholder="Assignment notes (optional)"
