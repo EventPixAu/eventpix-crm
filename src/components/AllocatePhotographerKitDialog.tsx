@@ -20,6 +20,7 @@ import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './Photograph
 import { AssignmentPhoneKit } from './AssignmentPhoneKit';
 import { phoneKitDetails, phoneUploadAllocation, requestMissingPhoneKitDetails } from '@/lib/phoneUploadKit';
 import { laptopAllocation, sendLaptopReminders } from '@/lib/laptopReminder';
+import { onsiteEquipmentAssignments } from '@/lib/staffRoleScope';
 
 interface PhotographerKit {
   kitId: string;
@@ -45,7 +46,7 @@ interface EventAssignment {
   staff_id: string | null;
   profile?: { id: string; full_name: string | null; email: string } | null;
   staff?: { id: string; name: string; email: string | null } | null;
-  staff_role?: { id: string; name: string } | null;
+  staff_role?: { id: string; name: string; is_onsite?: boolean } | null;
 }
 
 interface AllocatePhotographerKitDialogProps {
@@ -64,6 +65,7 @@ export function AllocatePhotographerKitDialog({
   const [selectedKits, setSelectedKits] = useState<Set<string>>(new Set());
   const [isAllocating, setIsAllocating] = useState(false);
   const allocateKits = useAllocatePhotographerKits();
+  const onsiteAssignments = useMemo(() => onsiteEquipmentAssignments(assignments), [assignments]);
 
   // Extract all assigned staff (both profile-linked and legacy)
   const allAssignedStaff = useMemo(() => {
@@ -71,7 +73,7 @@ export function AllocatePhotographerKitDialog({
     const seenIds = new Set<string>();
     const result: { ownerId: string; profileUserId: string | null; name: string; hasProfile: boolean; roleName: string }[] = [];
     
-    for (const a of assignments) {
+    for (const a of onsiteAssignments) {
       if (a.user_id && a.profile) {
         if (seenIds.has(a.user_id)) continue;
         seenIds.add(a.user_id);
@@ -97,7 +99,7 @@ export function AllocatePhotographerKitDialog({
       }
     }
     return result;
-  }, [assignments]);
+  }, [onsiteAssignments]);
 
   // Collect all staff IDs to check which ones have linked profiles
   const allStaffIds = allAssignedStaff.filter(s => !s.hasProfile).map(s => s.ownerId);
@@ -210,7 +212,7 @@ export function AllocatePhotographerKitDialog({
       const details = phoneKitDetails(equipment);
       kits.push({ ...phoneUploadAllocation(), icon: Smartphone });
       kits.push({ ...laptopAllocation(), icon: Laptop });
-      const assignment = assignments.find(a => (userIdToLookup && a.user_id === userIdToLookup) || a.staff_id === staff.ownerId);
+      const assignment = onsiteAssignments.find(a => (userIdToLookup && a.user_id === userIdToLookup) || a.staff_id === staff.ownerId);
 
       return {
         userId: userIdToLookup, // Use resolved profile user_id for FK constraint
@@ -224,7 +226,7 @@ export function AllocatePhotographerKitDialog({
           : `Missing: ${details.missing.join(', ')}`,
       };
     });
-  }, [allAssignedStaff, photographerData, staffUserLinks, assignments]);
+  }, [allAssignedStaff, photographerData, staffUserLinks, onsiteAssignments]);
 
   const toggleKit = (photographerId: string, kitId: string) => {
     const key = `${photographerId}:${kitId}`;
