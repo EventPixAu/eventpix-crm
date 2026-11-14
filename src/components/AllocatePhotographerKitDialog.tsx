@@ -363,7 +363,7 @@ export function AllocatePhotographerKitDialog({
                             {kit.items.length} item{kit.items.length !== 1 ? 's' : ''}
                           </Badge>
                         </div>
-                        {kit.category === 'phone' && isSelected && <AssignmentPhoneKit
+                        {kit.category === 'phone' && <AssignmentPhoneKit
                           eventId={eventId} userId={photographer.userId} staffId={photographer.staffId}
                           assignmentId={photographer.assignmentId} required canRequest
                         />}
