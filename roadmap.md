@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Show the phone-details request immediately in Allocate Photographer Kits without selecting a kit first; signed-in Evie view verified with all kits unselected, no email sent, build OK; awaits publishing.
 - [x] Add selectable phone upload kits and the existing request-details action to photographer equipment allocation, including missing equipment profiles. Six tests passed; signed-in Evie phone kit saved and reloaded as Phone Kit, temporary allocation/item removed, desktop/mobile request button verified without sending email, build OK; awaits publishing.
 - [x] Add non-blocking phone upload-kit checks during assignment, cable details in team profiles, and a request-details action on assigned team cards. Signed-in warning, profile save/reload and mobile layout verified; five tests passed. Gmail request preview verified without sending email; sender deployed, controls await publishing.
 - [x] Add a contact-scoped series client view and an admin “View as Client” button; retain per-event details and certificate access. Vanessa’s Southlands preview shows all eight personally linked dates, EventPix certificates and Nicole’s now-approved WWCC; desktop/mobile checked without overflow, five tests passed, build OK. Preview sender deployed; pages await publishing. Real client-session check not exercised.
