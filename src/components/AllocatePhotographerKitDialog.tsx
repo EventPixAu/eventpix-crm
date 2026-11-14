@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -336,8 +335,8 @@ export function AllocatePhotographerKitDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80dvh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
             Allocate Photographer Kits
@@ -347,7 +346,7 @@ export function AllocatePhotographerKitDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 pr-4 [&>[data-radix-scroll-area-viewport]>div]:!block">
+        <div role="region" aria-label="Photographer equipment" tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -434,9 +433,9 @@ export function AllocatePhotographerKitDialog({
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="gap-2 pt-4 border-t">
+        <DialogFooter className="shrink-0 gap-2 pt-4 border-t">
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
