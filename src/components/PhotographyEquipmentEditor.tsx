@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PHONE_UPLOAD_CABLES } from '@/lib/phoneUploadKit';
 
 // --- Shared types ---
 
@@ -45,6 +46,7 @@ export interface EquipmentKit {
 export interface PhoneInfo {
   model: string;
   usb: string;
+  uploadCable?: string;
 }
 
 export const USB_CONNECTION_OPTIONS = ['USB-C', 'Lightning', 'Micro-USB', 'Other'] as const;
@@ -128,7 +130,7 @@ export function PhotographyEquipmentEditor({
   const updatePhone = (field: keyof PhoneInfo, value: string) => {
     update({
       ...data,
-      phone: { model: data.phone?.model || '', usb: data.phone?.usb || '', [field]: value },
+      phone: { ...data.phone, model: data.phone?.model || '', usb: data.phone?.usb || '', [field]: value },
     });
   };
 
@@ -153,7 +155,8 @@ export function PhotographyEquipmentEditor({
 
   const addKit = (cat: KitCategory) => {
     const existing = kitsForCategory(cat);
-    const cfg = CATEGORY_CONFIG.find(c => c.key === cat)!;
+    const cfg = CATEGORY_CONFIG.find(c => c.key === cat);
+    if (!cfg) return;
     const name = existing.length === 0 ? cfg.label : `${cfg.label} ${existing.length + 1}`;
     update({
       ...data,
@@ -248,8 +251,9 @@ export function PhotographyEquipmentEditor({
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Phone Model</Label>
+                <Label htmlFor="phone-model" className="text-xs">Phone Model</Label>
                 <Input
+                  id="phone-model"
                   placeholder="e.g., iPhone 15 Pro, Samsung Galaxy S24"
                   value={data.phone?.model || ''}
                   onChange={e => updatePhone('model', e.target.value)}
@@ -257,13 +261,13 @@ export function PhotographyEquipmentEditor({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">USB Connection</Label>
+                <Label htmlFor="phone-connection" className="text-xs">USB Connection</Label>
                 <Select
                   value={data.phone?.usb || ''}
                   onValueChange={v => updatePhone('usb', v)}
                   disabled={readOnly}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="phone-connection">
                     <SelectValue placeholder="Select connection type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -271,6 +275,13 @@ export function PhotographyEquipmentEditor({
                       <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                     ))}
                   </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="phone-upload-cable" className="text-xs">Photo upload cable</Label>
+                <Select value={data.phone?.uploadCable || ''} onValueChange={v => updatePhone('uploadCable', v)} disabled={readOnly}>
+                  <SelectTrigger id="phone-upload-cable"><SelectValue placeholder="Select your cable" /></SelectTrigger>
+                  <SelectContent>{PHONE_UPLOAD_CABLES.map(cable => <SelectItem key={cable} value={cable}>{cable}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
