@@ -6,6 +6,20 @@ export function phoneUploadAllocation() {
   return { kitId: 'phone-upload', category: 'phone' as const, label: 'Phone Upload Kit', items: [{ id: 'phone-upload', brand: '', name: 'Phone upload kit' }] };
 }
 
+export async function requestMissingPhoneKitDetails(
+  candidates: { userId: string; assignmentId: string; phoneSelected: boolean }[],
+  readEquipment: (userId: string) => Promise<unknown>,
+  sendRequest: (assignmentId: string) => Promise<void>,
+) {
+  const selected = [...new Map(candidates.filter(c => c.phoneSelected).map(c => [c.userId, c])).values()];
+  return Promise.allSettled(selected.map(async candidate => {
+    const equipment = await readEquipment(candidate.userId);
+    if (phoneKitDetails(equipment).ready) return false;
+    await sendRequest(candidate.assignmentId);
+    return true;
+  }));
+}
+
 export function phoneKitDetails(equipment: unknown) {
   const phone = equipment && typeof equipment === 'object' && 'phone' in equipment
     ? (equipment as { phone?: { model?: string; usb?: string; uploadCable?: string } }).phone : undefined;

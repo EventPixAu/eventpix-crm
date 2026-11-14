@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
 import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
 import { AssignmentPhoneKit } from './AssignmentPhoneKit';
-import { phoneKitDetails, phoneUploadAllocation } from '@/lib/phoneUploadKit';
+import { phoneKitDetails, phoneUploadAllocation, requestMissingPhoneKitDetails } from '@/lib/phoneUploadKit';
 
 interface PhotographerKit {
   kitId: string;
@@ -239,7 +239,7 @@ export function AllocatePhotographerKitDialog({
   };
 
   const handleAllocate = async () => {
-    if (selectedKits.size === 0) {
+    if (selectedKits.size === 0 || isAllocating) {
       return;
     }
 
@@ -272,6 +272,32 @@ export function AllocatePhotographerKitDialog({
         eventId,
         kits: kitsToAllocate,
       });
+
+      const requestResults = await requestMissingPhoneKitDetails(
+        photographers.flatMap(p => p.userId && p.assignmentId ? [{
+          userId: p.userId, assignmentId: p.assignmentId,
+          phoneSelected: selectedKits.has(`${p.displayId}:phone-upload`),
+        }] : []),
+        async userId => {
+          // Read current details, not the cached profile shown when the window opened.
+          const { data, error } = await supabase.from('profiles')
+            .select('photography_equipment_json').eq('id', userId).maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error('Team profile unavailable');
+          return data.photography_equipment_json;
+        },
+        async assignmentId => {
+          const { data, error } = await supabase.functions.invoke('send-notification', {
+            body: { type: 'phone_kit_request', event_id: eventId, assignment_id: assignmentId },
+          });
+          if (error) throw error;
+          if (!data?.success) throw new Error('Phone details request was not sent');
+        },
+      );
+      const failedRequests = requestResults.filter(r => r.status === 'rejected').length;
+      const sentRequests = requestResults.filter(r => r.status === 'fulfilled' && r.value).length;
+      if (sentRequests) toast.success(`Phone-kit details requested from ${sentRequests} team member${sentRequests === 1 ? '' : 's'}`);
+      if (failedRequests) toast.error('Equipment allocated, but some phone-details requests failed. Use Request phone-kit details to retry.');
       
       setSelectedKits(new Set());
       onOpenChange(false);

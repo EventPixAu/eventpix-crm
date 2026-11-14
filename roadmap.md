@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Automatically request missing phone/cable details after selected phone-kit allocation; skip complete profiles and unselected kits, retain allocation on email failure. Nine tests passed; signed-in Evie allocation/reload verified and automatic sender dry-run returned 200 with one request; temporary allocation/item removed, no live email sent, build OK; awaits publishing.
 - [x] Show the phone-details request immediately in Allocate Photographer Kits without selecting a kit first; signed-in Evie view verified with all kits unselected, no email sent, build OK; awaits publishing.
 - [x] Add selectable phone upload kits and the existing request-details action to photographer equipment allocation, including missing equipment profiles. Six tests passed; signed-in Evie phone kit saved and reloaded as Phone Kit, temporary allocation/item removed, desktop/mobile request button verified without sending email, build OK; awaits publishing.
 - [x] Add non-blocking phone upload-kit checks during assignment, cable details in team profiles, and a request-details action on assigned team cards. Signed-in warning, profile save/reload and mobile layout verified; five tests passed. Gmail request preview verified without sending email; sender deployed, controls await publishing.
