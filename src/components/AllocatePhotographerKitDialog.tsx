@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Camera, Package, User, Loader2, Smartphone } from 'lucide-react';
+import { Camera, Package, User, Loader2, Smartphone, Laptop } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -20,10 +20,11 @@ import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
 import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
 import { AssignmentPhoneKit } from './AssignmentPhoneKit';
 import { phoneKitDetails, phoneUploadAllocation, requestMissingPhoneKitDetails } from '@/lib/phoneUploadKit';
+import { laptopAllocation, sendLaptopReminders } from '@/lib/laptopReminder';
 
 interface PhotographerKit {
   kitId: string;
-  category: 'camera' | 'lighting' | 'audio' | 'backdrop' | 'other' | 'phone';
+  category: 'camera' | 'lighting' | 'audio' | 'backdrop' | 'other' | 'phone' | 'computer';
   label: string;
   icon: typeof Camera;
   items: Array<{ id: string; brand: string; name: string; notes?: string }>;
@@ -209,6 +210,7 @@ export function AllocatePhotographerKitDialog({
       
       const details = phoneKitDetails(equipment);
       kits.push({ ...phoneUploadAllocation(), icon: Smartphone });
+      kits.push({ ...laptopAllocation(), icon: Laptop });
       const assignment = assignments.find(a => (userIdToLookup && a.user_id === userIdToLookup) || a.staff_id === staff.ownerId);
 
       return {
@@ -298,6 +300,22 @@ export function AllocatePhotographerKitDialog({
       const sentRequests = requestResults.filter(r => r.status === 'fulfilled' && r.value).length;
       if (sentRequests) toast.success(`Phone-kit details requested from ${sentRequests} team member${sentRequests === 1 ? '' : 's'}`);
       if (failedRequests) toast.error('Equipment allocated, but some phone-details requests failed. Use Request phone-kit details to retry.');
+
+      const laptopResults = await sendLaptopReminders(
+        photographers.flatMap(p => p.userId && p.assignmentId ? [{
+          userId: p.userId, assignmentId: p.assignmentId,
+          laptopSelected: selectedKits.has(`${p.displayId}:bring-laptop`),
+        }] : []),
+        async assignmentId => {
+          const { data, error } = await supabase.functions.invoke('send-notification', {
+            body: { type: 'laptop_reminder', event_id: eventId, assignment_id: assignmentId },
+          });
+          if (error) throw error;
+          if (!data?.success) throw new Error('Laptop reminder was not sent');
+        },
+      );
+      if (laptopResults.some(r => r.status === 'fulfilled')) toast.success('Bring-laptop reminder sent');
+      if (laptopResults.some(r => r.status === 'rejected')) toast.error('Laptop allocated, but the reminder could not be sent.');
       
       setSelectedKits(new Set());
       onOpenChange(false);
@@ -382,7 +400,7 @@ export function AllocatePhotographerKitDialog({
                           <div className="flex-1 min-w-0 break-words">
                             <div className="font-medium text-sm">{kit.label}</div>
                             <div className="text-xs text-muted-foreground">
-                              {kit.category === 'phone' ? photographer.phoneSummary : kit.items.map(item => `${item.brand ? item.brand + ' ' : ''}${item.name}`).join(', ')}
+                              {kit.kitId === 'bring-laptop' ? 'Laptop and charger' : kit.category === 'phone' ? photographer.phoneSummary : kit.items.map(item => `${item.brand ? item.brand + ' ' : ''}${item.name}`).join(', ')}
                             </div>
                           </div>
                           <Badge variant="secondary" className="text-xs shrink-0">

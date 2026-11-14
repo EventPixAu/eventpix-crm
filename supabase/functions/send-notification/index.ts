@@ -6,7 +6,7 @@ import { selectedSeriesInvitationEvents } from '../_shared/seriesInvitationEvent
 
 
 interface NotificationRequest {
-  type: "assignment" | "assignment_confirmed" | "event_update" | "lead_on_hold" | "series_assignment" | "lead_assignment" | "phone_kit_request";
+  type: "assignment" | "assignment_confirmed" | "event_update" | "lead_on_hold" | "series_assignment" | "lead_assignment" | "phone_kit_request" | "laptop_reminder";
   event_id?: string;
   series_id?: string;
   event_ids?: string[];
@@ -290,6 +290,12 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const { type, event_id, user_id, assignment_id, user_ids, lead_id, series_id, event_ids, dry_run }: NotificationRequest = await req.json();
+    if (type === 'laptop_reminder' && (!event_id || !assignment_id ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(event_id) ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assignment_id) ||
+      (dry_run !== undefined && typeof dry_run !== 'boolean'))) {
+      return new Response(JSON.stringify({ error: 'Valid event and assignment IDs are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (type === 'lead_assignment') {
       if (!assignment_id || !lead_id) throw new Error('Lead and assignment are required');
@@ -418,7 +424,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", event_id).maybeSingle();
     if (eventError || !event) throw new Error(`Event not found: ${eventError?.message}`);
 
-    if (type === 'phone_kit_request') {
+    if (type === 'phone_kit_request' || type === 'laptop_reminder') {
       if (!assignment_id) throw new Error('Assignment is required');
       const { data: assignment, error: assignmentError } = await supabaseUser.from('event_assignments')
         .select('user_id, staff_id, confirmation_status').eq('id', assignment_id).eq('event_id', event_id).maybeSingle();
@@ -431,6 +437,15 @@ const handler = async (req: Request): Promise<Response> => {
       if (recipientError || !person?.email) throw new Error('Team member email is missing');
       const name = person.full_name || person.name || person.email;
       const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
+      if (type === 'laptop_reminder') {
+        const subject = `EventPix - Bring your laptop: ${event.event_name}`;
+        const html = `<html><body style="font-family:Arial,sans-serif"><main style="max-width:600px;margin:auto;padding:24px"><h1>Bring your laptop</h1><p>Hi ${escapeHtml(name.trim().split(/\s+/)[0])},</p><p>Please bring your <strong>laptop and charger</strong> to <strong>${escapeHtml(event.event_name)}</strong> on ${escapeHtml(formatDate(event.event_date))}.</p><p><a href="${appUrl}/events/${event.id}">View job details</a></p><p>Thanks,<br>EventPix</p></main></body></html>`;
+        if (/\{\{[\s\S]*?\}\}/.test(subject + html)) throw new Error('Email contains unfilled placeholders');
+        if (dry_run === true) return new Response(JSON.stringify({ success: true, subject, html }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        await sendViaGmailApi(person.email, subject, html);
+        await logNotificationEmail(supabase, { recipientEmail: person.email, recipientName: name, subject, eventId: event_id || '', sentBy: user.id });
+        return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       const subject = `EventPix - Phone upload kit details: ${event.event_name}`;
       const html = `<html><body style="font-family:Arial,sans-serif"><main style="max-width:600px;margin:auto;padding:24px"><h1>Phone upload kit details</h1><p>Hi ${escapeHtml(name.split(' ')[0])},</p><p>Your booking for <strong>${escapeHtml(event.event_name)}</strong> requires a phone upload kit for uploading photos during the event.</p><p>Please confirm your phone model, phone connection and whether you have a USB-C to USB-C cable or an OTG converter cable. If you don't have the cable, choose Not available so we can arrange one.</p><p><a href="${appUrl}/staff/me?tab=equipment">Update phone and cable details</a></p><p>You can also reply to this email with those details. Your assignment remains in place.</p><p>Thanks,<br>EventPix</p></main></body></html>`;
       if (/\{\{[\s\S]*?\}\}/.test(subject + html)) throw new Error('Email contains unfilled placeholders');
