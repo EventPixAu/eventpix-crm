@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER } from './phoneUploadKit';
+import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation } from './phoneUploadKit';
 
 describe('phone upload kit', () => {
+  it('allows allocating a phone kit before phone details have been supplied', () => {
+    expect(phoneKitDetails({}).ready).toBe(false);
+    expect(phoneUploadAllocation()).toMatchObject({ category: 'phone', items: [{ name: 'Phone upload kit' }] });
+    expect(requiresPhoneKit('', [{ equipment_item: phoneUploadAllocation().items[0] }])).toBe(true);
+  });
   it('requires the phone and a cable, not just the connection', () => {
     expect(phoneKitDetails({ phone: { model: 'iPhone 15', usb: 'USB-C' } }).missing).toEqual(['USB-C to USB-C cable or OTG converter']);
   });

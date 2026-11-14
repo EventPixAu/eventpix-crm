@@ -12,16 +12,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Camera, Sun, Image, Package, User, Loader2 } from 'lucide-react';
+import { Camera, Package, User, Loader2, Smartphone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
 import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
+import { AssignmentPhoneKit } from './AssignmentPhoneKit';
+import { phoneKitDetails, phoneUploadAllocation } from '@/lib/phoneUploadKit';
 
 interface PhotographerKit {
   kitId: string;
-  category: 'camera' | 'lighting' | 'audio' | 'backdrop' | 'other';
+  category: 'camera' | 'lighting' | 'audio' | 'backdrop' | 'other' | 'phone';
   label: string;
   icon: typeof Camera;
   items: Array<{ id: string; brand: string; name: string; notes?: string }>;
@@ -32,6 +34,9 @@ interface AssignedPhotographer {
   displayId: string;
   name: string;
   kits: PhotographerKit[];
+  assignmentId?: string;
+  staffId?: string | null;
+  phoneSummary: string;
 }
 
 interface EventAssignment {
@@ -49,13 +54,6 @@ interface AllocatePhotographerKitDialogProps {
   eventId: string;
   assignments: EventAssignment[];
 }
-
-const KIT_CONFIG: { key: 'camera' | 'lighting' | 'backdrop' | 'other'; label: string; icon: typeof Camera }[] = [
-  { key: 'camera', label: 'Camera Kit', icon: Camera },
-  { key: 'lighting', label: 'Lighting Kit', icon: Sun },
-  { key: 'backdrop', label: 'Backdrop Kit', icon: Image },
-  { key: 'other', label: 'Other', icon: Package },
-];
 
 export function AllocatePhotographerKitDialog({
   open,
@@ -164,9 +162,10 @@ export function AllocatePhotographerKitDialog({
           arr => Array.isArray(arr) && arr.length > 0
         );
         
+        const phone = phoneKitDetails(profileEquip).phone || phoneKitDetails(staffEquip).phone;
         return {
           ...p,
-          photography_equipment_json: profileHasEquip ? profileEquip : staffEquip,
+          photography_equipment_json: { ...(profileHasEquip ? profileEquip : staffEquip), phone },
         };
       });
     },
@@ -177,10 +176,6 @@ export function AllocatePhotographerKitDialog({
 
   // Transform data into photographers with kits
   const photographers: AssignedPhotographer[] = useMemo(() => {
-    console.log('[AllocateKit] allAssignedStaff:', allAssignedStaff);
-    console.log('[AllocateKit] photographerData:', photographerData);
-    console.log('[AllocateKit] staffUserLinks:', staffUserLinks);
-    
     return allAssignedStaff.map(staff => {
       // For staff-based assignments, check if staff record has a linked user_id
       let userIdToLookup = staff.profileUserId;
@@ -196,8 +191,6 @@ export function AllocatePhotographerKitDialog({
         : photographerData.find(p => p.id === userIdToLookup);
       const equipment = profile?.photography_equipment_json || {};
       
-      console.log('[AllocateKit] Processing staff:', staff.name, 'hasProfile:', staff.hasProfile, 'equipment:', equipment);
-
       // Migrate to v2 format to support named kits
       const v2 = migrateToV2(equipment as StoredEquipment);
       
@@ -214,16 +207,23 @@ export function AllocatePhotographerKitDialog({
           };
         });
       
-      console.log('[AllocateKit] Staff:', staff.name, 'kits:', kits.length);
+      const details = phoneKitDetails(equipment);
+      kits.push({ ...phoneUploadAllocation(), icon: Smartphone });
+      const assignment = assignments.find(a => a.user_id === userIdToLookup || a.staff_id === staff.ownerId);
 
       return {
         userId: userIdToLookup, // Use resolved profile user_id for FK constraint
         displayId: staff.ownerId, // Keep original ID for UI keys
         name: staff.name,
         kits,
+        assignmentId: assignment?.id,
+        staffId: assignment?.staff_id,
+        phoneSummary: details.ready
+          ? `${details.phone?.model} · ${details.phone?.usb} · ${details.phone?.uploadCable}`
+          : `Missing: ${details.missing.join(', ')}`,
       };
     });
-  }, [allAssignedStaff, photographerData, staffUserLinks]);
+  }, [allAssignedStaff, photographerData, staffUserLinks, assignments]);
 
   const toggleKit = (photographerId: string, kitId: string) => {
     const key = `${photographerId}:${kitId}`;
@@ -303,7 +303,7 @@ export function AllocatePhotographerKitDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-4 [&>[data-radix-scroll-area-viewport]>div]:!block">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -336,6 +336,7 @@ export function AllocatePhotographerKitDialog({
                       const Icon = kit.icon;
 
                       return (
+                        <div key={kit.kitId} className="min-w-0">
                         <div
                           key={kit.kitId}
                           className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -346,20 +347,26 @@ export function AllocatePhotographerKitDialog({
                           onClick={() => toggleKit(photographer.displayId, kit.kitId)}
                         >
                           <Checkbox
+                            aria-label={`${photographer.name}: ${kit.label}`}
                             checked={isSelected}
                             onCheckedChange={() => toggleKit(photographer.displayId, kit.kitId)}
                             onClick={(e) => e.stopPropagation()}
                           />
                           <Icon className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0 break-words">
                             <div className="font-medium text-sm">{kit.label}</div>
                             <div className="text-xs text-muted-foreground">
-                              {kit.items.map(item => `${item.brand ? item.brand + ' ' : ''}${item.name}`).join(', ')}
+                              {kit.category === 'phone' ? photographer.phoneSummary : kit.items.map(item => `${item.brand ? item.brand + ' ' : ''}${item.name}`).join(', ')}
                             </div>
                           </div>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs shrink-0">
                             {kit.items.length} item{kit.items.length !== 1 ? 's' : ''}
                           </Badge>
+                        </div>
+                        {kit.category === 'phone' && isSelected && <AssignmentPhoneKit
+                          eventId={eventId} userId={photographer.userId} staffId={photographer.staffId}
+                          assignmentId={photographer.assignmentId} required canRequest
+                        />}
                         </div>
                       );
                     })}

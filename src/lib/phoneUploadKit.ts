@@ -1,6 +1,11 @@
 export const PHONE_KIT_MARKER = '[Phone upload kit required]';
 export const PHONE_UPLOAD_CABLES = ['USB-C to USB-C cable', 'OTG converter cable', 'Not available'] as const;
 
+export function phoneUploadAllocation() {
+  // A stable name lets the existing allocator reuse the person's kit after profile updates.
+  return { kitId: 'phone-upload', category: 'phone' as const, label: 'Phone Upload Kit', items: [{ id: 'phone-upload', brand: '', name: 'Phone upload kit' }] };
+}
+
 export function phoneKitDetails(equipment: unknown) {
   const phone = equipment && typeof equipment === 'object' && 'phone' in equipment
     ? (equipment as { phone?: { model?: string; usb?: string; uploadCable?: string } }).phone : undefined;
