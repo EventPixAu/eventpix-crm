@@ -209,7 +209,7 @@ export function AllocatePhotographerKitDialog({
       
       const details = phoneKitDetails(equipment);
       kits.push({ ...phoneUploadAllocation(), icon: Smartphone });
-      const assignment = assignments.find(a => a.user_id === userIdToLookup || a.staff_id === staff.ownerId);
+      const assignment = assignments.find(a => (userIdToLookup && a.user_id === userIdToLookup) || a.staff_id === staff.ownerId);
 
       return {
         userId: userIdToLookup, // Use resolved profile user_id for FK constraint
