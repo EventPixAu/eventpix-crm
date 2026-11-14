@@ -1,7 +1,31 @@
-import { describe, it, expect } from 'vitest';
-import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation } from './phoneUploadKit';
+import { describe, it, expect, vi } from 'vitest';
+import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation, requestMissingPhoneKitDetails } from './phoneUploadKit';
 
 describe('phone upload kit', () => {
+  it('automatically requests missing details once for a selected phone kit', async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const candidate = { userId: 'evie', assignmentId: 'assignment-1', phoneSelected: true };
+    await requestMissingPhoneKitDetails([candidate, candidate], async () => ({}), send);
+    expect(send).toHaveBeenCalledExactlyOnceWith('assignment-1');
+  });
+  it('does not request details already supplied or an unselected phone kit', async () => {
+    const send = vi.fn();
+    const read = vi.fn().mockResolvedValue({ phone: { model: 'iPhone 15', usb: 'USB-C', uploadCable: 'USB-C to USB-C cable' } });
+    await requestMissingPhoneKitDetails([
+      { userId: 'evie', assignmentId: 'assignment-1', phoneSelected: true },
+      { userId: 'nat', assignmentId: 'assignment-2', phoneSelected: false },
+    ], read, send);
+    expect(read).toHaveBeenCalledExactlyOnceWith('evie');
+    expect(send).not.toHaveBeenCalled();
+  });
+  it('reports a request failure without failing successful requests', async () => {
+    const send = vi.fn().mockRejectedValueOnce(new Error('Email unavailable')).mockResolvedValueOnce(undefined);
+    const results = await requestMissingPhoneKitDetails([
+      { userId: 'evie', assignmentId: 'assignment-1', phoneSelected: true },
+      { userId: 'nat', assignmentId: 'assignment-2', phoneSelected: true },
+    ], async () => ({}), send);
+    expect(results.map(r => r.status)).toEqual(['rejected', 'fulfilled']);
+  });
   it('allows allocating a phone kit before phone details have been supplied', () => {
     expect(phoneKitDetails({}).ready).toBe(false);
     expect(phoneUploadAllocation()).toMatchObject({ category: 'phone', items: [{ name: 'Phone upload kit' }] });
