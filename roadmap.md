@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Add a per-photographer Bring Laptop selection and immediate email reminder on equipment allocation, with no laptop-profile details required.
+- [x] Add a per-photographer Bring Laptop selection and immediate email reminder on equipment allocation, with no laptop-profile details required. Twelve tests passed; signed-in laptop allocation/reload and one automatic sender dry-run verified (200), test equipment removed, no live email sent, sender deployed, build OK; awaits publishing.
 - [x] Automatically request missing phone/cable details after selected phone-kit allocation; skip complete profiles and unselected kits, retain allocation on email failure. Nine tests passed; signed-in Evie allocation/reload verified and automatic sender dry-run returned 200 with one request; temporary allocation/item removed, no live email sent, build OK; awaits publishing.
 - [x] Show the phone-details request immediately in Allocate Photographer Kits without selecting a kit first; signed-in Evie view verified with all kits unselected, no email sent, build OK; awaits publishing.
 - [x] Add selectable phone upload kits and the existing request-details action to photographer equipment allocation, including missing equipment profiles. Six tests passed; signed-in Evie phone kit saved and reloaded as Phone Kit, temporary allocation/item removed, desktop/mobile request button verified without sending email, build OK; awaits publishing.
