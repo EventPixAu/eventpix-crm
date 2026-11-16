@@ -1,7 +1,24 @@
 import { describe, it, expect, vi } from 'vitest';
-import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation, requestMissingPhoneKitDetails } from './phoneUploadKit';
+import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation, requestMissingPhoneKitDetails, isPhoneKitPhotographer, phoneKitAllocationsForPerson } from './phoneUploadKit';
 
 describe('phone upload kit', () => {
+  it('never treats shared or another photographer’s equipment as a personal phone-kit selection', () => {
+    const allocations = [
+      { user_id: null, equipment_item: { category: 'phone' } },
+      { user_id: 'evie', equipment_item: { category: 'phone' } },
+    ];
+    expect(requiresPhoneKit('', phoneKitAllocationsForPerson(allocations, 'nat'))).toBe(false);
+    expect(requiresPhoneKit('', phoneKitAllocationsForPerson(allocations, null))).toBe(false);
+    expect(requiresPhoneKit('', phoneKitAllocationsForPerson(allocations, 'evie'))).toBe(true);
+  });
+  it.each(['Admin', 'Support', 'LBA - Sales', 'LBA - Assistant (Wages)', 'LBA/SBC Staff Editor', 'Staff Photographer'])('excludes %s from phone-kit requests', name => {
+    expect(isPhoneKitPhotographer({ name })).toBe(false);
+  });
+  it('allows onsite photographer assignments only', () => {
+    expect(isPhoneKitPhotographer({ name: 'Photographer - SMP Live' })).toBe(true);
+    expect(isPhoneKitPhotographer({ name: 'Photographer', is_onsite: false })).toBe(false);
+    expect(isPhoneKitPhotographer(null)).toBe(false);
+  });
   it('automatically requests missing details once for a selected phone kit', async () => {
     const send = vi.fn().mockResolvedValue(undefined);
     const candidate = { userId: 'evie', assignmentId: 'assignment-1', phoneSelected: true };
