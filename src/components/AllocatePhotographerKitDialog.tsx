@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
 import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
 import { AssignmentPhoneKit } from './AssignmentPhoneKit';
-import { phoneKitDetails, phoneUploadAllocation, requestMissingPhoneKitDetails } from '@/lib/phoneUploadKit';
+import { phoneKitDetails, phoneUploadAllocation, requestMissingPhoneKitDetails, isPhoneKitPhotographer } from '@/lib/phoneUploadKit';
 import { laptopAllocation, sendLaptopReminders } from '@/lib/laptopReminder';
 import { onsiteEquipmentAssignments } from '@/lib/staffRoleScope';
 
@@ -210,7 +210,7 @@ export function AllocatePhotographerKitDialog({
         });
       
       const details = phoneKitDetails(equipment);
-      kits.push({ ...phoneUploadAllocation(), icon: Smartphone });
+      if (isPhoneKitPhotographer({ name: staff.roleName })) kits.push({ ...phoneUploadAllocation(), icon: Smartphone });
       kits.push({ ...laptopAllocation(), icon: Laptop });
       const assignment = onsiteAssignments.find(a => (userIdToLookup && a.user_id === userIdToLookup) || a.staff_id === staff.ownerId);
 
@@ -410,7 +410,7 @@ export function AllocatePhotographerKitDialog({
                         </div>
                         {kit.category === 'phone' && <AssignmentPhoneKit
                           eventId={eventId} userId={photographer.userId} staffId={photographer.staffId}
-                          assignmentId={photographer.assignmentId} required canRequest
+                          assignmentId={photographer.assignmentId} role={{ name: 'Photographer' }} required canRequest
                         />}
                         </div>
                       );

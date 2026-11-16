@@ -6764,7 +6764,7 @@ export type Database = {
         Row: {
           created_at: string | null
           document_type_id: string
-          document_url: string
+          document_url: string | null
           expiry_date: string | null
           file_name: string | null
           id: string
@@ -6783,7 +6783,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           document_type_id: string
-          document_url: string
+          document_url?: string | null
           expiry_date?: string | null
           file_name?: string | null
           id?: string
@@ -6802,7 +6802,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           document_type_id?: string
-          document_url?: string
+          document_url?: string | null
           expiry_date?: string | null
           file_name?: string | null
           id?: string

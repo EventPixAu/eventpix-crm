@@ -242,7 +242,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
             <p className="text-xs text-muted-foreground mt-1 truncate">{assignment.assignment_notes}</p>
           )}
           <AssignmentPhoneKit eventId={eventId} userId={assignment.user_id} staffId={assignment.staff_id}
-            assignmentId={assignment.id} notes={assignment.assignment_notes} canRequest={isAdmin || isOperations} />
+            assignmentId={assignment.id} notes={assignment.assignment_notes} role={assignment.staff_role || { name: role }} canRequest={isAdmin || isOperations} />
         </div>
       </div>
       {isAdmin && (

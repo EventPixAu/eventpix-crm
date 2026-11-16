@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { Smartphone, Send, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { phoneKitDetails, requiresPhoneKit } from '@/lib/phoneUploadKit';
+import { phoneKitDetails, requiresPhoneKit, isPhoneKitPhotographer, phoneKitAllocationsForPerson } from '@/lib/phoneUploadKit';
 import { useEventAllocations } from '@/hooks/useEquipmentAllocations';
 import { useSendNotification } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 
-export function AssignmentPhoneKit({ eventId, userId, staffId, assignmentId, notes, required = false, canRequest = false }: {
+export function AssignmentPhoneKit({ eventId, userId, staffId, assignmentId, notes, role, required = false, canRequest = false }: {
   eventId: string; userId?: string | null; staffId?: string | null; assignmentId?: string;
   notes?: string | null; required?: boolean; canRequest?: boolean;
+  role?: { name?: string; is_onsite?: boolean } | null;
 }) {
   const { data: allocations = [], isLoading: loadingAllocations } = useEventAllocations(eventId);
-  const needsKit = required || requiresPhoneKit(notes, allocations.filter(a => !a.user_id || a.user_id === userId));
+  const needsKit = isPhoneKitPhotographer(role) && (required || requiresPhoneKit(notes, phoneKitAllocationsForPerson(allocations, userId)));
   const { data: equipment, isLoading, error } = useQuery({
     queryKey: ['assignment-phone-kit', userId, staffId],
     enabled: needsKit && !!(userId || staffId),

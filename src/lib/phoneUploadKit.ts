@@ -1,4 +1,5 @@
 export const PHONE_KIT_MARKER = '[Phone upload kit required]';
+export { isPhoneKitPhotographer, phoneKitAllocationsForPerson } from '../../supabase/functions/_shared/phoneKitScope';
 export const PHONE_UPLOAD_CABLES = ['USB-C to USB-C cable', 'OTG converter cable', 'Not available'] as const;
 
 export function phoneUploadAllocation() {

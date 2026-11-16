@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { leadHoldEntries } from '../_shared/leadHoldCalendar.ts';
 import { selectedSeriesInvitationEvents } from '../_shared/seriesInvitationEvents.ts';
+import { isPhoneKitPhotographer } from '../_shared/phoneKitScope.ts';
 
 
 interface NotificationRequest {
@@ -427,8 +428,10 @@ const handler = async (req: Request): Promise<Response> => {
     if (type === 'phone_kit_request' || type === 'laptop_reminder') {
       if (!assignment_id) throw new Error('Assignment is required');
       const { data: assignment, error: assignmentError } = await supabaseUser.from('event_assignments')
-        .select('user_id, staff_id, confirmation_status').eq('id', assignment_id).eq('event_id', event_id).maybeSingle();
+        .select('user_id, staff_id, confirmation_status, staff_role:staff_roles(name, is_onsite)').eq('id', assignment_id).eq('event_id', event_id).maybeSingle();
       if (assignmentError || !assignment || assignment.confirmation_status === 'declined') throw new Error('Active assignment not found');
+      const assignmentRole = Array.isArray(assignment.staff_role) ? assignment.staff_role[0] : assignment.staff_role;
+      if (type === 'phone_kit_request' && !isPhoneKitPhotographer(assignmentRole)) throw new Error('Phone-kit requests are only for photographer assignments');
       const targetId = assignment.user_id || assignment.staff_id;
       if (!targetId) throw new Error('Team member not found');
       const { data: recipient, error: recipientError } = await supabase.from(assignment.user_id ? 'profiles' : 'staff')
