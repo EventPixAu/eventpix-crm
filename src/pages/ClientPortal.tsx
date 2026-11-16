@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import eventpixLogo from '@/assets/eventpix-logo.png';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase';
 import { ClientCertificates, type ClientCertificate } from '@/components/client/ClientCertificates';
+import { clientDietaries } from '@/lib/clientDietaries';
 
 interface PortalContract {
   id: string;
@@ -51,6 +52,7 @@ interface PortalQuote {
 interface PortalData {
   event_name: string;
   event_date: string | null;
+  setup_time?: string | null;
   start_time: string | null;
   end_time: string | null;
   client_name: string | null;
@@ -78,6 +80,7 @@ interface PortalData {
   sessions: Array<{
     id: string;
     session_date: string;
+    setup_time?: string | null;
     start_time: string | null;
     end_time: string | null;
     session_label: string | null;
@@ -255,9 +258,10 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
               <Calendar className="h-5 w-5 text-blue-400 mt-0.5 shrink-0" />
               <div>
                 <p className="text-white font-medium">{format(eventDate, 'EEEE, MMMM d, yyyy')}</p>
+                {data.setup_time && <p className="text-muted-foreground text-sm mt-0.5">Setup: {formatTime(data.setup_time)}</p>}
                 {(data.start_time || data.end_time) && (
                   <p className="text-white/60 text-sm mt-0.5">
-                    {data.start_time && formatTime(data.start_time)}
+                    Activation: {data.start_time && formatTime(data.start_time)}
                     {data.start_time && data.end_time && ' – '}
                     {data.end_time && formatTime(data.end_time)}
                   </p>
@@ -331,7 +335,10 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                       </p>
                       <p className="text-white/60 text-sm">
                         {format(parseISO(s.session_date), 'MMM d, yyyy')}
-                        {s.start_time && ` • ${formatTime(s.start_time)}`}
+                      </p>
+                      {s.setup_time && <p className="text-muted-foreground text-sm">Setup: {formatTime(s.setup_time)}</p>}
+                      <p className="text-muted-foreground text-sm">
+                        {s.start_time && `Activation: ${formatTime(s.start_time)}`}
                         {s.end_time && ` – ${formatTime(s.end_time)}`}
                       </p>
                     </div>
@@ -389,7 +396,7 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
                       </p>
                     )}
                     {!member.is_agency && <p className="text-white/60 text-xs mt-0.5">
-                      🍽️ {member.dietary_requirements?.trim() ? member.dietary_requirements : 'No dietary requirements'}
+                      🍽️ {clientDietaries(member.dietary_requirements)}
                     </p>}
                   </div>
                 </div>
