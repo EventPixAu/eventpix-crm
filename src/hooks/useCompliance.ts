@@ -91,7 +91,8 @@ function parseStorageReference(storedUrl: string, fallbackBucket: string): { buc
   }
 }
 
-async function resolveSignedDocumentUrl(documentUrl: string): Promise<string> {
+async function resolveSignedDocumentUrl(documentUrl: string | null): Promise<string | null> {
+  if (!documentUrl) return null;
   const parsed = parseStorageReference(documentUrl, 'compliance-documents');
   if (!parsed) return documentUrl;
 
@@ -194,7 +195,7 @@ export function useUploadComplianceDocument() {
       renewalDueDate,
       renewalPaidDate,
     }: {
-      file: File;
+      file?: File | null;
       userId?: string;
       documentTypeId: string;
       issuedDate?: string;
@@ -206,19 +207,24 @@ export function useUploadComplianceDocument() {
       if (!user?.id) throw new Error('Not authenticated');
       const targetUserId = userId || user.id;
 
-      // Upload file to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${targetUserId}/${fileName}`;
+      // Upload file to storage when provided; details-only records are allowed
+      let storedUrl: string | null = null;
+      let storedFileName: string | null = null;
+      if (file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${targetUserId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('compliance-documents')
-        .upload(filePath, file);
+        const { error: uploadError } = await supabase.storage
+          .from('compliance-documents')
+          .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // Bucket is private — store the storage path; consumers create signed URLs on read
-      const urlData = { publicUrl: `compliance-documents/${filePath}` };
+        // Bucket is private — store the storage path; consumers create signed URLs on read
+        storedUrl = `compliance-documents/${filePath}`;
+        storedFileName = file.name;
+      }
 
       // Check if document already exists for this type
       const { data: existing, error: lookupError } = await supabase
@@ -231,12 +237,11 @@ export function useUploadComplianceDocument() {
       if (lookupError) throw lookupError;
 
       if (existing) {
-        // Update existing document
+        // Update existing document; keep the current file when no replacement is provided
         const { data, error } = await supabase
           .from('staff_compliance_documents')
           .update({
-            document_url: urlData.publicUrl,
-            file_name: file.name,
+            ...(storedUrl ? { document_url: storedUrl, file_name: storedFileName } : {}),
             issued_date: issuedDate || null,
             expiry_date: expiryDate || null,
             policy_number: policyNumber || null,
@@ -261,8 +266,8 @@ export function useUploadComplianceDocument() {
           .insert({
             user_id: targetUserId,
             document_type_id: documentTypeId,
-            document_url: urlData.publicUrl,
-            file_name: file.name,
+            document_url: storedUrl,
+            file_name: storedFileName,
             issued_date: issuedDate || null,
             expiry_date: expiryDate || null,
             policy_number: policyNumber || null,

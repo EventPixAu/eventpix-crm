@@ -37,6 +37,10 @@ export async function teamCertificates(db: any, eventId: string) {
     .in('user_id', [...members.keys()]).eq('status', 'valid');
   if (docError) throw docError;
   return Promise.all((docs || []).filter((d: any) => CLIENT_CERTIFICATE_TYPES.has(d.document_type?.name)).map(async (d: any) => {
+    // Details-only records have no file — show the certificate without a download link
+    if (!d.document_url) {
+      return { id: d.id, name: d.document_type.name, team_member: members.get(d.user_id), expiry_date: d.expiry_date, url: null };
+    }
     let path = d.document_url;
     if (path.includes('/storage/v1/object/')) {
       const match = decodeURIComponent(new URL(path).pathname).match(/\/storage\/v1\/object\/(?:public|sign)\/compliance-documents\/(.+)/);
