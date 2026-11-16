@@ -7,7 +7,7 @@ export interface ClientCertificate {
   name: string;
   team_member?: string;
   expiry_date: string | null;
-  url: string;
+  url: string | null;
 }
 
 export function ClientCertificates({ title, certificates }: { title: string; certificates: ClientCertificate[] }) {
@@ -19,7 +19,11 @@ export function ClientCertificates({ title, certificates }: { title: string; cer
           <p className="text-sm font-medium text-foreground">{c.name}</p>
           <p className="text-xs text-muted-foreground">{c.team_member}{c.team_member && c.expiry_date ? ' · ' : ''}{c.expiry_date ? `Valid to ${format(parseISO(c.expiry_date), 'd MMM yyyy')}` : ''}</p>
         </div>
-        <Button asChild variant="outline" size="sm"><a href={c.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Certificate</a></Button>
+        {c.url ? (
+          <Button asChild variant="outline" size="sm"><a href={c.url} target="_blank" rel="noopener noreferrer"><ExternalLink className="mr-2 h-4 w-4" />Certificate</a></Button>
+        ) : (
+          <span className="text-xs text-muted-foreground">Details on file</span>
+        )}
       </div>)}
     </div> : <p className="text-sm text-muted-foreground">No certificates available.</p>}
   </section>;
