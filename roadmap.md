@@ -1,7 +1,8 @@
 # Roadmap
 
 ## Current request
-- [ ] Separate client vehicle/dietary sharing from photographer meal/parking and add per-event client WWCC sharing.
+- [x] Separate client vehicle/dietary sharing from photographer meal/parking. Signed-in Stihl controls and Day-Of logistics verified; public portal omits meal/parking, seven tests passed, build OK; screens await publishing.
+- [ ] Enable per-event client WWCC sharing: additive share_team_wwcc migration blocked by existing duplicate 0052–0054 history snapshots; no SQL applied. Disabled control shown; central certificate filtering fails closed (WWCC withheld) across public, authenticated and series views; all three functions deployed. Requires supported history repair before the switch can save.
 - [x] Show separate setup/activation times on client event details and normalize missing/N/A dietaries across client views. Actual Stihl portal verified at Setup 5:30 PM / Activation 6:30 PM–11 PM and Dietaries - none, desktop/mobile checked; ten timing/visibility tests passed, build OK, sender deployed; screens await publishing.
 - [x] Allow independent selection of equipment entries within photographer kits; preserve named kits and pass only selected entries to allocation. Twenty-two tests passed across all equipment categories and phone/laptop rules; signed-in Evie lighting choices verified independently on desktop/mobile, no allocations changed or requests sent, build OK; awaits publishing.
 - [x] Correct phone-kit requirements inferred from shared equipment and restrict requests to photographer assignments. Seventeen tests passed; signed-in LBA Canberra cards show no unwanted warnings, build OK; sender restriction deployed, screen changes await publishing. No test emails sent.
