@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current request
-- [ ] Show separate setup/activation times on client event details and normalize missing/N/A dietaries across client views.
+- [x] Show separate setup/activation times on client event details and normalize missing/N/A dietaries across client views. Actual Stihl portal verified at Setup 5:30 PM / Activation 6:30 PM–11 PM and Dietaries - none, desktop/mobile checked; ten timing/visibility tests passed, build OK, sender deployed; screens await publishing.
 - [x] Allow independent selection of equipment entries within photographer kits; preserve named kits and pass only selected entries to allocation. Twenty-two tests passed across all equipment categories and phone/laptop rules; signed-in Evie lighting choices verified independently on desktop/mobile, no allocations changed or requests sent, build OK; awaits publishing.
 - [x] Correct phone-kit requirements inferred from shared equipment and restrict requests to photographer assignments. Seventeen tests passed; signed-in LBA Canberra cards show no unwanted warnings, build OK; sender restriction deployed, screen changes await publishing. No test emails sent.
 - [x] Fix clipped photographer equipment list using native constrained scrolling and fixed action buttons. Signed-in Melissa multi-person list verified at 1284×855 (scrollTop 865) and mobile; lower phone/laptop options reachable, Allocate remains visible, build OK; awaits publishing.
