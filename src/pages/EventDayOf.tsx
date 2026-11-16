@@ -67,6 +67,7 @@ import { PhotographerChecklist } from '@/components/crew/PhotographerChecklist';
 import { PhotographerGuides } from '@/components/crew/PhotographerGuides';
 import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 import { assignmentHasPayDisplay } from '@/lib/assignmentPayAccess';
+import { crewProvisionStatus } from '@/lib/crewProvision';
 
 const phases = [
   { key: 'pre_event', label: 'Pre-Event' },
@@ -695,6 +696,10 @@ export default function EventDayOf() {
           </motion.section>
 
           <div className="px-4">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+              {(displayEvent as any).share_meal_info && <span>Meal provided: {crewProvisionStatus((displayEvent as any).meal_provision_status, (displayEvent as any).meal_provided)}</span>}
+              {(displayEvent as any).share_parking_info && <span>Parking provided: {crewProvisionStatus((displayEvent as any).parking_provision_status, (displayEvent as any).parking_provided)}</span>}
+            </div>
             {statusBadges.length > 0 && (
               <div className="flex gap-2 mt-2">
                 {statusBadges.map((badge) => (

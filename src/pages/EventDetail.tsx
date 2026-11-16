@@ -1519,7 +1519,8 @@ export default function EventDetail() {
                         <Checkbox
                           checked={!!(event as any).share_team_vehicle_info}
                           onCheckedChange={async (checked) => {
-                            await supabase.from('events').update({ share_team_vehicle_info: !!checked }).eq('id', id!);
+                            if (!id) return;
+                            await supabase.from('events').update({ share_team_vehicle_info: !!checked }).eq('id', id);
                             queryClient.invalidateQueries({ queryKey: ['events', id] });
                           }}
                           className="mt-0.5"
@@ -1530,18 +1531,25 @@ export default function EventDetail() {
                         <Checkbox
                           checked={!!(event as any).share_team_dietary}
                           onCheckedChange={async (checked) => {
-                            await supabase.from('events').update({ share_team_dietary: !!checked }).eq('id', id!);
+                            if (!id) return;
+                            await supabase.from('events').update({ share_team_dietary: !!checked }).eq('id', id);
                             queryClient.invalidateQueries({ queryKey: ['events', id] });
                           }}
                           className="mt-0.5"
                         />
                         <span>Share team dietary requirements</span>
                       </label>
+                      <label className="flex items-start gap-2 text-xs text-muted-foreground" title="WWCC sharing is unavailable until the saved-setting update can be applied.">
+                        <Checkbox checked={false} disabled className="mt-0.5" />
+                        <span>Share team WWCC / Blue Card</span>
+                      </label>
+                      <p className="pt-2 text-xs font-medium text-muted-foreground">Photographer / crew sharing</p>
                       <label className="flex items-start gap-2 text-xs cursor-pointer">
                         <Checkbox
                           checked={!!(event as any).share_meal_info}
                           onCheckedChange={async (checked) => {
-                            await supabase.from('events').update({ share_meal_info: !!checked }).eq('id', id!);
+                            if (!id) return;
+                            await supabase.from('events').update({ share_meal_info: !!checked }).eq('id', id);
                             queryClient.invalidateQueries({ queryKey: ['events', id] });
                           }}
                           className="mt-0.5"
@@ -1552,7 +1560,8 @@ export default function EventDetail() {
                         <Checkbox
                           checked={!!(event as any).share_parking_info}
                           onCheckedChange={async (checked) => {
-                            await supabase.from('events').update({ share_parking_info: !!checked }).eq('id', id!);
+                            if (!id) return;
+                            await supabase.from('events').update({ share_parking_info: !!checked }).eq('id', id);
                             queryClient.invalidateQueries({ queryKey: ['events', id] });
                           }}
                           className="mt-0.5"

@@ -42,8 +42,8 @@ Deno.serve(async req => {
       const { data: agency, error: agencyError } = await db.from('event_agency_crew').select('name,role,agency,phone,email').eq('event_id', e.id);
       if (agencyError) throw agencyError;
       return { id: e.id, event_name: e.event_name, event_date: e.event_date, start_time: e.start_time, end_time: e.end_time, venue_name: e.venue_name, ops_status: e.ops_status, client_portal_token: e.client_portal_token, created_at: e.created_at, series_id: seriesId, series_name: series.name,
-        meal_provided: e.share_meal_info ? e.meal_provided : null, meal_provision_status: e.share_meal_info ? e.meal_provision_status : null,
-        parking_provided: e.share_parking_info ? e.parking_provided : null, parking_provision_status: e.share_parking_info ? e.parking_provision_status : null,
+        meal_provided: null, meal_provision_status: null,
+        parking_provided: null, parking_provision_status: null,
         crew: [...(assignments || []).filter(clientCertificateAssignment).map((a: any) => ({ name: a.profile?.full_name || a.staff?.name, role: a.staff_role?.name || a.role_on_event || a.staff?.role, dietary_requirements: e.share_team_dietary ? a.profile?.dietary_requirements : null })), ...(agency || []).filter(a => clientCertificateAssignment({ role_on_event: a.role })).map(a => ({ ...a, is_agency: true }))] };
     }));
     const certificates = { company: await companyCertificates(db), events: await Promise.all(events.map(async e => ({ event_id: e.id, certificates: await teamCertificates(db, e.id) }))) };
