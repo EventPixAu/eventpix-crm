@@ -3,6 +3,10 @@ export const CLIENT_CERTIFICATE_TYPES = new Set([
   'Workers Comp', 'Workers Compensation', 'Venue Inductions', 'WWCC / Blue Card',
 ]);
 
+export function shareClientCertificate(name: string, shareWwcc: boolean) {
+  return CLIENT_CERTIFICATE_TYPES.has(name) && (name !== 'WWCC / Blue Card' || shareWwcc);
+}
+
 export function clientCertificateAssignment(a: any) {
   const role = a.staff_role?.name || a.role_on_event || a.staff?.role || '';
   return !/editor|retoucher|post[-\s]?production/i.test(role)
@@ -22,6 +26,11 @@ export async function companyCertificates(db: any) {
 }
 
 export async function teamCertificates(db: any, eventId: string) {
+  // Read the saved event flag centrally so public, authenticated and series views agree.
+  // A missing flag fails closed while the additive schema change is unavailable.
+  const { data: event, error: eventError } = await db.from('events').select('*').eq('id', eventId).maybeSingle();
+  if (eventError) throw eventError;
+  const shareWwcc = event?.share_team_wwcc === true;
   const { data: assignments, error } = await db.from('event_assignments')
     .select('user_id,assignment_status,role_on_event,staff_role:staff_roles(name),profile:profiles!event_assignments_user_id_fkey(full_name),staff:staff_id(user_id,name,role)')
     .eq('event_id', eventId);
@@ -36,7 +45,7 @@ export async function teamCertificates(db: any, eventId: string) {
     .select('id,user_id,document_url,expiry_date,document_type:compliance_document_types(name)')
     .in('user_id', [...members.keys()]).eq('status', 'valid');
   if (docError) throw docError;
-  return Promise.all((docs || []).filter((d: any) => CLIENT_CERTIFICATE_TYPES.has(d.document_type?.name)).map(async (d: any) => {
+  return Promise.all((docs || []).filter((d: any) => shareClientCertificate(d.document_type?.name, shareWwcc)).map(async (d: any) => {
     // Details-only records have no file — show the certificate without a download link
     if (!d.document_url) {
       return { id: d.id, name: d.document_type.name, team_member: members.get(d.user_id), expiry_date: d.expiry_date, url: null };

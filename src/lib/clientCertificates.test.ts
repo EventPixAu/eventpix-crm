@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CLIENT_CERTIFICATE_TYPES, clientCertificateAssignment } from '../../supabase/functions/_shared/clientCertificates';
+import { CLIENT_CERTIFICATE_TYPES, clientCertificateAssignment, shareClientCertificate } from '../../supabase/functions/_shared/clientCertificates';
 describe('client certificate privacy', () => {
+  it('shares WWCC only when the event explicitly enables it', () => {
+    expect(shareClientCertificate('WWCC / Blue Card', false)).toBe(false);
+    expect(shareClientCertificate('WWCC / Blue Card', true)).toBe(true);
+    expect(shareClientCertificate('Public Liability Insurance', false)).toBe(true);
+    expect(shareClientCertificate('Photo ID', true)).toBe(false);
+  });
   it('includes public liability and staff compliance certificates', () => {
     expect(CLIENT_CERTIFICATE_TYPES.has('Public Liability Insurance')).toBe(true);
     expect(CLIENT_CERTIFICATE_TYPES.has('WWCC / Blue Card')).toBe(true);

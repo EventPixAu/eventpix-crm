@@ -292,25 +292,6 @@ export default function ClientPortal({ portalFunction = 'client-portal' }: { por
             </div>
           )}
 
-          {(data.meal_provision_status || (data.meal_provided !== null && data.meal_provided !== undefined)) && (
-            <div className="flex items-start gap-3">
-              <UtensilsCrossed className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-white font-medium">Meal provided</p>
-                <p className="text-white/60 text-sm mt-0.5">{data.meal_provision_status === 'not_required' ? 'Not required' : data.meal_provided ? 'Yes' : 'No'}</p>
-              </div>
-            </div>
-          )}
-
-          {(data.parking_provision_status || (data.parking_provided !== null && data.parking_provided !== undefined)) && (
-            <div className="flex items-start gap-3">
-              <Car className="h-5 w-5 text-sky-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-white font-medium">Parking provided</p>
-                <p className="text-white/60 text-sm mt-0.5">{data.parking_provision_status === 'not_required' ? 'Not required' : data.parking_provided ? 'Yes' : 'No'}</p>
-              </div>
-            </div>
-          )}
         </motion.div>
 
         {/* Sessions / Schedule */}

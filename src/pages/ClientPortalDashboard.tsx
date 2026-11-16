@@ -443,16 +443,6 @@ export default function ClientPortalDashboard() {
                                 {event.venue_name}
                               </span>
                             )}
-                            {(event.meal_provision_status || (event.meal_provided !== null && event.meal_provided !== undefined)) && (
-                              <span className="flex items-center gap-1">
-                                🍽️ Meal: {event.meal_provision_status === 'not_required' ? 'Not required' : event.meal_provided ? 'Yes' : 'No'}
-                              </span>
-                            )}
-                            {(event.parking_provision_status || (event.parking_provided !== null && event.parking_provided !== undefined)) && (
-                              <span className="flex items-center gap-1">
-                                🅿️ Parking: {event.parking_provision_status === 'not_required' ? 'Not required' : event.parking_provided ? 'Yes' : 'No'}
-                              </span>
-                            )}
                           </div>
 
                           <div className="rounded-md border border-border/60 bg-muted/20 p-2.5 space-y-1.5">
