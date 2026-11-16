@@ -16,7 +16,8 @@ import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAllocatePhotographerKits } from '@/hooks/useEquipmentAllocations';
-import { type StoredEquipment, migrateToV2, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
+import { type StoredEquipment, CATEGORY_CONFIG } from './PhotographyEquipmentEditor';
+import { kitItemKey, selectablePhotographerKits, selectedKitItems } from '@/lib/photographerKitSelection';
 import { AssignmentPhoneKit } from './AssignmentPhoneKit';
 import { phoneKitDetails, phoneUploadAllocation, requestMissingPhoneKitDetails, isPhoneKitPhotographer } from '@/lib/phoneUploadKit';
 import { laptopAllocation, sendLaptopReminders } from '@/lib/laptopReminder';
@@ -193,11 +194,7 @@ export function AllocatePhotographerKitDialog({
         : photographerData.find(p => p.id === userIdToLookup);
       const equipment = profile?.photography_equipment_json || {};
       
-      // Migrate to v2 format to support named kits
-      const v2 = migrateToV2(equipment as StoredEquipment);
-      
-      const kits: PhotographerKit[] = v2.kits
-        .filter(kit => kit.items.some(i => i.name?.trim()))
+      const kits: PhotographerKit[] = selectablePhotographerKits(equipment as StoredEquipment)
         .map(kit => {
           const cfg = CATEGORY_CONFIG.find(c => c.key === kit.category);
           return {
@@ -229,17 +226,27 @@ export function AllocatePhotographerKitDialog({
   }, [allAssignedStaff, photographerData, staffUserLinks, onsiteAssignments]);
 
   const toggleKit = (photographerId: string, kitId: string) => {
-    const key = `${photographerId}:${kitId}`;
+    const kit = photographers.find(p => p.displayId === photographerId)?.kits.find(k => k.kitId === kitId);
+    if (!kit) return;
+    const keys = kit.items.map((_, index) => kitItemKey(photographerId, kitId, index));
     setSelectedKits(prev => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
+      const allSelected = keys.every(key => next.has(key));
+      keys.forEach(key => allSelected ? next.delete(key) : next.add(key));
       return next;
     });
   };
+
+  const toggleItem = (key: string) => setSelectedKits(prev => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    return next;
+  });
+
+  const selectedKitCount = photographers.reduce((count, person) => count + person.kits.filter(kit =>
+    selectedKitItems(kit.items, selectedKits, person.displayId, kit.kitId).length > 0
+  ).length, 0);
 
   const handleAllocate = async () => {
     if (selectedKits.size === 0 || isAllocating) {
@@ -249,22 +256,14 @@ export function AllocatePhotographerKitDialog({
     setIsAllocating(true);
 
     try {
-      const kitsToAllocate = Array.from(selectedKits).map(key => {
-        const [displayId, kitId] = key.split(':');
-        const photographer = photographers.find(p => p.displayId === displayId);
-        const kit = photographer?.kits.find(k => k.kitId === kitId);
-        
-        if (!photographer?.userId) {
-          console.warn('[AllocateKit] Skipping kit - no profile user_id for:', photographer?.name);
-          return null;
-        }
-        
-        return { 
-          userId: photographer.userId,
-          category: kit?.category || 'other', 
-          items: kit?.items || [] 
-        };
-      }).filter(Boolean) as Array<{ userId: string; category: string; items: any[] }>;
+      const kitsToAllocate = photographers.flatMap(photographer => {
+        const userId = photographer.userId;
+        if (!userId) return [];
+        return photographer.kits.flatMap(kit => {
+          const items = selectedKitItems(kit.items, selectedKits, photographer.displayId, kit.kitId);
+          return items.length ? [{ userId, category: kit.category, items }] : [];
+        });
+      });
 
       if (kitsToAllocate.length === 0) {
         toast.error('Unable to allocate - selected photographers must have linked accounts');
@@ -279,7 +278,7 @@ export function AllocatePhotographerKitDialog({
       const requestResults = await requestMissingPhoneKitDetails(
         photographers.flatMap(p => p.userId && p.assignmentId ? [{
           userId: p.userId, assignmentId: p.assignmentId,
-          phoneSelected: selectedKits.has(`${p.displayId}:phone-upload`),
+          phoneSelected: selectedKits.has(kitItemKey(p.displayId, 'phone-upload', 0)),
         }] : []),
         async userId => {
           // Read current details, not the cached profile shown when the window opened.
@@ -305,7 +304,7 @@ export function AllocatePhotographerKitDialog({
       const laptopResults = await sendLaptopReminders(
         photographers.flatMap(p => p.userId && p.assignmentId ? [{
           userId: p.userId, assignmentId: p.assignmentId,
-          laptopSelected: selectedKits.has(`${p.displayId}:bring-laptop`),
+          laptopSelected: selectedKits.has(kitItemKey(p.displayId, 'bring-laptop', 0)),
         }] : []),
         async assignmentId => {
           const { data, error } = await supabase.functions.invoke('send-notification', {
@@ -376,8 +375,9 @@ export function AllocatePhotographerKitDialog({
                   
                   <div className="grid gap-2 pl-6">
                     {photographer.kits.map(kit => {
-                      const key = `${photographer.displayId}:${kit.kitId}`;
-                      const isSelected = selectedKits.has(key);
+                      const selectedItems = selectedKitItems(kit.items, selectedKits, photographer.displayId, kit.kitId);
+                      const isSelected = selectedItems.length > 0;
+                      const allSelected = selectedItems.length === kit.items.length;
                       const Icon = kit.icon;
 
                       return (
@@ -393,7 +393,7 @@ export function AllocatePhotographerKitDialog({
                         >
                           <Checkbox
                             aria-label={`${photographer.name}: ${kit.label}`}
-                            checked={isSelected}
+                            checked={allSelected ? true : isSelected ? 'indeterminate' : false}
                             onCheckedChange={() => toggleKit(photographer.displayId, kit.kitId)}
                             onClick={(e) => e.stopPropagation()}
                           />
@@ -408,6 +408,24 @@ export function AllocatePhotographerKitDialog({
                             {kit.items.length} item{kit.items.length !== 1 ? 's' : ''}
                           </Badge>
                         </div>
+                        {kit.items.length > 1 && (
+                          <div className="ml-6 border-l pl-3 py-1 space-y-1">
+                            {kit.items.map((item, index) => {
+                              const itemKey = kitItemKey(photographer.displayId, kit.kitId, index);
+                              return (
+                                <label key={itemKey} className="flex items-start gap-3 py-2 cursor-pointer text-sm">
+                                  <Checkbox
+                                    className="mt-0.5 shrink-0"
+                                    aria-label={`${photographer.name}: ${item.brand ? item.brand + ' ' : ''}${item.name}`}
+                                    checked={selectedKits.has(itemKey)}
+                                    onCheckedChange={() => toggleItem(itemKey)}
+                                  />
+                                  <span className="min-w-0 break-words">{item.brand ? item.brand + ' ' : ''}{item.name}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                         {kit.category === 'phone' && <AssignmentPhoneKit
                           eventId={eventId} userId={photographer.userId} staffId={photographer.staffId}
                           assignmentId={photographer.assignmentId} role={{ name: 'Photographer' }} required canRequest
@@ -446,7 +464,7 @@ export function AllocatePhotographerKitDialog({
             disabled={selectedKits.size === 0 || isAllocating}
           >
             {isAllocating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Allocate {selectedKits.size > 0 ? `${selectedKits.size} Kit(s)` : 'Selected'}
+            Allocate {selectedKitCount > 0 ? `${selectedKitCount} Kit(s)` : 'Selected'}
           </Button>
         </DialogFooter>
       </DialogContent>
