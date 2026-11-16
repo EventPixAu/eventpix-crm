@@ -34,6 +34,9 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { getPublicBaseUrl } from '@/lib/utils';
 import { DELIVERY_TEMPLATE_NAME } from '@/lib/clientDeliveryOptions';
+import { useQueryClient } from '@tanstack/react-query';
+import { FunctionsHttpError } from '@supabase/supabase-js';
+import { prepareOpsEmailMessage } from '@/lib/opsEmailMessage';
 
 interface Recipient {
   id: string;
@@ -82,6 +85,7 @@ export function SendOpsEmailDialog({
   storageAttachments,
 }: SendOpsEmailDialogProps) {
   const { data: templates } = useActiveEmailTemplates();
+  const queryClient = useQueryClient();
   
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
@@ -299,7 +303,8 @@ export function SendOpsEmailDialog({
         // Convert newlines to <br> tags and markdown links to HTML for email
         const bodyWithLinks = convertLinksToHtml(body);
         const bodyWithLineBreaks = bodyWithLinks.replace(/\n/g, '<br>');
-        const personalizedBody = replaceMergeFields(bodyWithLineBreaks, recipient.name);
+        const message = prepareOpsEmailMessage(subject, bodyWithLineBreaks,
+          text => replaceMergeFields(text, recipient.name));
         
         // Resolve contactId if not provided - lookup by email
         let contactId = recipient.contactId;
@@ -309,7 +314,7 @@ export function SendOpsEmailDialog({
             .select('id')
             .ilike('email', recipient.email)
             .limit(1)
-            .single();
+            .maybeSingle();
           if (contactData) contactId = contactData.id;
         }
         
@@ -317,8 +322,8 @@ export function SendOpsEmailDialog({
           body: {
             recipientEmail: recipient.email,
             recipientName: recipient.name,
-            subject,
-            bodyHtml: personalizedBody,
+            subject: message.subject,
+            bodyHtml: message.bodyHtml,
             attachments: [...resolvedAttachments, ...userAttachments].length > 0 ? [...resolvedAttachments, ...userAttachments] : undefined,
             contactId,
             clientId: eventData.client_id,
@@ -327,7 +332,15 @@ export function SendOpsEmailDialog({
           },
         });
         
-        if (error) throw error;
+        if (error) {
+          if (error instanceof FunctionsHttpError) {
+            const details = await error.context.text();
+            let reason = details;
+            try { reason = JSON.parse(details).error || details; } catch { /* Non-JSON response */ }
+            throw new Error(reason);
+          }
+          throw error;
+        }
         if (!data?.success) throw new Error(data?.error || 'Failed to send email');
         
         return { recipient, success: true };
@@ -338,10 +351,21 @@ export function SendOpsEmailDialog({
       const failed = results.filter(r => r.status === 'rejected').length;
 
       if (failed > 0) {
-        toast.error('Partial success', { description: `${successful} sent, ${failed} failed.` });
+        const failure = results.find(result => result.status === 'rejected');
+        const reason = failure?.status === 'rejected' && failure.reason instanceof Error
+          ? failure.reason.message : 'Please try again.';
+        toast.error(successful > 0 ? 'Some emails were not sent' : 'Email not sent', {
+          description: `${successful} sent, ${failed} failed. ${reason}`,
+        });
+        setSelectedRecipients(selectedRecipientData.filter((_, index) => results[index].status === 'rejected').map(r => r.id));
       } else {
         toast.success('Emails sent successfully', { description: `Sent to ${successful} recipient(s).` });
       }
+      if (successful > 0) {
+        void queryClient.invalidateQueries({ queryKey: ['event-email-action-statuses', eventId] });
+        void queryClient.invalidateQueries({ queryKey: ['email-logs'] });
+      }
+      if (failed > 0) return;
       
       // Reset form and close
       setSelectedTemplateId('');
