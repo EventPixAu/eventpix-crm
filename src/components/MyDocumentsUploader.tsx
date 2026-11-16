@@ -179,8 +179,11 @@ export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClos
     }
   };
 
+  const hasDetails = !!(policyNumber || issuedDate || expiryDate || renewalDueDate || renewalPaidDate);
+  const canSave = !!selectedFile || hasDetails;
+
   const handleUpload = () => {
-    if (!uploadingType || !selectedFile) return;
+    if (!uploadingType || !canSave) return;
 
     uploadMutation.mutate({
       file: selectedFile,
@@ -323,7 +326,7 @@ export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClos
           <div className="space-y-4">
             {/* Drag and Drop Zone */}
             <div className="space-y-2">
-              <Label>Document File</Label>
+              <Label>Document File (optional)</Label>
               <div
                 ref={dropZoneRef}
                 onDrop={handleDrop}
@@ -398,7 +401,7 @@ export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClos
               )}
               
               <p className="text-xs text-muted-foreground">
-                Accepted formats: PDF, JPG, PNG, WebP (max 10MB)
+                Accepted formats: PDF, JPG, PNG, WebP (max 10MB). No file? Save the details below and add the file later.
               </p>
             </div>
 
@@ -458,9 +461,9 @@ export function MyDocumentsUploader({ userId, selectedDocumentType, onUploadClos
             </Button>
             <Button 
               onClick={handleUpload}
-              disabled={!selectedFile || uploadMutation.isPending}
+              disabled={!canSave || uploadMutation.isPending}
             >
-              {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+              {uploadMutation.isPending ? 'Saving...' : selectedFile ? 'Upload' : 'Save details'}
             </Button>
           </DialogFooter>
         </DialogContent>
