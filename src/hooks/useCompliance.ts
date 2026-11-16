@@ -237,12 +237,11 @@ export function useUploadComplianceDocument() {
       if (lookupError) throw lookupError;
 
       if (existing) {
-        // Update existing document
+        // Update existing document; keep the current file when no replacement is provided
         const { data, error } = await supabase
           .from('staff_compliance_documents')
           .update({
-            document_url: urlData.publicUrl,
-            file_name: file.name,
+            ...(storedUrl ? { document_url: storedUrl, file_name: storedFileName } : {}),
             issued_date: issuedDate || null,
             expiry_date: expiryDate || null,
             policy_number: policyNumber || null,
@@ -267,8 +266,8 @@ export function useUploadComplianceDocument() {
           .insert({
             user_id: targetUserId,
             document_type_id: documentTypeId,
-            document_url: urlData.publicUrl,
-            file_name: file.name,
+            document_url: storedUrl,
+            file_name: storedFileName,
             issued_date: issuedDate || null,
             expiry_date: expiryDate || null,
             policy_number: policyNumber || null,
