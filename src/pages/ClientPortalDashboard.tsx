@@ -24,6 +24,7 @@ import eventpixLogo from '@/assets/eventpix-logo.png';
 import type { Session } from '@supabase/supabase-js';
 import { ClientCertificates, type ClientCertificate } from '@/components/client/ClientCertificates';
 import { seriesClientEvents } from '../../supabase/functions/_shared/seriesClientScope';
+import { clientDietaries } from '@/lib/clientDietaries';
 
 interface Company {
   id: string;
@@ -467,7 +468,7 @@ export default function ClientPortalDashboard() {
                                   {member.phone && <div className="text-[11px]"><a href={`tel:${member.phone}`} className="text-primary hover:underline">{member.phone}</a></div>}
                                   {member.email && <div className="text-[11px]"><a href={`mailto:${member.email}`} className="text-primary hover:underline">{member.email}</a></div>}
                                   {!member.is_agency && <div className="text-[11px]">
-                                    🍽️ {member.dietary_requirements?.trim() || 'No dietary requirements'}
+                                    🍽️ {clientDietaries(member.dietary_requirements)}
                                   </div>}
                                 </div>
                               ))

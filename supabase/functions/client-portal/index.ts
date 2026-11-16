@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { teamCertificates } from '../_shared/clientCertificates.ts';
+import { clientSchedule } from '../_shared/clientSchedule.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,7 +34,7 @@ serve(async (req) => {
     const { data: event, error: eventError } = await supabase
       .from("events")
       .select(`
-        id, event_name, event_date, start_time, end_time,
+        id, event_name, event_date, setup_time, start_time, end_time,
         venue_name, venue_id, client_id, client_name, event_type_id,
         special_instructions, notes, photography_brief,
         onsite_contact_name, onsite_contact_phone,
@@ -80,21 +81,12 @@ serve(async (req) => {
     // Sessions
     const { data: sessions } = await supabase
       .from("event_sessions")
-      .select("id, label, session_date, start_time, end_time, arrival_time, venue_name, notes")
+      .select("id, label, session_date, session_type, start_time, end_time, arrival_time, venue_name, notes")
       .eq("event_id", event.id)
       .order("session_date", { ascending: true })
       .order("start_time", { ascending: true });
 
-    // Derive displayed start/end from sessions so the Client Portal matches the
-    // session call/end times shown elsewhere (e.g., team brief). Prefer the
-    // first session's arrival_time (call time) as the start, falling back to
-    // the session's start_time. End uses the last session's end_time.
-    const sessionStart = sessions?.length
-      ? (sessions[0].arrival_time || sessions[0].start_time)
-      : null;
-    const sessionEnd = sessions?.length
-      ? (sessions[sessions.length - 1].end_time || sessions[sessions.length - 1].start_time)
-      : null;
+    const schedule = clientSchedule(sessions || [], event);
 
     // Team (assignments)
     const { data: assignments } = await supabase
@@ -272,8 +264,9 @@ serve(async (req) => {
     const response = {
       event_name: event.event_name,
       event_date: event.event_date,
-      start_time: sessionStart ?? event.start_time,
-      end_time: sessionEnd ?? event.end_time,
+      setup_time: schedule.setup_time,
+      start_time: schedule.start_time,
+      end_time: schedule.end_time,
       client_name: event.client_name,
       venue_name: event.venue_name,
       venue,
@@ -288,11 +281,12 @@ serve(async (req) => {
       brief_attachment_name: briefAttachmentName,
       brief_attachment_url: briefAttachmentSignedUrl,
       main_shoot_date: event.main_shoot_date,
-      sessions: (sessions || []).map((s: any) => ({
+      sessions: schedule.sessions.map((s: any) => ({
         id: s.id,
         session_label: s.label,
         session_date: s.session_date,
-        start_time: s.arrival_time || s.start_time,
+        setup_time: s.setup_time,
+        start_time: s.start_time,
         end_time: s.end_time,
         location: s.venue_name,
         notes: s.notes,
