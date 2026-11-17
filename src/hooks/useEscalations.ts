@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { operationalWarningEvents } from '@/lib/operationalWarningEvents';
+import { requiresStaffConflictCheck } from '@/lib/staffRoleScope';
 import { parseISO, addHours, isWithinInterval, startOfDay, endOfDay, addDays, isBefore, format } from 'date-fns';
 
 export interface EscalationItem {
@@ -40,7 +41,8 @@ export function useEscalations() {
             id,
             user_id,
             staff_role_id,
-            profiles:user_id(id, full_name)
+            profiles:user_id(id, full_name),
+            staff_roles:staff_role_id(name, is_onsite)
           ),
           event_sessions(id),
           delivery_records(id, delivery_link, delivered_at)
@@ -131,7 +133,7 @@ export function useEscalations() {
       
       todayEvents.forEach(event => {
         event.event_assignments?.forEach(assignment => {
-          if (!assignment.user_id) return;
+          if (!assignment.user_id || !requiresStaffConflictCheck(assignment.staff_roles)) return;
           if (!userAssignments.has(assignment.user_id)) {
             userAssignments.set(assignment.user_id, []);
           }
