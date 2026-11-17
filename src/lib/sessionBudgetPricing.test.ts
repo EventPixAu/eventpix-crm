@@ -3,6 +3,15 @@ import { photographyPrice, catalogueItem, coverageDays } from '../../supabase/fu
 
 const products = [{ id: 'hourly', name: 'EPX1', unit_price: 275 }];
 describe('client session budget pricing', () => {
+  it('uses the 2027 client unit rate of $285 from Products', () => {
+    const price = photographyPrice(3, [{ ...products[0], unit_price: 285 }]);
+    expect(price.unit_price).toBe(285);
+    expect(price.quantity * price.unit_price).toBe(1140);
+  });
+  it('charges $855 ex GST for the first two hours at the 2027 rate', () => {
+    const price = photographyPrice(2, [{ ...products[0], unit_price: 285 }]);
+    expect(price.quantity * price.unit_price).toBe(855);
+  });
   it('charges $825 ex GST for the first two hours', () => {
     const p = photographyPrice(2, products);
     expect(p.quantity * p.unit_price).toBe(825);
