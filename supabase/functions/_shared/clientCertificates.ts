@@ -1,3 +1,5 @@
+import { teamWwccEnabled, teamWwccSettingKey } from './teamWwccSharing.ts';
+
 export const CLIENT_CERTIFICATE_TYPES = new Set([
   'Public Liability Insurance', 'Professional Indemnity Insurance',
   'Workers Comp', 'Workers Compensation', 'Venue Inductions', 'WWCC / Blue Card',
@@ -27,10 +29,13 @@ export async function companyCertificates(db: any) {
 
 export async function teamCertificates(db: any, eventId: string) {
   // Read the saved event flag centrally so public, authenticated and series views agree.
-  // A missing flag fails closed while the additive schema change is unavailable.
+  // Protected per-event settings work without changing the blocked schema history.
   const { data: event, error: eventError } = await db.from('events').select('*').eq('id', eventId).maybeSingle();
   if (eventError) throw eventError;
-  const shareWwcc = event?.share_team_wwcc === true;
+  const { data: setting, error: settingError } = await db.from('site_settings')
+    .select('value').eq('key', teamWwccSettingKey(eventId)).maybeSingle();
+  if (settingError) throw settingError;
+  const shareWwcc = teamWwccEnabled(setting?.value, event?.share_team_wwcc);
   const { data: assignments, error } = await db.from('event_assignments')
     .select('user_id,assignment_status,role_on_event,staff_role:staff_roles(name),profile:profiles!event_assignments_user_id_fkey(full_name),staff:staff_id(user_id,name,role)')
     .eq('event_id', eventId);

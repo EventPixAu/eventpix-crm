@@ -119,6 +119,7 @@ import { assignmentCardSession } from '@/lib/assignmentCardSession';
 import { AssignmentCallTimeEditor } from '@/components/AssignmentCallTimeEditor';
 import { AssignmentExpenseEditor } from '@/components/AssignmentExpenseEditor';
 import { AssignmentPhoneKit } from '@/components/AssignmentPhoneKit';
+import { TeamWwccSharing } from '@/components/TeamWwccSharing';
 function formatSessionTime(timeStr: string): string {
   try {
     const [h, m] = timeStr.split(':');
@@ -1539,10 +1540,7 @@ export default function EventDetail() {
                         />
                         <span>Share team dietary requirements</span>
                       </label>
-                      <label className="flex items-start gap-2 text-xs text-muted-foreground" title="WWCC sharing is unavailable until the saved-setting update can be applied.">
-                        <Checkbox checked={false} disabled className="mt-0.5" />
-                        <span>Share team WWCC / Blue Card</span>
-                      </label>
+                      {id && <TeamWwccSharing eventId={id} canEdit={isAdmin} />}
                       <p className="pt-2 text-xs font-medium text-muted-foreground">Photographer / crew sharing</p>
                       <label className="flex items-start gap-2 text-xs cursor-pointer">
                         <Checkbox
