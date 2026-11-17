@@ -1,7 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
-import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation, requestMissingPhoneKitDetails, isPhoneKitPhotographer, phoneKitAllocationsForPerson } from './phoneUploadKit';
+import { phoneKitDetails, requiresPhoneKit, PHONE_KIT_MARKER, phoneUploadAllocation, requestMissingPhoneKitDetails, isPhoneKitPhotographer, phoneKitAllocationsForPerson, shouldPromptPhoneUploadKit } from './phoneUploadKit';
 
 describe('phone upload kit', () => {
+  it.each(['Photographer - SMP Live', 'Photographer - Zno live'])('prompts for a phone kit for %s without selecting it', name => {
+    expect(shouldPromptPhoneUploadKit({ name })).toBe(true);
+    expect(requiresPhoneKit('')).toBe(false);
+  });
+  it.each(['Staff Editor - Zno Live', 'Admin', 'Photographer - on site delivery', 'LBA - Assistant'])('does not prompt for %s', name => {
+    expect(shouldPromptPhoneUploadKit({ name })).toBe(false);
+  });
+  it('does not prompt offsite photographers', () => {
+    expect(shouldPromptPhoneUploadKit({ name: 'Photographer - SMP Live', is_onsite: false })).toBe(false);
+  });
   it('never treats shared or another photographer’s equipment as a personal phone-kit selection', () => {
     const allocations = [
       { user_id: null, equipment_item: { category: 'phone' } },

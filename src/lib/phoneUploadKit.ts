@@ -1,6 +1,11 @@
 export const PHONE_KIT_MARKER = '[Phone upload kit required]';
+import { isPhoneKitPhotographer } from '../../supabase/functions/_shared/phoneKitScope';
 export { isPhoneKitPhotographer, phoneKitAllocationsForPerson } from '../../supabase/functions/_shared/phoneKitScope';
 export const PHONE_UPLOAD_CABLES = ['USB-C to USB-C cable', 'OTG converter cable', 'Not available'] as const;
+
+export function shouldPromptPhoneUploadKit(role?: { name?: string; is_onsite?: boolean } | null): boolean {
+  return isPhoneKitPhotographer(role) && /\b(?:smp|zno)[\s-]+live\b/i.test(role?.name || '');
+}
 
 export function phoneUploadAllocation() {
   // A stable name lets the existing allocator reuse the person's kit after profile updates.

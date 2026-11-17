@@ -45,7 +45,7 @@ import { postEventWorkDate, postEventSessionInput } from '@/lib/postEventAssignm
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { AssignmentPhoneKit } from '@/components/AssignmentPhoneKit';
-import { PHONE_KIT_MARKER, isPhoneKitPhotographer } from '@/lib/phoneUploadKit';
+import { PHONE_KIT_MARKER, isPhoneKitPhotographer, shouldPromptPhoneUploadKit } from '@/lib/phoneUploadKit';
 
 // Combine a local date + time in an IANA timezone into a timestamptz ISO string
 function toTimestamptz(dateStr: string, timeStr: string, tz: string): string {
@@ -684,7 +684,7 @@ export function StaffAssignmentDialog({ eventId, assignments, maxStaff = MAX_STA
 
           {!isWorkDateMode && isPhoneKitPhotographer(roles.find(r => r.id === selectedRole)) && <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <Label htmlFor="phone-kit-required">Phone upload kit required</Label>
+              <Label htmlFor="phone-kit-required">{shouldPromptPhoneUploadKit(roles.find(r => r.id === selectedRole)) ? 'Phone upload kit required for this live assignment?' : 'Phone upload kit required'}</Label>
               <Switch id="phone-kit-required" checked={phoneKitRequired} onCheckedChange={setPhoneKitRequired} />
             </div>
             <AssignmentPhoneKit eventId={eventId}
