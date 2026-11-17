@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { CLIENT_CERTIFICATE_TYPES, clientCertificateAssignment, shareClientCertificate } from '../../supabase/functions/_shared/clientCertificates';
+import { teamWwccEnabled, teamWwccSettingKey } from '../../supabase/functions/_shared/teamWwccSharing';
 describe('client certificate privacy', () => {
+  it('keeps sharing optional per event and off unless explicitly enabled', () => {
+    expect(teamWwccSettingKey('event-one')).toBe('event_team_wwcc:event-one');
+    expect(teamWwccSettingKey('event-two')).toBe('event_team_wwcc:event-two');
+    expect(teamWwccEnabled(undefined)).toBe(false);
+    expect(teamWwccEnabled('true')).toBe(true);
+    expect(teamWwccEnabled('false', true)).toBe(false);
+    expect(teamWwccEnabled('invalid', true)).toBe(false);
+  });
   it('shares WWCC only when the event explicitly enables it', () => {
     expect(shareClientCertificate('WWCC / Blue Card', false)).toBe(false);
     expect(shareClientCertificate('WWCC / Blue Card', true)).toBe(true);
