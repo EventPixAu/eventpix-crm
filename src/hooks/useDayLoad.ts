@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useGuardrailSettings } from './useGuardrails';
 import { operationalWarningEvents } from '@/lib/operationalWarningEvents';
+import { requiresStaffConflictCheck } from '@/lib/staffRoleScope';
 import { parseISO, differenceInMinutes, differenceInDays, addMinutes, isBefore } from 'date-fns';
 
 export interface DayLoadEvent {
@@ -45,6 +46,7 @@ export interface DayLoadAssignment {
   user_id: string | null;
   user_name: string | null;
   role_name: string | null;
+  is_onsite?: boolean;
   has_hard_conflict: boolean;
   has_soft_conflict: boolean;
   conflict_details: string[];
@@ -102,7 +104,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
             user_id,
             staff_role_id,
             profiles:user_id(id, full_name),
-            staff_roles:staff_role_id(name)
+            staff_roles:staff_role_id(name, is_onsite)
           ),
           event_sessions(id),
           event_contacts(id),
@@ -133,7 +135,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
       // First pass: build staff assignment map
       for (const event of warningEvents) {
         for (const assignment of event.event_assignments || []) {
-          if (!assignment.user_id) continue;
+          if (!assignment.user_id || !requiresStaffConflictCheck(assignment.staff_roles)) continue;
           if (!staffEventMap.has(assignment.user_id)) {
             staffEventMap.set(assignment.user_id, []);
           }
@@ -191,7 +193,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
           let has_soft_conflict = false;
           const conflict_details: string[] = [];
 
-          if (userId) {
+          if (userId && requiresStaffConflictCheck(role)) {
             const staffEvents = staffEventMap.get(userId) || [];
             const otherEvents = staffEvents.filter(e => e.eventId !== event.id);
 
@@ -247,6 +249,7 @@ export function useDayLoadEvents(filters: DayLoadFilters) {
             user_id: userId,
             user_name: profile?.full_name || null,
             role_name: role?.name || null,
+            is_onsite: requiresStaffConflictCheck(role),
             has_hard_conflict,
             has_soft_conflict,
             conflict_details,
@@ -338,7 +341,7 @@ export function useDayLoadSummary(events: DayLoadEvent[]) {
   const staffEventCount = new Map<string, number>();
   events.forEach(e => {
     e.assignments.forEach(a => {
-      if (a.user_id) {
+      if (a.user_id && a.is_onsite !== false && requiresStaffConflictCheck(a.role_name ? { name: a.role_name } : null)) {
         staffEventCount.set(a.user_id, (staffEventCount.get(a.user_id) || 0) + 1);
       }
     });
