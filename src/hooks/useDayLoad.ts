@@ -338,16 +338,18 @@ export function useDayLoadSummary(events: DayLoadEvent[]) {
   });
 
   // Get staff assigned to multiple events
-  const staffEventCount = new Map<string, number>();
+  const staffEventCount = new Map<string, Set<string>>();
   events.forEach(e => {
     e.assignments.forEach(a => {
       if (a.user_id && a.is_onsite !== false && requiresStaffConflictCheck(a.role_name ? { name: a.role_name } : null)) {
-        staffEventCount.set(a.user_id, (staffEventCount.get(a.user_id) || 0) + 1);
+        const assignedEvents = staffEventCount.get(a.user_id) || new Set<string>();
+        assignedEvents.add(e.id);
+        staffEventCount.set(a.user_id, assignedEvents);
       }
     });
   });
   const staffWithMultipleEvents = Array.from(staffEventCount.entries())
-    .filter(([_, count]) => count > 1)
+    .filter(([_, eventIds]) => eventIds.size > 1)
     .map(([userId]) => userId);
 
   // Calculate total crew assigned (unique staff across all events)

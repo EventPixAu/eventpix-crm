@@ -37,4 +37,12 @@ describe('offsite multi-event conflict exemption', () => {
     const events = await (useDayLoadEvents({ date: '2026-11-17' }) as any);
     expect(useDayLoadSummary(events)).toMatchObject({ eventsWithConflicts: 0, staffWithMultipleEvents: 0 });
   });
+
+  it('counts multiple sessions on one event as one booking', async () => {
+    const job = event('cpra', 'Photographer', true);
+    job.event_assignments.push({ ...job.event_assignments[0], id: 'second-session' });
+    rows.value = [job];
+    const events = await (useDayLoadEvents({ date: '2026-11-17' }) as any);
+    expect(useDayLoadSummary(events).staffWithMultipleEvents).toBe(0);
+  });
 });
