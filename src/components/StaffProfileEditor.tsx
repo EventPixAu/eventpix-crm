@@ -83,7 +83,6 @@ const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 const SENIORITY_LEVELS = ['junior', 'mid', 'senior', 'lead'];
 const STATUS_OPTIONS = ['active', 'inactive', 'on_leave'];
 const LEGACY_ROLE_OPTIONS = ['photographer', 'videographer', 'assistant'] as const;
-const TEAM_CATEGORY_OPTIONS = ['Admin', 'Assistant', 'Photographer', 'Videographer', 'Photog/Video'];
 
 export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId }: StaffProfileEditorProps) {
   const [open, setOpen] = useState(false);
@@ -484,7 +483,7 @@ export function StaffProfileEditor({ profile, sourceTable = 'profiles', staffId 
                     </SelectTrigger>
                     <SelectContent>
                       {roles
-                        .filter((role) => TEAM_CATEGORY_OPTIONS.includes(role.name))
+                        .filter((role) => role.is_active !== false || role.id === formData.default_role_id)
                         .map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}
