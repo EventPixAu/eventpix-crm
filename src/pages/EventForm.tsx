@@ -156,8 +156,8 @@ export default function EventForm() {
       meal_provided: '',
       parking_provided: '',
       notes: '',
-      crew_sms_setup_enabled: null,
-      crew_sms_delivery_enabled: null,
+      crew_sms_setup_enabled: false,
+      crew_sms_delivery_enabled: false,
     },
   });
 

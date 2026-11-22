@@ -57,8 +57,8 @@ export default function EventSeriesList() {
   const [newSeriesType, setNewSeriesType] = useState<'multi_venue' | 'single_venue'>('multi_venue');
   const [newVenueName, setNewVenueName] = useState('');
   const [newVenueAddress, setNewVenueAddress] = useState('');
-  const [newSetupSms, setNewSetupSms] = useState(true);
-  const [newDeliverySms, setNewDeliverySms] = useState(true);
+  const [newSetupSms, setNewSetupSms] = useState(false);
+  const [newDeliverySms, setNewDeliverySms] = useState(false);
   
   const { data: series = [], isLoading } = useEventSeries();
   const { data: eventTypes = [] } = useEventTypes();
@@ -118,8 +118,8 @@ export default function EventSeriesList() {
     setNewSeriesType('multi_venue');
     setNewVenueName('');
     setNewVenueAddress('');
-    setNewSetupSms(true);
-    setNewDeliverySms(true);
+    setNewSetupSms(false);
+    setNewDeliverySms(false);
   };
 
   const handleToggleActive = async (id: string, currentActive: boolean) => {

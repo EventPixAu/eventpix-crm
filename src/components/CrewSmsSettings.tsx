@@ -22,7 +22,7 @@ export function CrewSmsSettings({ setup, delivery, onChange, inherit = false, di
         {inherit && !lba ? <Select value={value === null ? 'inherit' : value ? 'on' : 'off'} disabled={disabled} onValueChange={v => onChange(kind, v === 'inherit' ? null : v === 'on')}>
           <SelectTrigger aria-label={label} className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="inherit">Series / default</SelectItem><SelectItem value="on">On</SelectItem><SelectItem value="off">Off</SelectItem></SelectContent>
-        </Select> : <Switch aria-label={label} checked={!lba && (value ?? true)} disabled={disabled || lba} onCheckedChange={v => onChange(kind, v)} />}
+        </Select> : <Switch aria-label={label} checked={!lba && (value ?? false)} disabled={disabled || lba} onCheckedChange={v => onChange(kind, v)} />}
       </div>;
     })}
   </section>;

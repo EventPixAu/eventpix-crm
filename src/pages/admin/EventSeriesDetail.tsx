@@ -2146,7 +2146,7 @@ export default function EventSeriesDetail() {
                   lba={/\bLBA\b/i.test(`${series.name} ${eventTypes.find(t => t.id === series.event_type_id)?.name || ''}`)}
                   disabled={!isAdmin || updateSeries.isPending}
                   onChange={async (kind, value) => {
-                    await updateSeries.mutateAsync({ id: series.id, [kind === 'setup' ? 'crew_sms_setup_enabled' : 'crew_sms_delivery_enabled']: value ?? true });
+                    await updateSeries.mutateAsync({ id: series.id, [kind === 'setup' ? 'crew_sms_setup_enabled' : 'crew_sms_delivery_enabled']: value ?? false });
                     queryClient.invalidateQueries({ queryKey: ['crew-sms-upcoming'] });
                   }}
                 />

@@ -29,6 +29,7 @@ import {
   Upload,
   Loader2,
   Globe,
+  MessageSquare,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RecommendCrewDialog } from '@/components/RecommendCrewDialog';
@@ -1356,6 +1357,12 @@ export default function EventDetail() {
                       View Worksheets
                     </Button>
                   </Link>
+                  {isAdmin && <Link to={`/admin/crew-sms?event=${id}`} className="block">
+                    <Button variant="outline" className="w-full justify-start">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Activate Auto SMS
+                    </Button>
+                  </Link>}
                   {(isAdmin || isOperations) && (
                     <Button
                       variant="outline"

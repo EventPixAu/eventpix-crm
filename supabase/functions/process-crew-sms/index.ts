@@ -2,11 +2,20 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { normalizeMobile, acceptedMessage, renderTemplate, deliveryBodyTemplate, DEFAULT_SETUP_TEMPLATE, JOB_SHEET_LINK, FOLLOWUP_RESEND_WINDOW_MS } from './reminders.ts';
+import { crewSmsActivated, crewSmsActivationKey } from '../_shared/crewSmsActivation.ts';
 
 const Body = z.object({ ticket: z.string().uuid().optional(), mode: z.enum(['process', 'verify', 'preview', 'followup', 'upcoming']).default('process'), event_id: z.string().uuid().optional() }).strict();
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 type Db = ReturnType<typeof createClient>;
+async function activatedReminders<T extends { event_id: string; reminder_type: string }>(db: Db, rows: T[]): Promise<T[]> {
+  const keys = [...new Set(rows.map(row => crewSmsActivationKey(row.event_id)))];
+  if (!keys.length) return [];
+  const { data, error } = await db.from('site_settings').select('key,value').in('key', keys);
+  if (error) throw new Error('Cannot load SMS activations');
+  const saved = new Map((data || []).map(row => [row.key, row.value]));
+  return rows.filter(row => crewSmsActivated(saved.get(crewSmsActivationKey(row.event_id)), row.reminder_type));
+}
 async function deliver(db: Db, headers: Record<string, string>, logId: string, phone: string, body: string): Promise<'sent' | 'failed'> {
   try {
     const response = await fetch('https://rest.clicksend.com/v3/sms/send', { method: 'POST', headers, body: JSON.stringify({ messages: [{ source: 'Eventpixii', from: 'EventPix', to: phone, body, custom_string: logId }] }), signal: AbortSignal.timeout(15000) });
@@ -55,7 +64,8 @@ Deno.serve(async req => {
       if (error) throw new Error('Cannot load upcoming reminders');
       const { data: settings, error: settingsError } = await db.from('crew_sms_settings').select('enabled, setup_template, delivery_template, delivery_template_masv').eq('id', true).maybeSingle();
       if (settingsError) throw new Error('Cannot load SMS settings');
-      const eventIds = [...new Set((schedule || []).map(c => c.event_id))];
+      const activated = await activatedReminders(db, schedule || []);
+      const eventIds = [...new Set(activated.map(c => c.event_id))];
       if (!eventIds.length) return reply({ reminders: [], enabled: settings?.enabled ?? false });
       const [claimsResult, eventsResult, assignmentsResult, disabledResult] = await Promise.all([
         db.from('crew_sms_logs').select('event_id,session_key,recipient_key,reminder_type').in('event_id', eventIds),
@@ -64,7 +74,7 @@ Deno.serve(async req => {
         db.from('crew_sms_disabled_reminders').select('event_id,session_key,recipient_key,reminder_type').in('event_id', eventIds),
       ]);
       if (claimsResult.error || eventsResult.error || assignmentsResult.error || disabledResult.error) throw new Error('Cannot load schedule details');
-      const reminders = (schedule || []).filter(c => !claimsResult.data?.some(l => l.event_id === c.event_id && l.session_key === c.session_key && l.recipient_key === c.recipient_key && l.reminder_type === c.reminder_type)).map(c => {
+      const reminders = activated.filter(c => !claimsResult.data?.some(l => l.event_id === c.event_id && l.session_key === c.session_key && l.recipient_key === c.recipient_key && l.reminder_type === c.reminder_type)).map(c => {
         const phone = normalizeMobile(c.phone || '');
         const masv = eventsResult.data?.some(e => e.id === c.event_id && e.crew_sms_masv_delivery) ?? false;
         const assignment = assignmentsResult.data?.find(a => a.event_id === c.event_id && (a.user_id === c.recipient_key || a.staff_id === c.recipient_key || a.staff?.user_id === c.recipient_key));
@@ -110,8 +120,9 @@ Deno.serve(async req => {
       }
       return reply({ sent, failed, skipped });
     }
-    const { data: candidates, error } = await db.rpc('crew_sms_candidates');
+    const { data: dueRows, error } = await db.rpc('crew_sms_candidates');
     if (error) throw new Error('Cannot load SMS reminders');
+    const candidates = await activatedReminders(db, dueRows || []);
     if (parsed.data.mode === 'preview') return reply({ due: candidates?.length || 0 });
     const masvEventIds = [...new Set((candidates || []).map((c) => c.event_id))];
     const { data: masvRows } = masvEventIds.length
@@ -131,7 +142,8 @@ Deno.serve(async req => {
       if (claimError || !log) { if (claimError?.code !== '23505') failed++; else skipped++; continue; }
       // Recheck after claiming: cancellation, reassignment or timing edits invalidate the candidate.
       const { data: fresh, error: recheckError } = await db.rpc('crew_sms_candidates');
-      const stillDue = !recheckError && fresh?.some((r: typeof c) => r.event_id === c.event_id && r.session_key === c.session_key && r.recipient_key === c.recipient_key && r.reminder_type === c.reminder_type && r.due_at === c.due_at && normalizeMobile(r.phone) === phone);
+      const activatedFresh = recheckError ? [] : await activatedReminders(db, fresh || []);
+      const stillDue = !recheckError && activatedFresh.some((r: typeof c) => r.event_id === c.event_id && r.session_key === c.session_key && r.recipient_key === c.recipient_key && r.reminder_type === c.reminder_type && r.due_at === c.due_at && normalizeMobile(r.phone) === phone);
       if (!stillDue) {
         const { error: removeError } = await db.from('crew_sms_logs').delete().eq('id', log.id);
         if (removeError) failed++; else skipped++;

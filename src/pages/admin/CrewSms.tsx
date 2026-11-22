@@ -15,6 +15,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { UpcomingCrewSms } from '@/components/UpcomingCrewSms';
+import { EventSmsActivation } from '@/components/EventSmsActivation';
+import { useSearchParams } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
 
 // Keep in sync with supabase/functions/process-crew-sms/reminders.ts DEFAULT_*_TEMPLATE
 const DEFAULT_SETUP_TEMPLATE = 'EventPix: Reminder - {{event_name}}. Setup {{setup_time}} at {{venue}}. Please review your job sheet: {{job_sheet_link}}';
@@ -42,6 +45,25 @@ export default function CrewSms() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const selectedEventId = params.get('event');
+  const [eventSearch, setEventSearch] = useState('');
+  const { data: activationEvents = [] } = useQuery({
+    queryKey: ['sms-activation-events', eventSearch, selectedEventId],
+    enabled: isAdmin,
+    queryFn: async () => {
+      let query = supabase.from('events').select('id,event_name,event_date,event_types!events_event_type_id_fkey(name),event_series(name)')
+        .neq('ops_status', 'cancelled').order('event_date');
+      if (selectedEventId) query = query.eq('id', selectedEventId);
+      else {
+        query = query.gte('event_date', format(new Date(), 'yyyy-MM-dd')).limit(100);
+        if (eventSearch.trim()) query = query.ilike('event_name', `%${eventSearch.trim()}%`);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ['crew-sms-settings'],
@@ -233,6 +255,7 @@ export default function CrewSms() {
                 </p>
               </div>
               <Switch
+                aria-label="Automatic SMS master switch"
                 checked={!!settings?.enabled}
                 disabled={settingsLoading || toggleMutation.isPending}
                 onCheckedChange={(checked) => toggleMutation.mutate(checked)}
@@ -240,6 +263,23 @@ export default function CrewSms() {
             </div>
           </CardContent>
         </Card>
+
+        <section className="space-y-4 border-t border-border pt-4">
+          <h2 className="text-lg font-semibold">SMS activations</h2>
+          <div className="flex flex-wrap gap-2">
+            <Input aria-label="Search SMS events" placeholder="Search events" value={eventSearch}
+              onChange={e => { setEventSearch(e.target.value); setParams({}); }} className="max-w-sm" />
+            {selectedEventId && <Button variant="outline" onClick={() => setParams({})}>All upcoming events</Button>}
+          </div>
+          {!settings?.enabled && <p className="text-sm text-muted-foreground">Automatic SMS is off. Turn on the master switch above and select the event reminders below.</p>}
+          <div className="divide-y divide-border">
+            {activationEvents.map(event => <div key={event.id} className="py-4">
+              <p className="font-medium">{event.event_name}</p>
+              <p className="text-sm text-muted-foreground">{format(parseISO(event.event_date), 'EEE d MMM yyyy')}</p>
+              <EventSmsActivation eventId={event.id} lba={/\bLBA\b/i.test(`${event.event_name} ${event.event_types?.name || ''} ${event.event_series?.name || ''}`)} />
+            </div>)}
+          </div>
+        </section>
 
         <UpcomingCrewSms />
 

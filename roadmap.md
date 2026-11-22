@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Current request
+- [x] Set automatic SMS off now and require explicit per-event setup/delivery activation in protected saved settings; new event/series controls default off. Quick Actions opens the selected event on Crew SMS activations. Sender, upcoming preview and post-claim checks enforce opt-in; 32 tests passed, Gungahlin save/reload and separate controls verified with master off, switches returned off and no texts sent. Sender deployed; activation screens await publishing. Existing database-history repair remains blocked independently.
 - [x] Fix photographer file-request subject merge fields and keep failed sends open. Reproduced unresolved event-name subject rejection; eight tests passed, signed-in intercepted success/failure verified, failed recipient retained, build OK. No actual emails sent; awaits publishing. Existing WWCC/history blockers remain unchanged.
 - [x] Separate client vehicle/dietary sharing from photographer meal/parking. Signed-in Stihl controls and Day-Of logistics verified; public portal omits meal/parking, seven tests passed, build OK; screens await publishing.
 - [x] Restore per-event client WWCC sharing using existing admin-protected site settings; five privacy tests passed, Southlands switch saved/reloaded and Nicole’s approved certificate appeared in the real client view, then disappeared when switched off; original off setting restored. All three certificate functions deployed, build OK; switch awaits publishing. Migration history remains blocked independently.
