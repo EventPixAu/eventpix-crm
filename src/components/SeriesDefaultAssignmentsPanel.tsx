@@ -2,7 +2,9 @@
  import { format, parseISO } from 'date-fns';
  import { Checkbox } from '@/components/ui/checkbox';
  import { selectedSeriesInvitationEvents } from '../../supabase/functions/_shared/seriesInvitationEvents';
- import { Users, Plus, Trash2, RefreshCw, UserCheck, Loader2, Mail } from 'lucide-react';
+ import { Users, Plus, Trash2, RefreshCw, UserCheck, Loader2, Mail, Pencil } from 'lucide-react';
+ import { useAuth } from '@/lib/auth';
+ import { SeriesAssignmentPayDialog } from '@/components/SeriesAssignmentPayDialog';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';
@@ -49,6 +51,8 @@
  }
  
  export function SeriesDefaultAssignmentsPanel({ seriesId }: SeriesDefaultAssignmentsPanelProps) {
+   const { isAdmin } = useAuth();
+   const [payAssignmentId, setPayAssignmentId] = useState<string | null>(null);
    const { data: assignments = [], isLoading } = useSeriesDefaultAssignments(seriesId);
   const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useSeriesEvents(seriesId);
    const { data: staffMembers = [] } = useStaffDirectory();
@@ -282,9 +286,7 @@
                            </AvatarFallback>
                          </Avatar>
                          <div>
-                           <p className="font-medium">
-                             {assignment.user?.full_name || 'Unknown'}
-                           </p>
+                           {isAdmin ? <Button variant="link" className="h-auto p-0 font-medium text-foreground whitespace-normal text-left" onClick={() => setPayAssignmentId(assignment.id)}>{assignment.user?.full_name || 'Unknown'}</Button> : <p className="font-medium">{assignment.user?.full_name || 'Unknown'}</p>}
                            <p className="text-xs text-muted-foreground">
                              {assignment.user?.email}
                            </p>
@@ -333,6 +335,7 @@
                      </TableCell>
                      <TableCell>
                        <div className="flex items-center justify-end gap-2">
+                       {isAdmin && <Button variant="ghost" size="icon" aria-label={`Edit pay and extras for ${assignment.user?.full_name || 'team member'}`} title="Edit pay & extras" onClick={() => setPayAssignmentId(assignment.id)}><Pencil className="h-4 w-4" /></Button>}
                        <Button
                          variant="outline"
                          size="sm"
@@ -361,6 +364,7 @@
          </CardContent>
        </Card>
        
+       {assignments.filter(assignment => assignment.id === payAssignmentId).map(assignment => <SeriesAssignmentPayDialog key={assignment.id} assignment={assignment} onClose={() => setPayAssignmentId(null)} />)}
        {/* Info Card */}
        <Card className="border-primary/20 bg-primary/5">
          <CardContent className="pt-4">
