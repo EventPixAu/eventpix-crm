@@ -29,6 +29,7 @@ import { useClients } from '@/hooks/useSales';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { eventContactEmail } from '@/lib/eventContactEmail';
 
 interface EventContactsCardProps {
   eventId: string;
@@ -261,7 +262,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     if (!onsitePhone) {
                       onsitePhone = getDisplayPhone(matchingContact) || undefined;
                     }
-                    onsiteEmail = matchingContact.contact_email || matchingContact.client_contact?.email;
+                    onsiteEmail = eventContactEmail(matchingContact);
                   }
                   // Fall back to client_contacts lookup
                   if (!onsitePhone && onsiteContactDetails) {
@@ -283,7 +284,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                 const norm = (v?: string | null) => (v || '').trim().toLowerCase();
                 const alreadyListed = contacts.some((c) => {
                   const cName = norm(c.contact_name || c.client_contact?.contact_name);
-                  const cEmail = norm(c.contact_email || c.client_contact?.email);
+                  const cEmail = norm(eventContactEmail(c));
                   return (
                     (!!displayName && cName === norm(displayName)) ||
                     (!!displayEmail && !!cEmail && cEmail === norm(displayEmail))
@@ -336,7 +337,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
           <div className="space-y-3">
             {contacts.map((contact) => {
               const phone = getDisplayPhone(contact);
-              const email = contact.contact_email || contact.client_contact?.email;
+              const email = eventContactEmail(contact);
               const name = contact.contact_name || contact.client_contact?.contact_name;
               const role = contact.client_contact?.role_title || contact.client_contact?.role;
               const isEditingThis = editingContactId === contact.id;
@@ -483,7 +484,7 @@ export function EventContactsCard({ eventId, clientId, clientName, clientDetails
                     const phone = onsiteContact?.phone 
                       || (matchingContact ? getDisplayPhone(matchingContact) : null)
                       || onsiteContactDetails?.phone_mobile || onsiteContactDetails?.phone_office || onsiteContactDetails?.phone || null;
-                    const email = matchingContact?.contact_email || matchingContact?.client_contact?.email
+                    const email = eventContactEmail(matchingContact)
                       || onsiteContactDetails?.email || null;
                     
                     return (

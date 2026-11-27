@@ -39,6 +39,7 @@ import {
 import { useActiveContactTypes } from '@/hooks/useAdminLookups';
 import { ContactSelector } from '@/components/shared/ContactSelector';
 import type { CrmContact } from '@/hooks/useContactSearch';
+import { eventContactEmail } from '@/lib/eventContactEmail';
 
 interface EventContactsEditorProps {
   eventId: string;
@@ -162,7 +163,7 @@ export function EventContactsEditor({ eventId, clientId, disabled, maxContacts =
         <div className="space-y-2">
           {contacts.map((contact) => {
             const phone = getDisplayPhone(contact);
-            const email = contact.contact_email || contact.client_contact?.email;
+            const email = eventContactEmail(contact);
             const name = contact.contact_name || contact.client_contact?.contact_name;
             const role = contact.client_contact?.role_title || contact.client_contact?.role;
             const isLinked = !!contact.client_contact_id;
