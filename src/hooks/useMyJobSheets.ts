@@ -29,6 +29,7 @@ export interface JobSheetSession {
   venue_name: string | null;
   venue_address: string | null;
   session_type: string | null;
+  timezone?: string | null;
 }
 
 export interface MyJobSheet {
@@ -82,8 +83,11 @@ export function useMyJobSheets() {
           role_on_event,
           travel_amount,
           equipment_amount,
+          hours_override,
+          hourly_rate_override,
+          pay_rate_snapshot,
           staff_role:staff_roles!event_assignments_staff_role_id_fkey(id, name, is_onsite),
-          session:event_sessions!event_assignments_session_id_fkey(id, session_date, label, start_time, end_time, arrival_time, session_type),
+          session:event_sessions!event_assignments_session_id_fkey(id, session_date, label, start_time, end_time, arrival_time, session_type, timezone),
           call_time_at,
           events!inner(
             id,
@@ -105,7 +109,7 @@ export function useMyJobSheets() {
               id,
               worksheet_items!left(id, is_done)
             ),
-            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type)
+            event_sessions!left(id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type, timezone)
           )
         `)
         .eq('user_id', user.id);
@@ -125,7 +129,7 @@ export function useMyJobSheets() {
       if (assignedSessionIds.length > 0) {
         const { data: assignedSessions, error: assignedSessionsError } = await supabase
           .from('event_sessions')
-          .select('id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type')
+          .select('id, session_date, arrival_time, start_time, end_time, venue_name, venue_address, label, session_type, timezone')
           .in('id', assignedSessionIds);
 
         if (assignedSessionsError) throw assignedSessionsError;
@@ -245,6 +249,7 @@ export function useMyJobSheets() {
               venue_name: s.venue_name ?? null,
               venue_address: s.venue_address ?? null,
               session_type: s.session_type ?? null,
+              timezone: s.timezone ?? null,
             })),
           has_equipment: hasEquipment,
           equipment_picked_up: equipmentPickedUp,

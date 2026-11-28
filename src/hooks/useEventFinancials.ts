@@ -9,7 +9,7 @@
 import { superAmount } from '@/lib/employmentSuper';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { assignmentSessionHours, assignmentPayUnits } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits, assignmentHourlyPayHours } from '@/lib/assignmentPayHours';
 import { unitsAfterLightingSetup } from '@/lib/assignmentPaidHours';
 import { assignmentRateSnapshot } from '@/lib/assignmentRateSnapshot';
 import type { AssignmentRate } from '@/lib/assignmentRateSnapshot';
@@ -95,10 +95,13 @@ export function useEventFinancials(eventId: string | undefined) {
           equipment_amount,
           session_id,
           role_on_event,
+          call_time_at,
           staff_role:staff_roles!event_assignments_staff_role_id_fkey (name, is_onsite),
           event_sessions:session_id (
             start_time,
-            end_time
+            end_time,
+            arrival_time,
+            timezone
           )
         `)
         .eq('event_id', eventId);
@@ -106,7 +109,7 @@ export function useEventFinancials(eventId: string | undefined) {
       // Fetch event sessions as fallback for assignments without a session_id
       const { data: eventSessions } = await supabase
         .from('event_sessions')
-        .select('id, start_time, end_time, session_type')
+        .select('id, start_time, end_time, arrival_time, timezone, session_type')
         .eq('event_id', eventId);
       
       if (assignError) throw assignError;
@@ -184,7 +187,12 @@ export function useEventFinancials(eventId: string | undefined) {
         const sessionHours = assignmentSessionHours({ ...assignment, session: assignment.event_sessions }, eventSessions || []);
         if (sessionHours <= 0 && rate.rate_mode !== 'fixed') continue;
         
-        const { units: rawCallHours } = assignmentPayUnits({ ...assignment, session: assignment.event_sessions } as any, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time);
+        const roleName = assignment.staff_role?.name || assignment.role_on_event || '';
+        const hourlyRole = !/photograph|videograph/i.test(roleName);
+        const scopedAssignment = { ...assignment, session: assignment.event_sessions } as any;
+        const rawCallHours = hourlyRole
+          ? assignmentHourlyPayHours(scopedAssignment, eventSessions || [], (event as any)?.call_time)
+          : assignmentPayUnits(scopedAssignment, eventSessions || [], rate.minimum_paid_hours ?? 0, (event as any)?.call_time).units;
         const callHours = (assignment as any).hours_override != null ? rawCallHours : unitsAfterLightingSetup(rawCallHours, lightingRows.filter(r => r.assignment_id === assignment.id).length + allowances.filter((al: any) => al.assignment_id === assignment.id && /lighting/i.test(al.pay_allowances?.name || '')).reduce((n: number, al: any) => n + (al.quantity || 1), 0));
         const basePay = rate.rate_mode === 'fixed' ? Number(rate.fixed_rate ?? 0) : Number(assignment.hourly_rate_override ?? rate.hourly_rate ?? 0) * callHours;
         expectedStaffCost += basePay + superAmount(basePay, rate.employment_type ?? rateMap.get(roleId)?.employment_type);

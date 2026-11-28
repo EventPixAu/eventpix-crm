@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignmentSessionHours } from './assignmentPayHours';
+import { assignmentHourlyPayHours, assignmentSessionHours } from './assignmentPayHours';
 import { assignmentPaidHours } from './assignmentPaidHours';
 
 const shoot = { id: 'shoot', session_type: 'live', start_time: '08:30:00', end_time: '10:30:00' };
@@ -19,5 +19,15 @@ describe('separate photography and editing pay hours', () => {
   });
   it('uses only offsite sessions for an unlinked Staff assignment', () => {
     expect(assignmentSessionHours({ staff_role: { name: 'Staff Editor', is_onsite: false } }, [shoot, editing])).toBe(8);
+  });
+  it('pays an hourly assistant for the full 3:00–8:30 call, not only the 5:00–8:30 session', () => {
+    const session = { ...shoot, start_time: '17:00:00', end_time: '20:30:00', arrival_time: '15:00:00' };
+    const hours = assignmentHourlyPayHours({ session, staff_role: { name: 'Assistant - Printing (ABN)' } }, [session]);
+    expect(hours).toBe(5.5);
+    expect(hours * 40).toBe(220);
+  });
+  it('retains a deliberate manual hourly adjustment', () => {
+    const session = { ...shoot, start_time: '17:00:00', end_time: '20:30:00', arrival_time: '15:00:00' };
+    expect(assignmentHourlyPayHours({ session, hours_override: 6 }, [session])).toBe(6);
   });
 });

@@ -53,6 +53,25 @@ export function assignmentCallStartTime(assignment: { call_time_at?: string | nu
   return eventCallTime || (session as any)?.arrival_time || session?.start_time || null;
 }
 
+/** Hourly team roles are paid for the full call, including arrival/setup time, rounded up to half hours. */
+export function assignmentHourlyPayHours(
+  assignment: PayAssignment & { hours_override?: number | null; call_time_at?: string | null },
+  sessions: PaySession[],
+  eventCallTime?: string | null
+): number {
+  const override = assignment.hours_override;
+  if (override != null && !isNaN(Number(override))) return Number(override);
+  const session = assignmentPaySession(assignment, sessions);
+  const start = assignmentCallStartTime(assignment, session, eventCallTime);
+  if (start && session?.end_time) {
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = session.end_time.split(':').map(Number);
+    const hours = (eh * 60 + em - sh * 60 - sm) / 60;
+    if (Number.isFinite(hours) && hours > 0) return Math.ceil(hours * 2) / 2;
+  }
+  return assignmentSessionHours(assignment, sessions);
+}
+
 /** Paid units for an assignment, honouring manual overrides and whole-clock-hour calls (arrival and finish on the hour pay the call span itself, no separate prep unit). */
 export function assignmentPayUnits(
   assignment: PayAssignment & { hours_override?: number | null; call_time_at?: string | null },

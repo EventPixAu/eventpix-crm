@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePayRateCard, usePayAllowances } from '@/hooks/usePayRateCard';
 import { useEventSessions } from '@/hooks/useEventSessions';
 import type { EventAssignment } from '@/hooks/useEvents';
-import { assignmentSessionHours, assignmentPayUnits, assignmentPaySession, assignmentCallStartTime } from '@/lib/assignmentPayHours';
+import { assignmentSessionHours, assignmentPayUnits, assignmentHourlyPayHours } from '@/lib/assignmentPayHours';
 import { assignmentPayAccess } from '@/lib/assignmentPayAccess';
 import { assignmentPaidHours, assignmentCoverageUnits, PREP_TRAVEL_UNITS } from '@/lib/assignmentPaidHours';
 import { supabase } from '@/lib/supabase';
@@ -65,13 +65,10 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
   const callHours = Number((assignment as any).hours_override ?? assignmentPaidHours(sessionHours, minHours));
   const calculated = assignmentPayUnits(assignment as any, eventSessions, minHours, eventCallTime);
   const hourlyRole = !/photograph|videograph/i.test(roleName);
-  const session = assignmentPaySession(assignment, eventSessions);
-  const start = assignmentCallStartTime(assignment, session, session?.start_time);
-  const minutes = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
-  const fallbackHours = hourlyRole ? Math.ceil(Math.max(0, start && session?.end_time ? (minutes(session.end_time) - minutes(start)) / 60 : sessionHours) * 2) / 2 : undefined;
+  const fallbackHours = hourlyRole ? assignmentHourlyPayHours(assignment as any, eventSessions, eventCallTime) : undefined;
   const lightingAllowanceCount = assignmentAllowances.filter((aa: any) => /lighting/i.test(aa.pay_allowances?.name || '')).reduce((n: number, aa: any) => n + (aa.quantity || 1), 0);
   const lightingCount = lightingPay.filter(row => row.assignment_id === assignment.id).length + lightingAllowanceCount;
-  const rawUnits = !hasHoursOverride && fallbackHours != null ? fallbackHours : calculated.units;
+  const rawUnits = fallbackHours ?? calculated.units;
   const payUnits = hasHoursOverride ? rawUnits : unitsAfterLightingSetup(rawUnits, lightingCount);
   const mergedCall = calculated.mergedCall;
   const alignedUnits = mergedCall ? payUnits : null;
@@ -196,7 +193,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
     );
   };
 
-  const rateLabel = `$${hourlyRate.toFixed(2)}/unit`;
+  const rateLabel = `$${hourlyRate.toFixed(2)}/${hourlyRole ? 'hour' : 'unit'}`;
 
   const saveCalculation = async (reset = false) => {
     const units = Number(unitsInput);
@@ -231,7 +228,7 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       <div className="mt-2 pt-2 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="font-medium">Pay: ${totalWithExtras.toFixed(2)} (ex GST)</span>
-        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} units × ${hourlyRate.toFixed(2)}`}{superPay > 0 ? ' + 12% Super' : ''}{summaryExtras.map(x => ` + ${x}`).join('')}</span>
+        <span className="text-muted-foreground">{isFixedMode ? 'Set rate' : `${payUnits} ${hourlyRole ? 'hours' : 'units'} × $${hourlyRate.toFixed(2)}${hourlyRole ? '/hour' : ''}`}{superPay > 0 ? ' + 12% Super' : ''}{summaryExtras.map(x => ` + ${x}`).join('')}</span>
       </div>
     );
   }
@@ -251,8 +248,8 @@ export function AssignmentBudgetLine({ assignment, eventId, isAdmin, isOperation
       </div>
       {canEdit && editingCalculation && (
         <div className="flex flex-wrap items-end gap-2 text-xs pb-2">
-          <label className="space-y-1">Payment units<input aria-label="Payment units" type="number" min="0" step="0.5" value={unitsInput} onChange={e => setUnitsInput(e.target.value)} className="block w-24 h-8 bg-background border border-border rounded px-2 text-foreground" /></label>
-          <label className="space-y-1">Rate per unit ($)<input aria-label="Rate per unit" type="number" min="0" step="0.01" value={rateInput} onChange={e => setRateInput(e.target.value)} className="block w-28 h-8 bg-background border border-border rounded px-2 text-foreground" /></label>
+          <label className="space-y-1">{hourlyRole ? 'Paid hours' : 'Payment units'}<input aria-label={hourlyRole ? 'Paid hours' : 'Payment units'} type="number" min="0" step="0.5" value={unitsInput} onChange={e => setUnitsInput(e.target.value)} className="block w-24 h-8 bg-background border border-border rounded px-2 text-foreground" /></label>
+          <label className="space-y-1">Rate per {hourlyRole ? 'hour' : 'unit'} ($)<input aria-label={`Rate per ${hourlyRole ? 'hour' : 'unit'}`} type="number" min="0" step="0.01" value={rateInput} onChange={e => setRateInput(e.target.value)} className="block w-28 h-8 bg-background border border-border rounded px-2 text-foreground" /></label>
           <Button size="sm" variant="outline" disabled={savingCalculation} onClick={() => saveCalculation(true)}>Reset</Button>
           <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Cancel pay edit" title="Cancel" disabled={savingCalculation} onClick={() => setEditingCalculation(false)}><X className="h-4 w-4" /></Button>
           <Button size="icon" className="h-8 w-8" aria-label="Save pay calculation" title="Save" disabled={savingCalculation} onClick={() => saveCalculation()}><Check className="h-4 w-4" /></Button>
