@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { isOnsiteStaffRole, onsiteEquipmentAssignments } from './staffRoleScope';
+import { isOnsiteStaffRole, onsiteEquipmentAssignments, isSelectableStaffRole } from './staffRoleScope';
 
 describe('staff assignment scope', () => {
+  it('offers one Event Manager choice while retaining the historical selected role', () => {
+    const roles = [
+      { id: 'manager', name: 'Event Manager', is_active: true },
+      { id: 'legacy', name: 'Event Manager (staff)', is_active: false },
+    ];
+    expect(roles.filter(role => isSelectableStaffRole(role)).map(role => role.id)).toEqual(['manager']);
+    expect(isSelectableStaffRole(roles[1], 'legacy')).toBe(true);
+  });
+  it('keeps both Event Manager names onsite only, including legacy offsite flags', () => {
+    for (const name of ['Event Manager', 'Event Manager (staff)']) {
+      expect(isOnsiteStaffRole({ name, is_onsite: true })).toBe(true);
+      expect(isOnsiteStaffRole({ name, is_onsite: false })).toBe(true);
+    }
+  });
   it('excludes Nat’s home-based allocation from onsite equipment reminders', () => {
     const assignments = [
       { name: 'Nat Franks', staff_role: { name: 'Staff Editor - Zno Live', is_onsite: false } },

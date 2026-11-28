@@ -19,6 +19,7 @@ export interface StaffRole {
   id: string;
   name: string;
   is_onsite?: boolean;
+  is_active?: boolean;
 }
 
 export interface EquipmentCategory {

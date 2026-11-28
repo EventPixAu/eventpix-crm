@@ -109,6 +109,7 @@ import { setClientStatusAuto } from '@/lib/clientStatusAuto';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useStaffRoles } from '@/hooks/useStaff';
+import { isSelectableStaffRole } from '@/lib/staffRoleScope';
 import { AssignmentBudgetLine } from '@/components/AssignmentBudgetLine';
 import { CrewChecklistsPanel } from '@/components/CrewChecklistsPanel';
 import { EventAgencyCrewPanel } from '@/components/EventAgencyCrewPanel';
@@ -206,7 +207,7 @@ function AssignmentCard({ assignment, eventId, isAdmin, isOperations, currentUse
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                {staffRoles.map((r) => (
+                {staffRoles.filter(r => isSelectableStaffRole(r, assignment.staff_role_id)).map((r) => (
                   <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
                 ))}
               </SelectContent>

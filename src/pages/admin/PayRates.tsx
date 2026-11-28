@@ -18,6 +18,7 @@ import {
 } from '@/hooks/usePayRateCard';
 import { useStaffRoles } from '@/hooks/useStaff';
 import { sortByDisplayName } from '@/lib/alphabeticalName';
+import { isSelectableStaffRole } from '@/lib/staffRoleScope';
 
 export default function PayRates() {
   const { data: rateCard = [], isLoading } = usePayRateCard();
@@ -51,7 +52,7 @@ export default function PayRates() {
 
   const usedRoleIds = new Set(rateCard.map(r => r.staff_role_id));
   const availableRoles = sortByDisplayName(
-    staffRoles.filter(r => !usedRoleIds.has(r.id) || editEntry?.staff_role_id === r.id),
+    staffRoles.filter(r => isSelectableStaffRole(r, editEntry?.staff_role_id) && (!usedRoleIds.has(r.id) || editEntry?.staff_role_id === r.id)),
     r => r.name,
   );
 

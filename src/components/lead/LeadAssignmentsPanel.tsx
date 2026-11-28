@@ -36,6 +36,7 @@ import {
 import { useStaffDirectoryWithLocation, useStaffRoles } from '@/hooks/useStaff';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { isSelectableStaffRole } from '@/lib/staffRoleScope';
 
 interface LeadAssignmentsPanelProps {
   leadId: string;
@@ -388,7 +389,7 @@ export function LeadAssignmentsPanel({ leadId }: LeadAssignmentsPanelProps) {
                   <SelectValue placeholder="Select role..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
+                  {roles.filter(role => isSelectableStaffRole(role)).map((role) => (
                     <SelectItem key={role.id} value={role.id}>
                       {role.name}
                     </SelectItem>

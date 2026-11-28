@@ -7,6 +7,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { isOnsiteStaffRole } from '@/lib/staffRoleScope';
 
 export interface StaffRoleLookup {
   id: string;
@@ -41,7 +42,7 @@ export function useCreateStaffRole() {
   return useMutation({
     mutationFn: async (input: string | { name: string; is_onsite: boolean }) => {
       const name = typeof input === 'string' ? input : input.name;
-      const is_onsite = /\bstaff\b/i.test(name) ? false : typeof input === 'string' ? true : input.is_onsite;
+      const is_onsite = isOnsiteStaffRole({ name, is_onsite: typeof input === 'string' ? true : input.is_onsite });
       // Get max sort_order
       const { data: maxData } = await supabase
         .from('staff_roles')
@@ -76,9 +77,20 @@ export function useUpdateStaffRole() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<StaffRoleLookup> & { id: string }) => {
+      const { data: current, error: readError } = await supabase
+        .from('staff_roles')
+        .select('name, is_onsite')
+        .eq('id', id)
+        .maybeSingle();
+      if (readError) throw readError;
+      if (!current) throw new Error('Team role not found');
+      const is_onsite = isOnsiteStaffRole({
+        name: updates.name ?? current.name,
+        is_onsite: updates.is_onsite ?? current.is_onsite,
+      });
       const { data, error } = await supabase
         .from('staff_roles')
-        .update(updates)
+        .update({ ...updates, is_onsite })
         .eq('id', id)
         .select()
         .maybeSingle();

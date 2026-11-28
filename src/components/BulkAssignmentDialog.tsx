@@ -32,6 +32,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCheckAssignmentGuardrails, type GuardrailCheck } from '@/hooks/useGuardrails';
 import { GuardrailOverrideDialog } from '@/components/GuardrailOverrideDialog';
 import { useAuth } from '@/lib/auth';
+import { isSelectableStaffRole } from '@/lib/staffRoleScope';
 
 interface BulkAssignmentDialogProps {
   open: boolean;
@@ -444,7 +445,7 @@ export function BulkAssignmentDialog({
               <SelectValue placeholder="Select role (optional)" />
             </SelectTrigger>
             <SelectContent>
-              {roles.map((role) => (
+              {roles.filter(role => isSelectableStaffRole(role)).map((role) => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.name}
                 </SelectItem>

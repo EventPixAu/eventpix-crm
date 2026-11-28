@@ -44,6 +44,7 @@
  } from '@/hooks/useSeriesDefaultAssignments';
  import { useStaffDirectory } from '@/hooks/useStaff';
  import { useStaffRoles } from '@/hooks/useLookups';
+ import { isSelectableStaffRole } from '@/lib/staffRoleScope';
  import { useSeriesEvents } from '@/hooks/useEventSeries';
  
  interface SeriesDefaultAssignmentsPanelProps {
@@ -210,7 +211,7 @@
                    <SelectValue placeholder="Select role..." />
                  </SelectTrigger>
                  <SelectContent>
-                   {staffRoles.map(role => (
+                   {staffRoles.filter(role => isSelectableStaffRole(role)).map(role => (
                      <SelectItem key={role.id} value={role.id}>
                        {role.name}
                      </SelectItem>
@@ -305,7 +306,7 @@
                            <SelectItem value="none">
                              <span className="text-muted-foreground">No role</span>
                            </SelectItem>
-                           {staffRoles.map(role => (
+                           {staffRoles.filter(role => isSelectableStaffRole(role, assignment.staff_role_id)).map(role => (
                              <SelectItem key={role.id} value={role.id}>
                                {role.name}
                              </SelectItem>
